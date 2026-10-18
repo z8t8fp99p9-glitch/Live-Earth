@@ -1,0 +1,47 @@
+{
+  "manifestVersion": 1,
+  "app": "LIVE // EARTH",
+  "status": "architecture-only; providers not yet selected or connected",
+  "datasets": [
+    {
+      "id": "astronomy.calculated",
+      "version": "1.0.0",
+      "description": "On-device Sun and Moon calculations and short-lived location/time keyed results.",
+      "storage": "indexeddb:astronomy_cache",
+      "retentionDays": 30,
+      "source": "local-calculation-engine-not-yet-integrated",
+      "license": "not-applicable-to-calculation; engine license must be reviewed before selection",
+      "updatePolicy": "calculate locally on demand; expire cached records after 30 days"
+    },
+    {
+      "id": "weather.forecast",
+      "version": "1.0.0",
+      "description": "Location-specific forecast snapshots saved after a successful online request.",
+      "storage": "indexeddb:weather_cache",
+      "retentionDays": 3,
+      "source": "provider-not-yet-selected",
+      "license": "must-be-reviewed-before-provider-selection",
+      "updatePolicy": "refresh when online; use cached forecast offline until its three-day expiry"
+    },
+    {
+      "id": "earthquakes.events",
+      "version": "1.0.0",
+      "description": "Compact earthquake event summaries with timestamp, magnitude, location and official event URL.",
+      "storage": "indexeddb:earthquakes",
+      "retentionDays": 365,
+      "source": "official-catalog-provider-not-yet-connected",
+      "license": "must-be-reviewed-before-provider-selection",
+      "updatePolicy": "rolling 365-day catalog; detailed event pages require internet"
+    },
+    {
+      "id": "assets.optional",
+      "version": "1.0.0",
+      "description": "Metadata for optional assets downloaded on first use and reused when available offline.",
+      "storage": "indexeddb:asset_metadata plus browser Cache Storage for asset bytes",
+      "targetCollectionMB": 60,
+      "source": "not-yet-selected",
+      "license": "each asset license must be reviewed before inclusion",
+      "updatePolicy": "download on demand; never preload the entire collection"
+    }
+  ]
+}
