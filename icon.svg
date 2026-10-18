@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs><radialGradient id="o" cx="32%" cy="26%" r="80%"><stop stop-color="#8deaff"/><stop offset=".45" stop-color="#237caf"/><stop offset="1" stop-color="#07152a"/></radialGradient></defs>
+  <rect width="512" height="512" rx="110" fill="#050a12"/>
+  <circle cx="256" cy="256" r="180" fill="url(#o)" stroke="#68dfff" stroke-width="5"/>
+  <path d="M164 120l48 14 16 34-22 30 12 35-39 14-18 43-34-17-13-49 22-35-14-37zm118 24l43 11 22 31-15 25-37-6-22-32zm-25 123l48-14 36 24-9 47-35 47-30-20-15-43zm-106 36l37 10 20 31-18 31-28-13-18-33z" fill="#72d5a5" opacity=".85"/>
+  <text x="256" y="474" font-family="Arial,sans-serif" font-size="25" font-weight="700" text-anchor="middle" fill="#eef6ff" letter-spacing="4">LIVE // EARTH</text>
+</svg>
