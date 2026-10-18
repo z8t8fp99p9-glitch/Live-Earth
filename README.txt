@@ -1,21 +1,14 @@
-LIVE // EARTH — 3D GLOBE CANDIDATE (NOT YET DEPLOYED)
+LIVE // EARTH — Globe Loading Fix
 
-This package contains a replacement index.html only. It is intended to replace the current repository-root index.html after review.
+This package contains two replacement files for the existing Live-Earth GitHub Pages site.
 
-Features:
-- 3D spherical Earth, dark space and subtle atmosphere
-- fixed camera / zoom
-- one-pointer drag rotation; pinch zoom and map controls are not implemented
-- NASA Blue Marble texture loaded from NASA's public imagery host
-- Three.js loaded from jsDelivr CDN
-- responsive viewport and low-power renderer preference
+FILES
+- index.html: corrects the NASA Earth texture URL.
+- sw.js: bumps the app cache version so the updated homepage can load.
 
-External dependencies (network required on first load):
-- Three.js 0.180.0 module via jsDelivr
-- Earth texture: https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57723/land_ocean_ice_2048.png
+IMPORTANT
+Do NOT upload this ZIP itself as the website replacement. Extract the ZIP first, then upload the two files inside to the ROOT of the existing Live-Earth repository, replacing the existing index.html and sw.js. Keep manifest.json and icon.svg unchanged.
 
-Attribution: Earth texture source NASA/GSFC. NASA should be acknowledged; do not imply NASA endorsement. Review NASA media/data guidance and the selected image's specific rights before public/commercial promotion. Three.js is MIT licensed and must retain its license notice when distributed as software; it is loaded from its official project distribution CDN here.
+GitHub commit message: Fix Earth texture loading and refresh app cache
 
-Important: This is a candidate package and has NOT been deployed or verified on the live site. The current website remains unchanged. Replace only index.html first; do not upload this ZIP as a nested folder. Existing manifest.json, sw.js and icon.svg are left untouched. After commit, wait for GitHub Pages deployment and test the actual URL on iPhone. If an older service worker serves stale content, we may need to update sw.js in a separate, verified step.
-
-This package also includes sw.js with a bumped cache version so the new homepage can replace the older cached homepage. Upload index.html and sw.js as two separate files to the repository root, replacing the existing versions. Keep all other existing files.
+After committing, wait for GitHub Pages to deploy, then open https://z8t8fp99p9-glitch.github.io/Live-Earth/ in Safari and refresh. This is a targeted fix, not yet a guarantee that the whole app works on every device.

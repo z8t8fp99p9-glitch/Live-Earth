@@ -42,7 +42,7 @@ try {
   const globeGroup=new THREE.Group();scene.add(globeGroup);
   const geometry=new THREE.SphereGeometry(1,96,64);
   const textureLoader=new THREE.TextureLoader();textureLoader.setCrossOrigin('anonymous');
-  const texture=await new Promise((resolve,reject)=>textureLoader.load('https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57723/land_ocean_ice_2048.png',resolve,undefined,reject));
+  const texture=await new Promise((resolve,reject)=>textureLoader.load('https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57730/land_ocean_ice_2048.png',resolve,undefined,reject));
   texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),4);
   const earth=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({map:texture,roughness:1,metalness:0}));
   // Present a familiar hemisphere on first load.
