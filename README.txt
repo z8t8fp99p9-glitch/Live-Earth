@@ -1,10 +1,14 @@
-LIVE // EARTH — 75% Shortest-Dimension Adaptive Framing
+LIVE // EARTH — Faster One-Finger Rotation
 
-Upload ONLY index.html and sw.js to the root of the Live-Earth repository, replacing the existing files. Leave all other files untouched.
+Upload ONLY index.html and sw.js to the root of the Live-Earth repository, replacing the existing files. Leave every other file untouched.
 
-Rule implemented: projected globe diameter = 75% × min(viewport width, viewport height), recalculated on resize and device orientation changes. The camera distance is computed from the vertical field of view so this is a pixel-diameter rule, not a guessed percentage tier. One-finger rotation remains; pinch zoom stays disabled.
+Changes:
+- Horizontal drag sensitivity increased from 0.005 to 0.009 (1.8x).
+- Vertical drag sensitivity increased from 0.003 to 0.0055.
+- Removed an unnecessary preventDefault call from pointer-move handling; touch-action:none still prevents page gestures.
+- Cache version bumped to v9 so the browser requests the updated app shell.
 
 Commit title:
-Set globe diameter to 75% of shortest screen dimension
+Make one-finger globe rotation more responsive
 
-This file has been code-checked but not physically tested on the user's iPhone. After GitHub Pages deploys, verify on phone and desktop.
+This has been source-checked, but not verified on the user's physical iPhone. After deployment, test a short swipe and a slow drag.

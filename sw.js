@@ -1,4 +1,4 @@
-const CACHE_NAME = "live-earth-shell-v8-shortest-dimension";
+const CACHE_NAME = "live-earth-shell-v9-responsive-drag";
 const APP_SHELL = ["./", "./index.html", "./manifest.json", "./icon.svg"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
