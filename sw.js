@@ -1,4 +1,4 @@
-const CACHE_NAME = "live-earth-shell-v4-globe";
+const CACHE_NAME = "live-earth-shell-v5-diagnostic";
 const APP_SHELL = ["./", "./index.html", "./manifest.json", "./icon.svg"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
