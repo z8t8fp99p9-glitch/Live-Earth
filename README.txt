@@ -1,9 +1,10 @@
-LIVE // EARTH — Adaptive Globe Framing
+LIVE // EARTH — 75% Shortest-Dimension Adaptive Framing
 
-Upload ONLY index.html and sw.js to the root of the Live-Earth repository, replacing existing versions. Leave all other files untouched.
+Upload ONLY index.html and sw.js to the root of the Live-Earth repository, replacing the existing files. Leave all other files untouched.
 
-This update adjusts camera distance automatically for portrait, square-ish, and landscape screens. It does not add pinch zoom. One-finger rotation remains unchanged. Cache version is bumped to v7.
+Rule implemented: projected globe diameter = 75% × min(viewport width, viewport height), recalculated on resize and device orientation changes. The camera distance is computed from the vertical field of view so this is a pixel-diameter rule, not a guessed percentage tier. One-finger rotation remains; pinch zoom stays disabled.
 
-Commit title: Adapt globe framing to screen size
+Commit title:
+Set globe diameter to 75% of shortest screen dimension
 
-This package has not been verified on a physical device; check the live site after Pages deploys.
+This file has been code-checked but not physically tested on the user's iPhone. After GitHub Pages deploys, verify on phone and desktop.
