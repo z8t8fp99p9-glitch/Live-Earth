@@ -1,32 +1,26 @@
-# LIVE // EARTH
+# LIVE // EARTH — Fixed World Map
 
-An early, lightweight PWA concept for Earth and sky exploration. Designed to be uploaded through GitHub's website from an iPhone.
+A minimal, responsive, fixed-zoom world map for the LIVE // EARTH homepage. The map has no pan, zoom, or touch controls. Branding and map attribution are kept subtle so the world remains the focus.
 
-## Included in this prototype
+## What changed
 
-- Responsive layout for phone, tablet, and desktop.
-- Illustrative Earth globe with no third-party JavaScript libraries.
-- Optional browser geolocation, requested only after the user taps **Use my location**.
-- Current weather from the Open-Meteo public forecast endpoint.
-- Recent global earthquakes from the USGS public GeoJSON feed.
-- Approximate Sun timing/position and Moon phase calculations.
-- Basic service-worker app-shell caching.
-- Explicitly unconnected traffic card pending a verified suitable free provider.
+- Replaced the dashboard homepage with a full-screen global map.
+- Fixed the map to a global view at zoom level 2.
+- Disabled dragging, touch zoom, double-tap zoom, wheel zoom, keyboard movement, and zoom controls.
+- Kept OpenStreetMap attribution visible as required.
+- Updated the service-worker cache version so browsers can fetch the new homepage.
 
-## GitHub Pages setup
+## Publish from an iPhone
 
-1. Upload the **contents** of this folder into the root of the repository's `main` branch. Do not upload the ZIP itself as the website.
-2. Open repository **Settings → Pages**.
-3. Under build and deployment, choose **Deploy from a branch**.
-4. Select branch `main` and folder `/(root)`, then save.
-5. Wait for GitHub Pages to publish and open the URL shown in Settings → Pages.
+1. Extract the ZIP in the iPhone Files app.
+2. Open the `Live-Earth` folder and upload its **five files** to the root of the GitHub repository `Live-Earth`, branch `main`, replacing the files with the same names.
+3. Commit with: `Replace dashboard with fixed world map homepage`
+4. Wait for the GitHub Pages workflow to finish successfully.
+5. Open the website and refresh it. If the old page remains, close the tab and reopen the site; an installed PWA may need to be fully closed and reopened to update its cached shell.
 
 ## Important limitations
 
-This is a first prototype, not the finished product. The globe is illustrative, not a geographic map. Sun/Moon values are approximations and require proper validation before relying on them for precise astronomical use. Traffic is not connected. Data providers may have their own availability, quotas, terms, and attribution requirements; verify these before promising global coverage. A public repository means its source code is visible to everyone.
-
-No app-owned backend, API key, paid service, analytics, or account is included. Public provider availability and any third-party usage costs are outside this repository's control.
-
-## Update workflow
-
-Keep the repository root structure intact. For each approved release, prepare a new versioned ZIP and inspect the actual deployed site after GitHub Pages finishes publishing.
+- This is a fixed 2D global map, not a photorealistic 3D globe.
+- Map tiles are fetched from OpenStreetMap tile servers and require internet access. OpenStreetMap's tile service has usage policies; this prototype is not a guarantee of unlimited or commercial-scale free map hosting. Keep the visible attribution.
+- External Leaflet library and map tiles must load for the map to appear. If either is unavailable, the page may show an error or blank map.
+- The map is not draggable, zoomable, or touch-interactive by design.
