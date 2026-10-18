@@ -1,9 +1,9 @@
-LIVE // EARTH — Texture Fallback Fix
+LIVE // EARTH — Adaptive Globe Framing
 
-Upload ONLY index.html and sw.js to the root of the Live-Earth repository, replacing existing files. Leave all other files untouched.
+Upload ONLY index.html and sw.js to the root of the Live-Earth repository, replacing existing versions. Leave all other files untouched.
 
-This tries the NASA texture first, then a Three.js-hosted Earth texture if the first image fails. It also updates the service-worker cache name.
+This update adjusts camera distance automatically for portrait, square-ish, and landscape screens. It does not add pinch zoom. One-finger rotation remains unchanged. Cache version is bumped to v7.
 
-Commit title: Fix Earth texture loading with fallback source
+Commit title: Adapt globe framing to screen size
 
-This has not been verified on the iPhone yet. After deployment, test the live page.
+This package has not been verified on a physical device; check the live site after Pages deploys.
