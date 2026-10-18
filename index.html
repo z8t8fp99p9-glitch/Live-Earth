@@ -1,62 +1,72 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#050a12">
-  <meta name="description" content="LIVE // EARTH — a quiet, fixed global map view.">
-  <title>LIVE // EARTH</title>
-  <link rel="manifest" href="./manifest.json">
-  <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-  <style>
-    :root{color-scheme:dark;--bg:#050a12;--text:#eef6ff;--muted:#b7c7d9;--cyan:#61d9ff}
-    *{box-sizing:border-box}
-    html,body{height:100%;width:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
-    #map{position:fixed;inset:0;background:#07111f;z-index:0}
-    .leaflet-container{background:#07111f;outline:0;touch-action:pan-x pan-y}
-    .leaflet-control-zoom{display:none!important}
-    .leaflet-control-attribution{font-size:10px!important;background:rgba(3,9,17,.72)!important;color:#d2e0ee!important;border-radius:6px 0 0 0;padding:2px 5px!important}
-    .leaflet-control-attribution a{color:#8ddfff!important}
-    .brand{position:fixed;z-index:500;top:calc(env(safe-area-inset-top) + 16px);left:18px;pointer-events:none;text-shadow:0 2px 14px #000;letter-spacing:.16em;font-weight:800;font-size:clamp(13px,2.8vw,18px)}
-    .brand span{color:var(--cyan)}
-    .caption{position:fixed;z-index:500;left:18px;bottom:calc(env(safe-area-inset-bottom) + 22px);pointer-events:none;color:#d7e5f3;text-shadow:0 2px 14px #000;font-size:11px;letter-spacing:.15em;text-transform:uppercase;opacity:.88}
-    .shade{position:fixed;inset:0;z-index:400;pointer-events:none;background:linear-gradient(180deg,rgba(2,7,14,.5),transparent 18%,transparent 78%,rgba(2,7,14,.32))}
-    .message{position:fixed;z-index:600;left:50%;top:50%;transform:translate(-50%,-50%);width:min(82vw,360px);padding:18px;border:1px solid #28435b;border-radius:16px;background:rgba(5,12,22,.92);color:var(--muted);text-align:center;line-height:1.5;backdrop-filter:blur(12px)}
-    .message[hidden]{display:none}
-    @media(min-width:900px){.brand{left:28px;top:24px}.caption{left:28px;bottom:26px}}
-    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#02050b">
+<meta name="description" content="LIVE // EARTH — a quiet, interactive 3D Earth globe.">
+<title>LIVE // EARTH</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<style>
+:root{color-scheme:dark;background:#02050b;color:#eaf5ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#02050b;overscroll-behavior:none;touch-action:none}
+body{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+#scene{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+.brand{position:absolute;z-index:2;top:calc(env(safe-area-inset-top) + 17px);left:19px;pointer-events:none;font-size:clamp(13px,2.8vw,17px);font-weight:800;letter-spacing:.19em;text-shadow:0 2px 16px #000}
+.brand span{color:#65d9ff}.hint{position:absolute;z-index:2;left:50%;bottom:calc(env(safe-area-inset-bottom) + 23px);transform:translateX(-50%);pointer-events:none;color:#b6c7d9;font-size:10px;letter-spacing:.19em;text-transform:uppercase;white-space:nowrap;text-shadow:0 1px 12px #000;opacity:.78}
+.status{position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);max-width:82vw;padding:13px 16px;border:1px solid #24384d;border-radius:12px;background:#08111ee8;color:#c7d9e9;text-align:center;font-size:13px;line-height:1.5}
+.status[hidden]{display:none}@media(min-width:800px){.brand{left:28px;top:25px}.hint{bottom:28px}}
+</style>
 </head>
 <body>
-  <main id="map" aria-label="Fixed, non-interactive world map"></main>
-  <div class="shade" aria-hidden="true"></div>
-  <div class="brand">LIVE <span>//</span> EARTH</div>
-  <div class="caption">One planet · One view</div>
-  <div id="mapMessage" class="message" role="status">Loading the world map…</div>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script>
-    (function(){
-      const message=document.getElementById('mapMessage');
-      if(!window.L){message.textContent='The map library could not load. Check your internet connection and refresh.';return;}
-      const map=L.map('map',{
-        center:[18,0],zoom:2,minZoom:2,maxZoom:2,zoomControl:false,attributionControl:true,
-        dragging:false,touchZoom:false,doubleClickZoom:false,scrollWheelZoom:false,boxZoom:false,
-        keyboard:false,tap:false,zoomSnap:1,zoomDelta:1,worldCopyJump:false,preferCanvas:true
-      });
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-        minZoom:2,maxZoom:2,noWrap:true,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a> contributors',
-        crossOrigin:true
-      }).addTo(map);
-      map.on('tileerror',function(){message.hidden=false;message.textContent='Some map tiles could not load. The map needs an internet connection.';});
-      map.on('load',function(){message.hidden=true;});
-      setTimeout(function(){if(message.textContent==='Loading the world map…')message.hidden=true;},6500);
-      window.addEventListener('resize',function(){map.invalidateSize({animate:false});});
-      if('serviceWorker' in navigator && location.protocol.startsWith('http')){
-        window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(){});});
-      }
-    })();
-  </script>
+<canvas id="scene" aria-label="Interactive 3D Earth globe. Drag with one finger to rotate; zoom is fixed."></canvas>
+<div class="brand">LIVE <span>//</span> EARTH</div>
+<div id="status" class="status" role="status">Preparing Earth…</div>
+<div class="hint">Drag with one finger to rotate</div>
+<script type="module">
+const canvas=document.querySelector('#scene'),status=document.querySelector('#status');
+try {
+  const THREE=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'low-power'});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.6));
+  renderer.setSize(window.innerWidth,window.innerHeight,false);
+  renderer.outputColorSpace=THREE.SRGBColorSpace;
+  renderer.setClearColor(0x02050b,1);
+  const scene=new THREE.Scene();scene.background=new THREE.Color(0x02050b);
+  const camera=new THREE.PerspectiveCamera(34,window.innerWidth/window.innerHeight,0.1,100);
+  camera.position.set(0,0,4.15);
+  scene.add(new THREE.AmbientLight(0x8aa7c8,1.25));
+  const sun=new THREE.DirectionalLight(0xffffff,2.25);sun.position.set(-3,2,4);scene.add(sun);
+  const fill=new THREE.DirectionalLight(0x245b9b,0.45);fill.position.set(4,-2,-3);scene.add(fill);
+  const globeGroup=new THREE.Group();scene.add(globeGroup);
+  const geometry=new THREE.SphereGeometry(1,96,64);
+  const textureLoader=new THREE.TextureLoader();textureLoader.setCrossOrigin('anonymous');
+  const texture=await new Promise((resolve,reject)=>textureLoader.load('https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57723/land_ocean_ice_2048.png',resolve,undefined,reject));
+  texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),4);
+  const earth=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({map:texture,roughness:1,metalness:0}));
+  // Present a familiar hemisphere on first load.
+  earth.rotation.y=-0.35;globeGroup.add(earth);
+  const atmosphere=new THREE.Mesh(new THREE.SphereGeometry(1.025,64,48),new THREE.MeshBasicMaterial({color:0x3d9cff,transparent:true,opacity:0.10,side:THREE.BackSide,blending:THREE.AdditiveBlending,depthWrite:false}));globeGroup.add(atmosphere);
+  // Sparse distant stars, generated locally (no additional image requests).
+  const positions=[];let seed=721;const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+  for(let i=0;i<500;i++){const r=18+rand()*25,a=rand()*Math.PI*2,z=rand()*2-1,s=Math.sqrt(1-z*z);positions.push(r*s*Math.cos(a),r*z,r*s*Math.sin(a));}
+  const starGeo=new THREE.BufferGeometry();starGeo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  scene.add(new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xa9c9ec,size:0.045,sizeAttenuation:true,transparent:true,opacity:0.72})));
+  status.hidden=true;
+  // Render only when needed to reduce idle battery use.
+  let frame=0;const draw=()=>{if(frame)return;frame=requestAnimationFrame(()=>{frame=0;renderer.render(scene,camera);});};draw();
+  // Only a single active pointer can rotate the globe. No zoom or pinch gestures.
+  let activePointer=null,lastX=0,lastY=0,dragging=false;
+  canvas.addEventListener('pointerdown',e=>{if(activePointer!==null)return;if(e.pointerType==='touch'&&e.isPrimary===false)return;activePointer=e.pointerId;lastX=e.clientX;lastY=e.clientY;dragging=true;canvas.setPointerCapture?.(e.pointerId);e.preventDefault();},{passive:false});
+  canvas.addEventListener('pointermove',e=>{if(!dragging||e.pointerId!==activePointer)return;e.preventDefault();const dx=e.clientX-lastX,dy=e.clientY-lastY;globeGroup.rotation.y+=dx*0.005;globeGroup.rotation.x=Math.max(-1.15,Math.min(1.15,globeGroup.rotation.x+dy*0.003));lastX=e.clientX;lastY=e.clientY;draw();},{passive:false});
+  const endDrag=e=>{if(e.pointerId===activePointer){dragging=false;activePointer=null;}};
+  canvas.addEventListener('pointerup',endDrag);canvas.addEventListener('pointercancel',endDrag);canvas.addEventListener('lostpointercapture',endDrag);
+  const resize=()=>{const w=window.innerWidth,h=window.innerHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.6));renderer.setSize(w,h,false);draw();};
+  window.addEventListener('resize',resize,{passive:true});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){if(frame)cancelAnimationFrame(frame);frame=0;}else{draw();}});
+  if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}catch(err){console.error(err);status.hidden=false;status.textContent='Earth could not load. Please check your internet connection and refresh.';}
+</script>
 </body>
 </html>
