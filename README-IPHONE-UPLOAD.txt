@@ -1,34 +1,36 @@
-LIVE // EARTH — Moon Orbit Integration (review package)
+LIVE // EARTH — Cinematic Moon + Stardust Trail (review package)
 
-WHAT THIS PACKAGE DOES
-- Keeps the existing Earth mesh, texture, material, rotation gesture, Earth atmosphere, nav buttons and current-day Sun/Moon preview code intact.
-- Adds a 3D Moon sphere with an offline procedural lunar surface texture. The Moon is intentionally enlarged to 0.38 Earth radii (about 1.4x its true radius) for visual readability.
-- Adds a dotted, Earth-centred 3D orbit and a rolling 30-day path (721 samples, roughly hourly). The path follows calculated orbital angles, but the displayed distance is intentionally reduced to 42% of the calculated radius (mean displayed distance about 25 Earth radii) so the Moon is not a distant speck in landscape framing.
-- Adds two-finger pinch zoom so the user can zoom out to reveal the true-scale Moon orbit; one-finger Earth rotation remains in place. The default camera framing remains the existing close Earth view.
-- Updates the service-worker cache version and caches moon-orbit.js.
+WHAT THIS PACKAGE ADDS
+- Keeps the existing Earth mesh, texture, material, Earth rotation gesture, atmosphere, nav buttons and current-day Sun/Moon preview code intact.
+- Adds a 3D Moon sphere with an offline procedural crater-like surface texture.
+- Adds a rolling 30-day calculated 3D orbital path and a subtle stardust treatment: faint blue-white grains, a delicate full-path guide, and a brighter flowing starlight segment trailing behind the Moon.
+- The starlight trail uses the same Moon position calculation; it is a visual effect, not a separate orbit.
+- Keeps one-finger Earth rotation and the existing pinch zoom behaviour.
+- Uses service-worker cache version v19 and caches moon-orbit.js.
 
-IMPORTANT SCIENCE / VISUAL LIMITS
-- Underlying orbital calculation: Earth radius = 1 unit; true Moon radius = 0.2727 Earth radii; mean centre-to-centre distance = about 60.3 Earth radii. DISPLAY OVERRIDE: Moon radius = 0.38 Earth radii and displayed orbital radius is scaled to 42%, giving a mean displayed distance around 25.3 Earth radii. This is deliberate cinematic scaling, not true-scale rendering.
-- The orbit uses a lightweight Keplerian approximation, not JPL Horizons-grade ephemerides. Do not describe its surface subpoint or position as exact. The orbital path is calculated; display distance and Moon size are intentionally dramatized.
-- The 30-day path is generated locally at page load, centred around current time; it is not a pre-saved fixed calendar file.
-- The procedural Moon texture is offline-first and gives crater-like albedo detail, but it is not a scientific lunar elevation/texture dataset.
-- Earth and Moon share the same parent group, so the existing one-finger rotation keeps their relative orientation together. The existing Sun direction is unchanged; phase/shadow accuracy is not yet a finished astronomical lighting model.
+VISUAL SCALE (INTENTIONALLY CINEMATIC)
+- Earth radius is 1 scene unit.
+- Display Moon radius is 0.38 Earth radii (slightly enlarged; physical ratio is about 0.273).
+- Display orbital distance is 42% of the calculated Earth-centred distance (average displayed centre distance about 25 Earth radii, not 60). This is deliberate visual drama, not a claim of physical scale.
+- The underlying orbital direction/timing comes from a low-precision Keplerian approximation, not JPL Horizons-grade ephemerides. Do not describe its positions as exact.
+- The 30-day path is generated locally at page load, centred around the current time. It is not a pre-saved fixed calendar file.
+- The Moon texture is procedural and offline-first; it is not a scientific lunar surface dataset.
 
-FILES
-1. index.html — integrated homepage code.
-2. moon-orbit.js — Moon geometry, path and position calculations.
-3. sw.js — cache version v17 and shell entry for moon-orbit.js.
-4. dataset-manifest.json — dataset and limitations record.
+FILES IN THIS REPLACEMENT PATCH
+1. index.html — integrated homepage code (Earth implementation preserved; Moon module loaded additively).
+2. moon-orbit.js — Moon sphere, orbital path, stardust and trailing light.
+3. sw.js — cache version v18 and shell entry for moon-orbit.js.
+4. dataset-manifest.json — data and display-scale notes.
 
-UPLOAD SAFETY
-This ZIP is a replacement-file package, not a full repository. Replace these four files at the repository root while preserving existing manifest.json, icon.svg, data-store.js, astronomy.js and all orb images. Do not upload the ZIP itself into the repository root. Do not upload until reviewed.
+IPHONE UPLOAD SAFETY
+This is a replacement-file patch, not a full repository. Replace these four files at the repository root, preserving manifest.json, icon.svg, data-store.js, astronomy.js and all orb images. Do not upload the ZIP itself into the repository root. Do not upload until you are ready to test.
 
-MANUAL CHECKS AFTER UPLOAD
-- Homepage loads and Earth still renders/rotates.
-- Pinch outward on the canvas: Moon and dotted path should become visible at real scale.
-- Pinch inward: return to close Earth framing.
-- Tap Sun and Moon nav buttons: existing current-day preview should still open.
+CHECK AFTER UPLOAD
+- Homepage loads and Earth still renders/rotates exactly as before.
+- In landscape, Earth and Moon should both be visible; the Moon begins to the left of Earth. The path should look like subtle stardust and a soft flowing tail, not a harsh dashed line.
+- Pinch out/in and verify Moon, orbit and tail stay synchronized with the Earth reference frame.
+- Tap Sun and Moon navigation buttons; existing current-day preview should still open.
 - Reload twice and test offline after the service worker finishes caching.
 
 GITHUB COMMIT TITLE
-Add cinematic Moon orbit layer to LIVE Earth
+Add cinematic Moon starlight trail to LIVE Earth

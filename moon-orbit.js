@@ -59,17 +59,66 @@ export function createMoonOrbit(T, earthGroup, options = {}) {
     const date = new Date(start + (end - start) * n / (samples - 1));
     const p = moonPositionAt(T, date); points.push(new T.Vector3(p.x * earthRadius * displayDistanceFactor, p.z * earthRadius * displayDistanceFactor, -p.y * earthRadius * displayDistanceFactor));
   }
+  // Faint full-orbit guide, layered to suggest starlight without a harsh dashed line.
   const orbitGeometry = new T.BufferGeometry().setFromPoints(points);
-  const orbit = new T.Line(orbitGeometry, new T.LineDashedMaterial({ color: 0x9ccfff, dashSize: .85, gapSize: .7, transparent: true, opacity: .62, depthWrite: false }));
-  orbit.computeLineDistances(); orbit.name = 'moonOrbit30DayDottedPath'; system.add(orbit);
+  const orbit = new T.Line(orbitGeometry, new T.LineBasicMaterial({ color: 0x9bcfff, transparent: true, opacity: 0.15, depthWrite: false }));
+  orbit.name = 'moonOrbit30DayStardustPath'; system.add(orbit);
+  const haloOrbit = new T.Line(orbitGeometry, new T.LineBasicMaterial({ color: 0x429dff, transparent: true, opacity: 0.055, depthWrite: false, blending: T.AdditiveBlending }));
+  haloOrbit.name = 'moonOrbitSoftBlueHalo'; system.add(haloOrbit);
+
+  // Sparse, uneven stardust grains follow the same 3D curve. No flashing or neon ring.
+  let seed = 90210; const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const dustPositions = [], dustColors = [];
+  const dustCount = 2100;
+  for (let n = 0; n < dustCount; n++) {
+    const index = Math.floor(rand() * (points.length - 1));
+    const p = points[index];
+    const spread = 0.025 + rand() * 0.20;
+    dustPositions.push(p.x + (rand() - 0.5) * spread, p.y + (rand() - 0.5) * spread, p.z + (rand() - 0.5) * spread);
+    const tint = rand();
+    dustColors.push(0.48 + tint * 0.34, 0.68 + tint * 0.25, 0.88 + tint * 0.12);
+  }
+  const dustGeometry = new T.BufferGeometry();
+  dustGeometry.setAttribute('position', new T.Float32BufferAttribute(dustPositions, 3));
+  dustGeometry.setAttribute('color', new T.Float32BufferAttribute(dustColors, 3));
+  const dust = new T.Points(dustGeometry, new T.PointsMaterial({ size: 0.032, vertexColors: true, transparent: true, opacity: 0.48, sizeAttenuation: true, depthWrite: false, blending: T.AdditiveBlending }));
+  dust.name = 'moonOrbitStardustGrains'; system.add(dust);
+
+  // Brighter, soft-edged section trailing the Moon. Rebuilt from the same time-based orbit calculation.
+  const tailCoreMaterial = new T.LineBasicMaterial({ color: 0xbfe8ff, transparent: true, opacity: 0.72, depthWrite: false, blending: T.AdditiveBlending });
+  const tailGlowMaterial = new T.LineBasicMaterial({ color: 0x3c9dff, transparent: true, opacity: 0.22, depthWrite: false, blending: T.AdditiveBlending });
+  const tailCore = new T.Line(new T.BufferGeometry(), tailCoreMaterial); tailCore.name = 'moonStarlightTailCore'; system.add(tailCore);
+  const tailGlow = new T.Line(new T.BufferGeometry(), tailGlowMaterial); tailGlow.name = 'moonStarlightTailGlow'; system.add(tailGlow);
+  const updateTail = (date) => {
+    const tailPoints = [];
+    // Trail behind the Moon for ~1.7 days; fine samples create a flowing curve rather than dashes.
+    const tailStart = date.getTime() - 1.7 * 86400000;
+    const tailEnd = date.getTime() - 4 * 60000;
+    for (let n = 0; n <= 130; n++) {
+      const t = new Date(tailStart + (tailEnd - tailStart) * n / 130);
+      const p = moonPositionAt(T, t);
+      tailPoints.push(new T.Vector3(p.x * earthRadius * displayDistanceFactor, p.z * earthRadius * displayDistanceFactor, -p.y * earthRadius * displayDistanceFactor));
+    }
+    tailCore.geometry.dispose(); tailCore.geometry = new T.BufferGeometry().setFromPoints(tailPoints);
+    tailGlow.geometry.dispose(); tailGlow.geometry = new T.BufferGeometry().setFromPoints(tailPoints);
+  };
   const moonGeometry = new T.SphereGeometry(earthRadius * displayMoonRadius, 56, 40);
   const texture = makeProceduralMoonTexture(T);
   const material = new T.MeshStandardMaterial({ map: texture, color: 0xffffff, roughness: 1, metalness: 0 });
   const moon = new T.Mesh(moonGeometry, material); moon.name = 'liveMoonSphere'; system.add(moon);
   const update = (date = new Date()) => {
-    const p = moonPositionAt(T, date); moon.position.set(p.x * earthRadius * displayDistanceFactor, p.z * earthRadius * displayDistanceFactor, -p.y * earthRadius * displayDistanceFactor);
+    const p = moonPositionAt(T, date);
+    moon.position.set(p.x * earthRadius * displayDistanceFactor, p.z * earthRadius * displayDistanceFactor, -p.y * earthRadius * displayDistanceFactor);
+    updateTail(date);
     return p;
   };
-  update(); earthGroup.add(system);
-  return { system, moon, orbit, update, destroy: () => { earthGroup.remove(system); orbitGeometry.dispose(); moonGeometry.dispose(); texture.dispose(); material.dispose(); orbit.material.dispose(); } };
+  update();
+  // Initial cinematic orientation: Moon begins left of Earth in the landscape composition.
+  // This rotates only the additive Moon/orbit group; it never changes the Earth mesh.
+  system.rotation.y = -Math.PI / 2 - Math.atan2(moon.position.x, moon.position.z);
+  earthGroup.add(system);
+  return { system, moon, orbit, dust, update, destroy: () => {
+    earthGroup.remove(system); orbitGeometry.dispose(); dustGeometry.dispose(); moonGeometry.dispose(); texture.dispose(); material.dispose();
+    orbit.material.dispose(); haloOrbit.material.dispose(); dust.material.dispose(); tailCore.geometry.dispose(); tailGlow.geometry.dispose(); tailCoreMaterial.dispose(); tailGlowMaterial.dispose();
+  } };
 }

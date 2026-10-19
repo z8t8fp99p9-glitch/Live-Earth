@@ -1,17 +1,17 @@
 {
   "manifestVersion": 3,
   "app": "LIVE // EARTH",
-  "status": "Moon orbit cinematic display layer added; existing Earth preserved",
+  "status": "Landscape-first cinematic Moon composition with a subtle starlight tail; existing Earth mesh/material/gesture preserved",
   "datasets": [
     {
       "id": "astronomy.moon-orbit-rolling-30day",
-      "version": "1.0.0",
-      "description": "Rolling 30-day 3D lunar orbital path with 721 timestamped samples and smooth current-position updates. Earth radius 1 scene unit, Moon radius 0.2727, mean orbital distance about 60.3 Earth radii.",
+      "version": "1.2.0",
+      "description": "Rolling 30-day 3D lunar path with 721 samples; cinematic display radius 0.38 Earth radii and display distance factor 0.04 (mean displayed centre distance about 2.4 Earth radii). Includes faint stardust and a flowing light segment trailing behind the Moon.",
       "storage": "generated locally in memory; no network data fetch",
       "retentionDays": 30,
-      "source": "low-precision Keplerian orbital elements; not a precision JPL ephemeris",
+      "source": "low-precision Keplerian orbital elements; orbit distance and Moon size are intentionally cinematic; not a precision JPL ephemeris",
       "license": "calculation included in moon-orbit.js; procedural lunar texture generated locally",
-      "updatePolicy": "rebuild path at page load for current 30-day window; update Moon position periodically"
+      "updatePolicy": "rebuild path at page load for current 30-day window; update Moon and trailing light every 30 seconds"
     },
     {
       "id": "astronomy.current-day-preview",
@@ -22,18 +22,6 @@
       "source": "on-device-low-precision-astronomy-calculation",
       "license": "no external provider; calculation formulas included",
       "updatePolicy": "calculate on demand when Sun/Moon orb is tapped"
-    },
-    {
-      "id": "astronomy.moon-orbit-homepage",
-      "version": "1.1.0",
-      "description": "Rolling 30-day calculated 3D lunar orbital path with hourly-ish samples and dotted visual orbit. Display deliberately enlarges the Moon and reduces displayed orbital distance for landscape homepage readability.",
-      "storage": "generated locally at page load; not persisted as a separate dataset",
-      "retentionDays": 30,
-      "source": "low-precision Keplerian lunar orbital approximation",
-      "license": "local calculation; no external ephemeris service",
-      "updatePolicy": "regenerate rolling 30-day path at page load; update Moon position every 30 seconds while visible",
-      "visualScale": "Earth radius 1; displayed Moon radius 0.38 Earth radii; displayed mean centre distance about 25.3 Earth radii; underlying orbital calculation uses mean distance about 60.3 Earth radii",
-      "accuracyNote": "Cinematic display scaling is intentional. Position is a low-precision approximation, not JPL-grade ephemeris."
     }
   ]
 }
