@@ -1,35 +1,37 @@
-# LIVE // EARTH — Location Orb integration bundle
+LIVE // EARTH — ORB CONTROLS CANDIDATE PACKAGE
 
-## Included
-- `location.html`: full-screen BASIC interactive map, manual pan/zoom, optional geolocation, and a restrained red scan only after a genuine location fix.
-- `sw.js`: service-worker shell list updated to include `location.html`.
-- `index-integration-snippet.js`: the exact navigation change to make in the existing homepage.
-- `README.txt`: setup and provider limitations.
+IMPORTANT: This is a candidate integration, NOT a fully finished release. It does not change the 3D Earth canvas, camera, texture, moon orbit, or sizing. The updated service worker injects orb-controls.js into the existing homepage response and uses a new cache version.
 
-## Important status
-This is a targeted integration bundle, **not yet a complete one-click replacement of the existing homepage**. The current homepage source was inspected and the Location orb still uses a placeholder. To connect it, the existing `index.html` needs the small change in `index-integration-snippet.js`. Do not upload this ZIP by overwriting the whole repository or replacing `index.html` with `location.html`.
+CONTENTS
+- sw.js: replacement service worker (includes orb-controls.js in the app shell and injects it into index.html responses)
+- orb-controls.js: control layer for navigation toggle behavior, Location switch state/gating, Earth choice panel, and Stacks placeholder panel.
 
-## Connect the orb
-In `index.html`, find this line inside `function activate(id)`:
-`status.textContent= id==="location" ? "Location tools are not connected yet. Your globe remains available." : \`${labels[id]} view is not connected yet. Your Earth globe remains available.\`;`
+WHAT IS IMPLEMENTED IN THIS CANDIDATE
+- Red Location orb toggles an app-owned Location ON/OFF preference (default OFF).
+- OFF blocks new geolocation API calls made by the homepage and signals stop events.
+- Earth/Moon/Sun/Stacks behave as toggle navigation; tap the active one again returns to Home.
+- Earth choices and Stacks panel are displayed, but are explicitly marked as preferences/placeholders where real mode/layer engines do not exist yet.
+- Sun/Moon existing preview remains connected through its current custom event.
 
-Replace that one line with:
-`if(id==="location"){location.href="./location.html?locate=1";return}`
+IMPORTANT LIMITATIONS / TEST BEFORE DEPLOY
+1. This is not yet a final production release. The browser API geolocation gate is a best-effort guard; test the exact iPhone Safari/PWA behavior.
+2. Earth HD/offline modes are preferences only. This package does not create an offline Earth dataset or high-definition globe profile.
+3. Stacks layer buttons are honest placeholders; cloud/elevation/weather/earthquake/traffic engines are not included.
+4. The service worker only transforms fetched HTML when it receives it from network; cached/offline behavior and update timing must be tested on the deployed PWA.
+5. Location permission already granted to iOS is not revoked by the app switch. This switch governs app-owned web requests only; it cannot turn off iPhone system Location Services.
+6. The existing astronomy module may request location after the UI opens Sun/Moon. With the app switch OFF, this candidate blocks the request and the existing panel should show its permission/error state.
+7. External map tile/CDN resources remain subject to their own availability and usage policies.
 
-Keep the other line behavior for Stacks:
-`status.textContent = \`${labels[id]} view is not connected yet. Your Earth globe remains available.\`;`
+IPHONE UPLOAD STEPS
+1. Download and unzip this candidate.
+2. In GitHub, open the Live-Earth repository, branch main.
+3. Replace the existing root sw.js with the supplied sw.js.
+4. Upload orb-controls.js to the repository root.
+5. Commit both files together.
+6. Open the deployed site, refresh/reopen the installed PWA, and test Earth/Moon/Sun/Location/Stacks.
+7. If anything is wrong, restore the previous sw.js and remove orb-controls.js.
 
-This makes the browser open the BASIC map first, then request location. If permission is granted and a fix is obtained, the red sweep and marker appear. If denied, the map remains open without the effect.
+COMMIT TITLE
+Integrate orb controls and app-owned location gate
 
-## Upload
-1. Add `location.html` to the repository root.
-2. Replace `sw.js` with the included file.
-3. Apply the one-line Location navigation change above to the existing `index.html`.
-4. Commit title: `Connect Location orb to BASIC map`
-
-## Provider / cost / offline notes
-- This prototype uses Leaflet (open-source map UI library) and OpenStreetMap standard raster tiles.
-- It requires internet access for map tiles. This ZIP does **not** contain offline map data.
-- The public OpenStreetMap tile service has a usage policy and is not a guaranteed unlimited production tile-hosting service. Do not promise unlimited free tile hosting.
-- Location access requires a secure context (GitHub Pages HTTPS) and the user's permission.
-- Homepage Earth and Moon composition is not changed by these files.
+This package has not been tested on the user's iPhone or deployed site. Do not treat it as fully verified.
