@@ -1,19 +1,21 @@
-LIVE // EARTH — Five Default Buttons Patch
+LIVE // EARTH — automatic cache refresh patch
 
-This patch removes the orb images, deck designs, Orb Studio, and Deck Studio from the app interface. It leaves five plain text buttons: Earth, Moon, Sun, Location, and Stacks. The existing rotating Earth globe and one-finger drag behavior are preserved.
+WHAT THIS FIXES
+The existing service worker uses cache-first for HTML. An installed iPhone
+home-screen app can therefore continue showing old UI after Safari shows the
+new page. This replacement uses network-first for navigations/HTML and keeps an
+offline fallback to the last cached page.
 
-The currently selected button is saved locally in this browser using localStorage. Moon, Sun, Location, and Stacks are navigation placeholders; this patch does not pretend their underlying features are implemented. Earth returns to the globe without a message.
-
-Files in this patch:
-- index.html
-- sw.js
-
-Upload instructions:
+UPLOAD FROM IPHONE
 1. Open the Live-Earth repository on GitHub, branch main.
-2. Replace only the root index.html and sw.js with the files in this patch.
-3. Leave manifest.json, icon.svg, data-store.js, dataset-manifest.json, and other files in place.
-4. Commit title: Simplify navigation to five default buttons
+2. Open the existing root-level sw.js and tap Edit (pencil).
+3. Replace the full file with the included sw.js.
+4. Commit title:
+   Fix automatic PWA HTML cache refresh
+5. Wait for GitHub Pages deployment to finish.
+6. Close and reopen the installed LIVE // EARTH app while online.
 
-The old image files may remain in the repository but this version does not display or precache the orb/deck images. No GitHub change has been made by creating this ZIP.
-
-Verification: ZIP integrity and JavaScript syntax checks are run when this bundle is created. This has not been deployed or tested on a physical iPhone.
+This patch changes only sw.js; it does not edit the globe or remove saved
+button selection. It also does not instantly update a page that is already
+open: the new service worker must install and activate. No GitHub files were
+changed while preparing this ZIP.
