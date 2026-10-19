@@ -1,5 +1,5 @@
 /* LIVE // EARTH — automatic HTML refresh + precached orb controls */
-const CACHE_NAME = "live-earth-shell-v14-shiny-orbs";
+const CACHE_NAME = "live-earth-shell-v15-orb-materials";
 const APP_SHELL = [
   "./", "./index.html", "./manifest.json", "./icon.svg",
   "./data-store.js", "./dataset-manifest.json",
