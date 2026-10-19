@@ -1,34 +1,25 @@
-LIVE // EARTH — ORB MATERIAL EFFECTS (READY TO UPLOAD)
+LIVE // EARTH — CURRENT-DAY SUN & MOON PREVIEW
 
-This package contains two complete root files: index.html and sw.js.
-Upload/replace BOTH files in the repository root on branch main. Do not upload
-this ZIP itself expecting GitHub to unpack it.
+Ready-to-upload files for repository root, branch main:
+- index.html (full replacement; retains globe and orb effects)
+- astronomy.js (on-device calculations)
+- sw.js (cache v16; precaches astronomy.js and cleans obsolete shell caches)
+- dataset-manifest.json (updated astronomy dataset description)
 
-VISUAL CHANGES
-- Liquid-glass style reflections and a clean circular image mask.
-- Precision rim and layered inset shadows for a tactile neumorphic finish.
-- Controlled colour-matched glow for Earth (blue), Moon (silver), Sun (amber),
-  Location (red/rose), and Stacks (cyan).
-- Subtle iridescent sheen and very gentle movement; respects reduced-motion.
-- Bottom instruction remains removed. No deck is included.
+SCOPE
+- Sun/Moon buttons open only a current local-day preview.
+- Device location is requested only after tapping Sun or Moon.
+- Sun: sunrise, sunset, solar noon, daylight duration, current altitude/direction.
+- Moon: phase, illumination, approximate moonrise/moonset, current altitude/direction.
+- Results are saved in the existing IndexedDB astronomy_cache, keyed by local date and rounded coordinates. Reuse saved result for that date/location; Refresh forces recalculation.
+- Existing 30-day astronomy cache retention remains. UI displays only today's data.
+- No astronomy API and no location/data sent to a server. Other files, including data-store.js, manifest.json, icon.svg and orb images, remain in place.
 
-PRESERVED
-- Existing five orb artworks; no artwork files are replaced.
-- Earth globe, one-finger rotation, responsive sizing, starfield and buttons.
-- Saved selected-orb preference and existing button status behavior.
-- Cache behavior: network-first HTML, offline fallback, precached orb assets,
-  and cleanup limited to old caches named live-earth-shell-*.
-- Cache version bumped to v15 so the installed app can activate the new shell.
+UPLOAD FROM IPHONE
+1. Extract ZIP in Files.
+2. Open https://github.com/z8t8fp99p9-glitch/Live-Earth, branch main.
+3. Upload/replace the four included files in the repository root. Do not delete other files.
+4. Commit title: Add current-day Sun and Moon preview data
+5. Wait for Pages deployment; open app online and tap Sun or Moon. Allow location permission when prompted.
 
-IPHONE UPLOAD
-1. Download and extract the ZIP in Files.
-2. Open the GitHub repo z8t8fp99p9-glitch/Live-Earth, branch main.
-3. Replace the root index.html with the included index.html.
-4. Replace the root sw.js with the included sw.js.
-5. Commit title: Polish orb glass glow effects
-6. Wait for GitHub Pages deployment. Open the installed app while online once,
-   allow it to refresh, then reopen it and verify the result.
-
-The package has been ZIP-integrity and source-guard checked, but has not been
-uploaded/deployed by ChatGPT or physically tested on an iPhone. No artwork has
-been generated or replaced. The deck is intentionally deferred.
+Accuracy: preview-grade approximations; moonrise/moonset are estimated by checking lunar altitude in 10-minute steps. Not for navigation. Package has not been deployed or tested on a physical iPhone.

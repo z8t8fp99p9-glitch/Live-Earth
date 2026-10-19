@@ -65,6 +65,10 @@ body{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset
 @media(prefers-reduced-motion:reduce){.orbShine{animation:none!important}}
 
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* Current-day Sun/Moon preview */
+#astroPanel{position:absolute;z-index:7;left:50%;top:50%;transform:translate(-50%,-50%);width:min(88vw,440px);max-height:62vh;overflow:auto;padding:20px;border:1px solid #b6e6ff50;border-radius:24px;background:linear-gradient(145deg,#102032f2,#050b16f5);box-shadow:inset 1px 1px 2px #ffffff20,inset -3px -4px 10px #0008,0 12px 38px #000b,0 0 28px #38bfff12;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);touch-action:pan-y}
+#astroPanel[hidden]{display:none}.astroTop{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.astroEyebrow{font-size:10px;letter-spacing:.18em;color:#8ba7bf;text-transform:uppercase}.astroTitle{font-size:25px;font-weight:650;margin:4px 0}.astroClose{border:1px solid #8fb5d544;border-radius:50%;background:#ffffff0b;color:#e8f6ff;width:34px;height:34px;font-size:20px}.astroDate{color:#a8bfd1;font-size:12px;margin:4px 0 16px}.astroHero{padding:15px;border:1px solid #8ecfff22;border-radius:16px;background:linear-gradient(120deg,#ffffff0b,#68bfff09);margin-bottom:12px}.astroHero strong{display:block;font-size:22px;font-weight:600;margin-bottom:4px}.astroHero span{font-size:12px;color:#a9c4d8}.astroGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.astroMetric{padding:12px;border-radius:13px;background:#ffffff08;border:1px solid #b8ddff16}.astroMetric span{display:block;color:#8fa9bf;font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}.astroMetric strong{display:block;font-size:15px;font-weight:600;color:#edf8ff}.astroNote{font-size:10px;line-height:1.5;color:#7e98ae;margin:13px 0 0}.astroAction{margin-top:12px;width:100%;padding:11px;border:1px solid #91d7ff44;border-radius:12px;background:#bceaff12;color:#dff5ff;font:600 13px -apple-system,BlinkMacSystemFont,sans-serif}
 </style>
 </head>
 <body>
@@ -79,6 +83,7 @@ body{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset
   <button class="orbButton" data-view="stacks" aria-label="Stacks" aria-pressed="false"><span class="orbShell"><img class="orbImage" src="./stacks.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Stacks</span></button>
 </nav>
 
+<section id="astroPanel" hidden role="dialog" aria-modal="false" aria-labelledby="astroTitle"><div class="astroTop"><div><div class="astroEyebrow">LIVE // EARTH · TODAY</div><div id="astroTitle" class="astroTitle">Moon preview</div></div><button class="astroClose" id="astroClose" aria-label="Close preview">×</button></div><div id="astroDate" class="astroDate">Calculating for today…</div><div id="astroContent"></div><button id="astroRefresh" class="astroAction">Refresh today’s calculation</button><p class="astroNote">Calculated on this device from your location. Times are approximate previews. Saved locally; no astronomy data is sent to a server.</p></section>
 <script type="module">
 import('./data-store.js').then(m=>m.initializeLocalDatabase()).then(result=>console.info('[LIVE // EARTH] Local database ready; save/retrieve self-test passed.',result)).catch(error=>console.warn('[LIVE // EARTH] Local database unavailable; globe remains independent.',error));
 const canvas=document.querySelector('#scene'),status=document.querySelector('#status');const showError=m=>{status.hidden=false;status.textContent=m};const loadTexture=(T,url)=>new Promise((resolve,reject)=>{const l=new T.TextureLoader();l.setCrossOrigin('anonymous');l.load(url,resolve,undefined,()=>reject(new Error('Image request failed: '+url)))});
@@ -89,7 +94,7 @@ scene.add(new T.AmbientLight(0x8aa7c8,.24));const sun=new T.DirectionalLight(0xf
 (()=>{
  const buttons=[...document.querySelectorAll(".orbButton")];
  const status=document.querySelector("#status");
- let selected="earth";
+ let selected="earth", initializing=true;
  try{selected=localStorage.getItem("liveEarthSelectedButton")||"earth"}catch(e){}
  const supported=new Set(["earth","moon","sun","location","stacks"]);
  if(!supported.has(selected))selected="earth";
@@ -98,14 +103,28 @@ scene.add(new T.AmbientLight(0x8aa7c8,.24));const sun=new T.DirectionalLight(0xf
   selected=id;
   buttons.forEach(button=>button.setAttribute("aria-pressed",String(button.dataset.view===id)));
   try{localStorage.setItem("liveEarthSelectedButton",id)}catch(e){}
-  if(id==="earth"){status.hidden=true;return}
-  status.hidden=false;
+  if(id==="earth"){status.hidden=true;document.querySelector("#astroPanel").hidden=true;return}
+  if((id==="sun"||id==="moon")&&!initializing){status.hidden=true;window.dispatchEvent(new CustomEvent("live-earth-astro-preview",{detail:{view:id}}));return}
+  if(id==="sun"||id==="moon"){status.hidden=true;return}
+  document.querySelector("#astroPanel").hidden=true;status.hidden=false;
   status.textContent= id==="location" ? "Location tools are not connected yet. Your globe remains available." : `${labels[id]} view is not connected yet. Your Earth globe remains available.`;
   window.setTimeout(()=>{if(selected===id)status.hidden=true},2600);
  }
  buttons.forEach(button=>button.addEventListener("click",()=>activate(button.dataset.view)));
  activate(selected);
+ initializing=false;
 })();
 </script>
-</body>
+<script type="module">
+import {calculateAstronomy,dayKey} from './astronomy.js';
+import {getRecord,saveAstronomy} from './data-store.js';
+const panel=document.querySelector('#astroPanel'),title=document.querySelector('#astroTitle'),dateLabel=document.querySelector('#astroDate'),content=document.querySelector('#astroContent'),close=document.querySelector('#astroClose'),refresh=document.querySelector('#astroRefresh');
+let activeView='moon',requestSerial=0;
+const fmtTime=iso=>{if(!iso)return 'Not visible today';return new Intl.DateTimeFormat(undefined,{hour:'numeric',minute:'2-digit'}).format(new Date(iso))};
+const fmtDuration=m=>`${Math.floor(m/60)}h ${m%60}m`;
+function render(data,view){const d=data[view];const cells=view==='sun'?[['Sunrise',fmtTime(d.sunrise)],['Sunset',fmtTime(d.sunset)],['Solar noon',fmtTime(d.solarNoon)],['Daylight',d.polar==='polar night'?'Polar night':d.polar==='midnight sun'?'Midnight sun':fmtDuration(d.daylightMinutes)],['Altitude',`${d.altitudeDegrees}°`],['Direction',`${d.azimuthDegrees}°`]]:[['Moon phase',d.phase],['Illumination',`${d.illuminationPercent}%`],['Moonrise',fmtTime(d.moonrise)],['Moonset',fmtTime(d.moonset)],['Altitude',`${d.altitudeDegrees}°`],['Direction',`${d.azimuthDegrees}°`]];const hero=view==='sun'?(d.altitudeDegrees>0?'Above the horizon':'Below the horizon'):`${d.phase} · ${d.illuminationPercent}% lit`;content.innerHTML=`<div class="astroHero"><strong>${hero}</strong><span>${view==='sun'?'Current solar position':'Current lunar position'} · local device time</span></div><div class="astroGrid">${cells.map(([k,v])=>`<div class="astroMetric"><span>${k}</span><strong>${v}</strong></div>`).join('')}</div>`}
+function message(text){content.innerHTML=`<div class="astroHero"><strong>Preview unavailable</strong><span>${text}</span></div><button class="astroAction" id="astroRetry">Try location again</button>`;document.querySelector('#astroRetry')?.addEventListener('click',()=>openPreview(activeView,true))}
+async function openPreview(view,force=false){activeView=view;const serial=++requestSerial;title.textContent=view==='sun'?'Sun preview':'Moon preview';panel.hidden=false;dateLabel.textContent='Finding your location…';content.innerHTML='<div class="astroHero"><strong>Calculating locally…</strong><span>Location is requested only for this preview.</span></div>';if(!navigator.geolocation){dateLabel.textContent='Location unavailable';message('This browser does not provide location services.');return}navigator.geolocation.getCurrentPosition(async pos=>{if(serial!==requestSerial)return;try{const lat=pos.coords.latitude,lon=pos.coords.longitude,now=new Date(),today=dayKey(now),key=`preview:${today}:${lat.toFixed(3)},${lon.toFixed(3)}`;let record=force?null:await getRecord('astronomy_cache',key),data=record?.data;if(!data||data.date!==today){data=calculateAstronomy(lat,lon,now);await saveAstronomy(key,data,Date.now())}if(serial!==requestSerial)return;dateLabel.textContent=`${new Intl.DateTimeFormat(undefined,{dateStyle:'full'}).format(now)} · Saved on this device`;render(data,view)}catch(e){console.error(e);dateLabel.textContent='Calculation error';message('Could not calculate or save locally. Please try again.')}},err=>{if(serial!==requestSerial)return;dateLabel.textContent='Location permission needed';message(err.code===1?'Allow location access to calculate local Sun and Moon times.':err.code===2?'Your location could not be determined. Check Location Services and try again.':'Location lookup timed out. Try again.')},{enableHighAccuracy:false,timeout:12000,maximumAge:300000})}
+window.addEventListener('live-earth-astro-preview',e=>openPreview(e.detail.view));close.addEventListener('click',()=>{requestSerial++;panel.hidden=true});refresh.addEventListener('click',()=>openPreview(activeView,true));
+</script>\n</body>
 </html>
