@@ -21,7 +21,7 @@
   .orbButton:not([aria-pressed="true"]) .orbShell{filter:brightness(.58) saturate(.62)!important;box-shadow:inset 1px 1px 3px #ffffff35,inset -2px -3px 5px #000b,0 3px 7px #000b!important}
   .orbButton:not([aria-pressed="true"]) .orbShine{opacity:.12!important}
   .orbButton[aria-pressed="true"] .orbShell{filter:brightness(1.08) saturate(1.12)!important}
-  #le-control-panel{position:absolute;z-index:9;left:50%;top:50%;transform:translate(-50%,-50%);width:min(88vw,420px);max-height:58vh;overflow:auto;padding:18px;border:1px solid #b6e6ff50;border-radius:22px;background:linear-gradient(145deg,#102032f5,#050b16f7);box-shadow:inset 1px 1px 2px #ffffff20,0 12px 38px #000b,0 0 28px #38bfff18;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);touch-action:pan-y;color:#eaf5ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  #le-control-panel{position:fixed;z-index:7;left:50%;top:50%;transform:translate(-50%,-50%);width:min(88vw,420px);max-height:min(58vh,calc(var(--le-viewport-height,100vh) - 28px));overflow:auto;padding:18px;border:1px solid #b6e6ff50;border-radius:22px;background:linear-gradient(145deg,#102032f5,#050b16f7);box-shadow:inset 1px 1px 2px #ffffff20,0 12px 38px #000b,0 0 28px #38bfff18;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);touch-action:pan-y;color:#eaf5ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
   #le-control-panel[hidden]{display:none}#le-control-panel h2{font-size:21px;margin:0 0 6px;font-weight:650}#le-control-panel p{font-size:12px;line-height:1.5;color:#a8bfd1;margin:0 0 14px}
   .le-choice{display:block;width:100%;margin:8px 0;padding:13px 14px;text-align:left;border:1px solid #8ecfff30;border-radius:14px;background:#ffffff08;color:#edf8ff;font:600 13px -apple-system,BlinkMacSystemFont,sans-serif}
   .le-choice[aria-pressed="true"]{border-color:#79d7ff99;background:#58bfff18;box-shadow:0 0 14px #36bfff20}
@@ -48,6 +48,35 @@
   const panelDesc=featurePanel.querySelector('#le-panel-desc');
   const options=featurePanel.querySelector('#le-panel-options');
   featurePanel.querySelector('.le-panel-close').addEventListener('click',()=>{featurePanel.hidden=true;home(false)});
+
+  // iOS can briefly retain the previous visual viewport after device rotation.
+  // Re-measure without reloading the page or changing the approved globe scene.
+  let viewportFrame=0;
+  function syncViewport(){
+    if(viewportFrame)cancelAnimationFrame(viewportFrame);
+    viewportFrame=requestAnimationFrame(()=>{
+      viewportFrame=0;
+      const vv=window.visualViewport;
+      const height=Math.max(240,Math.round(vv?.height||window.innerHeight||document.documentElement.clientHeight));
+      const width=Math.max(240,Math.round(vv?.width||window.innerWidth||document.documentElement.clientWidth));
+      document.documentElement.style.setProperty('--le-viewport-height',`${height}px`);
+      document.documentElement.style.setProperty('--le-viewport-width',`${width}px`);
+      // Force the open panel to recalculate its hit box after orientation changes.
+      for(const el of [panel,featurePanel]){
+        if(!el||el.hidden)continue;
+        el.style.maxHeight=`${Math.max(180,height-28)}px`;
+        el.style.maxWidth=`${Math.max(240,Math.min(width-24,440))}px`;
+        el.style.pointerEvents='auto';
+        void el.offsetHeight;
+      }
+      const nav=document.querySelector('#navButtons');
+      if(nav){nav.style.pointerEvents='auto';nav.querySelectorAll('.orbButton').forEach(b=>{b.style.pointerEvents='auto';});}
+    });
+  }
+  window.addEventListener('orientationchange',syncViewport,{passive:true});
+  window.addEventListener('resize',syncViewport,{passive:true});
+  window.visualViewport?.addEventListener('resize',syncViewport,{passive:true});
+  syncViewport();
 
   function setStatus(message, ms=2800) {
     if (!status) return;
@@ -97,7 +126,10 @@
     if(!locationEnabled){setStatus('Live Location OFF · fresh app location requests are blocked.');return}
     setStatus('Live Location ON · a feature may request location when you choose it.');
   }
-  try{locationEnabled=localStorage.getItem('liveEarthLocationEnabled')==='true'}catch(e){}
+  // Safety default: each fresh app launch starts with app-owned Live Location OFF.
+  // The user must explicitly turn it on again during this session.
+  locationEnabled=false;
+  try{localStorage.setItem('liveEarthLocationEnabled','false')}catch(e){}
   if(navigator.geolocation&&originalGetCurrentPosition){
     try{
       navigator.geolocation.getCurrentPosition=function(success,error,opts){
@@ -127,9 +159,12 @@
     if(!['moon','sun','stacks'].includes(id))return;
     if(selected===id){home(true);return}
     selected=id;paintButtons();
-    if(id==='stacks'){stacksPanel();return}
+    // Hide the previous feature immediately before showing the next one.
     featurePanel.hidden=true;
+    if(panel)panel.hidden=true;
+    if(id==='stacks'){stacksPanel();syncViewport();return}
     if(panel)panel.hidden=false;
+    syncViewport();
     window.dispatchEvent(new CustomEvent('live-earth-astro-preview',{detail:{view:id}}));
   }
   buttons.forEach(b=>{
@@ -163,6 +198,7 @@
 
   window.addEventListener('live-earth-location-state',e=>{locationEnabled=!!e.detail?.enabled;paintButtons()});
   window.addEventListener('pagehide',stopOwnedLocation,{once:true});
+  window.addEventListener('pagehide',()=>{if(viewportFrame)cancelAnimationFrame(viewportFrame)},{once:true});
   window.liveEarthLocationAllowed=()=>locationEnabled;
   window.liveEarthGetLocationState=()=>locationEnabled;
   window.addEventListener('live-earth-astro-preview',()=>{featurePanel.hidden=true});

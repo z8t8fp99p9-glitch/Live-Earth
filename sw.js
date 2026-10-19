@@ -1,9 +1,9 @@
-/* LIVE // EARTH — Stage A core cache manager.
+/* LIVE // EARTH — orientation recovery + Location OFF cache release.
    Preserves the existing v4 orb-controller injection and homepage scene.
    New workers precache the complete shell, wait for a safe activation, and
    retain previous shells until the new page confirms successful startup. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v24-safe-balanced";
+const CACHE_NAME = "live-earth-shell-v25-orientation-location-off";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -112,7 +112,6 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  const shellURL = new URL(CACHE_NAME, self.location.href);
   const shellPaths = new Set(APP_SHELL.map(path => new URL(path, self.location.href).pathname));
   if (shellPaths.has(url.pathname)) {
     event.respondWith((async () => {
