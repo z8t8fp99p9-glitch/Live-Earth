@@ -10,12 +10,15 @@ WHAT IS IMPLEMENTED IN THIS CANDIDATE
 - Red Location orb toggles an app-owned Location ON/OFF preference (default OFF).
 - OFF blocks new geolocation API calls made by the homepage and signals stop events.
 - Earth/Moon/Sun/Stacks behave as toggle navigation; tap the active one again returns to Home.
-- Earth choices and Stacks panel are displayed, but are explicitly marked as preferences/placeholders where real mode/layer engines do not exist yet.
+- Homepage is always the default; the Earth orb does not open a selection panel and is never shown as an active navigation orb.
+- Inactive orbs are uniformly dimmed; active navigation/location states reveal the glow.
+- Offline selection does not toggle Location OFF; only the red Location orb controls the Location switch.
+- Stacks panel is displayed, but layer engines remain placeholders.
 - Sun/Moon existing preview remains connected through its current custom event.
 
 IMPORTANT LIMITATIONS / TEST BEFORE DEPLOY
 1. This is not yet a final production release. The browser API geolocation gate is a best-effort guard; test the exact iPhone Safari/PWA behavior.
-2. Earth HD/offline modes are preferences only. This package does not create an offline Earth dataset or high-definition globe profile.
+2. Earth HD/offline modes are preferences only; selecting Offline does not switch Location off. This package does not create an offline Earth dataset or high-definition globe profile.
 3. Stacks layer buttons are honest placeholders; cloud/elevation/weather/earthquake/traffic engines are not included.
 4. The service worker only transforms fetched HTML when it receives it from network; cached/offline behavior and update timing must be tested on the deployed PWA.
 5. Location permission already granted to iOS is not revoked by the app switch. This switch governs app-owned web requests only; it cannot turn off iPhone system Location Services.

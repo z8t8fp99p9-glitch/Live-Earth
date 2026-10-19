@@ -9,8 +9,8 @@
   const status = document.querySelector('#status');
   const panel = document.querySelector('#astroPanel');
   const nav = document.querySelector('#navButtons');
-  const views = new Set(['earth','moon','sun','stacks']);
-  let selected = 'earth';
+  const views = new Set(['moon','sun','stacks']);
+  let selected = 'home';
   let locationEnabled = false;
   let earthMode = 'basic';
   let locationWatch = null;
@@ -21,6 +21,10 @@
 
   const style = document.createElement('style');
   style.textContent = `
+  /* Inactive orbs stay uniformly dim; only active navigation/location gets its glow. */
+  .orbButton:not([aria-pressed="true"]) .orbShell{filter:brightness(.58) saturate(.62)!important;box-shadow:inset 1px 1px 3px #ffffff35,inset -2px -3px 5px #000b,0 3px 7px #000b!important}
+  .orbButton:not([aria-pressed="true"]) .orbShine{opacity:.12!important}
+  .orbButton[aria-pressed="true"] .orbShell{filter:brightness(1.08) saturate(1.12)!important}
   #le-control-panel{position:absolute;z-index:9;left:50%;top:50%;transform:translate(-50%,-50%);width:min(88vw,420px);max-height:58vh;overflow:auto;padding:18px;border:1px solid #b6e6ff50;border-radius:22px;background:linear-gradient(145deg,#102032f5,#050b16f7);box-shadow:inset 1px 1px 2px #ffffff20,0 12px 38px #000b,0 0 28px #38bfff18;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);touch-action:pan-y;color:#eaf5ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
   #le-control-panel[hidden]{display:none}#le-control-panel h2{font-size:21px;margin:0 0 6px;font-weight:650}#le-control-panel p{font-size:12px;line-height:1.5;color:#a8bfd1;margin:0 0 14px}
   .le-choice{display:block;width:100%;margin:8px 0;padding:13px 14px;text-align:left;border:1px solid #8ecfff30;border-radius:14px;background:#ffffff08;color:#edf8ff;font:600 13px -apple-system,BlinkMacSystemFont,sans-serif}
@@ -58,7 +62,7 @@
   function paintButtons(){
     buttons.forEach(b=>{
       const id=b.dataset.view;
-      const active=id==='location'?locationEnabled:(id===selected);
+      const active=id==='location'?locationEnabled:(id==='earth'?false:(id===selected));
       b.setAttribute('aria-pressed',String(active));
       if(id==='location') b.setAttribute('aria-label',locationEnabled?'Location ON — tap to turn off':'Location OFF — tap to turn on');
     });
@@ -113,13 +117,6 @@
       }
     }catch(e){console.warn('[LIVE // EARTH] Browser did not allow geolocation gating.',e)}
   }
-  function earthPanel(){
-    showPanel('Earth experience','These choices describe the intended experience. Live/HD/offline data modes must be connected to the globe engine before they change data behavior.',[
-      {title:'Basic Live',detail:'Standard live Earth view · current globe preserved',active:earthMode==='basic',action:()=>{earthMode='basic';home(true);setStatus('Basic Live selected. The current globe remains unchanged.');}},
-      {title:'HD Live',detail:'Higher-detail experience · requires an implemented detail profile',active:earthMode==='hd',action:()=>{earthMode='hd';home(false);setStatus('HD Live selected as a preference. HD data profile is not connected yet.');}},
-      {title:'Offline',detail:'Offline intent · live GPS must remain unused in this mode',active:earthMode==='offline',action:()=>{earthMode='offline';applyLocation(false);home(false);setStatus('Offline selected as a preference. Full offline Earth mode is not connected yet.');}}
-    ]);
-  }
   function stacksPanel(){
     showPanel('Stacks · More Options','Only layers that are actually connected should be enabled. These controls are honest placeholders until each data layer is integrated.',[
       {title:'Clouds',detail:'Not connected yet',action:()=>setStatus('Cloud layer is not connected yet.')},
@@ -131,10 +128,10 @@
   }
   function activate(id){
     if(id==='location'){featurePanel.hidden=true;applyLocation(!locationEnabled);return}
-    if(!['earth','moon','sun','stacks'].includes(id))return;
-    if(selected===id){if(id==='earth'&&featurePanel.hidden){earthPanel();return}home(true);return}
+    if(id==='earth'){home(true);return}
+    if(!['moon','sun','stacks'].includes(id))return;
+    if(selected===id){home(true);return}
     selected=id;paintButtons();
-    if(id==='earth'){earthPanel();return}
     if(id==='stacks'){stacksPanel();return}
     featurePanel.hidden=true;
     if(panel){panel.hidden=false}
