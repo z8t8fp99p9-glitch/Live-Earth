@@ -1,17 +1,17 @@
 {
   "manifestVersion": 3,
   "app": "LIVE // EARTH",
-  "status": "Landscape-first cinematic Moon composition with a subtle starlight tail; existing Earth mesh/material/gesture preserved",
+  "status": "Original Earth camera framing restored; Moon slightly reduced; subtle static stardust path, no comet-like tail",
   "datasets": [
     {
       "id": "astronomy.moon-orbit-rolling-30day",
-      "version": "1.2.0",
-      "description": "Rolling 30-day 3D lunar path with 721 samples; cinematic display radius 0.38 Earth radii and display distance factor 0.04 (mean displayed centre distance about 2.4 Earth radii). Includes faint stardust and a flowing light segment trailing behind the Moon.",
+      "version": "1.3.0",
+      "description": "Rolling 30-day 3D lunar path with 721 calculated samples; cinematic display radius 0.32 Earth radii and display distance factor 0.04 (mean displayed centre distance about 2.4 Earth radii). The orbit is indicated by faint curve and subtle static stardust particles; no comet-like tail.",
       "storage": "generated locally in memory; no network data fetch",
       "retentionDays": 30,
-      "source": "low-precision Keplerian orbital elements; orbit distance and Moon size are intentionally cinematic; not a precision JPL ephemeris",
+      "source": "low-precision Keplerian orbital elements; orbit distance and Moon size intentionally cinematic; not precision JPL ephemeris",
       "license": "calculation included in moon-orbit.js; procedural lunar texture generated locally",
-      "updatePolicy": "rebuild path at page load for current 30-day window; update Moon and trailing light every 30 seconds"
+      "updatePolicy": "rebuild path at page load for current 30-day window; update Moon position every 30 seconds"
     },
     {
       "id": "astronomy.current-day-preview",

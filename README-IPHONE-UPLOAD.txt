@@ -1,36 +1,31 @@
-LIVE // EARTH — Cinematic Moon + Stardust Trail (review package)
+LIVE // EARTH — Moon Subtle Stardust + Landscape Restore
 
-WHAT THIS PACKAGE ADDS
-- Keeps the existing Earth mesh, texture, material, Earth rotation gesture, atmosphere, nav buttons and current-day Sun/Moon preview code intact.
-- Adds a 3D Moon sphere with an offline procedural crater-like surface texture.
-- Adds a rolling 30-day calculated 3D orbital path and a subtle stardust treatment: faint blue-white grains, a delicate full-path guide, and a brighter flowing starlight segment trailing behind the Moon.
-- The starlight trail uses the same Moon position calculation; it is a visual effect, not a separate orbit.
-- Keeps one-finger Earth rotation and the existing pinch zoom behaviour.
-- Uses service-worker cache version v19 and caches moon-orbit.js.
+PATCH CONTENTS
+- index.html — original Earth camera framing restored exactly: camera distance is based on 75% of the shortest viewport dimension. The Moon layer is additive; Earth mesh, texture, lighting and one-finger rotation code are not rewritten.
+- moon-orbit.js — rolling 30-day calculated 3D orbit, slightly reduced Moon display radius, very faint orbit curve and sparse stardust grains. Removed the comet-like moving tail.
+- sw.js — cache version v20 so mobile browsers fetch the corrected package.
+- dataset-manifest.json — documents the intentional cinematic scaling and low-precision orbital model.
 
-VISUAL SCALE (INTENTIONALLY CINEMATIC)
-- Earth radius is 1 scene unit.
-- Display Moon radius is 0.38 Earth radii (slightly enlarged; physical ratio is about 0.273).
-- Display orbital distance is 42% of the calculated Earth-centred distance (average displayed centre distance about 25 Earth radii, not 60). This is deliberate visual drama, not a claim of physical scale.
-- The underlying orbital direction/timing comes from a low-precision Keplerian approximation, not JPL Horizons-grade ephemerides. Do not describe its positions as exact.
-- The 30-day path is generated locally at page load, centred around the current time. It is not a pre-saved fixed calendar file.
-- The Moon texture is procedural and offline-first; it is not a scientific lunar surface dataset.
+VISUAL CHOICES
+- Moon display radius: 0.32 Earth radii (still slightly enlarged relative to the real 0.273 ratio, but smaller than the previous version).
+- Display orbital distance factor: 0.04; mean displayed centre distance about 2.4 Earth radii. This is cinematic, not physical scale.
+- Orbit dots are subtle and static along the path. The Moon position updates from a low-precision Keplerian calculation every 30 seconds. This is not a JPL-grade ephemeris.
+- No long tail or flashing particles. Orbit may extend beyond the screen at the original Earth framing; Earth is not zoomed out to fit the orbit.
 
-FILES IN THIS REPLACEMENT PATCH
-1. index.html — integrated homepage code (Earth implementation preserved; Moon module loaded additively).
-2. moon-orbit.js — Moon sphere, orbital path, stardust and trailing light.
-3. sw.js — cache version v18 and shell entry for moon-orbit.js.
-4. dataset-manifest.json — data and display-scale notes.
+IPHONE UPLOAD NOTES
+This is a replacement-file patch, not a full repository. If you decide to test it, replace these four files at the repository root: index.html, moon-orbit.js, sw.js, dataset-manifest.json. Keep manifest.json, icon.svg, data-store.js, astronomy.js and all existing orb images. Do not upload the ZIP itself to the repository root.
 
-IPHONE UPLOAD SAFETY
-This is a replacement-file patch, not a full repository. Replace these four files at the repository root, preserving manifest.json, icon.svg, data-store.js, astronomy.js and all orb images. Do not upload the ZIP itself into the repository root. Do not upload until you are ready to test.
-
-CHECK AFTER UPLOAD
-- Homepage loads and Earth still renders/rotates exactly as before.
-- In landscape, Earth and Moon should both be visible; the Moon begins to the left of Earth. The path should look like subtle stardust and a soft flowing tail, not a harsh dashed line.
-- Pinch out/in and verify Moon, orbit and tail stay synchronized with the Earth reference frame.
-- Tap Sun and Moon navigation buttons; existing current-day preview should still open.
-- Reload twice and test offline after the service worker finishes caching.
+TEST CHECKLIST
+1. In landscape, Earth should return to the original close framing (75% of the shortest screen dimension).
+2. Moon should be slightly smaller than in the previous screenshot.
+3. Orbit should read as faint stardust / a delicate curve, not a long comet tail or bright dashed line.
+4. Drag with one finger; Earth and the attached Moon system should rotate together.
+5. Pinch zoom; Earth, Moon and path should stay in the same coordinate system.
+6. Tap Sun/Moon buttons and verify the existing current-day preview still opens.
+7. Reload twice and test offline after cache completes.
 
 GITHUB COMMIT TITLE
-Add cinematic Moon starlight trail to LIVE Earth
+Restore Earth framing and soften Moon orbital stardust
+
+STATUS
+Package checks can validate ZIP integrity, JavaScript syntax and JSON validity, but cannot certify real-iPhone visual behavior. Review before deployment. No GitHub changes were made by preparing this patch.
