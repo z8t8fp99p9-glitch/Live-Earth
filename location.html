@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#050a12">
+<title>Live Location · LIVE // EARTH</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#050a12;color:#eaf5ff}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050a12}body{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}#map{position:absolute;inset:0;background:#0b1420;z-index:0}.top{position:absolute;z-index:500;top:calc(env(safe-area-inset-top) + 12px);left:12px;right:12px;display:flex;align-items:center;gap:10px;pointer-events:none}.glass{background:rgba(5,12,23,.88);border:1px solid rgba(155,205,235,.2);box-shadow:0 8px 28px #0007;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}button{font:600 14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#eaf5ff;border:1px solid #36516a;background:#0b1928;border-radius:13px;min-height:44px;padding:0 14px;cursor:pointer;touch-action:manipulation}.back{pointer-events:auto;width:46px;min-width:46px;padding:0;font-size:22px}.heading{pointer-events:auto;flex:1;min-width:0;border-radius:14px;padding:9px 13px}.brand{font-size:11px;letter-spacing:.17em;font-weight:800;color:#68d9ff}.heading h1{font-size:16px;margin:3px 0 0;font-weight:700}.mode{pointer-events:auto;padding:5px;display:flex;gap:4px;border-radius:14px}.mode button{min-height:34px;padding:0 10px;font-size:11px;border:0;background:transparent;color:#a8bfd0}.mode button.active{background:#19344a;color:#8ee5ff}.bottom{position:absolute;z-index:500;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 14px);padding:13px;border-radius:18px}.row{display:flex;gap:8px}.row button{flex:1}.primary{background:linear-gradient(135deg,#0c779b,#14517b);border-color:#368eb0}.status{font-size:12px;line-height:1.45;color:#b8cada;margin:10px 2px 0;min-height:17px}.status strong{color:#eaf5ff}.offline{color:#ffd99a}.leaflet-control-attribution{font-size:9px!important;background:#06101bcc!important;color:#adc3d4!important}.leaflet-control-attribution a{color:#75d8ff!important}.leaflet-control-zoom{border:1px solid #35516a!important;box-shadow:none!important}.leaflet-control-zoom a{background:#081522!important;color:#eaf5ff!important;border-color:#35516a!important}.you-dot{width:18px;height:18px;border-radius:50%;background:#43c7ff;border:3px solid white;box-shadow:0 0 0 7px #42bfff35,0 0 20px #36baffb0}.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#081522;color:#eaf5ff}.leaflet-popup-content{margin:10px 13px}.leaflet-container{font-family:inherit}.leaflet-tile{filter:saturate(.72) brightness(.9)}@media(min-width:700px){.top{left:22px;right:22px;top:22px}.bottom{left:22px;right:auto;width:min(390px,calc(100vw - 44px));bottom:22px}}
+</style>
+</head>
+<body>
+<div id="map" aria-label="Basic 2D street map"></div>
+<div class="top">
+ <button class="back glass" id="back" aria-label="Back to Earth">‹</button>
+ <div class="heading glass"><div class="brand">LIVE // EARTH</div><h1>Live Location</h1></div>
+ <div class="mode glass" aria-label="Map mode"><button class="active" aria-pressed="true">BASIC</button><button id="hd" aria-label="HD mode coming later">HD</button></div>
+</div>
+<div class="bottom glass">
+ <div class="row"><button class="primary" id="find">◎ &nbsp; Find Me</button><button id="recenter">Recenter</button></div>
+ <div class="status" id="status" role="status" aria-live="polite">Map ready. Tap <strong>Find Me</strong> to request your location.</div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+(()=>{
+ const status=document.getElementById('status'),find=document.getElementById('find'),recenter=document.getElementById('recenter');
+ const say=(html,cls='')=>{status.className='status '+cls;status.innerHTML=html};
+ document.getElementById('back').addEventListener('click',()=>{location.href='./index.html'});
+ document.getElementById('hd').addEventListener('click',()=>say('HD 3D mode is planned for the next phase. BASIC stays lightweight for now.'));
+ if(!window.L){say('The map library could not load. Connect to the internet and reopen Live Location.','offline');return}
+ const map=L.map('map',{zoomControl:false,preferCanvas:true,worldCopyJump:true}).setView([20,0],2);
+ L.control.zoom({position:'bottomright'}).addTo(map);
+ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+ let marker=null,accuracy=null,last=null,watchId=null;
+ try{const saved=JSON.parse(localStorage.getItem('liveEarthLastLocation')||'null');if(saved&&Number.isFinite(saved.lat)&&Number.isFinite(saved.lon)){last=saved;marker=L.marker([saved.lat,saved.lon]).addTo(map).bindPopup('Last known location');map.setView([saved.lat,saved.lon],14);say('Showing your <strong>last saved location</strong>. Tap Find Me for a fresh GPS fix.')}}catch(e){}
+ function onPosition(pos){const c=pos.coords;last={lat:c.latitude,lon:c.longitude,accuracy:c.accuracy,at:Date.now()};try{localStorage.setItem('liveEarthLastLocation',JSON.stringify(last))}catch(e){}const ll=[last.lat,last.lon];if(!marker)marker=L.marker(ll,{icon:L.divIcon({className:'',html:'<div class="you-dot"></div>',iconSize:[24,24],iconAnchor:[12,12]})}).addTo(map);else marker.setLatLng(ll);marker.bindPopup('<strong>Your location</strong><br>Accuracy: about '+Math.round(c.accuracy)+' m');if(accuracy)map.removeLayer(accuracy);accuracy=L.circle(ll,{radius:Math.max(8,c.accuracy||0),color:'#43c7ff',weight:1,fillColor:'#43c7ff',fillOpacity:.10}).addTo(map);map.setView(ll,Math.max(map.getZoom(),15),{animate:true});say('<strong>Location found.</strong> GPS accuracy about '+Math.round(c.accuracy)+' m. The blue marker updates while this page is open.');}
+ function onError(err){const messages={1:'Location permission was denied. You can still explore the map; enable location access in iPhone Settings to use Find Me.',2:'GPS could not determine your position. Move to a clearer area and try again.',3:'Location request timed out. Try Find Me again.'};say(messages[err.code]||'Location is unavailable. You can still browse the map.', 'offline')}
+ function findMe(){if(!navigator.geolocation){say('This browser does not provide GPS location. You can still explore the map.','offline');return}say('Requesting location permission…');navigator.geolocation.getCurrentPosition(pos=>{onPosition(pos);if(watchId!==null)navigator.geolocation.clearWatch(watchId);watchId=navigator.geolocation.watchPosition(onPosition,onError,{enableHighAccuracy:true,maximumAge:5000,timeout:15000})},onError,{enableHighAccuracy:true,maximumAge:10000,timeout:15000})}
+ find.addEventListener('click',findMe);recenter.addEventListener('click',()=>{if(last){map.setView([last.lat,last.lon],Math.max(map.getZoom(),15),{animate:true});marker?.openPopup()}else findMe()});
+ window.addEventListener('online',()=>say('Internet connected. Street map tiles can load as you explore.'));window.addEventListener('offline',()=>say(last?'Offline. Showing saved coordinates; map tiles may not be available.':'Offline. Map tiles need an internet connection; GPS may still work.','offline'));
+ if(!navigator.onLine)say('Offline. Map tiles need an internet connection; GPS may still work.','offline');
+})();
+</script>
+</body>
+</html>
