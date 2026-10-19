@@ -1,20 +1,21 @@
-LIVE // EARTH — shiny orb buttons (deck not included yet)
+LIVE // EARTH — Orb Material Update
 
-This patch changes only index.html and sw.js. It uses the five existing orb assets already present in the repository root:
-earth.webp, moon.webp, sun.webp, location.webp, stacks.webp.
+This ZIP contains a focused CSS patch for the five current orb buttons. It adds
+ glassmorphism, neumorphic inner depth, curved highlights, individual colored
+rim lighting, subtle floating motion, and reduced-motion support.
 
-DESIGN
-- Each orb is a separate accessible button with its own tap/active shine and glow.
-- The orb artwork is adaptive and circular; no deck image or card panel is included.
-- The working globe, lighting, starfield, one-finger rotation, data-store and button-selection persistence are preserved.
-- The five buttons remain navigation placeholders where features are not connected yet.
-- The new service-worker cache version precaches the five orb assets and keeps network-first HTML refresh.
+This is a patch, not a full replacement app. To protect the working globe, the
+existing index.html should be edited minimally:
 
-UPLOAD FROM IPHONE
-1. Open the Live-Earth repository on GitHub, branch main.
-2. Replace the root index.html with this index.html.
-3. Replace the root sw.js with this sw.js.
-4. Commit title: Activate shiny glass orb buttons
-5. Wait for GitHub Pages deployment to complete, then reopen the installed app while online.
+1. Open the repository on GitHub, branch main, then open root index.html.
+2. Tap Edit (pencil).
+3. Find the existing <style> section in the <head>.
+4. Paste all contents of orb-materials.css just before </style>.
+5. Remove this exact HTML line:
+   <div class="hint">Drag globe to rotate · Choose an orb</div>
+6. Commit title:
+   Add glassmorphic orb depth and remove bottom hint
+7. Wait for GitHub Pages deployment, then reopen LIVE // EARTH online.
 
-Important: this ZIP does not upload or commit anything. No GitHub changes were made by preparing it. The deck will be added separately after the orb buttons are verified.
+Do not change the Three.js globe script or sw.js. The deck is intentionally not
+included yet. This patch has not been uploaded or deployed by ChatGPT.
