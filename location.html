@@ -2,44 +2,112 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#050a12">
-<title>Live Location · LIVE // EARTH</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#05080d">
+<title>LIVE // EARTH — Location</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <style>
-:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#050a12;color:#eaf5ff}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050a12}body{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}#map{position:absolute;inset:0;background:#0b1420;z-index:0}.top{position:absolute;z-index:500;top:calc(env(safe-area-inset-top) + 12px);left:12px;right:12px;display:flex;align-items:center;gap:10px;pointer-events:none}.glass{background:rgba(5,12,23,.88);border:1px solid rgba(155,205,235,.2);box-shadow:0 8px 28px #0007;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}button{font:600 14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#eaf5ff;border:1px solid #36516a;background:#0b1928;border-radius:13px;min-height:44px;padding:0 14px;cursor:pointer;touch-action:manipulation}.back{pointer-events:auto;width:46px;min-width:46px;padding:0;font-size:22px}.heading{pointer-events:auto;flex:1;min-width:0;border-radius:14px;padding:9px 13px}.brand{font-size:11px;letter-spacing:.17em;font-weight:800;color:#68d9ff}.heading h1{font-size:16px;margin:3px 0 0;font-weight:700}.mode{pointer-events:auto;padding:5px;display:flex;gap:4px;border-radius:14px}.mode button{min-height:34px;padding:0 10px;font-size:11px;border:0;background:transparent;color:#a8bfd0}.mode button.active{background:#19344a;color:#8ee5ff}.bottom{position:absolute;z-index:500;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 14px);padding:13px;border-radius:18px}.row{display:flex;gap:8px}.row button{flex:1}.primary{background:linear-gradient(135deg,#0c779b,#14517b);border-color:#368eb0}.status{font-size:12px;line-height:1.45;color:#b8cada;margin:10px 2px 0;min-height:17px}.status strong{color:#eaf5ff}.offline{color:#ffd99a}.leaflet-control-attribution{font-size:9px!important;background:#06101bcc!important;color:#adc3d4!important}.leaflet-control-attribution a{color:#75d8ff!important}.leaflet-control-zoom{border:1px solid #35516a!important;box-shadow:none!important}.leaflet-control-zoom a{background:#081522!important;color:#eaf5ff!important;border-color:#35516a!important}.you-dot{width:18px;height:18px;border-radius:50%;background:#43c7ff;border:3px solid white;box-shadow:0 0 0 7px #42bfff35,0 0 20px #36baffb0}.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#081522;color:#eaf5ff}.leaflet-popup-content{margin:10px 13px}.leaflet-container{font-family:inherit}.leaflet-tile{filter:saturate(.72) brightness(.9)}@media(min-width:700px){.top{left:22px;right:22px;top:22px}.bottom{left:22px;right:auto;width:min(390px,calc(100vw - 44px));bottom:22px}}
+:root{color-scheme:dark;--bg:#05080d;--glass:rgba(7,14,23,.88);--line:rgba(170,205,230,.2);--text:#eaf5ff;--muted:#9db1c5;--red:#ff334d}
+*{box-sizing:border-box}
+html,body,#map{height:100%;width:100%;margin:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
+#map{position:absolute;inset:0;background:#0a111b}
+.topbar{position:absolute;z-index:900;top:calc(env(safe-area-inset-top) + 12px);left:12px;right:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;pointer-events:none}
+.glass{background:var(--glass);border:1px solid var(--line);box-shadow:0 8px 28px #0007,inset 0 1px #ffffff0b;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-radius:16px}
+.brand{padding:11px 14px;letter-spacing:.13em;font-size:12px;font-weight:800;pointer-events:auto}
+.brand span{color:#66d7ff}
+.action{color:var(--text);border:1px solid var(--line);background:var(--glass);border-radius:14px;padding:11px 13px;font-size:12px;font-weight:650;pointer-events:auto;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.bottom{position:absolute;z-index:900;bottom:calc(env(safe-area-inset-bottom) + 14px);left:12px;right:12px;padding:13px 15px;display:flex;align-items:center;gap:12px}
+.dot{width:8px;height:8px;flex:0 0 8px;border-radius:50%;background:#7f95a9;box-shadow:0 0 12px currentColor}
+#statusTitle{font-size:13px;font-weight:700;margin-bottom:3px}
+#statusText{font-size:11px;line-height:1.45;color:var(--muted)}
+.leaflet-control-attribution{font-size:9px!important;background:#06101bd9!important;color:#a9bdcf!important}
+.leaflet-control-attribution a{color:#9bdcff!important}
+.leaflet-control-zoom{border:1px solid var(--line)!important;box-shadow:none!important}
+.leaflet-control-zoom a{background:#08121fe8!important;color:#eaf5ff!important;border-color:var(--line)!important}
+.leaflet-control-container{filter:drop-shadow(0 2px 7px #0008)}
+/* Gentle cinematic location arrival: one sweep and one pulse, then it disappears. */
+#scanFX{position:absolute;z-index:700;inset:0;pointer-events:none;overflow:hidden;opacity:0}
+#scanFX.active{opacity:1}
+.scanBeam{position:absolute;left:0;right:0;top:-20%;height:20%;opacity:0;background:linear-gradient(180deg,transparent,rgba(255,42,67,.015) 20%,rgba(255,50,75,.18) 48%,rgba(255,70,85,.06) 70%,transparent);border-bottom:1px solid rgba(255,70,90,.38);box-shadow:0 8px 26px rgba(255,30,55,.10);animation:sweep 1.65s cubic-bezier(.2,.7,.25,1) forwards}
+.scanGrid{position:absolute;inset:0;opacity:0;background:linear-gradient(180deg,transparent 49.8%,rgba(255,60,80,.07) 50%,transparent 50.2%);animation:softReveal .55s ease-out forwards}
+@keyframes sweep{0%{top:-20%;opacity:0}12%{opacity:.9}85%{opacity:.6}100%{top:110%;opacity:0}}
+@keyframes softReveal{0%{opacity:0}30%{opacity:.5}100%{opacity:0}}
+#arrivalToast{position:absolute;z-index:950;left:50%;top:calc(env(safe-area-inset-top) + 76px);transform:translate(-50%,-8px);padding:10px 14px;max-width:calc(100vw - 28px);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;font-size:11px;letter-spacing:.09em;color:#ffe9ec}
+#arrivalToast.show{opacity:1;transform:translate(-50%,0)}
+.userMarker{width:18px;height:18px;border-radius:50%;background:#ff334d;border:2px solid #fff;box-shadow:0 0 0 5px #ff334d2b,0 0 18px #ff334dcc;position:relative}
+.userMarker:after{content:"";position:absolute;inset:-8px;border:1px solid #ff5367;border-radius:50%;animation:markerPulse 1.8s ease-out 2}
+@keyframes markerPulse{0%{transform:scale(.55);opacity:.9}100%{transform:scale(1.65);opacity:0}}
+@media(prefers-reduced-motion:reduce){.scanBeam,.scanGrid,.userMarker:after{animation:none!important}.scanBeam{display:none!important}#arrivalToast{transition:none}}
 </style>
 </head>
 <body>
-<div id="map" aria-label="Basic 2D street map"></div>
-<div class="top">
- <button class="back glass" id="back" aria-label="Back to Earth">‹</button>
- <div class="heading glass"><div class="brand">LIVE // EARTH</div><h1>Live Location</h1></div>
- <div class="mode glass" aria-label="Map mode"><button class="active" aria-pressed="true">BASIC</button><button id="hd" aria-label="HD mode coming later">HD</button></div>
+<div id="map" aria-label="Basic interactive map"></div>
+<div id="scanFX" aria-hidden="true"><div class="scanGrid"></div><div class="scanBeam"></div></div>
+<div id="arrivalToast" class="glass">LOCATION ACQUIRED · WELCOME HOME</div>
+<div class="topbar">
+  <div class="brand glass">LIVE <span>//</span> EARTH</div>
+  <button id="locateAgain" class="action" type="button">Locate me</button>
+  <button id="backHome" class="action" type="button">← Home</button>
 </div>
-<div class="bottom glass">
- <div class="row"><button class="primary" id="find">◎ &nbsp; Find Me</button><button id="recenter">Recenter</button></div>
- <div class="status" id="status" role="status" aria-live="polite">Map ready. Tap <strong>Find Me</strong> to request your location.</div>
+<div class="bottom glass" role="status" aria-live="polite">
+  <span id="statusDot" class="dot"></span>
+  <div><div id="statusTitle">Basic map</div><div id="statusText">Explore the map by moving and zooming. Live location is optional.</div></div>
 </div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script>
-(()=>{
- const status=document.getElementById('status'),find=document.getElementById('find'),recenter=document.getElementById('recenter');
- const say=(html,cls='')=>{status.className='status '+cls;status.innerHTML=html};
- document.getElementById('back').addEventListener('click',()=>{location.href='./index.html'});
- document.getElementById('hd').addEventListener('click',()=>say('HD 3D mode is planned for the next phase. BASIC stays lightweight for now.'));
- if(!window.L){say('The map library could not load. Connect to the internet and reopen Live Location.','offline');return}
- const map=L.map('map',{zoomControl:false,preferCanvas:true,worldCopyJump:true}).setView([20,0],2);
- L.control.zoom({position:'bottomright'}).addTo(map);
- L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
- let marker=null,accuracy=null,last=null,watchId=null;
- try{const saved=JSON.parse(localStorage.getItem('liveEarthLastLocation')||'null');if(saved&&Number.isFinite(saved.lat)&&Number.isFinite(saved.lon)){last=saved;marker=L.marker([saved.lat,saved.lon]).addTo(map).bindPopup('Last known location');map.setView([saved.lat,saved.lon],14);say('Showing your <strong>last saved location</strong>. Tap Find Me for a fresh GPS fix.')}}catch(e){}
- function onPosition(pos){const c=pos.coords;last={lat:c.latitude,lon:c.longitude,accuracy:c.accuracy,at:Date.now()};try{localStorage.setItem('liveEarthLastLocation',JSON.stringify(last))}catch(e){}const ll=[last.lat,last.lon];if(!marker)marker=L.marker(ll,{icon:L.divIcon({className:'',html:'<div class="you-dot"></div>',iconSize:[24,24],iconAnchor:[12,12]})}).addTo(map);else marker.setLatLng(ll);marker.bindPopup('<strong>Your location</strong><br>Accuracy: about '+Math.round(c.accuracy)+' m');if(accuracy)map.removeLayer(accuracy);accuracy=L.circle(ll,{radius:Math.max(8,c.accuracy||0),color:'#43c7ff',weight:1,fillColor:'#43c7ff',fillOpacity:.10}).addTo(map);map.setView(ll,Math.max(map.getZoom(),15),{animate:true});say('<strong>Location found.</strong> GPS accuracy about '+Math.round(c.accuracy)+' m. The blue marker updates while this page is open.');}
- function onError(err){const messages={1:'Location permission was denied. You can still explore the map; enable location access in iPhone Settings to use Find Me.',2:'GPS could not determine your position. Move to a clearer area and try again.',3:'Location request timed out. Try Find Me again.'};say(messages[err.code]||'Location is unavailable. You can still browse the map.', 'offline')}
- function findMe(){if(!navigator.geolocation){say('This browser does not provide GPS location. You can still explore the map.','offline');return}say('Requesting location permission…');navigator.geolocation.getCurrentPosition(pos=>{onPosition(pos);if(watchId!==null)navigator.geolocation.clearWatch(watchId);watchId=navigator.geolocation.watchPosition(onPosition,onError,{enableHighAccuracy:true,maximumAge:5000,timeout:15000})},onError,{enableHighAccuracy:true,maximumAge:10000,timeout:15000})}
- find.addEventListener('click',findMe);recenter.addEventListener('click',()=>{if(last){map.setView([last.lat,last.lon],Math.max(map.getZoom(),15),{animate:true});marker?.openPopup()}else findMe()});
- window.addEventListener('online',()=>say('Internet connected. Street map tiles can load as you explore.'));window.addEventListener('offline',()=>say(last?'Offline. Showing saved coordinates; map tiles may not be available.':'Offline. Map tiles need an internet connection; GPS may still work.','offline'));
- if(!navigator.onLine)say('Offline. Map tiles need an internet connection; GPS may still work.','offline');
+(() => {
+  const params = new URLSearchParams(location.search);
+  const wantsLocate = params.get('locate') === '1';
+  const map = L.map('map',{zoomControl:false,preferCanvas:true}).setView([20,0],2);
+  L.control.zoom({position:'bottomright'}).addTo(map);
+  // OpenStreetMap standard tiles are online-only and subject to the tile usage policy.
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+  }).addTo(map);
+  const statusTitle=document.querySelector('#statusTitle');
+  const statusText=document.querySelector('#statusText');
+  const dot=document.querySelector('#statusDot');
+  const scan=document.querySelector('#scanFX');
+  const toast=document.querySelector('#arrivalToast');
+  let marker=null, scanTimer=null, toastTimer=null, locating=false;
+  function setStatus(title,text,color='#7f95a9'){
+    statusTitle.textContent=title;statusText.textContent=text;dot.style.background=color;dot.style.color=color;dot.style.boxShadow='0 0 12px '+color;
+  }
+  function arrival(lat,lon,accuracy){
+    if(marker)map.removeLayer(marker);
+    const icon=L.divIcon({className:'',html:'<div class="userMarker"></div>',iconSize:[18,18],iconAnchor:[9,9]});
+    marker=L.marker([lat,lon],{icon,keyboard:true,title:'Your current location'}).addTo(map);
+    map.setView([lat,lon],Math.max(14,Math.min(16,map.getZoom())),{animate:true,duration:.8});
+    setStatus('Explorer located','Your device provided a location fix. You can continue exploring manually.','#ff5268');
+    scan.classList.remove('active');void scan.offsetWidth;scan.classList.add('active');
+    toast.classList.remove('show');void toast.offsetWidth;toast.classList.add('show');
+    clearTimeout(scanTimer);clearTimeout(toastTimer);
+    scanTimer=setTimeout(()=>scan.classList.remove('active'),1900);
+    toastTimer=setTimeout(()=>toast.classList.remove('show'),2400);
+  }
+  function locate(){
+    if(locating)return;
+    if(!navigator.geolocation){
+      setStatus('Live location unavailable','Your browser does not provide location services. The map is still available.');return;
+    }
+    locating=true;
+    setStatus('Finding your location…','Waiting for your device. The map remains available meanwhile.','#ff5268');
+    navigator.geolocation.getCurrentPosition(pos=>{
+      locating=false;
+      arrival(pos.coords.latitude,pos.coords.longitude,pos.coords.accuracy);
+    },err=>{
+      locating=false;
+      if(err.code===1)setStatus('Map ready','Location permission was not granted. Explore the map normally.');
+      else if(err.code===2)setStatus('Map ready','Your location could not be determined. You can browse the map or try again.');
+      else setStatus('Map ready','Location lookup timed out. You can browse the map or try again.');
+    },{enableHighAccuracy:false,timeout:12000,maximumAge:120000});
+  }
+  document.querySelector('#locateAgain').addEventListener('click',locate);
+  document.querySelector('#backHome').addEventListener('click',()=>location.href='./');
+  // Map always opens first. Permission is requested only after explicit intent from the orb.
+  if(wantsLocate)locate();
+  window.addEventListener('pageshow',()=>setTimeout(()=>map.invalidateSize(),100));
 })();
 </script>
 </body>
