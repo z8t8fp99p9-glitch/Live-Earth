@@ -18,12 +18,19 @@ body{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset
 .hint{position:absolute;z-index:2;left:50%;bottom:calc(env(safe-area-inset-bottom) + 15px);transform:translateX(-50%);pointer-events:none;color:#b6c7d9;font-size:9px;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;opacity:.72}
 .status{position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);max-width:84vw;padding:13px 16px;border:1px solid #24384d;border-radius:12px;background:#08111ee8;color:#c7d9e9;text-align:center;font-size:13px;line-height:1.5}
 .status[hidden]{display:none}
-#navButtons{position:absolute;z-index:8;left:50%;bottom:calc(env(safe-area-inset-bottom) + 39px);transform:translateX(-50%);width:min(94vw,520px);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
-.navButton{appearance:none;-webkit-appearance:none;min-width:0;padding:12px 2px;border:1px solid #71819766;border-radius:10px;background:#09111dcc;color:#e7f2ff;font:600 clamp(9px,2.5vw,12px)/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.015em;box-shadow:0 5px 15px #0006;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);touch-action:manipulation;cursor:pointer}
-.navButton[aria-pressed="true"]{background:#d9f2ff;color:#07131e;border-color:#e8f8ff}
-.navButton:focus-visible{outline:2px solid #8de1ff;outline-offset:3px}
-.navButton:active{transform:scale(.97)}
-@media(min-width:600px){#navButtons{bottom:30px;gap:10px}.navButton{padding:14px 8px;font-size:12px}}
+#navButtons{position:absolute;z-index:8;left:50%;bottom:calc(env(safe-area-inset-bottom) + 49px);transform:translateX(-50%);width:min(94vw,520px);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:end;gap:clamp(2px,1.2vw,9px)}
+.orbButton{appearance:none;-webkit-appearance:none;min-width:0;padding:0 0 2px;border:0;background:transparent;color:#dbeaf7;display:flex;flex-direction:column;align-items:center;gap:6px;font:600 clamp(8px,2.4vw,11px)/1.1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.14em;text-transform:uppercase;touch-action:manipulation;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.orbShell{position:relative;display:block;width:clamp(49px,14.2vw,76px);aspect-ratio:1;border-radius:50%;isolation:isolate;transform:translateZ(0);transition:transform .22s ease,filter .22s ease;filter:drop-shadow(0 5px 7px #000b) drop-shadow(0 0 3px #7dcfff30)}
+.orbImage{display:block;width:100%;height:100%;object-fit:contain;border-radius:50%;user-select:none;-webkit-user-drag:none}
+.orbShell:before{content:"";position:absolute;inset:3%;z-index:2;border-radius:50%;pointer-events:none;background:linear-gradient(137deg,#fff8 0%,#ffffff2b 13%,transparent 34%,transparent 69%,#77cfff19 83%,#fff3 100%);box-shadow:inset 1px 2px 4px #fff5,inset -2px -4px 8px #0007}
+.orbShell:after{content:"";position:absolute;z-index:3;left:13%;top:7%;width:40%;height:17%;border-radius:50%;transform:rotate(-34deg);background:linear-gradient(90deg,#fff0,#fff9,#fff0);filter:blur(1px);opacity:.8;pointer-events:none}
+.orbLabel{max-width:100%;white-space:nowrap;text-shadow:0 1px 7px #000,0 0 9px #6cbfff33;opacity:.82;transition:opacity .2s ease,color .2s ease}
+.orbButton[aria-pressed="true"] .orbShell{transform:translateY(-3px) scale(1.07);filter:drop-shadow(0 7px 10px #000d) drop-shadow(0 0 8px #74d8ffb0)}
+.orbButton[aria-pressed="true"] .orbLabel{color:#f4fbff;opacity:1}
+.orbButton:active .orbShell{transform:scale(.94)}
+.orbButton:focus-visible{outline:2px solid #8de1ff;outline-offset:5px;border-radius:12px}
+@media(min-width:600px){#navButtons{bottom:38px;gap:10px}.orbShell{width:clamp(68px,8vw,88px)}.orbButton{font-size:11px}}
+@media(max-height:700px){#navButtons{bottom:calc(env(safe-area-inset-bottom) + 42px)}.orbShell{width:clamp(43px,11vw,63px)}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -32,13 +39,13 @@ body{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset
 <div class="brand">LIVE <span>//</span> EARTH</div>
 <div id="status" class="status">Preparing Earth…</div>
 <nav id="navButtons" aria-label="Main navigation">
-  <button class="navButton" data-view="earth" aria-pressed="true">Earth</button>
-  <button class="navButton" data-view="moon" aria-pressed="false">Moon</button>
-  <button class="navButton" data-view="sun" aria-pressed="false">Sun</button>
-  <button class="navButton" data-view="location" aria-pressed="false">Location</button>
-  <button class="navButton" data-view="stacks" aria-pressed="false">Stacks</button>
+  <button class="orbButton" data-view="earth" aria-label="Earth" aria-pressed="true"><span class="orbShell"><img class="orbImage" src="./earth.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Earth</span></button>
+  <button class="orbButton" data-view="moon" aria-label="Moon" aria-pressed="false"><span class="orbShell"><img class="orbImage" src="./moon.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Moon</span></button>
+  <button class="orbButton" data-view="sun" aria-label="Sun" aria-pressed="false"><span class="orbShell"><img class="orbImage" src="./sun.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Sun</span></button>
+  <button class="orbButton" data-view="location" aria-label="Location" aria-pressed="false"><span class="orbShell"><img class="orbImage" src="./location.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Location</span></button>
+  <button class="orbButton" data-view="stacks" aria-label="Stacks" aria-pressed="false"><span class="orbShell"><img class="orbImage" src="./stacks.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Stacks</span></button>
 </nav>
-<div class="hint">Drag globe to rotate · Choose a button</div>
+<div class="hint">Drag globe to rotate · Choose an orb</div>
 <script type="module">
 import('./data-store.js').then(m=>m.initializeLocalDatabase()).then(result=>console.info('[LIVE // EARTH] Local database ready; save/retrieve self-test passed.',result)).catch(error=>console.warn('[LIVE // EARTH] Local database unavailable; globe remains independent.',error));
 const canvas=document.querySelector('#scene'),status=document.querySelector('#status');const showError=m=>{status.hidden=false;status.textContent=m};const loadTexture=(T,url)=>new Promise((resolve,reject)=>{const l=new T.TextureLoader();l.setCrossOrigin('anonymous');l.load(url,resolve,undefined,()=>reject(new Error('Image request failed: '+url)))});
@@ -47,7 +54,7 @@ scene.add(new T.AmbientLight(0x8aa7c8,.24));const sun=new T.DirectionalLight(0xf
 </script>
 <script>
 (()=>{
- const buttons=[...document.querySelectorAll(".navButton")];
+ const buttons=[...document.querySelectorAll(".orbButton")];
  const status=document.querySelector("#status");
  let selected="earth";
  try{selected=localStorage.getItem("liveEarthSelectedButton")||"earth"}catch(e){}
