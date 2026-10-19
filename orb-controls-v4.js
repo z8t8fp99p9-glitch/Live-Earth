@@ -1,5 +1,5 @@
-/* LIVE // EARTH — integrated orb controls layer.
-   Injected by the updated service worker; does not edit the Earth scene/camera. */
+/* LIVE // EARTH — v4 orb controller, with Stage A readiness signal.
+   Visual and navigation behaviour is intentionally kept from the known-good v4. */
 (() => {
   'use strict';
   const buttons = [...document.querySelectorAll('.orbButton[data-view]')];
@@ -8,20 +8,16 @@
 
   const status = document.querySelector('#status');
   const panel = document.querySelector('#astroPanel');
-  const nav = document.querySelector('#navButtons');
-  const views = new Set(['moon','sun','stacks']);
   let selected = 'home';
   let locationEnabled = false;
-  let earthMode = 'basic';
   let locationWatch = null;
-  let originalGetCurrentPosition = navigator.geolocation?.getCurrentPosition?.bind(navigator.geolocation);
-  let originalWatchPosition = navigator.geolocation?.watchPosition?.bind(navigator.geolocation);
-  let originalClearWatch = navigator.geolocation?.clearWatch?.bind(navigator.geolocation);
+  const originalGetCurrentPosition = navigator.geolocation?.getCurrentPosition?.bind(navigator.geolocation);
+  const originalWatchPosition = navigator.geolocation?.watchPosition?.bind(navigator.geolocation);
+  const originalClearWatch = navigator.geolocation?.clearWatch?.bind(navigator.geolocation);
   const watches = new Set();
 
   const style = document.createElement('style');
   style.textContent = `
-  /* Inactive orbs stay uniformly dim; only active navigation/location gets its glow. */
   .orbButton:not([aria-pressed="true"]) .orbShell{filter:brightness(.58) saturate(.62)!important;box-shadow:inset 1px 1px 3px #ffffff35,inset -2px -3px 5px #000b,0 3px 7px #000b!important}
   .orbButton:not([aria-pressed="true"]) .orbShine{opacity:.12!important}
   .orbButton[aria-pressed="true"] .orbShell{filter:brightness(1.08) saturate(1.12)!important}
@@ -68,7 +64,7 @@
     });
   }
   function home(showMessage=false){
-    selected='earth';
+    selected='home';
     featurePanel.hidden=true;
     if(panel) panel.hidden=true;
     paintButtons();
@@ -102,7 +98,6 @@
     setStatus('Live Location ON · a feature may request location when you choose it.');
   }
   try{locationEnabled=localStorage.getItem('liveEarthLocationEnabled')==='true'}catch(e){}
-  // Gate app calls through the browser's location API while OFF.
   if(navigator.geolocation&&originalGetCurrentPosition){
     try{
       navigator.geolocation.getCurrentPosition=function(success,error,opts){
@@ -134,17 +129,38 @@
     selected=id;paintButtons();
     if(id==='stacks'){stacksPanel();return}
     featurePanel.hidden=true;
-    if(panel){panel.hidden=false}
+    if(panel)panel.hidden=false;
     window.dispatchEvent(new CustomEvent('live-earth-astro-preview',{detail:{view:id}}));
   }
   buttons.forEach(b=>{
-    // Remove the existing placeholder click handler without disturbing the globe.
     const replacement=b.cloneNode(true);b.replaceWith(replacement);
     replacement.addEventListener('click',()=>activate(replacement.dataset.view));
   });
   const freshButtons=[...document.querySelectorAll('.orbButton[data-view]')];
   buttons.splice(0,buttons.length,...freshButtons);
   paintButtons();
+
+  // Signal that the visual scene is ready before allowing old shell caches to
+  // be removed. The homepage's status is hidden only after successful setup.
+  const announceReady = () => {
+    if (!status || status.hidden) {
+      const controller = navigator.serviceWorker?.controller;
+      controller?.postMessage({type:'LIVE_EARTH_APP_READY'});
+      return true;
+    }
+    return false;
+  };
+  if (!announceReady()) {
+    const readyTimer = window.setInterval(() => {
+      if (announceReady()) window.clearInterval(readyTimer);
+      else if (status && !status.hidden && !/Preparing Earth/i.test(status.textContent || '')) {
+        // Keep the previous shell if the scene reports an error.
+        window.clearInterval(readyTimer);
+      }
+    }, 250);
+    window.addEventListener('pagehide',()=>window.clearInterval(readyTimer),{once:true});
+  }
+
   window.addEventListener('live-earth-location-state',e=>{locationEnabled=!!e.detail?.enabled;paintButtons()});
   window.addEventListener('pagehide',stopOwnedLocation,{once:true});
   window.liveEarthLocationAllowed=()=>locationEnabled;
