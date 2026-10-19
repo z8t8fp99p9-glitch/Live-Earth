@@ -1,17 +1,27 @@
 {
-  "manifestVersion": 2,
+  "manifestVersion": 3,
   "app": "LIVE // EARTH",
-  "status": "current-day Sun/Moon preview calculations integrated locally",
+  "status": "Moon orbit layer integrated as an additive Three.js scene group",
   "datasets": [
+    {
+      "id": "astronomy.moon-orbit-rolling-30day",
+      "version": "1.0.0",
+      "description": "Rolling 30-day 3D lunar orbital path with 721 timestamped samples and smooth current-position updates. Earth radius 1 scene unit, Moon radius 0.2727, mean orbital distance about 60.3 Earth radii.",
+      "storage": "generated locally in memory; no network data fetch",
+      "retentionDays": 30,
+      "source": "low-precision Keplerian orbital elements; not a precision JPL ephemeris",
+      "license": "calculation included in moon-orbit.js; procedural lunar texture generated locally",
+      "updatePolicy": "rebuild path at page load for current 30-day window; update Moon position periodically"
+    },
     {
       "id": "astronomy.current-day-preview",
       "version": "1.1.0",
-      "description": "On-device current-day Sun/Moon preview: sunrise, sunset, solar noon/daylight, current positions, lunar phase/illumination and approximate moonrise/moonset.",
+      "description": "Existing on-device current-day Sun/Moon preview retained unchanged.",
       "storage": "indexeddb:astronomy_cache",
       "retentionDays": 30,
       "source": "on-device-low-precision-astronomy-calculation",
       "license": "no external provider; calculation formulas included",
-      "updatePolicy": "calculate on demand when Sun/Moon orb is tapped; key by local date and rounded coordinates; UI shows current local day only"
+      "updatePolicy": "calculate on demand when Sun/Moon orb is tapped"
     }
   ]
 }
