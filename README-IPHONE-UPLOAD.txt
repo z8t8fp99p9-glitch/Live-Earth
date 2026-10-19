@@ -20,7 +20,7 @@ TEST CHECKLIST
 2. Moon should be slightly smaller than in the previous screenshot.
 3. Orbit should read as faint stardust / a delicate curve, not a long comet tail or bright dashed line.
 4. Drag with one finger; Earth and the attached Moon system should rotate together.
-5. Pinch zoom; Earth, Moon and path should stay in the same coordinate system.
+5. Confirm pinch gestures do not zoom the camera; Earth stays locked at the original framing.
 6. Tap Sun/Moon buttons and verify the existing current-day preview still opens.
 7. Reload twice and test offline after cache completes.
 
