@@ -1,13 +1,30 @@
-LIVE // EARTH — EARTH ORB MODES CANDIDATE v5
+LIVE // EARTH — CONTROL CACHE-BUST CANDIDATE v4
 
-- Earth orb opens Basic Live / HD Live / Offline choices.
-- Basic Live opens an interactive 2D map with pan/zoom and optional location only when the red Location switch is ON.
-- HD Live has a separate entry but currently uses the available 2D map; 3D buildings and HD imagery are not implemented.
-- Offline makes no GPS or online tile requests. Offline map tiles are not bundled.
-- Only the red Location orb changes the Location switch.
-- Homepage index.html is untouched: Earth/Moon composition, camera, scale and orbit remain untouched.
-- Stacks options remain placeholders until the respective layers are integrated.
+This package targets the reported stale Earth experience panel by using a NEW controller filename and NEW service-worker cache name. It is still a candidate and must be tested on the deployed PWA.
 
-Upload all three files to the Live-Earth repository root on main: sw.js (replace), orb-controls-v5.js (new), location.html (replace). Commit together. This candidate has archive integrity checked but has not been tested on your iPhone or deployed.
+FILES
+- sw.js — replace the root service worker
+- orb-controls-v4.js — upload this new file to the repository root
+- README.txt — instructions
 
-Commit title: Restore Earth orb modes and connect Basic Live explorer
+EXPECTED BEHAVIOR
+- Homepage is always the default; Earth orb does not open Earth experience panel.
+- Inactive orbs are dimmed; active navigation/location state shows its effect.
+- Only the red Location orb toggles the app-owned Location state.
+- Choosing Offline does not switch Location OFF.
+- Moon/Sun open the existing astronomy preview; Stacks shows a panel with not-yet-connected layers.
+
+IMPORTANT
+The HD/Offline Earth modes are still preferences/placeholders, not fully implemented globe data modes. Stacks layers are not implemented. No device testing or deployment has been performed by the assistant.
+
+UPLOAD
+1. In the Live-Earth repository on main, replace root sw.js.
+2. Upload orb-controls-v4.js to the root (do not rename it).
+3. Commit both together.
+4. Reopen the published site. If the installed PWA still shows old behavior, close the PWA fully, open the site in Safari, refresh, then reopen the PWA. If it remains stale, inspect the service worker status before further changes.
+5. To roll back, restore the prior sw.js and remove orb-controls-v4.js.
+
+COMMIT TITLE
+Fix stale orb controls and preserve homepage default
+
+This does not alter index.html, globe rendering, camera, Earth size, Moon size, or orbit.
