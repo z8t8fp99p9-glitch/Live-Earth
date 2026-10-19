@@ -1,14 +1,17 @@
-LIVE // EARTH — Faster One-Finger Rotation
+LIVE // EARTH — READY-TO-UPLOAD HOMEPAGE
 
-Upload ONLY index.html and sw.js to the root of the Live-Earth repository, replacing the existing files. Leave every other file untouched.
+This ZIP contains a complete replacement index.html, built from the existing orb-button homepage source.
 
-Changes:
-- Horizontal drag sensitivity increased from 0.005 to 0.009 (1.8x).
-- Vertical drag sensitivity increased from 0.003 to 0.0055.
-- Removed an unnecessary preventDefault call from pointer-move handling; touch-action:none still prevents page gestures.
-- Cache version bumped to v9 so the browser requests the updated app shell.
+Changes: glassmorphism highlights, neumorphic depth, colored rim lighting for all five orbs, gentle floating motion (respects reduced-motion), and removal of the bottom instruction. No deck is added.
 
-Commit title:
-Make one-finger globe rotation more responsive
+Preserved: Earth globe implementation, one-finger rotation, 75%-of-shortest-screen sizing, starfield, five buttons, selection feedback and saved selected-button choice. Do not replace sw.js or other files.
 
-This has been source-checked, but not verified on the user's physical iPhone. After deployment, test a short swipe and a slow drag.
+Upload from iPhone:
+1. Download and unzip this package in Files.
+2. Open GitHub repository z8t8fp99p9-glitch/Live-Earth, branch main.
+3. Open root index.html and tap Edit (pencil).
+4. Replace all file contents with the included index.html.
+5. Commit title: Apply orb glassmorphism and remove bottom hint
+6. Wait for Pages deployment, then reopen the installed app online.
+
+This package is prepared locally and not uploaded/deployed by ChatGPT. It has not been physically tested on an iPhone. Replace only index.html.
