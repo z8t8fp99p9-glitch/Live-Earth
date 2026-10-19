@@ -1,5 +1,5 @@
 /* LIVE // EARTH — Moon orbit integration cache */
-const CACHE_NAME="live-earth-shell-v17-moon-orbit";
+const CACHE_NAME="live-earth-shell-v18-cinematic-moon";
 const APP_SHELL=["./","./index.html","./manifest.json","./icon.svg","./data-store.js","./astronomy.js","./moon-orbit.js","./dataset-manifest.json","./earth.webp","./moon.webp","./sun.webp","./location.webp","./stacks.webp"];
 self.addEventListener("install",event=>event.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(APP_SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith("live-earth-shell-")&&k!==CACHE_NAME).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

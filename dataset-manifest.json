@@ -1,7 +1,7 @@
 {
   "manifestVersion": 3,
   "app": "LIVE // EARTH",
-  "status": "Moon orbit layer integrated as an additive Three.js scene group",
+  "status": "Moon orbit cinematic display layer added; existing Earth preserved",
   "datasets": [
     {
       "id": "astronomy.moon-orbit-rolling-30day",
@@ -22,6 +22,18 @@
       "source": "on-device-low-precision-astronomy-calculation",
       "license": "no external provider; calculation formulas included",
       "updatePolicy": "calculate on demand when Sun/Moon orb is tapped"
+    },
+    {
+      "id": "astronomy.moon-orbit-homepage",
+      "version": "1.1.0",
+      "description": "Rolling 30-day calculated 3D lunar orbital path with hourly-ish samples and dotted visual orbit. Display deliberately enlarges the Moon and reduces displayed orbital distance for landscape homepage readability.",
+      "storage": "generated locally at page load; not persisted as a separate dataset",
+      "retentionDays": 30,
+      "source": "low-precision Keplerian lunar orbital approximation",
+      "license": "local calculation; no external ephemeris service",
+      "updatePolicy": "regenerate rolling 30-day path at page load; update Moon position every 30 seconds while visible",
+      "visualScale": "Earth radius 1; displayed Moon radius 0.38 Earth radii; displayed mean centre distance about 25.3 Earth radii; underlying orbital calculation uses mean distance about 60.3 Earth radii",
+      "accuracyNote": "Cinematic display scaling is intentional. Position is a low-precision approximation, not JPL-grade ephemeris."
     }
   ]
 }

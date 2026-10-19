@@ -1,8 +1,9 @@
 /* LIVE // EARTH — additive Moon orbit layer.
- * Earth radius = 1 scene unit; Moon radius = 0.2727; mean centre distance = 60.3.
- * 30-day rolling path uses 721 samples (about one hour apart). Keplerian low-precision
- * orbital elements provide a visually coherent approximation, not JPL-grade ephemerides.
- * This module never edits the Earth mesh or Earth material.
+ * LIVE // EARTH cinematic display mode. Earth mesh/material are never edited.
+ * Orbital angles and eccentricity come from a lightweight Keplerian approximation;
+ * display distance is intentionally reduced and Moon display radius enlarged for readability.
+ * Earth radius = 1; display Moon radius = 0.38; display mean centre distance ~= 25.3 Earth radii.
+ * Underlying calculated mean distance remains about 60.3 Earth radii. 721 rolling samples ~= hourly.
  */
 export function moonPositionAt(T, date = new Date()) {
   const jd = date.getTime() / 86400000 + 2440587.5;
@@ -50,23 +51,23 @@ function makeProceduralMoonTexture(T) {
   const texture = new T.CanvasTexture(canvas); texture.colorSpace = T.SRGBColorSpace; texture.anisotropy = 4; return texture;
 }
 export function createMoonOrbit(T, earthGroup, options = {}) {
-  const { earthRadius = 1, samples = 721 } = options;
+  const { earthRadius = 1, samples = 721, displayDistanceFactor = 0.42, displayMoonRadius = 0.38 } = options;
   const system = new T.Group(); system.name = 'liveEarthMoonOrbitSystem';
   const start = Date.now() - 15 * 86400000, end = Date.now() + 15 * 86400000;
   const points = [];
   for (let n = 0; n < samples; n++) {
     const date = new Date(start + (end - start) * n / (samples - 1));
-    const p = moonPositionAt(T, date); points.push(new T.Vector3(p.x * earthRadius, p.z * earthRadius, -p.y * earthRadius));
+    const p = moonPositionAt(T, date); points.push(new T.Vector3(p.x * earthRadius * displayDistanceFactor, p.z * earthRadius * displayDistanceFactor, -p.y * earthRadius * displayDistanceFactor));
   }
   const orbitGeometry = new T.BufferGeometry().setFromPoints(points);
   const orbit = new T.Line(orbitGeometry, new T.LineDashedMaterial({ color: 0x9ccfff, dashSize: .85, gapSize: .7, transparent: true, opacity: .62, depthWrite: false }));
   orbit.computeLineDistances(); orbit.name = 'moonOrbit30DayDottedPath'; system.add(orbit);
-  const moonGeometry = new T.SphereGeometry(earthRadius * .2727, 48, 32);
+  const moonGeometry = new T.SphereGeometry(earthRadius * displayMoonRadius, 56, 40);
   const texture = makeProceduralMoonTexture(T);
   const material = new T.MeshStandardMaterial({ map: texture, color: 0xffffff, roughness: 1, metalness: 0 });
   const moon = new T.Mesh(moonGeometry, material); moon.name = 'liveMoonSphere'; system.add(moon);
   const update = (date = new Date()) => {
-    const p = moonPositionAt(T, date); moon.position.set(p.x * earthRadius, p.z * earthRadius, -p.y * earthRadius);
+    const p = moonPositionAt(T, date); moon.position.set(p.x * earthRadius * displayDistanceFactor, p.z * earthRadius * displayDistanceFactor, -p.y * earthRadius * displayDistanceFactor);
     return p;
   };
   update(); earthGroup.add(system);
