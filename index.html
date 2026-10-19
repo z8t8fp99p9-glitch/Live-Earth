@@ -1,7 +1,159 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"><meta name="theme-color" content="#02050b"><title>LIVE // EARTH</title><link rel="manifest" href="./manifest.json"><link rel="icon" href="./icon.svg" type="image/svg+xml"><style>:root{color-scheme:dark;background:#02050b;color:#eaf5ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#02050b;overscroll-behavior:none;touch-action:none}body{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}#scene{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}.brand{position:absolute;z-index:2;top:calc(env(safe-area-inset-top) + 17px);left:19px;pointer-events:none;font-size:clamp(13px,2.8vw,17px);font-weight:800;letter-spacing:.19em}.brand span{color:#65d9ff}.hint{position:absolute;z-index:2;left:50%;bottom:calc(env(safe-area-inset-bottom) + 23px);transform:translateX(-50%);pointer-events:none;color:#b6c7d9;font-size:10px;letter-spacing:.19em;text-transform:uppercase;white-space:nowrap;opacity:.78}.status{position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);max-width:84vw;padding:13px 16px;border:1px solid #24384d;border-radius:12px;background:#08111ee8;color:#c7d9e9;text-align:center;font-size:13px;line-height:1.5}.status[hidden]{display:none}</style></head><body><canvas id="scene" aria-label="Interactive 3D Earth globe. Drag with one finger to rotate; globe diameter is 75% of the shortest screen dimension."></canvas><div class="brand">LIVE <span>//</span> EARTH</div><div id="status" class="status">Preparing Earth…</div><div class="hint">Drag with one finger to rotate</div><script type="module">
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#02050b">
+<title>LIVE // EARTH</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<style>
+:root{color-scheme:dark;background:#02050b;color:#eaf5ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--glass:rgba(9,18,31,.56);--line:rgba(190,225,255,.23)}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#02050b;overscroll-behavior:none;touch-action:none}
+body{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+#scene{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.brand{position:absolute;z-index:2;top:calc(env(safe-area-inset-top) + 17px);left:19px;pointer-events:none;font-size:clamp(13px,2.8vw,17px);font-weight:800;letter-spacing:.19em}
+.brand span{color:#65d9ff}
+.hint{position:absolute;z-index:2;left:50%;bottom:calc(env(safe-area-inset-bottom) + 18px);transform:translateX(-50%);pointer-events:none;color:#b6c7d9;font-size:9px;letter-spacing:.15em;text-transform:uppercase;white-space:nowrap;opacity:.72}
+.status{position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);max-width:84vw;padding:13px 16px;border:1px solid #24384d;border-radius:12px;background:#08111ee8;color:#c7d9e9;text-align:center;font-size:13px;line-height:1.5}
+.status[hidden]{display:none}
+#orbDock{position:absolute;z-index:8;left:50%;bottom:calc(env(safe-area-inset-bottom) + 43px);transform:translateX(-50%);width:min(94vw,510px);padding:9px 10px 8px;border:1px solid var(--line);border-radius:24px;background:var(--deck-bg,linear-gradient(135deg,rgba(180,220,245,.16),rgba(20,37,57,.42)));background-size:cover;background-position:center;box-shadow:0 12px 36px #0008,inset 0 1px 0 #ffffff24;backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px)}
+#orbDock:before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(115deg,rgba(255,255,255,.13),transparent 36%,rgba(3,10,19,.2));pointer-events:none}
+#orbRow{position:relative;display:flex;justify-content:space-around;align-items:center;gap:3px}
+.orbButton{width:clamp(48px,14vw,67px);height:clamp(48px,14vw,67px);padding:0;border:0;border-radius:50%;background:transparent;display:grid;place-items:center;touch-action:manipulation;cursor:pointer;filter:drop-shadow(0 5px 8px #0009);transition:transform .18s ease}
+.orbButton:active{transform:scale(.93)}
+.orbButton img{display:block;width:100%;height:100%;object-fit:contain}
+.orbButton[aria-pressed="true"]{outline:1px solid #c9f2ff99;outline-offset:2px;filter:drop-shadow(0 0 9px #79dfff88)}
+.orbCaption{position:relative;text-align:center;color:#e8f5ffb8;font-size:8px;letter-spacing:.09em;text-transform:uppercase;margin-top:3px}
+#personalPanel{position:absolute;z-index:20;inset:0;display:none;align-items:flex-end;justify-content:center;background:#02050b80;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);touch-action:pan-y}
+#personalPanel.open{display:flex}
+.panelCard{width:min(100%,620px);max-height:82dvh;overflow:auto;padding:19px 17px calc(20px + env(safe-area-inset-bottom));border:1px solid #ffffff26;border-bottom:0;border-radius:27px 27px 0 0;background:linear-gradient(155deg,#17283aF2,#050a12F7 70%);box-shadow:0 -18px 70px #0009;touch-action:pan-y}
+.panelTop{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:5px}
+.panelEyebrow{font-size:9px;letter-spacing:.22em;color:#83dfff;text-transform:uppercase}
+.panelTitle{font-size:22px;font-weight:750;letter-spacing:-.03em;margin:4px 0 8px}
+.panelCopy{font-size:12px;color:#b6c7d9;line-height:1.5;margin:0 0 16px}
+.closeBtn,.studioTab,.assetCard,.saveBtn{font:inherit;color:inherit;touch-action:manipulation;cursor:pointer}
+.closeBtn{width:36px;height:36px;border:1px solid #ffffff22;border-radius:50%;background:#ffffff0b;font-size:20px}
+.studioTabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}
+.studioTab{border:1px solid #ffffff24;border-radius:14px;padding:12px 9px;background:#ffffff08;color:#c5d6e6;font-size:12px;font-weight:700}
+.studioTab[aria-selected="true"]{border-color:#75dfff88;background:linear-gradient(130deg,#2c779a55,#ffffff0d);color:#fff;box-shadow:inset 0 1px #ffffff1c}
+.assetGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.assetCard{position:relative;min-width:0;overflow:hidden;text-align:left;border:1px solid #ffffff20;border-radius:17px;padding:10px;background:linear-gradient(140deg,#ffffff0d,#ffffff04);color:#eef8ff}
+.assetCard[aria-pressed="true"]{border-color:#7ce1ffb0;box-shadow:0 0 0 1px #7ce1ff33,inset 0 0 22px #56bfe91a}
+.assetPreview{height:94px;border-radius:11px;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 20%,#ffffff13,transparent 65%),#020711;margin-bottom:9px}
+.assetPreview img{width:100%;height:100%;object-fit:contain}
+.deckPreview{width:100%;height:100%;background-size:cover;background-position:center}
+.assetName{font-size:12px;font-weight:700;display:block}
+.assetDesc{font-size:10px;color:#9db2c7;display:block;margin-top:4px;line-height:1.4}
+.selectionMark{position:absolute;right:8px;top:8px;width:19px;height:19px;border-radius:50%;background:#73dbff;color:#04111a;display:none;place-items:center;font-size:12px;font-weight:900}
+.assetCard[aria-pressed="true"] .selectionMark{display:grid}
+.panelFoot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:15px}
+.saveState{font-size:10px;color:#9eb5c9;line-height:1.4}
+.saveBtn{border:1px solid #a6eaff7a;border-radius:13px;padding:11px 16px;background:linear-gradient(135deg,#8ee4ff,#3d9dc4);color:#03111a;font-size:12px;font-weight:800;white-space:nowrap}
+@media(min-width:600px){#orbDock{bottom:30px}.panelCard{margin-bottom:18px;border-bottom:1px solid #ffffff26;border-radius:27px;max-height:78dvh}.assetPreview{height:115px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="Interactive 3D Earth globe. Drag with one finger to rotate; globe diameter is 75% of the shortest screen dimension."></canvas>
+<div class="brand">LIVE <span>//</span> EARTH</div>
+<div id="status" class="status">Preparing Earth…</div>
+<div id="orbDock" aria-label="Live Earth orb navigation">
+  <div id="orbRow">
+    <div><button class="orbButton" data-orb="earth" aria-label="Earth" aria-pressed="false"><img src="./earth.webp" alt=""></button><div class="orbCaption">Earth</div></div>
+    <div><button class="orbButton" data-orb="moon" aria-label="Moon" aria-pressed="false"><img src="./moon.webp" alt=""></button><div class="orbCaption">Moon</div></div>
+    <div><button class="orbButton" data-orb="sun" aria-label="Sun" aria-pressed="false"><img src="./sun.webp" alt=""></button><div class="orbCaption">Sun</div></div>
+    <div><button class="orbButton" data-orb="location" aria-label="Live Location" aria-pressed="false"><img src="./location.webp" alt=""></button><div class="orbCaption">Location</div></div>
+    <div><button class="orbButton" data-orb="stacks" aria-label="Stacks — Personalisation" aria-pressed="false"><img src="./stacks.webp" alt=""></button><div class="orbCaption">Stacks</div></div>
+  </div>
+</div>
+<div class="hint">Drag globe to rotate · Tap Stacks to personalise</div>
+<div id="personalPanel" role="dialog" aria-modal="true" aria-labelledby="panelTitle">
+  <section class="panelCard">
+    <div class="panelTop"><div><div class="panelEyebrow">LIVE // EARTH · PERSONALISATION</div><h1 class="panelTitle" id="panelTitle">Make it yours</h1></div><button id="closePanel" class="closeBtn" aria-label="Close personalisation">×</button></div>
+    <p class="panelCopy">Your choices are saved on this device. Orb and deck artwork stays separate, so your globe remains the hero.</p>
+    <div class="studioTabs" role="tablist" aria-label="Personalisation studios">
+      <button class="studioTab" id="orbTab" role="tab" aria-selected="true">◉ Orb Studio</button>
+      <button class="studioTab" id="deckTab" role="tab" aria-selected="false">◇ Deck Studio</button>
+    </div>
+    <div id="assetGrid" class="assetGrid"></div>
+    <div class="panelFoot"><div id="saveState" class="saveState" aria-live="polite">Selections save automatically on this device.</div><button id="saveChoices" class="saveBtn">Save choices</button></div>
+  </section>
+</div>
+<script type="module">
 import('./data-store.js').then(m=>m.initializeLocalDatabase()).then(result=>console.info('[LIVE // EARTH] Local database ready; save/retrieve self-test passed.',result)).catch(error=>console.warn('[LIVE // EARTH] Local database unavailable; globe remains independent.',error));
 const canvas=document.querySelector('#scene'),status=document.querySelector('#status');const showError=m=>{status.hidden=false;status.textContent=m};const loadTexture=(T,url)=>new Promise((resolve,reject)=>{const l=new T.TextureLoader();l.setCrossOrigin('anonymous');l.load(url,resolve,undefined,()=>reject(new Error('Image request failed: '+url)))});
 try{let T;try{T=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js')}catch(e){T=await import('https://unpkg.com/three@0.180.0/build/three.module.js')}const renderer=new T.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'low-power'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setSize(innerWidth,innerHeight,false);renderer.outputColorSpace=T.SRGBColorSpace;renderer.setClearColor(0x02050b,1);const scene=new T.Scene();scene.background=new T.Color(0x02050b);const camera=new T.PerspectiveCamera(34,innerWidth/Math.max(1,innerHeight),.1,100);function fitCamera(){const w=Math.max(1,document.documentElement.clientWidth||innerWidth),h=Math.max(1,document.documentElement.clientHeight||innerHeight);camera.aspect=w/h;camera.fov=34;camera.updateProjectionMatrix();const d=.75*Math.min(w,h);camera.position.set(0,0,h/(d*Math.tan(T.MathUtils.degToRad(camera.fov/2))));camera.lookAt(0,0,0)}fitCamera();
-// Silent Cosmos: adjust existing lights only; no additional animated objects or heavy refraction.
 scene.add(new T.AmbientLight(0x8aa7c8,.24));const sun=new T.DirectionalLight(0xffffff,2.15);sun.position.set(-3,2,4);scene.add(sun);const fill=new T.DirectionalLight(0x245b9b,.055);fill.position.set(4,-2,-3);scene.add(fill);const group=new T.Group();scene.add(group);let texture;try{texture=await loadTexture(T,'https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57730/land_ocean_ice_2048.png')}catch(e){console.warn('NASA texture failed; trying fallback',e);texture=await loadTexture(T,'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg')}texture.colorSpace=T.SRGBColorSpace;texture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),4);const earth=new T.Mesh(new T.SphereGeometry(1,96,64),new T.MeshStandardMaterial({map:texture,roughness:1,metalness:0}));earth.rotation.y=-.35;group.add(earth);group.add(new T.Mesh(new T.SphereGeometry(1.025,64,48),new T.MeshBasicMaterial({color:0x329dff,transparent:true,opacity:.13,side:T.BackSide,blending:T.AdditiveBlending,depthWrite:false})));const pos=[];let seed=721;const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};for(let i=0;i<500;i++){const r=18+rand()*25,a=rand()*Math.PI*2,z=rand()*2-1,s=Math.sqrt(1-z*z);pos.push(r*s*Math.cos(a),r*z,r*s*Math.sin(a))}const sg=new T.BufferGeometry();sg.setAttribute('position',new T.Float32BufferAttribute(pos,3));scene.add(new T.Points(sg,new T.PointsMaterial({color:0xa9c9ec,size:.045,transparent:true,opacity:.72})));status.hidden=true;let frame=0;const draw=()=>{if(frame)return;frame=requestAnimationFrame(()=>{frame=0;renderer.render(scene,camera)})};draw();let active=null,x=0,y=0,drag=false;canvas.addEventListener('pointerdown',e=>{if(active!==null||e.pointerType==='touch'&&!e.isPrimary)return;active=e.pointerId;x=e.clientX;y=e.clientY;drag=true;canvas.setPointerCapture?.(e.pointerId);e.preventDefault()},{passive:false});canvas.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==active)return;group.rotation.y+=(e.clientX-x)*.009;group.rotation.x=Math.max(-1.15,Math.min(1.15,group.rotation.x+(e.clientY-y)*.0055));x=e.clientX;y=e.clientY;draw()},{passive:false});const end=e=>{if(e.pointerId===active){drag=false;active=null}};canvas.addEventListener('pointerup',end);canvas.addEventListener('pointercancel',end);canvas.addEventListener('lostpointercapture',end);addEventListener('resize',()=>{renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setSize(innerWidth,innerHeight,false);fitCamera();draw()},{passive:true});if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>{fitCamera();renderer.setSize(innerWidth,innerHeight,false);draw()},{passive:true});document.addEventListener('visibilitychange',()=>{if(document.hidden){if(frame)cancelAnimationFrame(frame);frame=0}else draw()});if('serviceWorker'in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}catch(e){console.error('LIVE // EARTH failure',e);showError('Earth failed to load: '+(e?.message||String(e)))}
-</script></body></html>
+</script>
+<script>
+(()=> {
+ const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+ const panel=$('#personalPanel'),grid=$('#assetGrid'),saveState=$('#saveState'),dock=$('#orbDock');
+ const orbs=[
+  {id:'earth',name:'Earth Orb',desc:'Electric-blue living Earth',src:'./earth.webp'},
+  {id:'moon',name:'Moon Orb',desc:'Icy silver lunar glass',src:'./moon.webp'},
+  {id:'sun',name:'Sun Orb',desc:'Solar amber glow',src:'./sun.webp'},
+  {id:'location',name:'Live Location Orb',desc:'Location and map access',src:'./location.webp'},
+  {id:'stacks',name:'Stacks Orb',desc:'Your personalisation hub',src:'./stacks.webp'}
+ ];
+ const decks=[
+  {id:'deck_frost_glass.png',name:'Frost Glass',desc:'Colorless crystalline frost'},
+  {id:'deck_frost_fire.png',name:'Frost–Fire Glass',desc:'Ice, light and flowing energy'},
+  {id:'deck_cosmic.png',name:'Cosmic',desc:'Deep-space glass deck'},
+  {id:'deck_nebula_cloud.png',name:'Nebula Cloud',desc:'Soft cosmic cloud texture'},
+  {id:'deck_earth_nature.png',name:'Earth Nature',desc:'Warm natural terrain'},
+  {id:'frost-bite-ice-deck.webp',name:'Frost Bite Ice',desc:'Glacial blue and crystal ice'},
+  {id:'fire-sand-nation-deck.webp',name:'Fire Sand Nation',desc:'Warm sand and elemental fire'}
+ ];
+ const defaults={orb:'earth',deck:'deck_frost_glass.png'};
+ let choices={...defaults};try{choices={...choices,...JSON.parse(localStorage.getItem('liveEarthPersonalisation')||'{}')}}catch(e){}
+ let studio='orb';
+ function setDeck(){const d=decks.find(x=>x.id===choices.deck)||decks[0];dock.style.setProperty('--deck-bg',`linear-gradient(135deg,rgba(180,220,245,.12),rgba(5,12,22,.42)),url("./${d.id}")`)}
+ function markOrbs(){ $$('.orbButton').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.orb===choices.orb))); }
+ function render(){
+  $('#orbTab').setAttribute('aria-selected',String(studio==='orb'));$('#deckTab').setAttribute('aria-selected',String(studio==='deck'));
+  const items=studio==='orb'?orbs:decks;
+  grid.innerHTML=items.map(item=>{
+   const selected=studio==='orb'?choices.orb===item.id:choices.deck===item.id;
+   const preview=studio==='orb'?`<img loading="lazy" src="${item.src}" alt="">`:`<div class="deckPreview" style="background-image:url('./${item.id}')"></div>`;
+   return `<button class="assetCard" data-choice="${item.id}" aria-pressed="${selected}"><span class="selectionMark">✓</span><div class="assetPreview">${preview}</div><span class="assetName">${item.name}</span><span class="assetDesc">${item.desc}</span></button>`;
+  }).join('');
+  grid.querySelectorAll('.assetCard').forEach(btn=>btn.addEventListener('click',()=>{
+   if(studio==='orb'){choices.orb=btn.dataset.choice;markOrbs()}else{choices.deck=btn.dataset.choice;setDeck()}
+   try{localStorage.setItem('liveEarthPersonalisation',JSON.stringify(choices));saveState.textContent='Saved on this device · '+(studio==='orb'?'Orb':'Deck')+' updated.'}catch(e){saveState.textContent='This browser could not save locally. Try allowing website storage.'}
+   render();cacheAssets([studio==='orb'?orbs.find(x=>x.id===choices.orb).src:'./'+choices.deck]);
+  }));
+ }
+ async function cacheAssets(urls){
+  try{if('caches'in window){const cache=await caches.open('live-earth-personal-assets-v1');await Promise.all(urls.map(u=>cache.add(new Request(u,{cache:'reload'})).catch(()=>{})));}}
+  catch(e){console.info('Local asset cache is unavailable; normal browser caching remains enabled.')}
+ }
+ function openPanel(){panel.classList.add('open');studio='orb';render();$('#orbTab').focus();cacheAssets([...orbs.map(o=>o.src),...decks.map(d=>'./'+d.id)])}
+ function closePanel(){panel.classList.remove('open');$('#stacksButton')?.focus()}
+ $$('.orbButton').forEach(btn=>btn.addEventListener('click',()=>{
+  const id=btn.dataset.orb;
+  if(id==='stacks'){markOrbs();openPanel();return}
+  choices.orb=id;markOrbs();
+  try{localStorage.setItem('liveEarthPersonalisation',JSON.stringify(choices))}catch(e){}
+  cacheAssets(['./'+id+'.webp']);
+  // Other orbs remain navigation entry points; only Stacks opens personalisation.
+  if(id==='location'){saveState.textContent='Live Location is a navigation entry point. Location permission will only be requested when that feature is implemented and you explicitly start it.';}
+ }));
+ $('#closePanel').addEventListener('click',closePanel);
+ panel.addEventListener('click',e=>{if(e.target===panel)closePanel()});
+ $('#orbTab').addEventListener('click',()=>{studio='orb';render()});
+ $('#deckTab').addEventListener('click',()=>{studio='deck';render()});
+ $('#saveChoices').addEventListener('click',()=>{
+  try{localStorage.setItem('liveEarthPersonalisation',JSON.stringify(choices));setDeck();markOrbs();saveState.textContent='Saved on this device. Your choices will be restored on your next visit.';cacheAssets([...orbs.map(o=>o.src),...decks.map(d=>'./'+d.id)]);}
+  catch(e){saveState.textContent='Could not save. Check available storage and browser settings.'}
+ });
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')closePanel()});
+ setDeck();markOrbs();
+ // Warm the five orb assets for later use without delaying globe startup.
+ addEventListener('load',()=>cacheAssets(orbs.map(o=>o.src)),{once:true});
+})();
+</script>
+</body>
+</html>
