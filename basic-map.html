@@ -12,18 +12,23 @@
 #map{position:absolute;inset:0}
 .topbar{position:absolute;z-index:5;top:calc(env(safe-area-inset-top) + 12px);left:12px;right:12px;display:flex;align-items:center;gap:10px;justify-content:space-between;pointer-events:none}
 .brand,.home{pointer-events:auto;border:1px solid #b6e6ff40;border-radius:16px;background:#071321dd;color:#edf8ff;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 6px 20px #0007}
-.brand{padding:10px 13px;font-weight:800;font-size:12px;letter-spacing:.13em}.brand span{color:#65d9ff}
+.brand{padding:10px 13px;font-weight:800;font-size:12px;letter-spacing:.13em}
+.brand span{color:#65d9ff}
 .home{padding:11px 14px;font-size:12px;font-weight:650;text-decoration:none}
 #message{position:absolute;z-index:6;left:50%;top:50%;transform:translate(-50%,-50%);width:min(86vw,360px);padding:16px;border:1px solid #b6e6ff50;border-radius:18px;background:#071321ed;color:#dbeaf7;text-align:center;font-size:13px;line-height:1.5;box-shadow:0 12px 36px #000a}
-#message[hidden]{display:none}.maplibregl-ctrl-group{border-radius:12px!important;overflow:hidden;background:#071321e8!important}
-.maplibregl-ctrl-group button{background-color:transparent!important}.maplibregl-ctrl button .maplibregl-ctrl-icon{filter:invert(1)}
-.maplibregl-ctrl-attrib{background:#071321d9!important;color:#d8e7f4!important}.maplibregl-ctrl-attrib a{color:#7bdcff!important}
+#message[hidden]{display:none}
+.maplibregl-ctrl-group{border-radius:12px!important;overflow:hidden;background:#071321e8!important}
+.maplibregl-ctrl-group button{background-color:transparent!important}
+.maplibregl-ctrl button .maplibregl-ctrl-icon{filter:invert(1)}
+.maplibregl-ctrl-attrib{background:#071321d9!important;color:#d8e7f4!important}
+.maplibregl-ctrl-attrib a{color:#7bdcff!important}
 </style>
 </head>
 <body>
 <div id="map" aria-label="Basic Live interactive map"></div>
-<div class="topbar"><div class="brand">LIVE <span>//</span> EARTH · BASIC</div><a class="home" href="./" aria-label="Return to map chooser">← Modes</a></div>
-<div id="message">Opening Basic Live…</div>
+<div class="topbar"><div class="brand">LIVE <span>//</span> EARTH · BASIC</div><a class="home" href="./" aria-label="Return to the celestial homepage">← Home</a></div>
+<div id="message">Preparing Basic Live…</div>
 <script src="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js"></script>
 <script src="./basic-map.js"></script>
-</body></html>
+</body>
+</html>
