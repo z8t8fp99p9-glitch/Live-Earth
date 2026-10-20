@@ -1,11 +1,11 @@
-/* LIVE // EARTH — orientation recovery + Location OFF cache release.
-   Preserves the existing v4 orb-controller injection and safe app-ready cache cleanup. */
+/* LIVE // EARTH — v26 default-button diagnostic.
+   Preserves v4 controller and safe app-ready cache cleanup. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v25-orientation-location-safe";
+const CACHE_NAME = "live-earth-shell-v26-default-buttons-test";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
-  "./", "./index.html", "./orb-controls-v4.js", "./location.html",
+  "./", "./index.html", "./orb-controls-v4.js", "./orb-default-buttons.css", "./location.html",
   "./manifest.json", "./icon.svg", "./data-store.js", "./astronomy.js",
   "./moon-orbit.js", "./dataset-manifest.json", "./earth.webp",
   "./moon.webp", "./sun.webp", "./location.webp", "./stacks.webp"
@@ -37,6 +37,7 @@ async function networkFirst(req) {
     if (isHome) {
       let html = await response.clone().text();
       if (!html.includes("orb-controls-v4.js")) html = html.replace(/<\/body\s*>/i, '<script src="./orb-controls-v4.js" defer></script>\n</body>');
+      if (!html.includes("orb-default-buttons.css")) html = html.replace(/<\/head\s*>/i, '<link rel="stylesheet" href="./orb-default-buttons.css">\n</head>');
       const headers = new Headers(response.headers); headers.delete("content-length");
       const transformed = new Response(html, { status: response.status, statusText: response.statusText, headers });
       await cache.put(req, transformed.clone()); return transformed;
