@@ -165,23 +165,27 @@
     ]);
   }
   function openBasicLive(){
+    // Map access is independent of location. OFF means no GPS request; open a neutral world view.
     if(!locationEnabled){
-      setStatus('Turn on the red Location orb first. Location is OFF, so no GPS request was made.');
+      window.location.href='./basic-map.html';
       return;
     }
     if(!navigator.geolocation?.getCurrentPosition){
-      setStatus('This browser does not provide location access. Basic Live was not opened.');
+      window.location.href='./basic-map.html?notice='+encodeURIComponent('Location access is unavailable in this browser. Showing the map without your location.');
       return;
     }
-    setStatus('Requesting location permission…',12000);
+    setStatus('Requesting location permission…');
     navigator.geolocation.getCurrentPosition(pos=>{
       const lat=Number(pos.coords.latitude),lon=Number(pos.coords.longitude);
-      if(!Number.isFinite(lat)||!Number.isFinite(lon)){setStatus('Location could not be read. Basic Live was not opened.');return}
+      if(!Number.isFinite(lat)||!Number.isFinite(lon)){
+        window.location.href='./basic-map.html?notice='+encodeURIComponent('Your location could not be read. Showing the map without your location.');
+        return;
+      }
       const query=new URLSearchParams({lat:String(lat),lon:String(lon)});
       window.location.href='./basic-map.html?'+query.toString();
     },err=>{
-      const msg=err?.code===1?'Location permission was denied. Allow it in iPhone Settings to use Basic Live.':err?.code===2?'Your location is unavailable. Check Location Services and try again.':'Location lookup timed out. Try again.';
-      setStatus(msg,6000);
+      const msg=err?.code===1?'Location permission was denied. Showing the map without your location.':err?.code===2?'Your location is unavailable. Showing the map without your location.':'Location lookup timed out. Showing the map without your location.';
+      window.location.href='./basic-map.html?notice='+encodeURIComponent(msg);
     },{enableHighAccuracy:false,timeout:12000,maximumAge:300000});
   }
   function stacksPanel(){
