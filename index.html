@@ -21,48 +21,67 @@ body{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset
 .orbButton{appearance:none;-webkit-appearance:none;min-width:0;padding:0 0 2px;border:0;background:transparent;color:#dbeaf7;display:flex;flex-direction:column;align-items:center;gap:6px;font:600 clamp(8px,2.4vw,11px)/1.1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.14em;text-transform:uppercase;touch-action:manipulation;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .orbShell{position:relative;display:block;width:clamp(49px,14.2vw,76px);aspect-ratio:1;border-radius:50%;isolation:isolate;transform:translateZ(0);transition:transform .22s ease,filter .22s ease;filter:drop-shadow(0 5px 7px #000b) drop-shadow(0 0 3px #7dcfff30)}
 .orbImage{display:block;width:100%;height:100%;object-fit:contain;border-radius:50%;user-select:none;-webkit-user-drag:none}
-/* Glassmorphism + neumorphism material pass */
-.orbShell{border:1px solid rgba(199,235,255,.34);background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(94,149,190,.045) 42%,rgba(0,5,15,.42));box-shadow:inset 2px 2px 5px rgba(255,255,255,.34),inset -3px -4px 8px rgba(0,0,0,.64),3px 4px 9px rgba(0,0,0,.65),-2px -2px 7px rgba(170,225,255,.12);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
-.orbShell:before{content:"";position:absolute;inset:2%;z-index:2;border-radius:50%;pointer-events:none;background:radial-gradient(ellipse at 28% 16%,rgba(255,255,255,.48),transparent 27%),linear-gradient(138deg,rgba(255,255,255,.22),rgba(255,255,255,.035) 27%,transparent 47%,rgba(85,205,255,.06) 76%,rgba(255,255,255,.2));box-shadow:inset 1px 1px 3px rgba(255,255,255,.68),inset -2px -3px 6px rgba(0,0,0,.55)}
-.orbShell:after{content:"";position:absolute;z-index:3;left:18%;top:8%;width:35%;height:13%;border-radius:50%;transform:rotate(-34deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.88),rgba(255,255,255,.12),transparent);filter:blur(1.3px);opacity:.88;pointer-events:none}
-.orbButton:nth-child(1) .orbShell{box-shadow:inset 2px 2px 5px #ffffff55,inset -3px -4px 8px #00152a99,3px 4px 9px #000a,-2px -2px 9px #27aaff44,0 0 15px #078dff22}
-.orbButton:nth-child(2) .orbShell{box-shadow:inset 2px 2px 5px #ffffff66,inset -3px -4px 8px #020817aa,3px 4px 9px #000a,-2px -2px 9px #c8e6ff55,0 0 14px #6bb9ff22}
-.orbButton:nth-child(3) .orbShell{box-shadow:inset 2px 2px 5px #fff8c466,inset -3px -4px 8px #260c00aa,3px 4px 9px #000a,-2px -2px 9px #ffb34766,0 0 16px #ff7a1728}
-.orbButton:nth-child(4) .orbShell{box-shadow:inset 2px 2px 5px #ffdbe866,inset -3px -4px 8px #22000faa,3px 4px 9px #000a,-2px -2px 9px #ff5c9866,0 0 15px #ff1c6528}
-.orbButton:nth-child(5) .orbShell{box-shadow:inset 2px 2px 5px #d6ffff66,inset -3px -4px 8px #001a22aa,3px 4px 9px #000a,-2px -2px 9px #55f5ff66,0 0 15px #00d9ff28}
-.orbButton[aria-pressed="true"] .orbShell{border-color:rgba(231,250,255,.82);box-shadow:inset 2px 2px 6px rgba(255,255,255,.72),inset -3px -4px 8px rgba(0,0,0,.65),0 0 0 2px rgba(157,225,255,.14),0 0 18px rgba(95,202,255,.42),0 8px 14px rgba(0,0,0,.65)}
-@media(prefers-reduced-motion:no-preference){.orbShell{animation:orbFloat 5s ease-in-out infinite}.orbButton:nth-child(2) .orbShell{animation-delay:-1s}.orbButton:nth-child(3) .orbShell{animation-delay:-2s}.orbButton:nth-child(4) .orbShell{animation-delay:-3s}.orbButton:nth-child(5) .orbShell{animation-delay:-4s}}
-@keyframes orbFloat{0%,100%{translate:0 0}50%{translate:0 -2px}}
-.orbLabel{max-width:100%;white-space:nowrap;text-shadow:0 1px 7px #000,0 0 9px #6cbfff33;opacity:.82;transition:opacity .2s ease,color .2s ease}
-.orbButton[aria-pressed="true"] .orbShell{transform:translateY(-3px) scale(1.07);filter:drop-shadow(0 7px 10px #000d) drop-shadow(0 0 8px #74d8ffb0)}
-.orbButton[aria-pressed="true"] .orbLabel{color:#f4fbff;opacity:1}
-.orbButton:active .orbShell{transform:scale(.94)}
+/* Consolidated global orb material + state visuals. Geometry and navigation placement stay unchanged. */
+.orbShell{
+  overflow:visible;
+  border:1px solid rgba(220,245,255,.38);
+  background:linear-gradient(145deg,rgba(255,255,255,.14),rgba(94,149,190,.035) 42%,rgba(0,5,15,.42));
+  box-shadow:inset 1px 1px 3px rgba(255,255,255,.34),inset -2px -3px 6px rgba(0,0,0,.62),0 4px 8px rgba(0,0,0,.58),0 0 0 1px rgba(160,220,255,.06);
+  backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);
+  transition:filter .22s ease,box-shadow .22s ease,border-color .22s ease;
+}
+.orbImage{clip-path:circle(48.8% at 50% 50%)}
+.orbShell:before{
+  content:"";position:absolute;inset:1.5%;z-index:2;border-radius:50%;pointer-events:none;
+  background:radial-gradient(ellipse at 28% 13%,rgba(255,255,255,.56),transparent 23%),radial-gradient(ellipse at 72% 88%,var(--orb-tint-soft),transparent 38%),linear-gradient(138deg,rgba(255,255,255,.22),rgba(255,255,255,.035) 25%,transparent 44%,rgba(255,255,255,.02) 68%,rgba(255,255,255,.18));
+  box-shadow:inset 1px 1px 2px rgba(255,255,255,.68),inset -2px -3px 5px rgba(0,0,0,.50)
+}
+.orbShell:after{
+  content:"";position:absolute;z-index:3;left:17%;top:7%;width:37%;height:12%;border-radius:50%;transform:rotate(-34deg);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.92),rgba(255,255,255,.20),transparent);filter:blur(.8px);opacity:.82;pointer-events:none
+}
+.orbShine{
+  position:absolute;inset:1%;z-index:4;border-radius:50%;pointer-events:none;mix-blend-mode:screen;opacity:.18;
+  background:radial-gradient(ellipse at 26% 13%,rgba(255,255,255,.25),transparent 28%),conic-gradient(from 210deg,var(--orb-tint-soft),rgba(255,255,255,.02),var(--orb-tint),rgba(255,255,255,.025),var(--orb-tint-soft));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);transition:opacity .22s ease
+}
+.orbButton[data-view="earth"]{--orb-tint:rgba(30,190,160,.32);--orb-tint-soft:rgba(40,220,175,.10)}
+.orbButton[data-view="moon"]{--orb-tint:rgba(155,195,255,.34);--orb-tint-soft:rgba(190,220,255,.12)}
+.orbButton[data-view="sun"]{--orb-tint:rgba(255,155,35,.36);--orb-tint-soft:rgba(255,190,65,.12)}
+.orbButton[data-view="location"]{--orb-tint:rgba(255,40,75,.40);--orb-tint-soft:rgba(255,45,85,.13)}
+.orbButton[data-view="stacks"]{--orb-tint:rgba(30,220,235,.36);--orb-tint-soft:rgba(50,240,245,.12)}
+.orbButton .orbShell{filter:brightness(.88) saturate(.88) drop-shadow(0 4px 7px #000b) drop-shadow(0 0 4px var(--orb-tint));}
+.orbButton .orbShine{opacity:.20}
+.orbButton[aria-pressed="true"] .orbShell,
+.orbButton[data-view="earth"].le-earth-exploration-active .orbShell{
+  filter:brightness(1.08) saturate(1.10) drop-shadow(0 5px 8px #000b) drop-shadow(0 0 7px var(--orb-tint));
+  border-color:rgba(235,250,255,.86);
+  box-shadow:inset 1px 1px 3px rgba(255,255,255,.62),inset -2px -3px 5px rgba(0,0,0,.52),
+    0 0 0 1.5px var(--orb-tint),0 0 11px var(--orb-tint),0 5px 10px rgba(0,0,0,.58)
+}
+.orbButton[aria-pressed="true"] .orbShine,
+.orbButton[data-view="earth"].le-earth-exploration-active .orbShine{opacity:.42}
+.orbButton[data-view="location"][aria-pressed="true"] .orbShell{
+  border-color:rgba(255,170,180,.92);
+  box-shadow:inset 1px 1px 3px rgba(255,255,255,.70),inset -2px -3px 5px rgba(0,0,0,.52),
+    0 0 0 1.5px rgba(255,50,80,.50),0 0 12px rgba(255,35,75,.62),0 5px 10px rgba(0,0,0,.58)
+}
+.orbButton[aria-pressed="true"] .orbLabel,
+.orbButton[data-view="earth"].le-earth-exploration-active .orbLabel{color:#f4fbff;opacity:1}
+@media(prefers-reduced-motion:no-preference){
+  .orbShine{animation:glassSheen 8s ease-in-out infinite alternate}
+  .orbButton[data-view="moon"] .orbShine{animation-delay:-1.5s}
+  .orbButton[data-view="sun"] .orbShine{animation-delay:-3s}
+  .orbButton[data-view="location"] .orbShine{animation-delay:-4.5s}
+  .orbButton[data-view="stacks"] .orbShine{animation-delay:-6s}
+}
+@keyframes glassSheen{from{opacity:.16;filter:hue-rotate(-5deg)}to{opacity:.26;filter:hue-rotate(5deg)}}
+@media(prefers-reduced-motion:reduce){.orbShell,.orbShine{animation:none!important;transition:none!important}}
+.orbLabel{max-width:100%;white-space:nowrap;text-shadow:0 1px 7px #000,0 0 9px #6cbfff33;opacity:.82;transition:opacity .22s ease,color .22s ease}
+.orbButton:active .orbShell{filter:brightness(1.02) saturate(.96)}
 .orbButton:focus-visible{outline:2px solid #8de1ff;outline-offset:5px;border-radius:12px}
 @media(min-width:600px){#navButtons{bottom:38px;gap:10px}.orbShell{width:clamp(68px,8vw,88px)}.orbButton{font-size:11px}}
 @media(max-height:700px){#navButtons{bottom:calc(env(safe-area-inset-bottom) + 42px)}.orbShell{width:clamp(43px,11vw,63px)}}
-
-/* Premium material pass: liquid glass, precision rim, controlled glow, restrained iridescence. */
-.orbShell{isolation:isolate;overflow:visible;border:1px solid rgba(220,245,255,.56);box-shadow:inset 1px 1px 2px rgba(255,255,255,.42),inset -2px -3px 5px rgba(0,0,0,.62),0 4px 8px rgba(0,0,0,.58),0 0 0 1px rgba(160,220,255,.08);}
-.orbImage{clip-path:circle(48.8% at 50% 50%);}
-.orbShell:before{inset:1.5%;background:radial-gradient(ellipse at 28% 13%,rgba(255,255,255,.64),transparent 22%),radial-gradient(ellipse at 72% 88%,rgba(90,190,255,.10),transparent 38%),linear-gradient(138deg,rgba(255,255,255,.24),rgba(255,255,255,.035) 25%,transparent 44%,rgba(255,255,255,.02) 68%,rgba(255,255,255,.20));box-shadow:inset 1px 1px 2px rgba(255,255,255,.74),inset -2px -3px 5px rgba(0,0,0,.50);}
-.orbShell:after{left:17%;top:7%;width:37%;height:12%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.95),rgba(255,255,255,.24),transparent);filter:blur(.8px);opacity:.82;}
-.orbShine{position:absolute;inset:1%;z-index:4;border-radius:50%;pointer-events:none;mix-blend-mode:screen;opacity:.30;background:conic-gradient(from 210deg at 50% 50%,rgba(70,220,255,.20),rgba(255,255,255,.04) 16%,rgba(255,125,220,.15) 32%,rgba(255,255,255,.05) 48%,rgba(95,165,255,.18) 66%,rgba(255,255,255,.02) 82%,rgba(70,220,255,.20));box-shadow:inset 0 0 0 1px rgba(255,255,255,.22);}
-.orbButton:nth-child(1) .orbShine{background:radial-gradient(ellipse at 26% 13%,rgba(255,255,255,.26),transparent 28%),conic-gradient(from 210deg,rgba(30,190,255,.16),rgba(255,255,255,.02),rgba(45,120,255,.18),rgba(255,255,255,.03),rgba(30,190,255,.16));}
-.orbButton:nth-child(2) .orbShine{background:radial-gradient(ellipse at 26% 13%,rgba(255,255,255,.32),transparent 28%),conic-gradient(from 210deg,rgba(210,235,255,.20),rgba(255,255,255,.03),rgba(140,190,255,.17),rgba(255,255,255,.02),rgba(210,235,255,.20));}
-.orbButton:nth-child(3) .orbShine{background:radial-gradient(ellipse at 26% 13%,rgba(255,255,255,.30),transparent 28%),conic-gradient(from 210deg,rgba(255,190,65,.18),rgba(255,255,255,.02),rgba(255,80,15,.16),rgba(255,255,255,.02),rgba(255,190,65,.18));}
-.orbButton:nth-child(4) .orbShine{background:radial-gradient(ellipse at 26% 13%,rgba(255,255,255,.30),transparent 28%),conic-gradient(from 210deg,rgba(255,90,155,.20),rgba(255,255,255,.02),rgba(255,20,70,.18),rgba(255,255,255,.02),rgba(255,90,155,.20));}
-.orbButton:nth-child(5) .orbShine{background:radial-gradient(ellipse at 26% 13%,rgba(255,255,255,.30),transparent 28%),conic-gradient(from 210deg,rgba(60,245,255,.20),rgba(255,255,255,.02),rgba(35,135,255,.17),rgba(255,255,255,.02),rgba(60,245,255,.20));}
-.orbButton:nth-child(1) .orbShell{filter:drop-shadow(0 4px 7px #000b) drop-shadow(0 0 4px rgba(30,160,255,.26));}
-.orbButton:nth-child(2) .orbShell{filter:drop-shadow(0 4px 7px #000b) drop-shadow(0 0 4px rgba(180,220,255,.26));}
-.orbButton:nth-child(3) .orbShell{filter:drop-shadow(0 4px 7px #000b) drop-shadow(0 0 4px rgba(255,155,40,.24));}
-.orbButton:nth-child(4) .orbShell{filter:drop-shadow(0 4px 7px #000b) drop-shadow(0 0 4px rgba(255,45,110,.25));}
-.orbButton:nth-child(5) .orbShell{filter:drop-shadow(0 4px 7px #000b) drop-shadow(0 0 4px rgba(30,225,255,.25));}
-.orbButton[aria-pressed="true"] .orbShell{border-color:rgba(244,252,255,.94);box-shadow:inset 1px 1px 3px rgba(255,255,255,.70),inset -2px -3px 5px rgba(0,0,0,.56),0 0 0 1.5px rgba(210,244,255,.24),0 0 12px var(--orb-glow,rgba(95,202,255,.32)),0 5px 11px rgba(0,0,0,.58);}
-.orbButton:nth-child(1){--orb-glow:rgba(50,170,255,.45)}.orbButton:nth-child(2){--orb-glow:rgba(190,225,255,.42)}.orbButton:nth-child(3){--orb-glow:rgba(255,160,45,.44)}.orbButton:nth-child(4){--orb-glow:rgba(255,55,120,.46)}.orbButton:nth-child(5){--orb-glow:rgba(35,220,255,.44)}
-.orbButton[aria-pressed="true"] .orbShine{opacity:.46;}
-@media(prefers-reduced-motion:no-preference){.orbShine{animation:glassSheen 8s ease-in-out infinite alternate}.orbButton:nth-child(2) .orbShine{animation-delay:-1.5s}.orbButton:nth-child(3) .orbShine{animation-delay:-3s}.orbButton:nth-child(4) .orbShine{animation-delay:-4.5s}.orbButton:nth-child(5) .orbShine{animation-delay:-6s}}
-@keyframes glassSheen{from{opacity:.23;filter:hue-rotate(-8deg)}to{opacity:.36;filter:hue-rotate(8deg)}}
-@media(prefers-reduced-motion:reduce){.orbShine{animation:none!important}}
 
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 

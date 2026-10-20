@@ -35,31 +35,6 @@
     }
     @media(prefers-reduced-motion:reduce){#le-quality-controls,.le-quality-button{transition:none!important}}
 
-    /* Explicit active glow: the legacy controller deliberately marks Earth inactive. */
-    /* Consistent orb luminance: brighten inactive artwork without activating its halo. */
-    .orbButton:not([aria-pressed="true"]):not([data-view="location"]) .orbShell{
-      filter:brightness(.84) saturate(.88)!important;
-    }
-    .orbButton:not([aria-pressed="true"]):not([data-view="location"]) .orbShine{opacity:.28!important}
-
-    /* Shared, restrained active halo. Location keeps its dedicated red treatment. */
-    .orbButton[aria-pressed="true"]:not([data-view="location"]) .orbShell{
-      filter:brightness(1.12) saturate(1.12) drop-shadow(0 0 5px rgba(145,220,255,.42))!important;
-      border-color:rgba(225,245,255,.78)!important;
-      box-shadow:inset 1px 1px 3px rgba(255,255,255,.58),inset -2px -3px 5px rgba(0,0,0,.48),
-        0 0 0 1px rgba(155,225,255,.30),0 0 10px rgba(85,195,255,.42)!important;
-    }
-    .orbButton[aria-pressed="true"]:not([data-view="location"]) .orbShine{opacity:.42!important}
-
-    /* Earth is deliberately aria-pressed=false in the legacy controller, so
-       its exploration marker must outrank the inactive filter above. */
-    .orbButton[data-view="earth"].le-earth-exploration-active .orbShell{
-      filter:brightness(1.12) saturate(1.14) drop-shadow(0 0 5px rgba(55,205,255,.48))!important;
-      border-color:rgba(225,250,255,.90)!important;
-      box-shadow:inset 1px 1px 3px rgba(255,255,255,.68),inset -2px -3px 5px rgba(0,0,0,.50),
-        0 0 0 1.5px rgba(90,220,255,.34),0 0 12px rgba(35,195,255,.48),0 0 20px rgba(35,145,255,.24)!important;
-    }
-    .orbButton[data-view="earth"].le-earth-exploration-active .orbShine{opacity:.48!important}
   `;
   document.head.appendChild(style);
 
@@ -84,6 +59,7 @@
     // The legacy orb controller paints Earth as inactive in Home mode. Keep
     // its own handlers intact and add an explicit mode state for this feature.
     button.classList.toggle("le-earth-exploration-active", active);
+    button.setAttribute("aria-pressed", String(active));
     button.setAttribute("aria-expanded", String(active));
     button.setAttribute("data-earth-exploration", String(active));
   }

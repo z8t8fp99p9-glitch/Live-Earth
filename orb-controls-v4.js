@@ -10,6 +10,7 @@
   const panel = document.querySelector('#astroPanel');
   let selected = 'home';
   let locationEnabled = false;
+  let stacksOpen = false;
   let locationWatch = null;
   const originalGetCurrentPosition = navigator.geolocation?.getCurrentPosition?.bind(navigator.geolocation);
   const originalWatchPosition = navigator.geolocation?.watchPosition?.bind(navigator.geolocation);
@@ -18,17 +19,12 @@
 
   const style = document.createElement('style');
   style.textContent = `
-  .orbButton:not([aria-pressed="true"]) .orbShell{filter:brightness(.58) saturate(.62)!important;box-shadow:inset 1px 1px 3px #ffffff35,inset -2px -3px 5px #000b,0 3px 7px #000b!important}
-  .orbButton:not([aria-pressed="true"]) .orbShine{opacity:.12!important}
-  .orbButton[aria-pressed="true"] .orbShell{filter:brightness(1.08) saturate(1.12)!important}
   #le-control-panel{position:fixed;z-index:7;left:50%;top:50%;transform:translate(-50%,-50%);width:min(88vw,420px);max-height:min(58vh,calc(var(--le-viewport-height,100vh) - 28px));overflow:auto;padding:18px;border:1px solid #b6e6ff50;border-radius:22px;background:linear-gradient(145deg,#102032f5,#050b16f7);box-shadow:inset 1px 1px 2px #ffffff20,0 12px 38px #000b,0 0 28px #38bfff18;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);touch-action:pan-y;color:#eaf5ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
   #le-control-panel[hidden]{display:none}#le-control-panel h2{font-size:21px;margin:0 0 6px;font-weight:650}#le-control-panel p{font-size:12px;line-height:1.5;color:#a8bfd1;margin:0 0 14px}
   .le-choice{display:block;width:100%;margin:8px 0;padding:13px 14px;text-align:left;border:1px solid #8ecfff30;border-radius:14px;background:#ffffff08;color:#edf8ff;font:600 13px -apple-system,BlinkMacSystemFont,sans-serif}
   .le-choice[aria-pressed="true"]{border-color:#79d7ff99;background:#58bfff18;box-shadow:0 0 14px #36bfff20}
   .le-choice small{display:block;font-size:11px;font-weight:400;color:#9fb6ca;margin-top:4px}
   .le-panel-close{float:right;border:1px solid #8fb5d544;border-radius:50%;background:#ffffff0b;color:#e8f6ff;width:32px;height:32px;font-size:20px}
-  .orbButton[data-view="location"][aria-pressed="true"] .orbShell{border-color:#ff8c9c!important;box-shadow:inset 1px 1px 3px #ffffff99,0 0 0 2px #ff334d55,0 0 23px #ff1d4f99!important}
-  .orbButton[data-view="location"][aria-pressed="false"] .orbShell{box-shadow:inset 1px 1px 3px #ffffff66,inset -2px -3px 5px #0009,0 4px 8px #0009,0 0 5px #ff334d18!important}
   @media(prefers-reduced-motion:reduce){#le-control-panel *{animation:none!important;transition:none!important}}
   `;
   document.head.appendChild(style);
@@ -110,13 +106,16 @@
   function paintButtons(){
     buttons.forEach(b=>{
       const id=b.dataset.view;
-      const active=id==='location'?locationEnabled:(id==='earth'?false:(id===selected));
+      const active=id==='location'?locationEnabled:
+        (id==='earth'?b.classList.contains('le-earth-exploration-active'):
+        (id==='stacks'?stacksOpen:(id===selected)));
       b.setAttribute('aria-pressed',String(active));
       if(id==='location') b.setAttribute('aria-label',locationEnabled?'Location ON — tap to turn off':'Location OFF — tap to turn on');
     });
   }
   function home(showMessage=false){
     selected='home';
+    stacksOpen=false;
     featurePanel.hidden=true;
     if(panel) panel.hidden=true;
     paintButtons();
@@ -175,14 +174,19 @@
     ]);
   }
   function activate(id){
-    if(id==='location'){featurePanel.hidden=true;applyLocation(!locationEnabled);return}
+    if(id==='location'){applyLocation(!locationEnabled);return}
     if(id==='earth'){home(true);return}
-    if(!['moon','sun','stacks'].includes(id))return;
-    if(selected===id){home(true);return}
+    if(id==='stacks'){
+      stacksOpen=!stacksOpen;
+      if(stacksOpen){stacksPanel();syncViewport()}
+      else {featurePanel.hidden=true}
+      paintButtons();
+      return;
+    }
+    if(!['moon','sun'].includes(id))return;
+    if(selected===id){selected='home';if(panel)panel.hidden=true;paintButtons();if(status)status.hidden=true;return}
     selected=id;paintButtons();
     featurePanel.hidden=true;
-    if(panel)panel.hidden=true;
-    if(id==='stacks'){stacksPanel();syncViewport();return}
     if(panel)panel.hidden=false;
     syncViewport();
     window.dispatchEvent(new CustomEvent('live-earth-astro-preview',{detail:{view:id}}));
