@@ -1,12 +1,19 @@
-LIVE // EARTH — Orientation + Location OFF Fix (candidate v1)
+LIVE // EARTH — Orientation Guardian CANDIDATE
 
-UPLOAD ONLY AFTER REVIEW. This package contains only files to replace at the repository root:
-- orb-controls-v4.js — adds orientation/visual-viewport recovery, keeps the orb row tappable above the custom Stacks panel, makes feature switches hide stale panels immediately, and resets app-owned Live Location to OFF on every fresh page load.
-- sw.js — increments the shell cache version so the updated controller can be fetched without deleting the known-good version before the new page reports ready.
+Files in this ZIP:
+- sw.js (service-worker shell/cache update; cache version v26)
+- orientation-manager.js (one-time 3-second orientation prompt + Stacks orientation preference)
 
-Preservation: does not include or modify index.html, Earth/Moon geometry, globe framing, textures, orb images, or visual composition.
+IMPORTANT LIMITATION
+This is a candidate, not an iPhone-verified fix. iOS Safari and installed PWAs may reject physical orientation locking. The script attempts Screen Orientation API locking only after a user tap; if iOS rejects it, it stores a session-level preferred view and reports the limitation. This candidate does NOT yet guarantee that the app will physically remain in its launch orientation when the prompt times out. It adds the prompt and Stacks option without editing index.html, Earth/Moon scene sizing, textures, or orb art.
 
-Manual iPhone GitHub upload: replace these two root files only, then commit using:
-Fix orientation recovery and default Live Location off
+MANUAL UPLOAD
+1. Keep a copy of your current working files first.
+2. Upload/replace sw.js in the repository root.
+3. Upload orientation-manager.js to the repository root as a NEW file.
+4. Commit title: Add one-time orientation prompt and Stacks view preference
+5. Open the live PWA online once and reload/close-reopen it so the new service worker can install. If it doesn't appear immediately, allow the old page to close and reopen the app.
+6. Test: launch portrait; rotate once; confirm the prompt disappears after 3 seconds; open Stacks and try Portrait/Landscape options; verify Earth/Moon artwork and Location OFF behavior.
 
-Validation performed here: JavaScript syntax checks, ZIP integrity, and source-level checks. This is NOT an iPhone runtime test. After upload, test: open Sun in landscape -> rotate to portrait -> close -> tap Moon/Stacks; repeat portrait -> landscape; confirm Location starts OFF after fully closing and relaunching the app.
+ROLLBACK
+Restore the previous sw.js and delete orientation-manager.js. Do not delete the old known-good ZIP. No GitHub changes have been made by the assistant.
