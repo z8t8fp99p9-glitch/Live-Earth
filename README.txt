@@ -1,19 +1,34 @@
-LIVE // EARTH — Orientation Guardian CANDIDATE
+LIVE // EARTH — ADAPTIVE ROTATION RECOVERY CANDIDATE
 
-Files in this ZIP:
-- sw.js (service-worker shell/cache update; cache version v26)
-- orientation-manager.js (one-time 3-second orientation prompt + Stacks orientation preference)
+Purpose
+- Removes the Orientation Guardian prompt/preference script from service-worker injection.
+- Keeps orientation:any and allows normal responsive portrait/landscape adaptation.
+- Adds a small recovery helper that waits for iOS viewport settling and cancels a globe drag interrupted by rotation.
+- Preserves the existing Earth renderer and approved composition; does not change Earth/Moon sizing or camera settings.
 
-IMPORTANT LIMITATION
-This is a candidate, not an iPhone-verified fix. iOS Safari and installed PWAs may reject physical orientation locking. The script attempts Screen Orientation API locking only after a user tap; if iOS rejects it, it stores a session-level preferred view and reports the limitation. This candidate does NOT yet guarantee that the app will physically remain in its launch orientation when the prompt times out. It adds the prompt and Stacks option without editing index.html, Earth/Moon scene sizing, textures, or orb art.
+FILES IN THIS ZIP
+- sw.js — replace the repository root service worker.
+- rotation-recovery.js — add this new file to the repository root.
 
-MANUAL UPLOAD
-1. Keep a copy of your current working files first.
-2. Upload/replace sw.js in the repository root.
-3. Upload orientation-manager.js to the repository root as a NEW file.
-4. Commit title: Add one-time orientation prompt and Stacks view preference
-5. Open the live PWA online once and reload/close-reopen it so the new service worker can install. If it doesn't appear immediately, allow the old page to close and reopen the app.
-6. Test: launch portrait; rotate once; confirm the prompt disappears after 3 seconds; open Stacks and try Portrait/Landscape options; verify Earth/Moon artwork and Location OFF behavior.
+IMPORTANT MANUAL CLEANUP
+1. In the repository root, delete orientation-manager.js (the orientation prompt and Stacks preference patch).
+2. Replace sw.js with this package's file.
+3. Upload rotation-recovery.js to the root.
+4. Do not replace index.html, orb-controls-v4.js, manifest.json, or image assets.
+5. Commit the changes together.
 
-ROLLBACK
-Restore the previous sw.js and delete orientation-manager.js. Do not delete the old known-good ZIP. No GitHub changes have been made by the assistant.
+WHY THE CACHE VERSION CHANGES
+The new service worker uses v27 so its shell no longer depends on the old orientation manager. It retains the app-ready message before deleting older shell caches. No skipWaiting() was added.
+
+TEST CHECKLIST ON THE PHONE
+- Open the app and rotate portrait ↔ landscape several times.
+- Open Moon, Sun, and Stacks; rotate while each is open; close the panel afterward.
+- Drag Earth, rotate during/after the drag, then verify Earth responds to a fresh one-finger drag.
+- Verify all five orbs respond and Location starts OFF after a fresh launch.
+- Confirm the approved Earth/Moon composition has not changed.
+
+LIMITATION
+This is a recovery candidate, not a claim of physical-device verification. The helper clears interrupted touch state and waits for layout settlement; it does not force the OS orientation or guarantee that every Safari/iOS rendering issue is solved. If a test fails, roll back sw.js and remove rotation-recovery.js, then restore the prior service worker file.
+
+GITHUB COMMIT TITLE
+Remove orientation prompt and recover touch after rotation
