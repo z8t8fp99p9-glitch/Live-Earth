@@ -61,7 +61,6 @@
       const width=Math.max(240,Math.round(vv?.width||window.innerWidth||document.documentElement.clientWidth));
       document.documentElement.style.setProperty('--le-viewport-height',`${height}px`);
       document.documentElement.style.setProperty('--le-viewport-width',`${width}px`);
-      // Force the open panel to recalculate its hit box after orientation changes.
       for(const el of [panel,featurePanel]){
         if(!el||el.hidden)continue;
         el.style.maxHeight=`${Math.max(180,height-28)}px`;
@@ -126,8 +125,6 @@
     if(!locationEnabled){setStatus('Live Location OFF · fresh app location requests are blocked.');return}
     setStatus('Live Location ON · a feature may request location when you choose it.');
   }
-  // Safety default: each fresh app launch starts with app-owned Live Location OFF.
-  // The user must explicitly turn it on again during this session.
   locationEnabled=false;
   try{localStorage.setItem('liveEarthLocationEnabled','false')}catch(e){}
   if(navigator.geolocation&&originalGetCurrentPosition){
@@ -159,7 +156,6 @@
     if(!['moon','sun','stacks'].includes(id))return;
     if(selected===id){home(true);return}
     selected=id;paintButtons();
-    // Hide the previous feature immediately before showing the next one.
     featurePanel.hidden=true;
     if(panel)panel.hidden=true;
     if(id==='stacks'){stacksPanel();syncViewport();return}
@@ -175,8 +171,6 @@
   buttons.splice(0,buttons.length,...freshButtons);
   paintButtons();
 
-  // Signal that the visual scene is ready before allowing old shell caches to
-  // be removed. The homepage's status is hidden only after successful setup.
   const announceReady = () => {
     if (!status || status.hidden) {
       const controller = navigator.serviceWorker?.controller;
@@ -189,7 +183,6 @@
     const readyTimer = window.setInterval(() => {
       if (announceReady()) window.clearInterval(readyTimer);
       else if (status && !status.hidden && !/Preparing Earth/i.test(status.textContent || '')) {
-        // Keep the previous shell if the scene reports an error.
         window.clearInterval(readyTimer);
       }
     }, 250);

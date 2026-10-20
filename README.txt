@@ -1,19 +1,25 @@
-LIVE // EARTH — Portrait Touch Coordinate Recovery (v29)
+LIVE // EARTH — PRE-ROTATION-RECOVERY BASELINE
 
-This is a focused test patch for the portrait touch offset seen after switching device orientation.
-It does not change index.html, orb-controls-v4.js, the orb artwork, Earth/Moon size, or homepage layout.
+This ZIP rolls back the orientation-recovery experiment that began with the
+portrait panel/touch recovery commits. It restores the earlier service-worker
+integration and keeps the currently known-good v4 orb controller unchanged.
 
-Files to upload to the repository root (replace existing files):
-- rotation-recovery.js
-- sw.js
+Included:
+- sw.js — pre-recovery service worker (cache v25); no rotation-recovery.js injection
+- orb-controls-v4.js — the known-good v4 controller, preserved unchanged
 
-Before uploading: the currently working orb controls should be left untouched. This patch only resets stale page scroll offsets after orientation changes, waits for the iOS viewport to settle, and forces a fresh hit-test/layout pass. It cannot be considered confirmed until tested on the iPhone.
+Not included / do not replace:
+- index.html
+- Earth/Moon/Sun artwork or assets
+- manifest.json or other data files
 
-After upload:
-1. Commit title: Fix portrait touch coordinate recovery after rotation
-2. Open the published LIVE // EARTH site on the iPhone.
-3. Fully close and reopen the site/PWA, then switch portrait → landscape → portrait.
-4. Tap each orb near its center. Confirm the selected orb matches the one touched and panels' close buttons work.
-5. Confirm the Earth and Moon composition has not moved or changed size.
+iPhone upload:
+1. Open the Live-Earth repository on branch main.
+2. Replace ONLY sw.js and orb-controls-v4.js with these files.
+3. Commit title: Restore pre-rotation-recovery app baseline
+4. Let Pages deploy, then close the Home Screen app fully and reopen it online.
+5. Test portrait -> landscape -> portrait.
 
-If the issue remains, do not upload the older V5 candidate. Report whether the offset remains and whether it is still about half an orb; we should diagnose the actual Safari hit-testing behavior before another patch.
+This is a rollback to a known earlier code baseline, not a verified fix. It does
+not change the homepage composition or globe dimensions. The orb controller is
+included to ensure the known-good controller is restored alongside the shell.
