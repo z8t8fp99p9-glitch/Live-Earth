@@ -17,8 +17,9 @@
       transition:opacity .22s ease,transform .22s ease; pointer-events:auto;
     }
     #le-quality-controls[hidden]{display:none}
+    #le-quality-controls button{touch-action:manipulation}
     .le-quality-button {
-      min-width:94px; padding:10px 16px; border-radius:999px;
+      min-width:78px; padding:10px 13px; border-radius:999px;
       border:1px solid rgba(197,230,255,.24); color:#cfe8f8;
       background:rgba(255,255,255,.045); font:650 12px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
       letter-spacing:.09em; text-transform:uppercase; -webkit-tap-highlight-color:transparent;
@@ -28,10 +29,13 @@
       background:linear-gradient(135deg,rgba(102,204,255,.25),rgba(255,255,255,.1));
       box-shadow:inset 1px 1px 2px #ffffff50,0 0 14px rgba(71,187,255,.22);
     }
-    .le-quality-button:active{transform:scale(.97)}
+    .le-quality-button:active,.le-zoom-button:active{transform:scale(.96)}
+    .le-zoom-button{width:38px;height:38px;display:grid;place-items:center;border-radius:50%;border:1px solid rgba(197,230,255,.28);color:#edf9ff;background:rgba(255,255,255,.07);font:600 23px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+    .le-zoom-button:focus-visible,.le-quality-button:focus-visible{outline:2px solid #8de1ff;outline-offset:3px}
     @media(max-height:560px){
       #le-quality-controls{bottom:calc(env(safe-area-inset-bottom) + 100px)}
-      .le-quality-button{min-width:78px;padding:8px 12px}
+      .le-quality-button{min-width:68px;padding:8px 10px}
+      .le-zoom-button{width:34px;height:34px}
     }
     @media(prefers-reduced-motion:reduce){#le-quality-controls,.le-quality-button{transition:none!important}}
 
@@ -44,11 +48,19 @@
   controls.setAttribute("role","group");
   controls.setAttribute("aria-label","Earth globe quality");
   controls.innerHTML = `
+    <button type="button" class="le-zoom-button" data-zoom="out" aria-label="Zoom out" title="Zoom out">−</button>
     <button type="button" class="le-quality-button" data-quality="basic" aria-pressed="true">Basic</button>
-    <button type="button" class="le-quality-button" data-quality="hd" aria-pressed="false">HD</button>`;
+    <button type="button" class="le-quality-button" data-quality="hd" aria-pressed="false">HD</button>
+    <button type="button" class="le-zoom-button" data-zoom="in" aria-label="Zoom in" title="Zoom in">+</button>`;
   document.body.appendChild(controls);
 
   const qualityButtons = [...controls.querySelectorAll("[data-quality]")];
+  const zoomButtons = [...controls.querySelectorAll("[data-zoom]")];
+  zoomButtons.forEach(button => button.addEventListener("click", () => {
+    const globe = window.LiveEarthScene;
+    if (!globe?.isUnlocked()) return;
+    globe.zoomBy(button.dataset.zoom === "in" ? 0.82 : 1.22);
+  }));
   function paintQuality(value) {
     qualityButtons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.quality === value)));
   }

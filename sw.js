@@ -1,6 +1,6 @@
 /* LIVE // EARTH — correct geographic solar direction and fixed-space sunlight, cache v42 corrected longitude basis. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v47-global-quality-and-orb-state";
+const CACHE_NAME = "live-earth-shell-v48-exploration-zoom-gestures";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -66,6 +66,63 @@ window.LiveEarthScene = (() => {
     try { localStorage.setItem("liveEarthQuality", quality); } catch (_) {}
     return renderQuality(quality);
   }
+  function zoomBy(factor, smooth = true) {
+    if (!unlocked || !Number.isFinite(factor) || factor <= 0) return camera.position.z;
+    const minZ = 1.55;
+    const maxZ = Math.max(minZ + 0.5, homeZ * 1.65);
+    const targetZ = Math.max(minZ, Math.min(maxZ, camera.position.z * factor));
+    if (smooth) animateCamera(targetZ);
+    else { if (animation) cancelAnimationFrame(animation); animation = 0; camera.position.z = targetZ; camera.lookAt(0,0,0); draw(); }
+    return targetZ;
+  }
+  // Multi-touch is enabled only while exploring. The existing single-finger
+  // pointer drag remains responsible for rotating the same globe.
+  const pointers = new Map();
+  let pinching = false;
+  let pinchDistance = 0;
+  function pointerPoint(event) { return {x:event.clientX,y:event.clientY}; }
+  canvas.addEventListener("pointerdown", event => {
+    if (!unlocked) return;
+    pointers.set(event.pointerId, pointerPoint(event));
+    if (pointers.size >= 2) {
+      pinching = true;
+      drag = false;
+      active = null;
+      pinchDistance = pointerGap();
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  }, {capture:true,passive:false});
+  canvas.addEventListener("pointermove", event => {
+    if (!unlocked || !pointers.has(event.pointerId)) return;
+    pointers.set(event.pointerId, pointerPoint(event));
+    if (pinching && pointers.size >= 2) {
+      const nextDistance = pointerGap();
+      if (pinchDistance > 0 && nextDistance > 0) zoomBy(pinchDistance / nextDistance, false);
+      pinchDistance = nextDistance;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  }, {capture:true,passive:false});
+  function pointerGap() {
+    const pts = [...pointers.values()];
+    if (pts.length < 2) return 0;
+    return Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y);
+  }
+  function finishPointer(event) {
+    if (!pointers.has(event.pointerId)) return;
+    const wasPinching = pinching;
+    pointers.delete(event.pointerId);
+    if (wasPinching) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      drag = false;
+      active = null;
+      if (pointers.size < 2) { pinching = false; pinchDistance = 0; pointers.clear(); }
+    }
+  }
+  canvas.addEventListener("pointerup", finishPointer, {capture:true,passive:false});
+  canvas.addEventListener("pointercancel", finishPointer, {capture:true,passive:false});
   // The quality selection is global and persistent. Keep the Home camera
   // baseline separate from the exploration zoom when orientation changes.
   window.addEventListener("resize", () => {
@@ -82,7 +139,7 @@ window.LiveEarthScene = (() => {
   }, {passive:true});
   // Apply the saved global profile from first render; Basic is the safe default.
   renderQuality(quality);
-  return {unlock,lock,setQuality,isUnlocked:()=>unlocked,getQuality:()=>quality};
+  return {unlock,lock,setQuality,zoomBy,isUnlocked:()=>unlocked,getQuality:()=>quality};
 })();
 `;
     html = html.replace(anchor, api + "\n" + anchor);
