@@ -1,6 +1,6 @@
 /* LIVE // EARTH — correct geographic solar direction and fixed-space sunlight, cache v42 corrected longitude basis. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v50-quality-zoom-range";
+const CACHE_NAME = "live-earth-shell-v51-home-visual-lock";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -22,10 +22,25 @@ window.LiveEarthScene = (() => {
   let animation = 0;
   let homeRotation = null;
   let homeZ = camera.position.z;
+  // HOME VISUAL LOCK: capture the original Home geometry and renderer density
+  // before any exploration quality profile is applied.
+  const homeGeometry = earth.geometry;
+  const homePixelRatio = renderer.getPixelRatio();
   const reducedGeometry = new T.SphereGeometry(1, 64, 48);
   const fullGeometry = new T.SphereGeometry(1, 96, 64);
+  function restoreHomeVisualState() {
+    earth.geometry = homeGeometry;
+    renderer.setPixelRatio(homePixelRatio);
+    draw();
+  }
   function renderQuality(next) {
     quality = next === "hd" ? "hd" : "basic";
+    // Quality selection is remembered globally, but only affects the globe
+    // while Exploration is unlocked. Home always uses its captured baseline.
+    if (!unlocked) {
+      restoreHomeVisualState();
+      return quality;
+    }
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, quality === "hd" ? 1.5 : 1));
     earth.geometry = quality === "hd" ? fullGeometry : reducedGeometry;
     draw();
@@ -72,9 +87,10 @@ window.LiveEarthScene = (() => {
   function lock() {
     if (!unlocked) return;
     unlocked = false; window.__leEarthUnlocked = false;
-    // Return to the approved Home orientation and camera framing together,
-    // interpolating both so the globe never snaps abruptly back to India.
-    renderQuality(quality);
+    // Restore Home's original geometry and pixel density before returning.
+    // The saved Basic/HD choice remains available for the next exploration,
+    // but cannot alter the protected celestial Home view.
+    restoreHomeVisualState();
     animateCamera(homeZ, null, homeRotation);
   }
   function setQuality(next) {
@@ -149,8 +165,10 @@ window.LiveEarthScene = (() => {
       if (unlocked) {
         if (Number.isFinite(fittedZ) && fittedZ > 0) homeZ = fittedZ;
         camera.position.z = homeZ * 0.62;
+        renderQuality(quality);
       } else {
         homeZ = fittedZ;
+        restoreHomeVisualState();
       }
       camera.lookAt(0,0,0); draw();
     });
