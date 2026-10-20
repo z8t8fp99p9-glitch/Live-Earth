@@ -1,6 +1,6 @@
-/* LIVE // EARTH — correct geographic solar direction and fixed-space sunlight, cache v36. */
+/* LIVE // EARTH — correct geographic solar direction and fixed-space sunlight, cache v37 balanced night lighting. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v36-correct-solar-direction";
+const CACHE_NAME = "live-earth-shell-v37-balanced-night-lighting";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -78,14 +78,12 @@ function injectSolarDayNight(html) {
 (() => {
   const earthMesh = earth;
   const solarLight = sun;
-  const sceneGroup = group;
   const solarVector = new T.Vector3();
   const utcDayOfYear = date => {
     const start = Date.UTC(date.getUTCFullYear(),0,0);
     return Math.floor((Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate())-start)/86400000);
   };
   function getSolarTarget(date = new Date()) {
-    // Smoothly evaluate the solar direction from current UTC time on every frame.
     const day = utcDayOfYear(date);
     const hour = date.getUTCHours() + date.getUTCMinutes()/60 + date.getUTCSeconds()/3600 + date.getUTCMilliseconds()/3600000;
     const gamma = 2*Math.PI/365*(day-1+(hour-12)/24);
@@ -97,43 +95,35 @@ function injectSolarDayNight(html) {
     const solarMinutes = hour*60 + equationMinutes;
     const subsolarLongitude = (720-solarMinutes)*Math.PI/720;
     const lat = declination;
-    // Three.js SphereGeometry's longitude orientation: Greenwich points along +X,
-    // and east longitude proceeds toward -Z. Apply only the model's fixed base
-    // rotation; never apply the user's drag rotation to the Sun direction.
+    // Keep the solar vector aligned with the model's fixed base orientation only.
     solarVector.set(Math.cos(lat)*Math.cos(subsolarLongitude), Math.sin(lat), -Math.cos(lat)*Math.sin(subsolarLongitude)).normalize();
     return solarVector.clone().applyEuler(earthMesh.rotation).multiplyScalar(12);
   }
   function updateSolarDayNight() {
     const target = getSolarTarget(new Date());
-    // The Sun is fixed in world space. Earth rotation naturally moves its surface
-    // through daylight; no easing lag is needed while the user drags the globe.
     solarLight.position.copy(target);
     solarLight.target.position.set(0,0,0);
     solarLight.target.updateMatrixWorld();
     draw();
   }
-  // Remove the decorative blue shell (radius 1.025), preserving Earth and Moon.
-  const blueShell = sceneGroup.children.find(o => o.isMesh && o.geometry?.parameters?.radius > 1.01 && o.geometry?.parameters?.radius < 1.04);
-  if (blueShell) sceneGroup.remove(blueShell);
-  // Remove the secondary blue directional fill; keep only the moving Sun light.
-  scene.children.filter(o => o.isDirectionalLight && o !== solarLight).forEach(light => scene.remove(light));
+
+  // Keep the existing atmosphere shell and blue fill light. The previous routine
+  // removed both and reduced ambient illumination too aggressively, crushing the
+  // night-side detail. Retain a restrained ambient level for visible oceans/land.
   const ambient = scene.children.find(o => o.isAmbientLight);
-  if (ambient) ambient.intensity = 0.035;
+  if (ambient) ambient.intensity = 0.12;
   solarLight.intensity = 2.3;
-  let lastFrame = performance.now();
+
   let solarFrame = 0;
-  function smoothSolarFrame(now) {
+  function smoothSolarFrame() {
     if (document.hidden) { solarFrame = 0; return; }
-    lastFrame = Math.max(0, now - lastFrame) > 100 ? now - 16.7 : lastFrame;
     updateSolarDayNight();
-    lastFrame = now;
     solarFrame = requestAnimationFrame(smoothSolarFrame);
   }
-  // Keep the solar vector current; user rotation moves Earth under a fixed Sun.
   solarFrame = requestAnimationFrame(smoothSolarFrame);
   document.addEventListener("visibilitychange", () => {
     if (document.hidden && solarFrame) { cancelAnimationFrame(solarFrame); solarFrame = 0; }
-    else if (!document.hidden && !solarFrame) { lastFrame = performance.now(); solarFrame = requestAnimationFrame(smoothSolarFrame); }
+    else if (!document.hidden && !solarFrame) { solarFrame = requestAnimationFrame(smoothSolarFrame); }
   });
   window.addEventListener("pagehide", () => { if (solarFrame) cancelAnimationFrame(solarFrame); }, {once:true});
   window.LiveEarthSolar = {update:updateSolarDayNight};
