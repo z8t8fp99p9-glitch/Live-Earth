@@ -34,6 +34,15 @@
       .le-quality-button{min-width:78px;padding:8px 12px}
     }
     @media(prefers-reduced-motion:reduce){#le-quality-controls,.le-quality-button{transition:none!important}}
+
+    /* Explicit active glow: the legacy controller deliberately marks Earth inactive. */
+    .orbButton[data-view="earth"].le-earth-exploration-active .orbShell{
+      filter:brightness(1.08) saturate(1.12) drop-shadow(0 0 10px rgba(55,205,255,.92))!important;
+      border-color:rgba(225,250,255,.98)!important;
+      box-shadow:inset 1px 1px 3px rgba(255,255,255,.72),inset -2px -3px 5px rgba(0,0,0,.52),
+        0 0 0 2px rgba(90,220,255,.58),0 0 18px rgba(35,195,255,.88),0 0 30px rgba(35,145,255,.48)!important;
+    }
+    .orbButton[data-view="earth"].le-earth-exploration-active .orbShine{opacity:.58!important}
   `;
   document.head.appendChild(style);
 
