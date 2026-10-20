@@ -49,9 +49,10 @@
   const options=featurePanel.querySelector('#le-panel-options');
   featurePanel.querySelector('.le-panel-close').addEventListener('click',()=>{featurePanel.hidden=true;home(false)});
 
-  // iOS can briefly retain the previous visual viewport after device rotation.
-  // Re-measure without reloading the page or changing the approved globe scene.
+  // Attempt 1: recover stale iOS standalone-app layout/hit-test geometry after rotation.
+  // Do not resize, reposition, zoom, or otherwise touch the Earth/Moon canvas.
   let viewportFrame=0;
+  let viewportTimers=[];
   function syncViewport(){
     if(viewportFrame)cancelAnimationFrame(viewportFrame);
     viewportFrame=requestAnimationFrame(()=>{
@@ -59,22 +60,45 @@
       const vv=window.visualViewport;
       const height=Math.max(240,Math.round(vv?.height||window.innerHeight||document.documentElement.clientHeight));
       const width=Math.max(240,Math.round(vv?.width||window.innerWidth||document.documentElement.clientWidth));
-      document.documentElement.style.setProperty('--le-viewport-height',`${height}px`);
-      document.documentElement.style.setProperty('--le-viewport-width',`${width}px`);
+      const root=document.documentElement;
+      root.style.setProperty('--le-viewport-height',`${height}px`);
+      root.style.setProperty('--le-viewport-width',`${width}px`);
       for(const el of [panel,featurePanel]){
         if(!el||el.hidden)continue;
         el.style.maxHeight=`${Math.max(180,height-28)}px`;
         el.style.maxWidth=`${Math.max(240,Math.min(width-24,440))}px`;
         el.style.pointerEvents='auto';
-        void el.offsetHeight;
+        void el.getBoundingClientRect();
       }
       const nav=document.querySelector('#navButtons');
-      if(nav){nav.style.pointerEvents='auto';nav.querySelectorAll('.orbButton').forEach(b=>{b.style.pointerEvents='auto';});}
+      if(nav){
+        nav.style.pointerEvents='auto';
+        nav.querySelectorAll('.orbButton').forEach(b=>{b.style.pointerEvents='auto';});
+        // Force a fresh layout/hit-test calculation without changing nav geometry.
+        void nav.getBoundingClientRect();
+      }
+      void root.getBoundingClientRect();
     });
   }
-  window.addEventListener('orientationchange',syncViewport,{passive:true});
+  function settleAfterRotation(){
+    viewportTimers.forEach(timer=>window.clearTimeout(timer));
+    viewportTimers=[];
+    // Safari may emit several intermediate resize events; measure again after it settles.
+    syncViewport();
+    for(const delay of [180,420,800]){
+      viewportTimers.push(window.setTimeout(()=>{
+        // Only clear stale scroll on an orientation transition, not ordinary resize.
+        try{window.scrollTo(0,0)}catch(_){}
+        if(document.documentElement.scrollTop)document.documentElement.scrollTop=0;
+        if(document.body.scrollTop)document.body.scrollTop=0;
+        syncViewport();
+      },delay));
+    }
+  }
+  window.addEventListener('orientationchange',settleAfterRotation,{passive:true});
   window.addEventListener('resize',syncViewport,{passive:true});
   window.visualViewport?.addEventListener('resize',syncViewport,{passive:true});
+  window.addEventListener('pageshow',settleAfterRotation,{passive:true});
   syncViewport();
 
   function setStatus(message, ms=2800) {
@@ -191,7 +215,11 @@
 
   window.addEventListener('live-earth-location-state',e=>{locationEnabled=!!e.detail?.enabled;paintButtons()});
   window.addEventListener('pagehide',stopOwnedLocation,{once:true});
-  window.addEventListener('pagehide',()=>{if(viewportFrame)cancelAnimationFrame(viewportFrame)},{once:true});
+  window.addEventListener('pagehide',()=>{
+    if(viewportFrame)cancelAnimationFrame(viewportFrame);
+    viewportTimers.forEach(timer=>window.clearTimeout(timer));
+    viewportTimers=[];
+  },{once:true});
   window.liveEarthLocationAllowed=()=>locationEnabled;
   window.liveEarthGetLocationState=()=>locationEnabled;
   window.addEventListener('live-earth-astro-preview',()=>{featurePanel.hidden=true});
