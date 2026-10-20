@@ -1,27 +1,17 @@
-LIVE // EARTH — isolated map-launch test build
-================================================
+LIVE // EARTH — HOMEPAGE RESTORE
+Date: 2026-10-20
 
-PURPOSE
-This is a separate test folder. It does not replace or modify the existing homepage files.
-It demonstrates the simplified Earth → Basic Live / HD Live launch rule.
+WHY THIS ZIP EXISTS
+The latest GitHub commit replaced the homepage index.html with an isolated “New Map Launch Test” screen. This ZIP restores the exact index.html from the earlier user-confirmed adaptive homepage checkpoint (Git blob SHA expected: fb547bf2999f90dd2bed1e4fb4bd5396d55be1f0).
 
-BASIC LIVE
-- Opens without asking for GPS.
-- Starts at a neutral world view.
-- Map controls work independently of the Location permission.
-- Location is not requested by this test page.
+CONTENTS
+- index.html — restored homepage file only.
+- README.txt — these instructions.
 
-HD LIVE
-- Clearly marked as the next stage; not implemented in this launch test.
+IMPORTANT
+- This restores the original LIVE // EARTH homepage and orb UI. It does not change sw.js or the Basic Live map files.
+- Do not upload or replace other files as part of this recovery.
+- The user must upload index.html to the repository root on GitHub main, replacing the current index.html. The assistant has not changed GitHub.
+- After upload/commit, wait for Pages to finish, then fully close and reopen the Home Screen app. If the old test screen persists, it may be cached; report back before changing any more files.
 
-HOW TO TEST
-1. Upload this entire LIVE_EARTH_NEXT folder as a NEW folder in the repository (do not replace root files).
-2. Open: https://z8t8fp99p9-glitch.github.io/Live-Earth/LIVE_EARTH_NEXT/
-3. Tap Basic Live. It should open the map without asking for Location.
-4. This test page is intentionally separate from the production homepage and is not yet connected to the homepage's Earth orb.
-
-LIMITATIONS
-- This is a launch-flow test harness, not a full duplicate of the existing celestial homepage.
-- Map tiles require an internet connection.
-- No GPS is requested, and no location marker is shown.
-- HD Live is a placeholder.
+Suggested commit title: Restore approved LIVE // EARTH homepage
