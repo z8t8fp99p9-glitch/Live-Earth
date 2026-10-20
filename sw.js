@@ -1,19 +1,20 @@
-/* LIVE // EARTH — Attempt 1 viewport recovery + Location OFF cache release.
-   Preserves the existing v4 orb-controller injection and safe app-ready cache cleanup. */
+/* LIVE // EARTH — Earth Modes Stage 1 + accepted Attempt 1 viewport recovery.
+   Cache v30 adds the Basic Live map page/scripts. Existing cache cleanup policy is preserved. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v29-viewport-recovery-attempt1";
+const CACHE_NAME = "live-earth-shell-v30-earth-modes-basic";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
-  "./", "./index.html", "./orb-controls-v4.js", "./location.html",
-  "./manifest.json", "./icon.svg", "./data-store.js", "./astronomy.js",
-  "./moon-orbit.js", "./dataset-manifest.json", "./earth.webp",
-  "./moon.webp", "./sun.webp", "./location.webp", "./stacks.webp"
+  "./", "./index.html", "./orb-controls-v4.js", "./basic-map.html", "./basic-map.js",
+  "./location.html", "./manifest.json", "./icon.svg", "./data-store.js", "./astronomy.js",
+  "./moon-orbit.js", "./dataset-manifest.json", "./earth.webp", "./moon.webp",
+  "./sun.webp", "./location.webp", "./stacks.webp"
 ];
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     await cache.addAll(APP_SHELL);
+    await self.skipWaiting();
   })());
 });
 self.addEventListener("activate", event => {
