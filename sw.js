@@ -1,6 +1,6 @@
-/* LIVE // EARTH — clean solar day/night, remove blue fill and shell, cache v35. */
+/* LIVE // EARTH — correct geographic solar direction and fixed-space sunlight, cache v36. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v35-smooth-solar-light";
+const CACHE_NAME = "live-earth-shell-v36-correct-solar-direction";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -72,9 +72,9 @@ window.LiveEarthScene = (() => {
 
 function injectSolarDayNight(html) {
   const anchor = "let active=null,x=0,y=0,drag=false;";
-  if (!html.includes(anchor) || html.includes("LIVE_EARTH_SOLAR_DAY_NIGHT_V3")) return html;
+  if (!html.includes(anchor) || html.includes("LIVE_EARTH_SOLAR_DAY_NIGHT_V4")) return html;
   const code = `
-/* LIVE_EARTH_SOLAR_DAY_NIGHT_V3 — update solar illumination; preserve the existing scene. */
+/* LIVE_EARTH_SOLAR_DAY_NIGHT_V4 — update solar illumination; preserve the existing scene. */
 (() => {
   const earthMesh = earth;
   const solarLight = sun;
@@ -97,15 +97,17 @@ function injectSolarDayNight(html) {
     const solarMinutes = hour*60 + equationMinutes;
     const subsolarLongitude = (720-solarMinutes)*Math.PI/720;
     const lat = declination;
-    solarVector.set(Math.cos(lat)*Math.sin(subsolarLongitude), Math.sin(lat), Math.cos(lat)*Math.cos(subsolarLongitude)).normalize();
-    return solarVector.clone().applyEuler(sceneGroup.rotation).multiplyScalar(12);
+    // Three.js SphereGeometry's longitude orientation: Greenwich points along +X,
+    // and east longitude proceeds toward -Z. Apply only the model's fixed base
+    // rotation; never apply the user's drag rotation to the Sun direction.
+    solarVector.set(Math.cos(lat)*Math.cos(subsolarLongitude), Math.sin(lat), -Math.cos(lat)*Math.sin(subsolarLongitude)).normalize();
+    return solarVector.clone().applyEuler(earthMesh.rotation).multiplyScalar(12);
   }
   function updateSolarDayNight() {
     const target = getSolarTarget(new Date());
-    // Frame-rate-independent easing: the light follows Earth rotation immediately,
-    // without snapping when the drag ends or when a minute changes.
-    const alpha = 1 - Math.exp(-10 * Math.min(0.05, Math.max(0.001, (performance.now() - lastFrame) / 1000)));
-    solarLight.position.lerp(target, alpha);
+    // The Sun is fixed in world space. Earth rotation naturally moves its surface
+    // through daylight; no easing lag is needed while the user drags the globe.
+    solarLight.position.copy(target);
     solarLight.target.position.set(0,0,0);
     solarLight.target.updateMatrixWorld();
     draw();
@@ -127,7 +129,7 @@ function injectSolarDayNight(html) {
     lastFrame = now;
     solarFrame = requestAnimationFrame(smoothSolarFrame);
   }
-  // One lightweight frame loop keeps the day/night edge in step with finger rotation.
+  // Keep the solar vector current; user rotation moves Earth under a fixed Sun.
   solarFrame = requestAnimationFrame(smoothSolarFrame);
   document.addEventListener("visibilitychange", () => {
     if (document.hidden && solarFrame) { cancelAnimationFrame(solarFrame); solarFrame = 0; }
