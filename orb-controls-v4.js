@@ -104,11 +104,14 @@
     setStatus.timer=window.setTimeout(()=>{if(status.textContent===message)status.hidden=true},ms);
   }
   function paintButtons(){
+    const earthActive = !!document.querySelector('.orbButton[data-view="earth"]')?.classList.contains('le-earth-exploration-active');
     buttons.forEach(b=>{
       const id=b.dataset.view;
+      // Earth, Sun and Moon are mutually exclusive. A selected Sun/Moon must
+      // never remain glowing underneath the active Earth exploration state.
       const active=id==='location'?locationEnabled:
-        (id==='earth'?b.classList.contains('le-earth-exploration-active'):
-        (id==='stacks'?stacksOpen:(id===selected)));
+        (id==='earth'?earthActive:
+        (id==='stacks'?stacksOpen:(!earthActive && id===selected)));
       b.setAttribute('aria-pressed',String(active));
       if(id==='location') b.setAttribute('aria-label',locationEnabled?'Location ON — tap to turn off':'Location OFF — tap to turn on');
     });
@@ -218,6 +221,14 @@
   }
 
   window.addEventListener('live-earth-location-state',e=>{locationEnabled=!!e.detail?.enabled;paintButtons()});
+  window.addEventListener('live-earth-exclusive-mode',e=>{
+    if(e.detail?.active){
+      selected='home';
+      if(panel)panel.hidden=true;
+      featurePanel.hidden=true;
+    }
+    paintButtons();
+  });
   window.addEventListener('pagehide',stopOwnedLocation,{once:true});
   window.addEventListener('pagehide',()=>{
     if(viewportFrame)cancelAnimationFrame(viewportFrame);

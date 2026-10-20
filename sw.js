@@ -1,6 +1,6 @@
 /* LIVE // EARTH — correct geographic solar direction and fixed-space sunlight, cache v42 corrected longitude basis. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v46-global-orb-states";
+const CACHE_NAME = "live-earth-shell-v47-global-quality-and-orb-state";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -18,6 +18,7 @@ window.__leEarthUnlocked = false;
 window.LiveEarthScene = (() => {
   let unlocked = false;
   let quality = "basic";
+  try { quality = localStorage.getItem("liveEarthQuality") === "hd" ? "hd" : "basic"; } catch (_) {}
   let animation = 0;
   let homeRotation = null;
   let homeZ = camera.position.z;
@@ -45,23 +46,42 @@ window.LiveEarthScene = (() => {
   }
   function unlock() {
     if (unlocked) return;
-    unlocked = true; window.__leEarthUnlocked = true;
+    // Capture the actual Home camera before entering exploration. Never derive
+    // the saved Home distance from the already-zoomed exploration camera.
     homeZ = camera.position.z;
     homeRotation = {x:group.rotation.x,y:group.rotation.y,z:group.rotation.z};
-    renderQuality("basic"); animateCamera(homeZ * 0.62);
+    unlocked = true; window.__leEarthUnlocked = true;
+    renderQuality(quality);
+    animateCamera(homeZ * 0.62);
   }
   function lock() {
     if (!unlocked) return;
     unlocked = false; window.__leEarthUnlocked = false;
-    renderQuality("hd");
     if (homeRotation) group.rotation.set(homeRotation.x,homeRotation.y,homeRotation.z);
+    renderQuality(quality);
     animateCamera(homeZ);
   }
-  function setQuality(next) { return unlocked ? renderQuality(next) : quality; }
+  function setQuality(next) {
+    quality = next === "hd" ? "hd" : "basic";
+    try { localStorage.setItem("liveEarthQuality", quality); } catch (_) {}
+    return renderQuality(quality);
+  }
+  // The quality selection is global and persistent. Keep the Home camera
+  // baseline separate from the exploration zoom when orientation changes.
   window.addEventListener("resize", () => {
-    if (!unlocked) return;
-    requestAnimationFrame(() => { homeZ = camera.position.z; camera.position.z = homeZ * 0.62; camera.lookAt(0,0,0); draw(); });
+    requestAnimationFrame(() => {
+      const fittedZ = camera.position.z; // index.html's fitCamera runs on resize
+      if (unlocked) {
+        if (Number.isFinite(fittedZ) && fittedZ > 0) homeZ = fittedZ;
+        camera.position.z = homeZ * 0.62;
+      } else {
+        homeZ = fittedZ;
+      }
+      camera.lookAt(0,0,0); draw();
+    });
   }, {passive:true});
+  // Apply the saved global profile from first render; Basic is the safe default.
+  renderQuality(quality);
   return {unlock,lock,setQuality,isUnlocked:()=>unlocked,getQuality:()=>quality};
 })();
 `;

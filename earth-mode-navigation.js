@@ -52,6 +52,10 @@
   function paintQuality(value) {
     qualityButtons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.quality === value)));
   }
+  function syncQualityFromGlobe() {
+    const globe = window.LiveEarthScene;
+    paintQuality(globe?.getQuality?.() || "basic");
+  }
 
   function setEarthActive(active) {
     const button = document.querySelector(earthSelector);
@@ -62,6 +66,7 @@
     button.setAttribute("aria-pressed", String(active));
     button.setAttribute("aria-expanded", String(active));
     button.setAttribute("data-earth-exploration", String(active));
+    window.dispatchEvent(new CustomEvent("live-earth-exclusive-mode", {detail:{active}}));
   }
 
   qualityButtons.forEach(button => button.addEventListener("click", () => {
@@ -94,7 +99,7 @@
     } else {
       globe.unlock();
       controls.hidden = false;
-      paintQuality("basic");
+      syncQualityFromGlobe();
       setEarthActive(true);
     }
   }
@@ -115,4 +120,5 @@
   document.addEventListener("keydown", event => {
     if (event.key === "Escape" && window.LiveEarthScene?.isUnlocked()) closeEarthMode();
   });
+  window.addEventListener("live-earth-quality-change", syncQualityFromGlobe);
 })();
