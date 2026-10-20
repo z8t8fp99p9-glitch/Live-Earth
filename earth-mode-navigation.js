@@ -51,6 +51,17 @@
   function paintQuality(value) {
     qualityButtons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.quality === value)));
   }
+
+  function setEarthActive(active) {
+    const button = document.querySelector(earthSelector);
+    if (!button) return;
+    // The legacy orb controller paints Earth as inactive in Home mode. Keep
+    // its own handlers intact and add an explicit mode state for this feature.
+    button.classList.toggle("le-earth-exploration-active", active);
+    button.setAttribute("aria-expanded", String(active));
+    button.setAttribute("data-earth-exploration", String(active));
+  }
+
   qualityButtons.forEach(button => button.addEventListener("click", () => {
     const globe = window.LiveEarthScene;
     if (!globe?.isUnlocked()) return;
@@ -58,9 +69,13 @@
     paintQuality(value);
   }));
 
-  function setEarthExpanded(value) {
-    document.querySelector(earthSelector)?.setAttribute("aria-expanded", String(value));
+  function closeEarthMode() {
+    const globe = window.LiveEarthScene;
+    if (globe?.isUnlocked()) globe.lock();
+    controls.hidden = true;
+    setEarthActive(false);
   }
+
   function toggleEarth() {
     const globe = window.LiveEarthScene;
     if (!globe) {
@@ -73,14 +88,12 @@
       return;
     }
     if (globe.isUnlocked()) {
-      globe.lock();
-      controls.hidden = true;
-      setEarthExpanded(false);
+      closeEarthMode();
     } else {
       globe.unlock();
       controls.hidden = false;
       paintQuality("basic");
-      setEarthExpanded(true);
+      setEarthActive(true);
     }
   }
 
@@ -93,21 +106,11 @@
       toggleEarth();
       return;
     }
-    // Keep the five-orb row active: leaving Earth exploration closes its zoom
-    // before the selected Moon/Sun/Location/Stacks action continues normally.
     const otherOrb = target?.closest('.orbButton[data-view]:not([data-view="earth"])');
-    if (otherOrb && window.LiveEarthScene?.isUnlocked()) {
-      window.LiveEarthScene.lock();
-      controls.hidden = true;
-      setEarthExpanded(false);
-    }
+    if (otherOrb && window.LiveEarthScene?.isUnlocked()) closeEarthMode();
   }, true);
 
   document.addEventListener("keydown", event => {
-    if (event.key === "Escape" && window.LiveEarthScene?.isUnlocked()) {
-      window.LiveEarthScene.lock();
-      controls.hidden = true;
-      setEarthExpanded(false);
-    }
+    if (event.key === "Escape" && window.LiveEarthScene?.isUnlocked()) closeEarthMode();
   });
 })();
