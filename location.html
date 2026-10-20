@@ -1,1 +1,110 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><meta name="theme-color" content="#05080d"><title>LIVE // EARTH — Explorer</title><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""><style>:root{color-scheme:dark;--glass:rgba(7,14,23,.9);--line:rgba(170,205,230,.2);--text:#eaf5ff;--muted:#9db1c5}*{box-sizing:border-box}html,body,#map{height:100%;width:100%;margin:0}body{background:#05080d;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,sans-serif;overflow:hidden}#map{position:absolute;inset:0;background:#0a111b}.bar{position:absolute;z-index:900;top:calc(env(safe-area-inset-top) + 12px);left:12px;right:12px;display:flex;justify-content:space-between;gap:8px;align-items:center}.glass{background:var(--glass);border:1px solid var(--line);border-radius:15px;padding:11px 13px;backdrop-filter:blur(18px)}button{color:var(--text);font-size:12px;background:var(--glass);border:1px solid var(--line);border-radius:13px;padding:11px}.bottom{position:absolute;z-index:900;bottom:calc(env(safe-area-inset-bottom) + 14px);left:12px;right:12px;color:var(--muted);font-size:11px;line-height:1.5}.bottom strong{display:block;color:var(--text);font-size:13px;margin-bottom:3px}.leaflet-control-attribution{font-size:9px!important;background:#06101bd9!important;color:#a9bdcf!important}.leaflet-control-attribution a{color:#9bdcff!important}.leaflet-control-zoom a{background:#08121fe8!important;color:#eaf5ff!important;border-color:var(--line)!important}.marker{width:18px;height:18px;border-radius:50%;background:#ff334d;border:2px solid white;box-shadow:0 0 0 5px #ff334d2b,0 0 18px #ff334dcc}</style></head><body><div id="map" aria-label="Interactive map"></div><div class="bar"><div class="glass">LIVE <span style="color:#66d7ff">//</span> EARTH</div><button id="locate">Locate me</button><button id="back">← Home</button></div><div class="bottom glass"><strong id="heading">Basic Live</strong><span id="details">Interactive 2D map · pan and zoom.</span></div><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script><script>(()=>{const q=new URLSearchParams(location.search),mode=q.get('mode')||'basic',heading=document.querySelector('#heading'),details=document.querySelector('#details');if(mode==='hd'){heading.textContent='HD Live · preview';details.textContent='This entry uses the available 2D map. HD imagery and 3D buildings are not connected yet.'}if(mode==='offline'){heading.textContent='Offline · limited shell';details.textContent='No GPS or online tile requests. Offline map tiles are not bundled.'}const map=L.map('map',{zoomControl:false,preferCanvas:true}).setView([20,0],2);L.control.zoom({position:'bottomright'}).addTo(map);if(mode!=='offline')L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);let marker=null,busy=false;function locate(){if(mode==='offline'){heading.textContent='Offline mode';details.textContent='Live location is not requested in Offline mode.';return}if(localStorage.getItem('liveEarthLocationEnabled')!=='true'){heading.textContent='Location is OFF';details.textContent='Tap the red Location orb on Home to enable live location.';return}if(busy||!navigator.geolocation)return;busy=true;heading.textContent='Finding location…';navigator.geolocation.getCurrentPosition(p=>{busy=false;if(marker)map.removeLayer(marker);marker=L.marker([p.coords.latitude,p.coords.longitude],{icon:L.divIcon({className:'',html:'<div class="marker"></div>',iconSize:[18,18],iconAnchor:[9,9]})}).addTo(map);map.setView([p.coords.latitude,p.coords.longitude],15);heading.textContent='Explorer located';details.textContent='Location shown for this session.'},()=>{busy=false;heading.textContent='Location unavailable';details.textContent='Could not determine location; explore manually.'},{enableHighAccuracy:false,timeout:12000,maximumAge:120000})}document.querySelector('#locate').onclick=locate;document.querySelector('#back').onclick=()=>location.href='./';if(q.get('locate')==='1')locate()})();</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#02050b">
+<title>LIVE // EARTH — Earth Modes</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<style>
+:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#02050b;color:#eaf5ff}
+*{box-sizing:border-box}
+html,body,#map{height:100%;width:100%;margin:0}
+body{background:#02050b;overflow:hidden}
+#map{position:absolute;inset:0;background:#08111c}
+.topbar{position:absolute;z-index:800;top:calc(env(safe-area-inset-top) + 12px);left:12px;right:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;pointer-events:none}
+.brand{pointer-events:none;padding:10px 13px;border:1px solid #b6e6ff40;border-radius:15px;background:#071321dd;color:#edf8ff;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font-size:11px;font-weight:800;letter-spacing:.13em;box-shadow:0 6px 20px #0007}
+.brand span{color:#65d9ff}
+.earth-home{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;padding:0;background:transparent;color:#eaf5ff;font:600 10px -apple-system,BlinkMacSystemFont,sans-serif;text-shadow:0 1px 6px #000;cursor:pointer}
+.earth-shell{position:relative;display:block;width:58px;height:58px;border-radius:50%;overflow:hidden;border:1px solid #d9f3ffb0;box-shadow:inset 1px 1px 3px #ffffff66,inset -2px -3px 5px #000b,0 4px 12px #000b,0 0 16px #37bfff42;background:#071321}
+.earth-shell img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}
+.earth-shell:after{content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;background:linear-gradient(140deg,#ffffff35,transparent 38%,#7edbff12 72%,#0005)}
+#mode-message{position:absolute;z-index:700;left:50%;top:calc(env(safe-area-inset-top) + 88px);transform:translateX(-50%);width:min(88vw,420px);padding:12px 14px;border:1px solid #b6e6ff40;border-radius:15px;background:#071321e8;color:#dbeaf7;text-align:center;font-size:12px;line-height:1.5;box-shadow:0 8px 24px #0008;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+#mode-message[hidden]{display:none}
+.leaflet-control-zoom a{background:#08121fe8!important;color:#eaf5ff!important;border-color:#b6e6ff35!important}
+.leaflet-control-attribution{font-size:9px!important;background:#06101bd9!important;color:#a9bdcf!important}
+.leaflet-control-attribution a{color:#9bdcff!important}
+.leaflet-control-scale-line{background:#06101bd9!important;border-color:#b6e6ff70!important;color:#dbeaf7!important;text-shadow:none!important}
+</style>
+</head>
+<body>
+<div id="map" role="application" aria-label="Interactive Earth map"></div>
+<header class="topbar">
+  <div class="brand">LIVE <span>//</span> EARTH</div>
+  <button id="earth-home" class="earth-home" type="button" aria-label="Earth orb — return to Home">
+    <span class="earth-shell"><img src="./earth.webp" alt="" draggable="false"></span>
+    <span>Earth · Home</span>
+  </button>
+</header>
+<div id="mode-message" role="status" aria-live="polite">Preparing map…</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+(() => {
+  'use strict';
+  const params = new URLSearchParams(window.location.search);
+  const requestedMode = params.get('mode') || 'basic';
+  const mode = ['basic', 'hd', 'offline'].includes(requestedMode) ? requestedMode : 'basic';
+  const message = document.querySelector('#mode-message');
+  const earthHome = document.querySelector('#earth-home');
+
+  earthHome.addEventListener('click', () => {
+    window.location.href = './';
+  });
+
+  if (mode === 'hd') {
+    document.title = 'HD Live Preview · LIVE // EARTH';
+    message.textContent = 'HD Live preview: this screen currently uses the 2D map. 3D buildings and richer imagery are not connected yet.';
+  } else if (mode === 'offline') {
+    document.title = 'Offline Preview · LIVE // EARTH';
+    message.textContent = 'Offline preview: saved map tiles are not bundled yet. This mode will not request map tiles.';
+  } else {
+    document.title = 'Basic Live · LIVE // EARTH';
+    message.textContent = 'Basic Live · Interactive 2D map. Pan and zoom to explore.';
+  }
+
+  if (!window.L) {
+    message.textContent = mode === 'offline'
+      ? 'Offline preview shell loaded, but the map library is not available. Saved map tiles are not bundled yet.'
+      : 'The map engine could not load. Check your internet connection and return Home to try again.';
+    return;
+  }
+
+  try {
+    const map = L.map('map', {
+      zoomControl: false,
+      preferCanvas: true,
+      attributionControl: true,
+      tap: true
+    }).setView([20, 0], 2);
+    L.control.zoom({position: 'bottomright'}).addTo(map);
+    L.control.scale({position: 'bottomleft', metric: true, imperial: false, maxWidth: 110}).addTo(map);
+
+    if (mode !== 'offline') {
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+    }
+
+    if (mode === 'basic') {
+      message.hidden = true;
+    } else {
+      // Keep the status visible briefly so preview limitations are not hidden.
+      window.setTimeout(() => { message.hidden = true; }, 6500);
+    }
+
+    map.on('tileerror', () => {
+      if (mode !== 'offline') {
+        message.hidden = false;
+        message.textContent = 'Map tiles could not load. Check your connection; you can still return Home with the Earth orb.';
+      }
+    });
+  } catch (error) {
+    console.error('[LIVE // EARTH] Map initialization failed', error);
+    message.hidden = false;
+    message.textContent = 'The map could not start on this device. Return Home with the Earth orb and try again.';
+  }
+})();
+</script>
+</body>
+</html>
