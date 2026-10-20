@@ -1,7 +1,8 @@
-/* LIVE // EARTH — v26 default-button diagnostic.
-   Preserves v4 controller and safe app-ready cache cleanup. */
+/* LIVE // EARTH — v27 bottom-spacing diagnostic.
+   Keeps the existing v4 controller and default-button test.
+   Changes only the shell cache version so the updated CSS is fetched. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v26-default-buttons-test";
+const CACHE_NAME = "live-earth-shell-v27-bottom-spacing-test";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
