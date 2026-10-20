@@ -1,6 +1,6 @@
-/* LIVE // EARTH — correct geographic solar direction and fixed-space sunlight, cache v37 balanced night lighting. */
+/* LIVE // EARTH — correct geographic solar direction and fixed-space sunlight, cache v38 true day-night lighting. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v37-balanced-night-lighting";
+const CACHE_NAME = "live-earth-shell-v38-true-day-night";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -72,18 +72,24 @@ window.LiveEarthScene = (() => {
 
 function injectSolarDayNight(html) {
   const anchor = "let active=null,x=0,y=0,drag=false;";
-  if (!html.includes(anchor) || html.includes("LIVE_EARTH_SOLAR_DAY_NIGHT_V4")) return html;
+  if (!html.includes(anchor) || html.includes("LIVE_EARTH_SOLAR_DAY_NIGHT_V5")) return html;
   const code = `
-/* LIVE_EARTH_SOLAR_DAY_NIGHT_V4 — update solar illumination; preserve the existing scene. */
+/* LIVE_EARTH_SOLAR_DAY_NIGHT_V5 — geographically aligned solar terminator + restrained night-side terrain reveal. */
 (() => {
   const earthMesh = earth;
   const solarLight = sun;
   const solarVector = new T.Vector3();
+  const solarLocal = new T.Vector3();
+  const worldQuaternion = new T.Quaternion();
+  const ambient = scene.children.find(o => o.isAmbientLight);
+  if (ambient) ambient.intensity = 0.12;
+  solarLight.intensity = 2.3;
+
   const utcDayOfYear = date => {
     const start = Date.UTC(date.getUTCFullYear(),0,0);
     return Math.floor((Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate())-start)/86400000);
   };
-  function getSolarTarget(date = new Date()) {
+  function getSolarLocalDirection(date = new Date()) {
     const day = utcDayOfYear(date);
     const hour = date.getUTCHours() + date.getUTCMinutes()/60 + date.getUTCSeconds()/3600 + date.getUTCMilliseconds()/3600000;
     const gamma = 2*Math.PI/365*(day-1+(hour-12)/24);
@@ -94,38 +100,69 @@ function injectSolarDayNight(html) {
       - 0.014615*Math.cos(2*gamma) - 0.040849*Math.sin(2*gamma));
     const solarMinutes = hour*60 + equationMinutes;
     const subsolarLongitude = (720-solarMinutes)*Math.PI/720;
-    const lat = declination;
-    // Keep the solar vector aligned with the model's fixed base orientation only.
-    solarVector.set(Math.cos(lat)*Math.cos(subsolarLongitude), Math.sin(lat), -Math.cos(lat)*Math.sin(subsolarLongitude)).normalize();
-    return solarVector.clone().applyEuler(earthMesh.rotation).multiplyScalar(12);
+    solarLocal.set(
+      Math.cos(declination)*Math.cos(subsolarLongitude),
+      Math.sin(declination),
+      -Math.cos(declination)*Math.sin(subsolarLongitude)
+    ).normalize();
+    return solarLocal;
   }
-  function updateSolarDayNight() {
-    const target = getSolarTarget(new Date());
-    solarLight.position.copy(target);
+
+  function updateSolarDayNight(date = new Date()) {
+    getSolarLocalDirection(date);
+    // Follow the same model transform as the texture-bearing Earth mesh. This
+    // keeps the terminator aligned when the user rotates the globe by touch.
+    earthMesh.getWorldQuaternion(worldQuaternion);
+    solarVector.copy(solarLocal).applyQuaternion(worldQuaternion).normalize();
+    solarLight.position.copy(solarVector).multiplyScalar(12);
     solarLight.target.position.set(0,0,0);
     solarLight.target.updateMatrixWorld();
+    if (shaderUniforms?.uLESunDirection) shaderUniforms.uLESunDirection.value.copy(solarVector);
     draw();
   }
 
-  // Keep the existing atmosphere shell and blue fill light. The previous routine
-  // removed both and reduced ambient illumination too aggressively, crushing the
-  // night-side detail. Retain a restrained ambient level for visible oceans/land.
-  const ambient = scene.children.find(o => o.isAmbientLight);
-  if (ambient) ambient.intensity = 0.12;
-  solarLight.intensity = 2.3;
+  let shaderUniforms = null;
+  const material = earthMesh.material;
+  const previousCompile = material.onBeforeCompile;
+  material.onBeforeCompile = shader => {
+    previousCompile?.(shader);
+    shader.uniforms.uLESunDirection = {value:solarVector.clone()};
+    shader.vertexShader = shader.vertexShader
+      .replace("void main() {", "varying vec3 vLEWorldNormal;\\nvoid main() {")
+      .replace("#include <beginnormal_vertex>", "#include <beginnormal_vertex>\\n vLEWorldNormal = normalize(mat3(modelMatrix) * objectNormal);");
+    shader.fragmentShader = shader.fragmentShader
+      .replace("void main() {", "uniform vec3 uLESunDirection;\\nvarying vec3 vLEWorldNormal;\\nvoid main() {")
+      .replace("#include <emissivemap_fragment>", \`#include <emissivemap_fragment>
+        float leSolarDot = dot(normalize(vLEWorldNormal), normalize(uLESunDirection));
+        float leNight = 1.0 - smoothstep(-0.10, 0.08, leSolarDot);
+        float leTwilight = 1.0 - smoothstep(0.015, 0.24, abs(leSolarDot));
+        // Very restrained, texture-coloured fill reveals terrain without washing
+        // out the daylight hemisphere. A cool twilight rim softens the terminator.
+        totalEmissiveRadiance += diffuseColor.rgb * leNight * 0.14;
+        totalEmissiveRadiance += vec3(0.012, 0.026, 0.052) * leTwilight * 0.20;\`);
+    shaderUniforms = shader.uniforms;
+  };
+  material.needsUpdate = true;
 
-  let solarFrame = 0;
-  function smoothSolarFrame() {
-    if (document.hidden) { solarFrame = 0; return; }
-    updateSolarDayNight();
-    solarFrame = requestAnimationFrame(smoothSolarFrame);
+  updateSolarDayNight();
+  // Recompute when the globe is manually rotated; the solar vector follows
+  // the globe's model transform instead of drifting away from the visible map.
+  canvas.addEventListener("pointermove", () => updateSolarDayNight(), {passive:true});
+  let solarTimer = 0;
+  function startSolarClock() {
+    if (solarTimer || document.hidden) return;
+    solarTimer = setInterval(() => updateSolarDayNight(new Date()), 30000);
   }
-  solarFrame = requestAnimationFrame(smoothSolarFrame);
+  function stopSolarClock() {
+    if (solarTimer) clearInterval(solarTimer);
+    solarTimer = 0;
+  }
+  startSolarClock();
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden && solarFrame) { cancelAnimationFrame(solarFrame); solarFrame = 0; }
-    else if (!document.hidden && !solarFrame) { solarFrame = requestAnimationFrame(smoothSolarFrame); }
+    if (document.hidden) stopSolarClock();
+    else { updateSolarDayNight(new Date()); startSolarClock(); }
   });
-  window.addEventListener("pagehide", () => { if (solarFrame) cancelAnimationFrame(solarFrame); }, {once:true});
+  window.addEventListener("pagehide", stopSolarClock, {once:true});
   window.LiveEarthSolar = {update:updateSolarDayNight};
 })();
 `;
