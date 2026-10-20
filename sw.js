@@ -1,6 +1,6 @@
-/* LIVE // EARTH — correct geographic solar direction and fixed-space sunlight, cache v39 texture-aligned day-night lighting. */
+/* LIVE // EARTH — correct geographic solar direction and fixed-space sunlight, cache v40 solar-basis correction. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v39-texture-aligned-day-night";
+const CACHE_NAME = "live-earth-shell-v40-solar-basis-correction";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -72,9 +72,9 @@ window.LiveEarthScene = (() => {
 
 function injectSolarDayNight(html) {
   const anchor = "let active=null,x=0,y=0,drag=false;";
-  if (!html.includes(anchor) || html.includes("LIVE_EARTH_SOLAR_DAY_NIGHT_V6")) return html;
+  if (!html.includes(anchor) || html.includes("LIVE_EARTH_SOLAR_DAY_NIGHT_V7")) return html;
   const code = `
-/* LIVE_EARTH_SOLAR_DAY_NIGHT_V6 — geographically aligned solar terminator + restrained night-side terrain reveal. */
+/* LIVE_EARTH_SOLAR_DAY_NIGHT_V7 — geographically aligned solar terminator + restrained night-side terrain reveal. */
 (() => {
   const earthMesh = earth;
   const solarLight = sun;
@@ -100,13 +100,13 @@ function injectSolarDayNight(html) {
       - 0.014615*Math.cos(2*gamma) - 0.040849*Math.sin(2*gamma));
     const solarMinutes = hour*60 + equationMinutes;
     const subsolarLongitude = (720-solarMinutes)*Math.PI/720;
-    // Three.js SphereGeometry maps texture longitude 0° toward local -Z;
-    // east-positive longitudes move toward local -X. Keep the terminator aligned
-    // with the NASA equirectangular texture instead of shifting it by 90°.
+    // The NASA equirectangular texture's 0° longitude maps to the sphere's
+    // local +X axis; east-positive longitude proceeds toward local -Z.
+    // This basis aligns the computed subsolar point with the visible texture.
     solarLocal.set(
-      -Math.cos(declination)*Math.sin(subsolarLongitude),
+      Math.cos(declination)*Math.cos(subsolarLongitude),
       Math.sin(declination),
-      -Math.cos(declination)*Math.cos(subsolarLongitude)
+      -Math.cos(declination)*Math.sin(subsolarLongitude)
     ).normalize();
     return solarLocal;
   }
