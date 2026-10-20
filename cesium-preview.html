@@ -39,7 +39,21 @@
 'use strict';const msg=document.querySelector('#message');let msgTimer;function tell(s){msg.textContent=s;msg.classList.add('show');clearTimeout(msgTimer);msgTimer=setTimeout(()=>msg.classList.remove('show'),4200)}
 if(!window.Cesium){tell('Cesium could not load. Check your connection and reload.');return}
 const C=window.Cesium;let viewer,unlocked=false,quality='basic',tileErrors=0;const qualityBox=document.querySelector('#quality');
-function frameEarth(){const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight),aspect=w/h,verticalFov=Cesium.Math.toRadians(60),horizontalFov=2*Math.atan(Math.tan(verticalFov/2)*aspect),targetFov=(Math.min(w,h)===w?horizontalFov:verticalFov),angularRadius=(targetFov*.75)/2,distance=C.Ellipsoid.WGS84.maximumRadius/Math.sin(angularRadius),altitude=Math.max(7500000,distance-C.Ellipsoid.WGS84.maximumRadius);return C.Cartesian3.fromDegrees(0,10,altitude)}
+function frameEarth(){
+  // Match the original homepage rule: projected globe diameter = 75% of the shorter viewport dimension.
+  // Solve perspective projection exactly for Cesium's vertical FOV and the selected short-axis FOV.
+  const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight);
+  const shortSide=Math.min(w,h),verticalFov=Cesium.Math.toRadians(60);
+  const aspect=w/h;
+  const horizontalFov=2*Math.atan(Math.tan(verticalFov/2)*aspect);
+  const shortAxisFov=(w<=h)?horizontalFov:verticalFov;
+  const targetFraction=0.75;
+  const targetAngularRadius=Math.atan(targetFraction*Math.tan(shortAxisFov/2));
+  const radius=C.Ellipsoid.WGS84.maximumRadius;
+  const centerDistance=radius/Math.sin(targetAngularRadius);
+  const altitude=Math.max(0,centerDistance-radius);
+  return C.Cartesian3.fromDegrees(0,10,altitude);
+}
 function cameraHome(duration=0){viewer.camera.flyTo({destination:frameEarth(),orientation:{heading:0,pitch:-Math.PI/2,roll:0},duration,complete:()=>viewer.scene.requestRender()})}
 (async()=>{try{
 let imageryLayer=null;let provider=null;
