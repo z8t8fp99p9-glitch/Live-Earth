@@ -1,110 +1,32 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#02050b">
-<title>LIVE // EARTH — Earth Modes</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#02050b"><title>LIVE // EARTH — Earth Modes</title>
 <style>
-:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#02050b;color:#eaf5ff}
-*{box-sizing:border-box}
-html,body,#map{height:100%;width:100%;margin:0}
-body{background:#02050b;overflow:hidden}
-#map{position:absolute;inset:0;background:#08111c}
-.topbar{position:absolute;z-index:800;top:calc(env(safe-area-inset-top) + 12px);left:12px;right:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;pointer-events:none}
-.brand{pointer-events:none;padding:10px 13px;border:1px solid #b6e6ff40;border-radius:15px;background:#071321dd;color:#edf8ff;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font-size:11px;font-weight:800;letter-spacing:.13em;box-shadow:0 6px 20px #0007}
-.brand span{color:#65d9ff}
-.earth-home{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;padding:0;background:transparent;color:#eaf5ff;font:600 10px -apple-system,BlinkMacSystemFont,sans-serif;text-shadow:0 1px 6px #000;cursor:pointer}
-.earth-shell{position:relative;display:block;width:58px;height:58px;border-radius:50%;overflow:hidden;border:1px solid #d9f3ffb0;box-shadow:inset 1px 1px 3px #ffffff66,inset -2px -3px 5px #000b,0 4px 12px #000b,0 0 16px #37bfff42;background:#071321}
-.earth-shell img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}
-.earth-shell:after{content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;background:linear-gradient(140deg,#ffffff35,transparent 38%,#7edbff12 72%,#0005)}
-#mode-message{position:absolute;z-index:700;left:50%;top:calc(env(safe-area-inset-top) + 88px);transform:translateX(-50%);width:min(88vw,420px);padding:12px 14px;border:1px solid #b6e6ff40;border-radius:15px;background:#071321e8;color:#dbeaf7;text-align:center;font-size:12px;line-height:1.5;box-shadow:0 8px 24px #0008;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
-#mode-message[hidden]{display:none}
-.leaflet-control-zoom a{background:#08121fe8!important;color:#eaf5ff!important;border-color:#b6e6ff35!important}
-.leaflet-control-attribution{font-size:9px!important;background:#06101bd9!important;color:#a9bdcf!important}
-.leaflet-control-attribution a{color:#9bdcff!important}
-.leaflet-control-scale-line{background:#06101bd9!important;border-color:#b6e6ff70!important;color:#dbeaf7!important;text-shadow:none!important}
-</style>
-</head>
-<body>
-<div id="map" role="application" aria-label="Interactive Earth map"></div>
-<header class="topbar">
-  <div class="brand">LIVE <span>//</span> EARTH</div>
-  <button id="earth-home" class="earth-home" type="button" aria-label="Earth orb — return to Home">
-    <span class="earth-shell"><img src="./earth.webp" alt="" draggable="false"></span>
-    <span>Earth · Home</span>
-  </button>
-</header>
-<div id="mode-message" role="status" aria-live="polite">Preparing map…</div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script>
-(() => {
-  'use strict';
-  const params = new URLSearchParams(window.location.search);
-  const requestedMode = params.get('mode') || 'basic';
-  const mode = ['basic', 'hd', 'offline'].includes(requestedMode) ? requestedMode : 'basic';
-  const message = document.querySelector('#mode-message');
-  const earthHome = document.querySelector('#earth-home');
-
-  earthHome.addEventListener('click', () => {
-    window.location.href = './';
-  });
-
-  if (mode === 'hd') {
-    document.title = 'HD Live Preview · LIVE // EARTH';
-    message.textContent = 'HD Live preview: this screen currently uses the 2D map. 3D buildings and richer imagery are not connected yet.';
-  } else if (mode === 'offline') {
-    document.title = 'Offline Preview · LIVE // EARTH';
-    message.textContent = 'Offline preview: saved map tiles are not bundled yet. This mode will not request map tiles.';
-  } else {
-    document.title = 'Basic Live · LIVE // EARTH';
-    message.textContent = 'Basic Live · Interactive 2D map. Pan and zoom to explore.';
-  }
-
-  if (!window.L) {
-    message.textContent = mode === 'offline'
-      ? 'Offline preview shell loaded, but the map library is not available. Saved map tiles are not bundled yet.'
-      : 'The map engine could not load. Check your internet connection and return Home to try again.';
-    return;
-  }
-
-  try {
-    const map = L.map('map', {
-      zoomControl: false,
-      preferCanvas: true,
-      attributionControl: true,
-      tap: true
-    }).setView([20, 0], 2);
-    L.control.zoom({position: 'bottomright'}).addTo(map);
-    L.control.scale({position: 'bottomleft', metric: true, imperial: false, maxWidth: 110}).addTo(map);
-
-    if (mode !== 'offline') {
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(map);
-    }
-
-    if (mode === 'basic') {
-      message.hidden = true;
-    } else {
-      // Keep the status visible briefly so preview limitations are not hidden.
-      window.setTimeout(() => { message.hidden = true; }, 6500);
-    }
-
-    map.on('tileerror', () => {
-      if (mode !== 'offline') {
-        message.hidden = false;
-        message.textContent = 'Map tiles could not load. Check your connection; you can still return Home with the Earth orb.';
-      }
-    });
-  } catch (error) {
-    console.error('[LIVE // EARTH] Map initialization failed', error);
-    message.hidden = false;
-    message.textContent = 'The map could not start on this device. Return Home with the Earth orb and try again.';
-  }
-})();
-</script>
-</body>
-</html>
+:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#02050b;color:#eaf5ff}*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden}body{position:relative;background:radial-gradient(ellipse at 50% 47%,#0b1b31,#050c18 42%,#02050b 78%)}
+#cosmos{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(1px 1px at 12% 17%,#d9edffb0 45%,transparent),radial-gradient(1px 1px at 79% 20%,#c9e4ff9c 45%,transparent),radial-gradient(1px 1px at 24% 73%,#d9edff8c 45%,transparent),radial-gradient(1px 1px at 87% 68%,#d9edff9c 45%,transparent),radial-gradient(1px 1px at 62% 85%,#c9e4ff8c 45%,transparent),radial-gradient(1px 1px at 42% 11%,#fff8 45%,transparent)}
+.topbar{position:absolute;z-index:5;top:calc(env(safe-area-inset-top) + 14px);left:16px;right:16px;display:flex;align-items:center;justify-content:space-between;pointer-events:none}
+.brand{padding:10px 13px;border:1px solid #b6e6ff35;border-radius:15px;background:#071321c9;color:#edf8ff;backdrop-filter:blur(14px);font-size:11px;font-weight:800;letter-spacing:.13em}.brand span{color:#65d9ff}
+.home-control{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:4px;border:0;padding:0;background:transparent;color:#eaf5ff;font:600 10px -apple-system,sans-serif;text-shadow:0 1px 6px #000}
+.home-shell{position:relative;display:block;width:56px;height:56px;border-radius:50%;overflow:hidden;border:1px solid #d9f3ffb0;box-shadow:inset 1px 1px 3px #ffffff66,0 0 16px #37bfff42;background:#071321}.home-shell img{width:100%;height:100%;object-fit:cover}.home-shell:after{content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;background:linear-gradient(140deg,#ffffff35,transparent 38%,#7edbff12 72%,#0005)}
+#scene-wrap{position:absolute;inset:0;display:grid;place-items:center;padding:100px 12px 95px}
+#earth-orb{position:relative;width:min(78vmin,72vh,590px);height:min(78vmin,72vh,590px);min-width:min(260px,78vw);min-height:min(260px,78vw);border-radius:50%;overflow:hidden;isolation:isolate;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;background:radial-gradient(circle at 35% 25%,#16314d,#071321 55%,#02050b);border:1px solid #bceaff9c;box-shadow:inset 0 2px 9px #ffffff2b,inset 0 -9px 25px #000c,0 0 0 5px #9cdcff0a,0 0 38px #168bff29,0 0 100px #0a3d7b1f}
+#earth-orb:after{content:"";position:absolute;z-index:3;inset:0;border-radius:50%;pointer-events:none;background:linear-gradient(145deg,#ffffff1e,transparent 25%,transparent 65%,#0005);box-shadow:inset 0 0 0 1px #ffffff18}
+#earth-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:2;touch-action:none;outline:none}
+#earth-fallback{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;z-index:1;opacity:.94}#earth-orb.globe-ready #earth-fallback{opacity:0}#earth-orb.dragging{cursor:grabbing}
+.orbit-halo{position:absolute;inset:-5%;border:1px solid #76caff1c;border-radius:50%;transform:rotate(-18deg) scaleY(.27);pointer-events:none}
+.footer{position:absolute;z-index:5;left:18px;right:18px;bottom:calc(env(safe-area-inset-bottom) + 18px);display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;pointer-events:none}
+.mode-label{font-size:11px;font-weight:800;letter-spacing:.19em;text-transform:uppercase;color:#9ee4ff;text-shadow:0 0 18px #198bce60}
+.hint{max-width:330px;padding:9px 13px;border:1px solid #b6e6ff26;border-radius:14px;background:#071321a8;color:#c7d7e8;font-size:11px;line-height:1.45;backdrop-filter:blur(12px)}
+#status{font-size:10px;color:#89a5c0;max-width:90vw}
+@media(max-height:560px){#scene-wrap{padding:66px 10px 54px}#earth-orb{width:min(68vmin,68vh,460px);height:min(68vmin,68vh,460px)}.footer{bottom:calc(env(safe-area-inset-bottom) + 7px)}.hint{padding:6px 10px}}
+</style></head><body>
+<div id="cosmos" aria-hidden="true"></div>
+<header class="topbar"><div class="brand">LIVE <span>//</span> EARTH</div>
+<button id="home-control" class="home-control" type="button" aria-label="Return to Home"><span class="home-shell"><img src="./earth.webp" alt="" draggable="false"></span><span>Home</span></button></header>
+<main id="scene-wrap"><div id="earth-orb" role="application" aria-label="Interactive 3D Earth. Drag with one finger to rotate. Pinch with two fingers to zoom. Tap to return Home." tabindex="0">
+<div class="orbit-halo" aria-hidden="true"></div><img id="earth-fallback" src="./earth.webp" alt="Earth globe preview"><canvas id="earth-canvas" aria-label="Interactive Earth globe"></canvas></div></main>
+<footer class="footer"><div id="mode-label" class="mode-label">BASIC LIVE</div><div class="hint">Drag to rotate · Pinch to zoom · Tap the globe or Home orb to return Home</div><div id="status" role="status" aria-live="polite">Preparing the Earth globe…</div></footer>
+<script>const mode=new URLSearchParams(location.search).get('mode')||'basic';const labels={basic:'BASIC LIVE',hd:'HD LIVE',offline:'OFFLINE EARTH'};document.querySelector('#mode-label').textContent=labels[mode]||labels.basic;document.title=(labels[mode]||labels.basic)+' · LIVE // EARTH';</script>
+<script type="module" src="./earth-orb-globe.js"></script></body></html>

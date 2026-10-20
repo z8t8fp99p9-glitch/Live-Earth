@@ -1,31 +1,15 @@
-LIVE // EARTH — Moon Subtle Stardust + Landscape Restore
+LIVE // EARTH — Interactive 3D Earth Orb patch
+Repository: z8t8fp99p9-glitch/Live-Earth | Branch: main
+Prepared 2026-10-20
 
-PATCH CONTENTS
-- index.html — original Earth camera framing restored exactly: camera distance is based on 75% of the shortest viewport dimension. The Moon layer is additive; Earth mesh, texture, lighting and one-finger rotation code are not rewritten.
-- moon-orbit.js — rolling 30-day calculated 3D orbit, slightly reduced Moon display radius, very faint orbit curve and sparse stardust grains. Removed the comet-like moving tail.
-- sw.js — cache version v20 so mobile browsers fetch the corrected package.
-- dataset-manifest.json — documents the intentional cinematic scaling and low-precision orbital model.
+UPLOAD THESE THREE FILES TO THE REPOSITORY ROOT:
+- location.html (replace)
+- sw.js (replace)
+- earth-orb-globe.js (new)
 
-VISUAL CHOICES
-- Moon display radius: 0.32 Earth radii (still slightly enlarged relative to the real 0.273 ratio, but smaller than the previous version).
-- Display orbital distance factor: 0.04; mean displayed centre distance about 2.4 Earth radii. This is cinematic, not physical scale.
-- Orbit dots are subtle and static along the path. The Moon position updates from a low-precision Keplerian calculation every 30 seconds. This is not a JPL-grade ephemeris.
-- No long tail or flashing particles. Orbit may extend beyond the screen at the original Earth framing; Earth is not zoomed out to fit the orbit.
+Commit title:
+Replace flat map with interactive 3D Earth orb
 
-IPHONE UPLOAD NOTES
-This is a replacement-file patch, not a full repository. If you decide to test it, replace these four files at the repository root: index.html, moon-orbit.js, sw.js, dataset-manifest.json. Keep manifest.json, icon.svg, data-store.js, astronomy.js and all existing orb images. Do not upload the ZIP itself to the repository root.
+This changes only the Earth-mode screen. index.html is intentionally not included or changed. The flat 2D map is replaced by a large circular 3D Earth orb. Drag with one finger to rotate; pinch with two fingers to zoom; tap the globe without moving to return Home. The small top-right Earth/Home orb also returns Home. Basic, HD and Offline labels are preserved; HD uses a higher sphere detail and pixel ratio.
 
-TEST CHECKLIST
-1. In landscape, Earth should return to the original close framing (75% of the shortest screen dimension).
-2. Moon should be slightly smaller than in the previous screenshot.
-3. Orbit should read as faint stardust / a delicate curve, not a long comet tail or bright dashed line.
-4. Drag with one finger; Earth and the attached Moon system should rotate together.
-5. Confirm pinch gestures do not zoom the camera; Earth stays locked at the original framing.
-6. Tap Sun/Moon buttons and verify the existing current-day preview still opens.
-7. Reload twice and test offline after cache completes.
-
-GITHUB COMMIT TITLE
-Restore Earth framing and soften Moon orbital stardust
-
-STATUS
-Package checks can validate ZIP integrity, JavaScript syntax and JSON validity, but cannot certify real-iPhone visual behavior. Review before deployment. No GitHub changes were made by preparing this patch.
+Important: the 3D renderer needs WebGL, Three.js from a CDN and a remote Earth texture. If texture loading fails, the saved earth.webp artwork remains visible. Offline is not yet a fully independent offline 3D engine; full 3D offline use depends on browser-cached engine and texture. This ZIP is prepared and statically checked, not deployed or iPhone-tested. Home artwork, Earth/Moon framing and the five homepage orbs are not changed.
