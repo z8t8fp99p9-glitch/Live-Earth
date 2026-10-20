@@ -1,6 +1,6 @@
-/* LIVE // EARTH — same-globe unlock + live solar day/night, cache v33. */
+/* LIVE // EARTH — clean solar day/night, remove blue fill and shell, cache v34. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v33-live-day-night";
+const CACHE_NAME = "live-earth-shell-v34-clean-solar-light";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -72,9 +72,9 @@ window.LiveEarthScene = (() => {
 
 function injectSolarDayNight(html) {
   const anchor = "let active=null,x=0,y=0,drag=false;";
-  if (!html.includes(anchor) || html.includes("LIVE_EARTH_SOLAR_DAY_NIGHT_V1")) return html;
+  if (!html.includes(anchor) || html.includes("LIVE_EARTH_SOLAR_DAY_NIGHT_V2")) return html;
   const code = `
-/* LIVE_EARTH_SOLAR_DAY_NIGHT_V1 — update solar illumination; preserve the existing scene. */
+/* LIVE_EARTH_SOLAR_DAY_NIGHT_V2 — update solar illumination; preserve the existing scene. */
 (() => {
   const earthMesh = earth;
   const solarLight = sun;
@@ -102,20 +102,20 @@ function injectSolarDayNight(html) {
     solarVector.set(Math.cos(lat)*Math.sin(subsolarLongitude), Math.sin(lat), Math.cos(lat)*Math.cos(subsolarLongitude)).normalize();
     // Treat the user's drag as moving the globe under their viewpoint: rotate the
     // solar direction with the same Earth group so the terminator stays geographic.
-    earthMesh.updateWorldMatrix(true,false);
-    const worldSun = earthMesh.localToWorld(solarVector.clone().multiplyScalar(12));
+    const worldSun = solarVector.clone().applyEuler(sceneGroup.rotation).multiplyScalar(12);
     solarLight.position.copy(worldSun);
     solarLight.target.position.set(0,0,0);
     solarLight.target.updateMatrixWorld();
     draw();
   }
-  // Lower ambient fill so the night hemisphere reads as night, while retaining a
-  // faint blue fill and the existing blue atmospheric shell.
+  // Remove the decorative blue shell (radius 1.025), preserving Earth and Moon.
+  const blueShell = sceneGroup.children.find(o => o.isMesh && o.geometry?.parameters?.radius > 1.01 && o.geometry?.parameters?.radius < 1.04);
+  if (blueShell) sceneGroup.remove(blueShell);
+  // Remove the secondary blue directional fill; keep only the moving Sun light.
+  scene.children.filter(o => o.isDirectionalLight && o !== solarLight).forEach(light => scene.remove(light));
   const ambient = scene.children.find(o => o.isAmbientLight);
-  if (ambient) ambient.intensity = 0.105;
-  const blueFill = scene.children.find(o => o.isDirectionalLight && o !== solarLight);
-  if (blueFill) blueFill.intensity = 0.018;
-  solarLight.intensity = 2.25;
+  if (ambient) ambient.intensity = 0.035;
+  solarLight.intensity = 2.3;
   updateSolarDayNight();
   let lastMinute = -1;
   const solarTimer = setInterval(() => {
