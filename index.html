@@ -109,7 +109,7 @@ radial-gradient(1px 1px at 42% 11%,#fff8 45%,transparent)}
     });
     document.body.appendChild(qualityControls);
     window.LiveEarthScene={
-      unlock(){if(unlocked)return;unlocked=true;homeDestination=viewer.camera.positionWC.clone();homeOrientation={heading:viewer.camera.heading,pitch:viewer.camera.pitch,roll:viewer.camera.roll};qualityControls.hidden=false;viewer.camera.flyTo({destination:C.Cartesian3.fromDegrees(0,15,7800000),orientation:{heading:0,pitch:-Math.PI/2,roll:0},duration:.65});},
+      unlock(){if(unlocked)return;unlocked=true;homeDestination=viewer.camera.positionWC.clone();homeOrientation={heading:viewer.camera.heading,pitch:viewer.camera.pitch,roll:viewer.camera.roll};qualityControls.hidden=false;viewer.camera.flyTo({destination:C.Cartesian3.fromDegrees(0,15,14500000),orientation:{heading:0,pitch:-Math.PI/2,roll:0},duration:.65});},
       lock(){if(!unlocked)return;unlocked=false;qualityControls.hidden=true;viewer.camera.flyTo({destination:homeDestination,orientation:homeOrientation,duration:.65});},
       isUnlocked(){return unlocked;},
       setQuality(value){const b=qualityControls.querySelector('[data-quality="'+(value==="hd"?"hd":"basic")+'"]');if(b)b.click();return value;},
@@ -136,7 +136,7 @@ radial-gradient(1px 1px at 42% 11%,#fff8 45%,transparent)}
     viewer.scene.screenSpaceCameraController.minimumZoomDistance=6800000;
     viewer.scene.screenSpaceCameraController.maximumZoomDistance=42000000;
     viewer.camera.setView({
-      destination:C.Cartesian3.fromDegrees(0,18,11800000),
+      destination:C.Cartesian3.fromDegrees(0,18,22500000),
       orientation:{heading:0,pitch:-Math.PI/2,roll:0}
     });
     viewer.scene.globe.tileLoadProgressEvent.addEventListener(remaining=>{
