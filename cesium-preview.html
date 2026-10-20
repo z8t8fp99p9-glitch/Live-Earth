@@ -42,23 +42,32 @@ let viewer,unlocked=false,quality='basic',timer;
 function tell(s){msg.textContent=s;msg.classList.add('show');clearTimeout(timer);timer=setTimeout(()=>msg.classList.remove('show'),3800)}
 if(!C){tell('Cesium failed to load. Check connection and reload.');return}
 function frameEarth(){
-  // Measure Cesium's actual canvas after resize, and use the live camera frustum FOV.
+  // A virtual square camera frame: use the shorter ACTUAL Cesium canvas side in either orientation.
   const canvas=viewer.canvas;
-  const w=Math.max(1,canvas.clientWidth||innerWidth),h=Math.max(1,canvas.clientHeight||innerHeight);
-  const fovy=(viewer.camera.frustum && viewer.camera.frustum.fovy) || C.Math.toRadians(60);
-  const aspect=w/h;
-  const horizontalFov=2*Math.atan(Math.tan(fovy/2)*aspect);
-  const shortFov=w<=h?horizontalFov:fovy;
-  // Perspective projection: apparent globe diameter / shorter viewport dimension = 0.75.
-  const tangentHalfAngle=Math.atan(.75*Math.tan(shortFov/2));
+  const width=Math.max(1,canvas.clientWidth||canvas.width||1);
+  const height=Math.max(1,canvas.clientHeight||canvas.height||1);
+  const side=Math.min(width,height);
+  const frustum=viewer.camera.frustum;
+  const verticalFov=(frustum.fovy||C.Math.toRadians(60));
+  const aspect=width/height;
+  // The square's short side is horizontal in portrait and vertical in landscape.
+  const squareFov=width<=height
+    ? 2*Math.atan(Math.tan(verticalFov/2)*aspect)
+    : verticalFov;
+  const targetFraction=0.75;
+  const tangentHalfAngle=Math.atan(targetFraction*Math.tan(squareFov/2));
   const radius=C.Ellipsoid.WGS84.maximumRadius;
   const cameraDistance=radius/Math.sin(tangentHalfAngle);
   return C.Cartesian3.fromDegrees(0,10,cameraDistance-radius);
 }
 function home(duration=0){
-  const destination=frameEarth();
-  if(duration>0){viewer.camera.flyTo({destination,orientation:{heading:0,pitch:-Math.PI/2,roll:0},duration,complete:()=>viewer.scene.requestRender()});}
-  else{viewer.camera.setView({destination,orientation:{heading:0,pitch:-Math.PI/2,roll:0}});viewer.scene.requestRender();}
+  viewer.camera.cancelFlight();
+  if(duration>0){
+    viewer.camera.flyTo({destination:frameEarth(),orientation:{heading:0,pitch:-Math.PI/2,roll:0},duration,complete:()=>viewer.scene.requestRender()});
+  }else{
+    viewer.camera.setView({destination:frameEarth(),orientation:{heading:0,pitch:-Math.PI/2,roll:0}});
+    viewer.scene.requestRender();
+  }
 }
 (async()=>{try{
 let imagery;
@@ -89,16 +98,26 @@ window.LiveEarthScene={
 };
 qualityBox.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>window.LiveEarthScene.setQuality(b.dataset.quality)));
 document.querySelectorAll('.orbButton').forEach(b=>b.addEventListener('click',()=>{const id=b.dataset.view;if(id==='earth'){unlocked?window.LiveEarthScene.lock():window.LiveEarthScene.unlock();return}if(unlocked)window.LiveEarthScene.lock();tell(({moon:'The Moon is following its timestamp-based orbital path.',sun:'Cesium solar lighting follows the scene time.',location:'Location is not wired into this preview.',stacks:'Stacks is not wired into this preview.'})[id]||'')}));
-let resizeFrame=0;
+let resizeTimer=0,resizeFrame=0;
 function resize(){
-  // Let Cesium update its canvas/frustum first; then reframe using the new dimensions.
-  viewer.resize();
+  // Coalesce iOS orientation/visualViewport events; resize Cesium before measuring its canvas.
+  clearTimeout(resizeTimer);
   if(resizeFrame)cancelAnimationFrame(resizeFrame);
-  resizeFrame=requestAnimationFrame(()=>{
-    resizeFrame=0;
-    if(!unlocked)home(0);
-    viewer.scene.requestRender();
-  });
+  resizeTimer=setTimeout(()=>{
+    viewer.resize();
+    resizeFrame=requestAnimationFrame(()=>{
+      resizeFrame=0;
+      if(!unlocked){
+        // Cancel any stale camera flight so it cannot overwrite the latest orientation.
+        viewer.camera.cancelFlight();
+        viewer.camera.setView({
+          destination:frameEarth(),
+          orientation:{heading:0,pitch:-Math.PI/2,roll:0}
+        });
+      }
+      viewer.scene.requestRender();
+    });
+  },120);
 }
 addEventListener('resize',resize,{passive:true});
 if(window.visualViewport)visualViewport.addEventListener('resize',resize,{passive:true});
