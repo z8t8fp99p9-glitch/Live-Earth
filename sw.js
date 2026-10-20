@@ -1,6 +1,6 @@
 /* LIVE // EARTH — correct geographic solar direction and fixed-space sunlight, cache v42 corrected longitude basis. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v48-exploration-zoom-gestures";
+const CACHE_NAME = "live-earth-shell-v50-quality-zoom-range";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -31,13 +31,28 @@ window.LiveEarthScene = (() => {
     draw();
     return quality;
   }
-  function animateCamera(targetZ, done) {
+  function animateCamera(targetZ, done, targetRotation = null) {
     if (animation) cancelAnimationFrame(animation);
     const startZ = camera.position.z, start = performance.now();
-    const duration = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 620;
+    const startRotation = {x:group.rotation.x,y:group.rotation.y,z:group.rotation.z};
+    const angleDelta = targetRotation ? {
+      x:Math.atan2(Math.sin(targetRotation.x-startRotation.x),Math.cos(targetRotation.x-startRotation.x)),
+      y:Math.atan2(Math.sin(targetRotation.y-startRotation.y),Math.cos(targetRotation.y-startRotation.y)),
+      z:Math.atan2(Math.sin(targetRotation.z-startRotation.z),Math.cos(targetRotation.z-startRotation.z))
+    } : null;
+    const duration = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 720;
     const tick = now => {
       const t = duration ? Math.min(1, (now - start) / duration) : 1;
-      camera.position.z = startZ + (targetZ - startZ) * (1 - Math.pow(1 - t, 3));
+      const eased = 1 - Math.pow(1 - t, 3);
+      camera.position.z = startZ + (targetZ - startZ) * eased;
+      if (targetRotation && angleDelta) {
+        group.rotation.set(
+          startRotation.x + angleDelta.x * eased,
+          startRotation.y + angleDelta.y * eased,
+          startRotation.z + angleDelta.z * eased
+        );
+        if (t === 1) group.rotation.set(targetRotation.x,targetRotation.y,targetRotation.z);
+      }
       camera.lookAt(0, 0, 0); draw();
       if (t < 1) animation = requestAnimationFrame(tick);
       else { animation = 0; done?.(); }
@@ -57,9 +72,10 @@ window.LiveEarthScene = (() => {
   function lock() {
     if (!unlocked) return;
     unlocked = false; window.__leEarthUnlocked = false;
-    if (homeRotation) group.rotation.set(homeRotation.x,homeRotation.y,homeRotation.z);
+    // Return to the approved Home orientation and camera framing together,
+    // interpolating both so the globe never snaps abruptly back to India.
     renderQuality(quality);
-    animateCamera(homeZ);
+    animateCamera(homeZ, null, homeRotation);
   }
   function setQuality(next) {
     quality = next === "hd" ? "hd" : "basic";
@@ -68,8 +84,10 @@ window.LiveEarthScene = (() => {
   }
   function zoomBy(factor, smooth = true) {
     if (!unlocked || !Number.isFinite(factor) || factor <= 0) return camera.position.z;
-    const minZ = 1.55;
-    const maxZ = Math.max(minZ + 0.5, homeZ * 1.65);
+    // Give Basic a modestly closer view, while HD unlocks the strongest
+    // zoom-in range. Both profiles remain bounded by the approved Home scale.
+    const minZ = quality === "hd" ? 0.88 : 1.30;
+    const maxZ = Math.max(minZ, homeZ);
     const targetZ = Math.max(minZ, Math.min(maxZ, camera.position.z * factor));
     if (smooth) animateCamera(targetZ);
     else { if (animation) cancelAnimationFrame(animation); animation = 0; camera.position.z = targetZ; camera.lookAt(0,0,0); draw(); }
