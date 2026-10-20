@@ -1,6 +1,6 @@
-/* LIVE // EARTH — clean solar day/night, remove blue fill and shell, cache v34. */
+/* LIVE // EARTH — clean solar day/night, remove blue fill and shell, cache v35. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v34-clean-solar-light";
+const CACHE_NAME = "live-earth-shell-v35-smooth-solar-light";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -72,9 +72,9 @@ window.LiveEarthScene = (() => {
 
 function injectSolarDayNight(html) {
   const anchor = "let active=null,x=0,y=0,drag=false;";
-  if (!html.includes(anchor) || html.includes("LIVE_EARTH_SOLAR_DAY_NIGHT_V2")) return html;
+  if (!html.includes(anchor) || html.includes("LIVE_EARTH_SOLAR_DAY_NIGHT_V3")) return html;
   const code = `
-/* LIVE_EARTH_SOLAR_DAY_NIGHT_V2 — update solar illumination; preserve the existing scene. */
+/* LIVE_EARTH_SOLAR_DAY_NIGHT_V3 — update solar illumination; preserve the existing scene. */
 (() => {
   const earthMesh = earth;
   const solarLight = sun;
@@ -84,11 +84,10 @@ function injectSolarDayNight(html) {
     const start = Date.UTC(date.getUTCFullYear(),0,0);
     return Math.floor((Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate())-start)/86400000);
   };
-  function updateSolarDayNight(date = new Date()) {
-    // Compact solar declination and equation-of-time approximation, accurate enough
-    // for a visual day/night terminator rather than navigation or scientific timing.
+  function getSolarTarget(date = new Date()) {
+    // Smoothly evaluate the solar direction from current UTC time on every frame.
     const day = utcDayOfYear(date);
-    const hour = date.getUTCHours() + date.getUTCMinutes()/60 + date.getUTCSeconds()/3600;
+    const hour = date.getUTCHours() + date.getUTCMinutes()/60 + date.getUTCSeconds()/3600 + date.getUTCMilliseconds()/3600000;
     const gamma = 2*Math.PI/365*(day-1+(hour-12)/24);
     const declination = 0.006918 - 0.399912*Math.cos(gamma) + 0.070257*Math.sin(gamma)
       - 0.006758*Math.cos(2*gamma) + 0.000907*Math.sin(2*gamma)
@@ -98,12 +97,15 @@ function injectSolarDayNight(html) {
     const solarMinutes = hour*60 + equationMinutes;
     const subsolarLongitude = (720-solarMinutes)*Math.PI/720;
     const lat = declination;
-    // Earth texture's central meridian is approximately the forward (+Z) direction.
     solarVector.set(Math.cos(lat)*Math.sin(subsolarLongitude), Math.sin(lat), Math.cos(lat)*Math.cos(subsolarLongitude)).normalize();
-    // Treat the user's drag as moving the globe under their viewpoint: rotate the
-    // solar direction with the same Earth group so the terminator stays geographic.
-    const worldSun = solarVector.clone().applyEuler(sceneGroup.rotation).multiplyScalar(12);
-    solarLight.position.copy(worldSun);
+    return solarVector.clone().applyEuler(sceneGroup.rotation).multiplyScalar(12);
+  }
+  function updateSolarDayNight() {
+    const target = getSolarTarget(new Date());
+    // Frame-rate-independent easing: the light follows Earth rotation immediately,
+    // without snapping when the drag ends or when a minute changes.
+    const alpha = 1 - Math.exp(-10 * Math.min(0.05, Math.max(0.001, (performance.now() - lastFrame) / 1000)));
+    solarLight.position.lerp(target, alpha);
     solarLight.target.position.set(0,0,0);
     solarLight.target.updateMatrixWorld();
     draw();
@@ -116,23 +118,22 @@ function injectSolarDayNight(html) {
   const ambient = scene.children.find(o => o.isAmbientLight);
   if (ambient) ambient.intensity = 0.035;
   solarLight.intensity = 2.3;
-  updateSolarDayNight();
-  let lastMinute = -1;
-  const solarTimer = setInterval(() => {
-    if (document.hidden) return;
-    const now = new Date();
-    if (now.getUTCMinutes() !== lastMinute) {
-      lastMinute = now.getUTCMinutes();
-      updateSolarDayNight(now);
-    }
-  }, 15000);
-  const oldDraw = draw;
-  // Refresh solar orientation after a user rotates the Earth, without adding a
-  // second animation loop or changing camera/framing.
-  const originalPointerMove = canvas.onpointermove;
-  canvas.addEventListener("pointerup", () => updateSolarDayNight(), {passive:true});
-  canvas.addEventListener("pointercancel", () => updateSolarDayNight(), {passive:true});
-  window.addEventListener("pagehide", () => clearInterval(solarTimer), {once:true});
+  let lastFrame = performance.now();
+  let solarFrame = 0;
+  function smoothSolarFrame(now) {
+    if (document.hidden) { solarFrame = 0; return; }
+    lastFrame = Math.max(0, now - lastFrame) > 100 ? now - 16.7 : lastFrame;
+    updateSolarDayNight();
+    lastFrame = now;
+    solarFrame = requestAnimationFrame(smoothSolarFrame);
+  }
+  // One lightweight frame loop keeps the day/night edge in step with finger rotation.
+  solarFrame = requestAnimationFrame(smoothSolarFrame);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden && solarFrame) { cancelAnimationFrame(solarFrame); solarFrame = 0; }
+    else if (!document.hidden && !solarFrame) { lastFrame = performance.now(); solarFrame = requestAnimationFrame(smoothSolarFrame); }
+  });
+  window.addEventListener("pagehide", () => { if (solarFrame) cancelAnimationFrame(solarFrame); }, {once:true});
   window.LiveEarthSolar = {update:updateSolarDayNight};
 })();
 `;
