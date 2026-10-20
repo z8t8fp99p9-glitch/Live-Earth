@@ -1,7 +1,7 @@
 /* LIVE // EARTH — adaptive rotation recovery shell.
-   Removes Orientation Guardian injection; preserves safe app-ready cache cleanup. */
+   Cache v29 adds portrait touch-coordinate recovery; no orientation lock. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v28-portrait-panel-touch-fix";
+const CACHE_NAME = "live-earth-shell-v29-portrait-coordinate-recovery";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [

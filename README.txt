@@ -1,24 +1,19 @@
-LIVE // EARTH — Portrait panel touch fix (candidate)
+LIVE // EARTH — Portrait Touch Coordinate Recovery (v29)
 
-WHY
-The current page applies touch-action:none to both html and body. That ancestor-level restriction can block vertical touch scrolling in the overflow:auto Moon/Sun or Stacks panel, which is most noticeable in portrait when the card is taller than the screen. The globe canvas keeps its own touch-action:none so one-finger globe rotation is retained.
+This is a focused test patch for the portrait touch offset seen after switching device orientation.
+It does not change index.html, orb-controls-v4.js, the orb artwork, Earth/Moon size, or homepage layout.
 
-FILES
-- sw.js: bumps the shell cache to v28 so the changed recovery helper is fetched.
-- rotation-recovery.js: permits vertical gestures outside the globe canvas, refreshes panel bounds after viewport settling, and cancels a globe drag interrupted by rotation.
+Files to upload to the repository root (replace existing files):
+- rotation-recovery.js
+- sw.js
 
-MANUAL iPHONE UPLOAD
-1. In the Live-Earth repository, branch main, replace sw.js with the supplied file.
-2. Replace rotation-recovery.js with the supplied file.
-3. Keep orientation-manager.js deleted (the orientation prompt has been removed).
-4. Commit the two files together. Do not replace index.html, orb-controls-v4.js, manifest.json, or any art assets.
+Before uploading: the currently working orb controls should be left untouched. This patch only resets stale page scroll offsets after orientation changes, waits for the iOS viewport to settle, and forces a fresh hit-test/layout pass. It cannot be considered confirmed until tested on the iPhone.
 
-TEST
-- In portrait, open Moon or Sun and try scrolling the panel vertically; test its close button.
-- Open Stacks and scroll its options if they exceed the screen height.
-- Rotate portrait -> landscape -> portrait while a panel is open; check close button and all orbs.
-- Rotate while dragging Earth; verify the globe is not left in a stuck drag.
-- Confirm Location starts OFF on a fresh launch.
+After upload:
+1. Commit title: Fix portrait touch coordinate recovery after rotation
+2. Open the published LIVE // EARTH site on the iPhone.
+3. Fully close and reopen the site/PWA, then switch portrait → landscape → portrait.
+4. Tap each orb near its center. Confirm the selected orb matches the one touched and panels' close buttons work.
+5. Confirm the Earth and Moon composition has not moved or changed size.
 
-STATUS
-Candidate only. JavaScript syntax and ZIP integrity checks should be run before upload. This has not been tested on a physical iPhone; report the actual result before treating it as fixed.
+If the issue remains, do not upload the older V5 candidate. Report whether the offset remains and whether it is still about half an orb; we should diagnose the actual Safari hit-testing behavior before another patch.
