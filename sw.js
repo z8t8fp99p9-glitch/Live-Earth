@@ -1,6 +1,6 @@
-/* LIVE // EARTH — solar direction and fixed-space sunlight; cache v65 fullscreen Moon View controls. */
+/* LIVE // EARTH — edge-to-edge iOS Sky View; cache v66. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v65-fullscreen-moon-view";
+const CACHE_NAME = "live-earth-shell-v66-edge-to-edge-sky-view";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
