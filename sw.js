@@ -281,7 +281,7 @@ function injectSolarDayNight(html) {
     // Follow the same model transform as the texture-bearing Earth mesh. This
     // keeps the terminator aligned when the user rotates the globe by touch.
     earthMesh.getWorldQuaternion(worldQuaternion);
-    solarVector.copy(solarLocal).applyQuaternion(worldQuaternion).normalize();
+    solarVector.copy(solarLocal).applyQuaternion(worldQuaternion).normalize().negate();
     solarLight.position.copy(solarVector).multiplyScalar(12);
     solarLight.target.position.set(0,0,0);
     solarLight.target.updateMatrixWorld();

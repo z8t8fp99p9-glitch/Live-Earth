@@ -1,15 +1,17 @@
-LIVE // EARTH — V53 EXPLORER ORB ROUTING FIX
+LIVE // EARTH — Solar Direction Test V54
+Changed files only: sw.js, earth-mode-navigation.js
 
-Purpose: Keep Explorer open when tapping the red Location Orb or Stacks Orb. Only the Earth Orb exits Explorer.
+Purpose:
+- Restores the tested V53 Explorer orb-routing source.
+- Applies one controlled solar-direction experiment: reverses the shared world-space solar vector used by the Earth directional light and day/night shader.
+- Does not intentionally change the Moon, Sun preview, Earth geometry, camera, Home framing, or orb controls.
 
-Upload these files to the repository root, replacing files with the same names:
-- sw.js
-- earth-mode-navigation.js
+Apply:
+1. Replace the repository's sw.js and earth-mode-navigation.js with these files.
+2. Commit and deploy.
+3. On iPhone, fully close/reopen the site or refresh after deployment so the new service-worker shell is active.
+4. Check the day/night boundary at the same globe orientation and time. If the bright/dark side is still wrong, do not stack another inversion; report the result and we will revert this single-line experiment.
 
-Do not upload the ZIP itself. Do not change index.html, orb-controls-v4.js, Earth/Moon size or framing, solar lighting, location-scanner.js, or the Clouds placeholder.
-
-The fix removes the capture-phase rule that automatically closed Explorer whenever any non-Earth orb was clicked. The Location and Stacks orbs keep their existing handlers and behavior. Service-worker cache version is bumped to v53 so the update can activate.
-
-Validation performed: JavaScript syntax checks and ZIP integrity check. This is not yet iPhone runtime-tested.
-
-Suggested commit title: Keep Explorer open when using Location and Stacks orbs
+Important:
+This is an unverified experiment, not a confirmed fix. Keep your previous ZIP/commit so rollback is easy.
+Suggested commit title: Test reversed Earth solar lighting direction
