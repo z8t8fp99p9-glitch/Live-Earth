@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1600" preserveAspectRatio="xMidYMid slice" role="img" aria-labelledby="title desc">
+<title id="title">LIVE // EARTH — Moon Sky View background</title>
+<desc id="desc">Responsive, text-free midnight-blue vector landscape with stars, moonlit clouds, layered mountains, a reflective valley, and a dark foreground reserved for independent live interface elements.</desc>
+<defs>
+  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+    <stop stop-color="#020817"/><stop offset=".35" stop-color="#092344"/><stop offset=".62" stop-color="#17446b"/><stop offset=".8" stop-color="#4a7192"/><stop offset="1" stop-color="#07172a"/>
+  </linearGradient>
+  <radialGradient id="moonGlow"><stop stop-color="#d9f2ff" stop-opacity=".6"/><stop offset=".35" stop-color="#80c8ff" stop-opacity=".24"/><stop offset="1" stop-color="#62b9ff" stop-opacity="0"/></radialGradient>
+  <linearGradient id="farMount" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#527c9d"/><stop offset="1" stop-color="#18324f"/></linearGradient>
+  <linearGradient id="midMount" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#193a5b"/><stop offset="1" stop-color="#07182d"/></linearGradient>
+  <linearGradient id="front" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#071526"/><stop offset="1" stop-color="#01050d"/></linearGradient>
+  <linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#b9e8ff" stop-opacity=".55"/><stop offset="1" stop-color="#3c9ddd" stop-opacity="0"/></linearGradient>
+  <filter id="blur"><feGaussianBlur stdDeviation="28"/></filter>
+  <style>
+    .portrait-only{display:inline}
+    .landscape-only{display:none}
+    @media (orientation: landscape) {
+      .portrait-only{display:none}
+      .landscape-only{display:inline}
+    }
+  </style>
+</defs>
+<g class="portrait-only">
+  <rect width="1000" height="1600" fill="url(#sky)"/>
+  <ellipse cx="720" cy="300" rx="360" ry="300" fill="url(#moonGlow)"/>
+  <g fill="#e0f3ff">
+    <circle cx="100" cy="110" r="2"/><circle cx="220" cy="250" r="2.5"/><circle cx="420" cy="130" r="1.8"/><circle cx="610" cy="200" r="2"/><circle cx="850" cy="110" r="2.4"/><circle cx="910" cy="350" r="1.8"/><circle cx="120" cy="450" r="1.7"/><circle cx="340" cy="380" r="2"/><circle cx="530" cy="470" r="1.6"/><circle cx="780" cy="430" r="2"/>
+  </g>
+  <g fill="#a8dfff" opacity=".22" filter="url(#blur)">
+    <path d="M-80 570 Q80 470 220 550 T480 530 T760 550 T1080 500 L1080 680 Q850 650 650 680 T300 670 T-80 720Z"/>
+  </g>
+  <path d="M0 960 L90 890 155 930 245 820 320 910 410 805 485 920 575 840 660 930 745 810 830 900 910 850 1000 930 1000 1160 0 1160Z" fill="url(#farMount)"/>
+  <path d="M0 1050 L105 955 200 1015 300 920 390 1025 490 950 585 1035 680 915 780 1000 875 930 950 1000 1000 965 1000 1260 0 1260Z" fill="url(#midMount)"/>
+  <path d="M0 1180 L95 1080 175 1140 275 1030 365 1150 460 1060 560 1165 665 1030 760 1140 855 1060 1000 1150 1000 1600 0 1600Z" fill="url(#front)"/>
+  <path d="M420 1140 Q500 1110 560 1145 Q520 1210 600 1290 Q520 1370 590 1600 L390 1600 Q460 1400 400 1300 Q460 1220 420 1140Z" fill="url(#water)" opacity=".65"/>
+  <rect y="1460" width="1000" height="140" fill="#01050d" opacity=".5"/>
+</g>
+<g class="landscape-only">
+  <rect width="1000" height="1600" fill="url(#sky)"/>
+  <ellipse cx="700" cy="330" rx="440" ry="270" fill="url(#moonGlow)"/>
+  <g fill="#e0f3ff">
+    <circle cx="90" cy="110" r="2"/><circle cx="230" cy="230" r="2.2"/><circle cx="410" cy="120" r="1.8"/><circle cx="600" cy="180" r="2"/><circle cx="850" cy="110" r="2.5"/><circle cx="930" cy="340" r="1.8"/><circle cx="150" cy="440" r="1.7"/><circle cx="350" cy="380" r="2"/><circle cx="530" cy="470" r="1.6"/><circle cx="780" cy="420" r="2"/>
+  </g>
+  <path d="M0 940 L100 850 200 920 300 810 390 900 480 790 580 910 670 810 770 900 870 820 1000 910 1000 1200 0 1200Z" fill="url(#farMount)"/>
+  <path d="M0 1060 L120 950 220 1015 330 900 430 1020 540 925 650 1020 760 915 870 1010 1000 930 1000 1300 0 1300Z" fill="url(#midMount)"/>
+  <path d="M0 1210 L110 1090 220 1160 320 1060 420 1170 530 1080 650 1180 760 1070 875 1160 1000 1080 1000 1600 0 1600Z" fill="url(#front)"/>
+  <path d="M390 1180 Q500 1140 590 1190 Q520 1280 600 1360 Q510 1450 570 1600 L420 1600 Q480 1430 410 1350 Q470 1260 390 1180Z" fill="url(#water)" opacity=".62"/>
+  <rect y="1450" width="1000" height="150" fill="#01050d" opacity=".5"/>
+</g>
+</svg>
