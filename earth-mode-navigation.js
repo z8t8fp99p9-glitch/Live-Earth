@@ -112,8 +112,6 @@
     button.setAttribute("aria-pressed", String(active));
     button.setAttribute("aria-expanded", String(active));
     button.setAttribute("data-earth-exploration", String(active));
-    if (active) window.LiveEarthViewState?.enterView("earth-explorer");
-    else window.LiveEarthViewState?.leaveView();
     window.dispatchEvent(new CustomEvent("live-earth-exclusive-mode", {detail:{active}}));
   }
 
@@ -162,11 +160,12 @@
     if (earthButton) {
       event.preventDefault();
       event.stopImmediatePropagation();
+      window.LiveEarthSkyViews?.close();
       toggleEarth();
       return;
     }
-    // Location and Stacks are independent controls. They never replace the
-    // foreground View or force Explorer back to Home.
+    // Location and Stacks are independent global orbs. Their clicks must not
+    // force Explorer back to Home; only the Earth Orb exits Explorer.
   }, true);
 
   document.addEventListener("keydown", event => {

@@ -104,17 +104,14 @@
     setStatus.timer=window.setTimeout(()=>{if(status.textContent===message)status.hidden=true},ms);
   }
   function paintButtons(){
-    const state = window.LiveEarthViewState;
-    const stateView = state?.getState?.().activeView ?? null;
-    const earthActive = state ? stateView === 'earth-explorer' : !!document.querySelector('.orbButton[data-view="earth"]')?.classList.contains('le-earth-exploration-active');
+    const earthActive = !!document.querySelector('.orbButton[data-view="earth"]')?.classList.contains('le-earth-exploration-active');
     buttons.forEach(b=>{
       const id=b.dataset.view;
       // Earth, Sun and Moon are mutually exclusive. A selected Sun/Moon must
       // never remain glowing underneath the active Earth exploration state.
-      const active=id==='location'?(state ? state.isFeatureOn('location') : locationEnabled):
+      const active=id==='location'?locationEnabled:
         (id==='earth'?earthActive:
-        (id==='stacks'?(state ? state.isOptionOpen('stacks') : stacksOpen):
-        (state ? (!earthActive && stateView === id) : (!earthActive && id===selected))));
+        (id==='stacks'?stacksOpen:(!earthActive && id===selected)));
       b.setAttribute('aria-pressed',String(active));
       if(id==='location') b.setAttribute('aria-label',locationEnabled?'Location ON — tap to turn off':'Location OFF — tap to turn on');
     });
@@ -122,8 +119,6 @@
   function home(showMessage=false){
     selected='home';
     stacksOpen=false;
-    window.LiveEarthViewState?.leaveView();
-    window.LiveEarthViewState?.toggleOption('stacks', false);
     featurePanel.hidden=true;
     if(panel) panel.hidden=true;
     paintButtons();
@@ -149,7 +144,6 @@
   }
   function applyLocation(on){
     locationEnabled=!!on;
-    window.LiveEarthViewState?.setFeature('location', locationEnabled);
     try{localStorage.setItem('liveEarthLocationEnabled',String(locationEnabled))}catch(e){}
     if(!locationEnabled)stopOwnedLocation();
     window.dispatchEvent(new CustomEvent('live-earth-location-state',{detail:{enabled:locationEnabled}}));
@@ -187,19 +181,14 @@
     if(id==='earth'){home(true);return}
     if(id==='stacks'){
       stacksOpen=!stacksOpen;
-      window.LiveEarthViewState?.toggleOption('stacks', stacksOpen);
       if(stacksOpen){stacksPanel();syncViewport()}
       else {featurePanel.hidden=true}
       paintButtons();
       return;
     }
     if(!['moon','sun'].includes(id))return;
-    if(selected===id){selected='home';window.LiveEarthViewState?.leaveView();if(panel)panel.hidden=true;paintButtons();if(status)status.hidden=true;return}
-    selected=id;
-    window.LiveEarthViewState?.enterView(id);
-    window.LiveEarthViewState?.toggleOption('stacks', false);
-    stacksOpen=false;
-    paintButtons();
+    if(selected===id){selected='home';if(panel)panel.hidden=true;paintButtons();if(status)status.hidden=true;return}
+    selected=id;paintButtons();
     featurePanel.hidden=true;
     if(panel)panel.hidden=false;
     syncViewport();
@@ -232,22 +221,6 @@
   }
 
   window.addEventListener('live-earth-location-state',e=>{locationEnabled=!!e.detail?.enabled;paintButtons()});
-  window.addEventListener('live-earth-state-change',e=>{
-    const active = e.detail?.state?.activeView;
-    if(active === 'earth-explorer' || active === 'moon' || active === 'sun' || active === null){
-      if(active === 'earth-explorer' || active === null){
-        selected='home';
-        stacksOpen=false;
-        window.LiveEarthViewState?.toggleOption('stacks', false);
-        if(panel)panel.hidden=true;
-        featurePanel.hidden=true;
-      } else {
-        selected=active;
-        featurePanel.hidden=true;
-      }
-      paintButtons();
-    }
-  });
   window.addEventListener('live-earth-exclusive-mode',e=>{
     if(e.detail?.active){
       selected='home';

@@ -1,23 +1,19 @@
-LIVE // EARTH — V57 INDEPENDENT VIEW STATE (CHANGED FILES ONLY)
+LIVE // EARTH — V58 Dedicated Sun & Moon Sky Views
 
-Purpose
-Introduce a central foreground-view state manager while keeping Home outside the manager's rendering authority. Stacks is a contextual option, Location is a global feature toggle, and only one primary foreground View can be active.
+Changed files only:
+- sw.js — preserves the V55 solar shader and updates cache version; includes/injects sky-views.js.
+- sky-views.js — adds separate immersive Sun Sky View and Moon Sky View, fixed compass-style arc projection, approximate lightweight Sun/Moon coordinates, timeline scrubbing, Live return, and next horizon-crossing labels.
+- earth-mode-navigation.js — closes a Sky View before the Earth orb performs its existing Explorer/Home transition.
+- orb-controls-v4.js — included unchanged from the existing repository archive as a companion dependency.
+- README-APPLY-FIRST.txt — these instructions.
 
-Changed files
-- sw.js: V55 solar-lighting baseline preserved; cache version updated; adds view-state.js to shell and injects it before the controller scripts.
-- view-state.js: new authoritative state for foreground View, options, and global features. null means protected Home; the manager does not render or mutate Home.
-- orb-controls-v4.js: foreground glow derives from the manager; Stacks updates option state; Location updates global feature state; Sun/Moon become exclusive foreground Views.
-- earth-mode-navigation.js: Explorer enter/exit is registered with the manager. Location and Stacks never close Explorer.
+Important:
+- index.html is not modified; the protected Home composition is untouched.
+- The V55 solar shader direction is preserved.
+- Location is requested through the browser's existing permission flow. Without coordinates, the view does not display a fabricated personalized arc.
+- Sky position and event calculations in this first implementation are lightweight approximations, not certified astronomical ephemerides. Verify against trusted references before treating event times as precise.
+- The actual iPhone/runtime behavior has not been tested. Keep V55 available for rollback.
 
-Protected
-- V55 Earth-only day/night shader direction is unchanged.
-- index.html and its Home composition are unchanged.
-- Earth/Moon sizes and Home framing are unchanged.
-- No GitHub writes or deployment were performed.
-
-Apply
-Replace the four listed files in the repository root. Do not upload this ZIP itself.
-Commit title: Add independent foreground view state manager
-
-Validation
-JavaScript syntax and ZIP integrity checks passed locally. This architecture patch has not yet been browser/iPhone runtime-tested. Test transitions before treating it as approved.
+Apply:
+Replace the listed files in the repository root. Do not upload this ZIP itself.
+Suggested commit title: Add dedicated Sun and Moon Sky Views
