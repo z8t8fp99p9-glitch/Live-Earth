@@ -1,11 +1,11 @@
 /* LIVE // EARTH — correct geographic solar direction and fixed-space sunlight, cache v42 corrected longitude basis. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v51-home-visual-lock";
+const CACHE_NAME = "live-earth-shell-v52-location-scanner";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
  "./","./index.html","./orb-controls-v4.js","./earth-mode-navigation.js",
- "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js",
+ "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js","./location-scanner.js",
  "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
  "./earth.webp","./moon.webp","./sun.webp","./location.webp","./stacks.webp"
 ];
@@ -28,6 +28,52 @@ window.LiveEarthScene = (() => {
   const homePixelRatio = renderer.getPixelRatio();
   const reducedGeometry = new T.SphereGeometry(1, 64, 48);
   const fullGeometry = new T.SphereGeometry(1, 96, 64);
+  // LOCATION MARKER: a small surface-anchored point, parented to the same
+  // rotating group as Earth. Home always shows it when tracking is enabled;
+  // Exploration shows it only while its independent Scanner control is on.
+  const locationVector = new T.Vector3();
+  const locationMarker = new T.Group();
+  const locationHalo = new T.Mesh(
+    new T.SphereGeometry(0.031, 16, 12),
+    new T.MeshBasicMaterial({color:0xff234d,transparent:true,opacity:0.28,depthWrite:false})
+  );
+  const locationDot = new T.Mesh(
+    new T.SphereGeometry(0.014, 16, 12),
+    new T.MeshBasicMaterial({color:0xff183f,depthWrite:false})
+  );
+  locationMarker.add(locationHalo,locationDot);
+  locationMarker.visible = false;
+  earth.add(locationMarker);
+  let locationEnabled = false;
+  let scannerVisible = false;
+  let hasLocation = false;
+  function syncLocationMarker() {
+    locationMarker.visible = hasLocation && locationEnabled && (!unlocked || scannerVisible);
+    draw();
+  }
+  function setLocation(lat, lon) {
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) return false;
+    const phi = lat * Math.PI / 180;
+    const lambda = lon * Math.PI / 180;
+    // Match the solar/texture convention: lon 0° faces local +X;
+    // east-positive longitude turns toward local -Z.
+    locationVector.set(Math.cos(phi)*Math.cos(lambda), Math.sin(phi), -Math.cos(phi)*Math.sin(lambda)).normalize();
+    locationHalo.position.copy(locationVector).multiplyScalar(1.006);
+    locationDot.position.copy(locationVector).multiplyScalar(1.019);
+    hasLocation = true;
+    syncLocationMarker();
+    return true;
+  }
+  function setLocationEnabled(enabled) {
+    locationEnabled = !!enabled;
+    if (!locationEnabled) { hasLocation = false; scannerVisible = false; }
+    syncLocationMarker();
+  }
+  function setScannerVisible(visible) {
+    scannerVisible = !!visible;
+    syncLocationMarker();
+  }
+  function getScannerVisible() { return scannerVisible; }
   function restoreHomeVisualState() {
     earth.geometry = homeGeometry;
     renderer.setPixelRatio(homePixelRatio);
@@ -81,6 +127,8 @@ window.LiveEarthScene = (() => {
     homeZ = camera.position.z;
     homeRotation = {x:group.rotation.x,y:group.rotation.y,z:group.rotation.z};
     unlocked = true; window.__leEarthUnlocked = true;
+    scannerVisible = false;
+    syncLocationMarker();
     renderQuality(quality);
     animateCamera(homeZ * 0.62);
   }
@@ -90,8 +138,11 @@ window.LiveEarthScene = (() => {
     // Restore Home's original geometry and pixel density before returning.
     // The saved Basic/HD choice remains available for the next exploration,
     // but cannot alter the protected celestial Home view.
+    scannerVisible = false;
     restoreHomeVisualState();
-    animateCamera(homeZ, null, homeRotation);
+    syncLocationMarker();
+    // Keep the latest explored globe rotation; only the camera returns Home.
+    animateCamera(homeZ);
   }
   function setQuality(next) {
     quality = next === "hd" ? "hd" : "basic";
@@ -175,8 +226,9 @@ window.LiveEarthScene = (() => {
   }, {passive:true});
   // Apply the saved global profile from first render; Basic is the safe default.
   renderQuality(quality);
-  return {unlock,lock,setQuality,zoomBy,isUnlocked:()=>unlocked,getQuality:()=>quality};
+  return {unlock,lock,setQuality,zoomBy,isUnlocked:()=>unlocked,getQuality:()=>quality,setLocation,setLocationEnabled,setScannerVisible,getScannerVisible};
 })();
+window.dispatchEvent(new Event("live-earth-scene-ready"));
 `;
     html = html.replace(anchor, api + "\n" + anchor);
   }
@@ -324,6 +376,9 @@ async function networkFirst(request) {
       }
       if (!html.includes("earth-mode-navigation.js")) {
         html = html.replace(/<\/body\s*>/i, '<script src="./earth-mode-navigation.js" defer></script>\n</body>');
+      }
+      if (!html.includes("location-scanner.js")) {
+        html = html.replace(/<\/body\s*>/i, '<script src="./location-scanner.js" defer></script>\n</body>');
       }
       const headers = new Headers(response.headers);
       headers.delete("content-length");

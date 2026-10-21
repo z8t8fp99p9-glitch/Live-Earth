@@ -17,6 +17,10 @@
       transition:opacity .22s ease,transform .22s ease; pointer-events:auto;
     }
     #le-quality-controls[hidden]{display:none}
+    #le-location-scanner{position:fixed;z-index:12;right:max(16px,env(safe-area-inset-right));top:calc(env(safe-area-inset-top) + 16px);display:flex;align-items:center;gap:8px;padding:10px 13px;border-radius:999px;border:1px solid rgba(255,70,100,.42);color:#ffeaf0;background:linear-gradient(145deg,rgba(90,12,32,.72),rgba(5,8,18,.84));box-shadow:inset 1px 1px 2px #ffffff24,0 5px 18px #0008;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);font:650 11px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.12em;text-transform:uppercase;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+    #le-location-scanner[hidden]{display:none}
+    #le-location-scanner[aria-pressed="true"]{border-color:rgba(255,105,130,.95);box-shadow:inset 1px 1px 2px #ffffff30,0 0 14px rgba(255,35,75,.38),0 5px 18px #0008;color:#fff}
+    #le-location-scanner .le-radar-dot{width:7px;height:7px;border-radius:50%;background:#ff234d;box-shadow:0 0 8px #ff234d}
     #le-quality-controls button{touch-action:manipulation}
     .le-quality-button {
       min-width:78px; padding:10px 13px; border-radius:999px;
@@ -53,6 +57,36 @@
     <button type="button" class="le-quality-button" data-quality="hd" aria-pressed="false">HD</button>
     <button type="button" class="le-zoom-button" data-zoom="in" aria-label="Zoom in" title="Zoom in">+</button>`;
   document.body.appendChild(controls);
+  const scannerButton = document.createElement("button");
+  scannerButton.type = "button";
+  scannerButton.id = "le-location-scanner";
+  scannerButton.hidden = true;
+  scannerButton.setAttribute("aria-pressed","false");
+  scannerButton.setAttribute("aria-label","Show or hide your location marker in Exploration");
+  scannerButton.innerHTML = '<span class="le-radar-dot" aria-hidden="true"></span><span>Scanner</span>';
+  document.body.appendChild(scannerButton);
+  scannerButton.addEventListener("click", () => {
+    const globe = window.LiveEarthScene;
+    if (!globe?.isUnlocked()) return;
+    if (window.liveEarthLocationAllowed?.() !== true) {
+      const status = document.querySelector("#status");
+      if (status) {
+        status.hidden = false;
+        status.textContent = "Turn the red Location Orb ON to use Scanner.";
+        window.setTimeout(() => { if (status.textContent === "Turn the red Location Orb ON to use Scanner.") status.hidden = true; }, 3000);
+      }
+      return;
+    }
+    const next = !globe.getScannerVisible();
+    globe.setScannerVisible(next);
+    scannerButton.setAttribute("aria-pressed",String(next));
+    const status = document.querySelector("#status");
+    if (status) {
+      status.hidden = false;
+      status.textContent = next ? "Location Scanner ON · showing your position on Earth." : "Location Scanner hidden · Location tracking remains ON.";
+      window.setTimeout(() => { if (status.textContent.startsWith("Location Scanner")) status.hidden = true; }, 2600);
+    }
+  });
 
   const qualityButtons = [...controls.querySelectorAll("[data-quality]")];
   const zoomButtons = [...controls.querySelectorAll("[data-zoom]")];
@@ -92,6 +126,8 @@
     const globe = window.LiveEarthScene;
     if (globe?.isUnlocked()) globe.lock();
     controls.hidden = true;
+    scannerButton.hidden = true;
+    scannerButton.setAttribute("aria-pressed","false");
     setEarthActive(false);
   }
 
@@ -111,6 +147,8 @@
     } else {
       globe.unlock();
       controls.hidden = false;
+      scannerButton.hidden = false;
+      scannerButton.setAttribute("aria-pressed","false");
       syncQualityFromGlobe();
       setEarthActive(true);
     }
