@@ -1,6 +1,6 @@
-/* LIVE // EARTH — solar direction and fixed-space sunlight; cache v64 cinematic Moon background. */
+/* LIVE // EARTH — solar direction and fixed-space sunlight; cache v65 fullscreen Moon View controls. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v64-cinematic-moon-view";
+const CACHE_NAME = "live-earth-shell-v65-fullscreen-moon-view";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
