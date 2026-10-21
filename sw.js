@@ -1,6 +1,6 @@
-/* LIVE // EARTH — correct geographic solar direction and fixed-space sunlight, cache v42 corrected longitude basis. */
+/* LIVE // EARTH — solar direction and fixed-space sunlight; cache v64 cinematic Moon background. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v63-primary-view-state-sync";
+const CACHE_NAME = "live-earth-shell-v64-cinematic-moon-view";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -8,6 +8,7 @@ const APP_SHELL = [
  "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js","./location-scanner.js",
  "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
  "./moon-sky-background-responsive.svg","./sun-sky-background-responsive.svg",
+ "./moon-sky-background-portrait.webp","./moon-sky-background-landscape.webp",
  "./earth.webp","./moon.webp","./sun.webp","./location.webp","./stacks.webp"
 ];
 
@@ -138,7 +139,7 @@ window.LiveEarthScene = (() => {
     unlocked = false; window.__leEarthUnlocked = false;
     // Restore Home's original geometry and pixel density before returning.
     // The saved Basic/HD choice remains available for the next exploration,
-    // but cannot alter the protected celestial Home view.
+    // but cannot alter the protected Home celestial view.
     scannerVisible = false;
     restoreHomeVisualState();
     syncLocationMarker();
@@ -267,8 +268,8 @@ function injectSolarDayNight(html) {
     const solarMinutes = hour*60 + equationMinutes;
     const subsolarLongitude = (720-solarMinutes)*Math.PI/720;
     // Three.js SphereGeometry maps the texture's central meridian (longitude 0°)
-// to local +X. East-positive longitude maps toward local -Z.
-// Subsolar unit vector: (cos(dec)*cos(lon), sin(dec), -cos(dec)*sin(lon)).
+    // to local +X. East-positive longitude maps toward local -Z.
+    // Subsolar unit vector: (cos(dec)*cos(lon), sin(dec), -cos(dec)*sin(lon)).
     solarLocal.set(
       Math.cos(declination)*Math.cos(subsolarLongitude),
       Math.sin(declination),

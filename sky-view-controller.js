@@ -27,7 +27,7 @@
       pointer-events: none;
     }
     #le-sky-view[data-view="moon"] .le-sky-bg {
-      background-image: url("./moon-sky-background-responsive.svg");
+      background-image: url("./moon-sky-background-portrait.webp");
     }
     #le-sky-view[data-view="sun"] .le-sky-bg {
       background-image: url("./sun-sky-background-responsive.svg");
@@ -68,6 +68,9 @@
     }
     @media (orientation: landscape) {
       #le-sky-view .le-sky-bg { background-position: center center; }
+      #le-sky-view[data-view="moon"] .le-sky-bg {
+        background-image: url("./moon-sky-background-landscape.webp");
+      }
       #le-sky-view .le-sky-close {
         top: calc(env(safe-area-inset-top) + 10px);
         right: calc(env(safe-area-inset-right) + 14px);

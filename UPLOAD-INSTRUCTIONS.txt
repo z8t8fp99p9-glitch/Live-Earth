@@ -1,0 +1,37 @@
+LIVE // EARTH — APPROVED MOON VIEW BACKGROUND INTEGRATION
+
+This is a focused integration package, not a complete app ZIP.
+Only the four app files below should be uploaded to the ROOT of the existing GitHub repository (branch main):
+
+REPLACE existing repository-root files:
+1. sky-view-controller.js
+2. sw.js
+
+ADD new repository-root files:
+3. moon-sky-background-portrait.webp
+4. moon-sky-background-landscape.webp
+
+Do not upload this instructions file to the repository. Do not upload this ZIP as a single repository file.
+Do not delete the old moon-sky-background-responsive.svg or change any other files.
+
+What changes:
+- Moon View selects the portrait WebP by default.
+- Moon View selects the landscape WebP when the device is in landscape orientation.
+- Sun View continues to use sun-sky-background-responsive.svg.
+- Service-worker cache changes from v63 to v64 and precaches the two new background images.
+- Existing view lifecycle, Home canvas, primary view manager, Moon renderer, Lunar Arc, and Sun background logic are preserved.
+
+Recommended GitHub commit title:
+Add responsive cinematic Moon View backgrounds
+
+After committing these four app files together, wait for GitHub Pages deployment, then test on the iPhone:
+1. Open Home and confirm the approved composition is unchanged.
+2. Open Moon View and confirm the new background appears.
+3. Return Home, then open Sun View and confirm it still looks the same.
+4. Reopen Moon View in landscape if available and confirm it selects the wider composition.
+
+Validation in this package:
+- JavaScript syntax checks passed for sky-view-controller.js and sw.js.
+- Both WebP files decode and their paths match the controller and APP_SHELL entries.
+- ZIP integrity checked.
+Not verified here: live GitHub Pages runtime or Safari/iPhone rendering. No GitHub files have been changed by this package preparation.
