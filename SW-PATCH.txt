@@ -1,0 +1,19 @@
+SW-PATCH.txt — apply to the existing sw.js only
+==================================================
+
+1) Change:
+   const CACHE_NAME = "live-earth-shell-v58-sky-views";
+
+   to:
+   const CACHE_NAME = "live-earth-shell-v59-svg-sky-canvases";
+
+2) In APP_SHELL, append these two paths to the existing array (keep every
+   existing entry intact):
+   "./sun-sky-background-responsive.svg",
+   "./moon-sky-background-responsive.svg"
+
+   For example, after "./earth.webp","./moon.webp","./sun.webp","./location.webp","./stacks.webp"
+   add a comma after the last existing asset and then the two SVG paths.
+
+Do not replace any other service-worker logic. This cache bump is important
+because sky-views.js is currently served cache-first by the shell cache.

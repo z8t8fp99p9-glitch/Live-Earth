@@ -1,25 +1,37 @@
-LIVE // EARTH — Sky View Adaptive Integration (draft patch)
+LIVE // EARTH — SVG SKY CANVAS PATCH (V59)
+===========================================
 
-Contents
-- sky-view-adaptive-layer.js: additive visual layer for the existing V58 Sky View.
-- APPLY-CAREFULLY.txt: required service-worker integration steps and validation notes.
+Scope
+-----
+Replaces the old Sun/Moon Sky View presentation with a clean canvas using the
+already-committed responsive SVGs. It intentionally removes the old tray, arc,
+event labels, metrics, timeline and footer. Those independent UI elements are
+to be rebuilt in a later step.
 
-IMPORTANT
-This package is a draft integration patch, not a complete production-ready changed-files ZIP. It intentionally does not include a reconstructed sw.js because the service-worker source must be edited from the exact current repository file, not regenerated from snippets.
+Files in this ZIP
+-----------------
+sky-views.js
+  Replacement for the existing repository-root sky-views.js.
 
-Before this script can run, wire it into the current service worker:
-1. In sw.js APP_SHELL, add "./sky-view-adaptive-layer.js", "./sun-sky-background-responsive.svg", and "./moon-sky-background-responsive.svg".
-2. Increment CACHE_NAME from live-earth-shell-v58-sky-views to a new version such as live-earth-shell-v59-adaptive-sky-views.
-3. In networkFirst(), after the existing sky-views.js injection block, inject:
-   <script src="./sky-view-adaptive-layer.js" defer></script>
-   only if the HTML does not already include it.
-4. Ensure the script loads after sky-views.js. Do not edit index.html.
-5. Verify the exact sw.js diff before upload.
+SW-PATCH.txt
+  Exact small edits needed in the existing sw.js. Do NOT replace sw.js with a
+  reconstructed copy. Make these two edits to the current repository version.
 
-Known caution:
-The current V58 sky view marks the selected view through its heading text. This patch uses that heading to select the Sun/Moon SVG. It also removes the tray card styling and positions data groups independently. Because `.le-data` uses `display: contents`, verify pointer/touch behavior and layout on actual iPhone Safari and desktop browsers before approval.
-The SVGs use orientation-specific groups and media queries. Some browsers may not apply media queries inside an externally loaded SVG background consistently; verify portrait/landscape rendering. If necessary, create separate portrait/landscape SVG files and select the URL with app CSS.
+Existing assets required (already committed on main)
+----------------------------------------------------
+sun-sky-background-responsive.svg
+moon-sky-background-responsive.svg
 
-Protected Home Page:
-Do not modify index.html, Earth/Moon size or position, camera framing, lighting, orbit curves, existing orb dimensions/positions, or orb-controls-v4.js.
-No repository files have been changed by this package.
+Protected files
+---------------
+Do not edit index.html or orb-controls-v4.js.
+The Home Page scene and its composition are not modified by this patch.
+
+Apply
+-----
+1. Replace repository-root sky-views.js with the included file.
+2. Edit sw.js exactly as described in SW-PATCH.txt.
+3. Commit the changed files together.
+4. Test Sun, Moon, Earth, Location and Stacks on device before treating this
+   as accepted. This is a static-validated first canvas stage, not a claim that
+   every runtime interaction has been device-tested.
