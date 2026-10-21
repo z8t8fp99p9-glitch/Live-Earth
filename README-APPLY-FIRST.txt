@@ -1,23 +1,23 @@
-LIVE // EARTH — V56 GLOBAL ORB STATE REPAIR
+LIVE // EARTH — V57 INDEPENDENT VIEW STATE (CHANGED FILES ONLY)
 
 Purpose
-Keep the V55 Earth-only day/night shader direction, while making entry into Earth Explorer explicitly clear any active Sun/Moon orb state and hide the Sun/Moon preview panel. This is a narrow state-synchronization repair; it does not redesign orb CSS or change Home composition.
+Introduce a central foreground-view state manager while keeping Home outside the manager's rendering authority. Stacks is a contextual option, Location is a global feature toggle, and only one primary foreground View can be active.
 
-Files
-- sw.js — retains V55 solar shader direction; increments the service-worker cache name to V56.
-- earth-mode-navigation.js — when Explorer activates, explicitly sets Sun/Moon aria-pressed=false, hides #astroPanel, then dispatches the existing global exclusive-mode event.
+Changed files
+- sw.js: V55 solar-lighting baseline preserved; cache version updated; adds view-state.js to shell and injects it before the controller scripts.
+- view-state.js: new authoritative state for foreground View, options, and global features. null means protected Home; the manager does not render or mutate Home.
+- orb-controls-v4.js: foreground glow derives from the manager; Stacks updates option state; Location updates global feature state; Sun/Moon become exclusive foreground Views.
+- earth-mode-navigation.js: Explorer enter/exit is registered with the manager. Location and Stacks never close Explorer.
+
+Protected
+- V55 Earth-only day/night shader direction is unchanged.
+- index.html and its Home composition are unchanged.
+- Earth/Moon sizes and Home framing are unchanged.
+- No GitHub writes or deployment were performed.
 
 Apply
-1. Keep the current deployed files as a rollback copy.
-2. Replace only these two files with the files in this ZIP.
-3. Commit title: Restore global orb state synchronization
-4. Deploy, then fully reload the site on iPhone. Test Sun preview -> Earth Explorer, Moon preview -> Earth Explorer, Location ON/OFF, and Stacks ON/OFF.
-
-Preserved standards
-- Earth/Moon/Home geometry and camera framing are unchanged.
-- Solar shader direction from V55 is retained.
-- Earth controls Explorer entry/exit; Location and Stacks never close Explorer.
-- Earth, Sun, and Moon are mutually exclusive; Location and Stacks remain independent.
+Replace the four listed files in the repository root. Do not upload this ZIP itself.
+Commit title: Add independent foreground view state manager
 
 Validation
-Runtime behavior must be confirmed on device. This patch does not change index.html orb glow CSS or orb-controls-v4.js.
+JavaScript syntax and ZIP integrity checks passed locally. This architecture patch has not yet been browser/iPhone runtime-tested. Test transitions before treating it as approved.

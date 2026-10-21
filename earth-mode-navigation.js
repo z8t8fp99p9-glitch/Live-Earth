@@ -106,21 +106,14 @@
   function setEarthActive(active) {
     const button = document.querySelector(earthSelector);
     if (!button) return;
-    // Keep the legacy orb controller, its global state rules, and the
-    // Explorer mode indicator synchronized. Entering Explorer explicitly
-    // clears any Sun/Moon preview state before repainting the global orbs.
+    // The legacy orb controller paints Earth as inactive in Home mode. Keep
+    // its own handlers intact and add an explicit mode state for this feature.
     button.classList.toggle("le-earth-exploration-active", active);
     button.setAttribute("aria-pressed", String(active));
     button.setAttribute("aria-expanded", String(active));
     button.setAttribute("data-earth-exploration", String(active));
-    if (active) {
-      for (const id of ["sun", "moon"]) {
-        const orb = document.querySelector(`.orbButton[data-view="${id}"]`);
-        if (orb) orb.setAttribute("aria-pressed", "false");
-      }
-      const astroPanel = document.querySelector("#astroPanel");
-      if (astroPanel) astroPanel.hidden = true;
-    }
+    if (active) window.LiveEarthViewState?.enterView("earth-explorer");
+    else window.LiveEarthViewState?.leaveView();
     window.dispatchEvent(new CustomEvent("live-earth-exclusive-mode", {detail:{active}}));
   }
 
@@ -172,8 +165,8 @@
       toggleEarth();
       return;
     }
-    // Location and Stacks are independent global orbs. Their clicks must not
-    // force Explorer back to Home; only the Earth Orb exits Explorer.
+    // Location and Stacks are independent controls. They never replace the
+    // foreground View or force Explorer back to Home.
   }, true);
 
   document.addEventListener("keydown", event => {
