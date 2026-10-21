@@ -192,7 +192,9 @@
   });
 
   document.addEventListener("keydown", event => {
-    if (event.key === "Escape" && window.LiveEarthScene?.isUnlocked()) closeEarthMode();
+    if (event.key !== "Escape" || !window.LiveEarthScene?.isUnlocked()) return;
+    if (window.LiveEarthViewManager) window.LiveEarthViewManager.requestView("home");
+    else closeEarthMode();
   });
   window.addEventListener("live-earth-quality-change", syncQualityFromGlobe);
 })();

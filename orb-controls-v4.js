@@ -42,7 +42,7 @@
   const panelTitle=featurePanel.querySelector('#le-panel-title');
   const panelDesc=featurePanel.querySelector('#le-panel-desc');
   const options=featurePanel.querySelector('#le-panel-options');
-  featurePanel.querySelector('.le-panel-close').addEventListener('click',()=>{featurePanel.hidden=true;home(false)});
+  featurePanel.querySelector('.le-panel-close').addEventListener('click',()=>{featurePanel.hidden=true;stacksOpen=false;paintButtons()});
 
   // Attempt 1: recover stale iOS standalone-app layout/hit-test geometry after rotation.
   // Do not resize, reposition, zoom, or otherwise touch the Earth/Moon canvas.
@@ -104,13 +104,17 @@
   }
   function paintButtons(){
     const earthActive = !!document.querySelector('.orbButton[data-view="earth"]')?.classList.contains('le-earth-exploration-active');
+    const managedView = window.LiveEarthViewManager?.getActiveView?.();
+    // The view manager owns Earth/Moon/Sun. This controller owns only the
+    // independent Location and Stacks utility states.
     buttons.forEach(b=>{
       const id=b.dataset.view;
-      // Earth, Sun and Moon are mutually exclusive. A selected Sun/Moon must
-      // never remain glowing underneath the active Earth exploration state.
-      const active=id==='location'?locationEnabled:
-        (id==='earth'?earthActive:
-        (id==='stacks'?stacksOpen:(!earthActive && id===selected)));
+      const primaryActive = managedView
+        ? (id==='earth' ? managedView==='explorer' : id==='moon' ? managedView==='moon' : id==='sun' ? managedView==='sun' : false)
+        : (id==='earth' ? earthActive : (!earthActive && id===selected));
+      const active = id==='location' ? locationEnabled
+        : id==='stacks' ? stacksOpen
+        : ['earth','moon','sun'].includes(id) ? primaryActive : false;
       b.setAttribute('aria-pressed',String(active));
       if(id==='location') b.setAttribute('aria-label',locationEnabled?'Location ON — tap to turn off':'Location OFF — tap to turn on');
     });
@@ -177,7 +181,7 @@
   }
   function activate(id){
     if(id==='location'){applyLocation(!locationEnabled);return}
-    if(id==='earth'){home(true);return}
+    if(id==='earth'){if(window.LiveEarthViewManager)window.LiveEarthViewManager.requestView('explorer');else home(true);return}
     if(id==='stacks'){
       stacksOpen=!stacksOpen;
       if(stacksOpen){stacksPanel();syncViewport()}
@@ -185,13 +189,9 @@
       paintButtons();
       return;
     }
-    // Sun and Moon remain as Home-page orbs, but their separate preview views are retired.
-    if(!['moon','sun'].includes(id))return;
-    selected='home';
-    
-    featurePanel.hidden=true;
-    paintButtons();
-    if(status)status.hidden=true;
+    // Primary views are managed centrally; do not let this utility controller
+    // reset them or close Stacks if a legacy handler is ever reached.
+    if(['moon','sun'].includes(id) && window.LiveEarthViewManager){window.LiveEarthViewManager.requestView(id);return}
     return;
   }
   buttons.forEach(b=>{
@@ -222,11 +222,8 @@
 
   window.addEventListener('live-earth-location-state',e=>{locationEnabled=!!e.detail?.enabled;paintButtons()});
   window.addEventListener('live-earth-exclusive-mode',e=>{
-    if(e.detail?.active){
-      selected='home';
-      
-      featurePanel.hidden=true;
-    }
+    // Explorer activation must not dismiss the independent Stacks panel.
+    if(e.detail?.active) selected='home';
     paintButtons();
   });
   window.addEventListener('pagehide',stopOwnedLocation,{once:true});
