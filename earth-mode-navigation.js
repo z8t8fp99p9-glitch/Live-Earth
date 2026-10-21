@@ -163,8 +163,8 @@
       toggleEarth();
       return;
     }
-    const otherOrb = target?.closest('.orbButton[data-view]:not([data-view="earth"])');
-    if (otherOrb && window.LiveEarthScene?.isUnlocked()) closeEarthMode();
+    // Location and Stacks are independent global orbs. Their clicks must not
+    // force Explorer back to Home; only the Earth Orb exits Explorer.
   }, true);
 
   document.addEventListener("keydown", event => {
