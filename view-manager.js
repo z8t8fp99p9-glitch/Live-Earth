@@ -54,11 +54,8 @@
       requestView(id);
       return;
     }
-    // Location and Stacks remain their existing independent features. Leaving
-    // a primary destination closes it before those features handle the tap.
-    if ((id === "location" || id === "stacks") && activeView !== "home") {
-      requestView("home");
-    }
+    // Location and Stacks are global utility orbs, not primary views.
+    // Let their existing controllers handle the tap without changing activeView.
   }, true);
 
   paintPrimaryOrbs(activeView);
