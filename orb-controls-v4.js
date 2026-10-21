@@ -7,7 +7,6 @@
   window.__liveEarthControlsInstalled = true;
 
   const status = document.querySelector('#status');
-  const panel = document.querySelector('#astroPanel');
   let selected = 'home';
   let locationEnabled = false;
   let stacksOpen = false;
@@ -126,7 +125,7 @@
     else if(status)status.hidden=true;
   }
   function showPanel(title,desc,items){
-    if(panel)panel.hidden=true;
+    
     panelTitle.textContent=title;panelDesc.textContent=desc;options.replaceChildren();
     items.forEach(item=>{
       const b=document.createElement('button');b.type='button';b.className='le-choice';b.setAttribute('aria-pressed',String(!!item.active));
@@ -186,13 +185,14 @@
       paintButtons();
       return;
     }
+    // Sun and Moon remain as Home-page orbs, but their separate preview views are retired.
     if(!['moon','sun'].includes(id))return;
-    if(selected===id){selected='home';if(panel)panel.hidden=true;paintButtons();if(status)status.hidden=true;return}
-    selected=id;paintButtons();
+    selected='home';
+    
     featurePanel.hidden=true;
-    if(panel)panel.hidden=false;
-    syncViewport();
-    window.dispatchEvent(new CustomEvent('live-earth-astro-preview',{detail:{view:id}}));
+    paintButtons();
+    if(status)status.hidden=true;
+    return;
   }
   buttons.forEach(b=>{
     const replacement=b.cloneNode(true);b.replaceWith(replacement);
@@ -224,7 +224,7 @@
   window.addEventListener('live-earth-exclusive-mode',e=>{
     if(e.detail?.active){
       selected='home';
-      if(panel)panel.hidden=true;
+      
       featurePanel.hidden=true;
     }
     paintButtons();
@@ -237,5 +237,4 @@
   },{once:true});
   window.liveEarthLocationAllowed=()=>locationEnabled;
   window.liveEarthGetLocationState=()=>locationEnabled;
-  window.addEventListener('live-earth-astro-preview',()=>{featurePanel.hidden=true});
 })();

@@ -1,10 +1,10 @@
 /* LIVE // EARTH — correct geographic solar direction and fixed-space sunlight, cache v42 corrected longitude basis. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v58-sky-views";
+const CACHE_NAME = "live-earth-shell-v59-no-sun-moon-views";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
- "./","./index.html","./sky-views.js","./orb-controls-v4.js","./earth-mode-navigation.js",
+ "./","./index.html","./orb-controls-v4.js","./earth-mode-navigation.js",
  "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js","./location-scanner.js",
  "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
  "./earth.webp","./moon.webp","./sun.webp","./location.webp","./stacks.webp"
@@ -379,9 +379,6 @@ async function networkFirst(request) {
       }
       if (!html.includes("location-scanner.js")) {
         html = html.replace(/<\/body\s*>/i, '<script src="./location-scanner.js" defer></script>\n</body>');
-      }
-      if (!html.includes("sky-views.js")) {
-        html = html.replace(/<\/body\s*>/i, '<script src="./sky-views.js" defer></script>\n</body>');
       }
       const headers = new Headers(response.headers);
       headers.delete("content-length");
