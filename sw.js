@@ -1,6 +1,6 @@
 /* LIVE // EARTH — correct geographic solar direction and fixed-space sunlight, cache v42 corrected longitude basis. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v53-explorer-orb-routing";
+const CACHE_NAME = "live-earth-shell-v55-earth-only-lighting-test";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -281,11 +281,11 @@ function injectSolarDayNight(html) {
     // Follow the same model transform as the texture-bearing Earth mesh. This
     // keeps the terminator aligned when the user rotates the globe by touch.
     earthMesh.getWorldQuaternion(worldQuaternion);
-    solarVector.copy(solarLocal).applyQuaternion(worldQuaternion).normalize().negate();
+    solarVector.copy(solarLocal).applyQuaternion(worldQuaternion).normalize();
     solarLight.position.copy(solarVector).multiplyScalar(12);
     solarLight.target.position.set(0,0,0);
     solarLight.target.updateMatrixWorld();
-    if (shaderUniforms?.uLESunDirection) shaderUniforms.uLESunDirection.value.copy(solarVector);
+    if (shaderUniforms?.uLESunDirection) shaderUniforms.uLESunDirection.value.copy(solarVector).negate();
     draw();
   }
 
