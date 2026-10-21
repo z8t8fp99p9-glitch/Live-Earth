@@ -154,19 +154,42 @@
     }
   }
 
+  // The global view manager is the only authority for primary-view switching.
+  // Keep this capture handler as a safe fallback while the manager initializes.
   document.addEventListener("click", event => {
     const target = event.target instanceof Element ? event.target : null;
     const earthButton = target?.closest(earthSelector);
-    if (earthButton) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
+    if (!earthButton) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (window.LiveEarthViewManager) {
+      window.LiveEarthViewManager.requestView("explorer");
+    } else {
+      // Fallback only if the manager script could not load.
       window.LiveEarthSkyViews?.close();
       toggleEarth();
-      return;
     }
-    // Location and Stacks are independent global orbs. Their clicks must not
-    // force Explorer back to Home; only the Earth Orb exits Explorer.
   }, true);
+
+  function applyManagedView(view) {
+    if (view === "explorer") {
+      const globe = window.LiveEarthScene;
+      if (!globe) return;
+      if (!globe.isUnlocked()) {
+        globe.unlock();
+        controls.hidden = false;
+        scannerButton.hidden = false;
+        scannerButton.setAttribute("aria-pressed","false");
+        syncQualityFromGlobe();
+      }
+      setEarthActive(true);
+    } else {
+      closeEarthMode();
+    }
+  }
+  window.addEventListener("live-earth-primary-view-change", event => {
+    applyManagedView(event.detail?.view || "home");
+  });
 
   document.addEventListener("keydown", event => {
     if (event.key === "Escape" && window.LiveEarthScene?.isUnlocked()) closeEarthMode();

@@ -121,7 +121,6 @@
     root.setAttribute("aria-hidden", "false");
     root.hidden = false;
     document.body.classList.add("le-sky-view-open");
-    setSkyOrbState(view);
     window.dispatchEvent(new CustomEvent("live-earth-sky-view", {
       detail: { active: view }
     }));
@@ -136,34 +135,28 @@
     root.removeAttribute("data-view");
     document.body.classList.remove("le-sky-view-open");
     document.body.style.overflow = previousBodyOverflow;
-    setSkyOrbState(null);
     window.dispatchEvent(new CustomEvent("live-earth-sky-view", {
       detail: { active: null, closed: closedView }
     }));
   }
 
-  closeButton.addEventListener("click", close);
+  closeButton.addEventListener("click", () => {
+    if (window.LiveEarthViewManager) window.LiveEarthViewManager.requestView("home");
+    else close();
+  });
 
-  // Capture the click before the existing placeholder handler can reset the
-  // Sun/Moon selection. Other orbs still close this view and run normally.
-  document.addEventListener("click", event => {
-    const target = event.target instanceof Element ? event.target : null;
-    const button = target?.closest('.orbButton[data-view]');
-    if (!button) return;
-
-    const id = button.dataset.view;
-    if (id === "sun" || id === "moon") {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      if (activeView === id) close();
-      else open(id);
-      return;
-    }
-    if (activeView) close();
-  }, true);
+  // View lifecycle is driven exclusively by the global primary-view manager.
+  window.addEventListener("live-earth-primary-view-change", event => {
+    const view = event.detail?.view || "home";
+    if (view === "sun" || view === "moon") open(view);
+    else close();
+  });
 
   document.addEventListener("keydown", event => {
-    if (event.key === "Escape" && activeView) close();
+    if (event.key === "Escape" && activeView) {
+      if (window.LiveEarthViewManager) window.LiveEarthViewManager.requestView("home");
+      else close();
+    }
   });
 
   window.addEventListener("pagehide", close, { once: true });

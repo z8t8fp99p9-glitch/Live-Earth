@@ -1,14 +1,14 @@
 /* LIVE // EARTH — correct geographic solar direction and fixed-space sunlight, cache v42 corrected longitude basis. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v60-cinematic-sky-views";
+const CACHE_NAME = "live-earth-shell-v61-global-view-manager";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
- "./","./index.html","./orb-controls-v4.js","./earth-mode-navigation.js","./sky-view-controller.js",
+ "./","./index.html","./orb-controls-v4.js","./earth-mode-navigation.js","./sky-view-controller.js","./view-manager.js",
  "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js","./location-scanner.js",
  "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
- "./earth.webp","./moon.webp","./sun.webp","./location.webp","./stacks.webp",
- "./moon-sky-background-responsive.svg","./sun-sky-background-responsive.svg"
+ "./moon-sky-background-responsive.svg","./sun-sky-background-responsive.svg",
+ "./earth.webp","./moon.webp","./sun.webp","./location.webp","./stacks.webp"
 ];
 
 function injectSameGlobeAPI(html) {
@@ -383,6 +383,9 @@ async function networkFirst(request) {
       }
       if (!html.includes("sky-view-controller.js")) {
         html = html.replace(/<\/body\s*>/i, '<script src="./sky-view-controller.js" defer></script>\n</body>');
+      }
+      if (!html.includes("view-manager.js")) {
+        html = html.replace(/<\/body\s*>/i, '<script src="./view-manager.js" defer></script>\n</body>');
       }
       const headers = new Headers(response.headers);
       headers.delete("content-length");
