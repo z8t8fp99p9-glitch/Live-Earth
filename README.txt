@@ -1,20 +1,25 @@
-LIVE // EARTH — Solar Day/Night Homepage Patch
-Date: 2026-10-20
+LIVE // EARTH — Sky View Adaptive Integration (draft patch)
 
-WHAT IT DOES
-- Adds a compact Sun-position calculation to the existing homepage scene through the service worker.
-- Updates the existing directional light about once per minute to approximate the real Sun's direction.
-- Reduces ambient fill so the night hemisphere becomes visibly darker.
-- Preserves index.html, the Earth/Moon geometry and textures, blue atmospheric shell, orbit, camera framing, and five orbs.
-- Bumps the service worker cache to v33.
+Contents
+- sky-view-adaptive-layer.js: additive visual layer for the existing V58 Sky View.
+- APPLY-CAREFULLY.txt: required service-worker integration steps and validation notes.
 
-UPLOAD
-Replace only sw.js at the root of z8t8fp99p9-glitch/Live-Earth on main.
-Commit title: Add live solar day-night lighting to homepage globe
+IMPORTANT
+This package is a draft integration patch, not a complete production-ready changed-files ZIP. It intentionally does not include a reconstructed sw.js because the service-worker source must be edited from the exact current repository file, not regenerated from snippets.
 
-IMPORTANT LIMITS
-- This is a visual solar-position approximation, not a navigation-grade ephemeris.
-- The effect has not been tested on the user's iPhone or live Pages deployment.
-- This patch assumes the current main-branch index.html still contains the exact existing scene anchor and variable names (earth, sun, group, draw, T, canvas). It was prepared against the inspected source.
-- The Moon also uses scene lighting, so reducing ambient light may make it darker too; test the Moon appearance after deployment. No homepage framing or object sizes are changed.
-- No GitHub files have been written by the assistant.
+Before this script can run, wire it into the current service worker:
+1. In sw.js APP_SHELL, add "./sky-view-adaptive-layer.js", "./sun-sky-background-responsive.svg", and "./moon-sky-background-responsive.svg".
+2. Increment CACHE_NAME from live-earth-shell-v58-sky-views to a new version such as live-earth-shell-v59-adaptive-sky-views.
+3. In networkFirst(), after the existing sky-views.js injection block, inject:
+   <script src="./sky-view-adaptive-layer.js" defer></script>
+   only if the HTML does not already include it.
+4. Ensure the script loads after sky-views.js. Do not edit index.html.
+5. Verify the exact sw.js diff before upload.
+
+Known caution:
+The current V58 sky view marks the selected view through its heading text. This patch uses that heading to select the Sun/Moon SVG. It also removes the tray card styling and positions data groups independently. Because `.le-data` uses `display: contents`, verify pointer/touch behavior and layout on actual iPhone Safari and desktop browsers before approval.
+The SVGs use orientation-specific groups and media queries. Some browsers may not apply media queries inside an externally loaded SVG background consistently; verify portrait/landscape rendering. If necessary, create separate portrait/landscape SVG files and select the URL with app CSS.
+
+Protected Home Page:
+Do not modify index.html, Earth/Moon size or position, camera framing, lighting, orbit curves, existing orb dimensions/positions, or orb-controls-v4.js.
+No repository files have been changed by this package.
