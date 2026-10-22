@@ -1,7 +1,7 @@
-/* LIVE // EARTH v73 — preserve the previous shell until verified startup gate passes. */
+/* LIVE // EARTH v74 — early boot + verified startup gate. */
 (() => {
   "use strict";
-  const BUILD_ID = "v73-startup-readiness";
+  const BUILD_ID = "v74-early-startup";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
@@ -18,7 +18,7 @@
   function signalVerifiedStartup() {
     const controller = navigator.serviceWorker.controller;
     if (!controller || !readyControllersPresent()) return;
-    controller.postMessage({ type: "LIVE_EARTH_APP_READY_V73", buildId: BUILD_ID });
+    controller.postMessage({ type: "LIVE_EARTH_APP_READY_V74", buildId: BUILD_ID });
   }
 
   window.addEventListener("live-earth-scene-ready", signalVerifiedStartup);

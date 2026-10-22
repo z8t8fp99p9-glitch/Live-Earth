@@ -1,7 +1,7 @@
-/* LIVE // EARTH — v73 verified startup gate with local cache repair and protected Home visuals. */
+/* LIVE // EARTH — v74 early boot + verified startup gate; safe local cache repair. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v73-startup-readiness";
-const CACHE_NAME = "live-earth-shell-v73-startup-readiness";
+const BUILD_ID = "v74-early-startup";
+const CACHE_NAME = "live-earth-shell-v74-early-startup";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -461,7 +461,7 @@ self.addEventListener("message", event => {
     event.waitUntil(self.skipWaiting());
     return;
   }
-  if (message.type !== "LIVE_EARTH_APP_READY_V73" || message.buildId !== BUILD_ID) return;
+  if (message.type !== "LIVE_EARTH_APP_READY_V74" || message.buildId !== BUILD_ID) return;
   event.waitUntil((async () => {
     // Keep exactly one active app-shell cache after the new app verifies startup.
     // The bounded optional-data cache and user IndexedDB are intentionally untouched.
