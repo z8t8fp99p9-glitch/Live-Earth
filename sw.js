@@ -1,7 +1,7 @@
-/* LIVE // EARTH — staged updates, safe shell retirement, and resilient startup; cache v69 local recovery. */
+/* LIVE // EARTH — shared-origin app shell, silent automatic updates, and offline fallback; v70 shared launch. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v69-local-recovery";
-const CACHE_NAME = "live-earth-shell-v69-local-recovery";
+const BUILD_ID = "v70-shared-launch";
+const CACHE_NAME = "live-earth-shell-v70-shared-launch";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -342,33 +342,32 @@ function injectSolarDayNight(html) {
 }
 
 self.addEventListener("install", event => {
-  // Stage the complete shell, but do not replace a running app mid-session.
-  // With no previous worker the browser activates this worker normally; on an
-  // update it waits until old controlled clients close or the user taps Update now.
+  // Stage a complete new shell before activation. On success, activate silently
+  // so every same-origin shortcut moves to the same shared app version.
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     await cache.addAll(APP_SHELL);
+    await self.skipWaiting();
   })());
 });
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
-    // Keep previous shell caches available until the new app confirms startup.
-    // Claiming is useful for first install and for an explicitly approved update.
+    // Keep the previous shared shell until this build reports verified startup.
     await self.clients.claim();
   })());
 });
 self.addEventListener("message", event => {
   const message = event.data || {};
-  if (message.type === "LIVE_EARTH_SKIP_WAITING" && message.buildId === BUILD_ID) {
-    // This is the only path that bypasses the default waiting lifecycle; it is
-    // sent only by the user's explicit Update now action.
+  // Compatibility with an older already-open v68/v69 page: never let an old
+  // build label strand the new waiting worker after explicit user interaction.
+  if (message.type === "LIVE_EARTH_SKIP_WAITING") {
     event.waitUntil(self.skipWaiting());
     return;
   }
-  if (message.type !== "LIVE_EARTH_APP_READY_V69" || message.buildId !== BUILD_ID) return;
+  if (message.type !== "LIVE_EARTH_APP_READY_V70" || message.buildId !== BUILD_ID) return;
   event.waitUntil((async () => {
-    // Retire old shell caches only after the matching build reports that its
-    // scene and view controllers initialized. Optional data cache is untouched.
+    // Keep exactly one active app-shell cache after the new app verifies startup.
+    // The bounded optional-data cache and user IndexedDB are intentionally untouched.
     const keys = await caches.keys();
     await Promise.all(keys.filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME).map(key => caches.delete(key)));
   })());
@@ -420,8 +419,9 @@ async function transformHomeHTML(request, response, forceHome = false) {
 
 async function networkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
-  // Serve the active build's own shell first. A waiting update must not replace
-  // the HTML of the currently running version just because the network is online.
+  // Keep launch deterministic: use this worker build's fully staged shell first.
+  // A deployment becomes current through service-worker install + silent activation,
+  // never by mixing live HTML with an older set of scripts mid-session.
   const activeBuildHit = await cache.match(request);
   if (activeBuildHit) return await transformHomeHTML(request, activeBuildHit);
   try {
@@ -435,12 +435,10 @@ async function networkFirst(request) {
     await cache.put(request, response.clone());
     return response;
   } catch (error) {
-    // The install precache stores a raw index.html/root document. If a first
-    // navigation falls back to that cached shell, transform it before serving
-    // so the app controllers and injected globe APIs are still initialized.
+    // A failed first navigation can fall back to the cached shell. The transform
+    // functions are idempotent, so already transformed HTML stays unchanged.
     const hit = await cache.match(request);
     if (hit) return await transformHomeHTML(request, hit);
-
     const fallback = await cache.match("./index.html");
     if (fallback) return await transformHomeHTML(request, fallback, true);
     throw error;
