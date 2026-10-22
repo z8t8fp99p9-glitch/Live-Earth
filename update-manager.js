@@ -4,7 +4,7 @@
   if (window.__liveEarthUpdateManagerInstalled) return;
   window.__liveEarthUpdateManagerInstalled = true;
 
-  const BUILD_ID = "v68-staged-update";
+  const BUILD_ID = "v69-local-recovery";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   let registration = null;
@@ -76,7 +76,7 @@
 
   function signalVerifiedStartup() {
     if (!navigator.serviceWorker.controller || !readyControllersPresent()) return;
-    navigator.serviceWorker.controller.postMessage({ type: "LIVE_EARTH_APP_READY_V68", buildId: BUILD_ID });
+    navigator.serviceWorker.controller.postMessage({ type: "LIVE_EARTH_APP_READY_V69", buildId: BUILD_ID });
   }
 
   navigator.serviceWorker.addEventListener("controllerchange", () => {

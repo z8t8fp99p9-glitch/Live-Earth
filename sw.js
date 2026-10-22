@@ -1,7 +1,7 @@
-/* LIVE // EARTH — staged updates, safe shell retirement, and resilient startup; cache v68. */
+/* LIVE // EARTH — staged updates, safe shell retirement, and resilient startup; cache v69 local recovery. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v68-staged-update";
-const CACHE_NAME = "live-earth-shell-v68-staged-update";
+const BUILD_ID = "v69-local-recovery";
+const CACHE_NAME = "live-earth-shell-v69-local-recovery";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -10,7 +10,7 @@ const APP_SHELL = [
  "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
  "./moon-sky-background-responsive.svg","./sun-sky-background-responsive.svg",
  "./moon-sky-background-portrait.webp","./moon-sky-background-landscape.webp",
- "./update-manager.js",
+ "./update-manager.js","./data-recovery.js",
  "./earth.webp","./moon.webp","./sun.webp","./location.webp","./stacks.webp"
 ];
 
@@ -365,7 +365,7 @@ self.addEventListener("message", event => {
     event.waitUntil(self.skipWaiting());
     return;
   }
-  if (message.type !== "LIVE_EARTH_APP_READY_V68" || message.buildId !== BUILD_ID) return;
+  if (message.type !== "LIVE_EARTH_APP_READY_V69" || message.buildId !== BUILD_ID) return;
   event.waitUntil((async () => {
     // Retire old shell caches only after the matching build reports that its
     // scene and view controllers initialized. Optional data cache is untouched.
@@ -401,6 +401,9 @@ async function transformHomeHTML(request, response, forceHome = false) {
   }
   if (!html.includes("update-manager.js")) {
     html = html.replace(/<\/body\s*>/i, '<script src="./update-manager.js" defer></script>\n</body>');
+  }
+  if (!html.includes("data-recovery.js")) {
+    html = html.replace(/<\/body\s*>/i, '<script type="module" src="./data-recovery.js"></script>\n</body>');
   }
 
   const headers = new Headers(response.headers);
