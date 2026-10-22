@@ -87,7 +87,7 @@ body{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset
 
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
-<!-- V74 EARLY BOOT CURTAIN: self-contained and available before the service worker controls this page. -->
+<!-- V75 EARLY BOOT CURTAIN: self-contained and available before the service worker controls this page. -->
 <style id="le-early-boot-style">
 html.le-boot-pending body > :not(#le-boot-overlay):not(#le-startup-gate){visibility:hidden!important}
 #le-boot-overlay{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;overflow:hidden;padding:24px 22px calc(24px + env(safe-area-inset-bottom));color:#edf8ff;background:radial-gradient(ellipse at 50% 36%,#102c47 0%,#071321 39%,#030811 73%,#02050b 100%);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;text-align:center;touch-action:pan-y;opacity:1;transition:opacity .3s ease}
@@ -119,12 +119,14 @@ html.le-boot-pending body > :not(#le-boot-overlay):not(#le-startup-gate){visibil
   document.documentElement.classList.add('le-boot-pending');
   // Snapshot control state before registration can change it mid-parse.
   window.__leBootControlledAtStart = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
-  const RELOAD_KEY = 'liveEarthEarlyControllerReloadV74';
+  const RELOAD_KEY = 'liveEarthEarlyControllerReloadV75';
   let registration = null;
-  let controllerRetryPending = false;
   let observer = null;
+  let startupWatchdog = 0;
+  let latestMessage = ['Starting essential checks…', 'Home stays protected until the app is ready.', false];
   function overlay() { return document.getElementById('le-boot-overlay'); }
   function setMessage(main, sub, showRetry = false) {
+    latestMessage = [main, sub, showRetry];
     const root = overlay();
     if (!root) return;
     const a = root.querySelector('#le-boot-message');
@@ -135,12 +137,14 @@ html.le-boot-pending body > :not(#le-boot-overlay):not(#le-startup-gate){visibil
     if (retry) retry.classList.toggle('visible', showRetry);
   }
   function hideEarlyBoot() {
+    window.__leEarlyBootHidden = true;
     const root = overlay();
     if (root) root.hidden = true;
     document.documentElement.classList.remove('le-boot-pending');
     if (observer) observer.disconnect();
     observer = null;
   }
+  window.__leHideEarlyBoot = hideEarlyBoot;
   function watchForGate() {
     if (document.getElementById('le-startup-gate')) { hideEarlyBoot(); return; }
     if (!observer && window.MutationObserver) {
@@ -206,6 +210,7 @@ html.le-boot-pending body > :not(#le-boot-overlay):not(#le-startup-gate){visibil
     watchForGate();
     const retry = document.getElementById('le-boot-retry');
     retry?.addEventListener('click', async () => {
+      try { sessionStorage.removeItem(RELOAD_KEY); } catch (_) {}
       setMessage('Retrying startup preparation', 'Checking the connection and requesting the essential app files.');
       if (registration && navigator.onLine !== false) {
         try { await registration.update(); } catch (_) {}
@@ -217,10 +222,10 @@ html.le-boot-pending body > :not(#le-boot-overlay):not(#le-startup-gate){visibil
   }, {once:true});
   window.addEventListener('live-earth-startup-ready', hideEarlyBoot, {once:true});
   startupWatchdog = window.setTimeout(() => {
-    if (!navigator.serviceWorker?.controller && !document.getElementById('le-startup-gate')) {
+    if (!window.__leEarlyBootHidden && !document.getElementById('le-startup-gate')) {
       setMessage('Still preparing LIVE // EARTH', 'The connection is taking longer than expected. Keep waiting or retry preparation.', true);
     }
-  }, 45000);
+  }, 60000);
   registerEarly();
 })();
 </script>

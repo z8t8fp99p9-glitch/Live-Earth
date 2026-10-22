@@ -1,7 +1,7 @@
-/* LIVE // EARTH — v74 early boot + verified startup gate; safe local cache repair. */
+/* LIVE // EARTH — v75 bounded downloads, parallel runtime fallback, verified startup gate. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v74-early-startup";
-const CACHE_NAME = "live-earth-shell-v74-early-startup";
+const BUILD_ID = "v75-bounded-startup";
+const CACHE_NAME = "live-earth-shell-v75-bounded-startup";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -46,20 +46,99 @@ function runtimePath(path) {
   return new URL(path, self.registration.scope).pathname;
 }
 
-async function fetchRuntimeSource(dependency) {
-  let lastError = null;
-  for (const url of dependency.urls) {
-    try {
-      const response = await fetch(url, { mode: "cors", cache: "no-store" });
-      if (!response || !response.ok || response.type === "opaque") {
-        throw new Error(`Runtime dependency request failed: ${url}`);
-      }
-      return response;
-    } catch (error) {
-      lastError = error;
+// Every install-time fetch is bounded. AbortController remains active while the
+// response body is consumed, so a connection that returns headers but stalls
+// mid-file cannot hold a fresh installation forever.
+async function fetchBuffered(input, init = {}, timeoutMs = 30000, controller = new AbortController()) {
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(input, { ...init, signal: controller.signal });
+    if (!response || !response.ok || response.type === "opaque") {
+      throw new Error("Essential download did not return a usable response.");
     }
+    const contentType = response.headers.get("content-type") || "application/octet-stream";
+    const body = await response.arrayBuffer();
+    return new Response(body, {
+      status: 200,
+      headers: {
+        "Content-Type": contentType,
+        "Cache-Control": "public, max-age=31536000"
+      }
+    });
+  } finally {
+    clearTimeout(timeout);
   }
-  throw lastError || new Error(`No source available for ${dependency.path}`);
+}
+
+function expectedShellMime(path, type) {
+  if (!type) return false;
+  if (/\.js$/i.test(path)) return /(javascript|ecmascript)/i.test(type);
+  if (/\.html?$/i.test(path) || path === "./" || /\/$/.test(path)) return /text\/html/i.test(type);
+  if (/\.(png|webp|jpe?g)$/i.test(path)) return /^image\//i.test(type);
+  if (/\.svg$/i.test(path)) return /(svg|image)/i.test(type);
+  if (/\.json$/i.test(path)) return /(json|text\/plain)/i.test(type);
+  return true;
+}
+
+function minimumShellBytes(path) {
+  if (/\.js$/i.test(path)) return 100;
+  if (/\.html?$/i.test(path) || path === "./" || /\/$/.test(path)) return 500;
+  if (/\.json$/i.test(path)) return 16;
+  if (/\.(png|webp|jpe?g|svg)$/i.test(path)) return 100;
+  return 1;
+}
+
+async function shellResponseIsValid(response, path) {
+  if (!response || !response.ok || response.type === "opaque") return false;
+  const contentType = response.headers.get("content-type") || "";
+  if (!expectedShellMime(path, contentType)) return false;
+  const bytes = await response.clone().arrayBuffer();
+  return bytes.byteLength >= minimumShellBytes(path);
+}
+
+async function stageShellAsset(cache, path) {
+  const request = new Request(new URL(path, self.registration.scope).href);
+  const existing = await cache.match(request);
+  if (existing && await shellResponseIsValid(existing, path)) return;
+  if (existing) await cache.delete(request);
+  const response = await fetchBuffered(request, { cache: "no-store" }, 30000);
+  if (!(await shellResponseIsValid(response, path))) {
+    throw new Error(`Essential app-shell file failed integrity checks: ${path}`);
+  }
+  await cache.put(request, response.clone());
+  const stored = await cache.match(request);
+  if (!(await shellResponseIsValid(stored, path))) {
+    await cache.delete(request);
+    throw new Error(`Essential app-shell file was not retained correctly: ${path}`);
+  }
+}
+
+async function fetchRuntimeSource(dependency) {
+  // Race the alternate origins instead of waiting for a stalled first CDN.
+  // Each source is independently bounded; once one full file is read, abort the rest.
+  const controllers = [];
+  const attempts = dependency.urls.map(url => {
+    const controller = new AbortController();
+    controllers.push(controller);
+    return fetchBuffered(url, { mode: "cors", cache: "no-store" }, 20000, controller).then(response => {
+      const contentType = response.headers.get("content-type") || "";
+      if (/three\.(module|core)\.js$/.test(dependency.path) && !/(javascript|ecmascript)/i.test(contentType)) {
+        throw new Error(`Three.js source returned an unexpected content type: ${url}`);
+      }
+      if (dependency.path.endsWith(".png") && !/^image\//i.test(contentType)) {
+        throw new Error(`Earth texture source returned an unexpected content type: ${url}`);
+      }
+      return { response, controller };
+    });
+  });
+  try {
+    const winner = await Promise.any(attempts);
+    controllers.forEach(controller => { if (controller !== winner.controller) controller.abort(); });
+    return winner.response;
+  } catch (_) {
+    controllers.forEach(controller => controller.abort());
+    throw new Error(`All bounded download sources failed for ${dependency.path}. Check the connection and retry.`);
+  }
 }
 
 async function localResponse(remoteResponse, dependency) {
@@ -73,6 +152,12 @@ async function localResponse(remoteResponse, dependency) {
   // Rebuild the response as a same-origin response and retain only safe headers.
   // This avoids carrying the CDN response URL across the local cache boundary.
   const body = await remoteResponse.arrayBuffer();
+  if (/three\.(module|core)\.js$/.test(dependency.path) && body.byteLength < 10000) {
+    throw new Error(`Three.js module is empty or truncated: ${dependency.path}`);
+  }
+  if (dependency.path.endsWith(".png") && body.byteLength < 50000) {
+    throw new Error(`Earth texture is empty or truncated: ${dependency.path}`);
+  }
   return new Response(body, {
     status: 200,
     headers: {
@@ -84,12 +169,22 @@ async function localResponse(remoteResponse, dependency) {
 
 async function stageRuntimeDependency(cache, dependency) {
   const localRequest = new Request(new URL(dependency.path, self.registration.scope).href);
+  const existing = await cache.match(localRequest);
+  if (existing) {
+    try {
+      // Reuse a fully verified entry from a previous interrupted install attempt.
+      await localResponse(existing.clone(), dependency);
+      return;
+    } catch (_) {
+      await cache.delete(localRequest);
+    }
+  }
   const remote = await fetchRuntimeSource(dependency);
   const local = await localResponse(remote, dependency);
   await cache.put(localRequest, local.clone());
-  if (!(await cache.match(localRequest))) {
-    throw new Error(`Runtime dependency was not retained in cache: ${dependency.path}`);
-  }
+  const stored = await cache.match(localRequest);
+  if (!stored) throw new Error(`Runtime dependency was not retained in cache: ${dependency.path}`);
+  await localResponse(stored.clone(), dependency);
 }
 
 async function runtimeResponse(request, dependency) {
@@ -430,19 +525,27 @@ function injectSolarDayNight(html) {
 }
 
 self.addEventListener("install", event => {
-  // Stage the full essential shell first. Activate only after all shell assets and
-  // runtime dependencies have been staged. A failed candidate is removed without
-  // touching the currently active shell, optional-data cache, or IndexedDB.
+  // Activate only after every essential file has a verified cached copy. A failed
+  // candidate never takes control; any completed, validated files remain dormant
+  // in its versioned cache so a retry can reuse them without another full download.
   event.waitUntil((async () => {
     try {
       const cache = await caches.open(CACHE_NAME);
-      await cache.addAll(APP_SHELL);
-      for (const dependency of RUNTIME_DEPENDENCIES) {
-        await stageRuntimeDependency(cache, dependency);
-      }
+      // Stage first-party files concurrently and wait for every request to settle
+      // before activation. Invalid or missing resources are never written to cache.
+      const shellResults = await Promise.allSettled(APP_SHELL.map(path => stageShellAsset(cache, path)));
+      const shellFailure = shellResults.find(result => result.status === "rejected");
+      if (shellFailure) throw new Error(`App-shell staging failed: ${shellFailure.reason?.message || shellFailure.reason}`);
+      // Three independent large/runtime resources can stage in parallel. Each has
+      // two raced origins and a hard timeout, so a stalled CDN cannot freeze install.
+      const runtimeResults = await Promise.allSettled(RUNTIME_DEPENDENCIES.map(dependency => stageRuntimeDependency(cache, dependency)));
+      const runtimeFailure = runtimeResults.find(result => result.status === "rejected");
+      if (runtimeFailure) throw new Error(`Runtime staging failed: ${runtimeFailure.reason?.message || runtimeFailure.reason}`);
       await self.skipWaiting();
     } catch (error) {
-      await caches.delete(CACHE_NAME);
+      // Keep already verified candidate entries for a user-requested retry.
+      // They are not serving pages because this worker never activates on failure.
+      // On the next install, every retained entry is rechecked before reuse.
       throw error;
     }
   })());
@@ -461,7 +564,7 @@ self.addEventListener("message", event => {
     event.waitUntil(self.skipWaiting());
     return;
   }
-  if (message.type !== "LIVE_EARTH_APP_READY_V74" || message.buildId !== BUILD_ID) return;
+  if (message.type !== "LIVE_EARTH_APP_READY_V75" || message.buildId !== BUILD_ID) return;
   event.waitUntil((async () => {
     // Keep exactly one active app-shell cache after the new app verifies startup.
     // The bounded optional-data cache and user IndexedDB are intentionally untouched.
@@ -855,7 +958,7 @@ async function networkFirst(request) {
   const activeBuildHit = await cache.match(request);
   if (activeBuildHit) return await transformHomeHTML(request, activeBuildHit);
   try {
-    const response = await fetch(request, {cache:"no-store"});
+    const response = await fetchBuffered(request, { cache: "no-store" }, 30000);
     if (!response?.ok) throw Error("Network response not OK");
     const type = response.headers.get("content-type") || "";
     const url = new URL(request.url);
@@ -909,8 +1012,8 @@ self.addEventListener("fetch", event => {
       const cache = await caches.open(CACHE_NAME);
       const hit = await cache.match(request);
       if (hit) return hit;
-      const response = await fetch(request);
-      if (response?.ok) await cache.put(request, response.clone());
+      const response = await fetchBuffered(request, { cache: "reload" }, 30000);
+      await cache.put(request, response.clone());
       return response;
     })());
     return;

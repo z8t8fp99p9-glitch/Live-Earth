@@ -1,7 +1,7 @@
-/* LIVE // EARTH v74 — early boot + verified startup gate. */
+/* LIVE // EARTH v75 — bounded downloads + verified startup gate. */
 (() => {
   "use strict";
-  const BUILD_ID = "v74-early-startup";
+  const BUILD_ID = "v75-bounded-startup";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
@@ -18,7 +18,7 @@
   function signalVerifiedStartup() {
     const controller = navigator.serviceWorker.controller;
     if (!controller || !readyControllersPresent()) return;
-    controller.postMessage({ type: "LIVE_EARTH_APP_READY_V74", buildId: BUILD_ID });
+    controller.postMessage({ type: "LIVE_EARTH_APP_READY_V75", buildId: BUILD_ID });
   }
 
   window.addEventListener("live-earth-scene-ready", signalVerifiedStartup);
