@@ -1,7 +1,7 @@
-/* LIVE // EARTH — shared-origin app shell, silent automatic updates, and offline fallback; v70 shared launch. */
+/* LIVE // EARTH — shared app shell, silent updates, and cached first-party runtime dependencies; v71 offline runtime. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v70-shared-launch";
-const CACHE_NAME = "live-earth-shell-v70-shared-launch";
+const BUILD_ID = "v71-offline-runtime";
+const CACHE_NAME = "live-earth-shell-v71-offline-runtime";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -13,6 +13,85 @@ const APP_SHELL = [
  "./update-manager.js","./data-recovery.js",
  "./earth.webp","./moon.webp","./sun.webp","./location.webp","./stacks.webp"
 ];
+
+// These runtime assets are cached under same-origin virtual URLs. That lets the
+// module loader and TextureLoader work offline without depending on a CDN at launch.
+const RUNTIME_DEPENDENCIES = [
+  {
+    path: "./vendor/three.module.js",
+    urls: [
+      "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+      "https://unpkg.com/three@0.180.0/build/three.module.js"
+    ]
+  },
+  {
+    path: "./runtime-assets/earth-land-ocean-ice-2048.png",
+    urls: [
+      "https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57730/land_ocean_ice_2048.png",
+      "https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg"
+    ]
+  }
+];
+
+function runtimePath(path) {
+  return new URL(path, self.registration.scope).pathname;
+}
+
+async function fetchRuntimeSource(dependency) {
+  let lastError = null;
+  for (const url of dependency.urls) {
+    try {
+      const response = await fetch(url, { mode: "cors", cache: "no-store" });
+      if (!response || !response.ok || response.type === "opaque") {
+        throw new Error(`Runtime dependency request failed: ${url}`);
+      }
+      return response;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error(`No source available for ${dependency.path}`);
+}
+
+async function localResponse(remoteResponse, dependency) {
+  const contentType = remoteResponse.headers.get("content-type") || "";
+  if (dependency.path.endsWith("three.module.js") && !/(javascript|ecmascript)/i.test(contentType)) {
+    throw new Error("Three.js source did not return a JavaScript content type.");
+  }
+  if (dependency.path.endsWith(".png") && !/^image\//i.test(contentType)) {
+    throw new Error("Earth texture did not return an image content type.");
+  }
+  // Rebuild the response as a same-origin response and retain only safe headers.
+  // This avoids carrying the CDN response URL across the local cache boundary.
+  const body = await remoteResponse.arrayBuffer();
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "Content-Type": contentType,
+      "Cache-Control": "public, max-age=31536000"
+    }
+  });
+}
+
+async function stageRuntimeDependency(cache, dependency) {
+  const localRequest = new Request(new URL(dependency.path, self.registration.scope).href);
+  const remote = await fetchRuntimeSource(dependency);
+  const local = await localResponse(remote, dependency);
+  await cache.put(localRequest, local.clone());
+  if (!(await cache.match(localRequest))) {
+    throw new Error(`Runtime dependency was not retained in cache: ${dependency.path}`);
+  }
+}
+
+async function runtimeResponse(request, dependency) {
+  const cache = await caches.open(CACHE_NAME);
+  const hit = await cache.match(request);
+  if (hit) return hit;
+  const remote = await fetchRuntimeSource(dependency);
+  const local = await localResponse(remote, dependency);
+  await cache.put(request, local.clone());
+  return local;
+}
 
 function injectSameGlobeAPI(html) {
   const anchor = "let active=null,x=0,y=0,drag=false;";
@@ -347,6 +426,11 @@ self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     await cache.addAll(APP_SHELL);
+    // Treat both runtime dependencies as essential. If either cannot be staged,
+    // installation fails safely and the currently active worker remains in place.
+    for (const dependency of RUNTIME_DEPENDENCIES) {
+      await stageRuntimeDependency(cache, dependency);
+    }
     await self.skipWaiting();
   })());
 });
@@ -364,7 +448,7 @@ self.addEventListener("message", event => {
     event.waitUntil(self.skipWaiting());
     return;
   }
-  if (message.type !== "LIVE_EARTH_APP_READY_V70" || message.buildId !== BUILD_ID) return;
+  if (message.type !== "LIVE_EARTH_APP_READY_V71" || message.buildId !== BUILD_ID) return;
   event.waitUntil((async () => {
     // Keep exactly one active app-shell cache after the new app verifies startup.
     // The bounded optional-data cache and user IndexedDB are intentionally untouched.
@@ -381,6 +465,18 @@ async function transformHomeHTML(request, response, forceHome = false) {
   if (!isHome) return response;
 
   let html = await response.clone().text();
+  const remoteThreeImport = "try{T=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js')}catch(e){T=await import('https://unpkg.com/three@0.180.0/build/three.module.js')}";
+  if (html.includes(remoteThreeImport)) {
+    html = html.replace(remoteThreeImport, "T=await import('./vendor/three.module.js')");
+  }
+  html = html.replaceAll(
+    "https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57730/land_ocean_ice_2048.png",
+    "./runtime-assets/earth-land-ocean-ice-2048.png"
+  );
+  html = html.replaceAll(
+    "https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg",
+    "./runtime-assets/earth-land-ocean-ice-2048.png"
+  );
   html = injectSameGlobeAPI(html);
   html = injectSolarDayNight(html);
   if (!html.includes("orb-controls-v4.js")) {
@@ -466,6 +562,11 @@ self.addEventListener("fetch", event => {
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
   if (request.mode === "navigate" || request.destination === "document" || url.pathname.endsWith(".html") || url.pathname.endsWith("/")) {
     event.respondWith(networkFirst(request));
+    return;
+  }
+  const runtimeDependency = RUNTIME_DEPENDENCIES.find(dependency => runtimePath(dependency.path) === url.pathname);
+  if (runtimeDependency) {
+    event.respondWith(runtimeResponse(request, runtimeDependency));
     return;
   }
   const shell = new Set(APP_SHELL.map(path => new URL(path, self.location.href).pathname));
