@@ -1,6 +1,6 @@
-/* LIVE // EARTH — edge-to-edge iOS Sky View; cache v66. */
+/* LIVE // EARTH — first-load controller bootstrap and cached HTML transform; cache v67. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v66-edge-to-edge-sky-view";
+const CACHE_NAME = "live-earth-shell-v67-first-load-controller-bootstrap";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -361,6 +361,44 @@ self.addEventListener("message", event => {
   })());
 });
 
+async function transformHomeHTML(request, response, forceHome = false) {
+  const type = response.headers.get("content-type") || "";
+  const url = new URL(request.url);
+  const isHome = forceHome || (type.includes("text/html") &&
+    (url.pathname.endsWith("/index.html") || url.pathname.endsWith("/")));
+  if (!isHome) return response;
+
+  let html = await response.clone().text();
+  html = injectSameGlobeAPI(html);
+  html = injectSolarDayNight(html);
+  if (!html.includes("orb-controls-v4.js")) {
+    html = html.replace(/<\/body\s*>/i, '<script src="./orb-controls-v4.js" defer></script>\n</body>');
+  }
+  if (!html.includes("earth-mode-navigation.js")) {
+    html = html.replace(/<\/body\s*>/i, '<script src="./earth-mode-navigation.js" defer></script>\n</body>');
+  }
+  if (!html.includes("location-scanner.js")) {
+    html = html.replace(/<\/body\s*>/i, '<script src="./location-scanner.js" defer></script>\n</body>');
+  }
+  if (!html.includes("sky-view-controller.js")) {
+    html = html.replace(/<\/body\s*>/i, '<script src="./sky-view-controller.js" defer></script>\n</body>');
+  }
+  if (!html.includes("view-manager.js")) {
+    html = html.replace(/<\/body\s*>/i, '<script src="./view-manager.js" defer></script>\n</body>');
+  }
+
+  const headers = new Headers(response.headers);
+  headers.delete("content-length");
+  const transformed = new Response(html, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+  const cache = await caches.open(CACHE_NAME);
+  await cache.put(request, transformed.clone());
+  return transformed;
+}
+
 async function networkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
   try {
@@ -368,39 +406,20 @@ async function networkFirst(request) {
     if (!response?.ok) throw Error("Network response not OK");
     const type = response.headers.get("content-type") || "";
     const url = new URL(request.url);
-    const isHome = type.includes("text/html") && (url.pathname.endsWith("/index.html") || url.pathname.endsWith("/"));
-    if (isHome) {
-      let html = await response.clone().text();
-      html = injectSameGlobeAPI(html);
-      html = injectSolarDayNight(html);
-      if (!html.includes("orb-controls-v4.js")) {
-        html = html.replace(/<\/body\s*>/i, '<script src="./orb-controls-v4.js" defer></script>\n</body>');
-      }
-      if (!html.includes("earth-mode-navigation.js")) {
-        html = html.replace(/<\/body\s*>/i, '<script src="./earth-mode-navigation.js" defer></script>\n</body>');
-      }
-      if (!html.includes("location-scanner.js")) {
-        html = html.replace(/<\/body\s*>/i, '<script src="./location-scanner.js" defer></script>\n</body>');
-      }
-      if (!html.includes("sky-view-controller.js")) {
-        html = html.replace(/<\/body\s*>/i, '<script src="./sky-view-controller.js" defer></script>\n</body>');
-      }
-      if (!html.includes("view-manager.js")) {
-        html = html.replace(/<\/body\s*>/i, '<script src="./view-manager.js" defer></script>\n</body>');
-      }
-      const headers = new Headers(response.headers);
-      headers.delete("content-length");
-      const transformed = new Response(html, {status:response.status,statusText:response.statusText,headers});
-      await cache.put(request, transformed.clone());
-      return transformed;
-    }
+    const isHome = type.includes("text/html") &&
+      (url.pathname.endsWith("/index.html") || url.pathname.endsWith("/"));
+    if (isHome) return await transformHomeHTML(request, response);
     await cache.put(request, response.clone());
     return response;
   } catch (error) {
+    // The install precache stores a raw index.html/root document. If a first
+    // navigation falls back to that cached shell, transform it before serving
+    // so the app controllers and injected globe APIs are still initialized.
     const hit = await caches.match(request);
-    if (hit) return hit;
+    if (hit) return await transformHomeHTML(request, hit);
+
     const fallback = await caches.match("./index.html");
-    if (fallback) return fallback;
+    if (fallback) return await transformHomeHTML(request, fallback, true);
     throw error;
   }
 }
