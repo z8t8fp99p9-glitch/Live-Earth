@@ -1,7 +1,7 @@
-/* LIVE // EARTH v72 — repaired offline Three.js dependency chain and cached-page migration. */
+/* LIVE // EARTH v73 — preserve the previous shell until verified startup gate passes. */
 (() => {
   "use strict";
-  const BUILD_ID = "v72-offline-runtime";
+  const BUILD_ID = "v73-startup-readiness";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
@@ -10,17 +10,19 @@
       window.LiveEarthViewManager &&
       window.LiveEarthSkyViews &&
       window.__liveEarthControlsInstalled &&
-      window.__liveEarthLocationScannerInstalled
+      window.__liveEarthLocationScannerInstalled &&
+      window.__liveEarthStartupReady === true
     );
   }
 
   function signalVerifiedStartup() {
     const controller = navigator.serviceWorker.controller;
     if (!controller || !readyControllersPresent()) return;
-    controller.postMessage({ type: "LIVE_EARTH_APP_READY_V72", buildId: BUILD_ID });
+    controller.postMessage({ type: "LIVE_EARTH_APP_READY_V73", buildId: BUILD_ID });
   }
 
   window.addEventListener("live-earth-scene-ready", signalVerifiedStartup);
+  window.addEventListener("live-earth-startup-ready", signalVerifiedStartup);
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (document.readyState === "complete") signalVerifiedStartup();
   });

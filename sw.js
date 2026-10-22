@@ -1,7 +1,7 @@
-/* LIVE // EARTH — shared app shell, silent updates, and cached first-party runtime dependencies; v72 offline runtime repair. */
+/* LIVE // EARTH — v73 verified startup gate with local cache repair and protected Home visuals. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v72-offline-runtime";
-const CACHE_NAME = "live-earth-shell-v72-offline-runtime";
+const BUILD_ID = "v73-startup-readiness";
+const CACHE_NAME = "live-earth-shell-v73-startup-readiness";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -430,17 +430,21 @@ function injectSolarDayNight(html) {
 }
 
 self.addEventListener("install", event => {
-  // Stage a complete new shell before activation. On success, activate silently
-  // so every same-origin shortcut moves to the same shared app version.
+  // Stage the full essential shell first. Activate only after all shell assets and
+  // runtime dependencies have been staged. A failed candidate is removed without
+  // touching the currently active shell, optional-data cache, or IndexedDB.
   event.waitUntil((async () => {
-    const cache = await caches.open(CACHE_NAME);
-    await cache.addAll(APP_SHELL);
-    // Treat both runtime dependencies as essential. If either cannot be staged,
-    // installation fails safely and the currently active worker remains in place.
-    for (const dependency of RUNTIME_DEPENDENCIES) {
-      await stageRuntimeDependency(cache, dependency);
+    try {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.addAll(APP_SHELL);
+      for (const dependency of RUNTIME_DEPENDENCIES) {
+        await stageRuntimeDependency(cache, dependency);
+      }
+      await self.skipWaiting();
+    } catch (error) {
+      await caches.delete(CACHE_NAME);
+      throw error;
     }
-    await self.skipWaiting();
   })());
 });
 self.addEventListener("activate", event => {
@@ -457,7 +461,7 @@ self.addEventListener("message", event => {
     event.waitUntil(self.skipWaiting());
     return;
   }
-  if (message.type !== "LIVE_EARTH_APP_READY_V72" || message.buildId !== BUILD_ID) return;
+  if (message.type !== "LIVE_EARTH_APP_READY_V73" || message.buildId !== BUILD_ID) return;
   event.waitUntil((async () => {
     // Keep exactly one active app-shell cache after the new app verifies startup.
     // The bounded optional-data cache and user IndexedDB are intentionally untouched.
@@ -465,6 +469,320 @@ self.addEventListener("message", event => {
     await Promise.all(keys.filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME).map(key => caches.delete(key)));
   })());
 });
+
+function injectStartupGate(html) {
+  if (html.includes('id="le-startup-gate"')) return html;
+
+  const expectedPaths = JSON.stringify([...APP_SHELL, ...RUNTIME_DEPENDENCIES.map(item => item.path)]);
+  const cacheName = JSON.stringify(CACHE_NAME);
+  const buildId = JSON.stringify(BUILD_ID);
+  const style = `<style id="le-startup-gate-style">
+  #le-startup-gate{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;overflow:hidden;isolation:isolate;box-sizing:border-box;padding:24px 22px calc(24px + env(safe-area-inset-bottom));color:#edf8ff;background:radial-gradient(ellipse at 50% 34%,#102b46 0%,#071321 38%,#030811 72%,#02050b 100%);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;text-align:center;opacity:1;transition:opacity .42s ease;touch-action:pan-y}
+  #le-startup-gate[hidden]{display:none}
+  #le-startup-gate:before{content:"";position:absolute;inset:0;z-index:-2;background-image:radial-gradient(1px 1px at 7% 18%,#d7f4ffad 98%,transparent),radial-gradient(1px 1px at 19% 72%,#d7f4ff80 98%,transparent),radial-gradient(1.3px 1.3px at 78% 16%,#e4f8ffba 98%,transparent),radial-gradient(1px 1px at 87% 64%,#b9e9ff8c 98%,transparent),radial-gradient(1px 1px at 61% 83%,#e4f8ff8c 98%,transparent),radial-gradient(1px 1px at 35% 33%,#e4f8ff70 98%,transparent),radial-gradient(1px 1px at 93% 38%,#d7f4ff70 98%,transparent);opacity:.8}
+  #le-startup-gate:after{content:"";position:absolute;inset:auto -20% -36% -20%;height:55%;z-index:-1;background:radial-gradient(ellipse at center,#0d42684d,transparent 68%);pointer-events:none}
+  #le-startup-gate *{box-sizing:border-box}
+  #le-startup-gate .le-gate-panel{position:relative;width:min(100%,390px);margin:auto;padding:15px 0 8px}
+  #le-startup-gate .le-gate-brand{font-size:13px;font-weight:800;letter-spacing:.23em;color:#f3faff;white-space:nowrap;text-shadow:0 0 24px #5ecbff35}
+  #le-startup-gate .le-gate-brand .le-gate-slash{color:#62d6ff;margin:0 .25em}
+  #le-startup-gate .le-gate-world{position:relative;width:clamp(142px,42vw,186px);aspect-ratio:1;margin:29px auto 29px;display:grid;place-items:center;isolation:isolate}
+  #le-startup-gate .le-gate-orbit{position:absolute;inset:-6%;border:1px solid #71d5ff34;border-radius:50%;transform:rotate(-27deg) scaleY(.38);box-shadow:0 0 18px #54caff12;animation:le-gate-orbit 5.5s linear infinite}
+  #le-startup-gate .le-gate-orbit:after{content:"";position:absolute;left:17%;top:12%;width:7px;height:7px;border-radius:50%;background:#8de4ff;box-shadow:0 0 12px 3px #64d9ff86}
+  #le-startup-gate .le-gate-orbit-two{inset:6%;transform:rotate(32deg) scaleY(.42);border-color:#9ecfff21;animation-direction:reverse;animation-duration:7.5s}
+  #le-startup-gate .le-gate-orbit-two:after{left:auto;right:18%;top:auto;bottom:12%;width:4px;height:4px;background:#d6f5ff;box-shadow:0 0 9px 2px #70d8ff72}
+  #le-startup-gate .le-gate-planet{position:relative;width:78%;aspect-ratio:1;overflow:hidden;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 31% 23%,#a0edff 0%,#2e91bf 18%,#125078 47%,#041929 76%);box-shadow:inset -16px -13px 27px #000a,inset 5px 4px 10px #a4edff52,0 0 30px #2fbfff32,0 0 70px #298dce13}
+  #le-startup-gate .le-gate-planet img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;filter:drop-shadow(0 0 13px #55caff30)}
+  #le-startup-gate .le-gate-title{margin:0;font-size:clamp(22px,6vw,27px);font-weight:650;letter-spacing:-.035em;line-height:1.2;color:#f1f8ff}
+  #le-startup-gate .le-gate-message{margin:12px 0 0;min-height:20px;font-size:13px;line-height:1.5;letter-spacing:.015em;color:#b7d2e5}
+  #le-startup-gate .le-gate-track{height:4px;margin:26px auto 13px;width:min(100%,292px);overflow:hidden;border-radius:999px;background:#b3deff19;box-shadow:inset 0 0 0 1px #9adfff12}
+  #le-startup-gate .le-gate-fill{height:100%;width:2%;border-radius:inherit;background:linear-gradient(90deg,#319ed2,#74e2ff 64%,#d0f7ff);box-shadow:0 0 16px #52caff64;transition:width .22s ease}
+  #le-startup-gate .le-gate-detail{margin:0;min-height:18px;font-size:11px;line-height:1.5;letter-spacing:.045em;color:#789bb5}
+  #le-startup-gate .le-gate-failure{margin:23px auto 0;max-width:320px}
+  #le-startup-gate .le-gate-failure[hidden]{display:none}
+  #le-startup-gate .le-gate-failure p{margin:0 0 14px;font-size:13px;line-height:1.55;color:#c5d8e7}
+  #le-startup-gate .le-gate-retry{appearance:none;min-height:42px;padding:11px 21px;border:1px solid #79d6ff76;border-radius:999px;background:linear-gradient(135deg,#2d9acb36,#ffffff08);color:#ecf9ff;font:650 12px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.055em;box-shadow:0 0 20px #46caff15}
+  #le-startup-gate .le-gate-retry:focus-visible{outline:2px solid #b8efff;outline-offset:4px}
+  #le-startup-gate.le-gate-ready{opacity:0;pointer-events:none}
+  @keyframes le-gate-orbit{to{transform:rotate(333deg) scaleY(.38)}}
+  @media(prefers-reduced-motion:reduce){#le-startup-gate,#le-startup-gate .le-gate-fill{transition:none}#le-startup-gate .le-gate-orbit{animation:none}}
+  </style>`;
+
+  const markup = `
+  <div id="le-startup-gate" role="status" aria-live="polite" aria-label="LIVE // EARTH startup readiness">
+    <div class="le-gate-panel">
+      <div class="le-gate-brand"><span style="color:#62d6ff">LIVE</span><span class="le-gate-slash">//</span> EARTH</div>
+      <div class="le-gate-world" aria-hidden="true">
+        <div class="le-gate-orbit"></div><div class="le-gate-orbit le-gate-orbit-two"></div>
+        <div class="le-gate-planet"><img src="./earth.webp" alt="" draggable="false" onerror="this.style.display='none'"></div>
+      </div>
+      <h1 class="le-gate-title">Preparing your world</h1>
+      <p id="le-gate-message" class="le-gate-message">Checking essential assets…</p>
+      <div class="le-gate-track" role="progressbar" aria-label="Startup preparation" aria-valuemin="0" aria-valuemax="100"><div id="le-gate-fill" class="le-gate-fill"></div></div>
+      <p id="le-gate-detail" class="le-gate-detail">Verifying local resources before entering orbit</p>
+      <div id="le-gate-failure" class="le-gate-failure" hidden><p id="le-gate-error-text">A required file could not be verified.</p><button id="le-gate-retry" class="le-gate-retry" type="button">Retry preparation</button></div>
+    </div>
+  </div>
+  <script id="le-startup-gate-script">
+  (() => {
+    'use strict';
+    const BUILD_ID = ${buildId};
+    const CACHE_NAME = ${cacheName};
+    const EXPECTED_PATHS = ${expectedPaths};
+    const REPAIR_MARKER = 'le-startup-repair-' + BUILD_ID;
+    const gate = document.getElementById('le-startup-gate');
+    const message = document.getElementById('le-gate-message');
+    const detail = document.getElementById('le-gate-detail');
+    const fill = document.getElementById('le-gate-fill');
+    const failure = document.getElementById('le-gate-failure');
+    const errorText = document.getElementById('le-gate-error-text');
+    const retry = document.getElementById('le-gate-retry');
+    let busy = false;
+    let failed = false;
+    let ready = false;
+    let lastInvalid = [];
+    let sceneFailure = '';
+    let knownBadPaths = [];
+    let repairAttempted = false;
+    let lastAssetCheck = 0;
+
+    function setStage(percent, title, subline) {
+      message.textContent = title;
+      detail.textContent = subline || '';
+      fill.style.width = Math.max(2, Math.min(100, percent)) + '%';
+      const track = gate.querySelector('.le-gate-track');
+      if (track) track.setAttribute('aria-valuenow', String(Math.round(percent)));
+    }
+    function fail(text) {
+      failed = true;
+      failure.hidden = false;
+      errorText.textContent = text;
+      retry.disabled = false;
+      retry.textContent = 'Retry preparation';
+      setStage(100, 'One more check is needed', 'Home stays protected until the essentials are ready');
+    }
+    function expectedMime(path, type) {
+      if (!type) return false;
+      if (/\\.js$/i.test(path)) return /(javascript|ecmascript)/i.test(type);
+      if (/\\.html?$/i.test(path) || /\\/$/.test(path) || path === './') return /text\\/html/i.test(type);
+      if (/\\.(png|webp|jpe?g)$/i.test(path)) return /^image\\//i.test(type);
+      if (/\\.svg$/i.test(path)) return /(svg|image)/i.test(type);
+      if (/\\.json$/i.test(path)) return /(json|text\\/plain)/i.test(type);
+      return true;
+    }
+    function minBytes(path) {
+      if (/three\\.(module|core)\\.js$/i.test(path)) return 10000;
+      if (/earth-land-ocean-ice-2048\\.png$/i.test(path)) return 50000;
+      if (/\\.js$/i.test(path)) return 100;
+      if (/\\.html?$/i.test(path) || path === './' || /\\/$/.test(path)) return 500;
+      if (/\\.json$/i.test(path)) return 16;
+      if (/\\.(png|webp|jpe?g|svg)$/i.test(path)) return 100;
+      return 1;
+    }
+    async function inspectPath(path, cache) {
+      const url = new URL(path, document.baseURI).href;
+      try {
+        const response = await cache.match(url);
+        if (!response) return 'missing';
+        if (!response.ok || response.type === 'opaque') return 'invalid response';
+        const type = response.headers.get('content-type') || '';
+        if (!expectedMime(path, type)) return 'unexpected file type';
+        const bytes = await response.clone().arrayBuffer();
+        if (bytes.byteLength < minBytes(path)) return 'empty or truncated file';
+        return '';
+      } catch (_) { return 'unreadable cache entry'; }
+    }
+    async function inspectAll() {
+      const cache = await caches.open(CACHE_NAME);
+      const invalid = [];
+      let count = 0;
+      for (const path of EXPECTED_PATHS) {
+        const issue = await inspectPath(path, cache);
+        count++;
+        setStage(4 + Math.round(63 * count / EXPECTED_PATHS.length), 'Checking essential assets', count + ' of ' + EXPECTED_PATHS.length + ' resources verified');
+        if (issue) invalid.push({path, issue});
+      }
+      lastAssetCheck = Date.now();
+      return invalid;
+    }
+    async function repairPath(path) {
+      const cache = await caches.open(CACHE_NAME);
+      const url = new URL(path, document.baseURI).href;
+      await cache.delete(url);
+      let lastError = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const response = await fetch(url, {cache:'reload', credentials:'same-origin'});
+          if (!response || !response.ok || response.type === 'opaque') throw new Error('Download did not return a usable response');
+          await cache.put(url, response.clone());
+          const issue = await inspectPath(path, cache);
+          if (!issue) return true;
+          lastError = new Error(issue);
+          await cache.delete(url);
+        } catch (error) { lastError = error; }
+      }
+      throw lastError || new Error('Asset repair failed');
+    }
+    function getMissingControllers() {
+      const paths = [...knownBadPaths];
+      if (!window.LiveEarthScene) paths.push('./vendor/three.module.js','./vendor/three.core.js','./runtime-assets/earth-land-ocean-ice-2048.png');
+      if (!window.LiveEarthViewManager) paths.push('./view-manager.js');
+      if (!window.LiveEarthSkyViews) paths.push('./sky-view-controller.js');
+      if (!window.__liveEarthControlsInstalled || typeof window.liveEarthLocationAllowed !== 'function') paths.push('./orb-controls-v4.js');
+      if (!window.__liveEarthLocationScannerInstalled) paths.push('./location-scanner.js');
+      const brokenImages = [...document.querySelectorAll('#navButtons .orbImage')].filter(img => img.complete && img.naturalWidth === 0);
+      for (const img of brokenImages) {
+        const src = img.getAttribute('src');
+        if (src) paths.push(src);
+      }
+      return [...new Set(paths)];
+    }
+    async function repairThenReload(paths, userRequested) {
+      let markerExists = false;
+      try { markerExists = sessionStorage.getItem(REPAIR_MARKER) === '1'; } catch (_) { markerExists = true; }
+      if (markerExists && !userRequested) return false;
+      if (navigator.onLine === false) return false;
+      repairAttempted = true;
+      try { sessionStorage.setItem(REPAIR_MARKER, '1'); } catch (_) { if (!userRequested) return false; }
+      setStage(75, 'Repairing an essential file', 'Replacing only the resource that failed verification');
+      for (let i = 0; i < paths.length; i++) {
+        setStage(75 + Math.round(12 * (i + 1) / Math.max(1, paths.length)), 'Repairing an essential file', (i + 1) + ' of ' + paths.length + ' resources refreshed');
+        await repairPath(paths[i]);
+      }
+      setStage(90, 'Rechecking the repaired files', 'Restarting from the verified local copy');
+      const remaining = await inspectAll();
+      if (remaining.length) throw new Error('Some resources still failed verification');
+      location.reload();
+      return true;
+    }
+    async function finishReady() {
+      if (ready || failed) return;
+      window.__liveEarthStartupReady = true;
+      window.dispatchEvent(new Event('live-earth-startup-ready'));
+      try { sessionStorage.removeItem(REPAIR_MARKER); } catch (_) {}
+      ready = true;
+      failure.hidden = true;
+      setStage(100, 'Your world is ready', 'All essential systems verified · enjoy LIVE // EARTH');
+      gate.setAttribute('aria-label', 'LIVE // EARTH is ready');
+      setTimeout(() => {
+        gate.classList.add('le-gate-ready');
+        setTimeout(() => { gate.hidden = true; }, 460);
+      }, 220);
+    }
+    function coreReady() {
+      const orbImages = [...document.querySelectorAll('#navButtons .orbImage')];
+      const imagesReady = orbImages.length === 5 && orbImages.every(img => img.complete && img.naturalWidth > 0);
+      return document.readyState === 'complete' &&
+        !!window.LiveEarthScene && !!window.LiveEarthViewManager && !!window.LiveEarthSkyViews &&
+        window.__liveEarthControlsInstalled === true && window.__liveEarthLocationScannerInstalled === true &&
+        typeof window.liveEarthLocationAllowed === 'function' && window.liveEarthLocationAllowed() === false && imagesReady;
+    }
+    async function prepare(userRequested = false) {
+      if (busy || ready) return;
+      busy = true;
+      failed = false;
+      failure.hidden = true;
+      retry.disabled = true;
+      retry.textContent = 'Checking…';
+      window.__liveEarthStartupReady = false;
+      try {
+        if (!('caches' in window)) throw new Error('This browser does not expose the local cache needed for safe startup.');
+        setStage(3, 'Checking essential assets', 'Verifying the globe, views, navigation and location tools');
+        let invalid = await inspectAll();
+        if (invalid.length) {
+          lastInvalid = invalid.map(item => item.path);
+          setStage(70, 'Repairing a missing essential', invalid.length + ' resource(s) need a fresh verified copy');
+          try {
+            for (let i = 0; i < invalid.length; i++) {
+              setStage(70 + Math.round(5 * (i + 1) / invalid.length), 'Repairing a missing essential', (i + 1) + ' of ' + invalid.length + ' files refreshed');
+              await repairPath(invalid[i].path);
+            }
+            invalid = await inspectAll();
+            if (invalid.length) throw new Error('One or more essential files still failed verification');
+            const reloaded = await repairThenReload([], userRequested);
+            if (reloaded) return;
+            throw new Error('A corrected cache is ready, but a clean reload is required to use it. Tap Retry preparation.');
+          } catch (repairError) {
+            throw new Error('A required file could not be repaired. Connect to the internet and retry.');
+          }
+        }
+        setStage(80, 'Warming up the globe', 'Initializing the Earth renderer and view systems');
+        const start = Date.now();
+        while (!coreReady()) {
+          if (sceneFailure) {
+            const missing = getMissingControllers();
+            const repairPaths = missing.length ? missing : ['./vendor/three.module.js','./vendor/three.core.js','./runtime-assets/earth-land-ocean-ice-2048.png'];
+            try { if (await repairThenReload(repairPaths, userRequested)) return; } catch (_) {}
+            throw new Error(sceneFailure);
+          }
+          if (Date.now() - start > 45000) {
+            const missing = getMissingControllers();
+            if (missing.length) {
+              const reloaded = await repairThenReload(missing, userRequested);
+              if (reloaded) return;
+            }
+            throw new Error('The globe or one of its controls did not finish initializing.');
+          }
+          await new Promise(resolve => setTimeout(resolve, 180));
+        }
+        try {
+          // The main scene's first requestAnimationFrame was queued before this gate.
+          // Two frames later, verify that its WebGL2 surface exists and the context is alive.
+          await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+          const sceneCanvas = document.getElementById('scene');
+          const context = sceneCanvas && sceneCanvas.getContext('webgl2');
+          if (!sceneCanvas || sceneCanvas.width < 1 || sceneCanvas.height < 1 || !context || context.isContextLost()) {
+            throw new Error('The Earth renderer did not complete its first frame.');
+          }
+        } catch (renderError) {
+          const missing = getMissingControllers();
+          const repairPaths = missing.length ? missing : ['./vendor/three.module.js','./vendor/three.core.js','./runtime-assets/earth-land-ocean-ice-2048.png'];
+          try { if (await repairThenReload(repairPaths, userRequested)) return; } catch (_) {}
+          throw renderError;
+        }
+        await finishReady();
+      } catch (error) {
+        const message = error && error.message ? error.message : 'Startup could not be verified.';
+        fail(message + ' Your saved local data has not been changed by this check.');
+      } finally {
+        busy = false;
+        retry.disabled = false;
+      }
+    }
+    retry.addEventListener('click', () => {
+      failed = false;
+      sceneFailure = '';
+      const currentStatus = document.getElementById('status');
+      if (currentStatus && /^Earth failed to load:/i.test(currentStatus.textContent || '')) sceneFailure = currentStatus.textContent.slice(0,180);
+      prepare(true);
+    });
+    window.addEventListener('online', () => { if (failed && !busy) prepare(true); });
+    window.addEventListener('error', event => {
+      if (event.target && event.target.tagName === 'SCRIPT') {
+        const src = event.target.src || '';
+        const scriptPaths = ['./orb-controls-v4.js','./earth-mode-navigation.js','./sky-view-controller.js','./view-manager.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
+        for (const path of scriptPaths) if (src.endsWith(path.slice(1))) knownBadPaths.push(path);
+        sceneFailure = 'A required startup script failed to load.';
+      } else if (event.error) {
+        sceneFailure = 'A startup script or the Earth renderer encountered an error.';
+      }
+    }, true);
+    window.addEventListener('unhandledrejection', event => {
+      if (event.reason) sceneFailure = 'A startup task failed: ' + String(event.reason.message || event.reason).slice(0,120);
+    });
+    const statusNode = document.getElementById('status');
+    if (statusNode && window.MutationObserver) {
+      new MutationObserver(() => {
+        if (/^Earth failed to load:/i.test(statusNode.textContent || '')) sceneFailure = (statusNode.textContent || 'Earth failed to load.').slice(0,180);
+      }).observe(statusNode, {childList:true,subtree:true,characterData:true,attributes:true});
+    }
+    prepare(false);
+  })();
+  </script>`;
+
+  html = html.replace(/<\/head\s*>/i, style + '</head>');
+  html = html.replace(/<body\b[^>]*>/i, function (tag) { return tag + markup; });
+  return html;
+}
 
 async function transformHomeHTML(request, response, forceHome = false) {
   const type = response.headers.get("content-type") || "";
@@ -515,6 +833,7 @@ async function transformHomeHTML(request, response, forceHome = false) {
   if (!html.includes("data-recovery.js")) {
     html = html.replace(/<\/body\s*>/i, '<script type="module" src="./data-recovery.js"></script>\n</body>');
   }
+  html = injectStartupGate(html);
 
   const headers = new Headers(response.headers);
   headers.delete("content-length");
