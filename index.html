@@ -160,5 +160,13 @@ let moonSystem={update:()=>null};try{const moonModule=await import('./moon-orbit
  initializing=false;
 })();
 </script>
+<!-- Core navigation controllers are part of the HTML shell, not runtime-only injections.
+     Their order is intentional; sw.js avoids injecting duplicate script tags. -->
+<script src="./orb-controls-v4.js" defer></script>
+<script src="./earth-mode-navigation.js" defer></script>
+<script src="./location-scanner.js" defer></script>
+<script src="./sky-view-controller.js" defer></script>
+<script src="./view-manager.js" defer></script>
+<script src="./update-manager.js" defer></script>
 </body>
 </html>

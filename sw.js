@@ -1,6 +1,7 @@
-/* LIVE // EARTH — first-load controller bootstrap and cached HTML transform; cache v67. */
+/* LIVE // EARTH — staged updates, safe shell retirement, and resilient startup; cache v68. */
 const CACHE_PREFIX = "live-earth-shell-";
-const CACHE_NAME = "live-earth-shell-v67-first-load-controller-bootstrap";
+const BUILD_ID = "v68-staged-update";
+const CACHE_NAME = "live-earth-shell-v68-staged-update";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -9,6 +10,7 @@ const APP_SHELL = [
  "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
  "./moon-sky-background-responsive.svg","./sun-sky-background-responsive.svg",
  "./moon-sky-background-portrait.webp","./moon-sky-background-landscape.webp",
+ "./update-manager.js",
  "./earth.webp","./moon.webp","./sun.webp","./location.webp","./stacks.webp"
 ];
 
@@ -340,22 +342,33 @@ function injectSolarDayNight(html) {
 }
 
 self.addEventListener("install", event => {
+  // Stage the complete shell, but do not replace a running app mid-session.
+  // With no previous worker the browser activates this worker normally; on an
+  // update it waits until old controlled clients close or the user taps Update now.
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     await cache.addAll(APP_SHELL);
-    await self.skipWaiting();
   })());
 });
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME).map(key => caches.delete(key)));
+    // Keep previous shell caches available until the new app confirms startup.
+    // Claiming is useful for first install and for an explicitly approved update.
     await self.clients.claim();
   })());
 });
 self.addEventListener("message", event => {
-  if (event.data?.type !== "LIVE_EARTH_APP_READY") return;
+  const message = event.data || {};
+  if (message.type === "LIVE_EARTH_SKIP_WAITING" && message.buildId === BUILD_ID) {
+    // This is the only path that bypasses the default waiting lifecycle; it is
+    // sent only by the user's explicit Update now action.
+    event.waitUntil(self.skipWaiting());
+    return;
+  }
+  if (message.type !== "LIVE_EARTH_APP_READY_V68" || message.buildId !== BUILD_ID) return;
   event.waitUntil((async () => {
+    // Retire old shell caches only after the matching build reports that its
+    // scene and view controllers initialized. Optional data cache is untouched.
     const keys = await caches.keys();
     await Promise.all(keys.filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME).map(key => caches.delete(key)));
   })());
@@ -386,6 +399,9 @@ async function transformHomeHTML(request, response, forceHome = false) {
   if (!html.includes("view-manager.js")) {
     html = html.replace(/<\/body\s*>/i, '<script src="./view-manager.js" defer></script>\n</body>');
   }
+  if (!html.includes("update-manager.js")) {
+    html = html.replace(/<\/body\s*>/i, '<script src="./update-manager.js" defer></script>\n</body>');
+  }
 
   const headers = new Headers(response.headers);
   headers.delete("content-length");
@@ -401,6 +417,10 @@ async function transformHomeHTML(request, response, forceHome = false) {
 
 async function networkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
+  // Serve the active build's own shell first. A waiting update must not replace
+  // the HTML of the currently running version just because the network is online.
+  const activeBuildHit = await cache.match(request);
+  if (activeBuildHit) return await transformHomeHTML(request, activeBuildHit);
   try {
     const response = await fetch(request, {cache:"no-store"});
     if (!response?.ok) throw Error("Network response not OK");
@@ -415,10 +435,10 @@ async function networkFirst(request) {
     // The install precache stores a raw index.html/root document. If a first
     // navigation falls back to that cached shell, transform it before serving
     // so the app controllers and injected globe APIs are still initialized.
-    const hit = await caches.match(request);
+    const hit = await cache.match(request);
     if (hit) return await transformHomeHTML(request, hit);
 
-    const fallback = await caches.match("./index.html");
+    const fallback = await cache.match("./index.html");
     if (fallback) return await transformHomeHTML(request, fallback, true);
     throw error;
   }
