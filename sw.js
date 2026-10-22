@@ -1,7 +1,7 @@
-/* LIVE // EARTH — shared app shell, silent updates, and cached first-party runtime dependencies; v71 offline runtime. */
+/* LIVE // EARTH — shared app shell, silent updates, and cached first-party runtime dependencies; v72 offline runtime repair. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v71-offline-runtime";
-const CACHE_NAME = "live-earth-shell-v71-offline-runtime";
+const BUILD_ID = "v72-offline-runtime";
+const CACHE_NAME = "live-earth-shell-v72-offline-runtime";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -17,6 +17,15 @@ const APP_SHELL = [
 // These runtime assets are cached under same-origin virtual URLs. That lets the
 // module loader and TextureLoader work offline without depending on a CDN at launch.
 const RUNTIME_DEPENDENCIES = [
+  {
+    // Three.js r180's module entry imports this companion file relatively.
+    // It must live at the matching same-origin path for offline ES-module resolution.
+    path: "./vendor/three.core.js",
+    urls: [
+      "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.core.js",
+      "https://unpkg.com/three@0.180.0/build/three.core.js"
+    ]
+  },
   {
     path: "./vendor/three.module.js",
     urls: [
@@ -55,8 +64,8 @@ async function fetchRuntimeSource(dependency) {
 
 async function localResponse(remoteResponse, dependency) {
   const contentType = remoteResponse.headers.get("content-type") || "";
-  if (dependency.path.endsWith("three.module.js") && !/(javascript|ecmascript)/i.test(contentType)) {
-    throw new Error("Three.js source did not return a JavaScript content type.");
+  if (/three\.(module|core)\.js$/.test(dependency.path) && !/(javascript|ecmascript)/i.test(contentType)) {
+    throw new Error(`Three.js module did not return a JavaScript content type: ${dependency.path}`);
   }
   if (dependency.path.endsWith(".png") && !/^image\//i.test(contentType)) {
     throw new Error("Earth texture did not return an image content type.");
@@ -448,7 +457,7 @@ self.addEventListener("message", event => {
     event.waitUntil(self.skipWaiting());
     return;
   }
-  if (message.type !== "LIVE_EARTH_APP_READY_V71" || message.buildId !== BUILD_ID) return;
+  if (message.type !== "LIVE_EARTH_APP_READY_V72" || message.buildId !== BUILD_ID) return;
   event.waitUntil((async () => {
     // Keep exactly one active app-shell cache after the new app verifies startup.
     // The bounded optional-data cache and user IndexedDB are intentionally untouched.
@@ -467,8 +476,14 @@ async function transformHomeHTML(request, response, forceHome = false) {
   let html = await response.clone().text();
   const remoteThreeImport = "try{T=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js')}catch(e){T=await import('https://unpkg.com/three@0.180.0/build/three.module.js')}";
   if (html.includes(remoteThreeImport)) {
-    html = html.replace(remoteThreeImport, "T=await import('./vendor/three.module.js')");
+    html = html.replace(remoteThreeImport, "T=await import('./vendor/three.module.js');");
   }
+  // v71 could cache this malformed adjacent-statement sequence in transformed HTML.
+  // Repair it explicitly so an old transformed cache cannot poison the v72 launch.
+  html = html.replace(
+    /T=await import\(['"]\.\/vendor\/three\.module\.js['"]\)\s*(?=const renderer\s*=)/g,
+    "T=await import('./vendor/three.module.js');"
+  );
   html = html.replaceAll(
     "https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57730/land_ocean_ice_2048.png",
     "./runtime-assets/earth-land-ocean-ice-2048.png"

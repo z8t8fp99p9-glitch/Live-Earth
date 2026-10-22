@@ -1,7 +1,7 @@
-/* LIVE // EARTH v71 — silent startup verification; same-origin runtime dependencies cached for offline launch. */
+/* LIVE // EARTH v72 — repaired offline Three.js dependency chain and cached-page migration. */
 (() => {
   "use strict";
-  const BUILD_ID = "v71-offline-runtime";
+  const BUILD_ID = "v72-offline-runtime";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
@@ -17,7 +17,7 @@
   function signalVerifiedStartup() {
     const controller = navigator.serviceWorker.controller;
     if (!controller || !readyControllersPresent()) return;
-    controller.postMessage({ type: "LIVE_EARTH_APP_READY_V71", buildId: BUILD_ID });
+    controller.postMessage({ type: "LIVE_EARTH_APP_READY_V72", buildId: BUILD_ID });
   }
 
   window.addEventListener("live-earth-scene-ready", signalVerifiedStartup);
