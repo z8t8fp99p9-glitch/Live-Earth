@@ -1,7 +1,7 @@
-/* LIVE // EARTH v75 — bounded downloads + verified startup gate. */
+/* LIVE // EARTH v78 — bounded downloads + verified startup gate. */
 (() => {
   "use strict";
-  const BUILD_ID = "v75-bounded-startup";
+  const BUILD_ID = "v78-sun-view-backgrounds";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
@@ -18,6 +18,7 @@
   function signalVerifiedStartup() {
     const controller = navigator.serviceWorker.controller;
     if (!controller || !readyControllersPresent()) return;
+    // Keep the existing message type for compatibility; BUILD_ID identifies this build.
     controller.postMessage({ type: "LIVE_EARTH_APP_READY_V75", buildId: BUILD_ID });
   }
 
