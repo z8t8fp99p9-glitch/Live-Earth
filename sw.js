@@ -1,11 +1,11 @@
 /* LIVE // EARTH — v75 bounded downloads, parallel runtime fallback, verified startup gate. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v75-bounded-startup";
-const CACHE_NAME = "live-earth-shell-v75-bounded-startup";
+const BUILD_ID = "v77-ios-root-flow-ab-test";
+const CACHE_NAME = "live-earth-shell-v77-ios-root-flow-ab-test";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
- "./","./index.html","./orb-controls-v4.js","./earth-mode-navigation.js","./sky-view-controller.js","./view-manager.js",
+ "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./sky-view-controller.js","./view-manager.js",
  "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js","./location-scanner.js",
  "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
  "./moon-sky-background-responsive.svg","./sun-sky-background-responsive.svg",
