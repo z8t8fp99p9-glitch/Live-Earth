@@ -1,29 +1,17 @@
-LIVE // EARTH — v78 Offline-Safe Patch Builder
+LIVE // EARTH — v78 Sun View Fix Builder
 
-IMPORTANT: This ZIP is a local patch builder, not a ZIP of the full app, and it does not push to GitHub. The GitHub connection available to the assistant denied repository writes, so no live commit or deployment has been made.
+This is a local patch builder. It does not upload to GitHub or deploy.
 
-WHY THE PATCH IS NEEDED
-The inspected main branch is still v77. The existing Sun portrait and landscape WebP files exist in the repository, but sw.js does not include them in APP_SHELL. Also, index.html contains a controllerchange guard that can skip reload when the service worker injects its startup gate.
+1. Download and extract the current main ZIP from the Live-Earth repository.
+2. Open LIVE-EARTH-v78-Fix-Builder.html in a browser that can open local files and run JavaScript.
+3. Choose the repository-root sw.js, index.html, and update-manager.js.
+4. Tap Build one corrected ZIP. If source files do not match the expected v77 baseline, it stops without output.
+5. Extract LIVE-EARTH-v78-Sun-View-Fix-Files.zip.
+6. Replace only those three files at the repository root, commit them together, and wait for GitHub Pages to publish.
+7. Open the app online once to get the new worker and cache both Sun WebP backgrounds. Then test Sun portrait, landscape, and offline.
 
-HOW TO USE
-1. Download the latest ZIP of z8t8fp99p9-glitch/Live-Earth from the main branch and extract it.
-2. Open patcher.html in a browser that can run local JavaScript.
-3. Select the extracted repository's root sw.js and index.html files.
-4. Tap Build corrected files. If the source is not the expected v77 baseline, the tool stops without downloading replacements.
-5. Replace only the repository-root sw.js and index.html with the generated files. Commit both together using this title:
-   Fix v78 Sun offline cache and startup handoff
-6. Wait for GitHub Pages to publish the commit. Open the app while online and allow the update to finish. Then test offline.
+Do not upload the builder HTML or the output ZIP itself as files inside the app repository. The output ZIP contains replacements for existing source files.
 
-PATCH DETAILS
-- sw.js BUILD_ID: v78-sun-offline-startup-fix
-- sw.js CACHE_NAME: live-earth-shell-v78-sun-offline-startup-fix
-- Adds sun-sky-background-portrait.webp and sun-sky-background-landscape.webp to APP_SHELL.
-- index.html removes the early return that suppresses controllerchange reload when le-startup-gate exists.
-- index.html treats a failed update check as non-fatal when an installed service worker already controls the page, preserving use of the existing shell.
+Suggested commit title: Fix v78 Sun offline cache and startup handoff
 
-SAFETY
-- The patch intentionally does not modify Sun artwork, Earth size/camera framing, five Orb layout, location privacy rules, IndexedDB, or local recovery files.
-- It does not erase old cache data. The worker keeps the prior cache until verified startup, under the existing service-worker cleanup rules.
-- If GitHub Pages has not published the commit, the app cannot download the patch merely by staying online.
-- After the commit is published, first open the app online so the v78 service worker can download and verify its required files. Do not claim offline readiness until this finishes.
-- Keep the v75 recovery ZIP unchanged. Do not clear Safari/site data or uninstall the PWA.
+Safety: the patch does not change the Earth scene framing, home composition, five Orb layout, Location-OFF privacy, IndexedDB, or the v75 recovery ZIP. Do not clear site data or uninstall the PWA.
