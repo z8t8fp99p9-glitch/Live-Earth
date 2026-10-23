@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LIVE // EARTH v78 Update Patcher</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#071321;color:#edf8ff;font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:24px 18px 48px}main{max-width:680px;margin:auto}h1{font-size:24px;line-height:1.2}p,li{color:#bad0e1}.card{border:1px solid #25445f;border-radius:16px;padding:16px;margin:16px 0;background:#0b1b2b}label{display:block;font-weight:650;margin:12px 0 8px}input[type=file]{display:block;width:100%;padding:12px;border:1px dashed #5b809f;border-radius:10px;background:#10273b;color:#dcedf8}button{border:0;border-radius:999px;padding:13px 20px;background:#62d6ff;color:#04121d;font-weight:800;font-size:15px;width:100%;margin-top:14px}button:disabled{opacity:.45}#status{white-space:pre-wrap;border-radius:10px;padding:12px;background:#0b2235;color:#d7f4ff;margin-top:14px}.small{font-size:13px;color:#90aabd}.warn{color:#ffdba0}a{color:#83ddff;overflow-wrap:anywhere}
+</style>
+</head>
+<body><main>
+<h1>LIVE // EARTH — v78 Update File Builder</h1>
+<p>This offline tool modifies only the existing <code>sw.js</code> and <code>index.html</code> files you select. It does not connect to GitHub or upload anything.</p>
+<div class="card"><strong>Before you start</strong><ol><li>Download the current repository ZIP from GitHub <em>after confirming the latest main commit</em>, then extract it.</li><li>Select the extracted repository's current <code>sw.js</code> and <code>index.html</code> below.</li><li>Tap Build files. The tool checks the expected baseline text and downloads two corrected files, with the same filenames.</li><li>Replace only <code>sw.js</code> and <code>index.html</code> in GitHub's repository root, then commit those two files together.</li></ol><p class="warn">Do not upload this patcher ZIP or any .patch/README files to the repository. It is a local editing tool, not app source.</p></div>
+<div class="card">
+<label for="swfile">1. Choose current sw.js</label><input id="swfile" type="file" accept=".js,text/javascript,application/javascript">
+<label for="ixfile">2. Choose current index.html</label><input id="ixfile" type="file" accept=".html,text/html">
+<button id="build">Build corrected files</button>
+<div id="status" role="status" aria-live="polite">Waiting for both source files.</div>
+</div>
+<p class="small">Expected base: repository <code>z8t8fp99p9-glitch/Live-Earth</code>, prior source commit <code>a1179495b6dc19e81654267aa9371304f6266acc</code> plus the subsequent v78 patch-instructions commit. If a match is missing or ambiguous, the tool stops without downloading altered files.</p>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+function replaceOnce(source, oldText, newText, label) {
+  const n = source.split(oldText).length - 1;
+  if (n !== 1) throw new Error(label + ': expected exactly one baseline match, found ' + n + '. No output files were built.');
+  return source.replace(oldText, newText);
+}
+function download(name, content, type) {
+  const url = URL.createObjectURL(new Blob([content], {type}));
+  const a = document.createElement('a'); a.href = url; a.download = name; a.style.display = 'none';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+const oldHide = `  function hideEarlyBoot() {
+    window.__leEarlyBootHidden = true;
+    const root = overlay();
+    if (root) root.hidden = true;
+    document.documentElement.classList.remove('le-boot-pending');
+    if (observer) observer.disconnect();
+    observer = null;
+  }`;
+const newHide = `  function hideEarlyBoot() {
+    if (!updateCheckSettled) {
+      earlyHidePending = true;
+      setMessage('Checking for updates', 'Home stays protected while the latest app shell is checked and prepared.');
+      return;
+    }
+    window.__leEarlyBootHidden = true;
+    const root = overlay();
+    if (root) root.hidden = true;
+    document.documentElement.classList.remove('le-boot-pending');
+    if (observer) observer.disconnect();
+    observer = null;
+  }
+  function finishUpdateCheck() {
+    if (updateCheckSettled) return;
+    updateCheckSettled = true;
+    if (earlyHidePending) { earlyHidePending = false; hideEarlyBoot(); }
+  }
+  function waitForCandidate(candidate, previousController) {
+    return new Promise(resolve => {
+      let timer = 0, finished = false;
+      const finish = result => {
+        if (finished) return;
+        finished = true;
+        if (timer) window.clearTimeout(timer);
+        navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+        candidate.removeEventListener('statechange', onStateChange);
+        resolve(result);
+      };
+      const inspect = () => {
+        if (navigator.serviceWorker.controller && navigator.serviceWorker.controller !== previousController) finish('changed');
+        else if (candidate.state === 'redundant') finish('failed');
+      };
+      const onControllerChange = () => inspect(), onStateChange = () => inspect();
+      navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+      candidate.addEventListener('statechange', onStateChange);
+      timer = window.setTimeout(() => finish('timeout'), 55000);
+      inspect();
+    });
+  }`;
+const oldReload = `  function reloadAfterControllerChange() {
+    if (!navigator.serviceWorker?.controller) return;
+    if (document.getElementById('le-startup-gate')) return;
+    let alreadyReloaded = false;`;
+const newReload = `  function reloadAfterControllerChange() {
+    if (!navigator.serviceWorker?.controller) return;
+    // An injected startup gate must not suppress a safe version handoff.
+    let alreadyReloaded = false;`;
+const newRegister = `  async function registerEarly() {
+    if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) {
+      setMessage('Secure startup is unavailable', 'Open LIVE // EARTH from its secure website address to prepare the offline app.', true); return;
+    }
+    const previousController = navigator.serviceWorker.controller;
+    if (previousController) { try { sessionStorage.removeItem(RELOAD_KEY); } catch (_) {} }
+    navigator.serviceWorker.addEventListener('controllerchange', reloadAfterControllerChange);
+    try {
+      setMessage('Preparing your world', 'Checking for the latest app shell before Home is released.');
+      registration = await navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'});
+      const trackWorker = worker => {
+        if (!worker) return;
+        const report = () => {
+          if (worker.state === 'installing') setMessage('Preparing essential files', 'Downloading and verifying the updated app shell.');
+          else if (worker.state === 'installed') setMessage('Essential files staged', 'The verified app shell is ready to activate.');
+          else if (worker.state === 'activated') setMessage('Starting verified launch', 'Attaching the prepared app shell.');
+          else if (worker.state === 'redundant') setMessage('Update needs another attempt', 'The previous working app has been preserved. Check the connection and retry.', true);
+        };
+        report(); worker.addEventListener('statechange', report);
+      };
+      registration.addEventListener('updatefound', () => trackWorker(registration.installing));
+      trackWorker(registration.installing);
+      if (navigator.onLine !== false && typeof registration.update === 'function') {
+        setMessage('Checking for updates', 'Downloading any new essential files before entering the app.');
+        try { await registration.update(); } catch (_) { /* keep verified offline shell available */ }
+      }
+      const candidate = registration.installing || registration.waiting;
+      if (candidate && candidate !== navigator.serviceWorker.controller) {
+        if (candidate.state === 'installed' && registration.waiting === candidate) {
+          try { candidate.postMessage({type:'LIVE_EARTH_SKIP_WAITING'}); } catch (_) {}
+        }
+        const outcome = await waitForCandidate(candidate, previousController);
+        if (outcome === 'changed') {
+          reloadAfterControllerChange();
+          let reloading = false;
+          try { reloading = sessionStorage.getItem(RELOAD_KEY) === '1'; } catch (_) {}
+          if (reloading) return;
+          setMessage('App update is ready', 'Tap retry to reopen the verified app shell.', true); return;
+        }
+        if (outcome === 'timeout') {
+          setMessage('Update is taking longer', 'Home stays protected while essential files finish downloading. Retry to check again.', true); return;
+        }
+      }
+      finishUpdateCheck();
+      if (navigator.serviceWorker.controller) setMessage('Checking essential files', 'The startup screen will verify the active local app shell before Home appears.');
+      else setMessage('Preparing offline launch', 'Home stays hidden until the required app shell takes control.');
+    } catch (_) {
+      setMessage('Connection needed to prepare LIVE // EARTH', 'Home stays protected until the app shell can be checked. Check your connection and retry.', true);
+    }
+  }`;
+$('build').addEventListener('click', async () => {
+  const status = $('status'); $('build').disabled = true;
+  try {
+    if (!$('swfile').files[0] || !$('ixfile').files[0]) throw new Error('Choose both sw.js and index.html first.');
+    status.textContent = 'Reading selected files locally…';
+    let sw = await $('swfile').files[0].text();
+    let ix = await $('ixfile').files[0].text();
+    if (!sw.includes('const BUILD_ID = "v77-ios-root-flow-ab-test";') || !ix.includes('liveEarthEarlyControllerReloadV75')) throw new Error('The chosen files do not match the expected v77 baseline. No output files were built.');
+    sw = replaceOnce(sw, 'const BUILD_ID = "v77-ios-root-flow-ab-test";', 'const BUILD_ID = "v78-sun-view-backgrounds";', 'sw.js BUILD_ID');
+    sw = replaceOnce(sw, 'const CACHE_NAME = "live-earth-shell-v77-ios-root-flow-ab-test";', 'const CACHE_NAME = "live-earth-shell-v78-sun-view-backgrounds";', 'sw.js CACHE_NAME');
+    sw = replaceOnce(sw, ' "./moon-sky-background-portrait.webp","./moon-sky-background-landscape.webp",', ' "./moon-sky-background-portrait.webp","./moon-sky-background-landscape.webp",\n "./sun-sky-background-portrait.webp","./sun-sky-background-landscape.webp",', 'sw.js APP_SHELL');
+    ix = replaceOnce(ix, '  let registration = null;\n  let observer = null;', '  let registration = null;\n  let observer = null;\n  let updateCheckSettled = false;\n  let earlyHidePending = false;', 'index.html update state');
+    ix = replaceOnce(ix, oldHide, newHide, 'index.html boot curtain');
+    ix = replaceOnce(ix, oldReload, newReload, 'index.html controller-change handler');
+    const startMark = '  async function registerEarly() {';
+    const endMark = "  document.addEventListener('DOMContentLoaded', () => {";
+    const starts = ix.split(startMark).length - 1, ends = ix.split(endMark).length - 1;
+    if (starts !== 1 || ends < 1) throw new Error('Could not uniquely locate registerEarly() in index.html. No output files were built.');
+    const start = ix.indexOf(startMark), end = ix.indexOf(endMark, start);
+    if (end <= start) throw new Error('registerEarly() boundary check failed. No output files were built.');
+    ix = ix.slice(0, start) + newRegister + ix.slice(end);
+    if (!sw.includes('const BUILD_ID = "v78-sun-view-backgrounds";') || !sw.includes('const CACHE_NAME = "live-earth-shell-v78-sun-view-backgrounds";') || !sw.includes('"./sun-sky-background-portrait.webp","./sun-sky-background-landscape.webp"')) throw new Error('Post-patch sw.js checks failed. No output files were built.');
+    if (!ix.includes('await registration.update();') || ix.includes("if (document.getElementById('le-startup-gate')) return;") || !ix.includes('let updateCheckSettled = false;')) throw new Error('Post-patch index.html checks failed. No output files were built.');
+    download('sw.js', sw, 'text/javascript;charset=utf-8');
+    setTimeout(() => download('index.html', ix, 'text/html;charset=utf-8'), 350);
+    status.textContent = 'SUCCESS: patched sw.js and index.html downloaded.\n\nNext: replace only those two files in the GitHub repository root and commit them together. Do not upload this patcher or any instruction files.\n\nThe first v77-to-v78 handoff may still need one normal close/reopen because an already-open v77 page cannot have its old boot code replaced in place. The new boot logic governs subsequent launches/updates.';
+  } catch (e) { status.textContent = 'STOPPED SAFELY\n' + (e && e.message ? e.message : String(e)) + '\nNo output files were downloaded.'; }
+  finally { $('build').disabled = false; }
+});
+})();
+</script></main></body></html>
