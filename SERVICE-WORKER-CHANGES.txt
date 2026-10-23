@@ -1,0 +1,20 @@
+SW.JS — TWO SMALL CHANGES
+
+1) In const APP_SHELL near the top of sw.js, find:
+"./","./index.html","./orb-controls-v4.js"
+
+Change that portion to:
+"./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js"
+
+(Keep the rest of APP_SHELL exactly as it is.)
+
+2) Find the existing cache-name line:
+const CACHE_NAME = "live-earth-shell-v75-bounded-startup";
+
+Replace it with:
+const CACHE_NAME = "live-earth-shell-v75-ios-root-flow-candidate";
+
+Do not change BUILD_ID or LIVE_EARTH_APP_READY_V75: this candidate deliberately
+reuses the verified v75 startup handshake. The new cache name ensures the updated
+index and new helper are staged together rather than mixing cached v75 HTML with
+new controller assets.

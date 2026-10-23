@@ -1,0 +1,10 @@
+INDEX.HTML — ONE-LINE INSERTION
+
+In index.html, find the existing line:
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+
+Immediately after it, add this one line:
+<script src="./ios-standalone-root-flow.js"></script>
+
+Do not remove or rewrite the existing viewport meta tags, the black-translucent
+status-bar setting, the Home artwork, the canvas startup code, or the Orb styles.
