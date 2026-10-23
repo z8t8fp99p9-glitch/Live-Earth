@@ -120,7 +120,7 @@ html.le-boot-pending body > :not(#le-boot-overlay):not(#le-startup-gate){visibil
   document.documentElement.classList.add('le-boot-pending');
   // Snapshot control state before registration can change it mid-parse.
   window.__leBootControlledAtStart = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
-  const RELOAD_KEY = 'liveEarthEarlyControllerReloadV75';
+  const RELOAD_KEY = 'liveEarthEarlyControllerReloadV79';
   let registration = null;
   let observer = null;
   let startupWatchdog = 0;
@@ -158,7 +158,7 @@ html.le-boot-pending body > :not(#le-boot-overlay):not(#le-startup-gate){visibil
   }
   function reloadAfterControllerChange() {
     if (!navigator.serviceWorker?.controller) return;
-    if (document.getElementById('le-startup-gate')) return;
+    // The injected startup gate must not suppress the controller-handoff reload.
     let alreadyReloaded = false;
     try { alreadyReloaded = sessionStorage.getItem(RELOAD_KEY) === '1'; } catch (_) { alreadyReloaded = true; }
     if (alreadyReloaded) {
@@ -201,7 +201,13 @@ html.le-boot-pending body > :not(#le-boot-overlay):not(#le-startup-gate){visibil
       if (navigator.serviceWorker.controller) setMessage('Checking essential files', 'The protected startup screen will verify the globe before Home appears.');
       else setMessage('Preparing offline launch', 'Home stays hidden until the required app shell takes control.');
     } catch (error) {
-      setMessage('Connection needed to prepare LIVE // EARTH', 'The app will keep Home hidden until its essential files can be prepared. Check your connection and retry.', true);
+      // An update check must never prevent a previously installed, controlled app from launching.
+      if (navigator.serviceWorker?.controller) {
+        setMessage('Using installed app', 'The update check could not finish. Continuing with the active app; the update will be retried on a later launch.');
+        watchForGate();
+      } else {
+        setMessage('First launch needs a connection', 'Connect once to install the essential app files. Existing local data is not cleared by this retry.', true);
+      }
     }
   }
   document.addEventListener('DOMContentLoaded', () => {

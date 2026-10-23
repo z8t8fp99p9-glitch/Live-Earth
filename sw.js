@@ -1,15 +1,16 @@
-/* LIVE // EARTH — v75 bounded downloads, parallel runtime fallback, verified startup gate. */
+/* LIVE // EARTH — v79 launch update recovery + verified Sun asset shell. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v77-ios-root-flow-ab-test";
-const CACHE_NAME = "live-earth-shell-v77-ios-root-flow-ab-test";
+const BUILD_ID = "v79-launch-update-recovery";
+const CACHE_NAME = "live-earth-shell-v79-launch-update-recovery";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
  "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./sky-view-controller.js","./view-manager.js",
  "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js","./location-scanner.js",
  "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
- "./moon-sky-background-responsive.svg","./sun-sky-background-responsive.svg",
+ "./moon-sky-background-responsive.svg",
  "./moon-sky-background-portrait.webp","./moon-sky-background-landscape.webp",
+ "./sun-sky-background-portrait.webp","./sun-sky-background-landscape.webp",
  "./update-manager.js","./data-recovery.js",
  "./earth.webp","./moon.webp","./sun.webp","./location.webp","./stacks.webp"
 ];

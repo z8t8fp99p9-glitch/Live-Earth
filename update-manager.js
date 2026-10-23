@@ -1,7 +1,7 @@
-/* LIVE // EARTH v78 — bounded downloads + verified startup gate. */
+/* LIVE // EARTH v79 — launch update recovery + verified startup gate. */
 (() => {
   "use strict";
-  const BUILD_ID = "v78-sun-view-backgrounds";
+  const BUILD_ID = "v79-launch-update-recovery";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
