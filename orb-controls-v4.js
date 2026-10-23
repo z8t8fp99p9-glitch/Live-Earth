@@ -90,10 +90,16 @@
       },delay));
     }
   }
-  window.addEventListener('orientationchange',settleAfterRotation,{passive:true});
-  window.addEventListener('resize',syncViewport,{passive:true});
-  window.visualViewport?.addEventListener('resize',syncViewport,{passive:true});
-  window.addEventListener('pageshow',settleAfterRotation,{passive:true});
+  // Temporary A/B test: the iOS root-flow helper may set the global flag before
+  // this controller loads. Keep initial syncViewport() active, but conditionally
+  // bypass only the old recovery event listeners while testing the new root flow.
+  const disableLegacyViewportRecoveryForAB = window.__LE_DISABLE_LEGACY_VIEWPORT_RECOVERY__ === true;
+  if(!disableLegacyViewportRecoveryForAB){
+    window.addEventListener('orientationchange',settleAfterRotation,{passive:true});
+    window.addEventListener('resize',syncViewport,{passive:true});
+    window.visualViewport?.addEventListener('resize',syncViewport,{passive:true});
+    window.addEventListener('pageshow',settleAfterRotation,{passive:true});
+  }
   syncViewport();
 
   function setStatus(message, ms=2800) {
@@ -129,7 +135,6 @@
     else if(status)status.hidden=true;
   }
   function showPanel(title,desc,items){
-    
     panelTitle.textContent=title;panelDesc.textContent=desc;options.replaceChildren();
     items.forEach(item=>{
       const b=document.createElement('button');b.type='button';b.className='le-choice';b.setAttribute('aria-pressed',String(!!item.active));
