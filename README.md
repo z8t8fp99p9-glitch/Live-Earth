@@ -1,17 +1,7 @@
-# LIVE // EARTH — Moon View Art Prototype
+# LIVE // EARTH — Lunar Stardust v81
 
-This is a **standalone visual prototype**, not an app patch.
+New Moon-only UI layer for the approved dramatic Arc + flowing curved time rail. The existing project and deployed site are not modified by this package.
 
-## What's inside
-- `moon-view-environment-prototype.svg`: hand-authored SVG experiment with gradients, layered cloud forms, mountain silhouettes, mist, lake reflections, and foreground trees.
-- Two compositions are included in the SVG: portrait and landscape.
-- The upper sky is moonless by design, leaving room for a separately rendered Moon and Lunar Arc.
+Start with `PATCH-GUIDE.md`. The new script is self-contained, but it intentionally relies on one small export addition to the existing `astronomy.js` module and three existing-shell edits so the staged service-worker update stays consistent.
 
-## Important limitations
-- This is a first art-direction prototype, not a photorealistic final background.
-- SVG media-query behavior can vary when an SVG is loaded as a CSS background image. Verify it on target browsers; if necessary, use separate portrait/landscape SVG files and choose between them in CSS.
-- This prototype is **not wired into LIVE // EARTH** and does not modify any repository files.
-- No Home screen, orb layout, Moon rendering, Lunar Arc, or astronomical logic has been changed.
-
-## Suggested next step
-Preview this SVG in Safari or an SVG-capable viewer, then decide whether the direction feels right before any integration work.
+**Build state:** source syntax checked; integration/device behavior has not been verified. This package is a candidate patch, not a claim of a deployed or device-tested release.

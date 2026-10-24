@@ -1,0 +1,15 @@
+LUNAR STARDUST V81 — PRE-PACKAGING CHECKS
+
+PASS  moon-lunar-interface.js parses under Node's JavaScript syntax checker.
+PASS  lunar-rise-set-interval.snippet.js parses as an ES module.
+PASS  isolated synthetic tests selected the active moonrise-to-moonset interval, selected the next interval while below the horizon, and rejected out-of-range latitude.
+PASS  code inspection confirms the geolocation API is called only after liveEarthGetLocationState() returns true; Location OFF keeps local event times hidden and clears in-memory observer coordinates.
+PASS  new layer is additive and targeted to #le-sky-view[data-view="moon"] only.
+
+NOT YET VERIFIED
+- Integrated browser execution against the current deployed files.
+- Actual device behavior / iOS portrait-landscape transitions / touch feel.
+- Exact astronomical accuracy; underlying solar/lunar calculations remain approximate.
+- Service-worker install/update after all patch edits are uploaded together.
+
+Do not treat this candidate patch as a deployed or device-tested build.
