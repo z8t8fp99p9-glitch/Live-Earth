@@ -1,38 +1,34 @@
-LIVE // EARTH V88.4 — FIX HOME ORB SIZING + STICK STACKS
+LIVE // EARTH V88.5 — ORB HUNT: RANDOM, ASYMMETRIC FEATURE ORBS
 
 STATUS
-Draft package for manual review. Nothing has been written to GitHub and nothing has been deployed.
+Review-only prototype package. No GitHub writes or deployment were performed.
 
-WHAT THIS REVISION FIXES
-1. Makes index.html use the shortest viewport dimension (vmin) for the Home Orb diameter in portrait and landscape. Removes the older width-based orb-size overrides at the wide-screen and short-height breakpoints.
-2. Keeps the five Home Orbs grouped on wide landscape viewports using a max width based on vmin.
-3. Moves the Home navigation slightly closer to the bottom in landscape. The CSS uses !important in the runtime override because the legacy button-position stylesheet can use important declarations too.
-4. Makes the six feature-picker Orbs smaller than Home Orbs while using the same shortest-side sizing system.
-5. Makes the Stacks rail re-query the currently visible Stacks button on every positioning pass. It no longer relies on a hard-coded right edge or a cached button that may have been replaced.
-6. Positions the rail's horizontal center and bottom edge relative to the actual Stacks Orb, clamps the rail inside the viewport, and recalculates on resize/orientation/visualViewport resize.
-7. Keeps the Stacks chooser transparent (no glass panel or dim/blur scrim) and gives scrolling only to the inner feature list; the heading remains fixed.
-8. Supports both the five-Orb Home navigation and the three-Orb active-feature dock as valid Stacks anchors.
+WHAT CHANGED
+- Stacks now releases six feature Orbs into randomized, non-symmetric positions across the available screen area.
+- Every feature orb is an absolutely positioned button in a single full-screen coordinate space. The visible orb and its hitbox move together; there is no nested scroller to offset taps.
+- Orbs emerge from the centre of the visible Stacks orb, settle into the randomized layout, drift gently, and collect back into Stacks when the chooser closes or a feature is selected.
+- The visible Stacks orb is measured directly from its .orbShell, not the taller button including its text label.
+- The Home five-Orb navigation, vmin size tokens and approved Earth/Moon composition are retained. No Home scene renderer, Moon geometry, service worker, location privacy or stored-data code is changed.
+- The existing "View preview" caption is retained in portrait; the compact landscape CSS reduces caption sizing to protect fit.
+- Reduced-motion preference disables transition/float animation.
 
-FILES TO REVIEW/REPLACE
-- index.html — replacement file, based on main blob SHA 5777f8cbf1db2498a6805e71deb17b2615f1fd97.
-- view-module-registry.js — replacement file, based on main blob SHA 52caba5ac85fc3a599dacb50868ecefca27ca94e, including the unapproved feature-view draft already discussed.
-
-BASELINE SAFETY
-The two ROLLBACK-* files are exact copies of the inspected main-branch source files for those SHAs, not the earlier drafts. Keep them until the new version is fully validated. If your current branch has changed since those blobs, compare before replacing anything. Do not upload old files over newer work.
-
-NO OTHER FILES ARE INCLUDED AS REPLACEMENTS
-- Do not replace sw.js, update-manager.js, Moon/Earth rendering files, asset files, or data store files for this task.
-- No deployment, service-worker version change, data migration, live data integration, or Earth/Moon geometry change is intended.
+FILES
+- view-module-registry.js: intended replacement based on V88.4 committed blob d73e711cbd8757cafa741a9dc2a690dd08802209.
+- index.html: unchanged copy of V88.4 committed blob 98c79eea09d9be2d251198a4caaf108372ecc5c1, included only so the full package is self-contained.
+- ROLLBACK-* files: exact V88.4 copies. Confirm your live files match these blobs before replacing anything.
 
 MANUAL TEST ORDER
-1. Back up the current main files.
-2. Review both replacement files against the current repository. If the corresponding current files have newer edits, stop and merge rather than overwrite.
-3. Replace index.html and view-module-registry.js on your own branch/repo.
-4. Open Stacks in portrait. Confirm the floating feature column sits directly above/over the Stacks Orb at the right, not over the center of Earth.
-5. Scroll the feature list. Confirm only the list moves, while its heading, Earth scene, and Home Orbs remain fixed.
-6. Select Weather, then open Stacks from the three-Orb dock. Confirm the rail aligns to the dock's Stacks Orb too.
-7. Rotate to landscape and back. Confirm Home Orbs remain the same diameter, the Home row stays compact and slightly lower in landscape, and the Stacks rail re-anchors.
-8. Test switching features, closing the active feature, Location ON/OFF, installed PWA and browser. Confirm the Home scene remains approved and local data remains intact.
+1. Back up your current registry file. The package's index.html should not need replacing; keep the current version unless you compare it with the included file.
+2. Replace view-module-registry.js on your own branch only after comparing it against the current file.
+3. Tap Stacks in portrait. Six feature Orbs should emerge from Stacks, scatter asymmetrically, stay clear of the bottom navigation, and be directly tappable at their visible positions.
+4. Tap Stacks again. Orbs should collect back into Stacks and disappear.
+5. Open Stacks, select Weather, and verify collection finishes before the feature view opens. Confirm the previous primary view is closed.
+6. Open Stacks from the three-Orb feature dock, check the anchor origin, select another feature, and confirm lifecycle cleanup order.
+7. Rotate to landscape and back while Stacks is open. Orbs should be re-scattered within the available viewport without clipping. Tap each visible Orb near its centre and edge to confirm hitboxes.
+8. Test browser and installed PWA, and confirm Home/Earth/Moon framing, five Home Orbs, Location ON/OFF privacy, offline behaviour and saved local data are unchanged.
+
+TEST LIMITATION
+Node syntax and mocked DOM smoke tests are useful checks but do not replace physical iPhone portrait/landscape and installed-PWA testing. Random placement is collision-checked in code; device viewport measurements still need to be verified on device.
 
 COMMIT TITLE
-LIVE // EARTH V88.4 — Fix Global Orb Sizing and Stick Stacks Rail
+LIVE // EARTH V88.5 — Release Random Orb Hunt for Stacks
