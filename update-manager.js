@@ -1,7 +1,7 @@
 /* LIVE // EARTH v83 — Moon Arc + online-first launch + verified startup gate. */
 (() => {
   "use strict";
-  const BUILD_ID = "v83-moon-arc-online-first";
+  const BUILD_ID = "v84-moon-arc-refinement";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {

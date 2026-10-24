@@ -1,7 +1,7 @@
 /* LIVE // EARTH — v83 Moon Arc + online-first launch / offline essentials fallback. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v83-moon-arc-online-first";
-const CACHE_NAME = "live-earth-shell-v83-moon-arc-online-first";
+const BUILD_ID = "v84-moon-arc-refinement";
+const CACHE_NAME = "live-earth-shell-v84-moon-arc-refinement";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [

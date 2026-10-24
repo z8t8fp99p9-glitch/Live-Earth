@@ -24,9 +24,9 @@
     }
     #le-sky-view[data-view="moon"] .le-lunar-ui { opacity:1; visibility:visible; }
     #le-sky-view .le-lunar-svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
-    #le-sky-view .le-lunar-arc { fill:none; stroke:url(#leLunarArcGradient); stroke-width:1.7; stroke-linecap:round; filter:drop-shadow(0 0 5px #86caffb5); }
-    #le-sky-view .le-lunar-arc-halo { fill:none; stroke:#70bfff; stroke-opacity:.13; stroke-width:9; }
-    #le-sky-view .le-lunar-rail { fill:none; stroke:url(#leLunarRailGradient); stroke-width:2; stroke-linecap:round; filter:drop-shadow(0 0 5px #76bfff90); }
+    #le-sky-view .le-lunar-arc { fill:none; stroke:url(#leLunarArcGradient); stroke-width:1.85; stroke-linecap:round; filter:drop-shadow(0 0 3px #a9dcffcc) drop-shadow(0 0 8px #4daaff55); }
+    #le-sky-view .le-lunar-arc-halo { fill:none; stroke:#70bfff; stroke-opacity:.17; stroke-width:6; }
+    #le-sky-view .le-lunar-rail { fill:none; stroke:url(#leLunarRailGradient); stroke-width:1.8; stroke-linecap:round; filter:drop-shadow(0 0 3px #76bfffaa); }
     #le-sky-view .le-lunar-hit { fill:none; stroke:transparent; stroke-width:34; pointer-events:stroke; touch-action:none; cursor:grab; outline:none; }
     #le-sky-view .le-lunar-hit:active { cursor:grabbing; }
     #le-sky-view .le-lunar-hit:focus-visible { stroke:#d9f0ff66; stroke-width:28; }
@@ -304,8 +304,8 @@
 
   function showUnavailable(message) {
     interval = null;
-    riseTime.textContent = enabled ? "UNAVAILABLE" : "—";
-    setTime.textContent = enabled ? "UNAVAILABLE" : "—";
+    riseTime.textContent = enabled ? "—" : "—";
+    setTime.textContent = enabled ? "—" : "—";
     hint.textContent = message;
     selectedTime = Date.now();
     progress = 0;
@@ -352,7 +352,7 @@
       return;
     }
     if (!navigator.geolocation || !active) {
-      showUnavailable("LOCAL LOCATION UNAVAILABLE");
+      showUnavailable("LOCAL LOCATION UNAVAILABLE · CHECK PERMISSION");
       return;
     }
     try {
@@ -370,7 +370,7 @@
     } catch (error) {
       observer = null;
       if (!isLocationEnabled()) showUnavailable("LOCATION OFF · LOCAL TIMES HIDDEN");
-      else showUnavailable("COULD NOT CALCULATE LOCAL TIMES");
+      else showUnavailable("COULD NOT CALCULATE LOCAL TIMES · CHECK LOCATION PERMISSION");
       console.info("[LIVE // EARTH] Lunar local-time calculation unavailable.", error?.message || error);
     }
   }

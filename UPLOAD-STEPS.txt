@@ -1,17 +1,17 @@
-BEGINNER-FRIENDLY UPLOAD — USE THE CORE ZIP IF POSSIBLE
+BEGINNER-FRIENDLY UPLOAD — CORE REPLACEMENT FILES
 
-1. Download and extract LIVE-EARTH-v83-CORE-REPLACEMENT-FILES.zip in the iPhone Files app.
+1. Download and extract LIVE-EARTH-v84-CORE-REPLACEMENT-FILES.zip in the iPhone Files app.
 2. Open the existing GitHub repository z8t8fp99p9-glitch/Live-Earth on branch main.
 3. Choose Add file → Upload files.
-4. Upload these five files from the extracted CORE folder to the repository ROOT (not inside a new folder):
+4. Upload these five files to the repository ROOT (not inside a new folder):
    index.html
    sw.js
    update-manager.js
    astronomy.js
    moon-lunar-interface.js
-5. Review that the filenames match exactly and GitHub is replacing the existing files. Do not delete any other file.
+5. Confirm the five names match and GitHub is replacing existing files. Do not delete other files.
 6. Commit all five together with this title:
-   Release Moon Arc and online-first offline-safe startup (v83)
-7. Let GitHub Pages finish publishing. Open the app ONLINE once and allow the update/startup flow to finish. Then test Moon View. Afterward, test offline mode without clearing website data.
+   Refine Moon Arc and clarify lunar event availability (v84)
+7. Wait for GitHub Pages to publish. Open the app online once and allow startup to finish. Test Moon View with Location ON only if you want local rise/set times. Then test offline without clearing website data.
 
-Do not upload the ZIP file itself, do not clear Safari website data, and do not delete local app data. This package has not been deployed from here.
+Do not upload the ZIP itself. Do not clear Safari website data or delete local app data. This package has not been deployed from here.

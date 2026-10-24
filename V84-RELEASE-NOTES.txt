@@ -1,0 +1,21 @@
+LIVE // EARTH — V84 MOON ARC REFINEMENT
+
+Build ID: v84-moon-arc-refinement
+Source baseline: user-uploaded Live-Earth-main ZIP, inspected from its actual files.
+
+CHANGES
+• Refined the Moon Arc glow: cleaner, slightly brighter silver-blue core with a more restrained halo.
+• Refined the lower time rail glow to match the arc without adding a new heavy visual element.
+• Improved troubleshooting hints for unavailable local location/permission cases.
+• Preserved the on-device Moon-rise/Moon-set approximation helper and coordinated startup/service-worker wiring.
+
+PRIVACY AND PRESERVATION
+• Location remains OFF by default. Local rise/set values require the app's existing Location feature to be enabled and browser permission granted. With Location OFF, the interface intentionally hides local times; this is privacy behavior, not proof of a broken calculation.
+• No Home layout, Earth framing/scale, Home Moon composition, Sun view, or Orb dock changes were made intentionally.
+• No IndexedDB/local recovery data is cleared, migrated, or rewritten.
+
+VALIDATION
+• JavaScript syntax checks passed for sw.js, update-manager.js, moon-lunar-interface.js, and astronomy.js (checked as an ES module).
+• Static checks confirm matching V84 build IDs, Moon interface included in the active sequential loader and APP_SHELL, and verified-startup readiness gating.
+• This is static validation only. It is not a physical iPhone test or proof of GitHub Pages deployment.
+• Lunar rise/set estimates are approximate on-device calculations, not professional ephemeris output.
