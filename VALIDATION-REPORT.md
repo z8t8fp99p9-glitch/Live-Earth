@@ -1,9 +1,8 @@
-# V88.5 Validation Report
+# V88.6 Validation Report
 
-- JavaScript syntax: PASS (`node --check view-module-registry.js`).
-- Mocked DOM smoke test: PASS for six randomized locations, asymmetric scatter, safe-area bounds, non-overlap, full-screen positioning, direct button hitbox ownership, Stacks open state, feature lifecycle ordering, and Home navigation restoration.
-- Repeated randomized placement runs: PASS (100 local smoke-test executions).
-- Package integrity: ZIP test and SHA-256 manifest verified.
+- Source baseline: current V88.5 registry file from `/mnt/data/Live-Earth-V88.5-Orb-Hunt/view-module-registry.js` (matches Git blob SHA `145335b99b09a2855b98d1cd6ea33df65ff17e34`).
+- Change scope: only feature Orb CSS size/short-landscape size/fallback sizing constants in `view-module-registry.js`.
+- JavaScript syntax: PASS (`node --check`).
+- CSS/static assertions: PASS (new size variables, short-viewport size, and fallback geometry verified).
 - Physical iPhone/PWA testing: NOT YET PERFORMED.
-
-These local tests do not replace iPhone portrait/landscape, touch, reduced-motion, and installed-PWA verification. No GitHub writes or deployment were performed.
+- GitHub writes and deployment: NOT PERFORMED.

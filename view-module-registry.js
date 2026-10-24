@@ -114,7 +114,7 @@
     css.id = "le-feature-orb-contract-style";
     css.textContent = `
       /* GLOBAL ORB SIZE STANDARD: all Orb diameters derive from the shorter viewport side (vmin). */
-      :root{--le-orb-size-primary:clamp(49px,14.2vmin,76px);--le-orb-size-feature:clamp(40px,11vmin,52px);--le-orb-size-dock:clamp(44px,13.5vmin,64px);--le-orb-size-hero:clamp(60px,22vmin,96px)}
+      :root{--le-orb-size-primary:clamp(49px,14.2vmin,76px);--le-orb-size-feature:clamp(44px,12.5vmin,58px);--le-orb-size-dock:clamp(44px,13.5vmin,64px);--le-orb-size-hero:clamp(60px,22vmin,96px)}
       #navButtons[hidden]{display:none!important}
       #navButtons{width:min(94vw,98vmin,520px)!important;gap:clamp(2px,1.2vmin,7px)!important;bottom:calc(env(safe-area-inset-bottom) + clamp(32px,9vmin,48px))!important}
       #navButtons .orbShell{width:var(--le-orb-size-primary)!important}
@@ -174,8 +174,8 @@
       }
       @media(max-height:460px){
         .le-feature-library-head{top:calc(env(safe-area-inset-top) + 22px)}
-        .le-feature-library-item .orbShell{width:clamp(32px,9vmin,40px)!important}
-        .le-feature-library-item{width:clamp(64px,18vmin,78px);font-size:8px;gap:2px}
+        .le-feature-library-item .orbShell{width:clamp(36px,10vmin,44px)!important}
+        .le-feature-library-item{width:clamp(70px,20vmin,82px);font-size:8px;gap:2px}
         .le-feature-library-detail{font-size:7px}
       }
       @media(prefers-reduced-motion:reduce){#le-feature-dock *,#le-feature-library *{transition:none!important;animation:none!important}}
@@ -257,7 +257,7 @@
       const layer = getLibraryRect();
       const shortSide = Math.max(1, Math.min(layer.width, layer.height));
       const landscape = layer.width > layer.height;
-      const orbHeight = Number(shell?.offsetHeight) || clampNumber(shortSide * 0.11, 38, 50);
+      const orbHeight = Number(shell?.offsetHeight) || clampNumber(shortSide * 0.125, 44, 58);
       const itemHeight = Number(item.offsetHeight) || orbHeight + (landscape ? 29 : 33);
       const shellTop = Number(shell?.offsetTop) || 4;
       return shellTop + orbHeight / 2 - itemHeight / 2;
@@ -276,7 +276,7 @@
       const navTop = Number(navRect?.height) > 0 ? navRect.top - layer.top : height - (landscape ? 86 : 104);
       const topBound = Math.max(headBottom + Math.max(9, shortSide * 0.025), landscape ? 72 : 112);
       const bottomBound = Math.min(height - 10, navTop - Math.max(8, shortSide * 0.025));
-      const fallbackOrb = clampNumber(shortSide * 0.11, 38, 50);
+      const fallbackOrb = clampNumber(shortSide * 0.125, 44, 58);
       const fallbackWidth = clampNumber(shortSide * (landscape ? 0.20 : 0.23), landscape ? 72 : 78, landscape ? 86 : 98);
       const dimensions = items.map(item => ({
         item,
