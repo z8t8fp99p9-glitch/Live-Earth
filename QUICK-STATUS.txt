@@ -1,0 +1,6 @@
+Why the screenshot still shows Home:
+- Home is not meant to show the Arc or scroller. They render only in Moon View.
+- The prepared source must be uploaded/committed before the current deployed site has those assets and boot wiring.
+- There is no timer to wait through. After the new commit is published, use the existing update mechanism's normal launch flow.
+
+The patcher makes one guarded update to index.html, sw.js, update-manager.js, and astronomy.js, adds moon-lunar-interface.js, and creates backups. It never writes to the GitHub repository, never deploys, and never touches browser/IndexedDB data.

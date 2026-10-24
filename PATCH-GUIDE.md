@@ -1,68 +1,52 @@
 # LIVE // EARTH — Lunar Stardust v81
 
-This is a staged patch package, not a deployment. The working v80 build and the GitHub repository are not modified by this package. Apply all changes together in one commit so the service worker never expects an asset that is not yet present.
+## First, the important distinction
 
-## Files included
+The screenshot of Home is expected to show the original scene. The lunar Arc and curved scroller are **Moon View overlays**, not Home decorations. The current live app will not show them until this v81 source change is uploaded and committed to the repository. The previous ZIP included the UI script, but left the wiring/cache/version changes as manual instructions; that was incomplete delivery on my part.
 
-- `moon-lunar-interface.js` — new self-contained SVG Arc + curved time-scroller overlay.
-- `lunar-rise-set-interval.snippet.js` — astronomy export to append after exposing `moonPosition`.
+There is **no artificial wait** needed. Once all v81 edits are in one commit and GitHub Pages has published that commit, the existing LIVE // EARTH update mechanism should handle the staged build through its normal launch flow. This package does not modify GitHub or deploy on its own because uploads/commits are kept manual.
 
-## Apply in this order
+## Recommended: apply the complete patch to a local checkout
 
-### 1. Add the new asset
+1. Download/clone the current `z8t8fp99p9-glitch/Live-Earth` repository at the v80 baseline.
+2. Place `apply-lunar-stardust-v81.py`, `moon-lunar-interface.js`, and `lunar-rise-set-interval.snippet.js` together in the package directory.
+3. Check the patch without changing files:
 
-Upload `moon-lunar-interface.js` to the repository root, beside `sky-view-controller.js`.
+   ```bash
+   python3 apply-lunar-stardust-v81.py /path/to/Live-Earth --check
+   ```
 
-### 2. Update `astronomy.js`
+4. Apply it:
 
-Append the complete contents of `lunar-rise-set-interval.snippet.js` to the end of `astronomy.js`. It exports the existing private `moonPosition` binding without changing its implementation, then adds a rise-to-next-set interval that correctly handles intervals crossing midnight. The calculation remains low precision, as documented in the code.
+   ```bash
+   python3 apply-lunar-stardust-v81.py /path/to/Live-Earth
+   ```
 
-### 3. Load the layer
+The script refuses unknown source versions, validates every target edit before writing, makes backup copies of the original four files, adds the new UI script, matches `sw.js` and `update-manager.js` at `v81-lunar-stardust`, adds the script to the app shell, and exports `moonRiseSetInterval` from `astronomy.js`. It does not create a commit or deploy.
 
-In `index.html`, locate the controller bootstrap `assets` array. Immediately after `./view-manager.js`, add:
+## If editing directly in GitHub's web editor
 
-`'./moon-lunar-interface.js',`
+Upload `moon-lunar-interface.js` to the repository root. Then edit these four existing files from `main`:
 
-Keep the existing sequential loader behavior.
+1. **`astronomy.js`** — append the entire `lunar-rise-set-interval.snippet.js` contents to the end.
+2. **`index.html`** — in the active controller bootstrap `assets` array, add ` './moon-lunar-interface.js',` immediately after ` './view-manager.js',`.
+3. **`sw.js`** — change the top comment to `/* LIVE // EARTH — v81 Lunar Stardust staged update. */`; set `BUILD_ID` to `v81-lunar-stardust`; set `CACHE_NAME` to `live-earth-shell-v81-lunar-stardust`; in `APP_SHELL`, add `"./moon-lunar-interface.js",` after `"./view-manager.js",`.
+4. **`update-manager.js`** — change its `BUILD_ID` to `v81-lunar-stardust`.
 
-### 4. Cache the new asset and bump the build ID
+Commit all five source changes together, not in separate commits. Commit title:
 
-At the top of `sw.js`, update the build comment to `/* LIVE // EARTH — v81 Lunar Stardust staged update. */`, and change:
+```text
+Add Lunar Stardust Arc and curved time scroller (v81)
+```
 
-`const BUILD_ID = "v80-sun-bluehour-amber";`
+## Visual + safety behavior
 
-to:
+- Adds a dramatic wide silver-blue Moon Arc and a separate S-shaped scroller over the lake; the main Moon and rail marker share one progress value.
+- Rise and set labels use the local selected lunar interval, including intervals crossing midnight. Calculations are approximate, not precision ephemeris.
+- The Moon-only overlay is inserted into the existing `#le-sky-view`; the background art, Home scene, approved Earth/Moon sizing, Orb dock, Sun view, IndexedDB, and recovery data are not replaced.
+- Location is never requested by this layer unless the existing Location control is ON. With Location OFF, local rise/set values remain hidden; the visual interface can still open, but time scrubbing is unavailable until local event times can be calculated.
+- No persistent coordinates are added, no storage is cleared, and Location is not switched ON by installing/updating.
 
-`const BUILD_ID = "v81-lunar-stardust";`
+## Verification boundary
 
-Change:
-
-`const CACHE_NAME = "live-earth-shell-v80-sun-bluehour-amber";`
-
-to:
-
-`const CACHE_NAME = "live-earth-shell-v81-lunar-stardust";`
-
-In `APP_SHELL`, add `"./moon-lunar-interface.js",` immediately after `"./sky-view-controller.js",`.
-
-### 5. Match the update manager
-
-In `update-manager.js`, change its `BUILD_ID` from `"v80-sun-bluehour-amber"` to `"v81-lunar-stardust"`. Keep its message type and existing update behavior unchanged.
-
-## Guardrails implemented
-
-- Moon-only overlay; Sun View and Home are not given the Arc/scroller.
-- Does not edit Earth framing, Moon orb size, Orb layout, or the Home canvas.
-- Does not request location or calculate local rise/set while the existing Location feature is OFF.
-- When Location is switched OFF, locally held observer coordinates are cleared and event times are hidden.
-- SVG curves resize to the active viewport; touch dragging and keyboard arrow/Home/End scrubbing share a single progress value.
-- Existing IndexedDB/local recovery state is untouched; no storage clearing, migration, or persistent location record is added.
-
-## Before uploading
-
-1. Add/modify all files above in one commit.
-2. Confirm the new script is included in the app shell and both build IDs match.
-3. Test Moon open/close, Sun open/close, repeated transitions, Location OFF/ON, portrait/landscape, touch scrubbing, and return to LIVE on the iPhone.
-4. Treat astronomy timestamps as approximate, not precision ephemeris data.
-
-The ZIP does not deploy to GitHub Pages and does not alter the repository on its own.
+Static syntax/package checks do not equal a deployed runtime test. After the commit is published, test Moon open/close, Sun open/close, portrait/landscape, repeated transitions, scrubbing on both curves, LIVE return, and Location OFF/ON on the iPhone. No user device or Pages deployment was changed by preparing this package.

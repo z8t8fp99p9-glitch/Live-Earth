@@ -1,7 +1,7 @@
-# LIVE // EARTH — Lunar Stardust v81
+# LIVE // EARTH Lunar Stardust v81
 
-New Moon-only UI layer for the approved dramatic Arc + flowing curved time rail. The existing project and deployed site are not modified by this package.
+A Moon View-only overlay for the existing v80 baseline: one dramatic lunar Arc, a cratered luminous Moon marker, fine stardust, and a separate S-curved lunar time rail. Includes the astronomy interval helper plus a guarded integration script that wires the asset into the active loader, service-worker app shell, and matching build IDs.
 
-Start with `PATCH-GUIDE.md`. The new script is self-contained, but it intentionally relies on one small export addition to the existing `astronomy.js` module and three existing-shell edits so the staged service-worker update stays consistent.
+**This ZIP is source for one manual commit; it is not deployed.** Read `PATCH-GUIDE.md`. The current Home screenshot should stay visually unchanged; the new layer appears only after Moon View is opened in the integrated build.
 
-**Build state:** source syntax checked; integration/device behavior has not been verified. This package is a candidate patch, not a claim of a deployed or device-tested release.
+`VALIDATION.txt` records checks actually performed and what remains pending.
