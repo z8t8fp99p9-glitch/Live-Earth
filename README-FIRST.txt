@@ -1,27 +1,32 @@
-LIVE // EARTH — Sun Blue-Hour Amber Background + Update Test (v80)
+LIVE // EARTH — Global Feature Orb Contract (prototype)
+Target baseline: z8t8fp99p9-glitch/Live-Earth, branch main, V87
 
-This is a DIRECT REPLACEMENT package, not a builder. It contains exactly four app files:
-- sw.js
-- update-manager.js
-- sun-sky-background-landscape.webp
-- sun-sky-background-portrait.webp
+WHAT THIS PACKAGE DOES
+- Replaces the existing view-module-registry.js only.
+- Keeps the five Home Orbs and approved Home/Earth framing unchanged while idle.
+- Converts Stacks into a scrollable library of default-look feature Orbs:
+  Clouds, Weather, Alien World, Elevation, Earthquakes, Traffic.
+- On activation, switches to three controls: active feature Orb, Location, Stacks.
+- Tapping the active feature Orb closes that feature (no X button).
+- Tapping Stacks opens/closes the library. Selecting a different feature deactivates
+  the outgoing feature before activating the next one.
+- Restores the same underlying primary view when a feature closes.
+- Provides LiveEarthFeatureViews.register/open/close/list hooks for later data modules.
 
-DESIGN
-Blue-hour alpine river valley, broad clean sky for the existing Arc, restrained amber afterglow at the horizon and river. No visible solar disc. No changes to Earth, Moon, the five Orbs, location privacy, or saved data are included.
+IMPORTANT LIMIT
+This is a navigation/UI prototype. The six feature entries use honest preview shells;
+Weather, Cloud, Alien World, Elevation, Earthquake, and Traffic data are NOT integrated.
+A successful local smoke test is not the same as iPhone/browser/offline validation.
+Do not call this a finished release until the device test checklist passes.
 
-UPLOAD
-1. Extract this ZIP.
-2. In the Live-Earth repository root on GitHub, replace the four same-named files with the files from this folder.
-3. Commit the four files together.
-Suggested commit title:
-Update Sun backgrounds and bump app shell to v80
+SAFE APPLICATION
+1. Preserve a copy of the current view-module-registry.js first.
+2. Replace only repository root view-module-registry.js with the file of the same name
+   from this package.
+3. Do not upload ROLLBACK-view-module-registry-V87.js as the active file; it is backup only.
+4. Do not change index.html or sw.js for this prototype. The existing HTML bootstrap and
+   service-worker shell already load/cache view-module-registry.js.
+5. Commit/deploy manually only after reviewing the file diff. Do not overwrite other files.
 
-WHY TWO CODE FILES CHANGE
-sw.js changes BUILD_ID and CACHE_NAME from v79 to v80. This forces a fresh essential-shell cache and downloads the newly replaced same-named WebP assets. The service worker's APP_SHELL already contains both Sun WebPs and no longer refers to the deleted Sun SVG.
-update-manager.js changes its build identifier to the same v80 value. The existing ready-message type is retained for backward compatibility.
-
-SAFETY NOTES
-- Do not upload this ZIP as a single file; extract it and upload/replace the four files.
-- Do not delete browser data or IndexedDB.
-- Do not replace index.html or sky-view-controller.js for this visual update; they already use the Sun WebP filenames and the v79 launch handoff.
-- A successful GitHub Pages workflow confirms deployment, but verify the actual browser and installed app receive the new background before marking the update test passed.
+GITHUB COMMIT TITLE
+LIVE // EARTH V88 — Add Global Feature Orb Prototype
