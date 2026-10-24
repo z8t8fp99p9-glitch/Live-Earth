@@ -6,6 +6,8 @@ The screenshot of Home is expected to show the original scene. The lunar Arc and
 
 There is **no artificial wait** needed. Once all v81 edits are in one commit and GitHub Pages has published that commit, the existing LIVE // EARTH update mechanism should handle the staged build through its normal launch flow. This package does not modify GitHub or deploy on its own because uploads/commits are kept manual.
 
+**Do not upload the ZIP itself into the app root.** Extract it first. Only `moon-lunar-interface.js` is a new runtime file for the site; the `.py`, `.md`, `.txt`, and `lunar-rise-set-interval.snippet.js` files are support material. The snippet's code is appended to the existing `astronomy.js`.
+
 ## Recommended: apply the complete patch to a local checkout
 
 1. Download/clone the current `z8t8fp99p9-glitch/Live-Earth` repository at the v80 baseline.
@@ -29,11 +31,26 @@ The script refuses unknown source versions, validates every target edit before w
 Upload `moon-lunar-interface.js` to the repository root. Then edit these four existing files from `main`:
 
 1. **`astronomy.js`** — append the entire `lunar-rise-set-interval.snippet.js` contents to the end.
-2. **`index.html`** — in the active controller bootstrap `assets` array, add ` './moon-lunar-interface.js',` immediately after ` './view-manager.js',`.
-3. **`sw.js`** — change the top comment to `/* LIVE // EARTH — v81 Lunar Stardust staged update. */`; set `BUILD_ID` to `v81-lunar-stardust`; set `CACHE_NAME` to `live-earth-shell-v81-lunar-stardust`; in `APP_SHELL`, add `"./moon-lunar-interface.js",` after `"./view-manager.js",`.
-4. **`update-manager.js`** — change its `BUILD_ID` to `v81-lunar-stardust`.
+2. **`index.html`** — in the active controller bootstrap `assets` array, insert the middle line shown here after the `view-manager.js` entry:
 
-Commit all five source changes together, not in separate commits. Commit title:
+   ```js
+    './view-manager.js',
+    './moon-lunar-interface.js',
+    './update-manager.js'
+   ```
+
+3. **`sw.js`** — change the top comment to `/* LIVE // EARTH — v81 Lunar Stardust staged update. */`; set `BUILD_ID` to `v81-lunar-stardust`; set `CACHE_NAME` to `live-earth-shell-v81-lunar-stardust`; in `APP_SHELL`, insert `"./moon-lunar-interface.js",` after `"./view-manager.js",`.
+4. **`update-manager.js`** — change its header comment to `/* LIVE // EARTH v81 — lunar interface startup gate. */`, change `BUILD_ID` to `v81-lunar-stardust`, and add the lunar readiness check inside `readyControllersPresent()` immediately before the existing `window.__liveEarthStartupReady === true` line:
+
+   ```js
+   window.__liveEarthLunarStardustInstalled &&
+   ```
+
+   The readiness check matters: the service worker should not retire the old shell cache just because the new script downloaded. The lunar layer sets `window.__liveEarthLunarStardustInstalled` only after it has attached its SVG, event handlers, and view lifecycle hooks.
+
+Apply all five source changes to one coordinated release. If you are using GitHub's web editor and it saves only one file per commit, first create a branch named `lunar-stardust-v81`, make the edits on that branch, then merge only after all five source files are ready. Do not publish partial edits straight to `main`; each `main` commit can trigger GitHub Pages while only part of the patch exists.
+
+Commit title:
 
 ```text
 Add Lunar Stardust Arc and curved time scroller (v81)

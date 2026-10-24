@@ -1,6 +1,9 @@
-Why the screenshot still shows Home:
-- Home is not meant to show the Arc or scroller. They render only in Moon View.
-- The prepared source must be uploaded/committed before the current deployed site has those assets and boot wiring.
-- There is no timer to wait through. After the new commit is published, use the existing update mechanism's normal launch flow.
+LUNAR STARDUST v81 — STATUS
 
-The patcher makes one guarded update to index.html, sw.js, update-manager.js, and astronomy.js, adds moon-lunar-interface.js, and creates backups. It never writes to the GitHub repository, never deploys, and never touches browser/IndexedDB data.
+The Moon Arc and curved lunar time rail are overlays inside the existing #le-sky-view root; Home and Sun View remain visually unchanged. The root is created by sky-view-controller.js before the new interface loads from the existing sequential controller bootstrap.
+
+For the feature to load in the app, commit the source changes together: index.html, sw.js, update-manager.js, astronomy.js, and the new moon-lunar-interface.js. The guarded patch script checks known v80 anchors and backs up the four existing files. It also matches the loader indentation inspected in the active v80 index.html.
+
+Build/cache IDs are aligned as v81-lunar-stardust. The service worker app shell includes the lunar script. The verified-startup gate additionally requires the lunar interface readiness marker, which is only set after initialization completes.
+
+Nothing has been committed to GitHub or deployed by preparing this package. Use the existing automatic update flow on the next launch after GitHub Pages publishes the complete commit. This package does not touch IndexedDB, saved recovery data, or browser storage.

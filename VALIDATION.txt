@@ -1,17 +1,29 @@
-LUNAR STARDUST V81 — PACKAGING / STATIC CHECKS
+LUNAR STARDUST V81 — RELEASE CHECK RESULTS
 
+SOURCE COMPATIBILITY
+PASS  Fetched current GitHub main source for index.html, sw.js, update-manager.js, and astronomy.js. Exact source revisions checked:
+      index.html         8e3c682ec0b0735486e40959f9116d1351e121c5
+      sw.js              d9a6b48f1264033a4fe71b68843b9e89b65b51f8
+      update-manager.js  812d04af10f9eedb4daa013a590695e61c1cfb6c
+      astronomy.js       f28c3fd272379e8f71cc46446d14be42fa84d697
+PASS  Each expected v80 source marker appeared exactly once in those fetched files, including the active controller bootstrap indentation, app-shell entry, both build identifiers, and verified-startup predicate.
+PASS  Astronomy insertion anchor (`function moonPosition(`) exists and no previous lunar interval patch was found.
+PASS  The app-shell and sequential bootstrap will both reference moon-lunar-interface.js after the patch; worker and update-manager build IDs align as v81-lunar-stardust.
+
+STATIC / PATCH TESTS
 PASS  moon-lunar-interface.js parses with Node's JavaScript syntax checker.
-PASS  lunar interval snippet parses when appended to the astronomy module context where moonPosition is defined (its export dependency is intentionally supplied by astronomy.js).
 PASS  apply-lunar-stardust-v81.py compiles with Python.
-PASS  integration patcher --check and apply smoke test passed against an isolated synthetic repository fixture.
-PASS  patcher verifies known v80 markers, validates all edits before writing, backs up modified files, inserts the new loader and app-shell entries, and aligns both build IDs.
-PASS  code inspection: geolocation is requested by the lunar layer only when liveEarthGetLocationState() returns true; Location OFF leaves local event times hidden and observer coordinates cleared in memory.
-PASS  interface styles/markup are scoped to #le-sky-view; visibility is enabled only for data-view="moon".
+PASS  Guarded patcher check/apply and repeat-apply rejection passed on a synthetic v80 fixture using the same verified source markers.
+PASS  Cross-file checks verify the lunar script is both loaded and cached, the astronomy helper is exported, and the update manager requires the lunar readiness marker.
+
+BROWSER SMOKE TEST (CONTROLLED HARNESS)
+PASS  Headless Chromium test harness verified lunar overlay creation and visibility only in Moon View, generated Arc and S-rail paths, legible endpoint labels that do not sit beneath the Moon marker, no geolocation call while Location is OFF, one mocked position request after Location is turned ON, rise/set labels with a test-only synthetic astronomy function, real mouse drag events leaving LIVE mode, LIVE-button return, landscape-to-portrait geometry rebuild, Moon close, Sun separation, and no uncaught JavaScript errors.
+NOTE  This harness used stub view controllers and a synthetic astronomy function; it is not a test of the complete deployed app or real lunar ephemeris.
 
 NOT YET VERIFIED
-- Browser integration against the current deployed v80 assets.
-- Real moonrise/moonset times against an authoritative ephemeris; existing calculations are approximate.
-- Actual iPhone runtime behavior, touch scrubbing, portrait/landscape/repeated open-close.
-- GitHub Pages publication and the app's normal staged-update launch flow.
+- Applying the patcher to a full local checkout or directly editing/uploading the changed source files in GitHub.
+- GitHub Pages publication and the actual service worker's staged-update launch flow.
+- The published page and installed iPhone/iOS web app, including orientation changes and real touch input.
+- The approximate moonrise/moonset estimates against an authoritative ephemeris.
 
-This package does not edit GitHub, deploy, or change any device/browser storage.
+This package does not edit GitHub, deploy, or change device/browser storage. It does not clear or migrate IndexedDB or local recovery data. Location remains OFF by default; the lunar layer reads observer location only while the existing Location control reports ON.

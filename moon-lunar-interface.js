@@ -3,11 +3,12 @@
    Local geolocation is read only while the existing Location feature is ON. */
 (() => {
   "use strict";
-  if (window.__liveEarthLunarStardustInstalled) return;
-  window.__liveEarthLunarStardustInstalled = true;
+  if (window.__liveEarthLunarStardustInstalled || window.__liveEarthLunarStardustBooting) return;
+  window.__liveEarthLunarStardustBooting = true;
 
   const root = document.getElementById("le-sky-view");
   if (!root) {
+    window.__liveEarthLunarStardustBooting = false;
     console.warn("[LIVE // EARTH] Lunar interface skipped: Sky View root is absent.");
     return;
   }
@@ -218,12 +219,17 @@
     writePoint("#le-lunar-rise-dot", {x:x0,y:arcY});
     writePoint("#le-lunar-set-halo", {x:x1,y:arcY});
     writePoint("#le-lunar-set-dot", {x:x1,y:arcY});
-    riseLabel.setAttribute("x", x0 - 1); riseLabel.setAttribute("y", arcY + 23);
+    // Keep event labels inside the arc endpoints but outside the main Moon's halo.
+    // The marker may sit at either endpoint when live time is before moonrise or
+    // when Location is OFF; endpoint text must remain legible in both cases.
+    const labelInset = 48;
+    riseLabel.setAttribute("x", x0 + labelInset); riseLabel.setAttribute("y", arcY + 23);
     riseLabel.setAttribute("text-anchor", "start"); riseLabel.textContent = "MOONRISE";
-    riseTime.setAttribute("x", x0 - 1); riseTime.setAttribute("y", arcY + 42);
+    riseTime.setAttribute("x", x0 + labelInset); riseTime.setAttribute("y", arcY + 42);
     riseTime.setAttribute("text-anchor", "start");
-    setLabel.setAttribute("x", x1 + 1); setLabel.setAttribute("y", arcY + 23); setLabel.textContent = "MOONSET";
-    setTime.setAttribute("x", x1 + 1); setTime.setAttribute("y", arcY + 42);
+    setLabel.setAttribute("x", x1 - labelInset); setLabel.setAttribute("y", arcY + 23); setLabel.textContent = "MOONSET";
+    setLabel.setAttribute("text-anchor", "end");
+    setTime.setAttribute("x", x1 - labelInset); setTime.setAttribute("y", arcY + 42);
     setTime.setAttribute("text-anchor", "end");
     hint.setAttribute("x", width / 2); hint.setAttribute("y", Math.min(height - 84, railY + railAmp + 30));
     addDust($("#le-lunar-arc-dust"), arc, landscape ? 34 : 46, .5);
@@ -298,8 +304,8 @@
 
   function showUnavailable(message) {
     interval = null;
-    riseTime.textContent = enabled ? "UNAVAILABLE" : "LOCATION OFF";
-    setTime.textContent = enabled ? "UNAVAILABLE" : "LOCATION OFF";
+    riseTime.textContent = enabled ? "UNAVAILABLE" : "—";
+    setTime.textContent = enabled ? "UNAVAILABLE" : "—";
     hint.textContent = message;
     selectedTime = Date.now();
     progress = 0;
@@ -474,4 +480,11 @@
   // The interface is prepared without requesting location. Location stays OFF by default.
   showUnavailable("LOCATION OFF · LOCAL TIMES HIDDEN");
   if (window.LiveEarthViewManager?.getActiveView?.() === "moon") activate("moon");
+
+  // Set readiness only after the root, SVG controls, handlers, and lifecycle hooks exist.
+  // update-manager.js includes this marker in the verified-startup gate so a broken
+  // lunar layer cannot retire the previous shell cache prematurely.
+  window.__liveEarthLunarStardustInstalled = true;
+  window.__liveEarthLunarStardustBooting = false;
+  window.dispatchEvent(new Event("live-earth-startup-ready"));
 })();

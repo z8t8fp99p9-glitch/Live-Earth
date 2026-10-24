@@ -43,8 +43,9 @@ def main() -> int:
     outputs = dict(sources)
 
     # Wire the new layer into the active, sequential boot loader.
-    old_loader = "     './sky-view-controller.js',\n     './view-manager.js',\n     './update-manager.js'"
-    new_loader = "     './sky-view-controller.js',\n     './view-manager.js',\n     './moon-lunar-interface.js',\n     './update-manager.js'"
+    # Match the four-space indentation in the inspected v80 index.html.
+    old_loader = "    './sky-view-controller.js',\n    './view-manager.js',\n    './update-manager.js'"
+    new_loader = "    './sky-view-controller.js',\n    './view-manager.js',\n    './moon-lunar-interface.js',\n    './update-manager.js'"
     outputs['index.html'] = exactly_once(outputs['index.html'], old_loader, new_loader, 'index.html controller loader')
 
     # Stage the new file in the existing app shell and use a fresh cache key.
@@ -64,8 +65,16 @@ def main() -> int:
         'sw.js APP_SHELL')
 
     outputs['update-manager.js'] = exactly_once(
+        outputs['update-manager.js'], '/* LIVE // EARTH v79 — launch update recovery + verified startup gate. */',
+        '/* LIVE // EARTH v81 — lunar interface startup gate. */', 'update-manager.js build comment')
+    outputs['update-manager.js'] = exactly_once(
         outputs['update-manager.js'], f'const BUILD_ID = "{BUILD_OLD}";',
         f'const BUILD_ID = "{BUILD_NEW}";', 'update-manager.js BUILD_ID')
+    outputs['update-manager.js'] = exactly_once(
+        outputs['update-manager.js'],
+        '      window.__liveEarthLocationScannerInstalled &&\n      window.__liveEarthStartupReady === true',
+        '      window.__liveEarthLocationScannerInstalled &&\n      window.__liveEarthLunarStardustInstalled &&\n      window.__liveEarthStartupReady === true',
+        'update-manager.js lunar verified-startup gate')
 
     snippet_path = package / 'lunar-rise-set-interval.snippet.js'
     ui_path = package / 'moon-lunar-interface.js'
@@ -90,6 +99,8 @@ def main() -> int:
         raise ValueError('Service worker build ID mismatch.')
     if f'const BUILD_ID = "{BUILD_NEW}";' not in outputs['update-manager.js']:
         raise ValueError('Update manager build ID mismatch.')
+    if 'window.__liveEarthLunarStardustInstalled' not in outputs['update-manager.js']:
+        raise ValueError('Update manager does not verify lunar-layer readiness.')
     if '"./moon-lunar-interface.js"' not in outputs['sw.js'] or "'./moon-lunar-interface.js'" not in outputs['index.html']:
         raise ValueError('New lunar interface is not both loaded and cached.')
     if 'export function moonRiseSetInterval' not in outputs['astronomy.js']:
