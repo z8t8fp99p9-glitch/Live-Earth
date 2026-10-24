@@ -8,3 +8,53 @@ function solarDay(lat,lon,date){const c=sunCoords(new Date(date.getFullYear(),da
 function moonPosition(date,lat,lon){const days=date.getTime()/DAY-10957.5,L=norm(218.316+13.176396*days),M=norm(134.963+13.064993*days),F=norm(93.272+13.229350*days),lambda=L+6.289*Math.sin(M*rad),beta=5.128*Math.sin(F*rad),eps=(23.439-.0000004*days)*rad,lam=lambda*rad,bet=beta*rad,ra=Math.atan2(Math.sin(lam)*Math.cos(eps)-Math.tan(bet)*Math.sin(eps),Math.cos(lam)),dec=Math.asin(Math.sin(bet)*Math.cos(eps)+Math.cos(bet)*Math.sin(eps)*Math.sin(lam)),gmst=norm(280.16+360.9856235*days),ha=(gmst+lon-ra*deg)*rad,phi=lat*rad,alt=Math.asin(Math.sin(phi)*Math.sin(dec)+Math.cos(phi)*Math.cos(dec)*Math.cos(ha)),az=norm(Math.atan2(Math.sin(ha),Math.cos(ha)*Math.sin(phi)-Math.tan(dec)*Math.cos(phi))*deg+180),sun=sunCoords(date),sunLon=Math.atan2(Math.sin(sun.lambda*rad)*Math.cos(eps),Math.cos(sun.lambda*rad)),elong=Math.acos(Math.max(-1,Math.min(1,Math.sin(dec)*Math.sin(sun.decl)+Math.cos(dec)*Math.cos(sun.decl)*Math.cos(ra-sunLon)))),illum=(1-Math.cos(elong))/2,age=((days-5.0)%29.530588853+29.530588853)%29.530588853,p=age/29.530588853;let phase=p<.035||p>.965?'New Moon':p<.22?'Waxing Crescent':p<.28?'First Quarter':p<.47?'Waxing Gibbous':p<.53?'Full Moon':p<.72?'Waning Gibbous':p<.78?'Last Quarter':'Waning Crescent';return{altitude:alt*deg,azimuth:az,illumination:illum,age,phase}}
 function riseSet(fn,lat,lon,date){const s=start(date).getTime(),e=new Date(date.getFullYear(),date.getMonth(),date.getDate()+1).getTime(),step=600000;let prev=fn(new Date(s),lat,lon).altitude,rise=null,set=null;for(let t=s+step;t<=e;t+=step){const v=fn(new Date(t),lat,lon).altitude;if(prev<=0&&v>0&&!rise)rise=new Date(t).toISOString();if(prev>0&&v<=0&&!set)set=new Date(t).toISOString();prev=v}return{rise,set}}
 export function calculateAstronomy(lat,lon,date=new Date()){const s=sunPosition(date,lat,lon),m=moonPosition(date,lat,lon),sr=solarDay(lat,lon,date),mr=riseSet(moonPosition,lat,lon,date);return{date:dayKey(date),calculatedAt:Date.now(),sun:{...sr,altitudeDegrees:+s.altitude.toFixed(1),azimuthDegrees:+s.azimuth.toFixed(1)},moon:{phase:m.phase,illuminationPercent:Math.round(m.illumination*100),ageDays:+m.age.toFixed(1),moonrise:mr.rise,moonset:mr.set,altitudeDegrees:+m.altitude.toFixed(1),azimuthDegrees:+m.azimuth.toFixed(1)}}}
+
+/* Append this snippet to astronomy.js after its existing declarations.
+   Low-precision, on-device crossing estimate; this does not claim ephemeris accuracy. */
+export { moonPosition };
+export function moonRiseSetInterval(lat, lon, now = new Date()) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) ||
+      lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
+  const STEP = 5 * 60 * 1000;
+  const nowMs = now.getTime();
+  const from = nowMs - 36 * 60 * 60 * 1000;
+  const to = nowMs + 36 * 60 * 60 * 1000;
+  const events = [];
+  let previousTime = from;
+  let previousAltitude = moonPosition(new Date(previousTime), lat, lon).altitude;
+  for (let t = from + STEP; t <= to; t += STEP) {
+    const altitude = moonPosition(new Date(t), lat, lon).altitude;
+    if (previousAltitude <= 0 && altitude > 0) {
+      const fraction = previousAltitude / (previousAltitude - altitude);
+      events.push({ type: "rise", time: previousTime + STEP * fraction });
+    } else if (previousAltitude > 0 && altitude <= 0) {
+      const fraction = previousAltitude / (previousAltitude - altitude);
+      events.push({ type: "set", time: previousTime + STEP * fraction });
+    }
+    previousTime = t;
+    previousAltitude = altitude;
+  }
+  const altitudeNow = moonPosition(now, lat, lon).altitude;
+  let riseTime = null;
+  let setTime = null;
+  if (altitudeNow > 0) {
+    for (const event of events) {
+      if (event.type === "rise" && event.time <= nowMs) riseTime = event.time;
+      if (event.type === "set" && event.time > nowMs) { setTime = event.time; break; }
+    }
+  } else {
+    const rise = events.find(event => event.type === "rise" && event.time > nowMs);
+    if (rise) {
+      riseTime = rise.time;
+      const set = events.find(event => event.type === "set" && event.time > rise.time);
+      if (set) setTime = set.time;
+    }
+  }
+  if (!Number.isFinite(riseTime) || !Number.isFinite(setTime) || setTime <= riseTime) return null;
+  return {
+    rise: new Date(riseTime),
+    set: new Date(setTime),
+    aboveHorizonNow: altitudeNow > 0,
+    approximate: true
+  };
+}

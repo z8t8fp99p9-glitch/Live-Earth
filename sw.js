@@ -1,11 +1,11 @@
-/* LIVE // EARTH — v79 launch update recovery + verified Sun asset shell. */
+/* LIVE // EARTH — v83 Moon Arc + online-first launch / offline essentials fallback. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v80-sun-bluehour-amber";
-const CACHE_NAME = "live-earth-shell-v80-sun-bluehour-amber";
+const BUILD_ID = "v83-moon-arc-online-first";
+const CACHE_NAME = "live-earth-shell-v83-moon-arc-online-first";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
- "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./sky-view-controller.js","./view-manager.js",
+ "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./sky-view-controller.js","./view-manager.js","./moon-lunar-interface.js",
  "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js","./location-scanner.js",
  "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
  "./moon-sky-background-responsive.svg",
@@ -780,6 +780,54 @@ function injectStartupGate(html) {
         window.__liveEarthControlsInstalled === true && window.__liveEarthLocationScannerInstalled === true &&
         typeof window.liveEarthLocationAllowed === 'function' && window.liveEarthLocationAllowed() === false && imagesReady;
     }
+    async function waitForOnlineWorkerUpdate() {
+      if (navigator.onLine === false || !('serviceWorker' in navigator)) return;
+      let registration = null;
+      try {
+        registration = await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise(resolve => setTimeout(() => resolve(null), 12000))
+        ]);
+      } catch (_) { return; }
+      if (!registration) return;
+
+      let observedWorker = null;
+      const onUpdateFound = () => { observedWorker = registration.installing; };
+      registration.addEventListener('updatefound', onUpdateFound, { once: true });
+      try {
+        await Promise.race([
+          registration.update(),
+          new Promise(resolve => setTimeout(resolve, 15000))
+        ]);
+      } catch (_) {
+        // A failed update check should not prevent an already-installed app
+        // from starting; the verified local shell remains the fallback.
+      }
+      registration.removeEventListener('updatefound', onUpdateFound);
+
+      const worker = registration.installing || observedWorker;
+      if (!worker || worker.state === 'activated' || worker.state === 'redundant') return;
+      await Promise.race([
+        new Promise(resolve => {
+          let settled = false;
+          const finish = () => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            worker.removeEventListener('statechange', check);
+            resolve();
+          };
+          const check = () => {
+            if (worker.state === 'activated' || worker.state === 'redundant') finish();
+          };
+          const timer = setTimeout(finish, 35000);
+          worker.addEventListener('statechange', check);
+          check();
+        }),
+        new Promise(resolve => setTimeout(resolve, 35000))
+      ]);
+    }
+
     async function prepare(userRequested = false) {
       if (busy || ready) return;
       busy = true;
@@ -789,6 +837,10 @@ function injectStartupGate(html) {
       retry.textContent = 'Checking…';
       window.__liveEarthStartupReady = false;
       try {
+        if (navigator.onLine !== false) {
+          setStage(1, 'Checking for a fresh online app', 'Checking for updates before releasing Home');
+          await waitForOnlineWorkerUpdate();
+        }
         if (!('caches' in window)) throw new Error('This browser does not expose the local cache needed for safe startup.');
         setStage(3, 'Checking essential assets', 'Verifying the globe, views, navigation and location tools');
         let invalid = await inspectAll();
@@ -953,14 +1005,22 @@ async function transformHomeHTML(request, response, forceHome = false) {
 
 async function networkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
-  // Keep launch deterministic: use this worker build's fully staged shell first.
-  // A deployment becomes current through service-worker install + silent activation,
-  // never by mixing live HTML with an older set of scripts mid-session.
-  const activeBuildHit = await cache.match(request);
-  if (activeBuildHit) return await transformHomeHTML(request, activeBuildHit);
+  const offlineFallback = async error => {
+    const hit = await cache.match(request);
+    if (hit) return await transformHomeHTML(request, hit);
+    const fallback = await cache.match("./index.html");
+    if (fallback) return await transformHomeHTML(request, fallback, true);
+    throw error || new Error("No network connection and no saved essential Homepage is available.");
+  };
+
+  // Offline means the saved essential shell is the fast path. Online means
+  // fetch the current Homepage first; Cache Storage is only a failure fallback.
+  if (self.navigator && self.navigator.onLine === false) {
+    return offlineFallback(new Error("Device reports no network connection."));
+  }
+
   try {
-    const response = await fetchBuffered(request, { cache: "no-store" }, 30000);
-    if (!response?.ok) throw Error("Network response not OK");
+    const response = await fetchBuffered(request, { cache: "no-store", credentials: "same-origin" }, 30000);
     const type = response.headers.get("content-type") || "";
     const url = new URL(request.url);
     const isHome = type.includes("text/html") &&
@@ -969,25 +1029,31 @@ async function networkFirst(request) {
     await cache.put(request, response.clone());
     return response;
   } catch (error) {
-    // A failed first navigation can fall back to the cached shell. The transform
-    // functions are idempotent, so already transformed HTML stays unchanged.
-    const hit = await cache.match(request);
-    if (hit) return await transformHomeHTML(request, hit);
-    const fallback = await cache.match("./index.html");
-    if (fallback) return await transformHomeHTML(request, fallback, true);
-    throw error;
+    // Only use the saved shell when the online request actually fails.
+    return offlineFallback(error);
   }
 }
 async function boundedOptionalCache(request) {
   const cache = await caches.open(OPTIONAL_CACHE);
-  const hit = await cache.match(request);
-  if (hit) {
-    await cache.delete(request);
-    await cache.put(request, hit.clone());
-    return hit;
+
+  // Optional online resources are refreshed from the network first. When the
+  // device is offline, use the bounded saved copy immediately when available.
+  if (self.navigator && self.navigator.onLine === false) {
+    const hit = await cache.match(request);
+    if (hit) return hit;
+    return fetch(request);
   }
-  const response = await fetch(request);
-  if (response?.ok) {
+
+  let response;
+  try {
+    response = await fetch(request, { cache: "no-store" });
+  } catch (error) {
+    const hit = await cache.match(request);
+    if (hit) return hit;
+    throw error;
+  }
+
+  if (response?.ok && response.type !== "opaque") {
     await cache.put(request, response.clone());
     const keys = await cache.keys();
     while (keys.length > OPTIONAL_LIMIT) await cache.delete(keys.shift());
@@ -1011,11 +1077,21 @@ self.addEventListener("fetch", event => {
   if (shell.has(url.pathname)) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
-      const hit = await cache.match(request);
-      if (hit) return hit;
-      const response = await fetchBuffered(request, { cache: "reload" }, 30000);
-      await cache.put(request, response.clone());
-      return response;
+      // Online essentials are refreshed before use. Saved entries are the
+      // offline path or a recovery fallback if the network request fails.
+      if (self.navigator && self.navigator.onLine === false) {
+        const cached = await cache.match(request);
+        if (cached) return cached;
+      }
+      try {
+        const response = await fetchBuffered(request, { cache: "no-store" }, 30000);
+        await cache.put(request, response.clone());
+        return response;
+      } catch (error) {
+        const hit = await cache.match(request);
+        if (hit) return hit;
+        throw error;
+      }
     })());
     return;
   }

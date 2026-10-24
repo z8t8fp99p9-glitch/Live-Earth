@@ -1,4 +1,4 @@
-/* LIVE // EARTH — Lunar Stardust interface (v81).
+/* LIVE // EARTH — Lunar Stardust interface (v83).
    Additive Moon-view overlay: does not alter Home, Sun View, or the Orb dock.
    Local geolocation is read only while the existing Location feature is ON. */
 (() => {

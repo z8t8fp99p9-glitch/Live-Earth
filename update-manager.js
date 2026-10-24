@@ -1,7 +1,7 @@
-/* LIVE // EARTH v79 — launch update recovery + verified startup gate. */
+/* LIVE // EARTH v83 — Moon Arc + online-first launch + verified startup gate. */
 (() => {
   "use strict";
-  const BUILD_ID = "v80-sun-bluehour-amber";
+  const BUILD_ID = "v83-moon-arc-online-first";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
@@ -11,6 +11,7 @@
       window.LiveEarthSkyViews &&
       window.__liveEarthControlsInstalled &&
       window.__liveEarthLocationScannerInstalled &&
+      window.__liveEarthLunarStardustInstalled &&
       window.__liveEarthStartupReady === true
     );
   }
