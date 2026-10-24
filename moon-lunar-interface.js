@@ -1,4 +1,4 @@
-/* LIVE // EARTH — Lunar Stardust interface (v83).
+/* LIVE // EARTH — Lunar Stardust interface (V87 phase 1).
    Additive Moon-view overlay: does not alter Home, Sun View, or the Orb dock.
    Local geolocation is read only while the existing Location feature is ON. */
 (() => {
@@ -161,8 +161,14 @@
   let live = true;
   let dragging = null;
   let animationTimer = 0;
+  let dragFrame = 0;
+  let pendingDragPoint = null;
   let width = 0, height = 0;
   let geometry = {};
+  // SVG path metrics are expensive on mobile Safari. Compute them only when the
+  // view geometry changes, not on every drag event or position render.
+  const pathMetrics = new WeakMap();
+  const PATH_SAMPLE_STEPS = 240;
 
   const fmt = timestamp => new Intl.DateTimeFormat(undefined, {
     hour: "numeric", minute: "2-digit"
@@ -170,9 +176,25 @@
   const isLocationEnabled = () => window.liveEarthGetLocationState?.() === true;
   const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 
-  function pathPoint(path, amount) {
+  function cachePath(path) {
     const length = path.getTotalLength();
-    return path.getPointAtLength(clamp(amount, 0, 1) * length);
+    const points = new Array(PATH_SAMPLE_STEPS + 1);
+    for (let i = 0; i <= PATH_SAMPLE_STEPS; i++) {
+      const point = path.getPointAtLength(length * i / PATH_SAMPLE_STEPS);
+      points[i] = { x: point.x, y: point.y };
+    }
+    pathMetrics.set(path, { length, steps: PATH_SAMPLE_STEPS, points });
+  }
+
+  function pathPoint(path, amount) {
+    const metrics = pathMetrics.get(path);
+    if (!metrics) return path.getPointAtLength(clamp(amount, 0, 1) * path.getTotalLength());
+    const scaled = clamp(amount, 0, 1) * metrics.steps;
+    const index = Math.min(metrics.steps - 1, Math.floor(scaled));
+    const fraction = scaled - index;
+    const a = metrics.points[index];
+    const b = metrics.points[Math.min(metrics.steps, index + 1)];
+    return { x: a.x + (b.x - a.x) * fraction, y: a.y + (b.y - a.y) * fraction };
   }
 
   function writePoint(id, point) {
@@ -183,10 +205,9 @@
 
   function addDust(group, path, count, phase) {
     group.replaceChildren();
-    const length = path.getTotalLength();
     for (let i = 0; i < count; i++) {
       const fraction = (i + .5) / count;
-      const point = path.getPointAtLength(length * fraction);
+      const point = pathPoint(path, fraction);
       const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       circle.setAttribute("cx", point.x.toFixed(2));
       circle.setAttribute("cy", point.y.toFixed(2));
@@ -214,6 +235,8 @@
     const railD = `M ${x0} ${railY} C ${x0 + (x1-x0)*.24} ${railY-railAmp}, ${x0+(x1-x0)*.29} ${railY-railAmp}, ${width/2} ${railY} C ${x0+(x1-x0)*.71} ${railY+railAmp}, ${x0+(x1-x0)*.76} ${railY+railAmp}, ${x1} ${railY}`;
     arc.setAttribute("d", arcD); arcHalo.setAttribute("d", arcD); arcHit.setAttribute("d", arcD);
     rail.setAttribute("d", railD); railHit.setAttribute("d", railD);
+    cachePath(arc);
+    cachePath(rail);
     geometry = { x0, x1, arcY, arcControlY, railY, railAmp, landscape };
     writePoint("#le-lunar-rise-halo", {x:x0,y:arcY});
     writePoint("#le-lunar-rise-dot", {x:x0,y:arcY});
@@ -250,22 +273,23 @@
     renderPosition();
   }
 
-  function nearestProgress(path, event) {
+  function nearestProgress(path, clientX, clientY) {
     const matrix = svg.getScreenCTM();
-    if (!matrix) return progress;
+    const metrics = pathMetrics.get(path);
+    if (!matrix || !metrics) return progress;
     const point = svg.createSVGPoint();
-    point.x = event.clientX; point.y = event.clientY;
+    point.x = clientX; point.y = clientY;
     const local = point.matrixTransform(matrix.inverse());
-    const length = path.getTotalLength();
-    let bestT = 0, bestDistance = Infinity;
-    const samples = 120;
-    for (let i=0; i<=samples; i++) {
-      const t = i/samples;
-      const p = path.getPointAtLength(length*t);
-      const distance = (p.x-local.x)**2 + (p.y-local.y)**2;
-      if (distance < bestDistance) { bestDistance=distance; bestT=t; }
+    let bestIndex = 0, bestDistance = Infinity;
+    // Compare against precomputed samples. This avoids hundreds of synchronous
+    // SVG getPointAtLength() calls while a finger moves across the screen.
+    for (let i = 0; i < metrics.points.length; i++) {
+      const p = metrics.points[i];
+      const dx = p.x - local.x, dy = p.y - local.y;
+      const distance = dx * dx + dy * dy;
+      if (distance < bestDistance) { bestDistance = distance; bestIndex = i; }
     }
-    return bestT;
+    return bestIndex / metrics.steps;
   }
 
   function setProgress(value) {
@@ -412,6 +436,9 @@
     if (!active) {
       if (animationTimer) window.clearInterval(animationTimer);
       animationTimer = 0;
+      if (dragFrame) window.cancelAnimationFrame(dragFrame);
+      dragFrame = 0;
+      pendingDragPoint = null;
       dragging = null;
       return;
     }
@@ -426,16 +453,31 @@
     if (!interval) return;
     dragging = path;
     live = false;
-    setProgress(nearestProgress(path, event));
+    setProgress(nearestProgress(path, event.clientX, event.clientY));
     try { svg.setPointerCapture(event.pointerId); } catch (_) {}
     event.preventDefault();
   }
   function moveDrag(event) {
     if (!dragging) return;
-    setProgress(nearestProgress(dragging, event));
+    pendingDragPoint = { clientX: event.clientX, clientY: event.clientY };
+    if (!dragFrame) {
+      dragFrame = window.requestAnimationFrame(() => {
+        dragFrame = 0;
+        const point = pendingDragPoint;
+        pendingDragPoint = null;
+        if (dragging && point) setProgress(nearestProgress(dragging, point.clientX, point.clientY));
+      });
+    }
     event.preventDefault();
   }
-  function endDrag() { dragging = null; }
+  function endDrag() {
+    if (dragFrame) window.cancelAnimationFrame(dragFrame);
+    dragFrame = 0;
+    const point = pendingDragPoint;
+    pendingDragPoint = null;
+    if (dragging && point) setProgress(nearestProgress(dragging, point.clientX, point.clientY));
+    dragging = null;
+  }
 
   [arcHit, railHit].forEach(path => {
     path.addEventListener("pointerdown", event => beginDrag(event, path), { passive: false });
@@ -457,7 +499,15 @@
     tick();
     updateLiveButton();
   });
-  window.addEventListener("live-earth-primary-view-change", event => activate(event.detail?.view || "home"));
+  if (window.LiveEarthViewModules) {
+    window.LiveEarthViewModules.register("moon-lunar-interface", {
+      views: ["moon"],
+      activate: () => activate("moon"),
+      deactivate: () => activate("home")
+    });
+  } else {
+    window.addEventListener("live-earth-primary-view-change", event => activate(event.detail?.view || "home"));
+  }
   window.addEventListener("live-earth-location-state", event => {
     const next = !!event.detail?.enabled && isLocationEnabled();
     if (!next) {

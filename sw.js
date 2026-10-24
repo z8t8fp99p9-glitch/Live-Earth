@@ -1,11 +1,11 @@
-/* LIVE // EARTH — v83 Moon Arc + online-first launch / offline essentials fallback. */
+/* LIVE // EARTH — V87 modular view lifecycle + cached lunar Arc geometry. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v84-moon-arc-refinement";
-const CACHE_NAME = "live-earth-shell-v84-moon-arc-refinement";
+const BUILD_ID = "v87-modular-view-lifecycle";
+const CACHE_NAME = "live-earth-shell-v87-modular-view-lifecycle";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
- "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./sky-view-controller.js","./view-manager.js","./moon-lunar-interface.js",
+ "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./view-manager.js","./view-module-registry.js","./sky-view-controller.js","./moon-lunar-interface.js",
  "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js","./location-scanner.js",
  "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
  "./moon-sky-background-responsive.svg",
@@ -776,7 +776,7 @@ function injectStartupGate(html) {
       const orbImages = [...document.querySelectorAll('#navButtons .orbImage')];
       const imagesReady = orbImages.length === 5 && orbImages.every(img => img.complete && img.naturalWidth > 0);
       return document.readyState === 'complete' &&
-        !!window.LiveEarthScene && !!window.LiveEarthViewManager && !!window.LiveEarthSkyViews &&
+        !!window.LiveEarthScene && !!window.LiveEarthViewManager && !!window.LiveEarthViewModules && window.LiveEarthViewModules.has('sky-container') && window.LiveEarthViewModules.has('moon-lunar-interface') && !!window.LiveEarthSkyViews &&
         window.__liveEarthControlsInstalled === true && window.__liveEarthLocationScannerInstalled === true &&
         typeof window.liveEarthLocationAllowed === 'function' && window.liveEarthLocationAllowed() === false && imagesReady;
     }
@@ -915,7 +915,7 @@ function injectStartupGate(html) {
     window.addEventListener('error', event => {
       if (event.target && event.target.tagName === 'SCRIPT') {
         const src = event.target.src || '';
-        const scriptPaths = ['./orb-controls-v4.js','./earth-mode-navigation.js','./sky-view-controller.js','./view-manager.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
+        const scriptPaths = ['./orb-controls-v4.js','./earth-mode-navigation.js','./view-manager.js','./view-module-registry.js','./sky-view-controller.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
         for (const path of scriptPaths) if (src.endsWith(path.slice(1))) knownBadPaths.push(path);
         sceneFailure = 'A required startup script failed to load.';
       } else if (event.error) {
@@ -982,6 +982,16 @@ async function transformHomeHTML(request, response, forceHome = false) {
   }
   if (!html.includes("view-manager.js")) {
     html = html.replace(/<\/body\s*>/i, '<script src="./view-manager.js" defer></script>\n</body>');
+  }
+  // Prefer adding the registry to the existing sequential controller bootstrap,
+  // preserving manager -> registry -> view-controller ordering on older cached HTML.
+  if (!html.includes("view-module-registry.js")) {
+    const bootstrapAnchor = "'./view-manager.js',";
+    if (html.includes(bootstrapAnchor)) {
+      html = html.replace(bootstrapAnchor, bootstrapAnchor + "\n    './view-module-registry.js',");
+    } else {
+      html = html.replace(/<\/body\s*>/i, '<script src="./view-module-registry.js" defer></script>\n</body>');
+    }
   }
   if (!html.includes("update-manager.js")) {
     html = html.replace(/<\/body\s*>/i, '<script src="./update-manager.js" defer></script>\n</body>');

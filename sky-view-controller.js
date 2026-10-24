@@ -115,12 +115,24 @@
   }
 
 
-  // View lifecycle is driven exclusively by the global primary-view manager.
-  window.addEventListener("live-earth-primary-view-change", event => {
-    const view = event.detail?.view || "home";
-    if (view === "sun" || view === "moon") open(view);
-    else close();
-  });
+  // The shared sky container is registered as a view module. Switching Moon ↔ Sun
+  // updates its mode in-place; leaving both views closes the shared overlay.
+  if (window.LiveEarthViewModules) {
+    window.LiveEarthViewModules.register("sky-container", {
+      views: ["sun", "moon"],
+      activate: view => open(view),
+      deactivate: () => close(),
+      change: view => open(view)
+    });
+  } else {
+    // Compatibility fallback for an older cached shell. The current service worker
+    // treats view-module-registry.js as essential and will repair a missing copy.
+    window.addEventListener("live-earth-primary-view-change", event => {
+      const view = event.detail?.view || "home";
+      if (view === "sun" || view === "moon") open(view);
+      else close();
+    });
+  }
 
 
   window.addEventListener("pagehide", close, { once: true });

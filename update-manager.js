@@ -1,13 +1,16 @@
-/* LIVE // EARTH v83 — Moon Arc + online-first launch + verified startup gate. */
+/* LIVE // EARTH V87 — modular view lifecycle + verified startup gate. */
 (() => {
   "use strict";
-  const BUILD_ID = "v84-moon-arc-refinement";
+  const BUILD_ID = "v87-modular-view-lifecycle";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
     return Boolean(
       window.LiveEarthScene &&
       window.LiveEarthViewManager &&
+      window.LiveEarthViewModules &&
+      window.LiveEarthViewModules.has("sky-container") &&
+      window.LiveEarthViewModules.has("moon-lunar-interface") &&
       window.LiveEarthSkyViews &&
       window.__liveEarthControlsInstalled &&
       window.__liveEarthLocationScannerInstalled &&
