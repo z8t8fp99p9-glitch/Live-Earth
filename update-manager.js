@@ -1,7 +1,7 @@
 /* LIVE // EARTH v79 — launch update recovery + verified startup gate. */
 (() => {
   "use strict";
-  const BUILD_ID = "v79-launch-update-recovery";
+  const BUILD_ID = "v80-sun-bluehour-amber";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {

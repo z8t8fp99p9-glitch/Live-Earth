@@ -1,7 +1,7 @@
 /* LIVE // EARTH — v79 launch update recovery + verified Sun asset shell. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v79-launch-update-recovery";
-const CACHE_NAME = "live-earth-shell-v79-launch-update-recovery";
+const BUILD_ID = "v80-sun-bluehour-amber";
+const CACHE_NAME = "live-earth-shell-v80-sun-bluehour-amber";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [

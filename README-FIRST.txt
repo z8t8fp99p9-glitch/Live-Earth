@@ -1,17 +1,27 @@
-LIVE // EARTH — v78 Sun View Fix Builder
+LIVE // EARTH — Sun Blue-Hour Amber Background + Update Test (v80)
 
-This is a local patch builder. It does not upload to GitHub or deploy.
+This is a DIRECT REPLACEMENT package, not a builder. It contains exactly four app files:
+- sw.js
+- update-manager.js
+- sun-sky-background-landscape.webp
+- sun-sky-background-portrait.webp
 
-1. Download and extract the current main ZIP from the Live-Earth repository.
-2. Open LIVE-EARTH-v78-Fix-Builder.html in a browser that can open local files and run JavaScript.
-3. Choose the repository-root sw.js, index.html, and update-manager.js.
-4. Tap Build one corrected ZIP. If source files do not match the expected v77 baseline, it stops without output.
-5. Extract LIVE-EARTH-v78-Sun-View-Fix-Files.zip.
-6. Replace only those three files at the repository root, commit them together, and wait for GitHub Pages to publish.
-7. Open the app online once to get the new worker and cache both Sun WebP backgrounds. Then test Sun portrait, landscape, and offline.
+DESIGN
+Blue-hour alpine river valley, broad clean sky for the existing Arc, restrained amber afterglow at the horizon and river. No visible solar disc. No changes to Earth, Moon, the five Orbs, location privacy, or saved data are included.
 
-Do not upload the builder HTML or the output ZIP itself as files inside the app repository. The output ZIP contains replacements for existing source files.
+UPLOAD
+1. Extract this ZIP.
+2. In the Live-Earth repository root on GitHub, replace the four same-named files with the files from this folder.
+3. Commit the four files together.
+Suggested commit title:
+Update Sun backgrounds and bump app shell to v80
 
-Suggested commit title: Fix v78 Sun offline cache and startup handoff
+WHY TWO CODE FILES CHANGE
+sw.js changes BUILD_ID and CACHE_NAME from v79 to v80. This forces a fresh essential-shell cache and downloads the newly replaced same-named WebP assets. The service worker's APP_SHELL already contains both Sun WebPs and no longer refers to the deleted Sun SVG.
+update-manager.js changes its build identifier to the same v80 value. The existing ready-message type is retained for backward compatibility.
 
-Safety: the patch does not change the Earth scene framing, home composition, five Orb layout, Location-OFF privacy, IndexedDB, or the v75 recovery ZIP. Do not clear site data or uninstall the PWA.
+SAFETY NOTES
+- Do not upload this ZIP as a single file; extract it and upload/replace the four files.
+- Do not delete browser data or IndexedDB.
+- Do not replace index.html or sky-view-controller.js for this visual update; they already use the Sun WebP filenames and the v79 launch handoff.
+- A successful GitHub Pages workflow confirms deployment, but verify the actual browser and installed app receive the new background before marking the update test passed.
