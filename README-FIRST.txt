@@ -1,32 +1,22 @@
-LIVE // EARTH — Global Feature Orb Contract (prototype)
-Target baseline: z8t8fp99p9-glitch/Live-Earth, branch main, V87
+LIVE // EARTH — V88.1 Stacks Float Refinement
 
-WHAT THIS PACKAGE DOES
-- Replaces the existing view-module-registry.js only.
+WHAT CHANGED
+- Replaces only the existing view-module-registry.js.
 - Keeps the five Home Orbs and approved Home/Earth framing unchanged while idle.
-- Converts Stacks into a scrollable library of default-look feature Orbs:
-  Clouds, Weather, Alien World, Elevation, Earthquakes, Traffic.
-- On activation, switches to three controls: active feature Orb, Location, Stacks.
-- Tapping the active feature Orb closes that feature (no X button).
-- Tapping Stacks opens/closes the library. Selecting a different feature deactivates
-  the outgoing feature before activating the next one.
-- Restores the same underlying primary view when a feature closes.
-- Provides LiveEarthFeatureViews.register/open/close/list hooks for later data modules.
+- The Stacks chooser is now a transparent layer: no surrounding glass card, no dim scrim, and no backdrop blur.
+- Six feature Orbs float in one centered vertical column. The column scrolls independently; the Home scene and bottom navigation are not part of that scroll area.
+- When any feature Orb opens, the active Moon/Sun/Earth Explorer primary view is closed to Home first, then the feature view opens. This prevents stale Moon/Sun scenes lingering behind the feature shell.
+- Switching from one feature to another still deactivates and cleans up the outgoing feature before activating the next.
+- The active feature screen keeps the intended three-Orb dock: active feature toggle, Location toggle, and Stacks.
+- Tapping the active feature Orb closes it and restores the original five Home Orbs.
 
-IMPORTANT LIMIT
-This is a navigation/UI prototype. The six feature entries use honest preview shells;
-Weather, Cloud, Alien World, Elevation, Earthquake, and Traffic data are NOT integrated.
-A successful local smoke test is not the same as iPhone/browser/offline validation.
-Do not call this a finished release until the device test checklist passes.
+SCOPE AND SAFETY
+- This package replaces only root view-module-registry.js.
+- Do not replace index.html, sw.js, any renderer, the Moon Arc, or Location files for this refinement.
+- The six items are UI/navigation preview shells. Live weather, cloud, alien-world, elevation, earthquake, and traffic data are not connected by this change.
+- Keep a backup of the existing deployed view-module-registry.js before replacing it.
+- This file has passed local syntax and smoke checks only. It has NOT been verified on the physical iPhone, in orientation changes, or through offline/service-worker reloads.
+- Do not call it device-verified until the device checklist is completed.
 
-SAFE APPLICATION
-1. Preserve a copy of the current view-module-registry.js first.
-2. Replace only repository root view-module-registry.js with the file of the same name
-   from this package.
-3. Do not upload ROLLBACK-view-module-registry-V87.js as the active file; it is backup only.
-4. Do not change index.html or sw.js for this prototype. The existing HTML bootstrap and
-   service-worker shell already load/cache view-module-registry.js.
-5. Commit/deploy manually only after reviewing the file diff. Do not overwrite other files.
-
-GITHUB COMMIT TITLE
-LIVE // EARTH V88 — Add Global Feature Orb Prototype
+GITHUB COMMIT TITLE (for manual use)
+LIVE // EARTH V88.1 — Float Stacks Orbs and Clean View Switching

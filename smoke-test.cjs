@@ -36,8 +36,12 @@ const doc = {
   addEventListener(){},
   get documentElement(){return new FakeElement('html');}
 };
+let activePrimaryView = 'moon';
 const win = {
-  LiveEarthViewManager:{getActiveView:()=> 'home'},
+  LiveEarthViewManager:{
+    getActiveView:()=>activePrimaryView,
+    requestView:view=>{const previous=activePrimaryView;activePrimaryView=view;win.dispatchEvent(new FakeCustomEvent('live-earth-primary-view-change',{detail:{view,previous}}));return activePrimaryView;}
+  },
   listeners:{},
   addEventListener(type,fn){(this.listeners[type] ||= []).push(fn);},
   dispatchEvent(event){(this.events ||= []).push(event); (this.listeners[event.type]||[]).forEach(fn=>fn(event)); return true;},
@@ -47,6 +51,11 @@ const context = {window:win, document:doc, console, Map, Set, Object, Array, Str
 vm.runInNewContext(fs.readFileSync(__dirname+'/view-module-registry.js','utf8'),context);
 const api=win.LiveEarthFeatureViews;
 assert(api,'feature view API installed');
+const contractStyle=head.children.find(el=>el.id==='le-feature-orb-contract-style');
+assert(contractStyle,'feature styling installed');
+assert(contractStyle.textContent.includes('.le-feature-library-grid{display:flex;flex-direction:column;'), 'Stacks Orb choices are arranged in one vertical column');
+assert(contractStyle.textContent.includes('background:transparent;box-shadow:none;backdrop-filter:none'), 'Stacks chooser has no glass panel or blur');
+assert(contractStyle.textContent.includes('overflow-y:auto'), 'Stacks owns its vertical scroll area');
 assert.equal(api.list().length,6,'six default Stacks Orb entries registered');
 assert(api.list().some(x=>x.id==='alien-world'),'Alien World default Orb registered');
 api.toggleLibrary();
@@ -57,6 +66,8 @@ const order=[];
 api.register('weather',{activate:()=>order.push('weather:activate'),deactivate:()=>order.push('weather:deactivate')});
 api.register('alien-world',{activate:()=>order.push('alien:activate'),deactivate:()=>order.push('alien:deactivate')});
 assert(api.open('weather'));
+assert.equal(activePrimaryView,'home','opening a feature closes the previously active Moon/primary view to Home');
+assert.equal(api.getReturnView(),'home','feature mode returns to Home, not the stale primary scene');
 assert.equal(api.getActive(),'weather');
 assert.equal(mainNav.hidden,true,'original five-Orb navigation hidden only in feature mode');
 assert(body.classList.contains('le-feature-view-active'),'feature mode flag is set');
@@ -68,4 +79,4 @@ assert.equal(api.getActive(),null);
 assert.equal(mainNav.hidden,false,'closing restores original five-Orb navigation');
 assert(!body.classList.contains('le-feature-view-active'),'feature mode flag is removed on close');
 assert.deepEqual(order,['weather:activate','weather:deactivate','alien:activate','alien:deactivate']);
-console.log('PASS: 6 default feature Orbs, feature open/switch/close, cleanup-before-activation, and Home navigation restore.');
+console.log('PASS: 6 feature Orbs, transparent vertical scroll layer, primary-view cleanup to Home, outgoing-feature cleanup before incoming activation, and Home navigation restore.');

@@ -136,12 +136,14 @@
       #le-feature-dock .orbButton[aria-pressed="true"] .orbShell{border-color:rgba(231,250,255,.92);filter:drop-shadow(0 0 8px rgba(109,207,255,.55))}
       #le-feature-dock .orbButton[data-view="location"][aria-pressed="true"] .orbShell{box-shadow:inset 2px 2px 5px #ffdbe866,inset -3px -4px 8px #22000faa,0 0 0 2px #ff676744,0 0 20px #ff264e88}
       #le-feature-dock .orbButton[data-view="stacks"][aria-pressed="true"] .orbShell{box-shadow:inset 2px 2px 5px #d6ffff66,inset -3px -4px 8px #001a22aa,0 0 0 2px #55f5ff33,0 0 20px #00d9ff66}
-      #le-feature-library{position:fixed;inset:0;z-index:8;display:grid;place-items:center;pointer-events:none;padding:calc(env(safe-area-inset-top) + 24px) 14px calc(env(safe-area-inset-bottom) + 126px);background:rgba(1,5,12,.58);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#eaf5ff}
-      .le-feature-library-panel{pointer-events:auto;width:min(94vw,560px);max-height:min(68vh,calc(100dvh - 170px));overflow:auto;overscroll-behavior:contain;padding:18px 15px 20px;border:1px solid rgba(170,220,255,.28);border-radius:24px;background:linear-gradient(145deg,rgba(11,26,43,.97),rgba(3,8,16,.98));box-shadow:inset 1px 1px 2px rgba(255,255,255,.12),0 18px 44px rgba(0,0,0,.55),0 0 26px rgba(62,172,255,.1);touch-action:pan-y}
-      .le-feature-library-heading{margin:0 0 5px;font-size:20px;letter-spacing:.07em;font-weight:800;text-transform:uppercase}
-      .le-feature-library-hint{margin:0 0 17px;color:#98b3ca;font-size:11px;line-height:1.45}
-      .le-feature-library-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px 8px}
-      .le-feature-library-item{appearance:none;border:0;min-width:0;padding:0 2px 5px;background:transparent;color:#dcecff;display:flex;flex-direction:column;align-items:center;gap:8px;font:600 10px/1.25 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.09em;text-transform:uppercase;touch-action:manipulation;cursor:pointer;-webkit-tap-highlight-color:transparent}
+      /* Stacks is a transparent, independently scrollable layer. The Orb buttons float over the scene; there is no glass card or dim/blur scrim. */
+      #le-feature-library{position:fixed;inset:0;z-index:8;display:flex;justify-content:center;pointer-events:none;padding:calc(env(safe-area-inset-top) + 98px) 12px calc(env(safe-area-inset-bottom) + 132px);background:transparent;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#eaf5ff}
+      .le-feature-library-panel{pointer-events:auto;flex:1;min-height:0;width:min(94vw,460px);max-width:100%;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:0 10px 20px;border:0;border-radius:0;background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;touch-action:pan-y}
+      .le-feature-library-panel::-webkit-scrollbar{display:none}
+      .le-feature-library-heading{margin:0 0 5px;text-align:center;font-size:20px;letter-spacing:.07em;font-weight:800;text-transform:uppercase;text-shadow:0 2px 12px #000}
+      .le-feature-library-hint{margin:0 auto 18px;max-width:28em;text-align:center;color:#a8c0d5;font-size:11px;line-height:1.45;text-shadow:0 2px 10px #000}
+      .le-feature-library-grid{display:flex;flex-direction:column;align-items:center;gap:18px;padding:2px 0 12px}
+      .le-feature-library-item{appearance:none;border:0;width:min(100%,230px);min-width:0;padding:3px 4px 6px;background:transparent;color:#e6f3ff;display:flex;flex-direction:column;align-items:center;gap:8px;font:650 10px/1.25 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.11em;text-transform:uppercase;touch-action:manipulation;cursor:pointer;-webkit-tap-highlight-color:transparent;text-shadow:0 2px 9px rgba(0,0,0,.95)}
       .le-feature-library-item .orbShell{position:relative;display:grid;place-items:center;width:clamp(55px,16vw,76px);aspect-ratio:1;border-radius:50%;isolation:isolate;border:1px solid rgba(199,235,255,.34);background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(94,149,190,.045) 42%,rgba(0,5,15,.42));box-shadow:inset 2px 2px 5px rgba(255,255,255,.34),inset -3px -4px 8px rgba(0,0,0,.64),3px 4px 9px rgba(0,0,0,.65),-2px -2px 7px rgba(170,225,255,.12);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);transition:transform .2s ease,filter .2s ease;overflow:hidden}
       .le-feature-library-item .orbShell:before{content:"";position:absolute;inset:2%;border-radius:inherit;background:radial-gradient(ellipse at 28% 16%,rgba(255,255,255,.48),transparent 27%),linear-gradient(138deg,rgba(255,255,255,.22),rgba(255,255,255,.035) 27%,transparent 47%,rgba(85,205,255,.06) 76%,rgba(255,255,255,.2));box-shadow:inset 1px 1px 3px rgba(255,255,255,.68),inset -2px -3px 6px rgba(0,0,0,.55);pointer-events:none}
       .le-feature-library-item .orbShell:after{content:"";position:absolute;left:18%;top:8%;width:35%;height:13%;border-radius:50%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.88),rgba(255,255,255,.12),transparent);filter:blur(1.3px);opacity:.88;pointer-events:none}
@@ -149,7 +151,7 @@
       .le-feature-library-item[aria-pressed="true"] .orbShell{border-color:rgba(231,250,255,.9);filter:drop-shadow(0 0 10px rgba(95,202,255,.48))}
       .le-feature-library-item small{display:block;max-width:100%;font-size:9px;font-weight:400;letter-spacing:.02em;text-transform:none;color:#7995ae}
       .le-feature-library-item[aria-pressed="true"] small{color:#9ce4ff}
-      @media(max-height:560px){#le-feature-library{padding-top:14px;padding-bottom:92px}.le-feature-library-panel{max-height:calc(100dvh - 110px);padding-top:13px}.le-feature-library-grid{gap:10px 6px}.le-feature-library-item .orbShell{width:clamp(42px,10vh,60px)}}
+      @media(max-height:560px){#le-feature-library{padding-top:calc(env(safe-area-inset-top) + 62px);padding-bottom:calc(env(safe-area-inset-bottom) + 102px)}.le-feature-library-hint{margin-bottom:10px}.le-feature-library-grid{gap:12px}.le-feature-library-item .orbShell{width:clamp(42px,10vh,60px)}}
       @media(prefers-reduced-motion:reduce){#le-feature-dock *,#le-feature-library *{transition:none!important;animation:none!important}}
     `;
     document.head.appendChild(css);
@@ -348,7 +350,15 @@
 
       // Mandatory order: outgoing feature is deactivated and cleaned before the next activates.
       if (previousFeature) safeHook(previousFeature.deactivate, id, source);
-      if (!previous) returnView = window.LiveEarthViewManager?.getActiveView?.() || "home";
+
+      // A feature Orb replaces the currently active primary scene. Explicitly return
+      // Moon/Sun/Earth Explorer to Home before painting the feature stage so an old
+      // celestial view can never remain visible behind Clouds, Weather, Alien World, etc.
+      const primaryManager = window.LiveEarthViewManager;
+      const primaryView = primaryManager?.getActiveView?.() || "home";
+      if (primaryView !== "home") primaryManager?.requestView?.("home");
+      returnView = "home";
+
       activeFeature = id;
       libraryOpen = false;
       library.hidden = true;
