@@ -1,6 +1,6 @@
-/* LIVE // EARTH — V88.8 width-driven Orb geometry + Orbital Rail + Smooth Collection.
-   Built from the V88.7 orbital-rail draft. Orb dimensions are width-driven and locked to a 1:1 ratio; Home/Earth framing stays untouched.
-   All Orb size tiers use vmin; scattered feature Orbs are positioned from one full-screen overlay coordinate space. */
+/* LIVE // EARTH — V88.9 width-driven feature Orb sizing + simple Orb Hunt + smooth collection.
+   Built from the exact V88.8 main-branch registry. Decorative orbital rails removed; feature Orb size remains width-driven and locked to 1:1. Home/Earth framing stays untouched.
+   All Orb size tiers use vmin; scattered feature Orbs are positioned in one overlay coordinate space without decorative paths over the Home scene. */
 (() => {
   "use strict";
   if (window.LiveEarthViewModules) return;
@@ -144,14 +144,10 @@
       #le-feature-dock .orbButton[aria-pressed="true"] .orbShell{border-color:rgba(231,250,255,.92);filter:drop-shadow(0 0 8px rgba(109,207,255,.55))}
       #le-feature-dock .orbButton[data-view="location"][aria-pressed="true"] .orbShell{box-shadow:inset 2px 2px 5px #ffdbe866,inset -3px -4px 8px #22000faa,0 0 0 2px #ff676744,0 0 20px #ff264e88}
       #le-feature-dock .orbButton[data-view="stacks"][aria-pressed="true"] .orbShell{box-shadow:inset 2px 2px 5px #d6ffff66,inset -3px -4px 8px #001a22aa,0 0 0 2px #55f5ff33,0 0 20px #00d9ff66}
-      /* ORB HUNT: transparent full-screen scene. Rail paths are decorative; actual buttons stay independent and tappable. */
+      /* ORB HUNT: transparent full-screen scene. Floating feature buttons and hitboxes share one coordinate space. */
       #le-feature-library{position:fixed;inset:0;z-index:8;display:block;pointer-events:none;padding:0;background:transparent;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#eaf5ff;overflow:hidden}
       .le-feature-library-panel{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden;background:transparent;border:0;border-radius:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
-      .le-feature-orbit-rails{position:absolute;inset:0;z-index:0;display:block;width:100%;height:100%;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .46s ease}
-      #le-feature-library.le-stacks-orb-hunt-open .le-feature-orbit-rails{opacity:1}
-      .le-feature-orbit-rail{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
-      .le-feature-orbit-rail-main{stroke:rgba(112,202,255,.36);stroke-width:1.05;stroke-dasharray:2 4;opacity:.62}
-      .le-feature-orbit-rail-secondary{stroke:rgba(103,230,255,.22);stroke-width:.8;stroke-dasharray:1 5;opacity:.68}
+      /* Simple Orb Hunt: no decorative tracks over the Home moon/stardust path. */
       .le-feature-library-head{position:absolute;z-index:2;left:50%;top:calc(env(safe-area-inset-top) + clamp(62px,15vmin,80px));transform:translateX(-50%);width:min(82vw,320px);text-align:center;padding:0 4px;text-shadow:0 2px 12px #000;pointer-events:none}
       .le-feature-library-heading{margin:0 0 4px;text-align:center;font-size:clamp(14px,3.5vmin,18px);letter-spacing:.07em;font-weight:800;text-transform:uppercase;text-shadow:0 2px 12px #000}
       .le-feature-library-hint{margin:0 auto;color:#a8c0d5;font-size:clamp(8px,2.1vmin,10px);line-height:1.35;letter-spacing:.08em;text-transform:uppercase;text-align:center;text-shadow:0 2px 10px #000}
@@ -181,7 +177,7 @@
       }
       @media(max-height:460px){
         .le-feature-library-head{top:calc(env(safe-area-inset-top) + 22px)}
-        .le-feature-library-item .orbShell{width:clamp(36px,10vmin,44px)!important;height:auto!important;aspect-ratio:1 / 1!important}
+        .le-feature-library-item .orbShell{width:var(--le-orb-size-feature)!important;height:auto!important;aspect-ratio:1 / 1!important;box-sizing:border-box}
         .le-feature-library-item{width:clamp(70px,20vmin,82px);font-size:8px;gap:2px}
         .le-feature-library-detail{font-size:7px}
       }
@@ -209,7 +205,7 @@
     library.setAttribute("role", "dialog");
     library.setAttribute("aria-modal", "false");
     library.setAttribute("aria-label", "Stacks feature library");
-    library.innerHTML = `<div class="le-feature-library-panel"><svg class="le-feature-orbit-rails" aria-hidden="true" focusable="false"><path class="le-feature-orbit-rail le-feature-orbit-rail-main"></path><path class="le-feature-orbit-rail le-feature-orbit-rail-secondary"></path></svg><header class="le-feature-library-head"><h2 class="le-feature-library-heading">Stacks</h2><p class="le-feature-library-hint">Find a feature Orb</p></header><div class="le-feature-library-grid"></div></div>`;
+    library.innerHTML = `<div class="le-feature-library-panel"><header class="le-feature-library-head"><h2 class="le-feature-library-heading">Stacks</h2><p class="le-feature-library-hint">Find a feature Orb</p></header><div class="le-feature-library-grid"></div></div>`;
     document.body.appendChild(library);
 
     const stageSymbol = stage.querySelector(".le-feature-stage-symbol");
@@ -219,8 +215,6 @@
     const libraryGrid = library.querySelector(".le-feature-library-grid");
     const libraryPanel = library.querySelector(".le-feature-library-panel");
     const libraryHead = library.querySelector(".le-feature-library-head");
-    const orbitRailMain = library.querySelector(".le-feature-orbit-rail-main");
-    const orbitRailSecondary = library.querySelector(".le-feature-orbit-rail-secondary");
     let locationEnabled = typeof window.liveEarthLocationAllowed === "function" ? window.liveEarthLocationAllowed() : false;
 
     let collectingOrbs = false;
@@ -257,28 +251,6 @@
 
     function clampNumber(value, min, max) {
       return Math.max(min, Math.min(max, value));
-    }
-
-    function drawOrbitalRails() {
-      if (!orbitRailMain || !orbitRailSecondary) return;
-      const { width, height } = getLibraryRect();
-      if (!(width > 0 && height > 0)) return;
-      const shortSide = Math.min(width, height);
-      const landscape = width > height;
-      const cx = width / 2;
-      const cy = height * (landscape ? 0.50 : 0.525);
-      const rx = Math.min(width * (landscape ? 0.315 : 0.455), shortSide * 0.57);
-      const ry = Math.min(height * (landscape ? 0.365 : 0.255), shortSide * 0.53);
-      const ellipsePath = (xRadius, yRadius) =>
-        `M ${cx - xRadius} ${cy} C ${cx - xRadius} ${cy - yRadius}, ${cx + xRadius} ${cy - yRadius}, ${cx + xRadius} ${cy} C ${cx + xRadius} ${cy + yRadius}, ${cx - xRadius} ${cy + yRadius}, ${cx - xRadius} ${cy} Z`;
-      const svg = library.querySelector('.le-feature-orbit-rails');
-      svg?.setAttribute('viewBox', `0 0 ${width} ${height}`);
-      svg?.setAttribute('width', String(width));
-      svg?.setAttribute('height', String(height));
-      orbitRailMain.setAttribute('d', ellipsePath(rx, ry));
-      orbitRailMain.setAttribute('transform', `rotate(${landscape ? -13 : 11} ${cx} ${cy})`);
-      orbitRailSecondary.setAttribute('d', ellipsePath(rx * 0.82, ry * 0.69));
-      orbitRailSecondary.setAttribute('transform', `rotate(${landscape ? 19 : -22} ${cx} ${cy})`);
     }
 
     function setOrbCenter(item, centerX, centerY, layerRect) {
@@ -415,7 +387,6 @@
       const layerRect = getLibraryRect();
       const positions = getRandomScatterPositions(items);
       const positionByItem = new Map(positions.map(point => [point.item, point]));
-      drawOrbitalRails();
 
       for (const item of items) {
         item.classList.remove('le-orb-collecting', 'le-orb-deployed');
@@ -473,7 +444,6 @@
       if (collectingTimer) { clearTimeout(collectingTimer); collectingTimer = null; }
       libraryOpen = false;
       library.hidden = true;
-      library.classList.remove('le-stacks-orb-hunt-open');
       collectingOrbs = false;
       document.documentElement?.classList.remove('le-stacks-library-open');
       document.body.classList.remove('le-stacks-library-open');
@@ -490,7 +460,6 @@
       const layerRect = getLibraryRect();
       const items = [...(libraryGrid?.children || [])];
       const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
-      library.classList.remove('le-stacks-orb-hunt-open');
       for (const [index, item] of items.entries()) {
         item.classList.remove('le-orb-deployed');
         item.classList.add('le-orb-collecting');
@@ -671,14 +640,10 @@
       if (activeFeature) updateDock();
       libraryOpen = true;
       library.hidden = false;
-      library.classList.remove('le-stacks-orb-hunt-open');
       document.documentElement?.classList.add("le-stacks-library-open");
       document.body.classList.add("le-stacks-library-open");
       renderLibrary();
       layoutLooseOrbs({ fromAnchor: true });
-      const revealRails = () => { if (libraryOpen) library.classList.add('le-stacks-orb-hunt-open'); };
-      if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(revealRails);
-      else revealRails();
       syncMainButtons();
       window.dispatchEvent(new CustomEvent("live-earth-stacks-library-change", {
         detail: { open: true, activeFeature, mode: "orb-hunt" }

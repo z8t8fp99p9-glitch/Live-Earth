@@ -1,16 +1,13 @@
-# V88.8 Validation Report — Width-Driven Orb Geometry
+# V88.9 validation report
 
-- Draft parent: V88.7 Orbital Rail & Smooth Collection package.
-- Repository baseline represented by the included rollback file: GitHub `main` commit `2b3b7b0ed41a719c01f6ec321e201ff3df38fb2a`, registry blob `11a3aa6177ee80eca5b8f887fd68bd950c5ea9cb`.
-- Intended replacement: only `view-module-registry.js`.
-- `node --check`: PASS.
-- Static size-rule assertions: PASS for Home, feature, dock, preview emblem, and short-landscape override.
-- Orbital rail and smooth-collection code-presence checks: PASS.
-- Preview harness: included for visual smoke test; it is not a substitute for the real application.
-- Physical iPhone, installed-PWA, touch-hitbox, and GPU-performance checks: NOT PERFORMED in this build session.
-- Home-globe vertical stretching: intentionally not changed; track separately.
-- GitHub writes / deployment: NOT PERFORMED.
+Baseline repository commit: `75e466f909ed9f7687cc958b4e7cb7f6ede99aa2` (V88.8)
+Registry baseline Git blob: `e85a7b2011ca7e8d2169d47cdbd8ef8dd25f8c5e`
 
-## Important scope note
+- PASS — `node --check view-module-registry.js`.
+- PASS — 9/9 static checks.
+- PASS — ZIP integrity check.
+- Removed persistent SVG rail DOM, CSS, drawing function and visibility toggles.
+- Fixed feature Orb size inconsistency: the short-height landscape media query now preserves the shared `--le-orb-size-feature` width instead of forcing a smaller diameter. The scatter safe bounds only affect positions, not Orb size.
+- Random scatter, smooth transform/opacity collection, width-driven 1:1 shells and reduced-motion handling retained.
 
-The package includes a full registry replacement based on the V88.7 draft plus the explicit width-driven 1:1 rule. Compare it with the current repository before replacing. The rollback file is the V88.6 repository registry represented by the recorded Git blob above, not a backup of any uncommitted local changes.
+Not tested here: physical iPhone touch accuracy, Safari/PWA rendering, actual GPU performance, or device visual regression. Test on device before treating as stable. No GitHub edits or deployment performed.
