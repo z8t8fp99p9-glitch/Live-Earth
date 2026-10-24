@@ -1,19 +1,21 @@
-# LIVE // EARTH — Global Orb Size Standard (V88.5)
+# LIVE // EARTH — Global Orb Size Standard (V88.8)
 
-## Core rule
-Use the shorter current viewport dimension (`vmin`) as the global reference for Orb diameters. Distinct roles may use different multipliers, but they share one reference system.
+## Single sizing principle
 
-## Protected visual baseline
-Home Orb dimensions and styling stay at the V88.4-approved vmin tokens; this revision does not change the Earth or Moon renderer/camera/geometry. The Home Orb row stays grouped and slightly lower in landscape according to the existing V88.4 CSS.
+The declared **width is the only source of each Orb's diameter**. The Orb's height stays `auto`, and `aspect-ratio: 1 / 1` derives its height from its width. Each shell uses `box-sizing: border-box` so the border remains included in its measured diameter. Shells do not flex-shrink.
 
-## Stacks Orb Hunt
-The six feature-Orb buttons use the existing smaller feature size token. Their positions are sampled randomly within the measured visible region between the Stacks heading and the visible Home/dock navigation. Collision checks prevent their button rectangles from overlapping; if random placement cannot fit, a jittered, orientation-aware fallback is used. The button and its visible Orb are a single positioned element so hitboxes travel with their visuals.
+## Size roles
 
-## Viewport and touch notes
-Coordinates use the rendered full-screen overlay's `getBoundingClientRect()` space and the visible Stacks Orb circle (`.orbShell`) as the animation origin. This avoids using the button's label-expanded bounding box as the source point. The layout is recalculated on resize, orientation change and visual viewport resize.
+- Home/navigation Orb: `--le-orb-size-primary`
+- Scattered feature Orb: `--le-orb-size-feature`
+- Three-Orb feature dock: `--le-orb-size-dock`
+- Feature preview emblem: `--le-orb-size-hero`
 
-## Motion
-Feature Orbs emerge from Stacks, settle at randomly scattered positions, drift very slightly, and collect back into Stacks when dismissed or selected. Reduced-motion settings skip animation. Orb positions remain stable while the user is tapping, and the buttons themselves carry the hitboxes.
+Each size token is derived from `vmin`, the shorter viewport dimension, and is bounded with `clamp()`. A very-short-landscape exception reduces only the feature Orb's **width**; the 1:1 ratio and auto height still apply.
 
-## Exclusions
-No service-worker changes, no deployment, no live-data integrations, no local-storage or IndexedDB migrations, no Location ON/OFF logic changes, and no Earth/Moon visual framing changes.
+## Preserved behaviour
+
+- Random, asymmetric Orb Hunt placement remains.
+- The two decorative orbital rails and staggered transform/opacity collection remain.
+- Reduced-motion preference skips the collection transition.
+- Home navigation, Earth renderer/camera and Moon geometry are outside this replacement.

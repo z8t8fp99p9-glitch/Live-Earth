@@ -1,5 +1,5 @@
-/* LIVE // EARTH — V88.4 shared view lifecycle + Stick Stacks rail + Global Orb sizing.
-   Built as a draft from the verified main-branch registry baseline. Home/Earth framing stays untouched.
+/* LIVE // EARTH — V88.8 width-driven Orb geometry + Orbital Rail + Smooth Collection.
+   Built from the V88.7 orbital-rail draft. Orb dimensions are width-driven and locked to a 1:1 ratio; Home/Earth framing stays untouched.
    All Orb size tiers use vmin; scattered feature Orbs are positioned from one full-screen overlay coordinate space. */
 (() => {
   "use strict";
@@ -115,22 +115,24 @@
     css.textContent = `
       /* GLOBAL ORB SIZE STANDARD: all Orb diameters derive from the shorter viewport side (vmin). */
       :root{--le-orb-size-primary:clamp(49px,14.2vmin,76px);--le-orb-size-feature:clamp(44px,12.5vmin,58px);--le-orb-size-dock:clamp(44px,13.5vmin,64px);--le-orb-size-hero:clamp(60px,22vmin,96px)}
+      /* WIDTH-DRIVEN ORB RULE: width sets diameter; height is never independently sized. */
+      .orbShell{box-sizing:border-box;height:auto!important;aspect-ratio:1 / 1!important;flex:0 0 auto}
       #navButtons[hidden]{display:none!important}
       #navButtons{width:min(94vw,98vmin,520px)!important;gap:clamp(2px,1.2vmin,7px)!important;bottom:calc(env(safe-area-inset-bottom) + clamp(32px,9vmin,48px))!important}
-      #navButtons .orbShell{width:var(--le-orb-size-primary)!important}
+      #navButtons .orbShell{width:var(--le-orb-size-primary)!important;height:auto!important;aspect-ratio:1 / 1!important;flex:0 0 auto;box-sizing:border-box}
       /* Landscape moves closer to the bottom; !important wins against the legacy navigation offset. */
       @media(orientation:landscape){#navButtons{bottom:calc(env(safe-area-inset-bottom) + clamp(14px,4vmin,20px))!important}}
       #le-feature-stage{position:fixed;inset:0;z-index:5;display:grid;place-items:center;padding:calc(env(safe-area-inset-top) + 66px) 18px calc(env(safe-area-inset-bottom) + 124px);background:radial-gradient(ellipse at 50% 36%,rgba(12,34,54,.32),rgba(2,5,11,.24) 70%);color:#eaf5ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;touch-action:pan-y;overflow:auto}
       #le-feature-stage[hidden],#le-feature-library[hidden],#le-feature-dock[hidden]{display:none!important}
       .le-feature-stage-card{width:min(88vw,430px);padding:clamp(18px,5vw,28px);border:1px solid rgba(170,220,255,.24);border-radius:24px;background:linear-gradient(145deg,rgba(9,23,38,.88),rgba(3,8,16,.86));box-shadow:inset 1px 1px 2px rgba(255,255,255,.12),0 14px 42px rgba(0,0,0,.45),0 0 26px rgba(62,172,255,.09);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);text-align:center;pointer-events:none}
-      .le-feature-stage-symbol{display:grid;place-items:center;width:var(--le-orb-size-hero);aspect-ratio:1;margin:0 auto 14px;border:1px solid rgba(210,240,255,.42);border-radius:50%;background:radial-gradient(circle at 32% 22%,rgba(255,255,255,.32),rgba(90,150,200,.12) 46%,rgba(0,7,18,.86));box-shadow:inset 2px 2px 6px rgba(255,255,255,.22),inset -4px -5px 10px rgba(0,0,0,.72),0 0 22px rgba(82,190,255,.16);font-size:clamp(34px,9vw,48px)}
+      .le-feature-stage-symbol{display:grid;place-items:center;width:var(--le-orb-size-hero);height:auto!important;aspect-ratio:1 / 1!important;box-sizing:border-box;margin:0 auto 14px;border:1px solid rgba(210,240,255,.42);border-radius:50%;background:radial-gradient(circle at 32% 22%,rgba(255,255,255,.32),rgba(90,150,200,.12) 46%,rgba(0,7,18,.86));box-shadow:inset 2px 2px 6px rgba(255,255,255,.22),inset -4px -5px 10px rgba(0,0,0,.72),0 0 22px rgba(82,190,255,.16);font-size:clamp(34px,9vw,48px)}
       .le-feature-stage-title{margin:0 0 8px;font-weight:750;font-size:clamp(21px,5.3vw,29px);letter-spacing:.015em}
       .le-feature-stage-description{margin:0 auto;max-width:34em;color:#bfd1e2;font-size:13px;line-height:1.55}
       .le-feature-stage-status{margin:15px 0 0;color:#8eb2cb;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
       #le-feature-dock{position:fixed;z-index:9;left:50%;bottom:calc(env(safe-area-inset-bottom) + clamp(24px,8vmin,38px));transform:translateX(-50%);width:min(82vw,74vmin,330px);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:clamp(5px,1.8vmin,10px);pointer-events:auto}
       @media(orientation:landscape){#le-feature-dock{bottom:calc(env(safe-area-inset-bottom) + clamp(14px,4vmin,22px))}}
       #le-feature-dock .orbButton{min-width:0}
-      #le-feature-dock .orbShell{width:var(--le-orb-size-dock)!important;display:grid;place-items:center;overflow:hidden}
+      #le-feature-dock .orbShell{width:var(--le-orb-size-dock)!important;height:auto!important;aspect-ratio:1 / 1!important;flex:0 0 auto;box-sizing:border-box;display:grid;place-items:center;overflow:hidden}
       #le-feature-dock .orbImage{width:100%;height:100%;object-fit:cover}
       .le-feature-symbol{position:absolute;inset:0;display:grid;place-items:center;font-size:clamp(25px,7vw,36px);line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.7));pointer-events:none}
       .le-feature-orb[data-feature="clouds"] .orbShell,.le-feature-library-item[data-feature="clouds"] .orbShell,.le-feature-stage[data-feature="clouds"] .le-feature-stage-symbol{box-shadow:inset 2px 2px 5px #fff8,inset -3px -4px 8px #001329aa,0 0 18px #9ccfff55,0 5px 10px #000a}
@@ -142,18 +144,23 @@
       #le-feature-dock .orbButton[aria-pressed="true"] .orbShell{border-color:rgba(231,250,255,.92);filter:drop-shadow(0 0 8px rgba(109,207,255,.55))}
       #le-feature-dock .orbButton[data-view="location"][aria-pressed="true"] .orbShell{box-shadow:inset 2px 2px 5px #ffdbe866,inset -3px -4px 8px #22000faa,0 0 0 2px #ff676744,0 0 20px #ff264e88}
       #le-feature-dock .orbButton[data-view="stacks"][aria-pressed="true"] .orbShell{box-shadow:inset 2px 2px 5px #d6ffff66,inset -3px -4px 8px #001a22aa,0 0 0 2px #55f5ff33,0 0 20px #00d9ff66}
-      /* ORB HUNT: a full-screen transparent field. Each feature button is absolutely positioned
-         in this one coordinate space, so the visual orb and its real hitbox travel together. */
+      /* ORB HUNT: transparent full-screen scene. Rail paths are decorative; actual buttons stay independent and tappable. */
       #le-feature-library{position:fixed;inset:0;z-index:8;display:block;pointer-events:none;padding:0;background:transparent;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#eaf5ff;overflow:hidden}
       .le-feature-library-panel{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden;background:transparent;border:0;border-radius:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
-      .le-feature-library-head{position:absolute;z-index:1;left:50%;top:calc(env(safe-area-inset-top) + clamp(62px,15vmin,80px));transform:translateX(-50%);width:min(82vw,320px);text-align:center;padding:0 4px;text-shadow:0 2px 12px #000;pointer-events:none}
+      .le-feature-orbit-rails{position:absolute;inset:0;z-index:0;display:block;width:100%;height:100%;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .46s ease}
+      #le-feature-library.le-stacks-orb-hunt-open .le-feature-orbit-rails{opacity:1}
+      .le-feature-orbit-rail{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+      .le-feature-orbit-rail-main{stroke:rgba(112,202,255,.36);stroke-width:1.05;stroke-dasharray:2 4;opacity:.62}
+      .le-feature-orbit-rail-secondary{stroke:rgba(103,230,255,.22);stroke-width:.8;stroke-dasharray:1 5;opacity:.68}
+      .le-feature-library-head{position:absolute;z-index:2;left:50%;top:calc(env(safe-area-inset-top) + clamp(62px,15vmin,80px));transform:translateX(-50%);width:min(82vw,320px);text-align:center;padding:0 4px;text-shadow:0 2px 12px #000;pointer-events:none}
       .le-feature-library-heading{margin:0 0 4px;text-align:center;font-size:clamp(14px,3.5vmin,18px);letter-spacing:.07em;font-weight:800;text-transform:uppercase;text-shadow:0 2px 12px #000}
       .le-feature-library-hint{margin:0 auto;color:#a8c0d5;font-size:clamp(8px,2.1vmin,10px);line-height:1.35;letter-spacing:.08em;text-transform:uppercase;text-align:center;text-shadow:0 2px 10px #000}
-      .le-feature-library-grid{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-      .le-feature-library-item{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.22);translate:0 0;opacity:0;pointer-events:auto;appearance:none;-webkit-appearance:none;border:0;width:clamp(78px,23vmin,98px);min-width:0;min-height:44px;padding:4px 2px 6px;background:transparent;color:#e6f3ff;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;font:650 clamp(8px,2.1vmin,10px)/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.065em;text-transform:uppercase;touch-action:manipulation;cursor:pointer;-webkit-tap-highlight-color:transparent;text-shadow:0 2px 9px rgba(0,0,0,.96);transition:left .44s cubic-bezier(.16,.78,.25,1),top .44s cubic-bezier(.16,.78,.25,1),transform .42s cubic-bezier(.16,.78,.25,1),opacity .25s ease;}
-      .le-feature-library-item.le-orb-deployed{transform:translate(-50%,-50%) scale(1);opacity:1;animation:le-feature-orb-drift var(--le-orb-float-duration,5s) ease-in-out var(--le-orb-float-delay,0s) infinite alternate}
-      .le-feature-library-item.le-orb-collecting{transform:translate(-50%,-50%) scale(.16)!important;opacity:0!important;filter:brightness(1.6) saturate(1.35);animation:none!important;pointer-events:none}
-      .le-feature-library-item .orbShell{position:relative;display:grid;place-items:center;width:var(--le-orb-size-feature)!important;aspect-ratio:1;flex:0 0 auto;border-radius:50%;isolation:isolate;border:1px solid rgba(199,235,255,.42);background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(94,149,190,.045) 42%,rgba(0,5,15,.42));box-shadow:inset 2px 2px 5px rgba(255,255,255,.34),inset -3px -4px 8px rgba(0,0,0,.64),3px 4px 9px rgba(0,0,0,.65),-2px -2px 7px rgba(170,225,255,.12);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);overflow:hidden}
+      .le-feature-library-grid{position:absolute;z-index:1;inset:0;pointer-events:none;overflow:hidden}
+      /* One button contains the Orb + both labels. Only transform/opacity animate, keeping its hitbox glued to the visible Orb. */
+      .le-feature-library-item{position:absolute;left:50%;top:50%;transform:translate3d(calc(-50% + var(--le-orb-x,0px)),calc(-50% + var(--le-orb-y,0px)),0) scale(.20);translate:0 0;opacity:0;pointer-events:auto;appearance:none;-webkit-appearance:none;border:0;width:clamp(78px,23vmin,98px);min-width:0;min-height:44px;padding:4px 2px 6px;background:transparent;color:#e6f3ff;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;font:650 clamp(8px,2.1vmin,10px)/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.065em;text-transform:uppercase;touch-action:manipulation;cursor:pointer;-webkit-tap-highlight-color:transparent;text-shadow:0 2px 9px rgba(0,0,0,.96);transition:transform .62s cubic-bezier(.22,.76,.22,1),opacity .42s ease,filter .42s ease;will-change:transform,opacity}
+      .le-feature-library-item.le-orb-deployed{transform:translate3d(calc(-50% + var(--le-orb-x,0px)),calc(-50% + var(--le-orb-y,0px)),0) scale(1);opacity:1;animation:le-feature-orb-drift var(--le-orb-float-duration,5s) ease-in-out var(--le-orb-float-delay,0s) infinite alternate}
+      .le-feature-library-item.le-orb-collecting{transform:translate3d(calc(-50% + var(--le-orb-x,0px)),calc(-50% + var(--le-orb-y,0px)),0) scale(.08)!important;opacity:0!important;filter:brightness(1.35) saturate(1.2);animation:none!important;pointer-events:none}
+      .le-feature-library-item .orbShell{position:relative;display:grid;place-items:center;width:var(--le-orb-size-feature)!important;height:auto!important;aspect-ratio:1 / 1!important;box-sizing:border-box;flex:0 0 auto;border-radius:50%;isolation:isolate;border:1px solid rgba(199,235,255,.42);background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(94,149,190,.045) 42%,rgba(0,5,15,.42));box-shadow:inset 2px 2px 5px rgba(255,255,255,.34),inset -3px -4px 8px rgba(0,0,0,.64),3px 4px 9px rgba(0,0,0,.65),-2px -2px 7px rgba(170,225,255,.12);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);overflow:hidden}
       .le-feature-library-item .orbShell:before{content:"";position:absolute;inset:2%;border-radius:inherit;background:radial-gradient(ellipse at 28% 16%,rgba(255,255,255,.48),transparent 27%),linear-gradient(138deg,rgba(255,255,255,.22),rgba(255,255,255,.035) 27%,transparent 47%,rgba(85,205,255,.06) 76%,rgba(255,255,255,.2));box-shadow:inset 1px 1px 3px rgba(255,255,255,.68),inset -2px -3px 6px rgba(0,0,0,.55);pointer-events:none}
       .le-feature-library-item .orbShell:after{content:"";position:absolute;left:18%;top:8%;width:35%;height:13%;border-radius:50%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.88),rgba(255,255,255,.12),transparent);filter:blur(1.3px);opacity:.88;pointer-events:none}
       .le-feature-library-item .le-feature-symbol{z-index:1}
@@ -174,11 +181,11 @@
       }
       @media(max-height:460px){
         .le-feature-library-head{top:calc(env(safe-area-inset-top) + 22px)}
-        .le-feature-library-item .orbShell{width:clamp(36px,10vmin,44px)!important}
+        .le-feature-library-item .orbShell{width:clamp(36px,10vmin,44px)!important;height:auto!important;aspect-ratio:1 / 1!important}
         .le-feature-library-item{width:clamp(70px,20vmin,82px);font-size:8px;gap:2px}
         .le-feature-library-detail{font-size:7px}
       }
-      @media(prefers-reduced-motion:reduce){#le-feature-dock *,#le-feature-library *{transition:none!important;animation:none!important}}
+      @media(prefers-reduced-motion:reduce){#le-feature-dock *,#le-feature-library *{transition:none!important;animation:none!important;will-change:auto!important}}
     `;
     document.head.appendChild(css);
 
@@ -202,7 +209,7 @@
     library.setAttribute("role", "dialog");
     library.setAttribute("aria-modal", "false");
     library.setAttribute("aria-label", "Stacks feature library");
-    library.innerHTML = `<div class="le-feature-library-panel"><header class="le-feature-library-head"><h2 class="le-feature-library-heading">Stacks</h2><p class="le-feature-library-hint">Find a feature Orb</p></header><div class="le-feature-library-grid"></div></div>`;
+    library.innerHTML = `<div class="le-feature-library-panel"><svg class="le-feature-orbit-rails" aria-hidden="true" focusable="false"><path class="le-feature-orbit-rail le-feature-orbit-rail-main"></path><path class="le-feature-orbit-rail le-feature-orbit-rail-secondary"></path></svg><header class="le-feature-library-head"><h2 class="le-feature-library-heading">Stacks</h2><p class="le-feature-library-hint">Find a feature Orb</p></header><div class="le-feature-library-grid"></div></div>`;
     document.body.appendChild(library);
 
     const stageSymbol = stage.querySelector(".le-feature-stage-symbol");
@@ -212,6 +219,8 @@
     const libraryGrid = library.querySelector(".le-feature-library-grid");
     const libraryPanel = library.querySelector(".le-feature-library-panel");
     const libraryHead = library.querySelector(".le-feature-library-head");
+    const orbitRailMain = library.querySelector(".le-feature-orbit-rail-main");
+    const orbitRailSecondary = library.querySelector(".le-feature-orbit-rail-secondary");
     let locationEnabled = typeof window.liveEarthLocationAllowed === "function" ? window.liveEarthLocationAllowed() : false;
 
     let collectingOrbs = false;
@@ -248,6 +257,37 @@
 
     function clampNumber(value, min, max) {
       return Math.max(min, Math.min(max, value));
+    }
+
+    function drawOrbitalRails() {
+      if (!orbitRailMain || !orbitRailSecondary) return;
+      const { width, height } = getLibraryRect();
+      if (!(width > 0 && height > 0)) return;
+      const shortSide = Math.min(width, height);
+      const landscape = width > height;
+      const cx = width / 2;
+      const cy = height * (landscape ? 0.50 : 0.525);
+      const rx = Math.min(width * (landscape ? 0.315 : 0.455), shortSide * 0.57);
+      const ry = Math.min(height * (landscape ? 0.365 : 0.255), shortSide * 0.53);
+      const ellipsePath = (xRadius, yRadius) =>
+        `M ${cx - xRadius} ${cy} C ${cx - xRadius} ${cy - yRadius}, ${cx + xRadius} ${cy - yRadius}, ${cx + xRadius} ${cy} C ${cx + xRadius} ${cy + yRadius}, ${cx - xRadius} ${cy + yRadius}, ${cx - xRadius} ${cy} Z`;
+      const svg = library.querySelector('.le-feature-orbit-rails');
+      svg?.setAttribute('viewBox', `0 0 ${width} ${height}`);
+      svg?.setAttribute('width', String(width));
+      svg?.setAttribute('height', String(height));
+      orbitRailMain.setAttribute('d', ellipsePath(rx, ry));
+      orbitRailMain.setAttribute('transform', `rotate(${landscape ? -13 : 11} ${cx} ${cy})`);
+      orbitRailSecondary.setAttribute('d', ellipsePath(rx * 0.82, ry * 0.69));
+      orbitRailSecondary.setAttribute('transform', `rotate(${landscape ? 19 : -22} ${cx} ${cy})`);
+    }
+
+    function setOrbCenter(item, centerX, centerY, layerRect) {
+      item.style.left = '50%';
+      item.style.top = '50%';
+      // CSS transform centers the whole button at viewport centre; custom offsets
+      // keep the true button and its touch target travelling together.
+      item.style.setProperty('--le-orb-x', `${centerX - layerRect.width / 2}px`);
+      item.style.setProperty('--le-orb-y', `${centerY - layerRect.height / 2}px`);
     }
 
     function getOrbCenterOffsetY(item) {
@@ -372,43 +412,59 @@
       const items = [...(libraryGrid?.children || [])];
       if (!items.length) return;
       const anchor = getVisibleStacksAnchor();
+      const layerRect = getLibraryRect();
       const positions = getRandomScatterPositions(items);
       const positionByItem = new Map(positions.map(point => [point.item, point]));
+      drawOrbitalRails();
+
       for (const item of items) {
-        item.classList.remove('le-orb-collecting');
-        item.classList.remove('le-orb-deployed');
+        item.classList.remove('le-orb-collecting', 'le-orb-deployed');
         item.style.pointerEvents = 'auto';
-        item.style.transitionDuration = fromAnchor ? '0ms' : '0ms';
+        item.style.transition = 'none';
         item.style.transitionDelay = '0ms';
-        item.style.left = `${fromAnchor ? anchor.x : (positionByItem.get(item)?.x ?? anchor.x)}px`;
-        item.style.top = `${fromAnchor ? anchor.y - getOrbCenterOffsetY(item) : (positionByItem.get(item)?.y ?? anchor.y)}px`;
-        item.style.opacity = fromAnchor ? '0' : '1';
-        item.style.transform = fromAnchor ? 'translate(-50%,-50%) scale(.22)' : 'translate(-50%,-50%) scale(1)';
-        item.style.animationDelay = `${-(Math.random() * 2.6).toFixed(2)}s`;
+        item.style.opacity = '';
+        item.style.transform = '';
+        item.style.animation = '';
+        item.style.setProperty?.('--le-orb-float-delay', `${-(Math.random() * 2.6).toFixed(2)}s`);
         item.style.setProperty?.('--le-orb-float-duration', `${(4.2 + Math.random() * 2.8).toFixed(2)}s`);
-        item.classList.add('le-orb-deployed');
+        if (fromAnchor) {
+          // The glass sphere starts at Stacks; correct for the label below the sphere.
+          setOrbCenter(item, anchor.x, anchor.y - getOrbCenterOffsetY(item), layerRect);
+        } else {
+          const target = positionByItem.get(item);
+          setOrbCenter(item, target?.x ?? anchor.x, target?.y ?? anchor.y, layerRect);
+          item.classList.add('le-orb-deployed');
+        }
       }
+
       if (fromAnchor) {
-        // Force the collapsed state to layout before moving each Orb to its random point.
-        for (const item of items) void item.offsetWidth;
-        const move = () => {
+        // Commit the collapsed start position first. Then animate only transform/opacity,
+        // which avoids six continuously reflowing left/top coordinates on mobile.
+        void libraryGrid.offsetWidth;
+        const deploy = () => {
+          if (!libraryOpen) return;
           for (const item of items) {
             const target = positionByItem.get(item);
             if (!target) continue;
-            item.style.transitionDuration = '';
-            item.style.transitionDelay = `${Math.floor(Math.random() * 130)}ms`;
-            item.style.left = `${target.x}px`;
-            item.style.top = `${target.y}px`;
-            item.style.opacity = '1';
-            item.style.transform = 'translate(-50%,-50%) scale(1)';
+            item.style.transition = '';
+            item.style.transitionDelay = `${Math.floor(Math.random() * 110)}ms`;
+            setOrbCenter(item, target.x, target.y, layerRect);
+            item.classList.add('le-orb-deployed');
           }
         };
-        if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(move);
-        else move();
+        if (typeof window.requestAnimationFrame === 'function') {
+          window.requestAnimationFrame(() => window.requestAnimationFrame(deploy));
+        } else deploy();
       } else {
-        for (const item of items) {
-          item.style.transitionDuration = '0ms';
-          item.style.transitionDelay = '0ms';
+        // Resizing/orientation changes reposition immediately to avoid hitbox drift.
+        void libraryGrid.offsetWidth;
+        if (typeof window.requestAnimationFrame === 'function') {
+          window.requestAnimationFrame(() => items.forEach(item => {
+            item.style.transition = '';
+            item.style.transitionDelay = '';
+          }));
+        } else {
+          items.forEach(item => { item.style.transition = ''; item.style.transitionDelay = ''; });
         }
       }
     }
@@ -417,6 +473,7 @@
       if (collectingTimer) { clearTimeout(collectingTimer); collectingTimer = null; }
       libraryOpen = false;
       library.hidden = true;
+      library.classList.remove('le-stacks-orb-hunt-open');
       collectingOrbs = false;
       document.documentElement?.classList.remove('le-stacks-library-open');
       document.body.classList.remove('le-stacks-library-open');
@@ -430,26 +487,28 @@
       if (collectingOrbs) return false;
       collectingOrbs = true;
       const anchor = getVisibleStacksAnchor();
+      const layerRect = getLibraryRect();
       const items = [...(libraryGrid?.children || [])];
       const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
-      for (const item of items) {
+      library.classList.remove('le-stacks-orb-hunt-open');
+      for (const [index, item] of items.entries()) {
         item.classList.remove('le-orb-deployed');
         item.classList.add('le-orb-collecting');
         item.style.animation = 'none';
         item.style.pointerEvents = 'none';
-        item.style.transitionDuration = reducedMotion ? '0ms' : '320ms';
-        item.style.transitionDelay = '0ms';
-        item.style.left = `${anchor.x}px`;
-        item.style.top = `${anchor.y - getOrbCenterOffsetY(item)}px`;
-        item.style.opacity = '0';
-        item.style.transform = 'translate(-50%,-50%) scale(.16)';
+        item.style.transition = reducedMotion
+          ? 'none'
+          : 'transform 620ms cubic-bezier(0.22,0.76,0.22,1), opacity 440ms ease, filter 440ms ease';
+        item.style.transitionDelay = reducedMotion ? '0ms' : `${Math.min(index * 16, 80)}ms`;
+        setOrbCenter(item, anchor.x, anchor.y - getOrbCenterOffsetY(item), layerRect);
       }
       const finish = () => {
         collectingTimer = null;
         done?.();
       };
+      // Six lightweight transform transitions only; no JS animation loop or per-frame layout work.
       if (reducedMotion || !items.length) finish();
-      else collectingTimer = setTimeout(finish, 370);
+      else collectingTimer = setTimeout(finish, 760);
       return true;
     }
 
@@ -612,10 +671,14 @@
       if (activeFeature) updateDock();
       libraryOpen = true;
       library.hidden = false;
+      library.classList.remove('le-stacks-orb-hunt-open');
       document.documentElement?.classList.add("le-stacks-library-open");
       document.body.classList.add("le-stacks-library-open");
       renderLibrary();
       layoutLooseOrbs({ fromAnchor: true });
+      const revealRails = () => { if (libraryOpen) library.classList.add('le-stacks-orb-hunt-open'); };
+      if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(revealRails);
+      else revealRails();
       syncMainButtons();
       window.dispatchEvent(new CustomEvent("live-earth-stacks-library-change", {
         detail: { open: true, activeFeature, mode: "orb-hunt" }

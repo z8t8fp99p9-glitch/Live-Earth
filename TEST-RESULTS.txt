@@ -1,0 +1,10 @@
+PASS — shared orb shell: width-driven, auto height, 1:1 aspect ratio
+PASS — Home/navigation Orb explicitly uses width as diameter
+PASS — three-Orb dock explicitly uses width as diameter
+PASS — scattered feature Orb explicitly uses width as diameter
+PASS — preview emblem explicitly uses width as diameter
+PASS — short-landscape exception changes width only
+PASS — decorative orbital rail retained
+PASS — smooth transform-based collection retained
+PASS — reduced-motion preference retained
+PASS — all six feature Orbs retained
