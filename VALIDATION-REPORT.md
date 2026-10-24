@@ -1,26 +1,16 @@
-# Validation report — Stacks Float Refinement
+# V88.4 Validation Report
 
-## Local automated checks completed
+## Automated checks run locally
+
 - `node --check view-module-registry.js` — PASS.
-- `node smoke-test.cjs` — PASS.
-- The smoke test verifies six default feature entries, a transparent vertical Stacks list, independently scrollable list styling, primary-view request to Home when opening a feature from Moon, outgoing feature deactivation before incoming activation, and restoration of the five-Orb navigation on close.
-- Scope review: the draft changes only `view-module-registry.js`; no renderer, index, service-worker, Moon, Location, or storage file is included as a replacement.
+- `node smoke-test.cjs` — PASS. The mocked DOM test checks six registered features, transparent vertical list, scroll ownership, live Home-Stacks anchoring, edge clamping, bottom anchoring, current dock-Stacks anchoring when Home navigation is hidden, resize re-anchoring, vmin size tokens, compact grouped Home navigation, landscape bottom offset, primary-view cleanup, lifecycle order and restoration of Home navigation.
+- `index.html` source checks — PASS. Confirmed the primary Orb size uses the shared `vmin` token, width-based size overrides are removed from the two old breakpoint rules, the five-Orb group is capped with `vmin`, and the landscape offset uses the agreed shorter-side-based rule.
+- Source provenance verified before editing: main `index.html` blob SHA `5777f8cbf1db2498a6805e71deb17b2615f1fd97`; main `view-module-registry.js` blob SHA `52caba5ac85fc3a599dacb50868ecefca27ca94e`.
 
-## Not tested here
-- Visual rendering and scrolling in Safari/iOS standalone app.
-- Real touch gestures, safe areas, and orientation changes on device.
-- Service-worker cache refresh and offline/cold-start behavior after manual upload.
-- Full Home/Moon Arc/Sun/Location regression on the live site.
+## Not yet tested
 
-## Device test checklist
-1. Open Stacks while Moon is active: list appears as floating vertical Orbs, without a surrounding panel or blurred/dimmed scrim.
-2. Scroll the Stacks list: only the list scrolls; the Earth/Moon background and bottom controls remain fixed.
-3. Tap Clouds or Alien World from Moon: Moon view deactivates and the feature shell opens over Home, not over the Moon view.
-4. Open Stacks while Weather is active, then select Alien World: Weather deactivates before Alien World activates.
-5. Tap the active feature Orb: feature closes and the original five Home Orbs return.
-6. Toggle Location from the three-Orb dock; active glow must match ON/OFF and Location-OFF privacy rules remain intact.
-7. Repeat in portrait and landscape, including orientation change while Stacks is open.
-8. Test online reload and offline/fresh launch; confirm existing local/IndexedDB data is untouched.
-9. Re-test Moon Arc and Sun navigation before calling the refinement stable.
+- Real iPhone visual positioning/touch scrolling in portrait and landscape.
+- Browser, previously installed PWA, and freshly installed PWA after manual upload.
+- Real service-worker update/cache behaviour.
 
-Do not call this release or device-verified until these checks pass on the target devices.
+This is a local draft, not a deployment confirmation. Mocked tests cannot guarantee the rail will look correct on an iPhone; perform the device checks before considering the build stable.

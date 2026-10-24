@@ -11,7 +11,7 @@
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <script src="./ios-standalone-root-flow.js"></script>
 <style>
-:root{color-scheme:dark;background:#02050b;color:#eaf5ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+:root{--le-orb-size-primary:clamp(49px,14.2vmin,76px);color-scheme:dark;background:#02050b;color:#eaf5ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 *{box-sizing:border-box}
 html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#02050b;overscroll-behavior:none;touch-action:none}
 body{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
@@ -20,9 +20,9 @@ body{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset
 .brand span{color:#65d9ff}
 .status{position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);max-width:84vw;padding:13px 16px;border:1px solid #24384d;border-radius:12px;background:#08111ee8;color:#c7d9e9;text-align:center;font-size:13px;line-height:1.5}
 .status[hidden]{display:none}
-#navButtons{position:absolute;z-index:8;left:50%;bottom:calc(env(safe-area-inset-bottom) + 49px);transform:translateX(-50%);width:min(94vw,520px);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:end;gap:clamp(2px,1.2vw,9px)}
+#navButtons{position:absolute;z-index:8;left:50%;bottom:calc(env(safe-area-inset-bottom) + clamp(32px,9vmin,48px));transform:translateX(-50%);width:min(94vw,98vmin,520px);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:end;gap:clamp(2px,1.2vmin,7px)}
 .orbButton{appearance:none;-webkit-appearance:none;min-width:0;padding:0 0 2px;border:0;background:transparent;color:#dbeaf7;display:flex;flex-direction:column;align-items:center;gap:6px;font:600 clamp(8px,2.4vw,11px)/1.1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.14em;text-transform:uppercase;touch-action:manipulation;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.orbShell{position:relative;display:block;width:clamp(49px,14.2vw,76px);aspect-ratio:1;border-radius:50%;isolation:isolate;transform:translateZ(0);transition:transform .22s ease,filter .22s ease;filter:drop-shadow(0 5px 7px #000b) drop-shadow(0 0 3px #7dcfff30)}
+.orbShell{position:relative;display:block;width:var(--le-orb-size-primary);aspect-ratio:1;border-radius:50%;isolation:isolate;transform:translateZ(0);transition:transform .22s ease,filter .22s ease;filter:drop-shadow(0 5px 7px #000b) drop-shadow(0 0 3px #7dcfff30)}
 .orbImage{display:block;width:100%;height:100%;object-fit:contain;border-radius:50%;user-select:none;-webkit-user-drag:none}
 /* Consolidated global orb material + state visuals. Geometry and navigation placement stay unchanged. */
 .orbShell{
@@ -83,8 +83,9 @@ body{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset
 .orbLabel{max-width:100%;white-space:nowrap;text-shadow:0 1px 7px #000,0 0 9px #6cbfff33;opacity:.82;transition:opacity .22s ease,color .22s ease}
 .orbButton:active .orbShell{filter:brightness(1.02) saturate(.96)}
 .orbButton:focus-visible{outline:2px solid #8de1ff;outline-offset:5px;border-radius:12px}
-@media(min-width:600px){#navButtons{bottom:38px;gap:10px}.orbShell{width:clamp(68px,8vw,88px)}.orbButton{font-size:11px}}
-@media(max-height:700px){#navButtons{bottom:calc(env(safe-area-inset-bottom) + 42px)}.orbShell{width:clamp(43px,11vw,63px)}}
+@media(min-width:600px){#navButtons{bottom:calc(env(safe-area-inset-bottom) + clamp(32px,9vmin,48px));width:min(94vw,98vmin,520px);gap:clamp(2px,1.2vmin,7px)}.orbButton{font-size:11px}}
+@media(max-height:700px){#navButtons{bottom:calc(env(safe-area-inset-bottom) + clamp(32px,9vmin,48px))}}
+@media(orientation:landscape){#navButtons{bottom:calc(env(safe-area-inset-bottom) + clamp(14px,4vmin,20px))}}
 
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>

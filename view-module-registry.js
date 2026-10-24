@@ -1,7 +1,6 @@
-/* LIVE // EARTH — shared view lifecycle + Global Feature Orb Contract.
-   Based on the V87 registry. The protected Home scene and the five Home Orbs
-   are never resized or reframed. Feature-view UI is additive and uses this
-   already-loaded file so the existing app shell and offline asset list stay intact. */
+/* LIVE // EARTH — V88.4 shared view lifecycle + Stick Stacks rail + Global Orb sizing.
+   Built as a draft from the verified main-branch registry baseline. Home/Earth framing stays untouched.
+   All Orb size tiers use vmin; the Stacks rail follows the currently visible Stacks Orb. */
 (() => {
   "use strict";
   if (window.LiveEarthViewModules) return;
@@ -114,17 +113,24 @@
     const css = document.createElement("style");
     css.id = "le-feature-orb-contract-style";
     css.textContent = `
+      /* GLOBAL ORB SIZE STANDARD: all Orb diameters derive from the shorter viewport side (vmin). */
+      :root{--le-orb-size-primary:clamp(49px,14.2vmin,76px);--le-orb-size-feature:clamp(40px,11vmin,52px);--le-orb-size-dock:clamp(44px,13.5vmin,64px);--le-orb-size-hero:clamp(60px,22vmin,96px)}
       #navButtons[hidden]{display:none!important}
+      #navButtons{width:min(94vw,98vmin,520px)!important;gap:clamp(2px,1.2vmin,7px)!important;bottom:calc(env(safe-area-inset-bottom) + clamp(32px,9vmin,48px))!important}
+      #navButtons .orbShell{width:var(--le-orb-size-primary)!important}
+      /* Landscape moves closer to the bottom; !important wins against the legacy navigation offset. */
+      @media(orientation:landscape){#navButtons{bottom:calc(env(safe-area-inset-bottom) + clamp(14px,4vmin,20px))!important}}
       #le-feature-stage{position:fixed;inset:0;z-index:5;display:grid;place-items:center;padding:calc(env(safe-area-inset-top) + 66px) 18px calc(env(safe-area-inset-bottom) + 124px);background:radial-gradient(ellipse at 50% 36%,rgba(12,34,54,.32),rgba(2,5,11,.24) 70%);color:#eaf5ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;touch-action:pan-y;overflow:auto}
       #le-feature-stage[hidden],#le-feature-library[hidden],#le-feature-dock[hidden]{display:none!important}
       .le-feature-stage-card{width:min(88vw,430px);padding:clamp(18px,5vw,28px);border:1px solid rgba(170,220,255,.24);border-radius:24px;background:linear-gradient(145deg,rgba(9,23,38,.88),rgba(3,8,16,.86));box-shadow:inset 1px 1px 2px rgba(255,255,255,.12),0 14px 42px rgba(0,0,0,.45),0 0 26px rgba(62,172,255,.09);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);text-align:center;pointer-events:none}
-      .le-feature-stage-symbol{display:grid;place-items:center;width:clamp(68px,19vw,96px);aspect-ratio:1;margin:0 auto 14px;border:1px solid rgba(210,240,255,.42);border-radius:50%;background:radial-gradient(circle at 32% 22%,rgba(255,255,255,.32),rgba(90,150,200,.12) 46%,rgba(0,7,18,.86));box-shadow:inset 2px 2px 6px rgba(255,255,255,.22),inset -4px -5px 10px rgba(0,0,0,.72),0 0 22px rgba(82,190,255,.16);font-size:clamp(34px,9vw,48px)}
+      .le-feature-stage-symbol{display:grid;place-items:center;width:var(--le-orb-size-hero);aspect-ratio:1;margin:0 auto 14px;border:1px solid rgba(210,240,255,.42);border-radius:50%;background:radial-gradient(circle at 32% 22%,rgba(255,255,255,.32),rgba(90,150,200,.12) 46%,rgba(0,7,18,.86));box-shadow:inset 2px 2px 6px rgba(255,255,255,.22),inset -4px -5px 10px rgba(0,0,0,.72),0 0 22px rgba(82,190,255,.16);font-size:clamp(34px,9vw,48px)}
       .le-feature-stage-title{margin:0 0 8px;font-weight:750;font-size:clamp(21px,5.3vw,29px);letter-spacing:.015em}
       .le-feature-stage-description{margin:0 auto;max-width:34em;color:#bfd1e2;font-size:13px;line-height:1.55}
       .le-feature-stage-status{margin:15px 0 0;color:#8eb2cb;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
-      #le-feature-dock{position:fixed;z-index:9;left:50%;bottom:clamp(32px,9vmin,48px);transform:translateX(-50%);width:min(82vw,330px);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:clamp(7px,2vw,14px);pointer-events:auto}
+      #le-feature-dock{position:fixed;z-index:9;left:50%;bottom:calc(env(safe-area-inset-bottom) + clamp(24px,8vmin,38px));transform:translateX(-50%);width:min(82vw,74vmin,330px);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:clamp(5px,1.8vmin,10px);pointer-events:auto}
+      @media(orientation:landscape){#le-feature-dock{bottom:calc(env(safe-area-inset-bottom) + clamp(14px,4vmin,22px))}}
       #le-feature-dock .orbButton{min-width:0}
-      #le-feature-dock .orbShell{width:clamp(52px,15vw,72px);display:grid;place-items:center;overflow:hidden}
+      #le-feature-dock .orbShell{width:var(--le-orb-size-dock)!important;display:grid;place-items:center;overflow:hidden}
       #le-feature-dock .orbImage{width:100%;height:100%;object-fit:cover}
       .le-feature-symbol{position:absolute;inset:0;display:grid;place-items:center;font-size:clamp(25px,7vw,36px);line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.7));pointer-events:none}
       .le-feature-orb[data-feature="clouds"] .orbShell,.le-feature-library-item[data-feature="clouds"] .orbShell,.le-feature-stage[data-feature="clouds"] .le-feature-stage-symbol{box-shadow:inset 2px 2px 5px #fff8,inset -3px -4px 8px #001329aa,0 0 18px #9ccfff55,0 5px 10px #000a}
@@ -136,22 +142,27 @@
       #le-feature-dock .orbButton[aria-pressed="true"] .orbShell{border-color:rgba(231,250,255,.92);filter:drop-shadow(0 0 8px rgba(109,207,255,.55))}
       #le-feature-dock .orbButton[data-view="location"][aria-pressed="true"] .orbShell{box-shadow:inset 2px 2px 5px #ffdbe866,inset -3px -4px 8px #22000faa,0 0 0 2px #ff676744,0 0 20px #ff264e88}
       #le-feature-dock .orbButton[data-view="stacks"][aria-pressed="true"] .orbShell{box-shadow:inset 2px 2px 5px #d6ffff66,inset -3px -4px 8px #001a22aa,0 0 0 2px #55f5ff33,0 0 20px #00d9ff66}
-      /* Stacks is a transparent, independently scrollable layer. The Orb buttons float over the scene; there is no glass card or dim/blur scrim. */
-      #le-feature-library{position:fixed;inset:0;z-index:8;display:flex;justify-content:center;pointer-events:none;padding:calc(env(safe-area-inset-top) + 98px) 12px calc(env(safe-area-inset-bottom) + 132px);background:transparent;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#eaf5ff}
-      .le-feature-library-panel{pointer-events:auto;flex:1;min-height:0;width:min(94vw,460px);max-width:100%;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:0 10px 20px;border:0;border-radius:0;background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;touch-action:pan-y}
-      .le-feature-library-panel::-webkit-scrollbar{display:none}
-      .le-feature-library-heading{margin:0 0 5px;text-align:center;font-size:20px;letter-spacing:.07em;font-weight:800;text-transform:uppercase;text-shadow:0 2px 12px #000}
-      .le-feature-library-hint{margin:0 auto 18px;max-width:28em;text-align:center;color:#a8c0d5;font-size:11px;line-height:1.45;text-shadow:0 2px 10px #000}
-      .le-feature-library-grid{display:flex;flex-direction:column;align-items:center;gap:18px;padding:2px 0 12px}
-      .le-feature-library-item{appearance:none;border:0;width:min(100%,230px);min-width:0;padding:3px 4px 6px;background:transparent;color:#e6f3ff;display:flex;flex-direction:column;align-items:center;gap:8px;font:650 10px/1.25 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.11em;text-transform:uppercase;touch-action:manipulation;cursor:pointer;-webkit-tap-highlight-color:transparent;text-shadow:0 2px 9px rgba(0,0,0,.95)}
-      .le-feature-library-item .orbShell{position:relative;display:grid;place-items:center;width:clamp(55px,16vw,76px);aspect-ratio:1;border-radius:50%;isolation:isolate;border:1px solid rgba(199,235,255,.34);background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(94,149,190,.045) 42%,rgba(0,5,15,.42));box-shadow:inset 2px 2px 5px rgba(255,255,255,.34),inset -3px -4px 8px rgba(0,0,0,.64),3px 4px 9px rgba(0,0,0,.65),-2px -2px 7px rgba(170,225,255,.12);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);transition:transform .2s ease,filter .2s ease;overflow:hidden}
+      /* Stacks is a transparent floating layer. It is aligned to the actual Stacks Orb; only the feature list scrolls. */
+      #le-feature-library{position:fixed;inset:0;z-index:8;display:block;pointer-events:none;padding:0;background:transparent;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#eaf5ff}
+      /* Narrow floating rail; JS measures the visible Stacks Orb and supplies its true center and bottom anchor. */
+      .le-feature-library-panel{position:fixed;left:50%;right:auto;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + clamp(72px,18vmin,90px));bottom:calc(env(safe-area-inset-bottom) + clamp(126px,32vmin,144px));width:clamp(102px,25vmin,124px);max-width:calc(100vw - 12px);min-height:0;display:flex;flex-direction:column;pointer-events:auto;overflow:hidden;padding:0 2px 2px;border:0;border-radius:0;background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+      .le-feature-library-head{flex:0 0 auto;text-align:center;padding:0 0 9px;text-shadow:0 2px 12px #000}
+      .le-feature-library-heading{margin:0 0 4px;text-align:center;font-size:clamp(13px,3.3vmin,15px);letter-spacing:.07em;font-weight:800;text-transform:uppercase;text-shadow:0 2px 12px #000}
+      .le-feature-library-hint{margin:0 auto;color:#a8c0d5;font-size:8px;line-height:1.3;letter-spacing:.06em;text-transform:uppercase;text-align:center}
+      .le-feature-library-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;touch-action:pan-y}
+      .le-feature-library-scroll::-webkit-scrollbar{display:none}
+      .le-feature-library-grid{display:flex;flex-direction:column;align-items:center;gap:clamp(8px,1.8vmin,12px);padding:2px 0 12px}
+      .le-feature-library-item{appearance:none;border:0;width:100%;min-width:0;padding:2px 0 4px;background:transparent;color:#e6f3ff;display:flex;flex-direction:column;align-items:center;gap:4px;font:650 9px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.07em;text-transform:uppercase;touch-action:manipulation;cursor:pointer;-webkit-tap-highlight-color:transparent;text-shadow:0 2px 9px rgba(0,0,0,.95)}
+      .le-feature-library-item .orbShell{position:relative;display:grid;place-items:center;width:var(--le-orb-size-feature)!important;aspect-ratio:1;border-radius:50%;isolation:isolate;border:1px solid rgba(199,235,255,.34);background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(94,149,190,.045) 42%,rgba(0,5,15,.42));box-shadow:inset 2px 2px 5px rgba(255,255,255,.34),inset -3px -4px 8px rgba(0,0,0,.64),3px 4px 9px rgba(0,0,0,.65),-2px -2px 7px rgba(170,225,255,.12);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);transition:transform .2s ease,filter .2s ease;overflow:hidden}
       .le-feature-library-item .orbShell:before{content:"";position:absolute;inset:2%;border-radius:inherit;background:radial-gradient(ellipse at 28% 16%,rgba(255,255,255,.48),transparent 27%),linear-gradient(138deg,rgba(255,255,255,.22),rgba(255,255,255,.035) 27%,transparent 47%,rgba(85,205,255,.06) 76%,rgba(255,255,255,.2));box-shadow:inset 1px 1px 3px rgba(255,255,255,.68),inset -2px -3px 6px rgba(0,0,0,.55);pointer-events:none}
       .le-feature-library-item .orbShell:after{content:"";position:absolute;left:18%;top:8%;width:35%;height:13%;border-radius:50%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.88),rgba(255,255,255,.12),transparent);filter:blur(1.3px);opacity:.88;pointer-events:none}
       .le-feature-library-item .le-feature-symbol{z-index:1}
       .le-feature-library-item[aria-pressed="true"] .orbShell{border-color:rgba(231,250,255,.9);filter:drop-shadow(0 0 10px rgba(95,202,255,.48))}
-      .le-feature-library-item small{display:block;max-width:100%;font-size:9px;font-weight:400;letter-spacing:.02em;text-transform:none;color:#7995ae}
+      .le-feature-library-item small{display:block;max-width:100%;font-size:8px;font-weight:400;letter-spacing:.02em;text-transform:none;color:#7995ae}
       .le-feature-library-item[aria-pressed="true"] small{color:#9ce4ff}
-      @media(max-height:560px){#le-feature-library{padding-top:calc(env(safe-area-inset-top) + 62px);padding-bottom:calc(env(safe-area-inset-bottom) + 102px)}.le-feature-library-hint{margin-bottom:10px}.le-feature-library-grid{gap:12px}.le-feature-library-item .orbShell{width:clamp(42px,10vh,60px)}}
+      @media(max-height:560px){.le-feature-library-panel{top:calc(env(safe-area-inset-top) + clamp(48px,13vmin,62px))}.le-feature-library-head{padding-bottom:6px}.le-feature-library-grid{gap:clamp(6px,1.8vmin,9px)}}
+      /* The document shell disables gestures for the globe. Temporarily permit vertical pan while Stacks is open; the page itself remains fixed and only the inner list scrolls. */
+      html.le-stacks-library-open,html.le-stacks-library-open body{touch-action:pan-y!important}
       @media(prefers-reduced-motion:reduce){#le-feature-dock *,#le-feature-library *{transition:none!important;animation:none!important}}
     `;
     document.head.appendChild(css);
@@ -176,7 +187,7 @@
     library.setAttribute("role", "dialog");
     library.setAttribute("aria-modal", "false");
     library.setAttribute("aria-label", "Stacks feature library");
-    library.innerHTML = `<div class="le-feature-library-panel"><h2 class="le-feature-library-heading">Stacks</h2><p class="le-feature-library-hint">Choose a feature Orb. Selecting another feature closes the current view before opening the next.</p><div class="le-feature-library-grid"></div></div>`;
+    library.innerHTML = `<div class="le-feature-library-panel"><header class="le-feature-library-head"><h2 class="le-feature-library-heading">Stacks</h2><p class="le-feature-library-hint">Choose a feature</p></header><div class="le-feature-library-scroll"><div class="le-feature-library-grid"></div></div></div>`;
     document.body.appendChild(library);
 
     const stageSymbol = stage.querySelector(".le-feature-stage-symbol");
@@ -184,7 +195,55 @@
     const stageDescription = stage.querySelector(".le-feature-stage-description");
     const stageStatus = stage.querySelector(".le-feature-stage-status");
     const libraryGrid = library.querySelector(".le-feature-library-grid");
+    const libraryPanel = library.querySelector(".le-feature-library-panel");
     let locationEnabled = typeof window.liveEarthLocationAllowed === "function" ? window.liveEarthLocationAllowed() : false;
+
+    function positionLibraryToStacks() {
+      if (!libraryPanel) return;
+
+      // Re-query the live button every time: controls may replace the original nodes,
+      // and feature mode uses the Stacks button in the three-Orb dock.
+      const mainStacksButton = !mainNav.hidden
+        ? mainNav.querySelector('.orbButton[data-view="stacks"]')
+        : null;
+      const dockStacksButton = !dock.hidden
+        ? dock.querySelector('.orbButton[data-view="stacks"]')
+        : null;
+      const candidates = [mainStacksButton, dockStacksButton, originalStacksButton];
+      let rect = null;
+      for (const candidate of candidates) {
+        if (typeof candidate?.getBoundingClientRect !== "function") continue;
+        const measured = candidate.getBoundingClientRect();
+        if (Number.isFinite(measured.left) && Number.isFinite(measured.width) && measured.width > 0 && measured.height > 0) {
+          rect = measured;
+          break;
+        }
+      }
+      if (!rect) return;
+
+      // Fixed elements and getBoundingClientRect share the layout-viewport coordinate system.
+      const viewportWidth = Number(document.documentElement?.clientWidth) || Number(window.innerWidth) || rect.right;
+      const viewportHeight = Number(document.documentElement?.clientHeight) || Number(window.innerHeight) || viewportWidth;
+      if (!(viewportWidth > 0 && viewportHeight > 0)) return;
+      const shortSide = Math.min(viewportWidth, viewportHeight);
+      const fallbackWidth = Math.min(Math.max(102, shortSide * 0.25), 124, Math.max(1, viewportWidth - 12));
+      const measuredWidth = libraryPanel.getBoundingClientRect?.().width;
+      const panelWidth = Number.isFinite(measuredWidth) && measuredWidth > 0
+        ? Math.min(measuredWidth, viewportWidth - 12)
+        : fallbackWidth;
+      const edge = 6;
+      const minCenter = Math.min(viewportWidth / 2, panelWidth / 2 + edge);
+      const maxCenter = Math.max(minCenter, viewportWidth - panelWidth / 2 - edge);
+      const stacksCenter = rect.left + rect.width / 2;
+      // Keep the rail centered over the live Stacks Orb unless viewport edges require a small inset.
+      const centerX = Math.max(minCenter, Math.min(maxCenter, stacksCenter));
+      libraryPanel.style.left = `${centerX}px`;
+      libraryPanel.style.right = "auto";
+      libraryPanel.style.transform = "translateX(-50%)";
+
+      // The rail ends just above the Orb that opened it; scrolling remains inside its list.
+      libraryPanel.style.bottom = `${Math.max(12, viewportHeight - rect.top + 10)}px`;
+    }
 
     function emitChange(next, previous, phase, extra = {}) {
       window.dispatchEvent(new CustomEvent("live-earth-feature-view-change", {
@@ -330,7 +389,12 @@
     function toggleLibrary() {
       libraryOpen = !libraryOpen;
       library.hidden = !libraryOpen;
-      if (libraryOpen) renderLibrary();
+      document.documentElement?.classList.toggle("le-stacks-library-open", libraryOpen);
+      document.body.classList.toggle("le-stacks-library-open", libraryOpen);
+      if (libraryOpen) {
+        positionLibraryToStacks();
+        renderLibrary();
+      }
       if (activeFeature) updateDock();
       syncMainButtons();
       window.dispatchEvent(new CustomEvent("live-earth-stacks-library-change", {
@@ -361,6 +425,8 @@
 
       activeFeature = id;
       libraryOpen = false;
+      document.documentElement?.classList.remove("le-stacks-library-open");
+      document.body.classList.remove("le-stacks-library-open");
       library.hidden = true;
       mainNav.hidden = true;
       mainNav.setAttribute("aria-hidden", "true");
@@ -386,6 +452,8 @@
       if (previousFeature) safeHook(previousFeature.deactivate, null, reason);
       activeFeature = null;
       libraryOpen = false;
+      document.documentElement?.classList.remove("le-stacks-library-open");
+      document.body.classList.remove("le-stacks-library-open");
       library.hidden = true;
       dock.hidden = true;
       stage.hidden = true;
@@ -410,6 +478,9 @@
     // The capture handler runs before the legacy button's direct click listener,
     // so Stacks has one owner rather than two competing panels.
     document.addEventListener("click", onMainNavCapture, true);
+    window.addEventListener("resize", () => { if (libraryOpen) positionLibraryToStacks(); }, { passive: true });
+    window.addEventListener("orientationchange", () => { if (libraryOpen) positionLibraryToStacks(); }, { passive: true });
+    window.visualViewport?.addEventListener("resize", () => { if (libraryOpen) positionLibraryToStacks(); }, { passive: true });
     window.addEventListener("live-earth-location-state", event => {
       locationEnabled = !!event.detail?.enabled;
       updateDock();
