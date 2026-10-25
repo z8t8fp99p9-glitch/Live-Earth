@@ -1,0 +1,125 @@
+name: LIVE // EARTH Safe Repository Cleanup
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type DELETE LIST APPROVED to remove the reviewed file list
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live-earth-cleanup-main
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+
+      - name: Validate exact baseline, list and protected source files
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          EXPECTED_MANIFEST_BLOB: 479bdc0e1cc2090b39aa6a7fd65812db43f042e7
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$CONFIRMATION" != "DELETE LIST APPROVED" ]]; then
+            echo "Refusing cleanup: confirmation phrase did not match."
+            exit 1
+          fi
+          if [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
+            echo "Refusing cleanup: this workflow may run only on main."
+            exit 1
+          fi
+          if [[ "$(git rev-parse HEAD:DELETE-FILES.txt)" != "$EXPECTED_MANIFEST_BLOB" ]]; then
+            echo "Refusing cleanup: DELETE-FILES.txt differs from the reviewed manifest. Rebuild the package after any list change."
+            exit 1
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess, sys, re
+
+          expected = {'index.html': '98c79eea09d9be2d251198a4caaf108372ecc5c1', 'sw.js': '2e1d68c7b46137da47543ee3404a1978360acd9e', 'update-manager.js': 'a5ef1365fb58c2ef00b72bfdc31cec66d3b2524b', 'ios-standalone-root-flow.js': '8384093ee2921b470bad13d4871f16c73e55c122', 'orb-controls-v4.js': '80a39b406a621a396d40bd1c53439551bad88df3', 'earth-mode-navigation.js': '8949edeef25c9f2a2b739b8411fe99a1d6067e39', 'view-manager.js': '28703c9804ed79ade093ffce2b9c35341fb08521', 'view-module-registry.js': 'c2a84faba014c92096ad6a1cc2ad14cd7f40cea1', 'sky-view-controller.js': '8e94f73bf6c62b5b0aec09fd19921db6a7ac0753', 'moon-lunar-interface.js': '1d004e42bba7bbda2875da0d590d8e6f5c7ef976', 'location.html': '328ec9969d85381ad3a12a866a17d072b77e836c', 'earth-orb-globe.js': '133ca35ec6cddd8482df16c65918927227c4e035', 'manifest.json': 'f0848f6d9d92a5e9ce7ba6d6b269856c2c2a4cb9', 'icon.svg': '2daf17fd49756b8b047ff0bbc883d8b56d835051', 'data-store.js': '4cd8ca747d516445301a2c06dc02e5b3a4ab8751', 'location-scanner.js': '4b9b7306c008a148c2ad1afe4a5bc72120c1e578', 'astronomy.js': '340c0b434cf6789a1a4283099f9cc59d9d162981', 'moon-orbit.js': 'd2df04e8ec4b8393b123ed7638fa168bdd7da5a8', 'dataset-manifest.json': '7b6d0192f58f38049ef0577c5c89f543b0ef0091', 'moon-sky-background-responsive.svg': '5848c6b22676a67c72b48cce58ff13869552302e', 'moon-sky-background-portrait.webp': '0a3c2163f2f8c1e5093a8def253ae3a7cd515d6c', 'moon-sky-background-landscape.webp': '2ec9ba5bb67d0805b1ff453161beb903aa402b7d', 'sun-sky-background-portrait.webp': '90fc14a72d3e7352d076e0cad25d66ae08b6c5ad', 'sun-sky-background-landscape.webp': '6dbf12b0aef60478ed5d7c8f66251e9b2c7d89cd', 'data-recovery.js': '5cc9c42dd455d5979c038f8d4c775df0ac77cef8', 'earth.webp': '9d553247899f93e42997ad5635a097da496a360a', 'moon.webp': '2acd3d08667de4bb28f8836864747c4bede591dc', 'sun.webp': '6356a53079c32b719bf9a1b1fd15d5d2e9a5f933', 'location.webp': '4ed509292c1570d7163a61851fed958ff1a62bc7', 'stacks.webp': 'e863562cbd1d85f3085abda09d9d4e008da57424', 'basic-map.html': 'd98f0f89c9575249b2e7666b629ccb7c548314c9', 'basic-map.js': 'e9971a538bf44c26da47fea8e7772ad72413320a'}
+          for path, sha in expected.items():
+              try:
+                  actual = subprocess.check_output(["git", "rev-parse", f"HEAD:{path}"], text=True).strip()
+              except subprocess.CalledProcessError:
+                  sys.exit(f"Refusing cleanup: protected app file is missing: {path}")
+              if actual != sha:
+                  sys.exit(f"Refusing cleanup: protected app file changed since audit: {path} (expected {sha}, got {actual})")
+
+          sw = Path("sw.js").read_text(encoding="utf-8")
+          updater = Path("update-manager.js").read_text(encoding="utf-8")
+          build = 'v93-bounded-automatic-retry'
+          if f'BUILD_ID = "{build}"' not in sw or f'BUILD_ID = "{build}"' not in updater:
+              sys.exit("Refusing cleanup: V93 service-worker/update-manager build IDs are not aligned.")
+          if 'CACHE_NAME = "live-earth-shell-v93-bounded-automatic-retry"' not in sw:
+              sys.exit("Refusing cleanup: unexpected service-worker cache baseline.")
+          if Path("README.md").is_file() is False or Path("LIVE-EARTH-CONTINUITY.md").is_file() is False:
+              sys.exit("Refusing cleanup: one of the two consolidated documentation files is missing.")
+
+          manifest = Path("DELETE-FILES.txt")
+          targets = []
+          for raw in manifest.read_text(encoding="utf-8").splitlines():
+              item = raw.strip()
+              if not item or item.startswith("#"):
+                  continue
+              if item in targets:
+                  sys.exit(f"Refusing cleanup: duplicate path: {item}")
+              p = Path(item)
+              if p.is_absolute() or ".." in p.parts or "\\" in item or item.startswith("-"):
+                  sys.exit(f"Refusing cleanup: unsafe path: {item}")
+              targets.append(item)
+
+          protected = set(expected) | {
+              "README.md", "LIVE-EARTH-CONTINUITY.md",
+              "index.html", "sw.js", "update-manager.js",
+              "ios-standalone-root-flow.js", "orb-controls-v4.js",
+              "earth-mode-navigation.js", "view-manager.js", "view-module-registry.js",
+              "sky-view-controller.js", "moon-lunar-interface.js",
+              "location.html", "earth-orb-globe.js", "manifest.json", "icon.svg",
+              "data-store.js", "data-recovery.js", "location-scanner.js",
+              "astronomy.js", "moon-orbit.js", "dataset-manifest.json",
+              "moon-sky-background-responsive.svg",
+              "moon-sky-background-portrait.webp", "moon-sky-background-landscape.webp",
+              "sun-sky-background-portrait.webp", "sun-sky-background-landscape.webp",
+              "earth.webp", "moon.webp", "sun.webp", "location.webp", "stacks.webp",
+              "basic-map.html", "basic-map.js",
+          }
+          forbidden = sorted(set(targets) & protected)
+          if forbidden:
+              sys.exit("Refusing cleanup: protected app/documentation path in list: " + ", ".join(forbidden))
+          if "DELETE-FILES.txt" not in targets:
+              sys.exit("Refusing cleanup: list must include itself for final consolidation.")
+          if ".github/workflows/live-earth-cleanup.yml" not in targets:
+              sys.exit("Refusing cleanup: one-time workflow must be in the exact cleanup list.")
+          if len(targets) != 101:
+              sys.exit(f"Refusing cleanup: expected 101 exact reviewed paths, found {len(targets)}.")
+          missing = [x for x in targets if not Path(x).is_file()]
+          if missing:
+              sys.exit("Refusing cleanup: listed files missing; refresh manifest before run: " + ", ".join(missing))
+          print(f"PRE-FLIGHT PASS: {len(targets)} exact paths validated; protected source hashes match the reviewed V93 baseline.")
+          print("No application source will be changed by this job; only listed paths will be removed.")
+          Path("/tmp/live-earth-delete-targets.txt").write_text("\n".join(targets) + "\n", encoding="utf-8")
+          PY
+
+      - name: Remove reviewed files and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t TARGETS < /tmp/live-earth-delete-targets.txt
+          git rm -- "${TARGETS[@]}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Remove unused development files and mis-cropped artwork"
+          git push origin HEAD:main
