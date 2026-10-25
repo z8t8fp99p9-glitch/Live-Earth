@@ -1,7 +1,7 @@
-/* LIVE // EARTH V92 — verified offline fallback + protected startup gate. */
+/* LIVE // EARTH V93 — bounded automatic retry + protected offline startup gate. */
 (() => {
   "use strict";
-  const BUILD_ID = "v92-verified-offline-fallback";
+  const BUILD_ID = "v93-bounded-automatic-retry";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {

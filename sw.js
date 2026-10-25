@@ -1,7 +1,7 @@
-/* LIVE // EARTH V92 — online fresh sync; verified cached-shell fallback when the network is unreachable. */
+/* LIVE // EARTH V93 — two bounded automatic startup retries before the manual retry prompt. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v92-verified-offline-fallback";
-const CACHE_NAME = "live-earth-shell-v92-verified-offline-fallback";
+const BUILD_ID = "v93-bounded-automatic-retry";
+const CACHE_NAME = "live-earth-shell-v93-bounded-automatic-retry";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -648,6 +648,11 @@ function injectStartupGate(html) {
     let knownBadPaths = [];
     let repairAttempted = false;
     let lastAssetCheck = 0;
+    // OFFLINE STARTUP CONTRACT: transient service-worker/network failures receive
+    // two bounded automatic preparation retries before asking the user to retry.
+    // This never bypasses cache integrity, controller, Location-OFF, or renderer checks.
+    const MAX_AUTOMATIC_RETRIES = 2;
+    let automaticRetriesUsed = 0;
 
     function setStage(percent, title, subline) {
       message.textContent = title;
@@ -822,6 +827,7 @@ function injectStartupGate(html) {
       if (ready || failed) return;
       window.__liveEarthStartupReady = true;
       window.dispatchEvent(new Event('live-earth-startup-ready'));
+      automaticRetriesUsed = 0;
       try { sessionStorage.removeItem(REPAIR_MARKER); } catch (_) {}
       ready = true;
       failure.hidden = true;
@@ -975,7 +981,22 @@ function injectStartupGate(html) {
         await finishReady();
       } catch (error) {
         const message = error && error.message ? error.message : 'Startup could not be verified.';
-        fail(message + ' Your saved local data has not been changed by this check.');
+        // Retry only offline/network-style failures automatically. Other integrity
+        // or readiness errors are surfaced immediately so we do not hide real faults.
+        const retryable = navigator.onLine === false || /online sync failed|fetchevent\.respondwith received an error|load failed|failed to fetch|network error|network request failed|networkerror|connection reset|connection closed|connection failed|network unreachable/i.test(message);
+        if (retryable && automaticRetriesUsed < MAX_AUTOMATIC_RETRIES) {
+          automaticRetriesUsed++;
+          failed = false;
+          failure.hidden = true;
+          retry.disabled = true;
+          setStage(96, 'Retrying preparation automatically', 'Automatic retry ' + automaticRetriesUsed + ' of ' + MAX_AUTOMATIC_RETRIES + ' · Home remains protected');
+          // Let the current attempt finish and release the busy lock before retrying.
+          // Bounded delay prevents a hot loop while still recovering transient failures.
+          window.setTimeout(() => { if (!ready) prepare(false); }, 900);
+        } else {
+          automaticRetriesUsed = 0;
+          fail(message + ' Your saved local data has not been changed by this check.');
+        }
       } finally {
         busy = false;
         retry.disabled = false;
