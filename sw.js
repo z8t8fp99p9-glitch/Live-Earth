@@ -1,7 +1,7 @@
-/* LIVE // EARTH — V90 coherent app-shell staging + cached lunar Arc geometry. */
+/* LIVE // EARTH V91 — online fresh essential sync; offline verified local shell. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v90-coherent-app-shell";
-const CACHE_NAME = "live-earth-shell-v90-coherent-app-shell";
+const BUILD_ID = "v91-online-fresh-sync";
+const CACHE_NAME = "live-earth-shell-v91-online-fresh-sync";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -708,10 +708,50 @@ function injectStartupGate(html) {
       lastAssetCheck = Date.now();
       return invalid;
     }
+    // PRODUCT RULE: every online launch downloads all essential, lightweight app files
+    // from the live site and verifies them before Home is released. Offline launches
+    // skip network sync and use the last saved, verified shell. Wallpaper decoding is
+    // not an extra startup gate; the assets remain lightweight as designed.
+    async function syncOnlineAssets() {
+      const total = EXPECTED_PATHS.length;
+      let completed = 0;
+      const results = await Promise.allSettled(EXPECTED_PATHS.map(async path => {
+        let lastError = null;
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            const url = new URL(path, document.baseURI).href;
+            const response = await fetch(url, {
+              cache: 'no-store',
+              credentials: 'same-origin',
+              headers: { 'X-Live-Earth-Force-Fresh': '1' }
+            });
+            if (!response || !response.ok || response.type === 'opaque') throw new Error('Fresh download returned no usable response');
+            const type = response.headers.get('content-type') || '';
+            if (!expectedMime(path, type)) throw new Error('Downloaded file has the wrong content type');
+            const bytes = await response.clone().arrayBuffer();
+            if (bytes.byteLength < minBytes(path)) throw new Error('Downloaded file is empty or truncated');
+            return true;
+          } catch (error) { lastError = error; }
+        }
+        throw new Error(path + ': ' + (lastError?.message || 'fresh download failed'));
+      }).map(async promise => {
+        try { return await promise; }
+        finally {
+          completed++;
+          setStage(3 + Math.round(63 * completed / Math.max(1, total)), 'Downloading fresh online files', completed + ' of ' + total + ' essential resources synchronized');
+        }
+      }));
+      const failedIndex = results.findIndex(result => result.status === 'rejected');
+      if (failedIndex >= 0) {
+        const reason = results[failedIndex].reason;
+        throw new Error('Online sync failed: ' + (reason?.message || String(reason)) + '. Home remains protected; retry when the connection is stable.');
+      }
+    }
     async function repairPath(path) {
       const cache = await caches.open(CACHE_NAME);
       const url = new URL(path, document.baseURI).href;
-      await cache.delete(url);
+      // Keep any existing saved entry until a new network response has passed verification.
+      const previous = await cache.match(url);
       let lastError = null;
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
@@ -722,6 +762,7 @@ function injectStartupGate(html) {
           if (!issue) return true;
           lastError = new Error(issue);
           await cache.delete(url);
+          if (previous) await cache.put(url, previous.clone());
         } catch (error) { lastError = error; }
       }
       throw lastError || new Error('Asset repair failed');
@@ -842,7 +883,13 @@ function injectStartupGate(html) {
           await waitForOnlineWorkerUpdate();
         }
         if (!('caches' in window)) throw new Error('This browser does not expose the local cache needed for safe startup.');
-        setStage(3, 'Checking essential assets', 'Verifying the globe, views, navigation and location tools');
+        if (navigator.onLine !== false) {
+          setStage(3, 'Refreshing essential app files', 'Downloading the current online files before Home opens');
+          await syncOnlineAssets();
+        } else {
+          setStage(3, 'Checking saved offline files', 'Using the last saved essential shell');
+        }
+        setStage(67, 'Checking essential assets', 'Verifying the globe, views, navigation and location tools');
         let invalid = await inspectAll();
         if (invalid.length) {
           lastInvalid = invalid.map(item => item.path);
@@ -1070,10 +1117,52 @@ async function boundedOptionalCache(request) {
   }
   return response;
 }
+async function forceFreshEssential(request) {
+  const url = new URL(request.url);
+  const dependency = RUNTIME_DEPENDENCIES.find(item => runtimePath(item.path) === url.pathname);
+  const cache = await caches.open(CACHE_NAME);
+
+  // Runtime libraries are fetched fresh from the approved primary/backup origins.
+  // Validate completely before replacing the last saved copy.
+  if (dependency) {
+    const remote = await fetchRuntimeSource(dependency);
+    const local = await localResponse(remote, dependency);
+    const key = new Request(new URL(dependency.path, self.registration.scope).href);
+    await cache.put(key, local.clone());
+    const stored = await cache.match(key);
+    await localResponse(stored.clone(), dependency);
+    return local;
+  }
+
+  const path = APP_SHELL.find(item => new URL(item, self.registration.scope).pathname === url.pathname);
+  if (!path) throw new Error(`Online sync rejected a non-essential path: ${url.pathname}`);
+  const networkRequest = new Request(request.url, { method: "GET", credentials: "same-origin", cache: "no-store" });
+  const response = await fetchBuffered(networkRequest, { cache: "no-store", credentials: "same-origin" }, 30000);
+  if (!(await shellResponseIsValid(response, path))) {
+    throw new Error(`Fresh essential download failed validation: ${path}`);
+  }
+  const key = new Request(new URL(path, self.registration.scope).href);
+  await cache.put(key, response.clone());
+  const stored = await cache.match(key);
+  if (!(await shellResponseIsValid(stored, path))) {
+    throw new Error(`Fresh essential file was not retained correctly: ${path}`);
+  }
+  return response;
+}
+
 self.addEventListener("fetch", event => {
   const request = event.request;
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
+  // The startup gate marks required files that must come from the live network.
+  // This route never silently substitutes a cached file for a failed online download.
+  if (request.headers.get("X-Live-Earth-Force-Fresh") === "1") {
+    event.respondWith(forceFreshEssential(request));
+    return;
+  }
+  // ONLINE/OFFLINE CONTRACT: navigation and required resources prefer fresh online
+  // content; saved verified shell is the offline path/recovery fallback. The marked
+  // startup sync above specifically refuses a silent cache fallback while online.
   if (request.mode === "navigate" || request.destination === "document" || url.pathname.endsWith(".html") || url.pathname.endsWith("/")) {
     event.respondWith(networkFirst(request));
     return;

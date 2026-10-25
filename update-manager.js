@@ -1,7 +1,7 @@
-/* LIVE // EARTH V90 — coherent app-shell release + verified startup gate. */
+/* LIVE // EARTH V91 — online fresh essential sync + verified startup gate. */
 (() => {
   "use strict";
-  const BUILD_ID = "v90-coherent-app-shell";
+  const BUILD_ID = "v91-online-fresh-sync";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
