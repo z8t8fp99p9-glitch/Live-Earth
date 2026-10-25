@@ -1,7 +1,7 @@
-/* LIVE // EARTH V91 — online fresh essential sync; offline verified local shell. */
+/* LIVE // EARTH V92 — online fresh sync; verified cached-shell fallback when the network is unreachable. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v91-online-fresh-sync";
-const CACHE_NAME = "live-earth-shell-v91-online-fresh-sync";
+const BUILD_ID = "v92-verified-offline-fallback";
+const CACHE_NAME = "live-earth-shell-v92-verified-offline-fallback";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -708,10 +708,20 @@ function injectStartupGate(html) {
       lastAssetCheck = Date.now();
       return invalid;
     }
-    // PRODUCT RULE: every online launch downloads all essential, lightweight app files
-    // from the live site and verifies them before Home is released. Offline launches
-    // skip network sync and use the last saved, verified shell. Wallpaper decoding is
-    // not an extra startup gate; the assets remain lightweight as designed.
+    // PRODUCT RULE: try a fresh network sync first when online, then verify the full
+    // shell before Home is released. Offline use is allowed only from the saved shell.
+    // navigator.onLine can remain true when an installed iOS web app cannot reach its
+    // origin, so a complete network-layer failure may use the saved shell as fallback.
+    // Do not treat partial syncs, HTTP/content-type errors, or invalid files as offline.
+    // Wallpaper decoding is intentionally not an additional startup gate.
+    function isNetworkUnavailableError(error) {
+      const text = String(error && error.message ? error.message : error).toLowerCase();
+      return [
+        'load failed', 'failed to fetch', 'network error', 'network request failed',
+        'fetch failed', 'networkerror', 'network unreachable', 'connection reset',
+        'connection closed', 'connection failed', 'internet disconnected'
+      ].some(marker => text.includes(marker));
+    }
     async function syncOnlineAssets() {
       const total = EXPECTED_PATHS.length;
       let completed = 0;
@@ -743,9 +753,18 @@ function injectStartupGate(html) {
       }));
       const failedIndex = results.findIndex(result => result.status === 'rejected');
       if (failedIndex >= 0) {
+        // FALLBACK RULE: if every essential request failed at the network layer,
+        // defer to inspectAll() to verify the complete saved shell. A partial sync or
+        // a response that fails integrity checks still blocks startup, preserving the
+        // fresh-online contract whenever a usable live response is available.
+        const allUnavailable = results.length > 0 && results.every(result =>
+          result.status === 'rejected' && isNetworkUnavailableError(result.reason)
+        );
+        if (allUnavailable) return false;
         const reason = results[failedIndex].reason;
         throw new Error('Online sync failed: ' + (reason?.message || String(reason)) + '. Home remains protected; retry when the connection is stable.');
       }
+      return true;
     }
     async function repairPath(path) {
       const cache = await caches.open(CACHE_NAME);
@@ -883,13 +902,21 @@ function injectStartupGate(html) {
           await waitForOnlineWorkerUpdate();
         }
         if (!('caches' in window)) throw new Error('This browser does not expose the local cache needed for safe startup.');
+        let usingSavedOfflineShell = navigator.onLine === false;
         if (navigator.onLine !== false) {
           setStage(3, 'Refreshing essential app files', 'Downloading the current online files before Home opens');
-          await syncOnlineAssets();
+          const freshSyncCompleted = await syncOnlineAssets();
+          if (freshSyncCompleted === false) {
+            // The network could not deliver any essential file. Continue only by
+            // validating every saved entry; inspectAll() below remains the gate.
+            usingSavedOfflineShell = true;
+            setStage(3, 'Checking saved offline files', 'Fresh sync could not reach the server; verifying the last saved shell');
+          }
         } else {
           setStage(3, 'Checking saved offline files', 'Using the last saved essential shell');
         }
-        setStage(67, 'Checking essential assets', 'Verifying the globe, views, navigation and location tools');
+        setStage(67, usingSavedOfflineShell ? 'Checking saved offline files' : 'Checking essential assets',
+          usingSavedOfflineShell ? 'Verifying every required file in the saved shell' : 'Verifying the globe, views, navigation and location tools');
         let invalid = await inspectAll();
         if (invalid.length) {
           lastInvalid = invalid.map(item => item.path);
@@ -905,6 +932,9 @@ function injectStartupGate(html) {
             if (reloaded) return;
             throw new Error('A corrected cache is ready, but a clean reload is required to use it. Tap Retry preparation.');
           } catch (repairError) {
+            if (usingSavedOfflineShell) {
+              throw new Error('A saved offline file is missing or failed verification. Connect to the internet and retry preparation.');
+            }
             throw new Error('A required file could not be repaired. Connect to the internet and retry.');
           }
         }

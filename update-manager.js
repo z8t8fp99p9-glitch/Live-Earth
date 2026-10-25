@@ -1,7 +1,7 @@
-/* LIVE // EARTH V91 — online fresh essential sync + verified startup gate. */
+/* LIVE // EARTH V92 — verified offline fallback + protected startup gate. */
 (() => {
   "use strict";
-  const BUILD_ID = "v91-online-fresh-sync";
+  const BUILD_ID = "v92-verified-offline-fallback";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
