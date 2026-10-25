@@ -1,9 +1,0 @@
-index.html — ONE LINE ONLY
-
-Find the current line:
-<link rel="icon" href="./icon.svg" type="image/svg+xml">
-
-Immediately after it, insert:
-<script src="./ios-standalone-root-flow.js"></script>
-
-Do not change the viewport meta tags, black-translucent status-bar metadata, existing early boot controller, CSS for the approved artwork, canvas initialization, or Orb styles.

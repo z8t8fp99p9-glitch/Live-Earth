@@ -1,2 +1,0 @@
-Rollback registry git blob: 11a3aa6177ee80eca5b8f887fd68bd950c5ea9cb
-Expected baseline blob: 11a3aa6177ee80eca5b8f887fd68bd950c5ea9cb
