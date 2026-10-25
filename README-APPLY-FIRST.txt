@@ -1,37 +1,56 @@
-LIVE // EARTH — v78 Sun Background Cache Repair
-Prepared against: z8t8fp99p9-glitch/Live-Earth, main
-Verified source head: 955f303f5866d7333280aa97f63fcd067a7b69f9
+LIVE // EARTH — V90 Coherent App-Shell Candidate
+================================================
 
-ROOT CAUSE CONFIRMED
-- main/sw.js still declares the v77 build ID/cache name.
-- APP_SHELL contains the Moon WebP backgrounds but omits the Sun portrait/landscape WebP backgrounds.
-- Unlisted Sun WebP requests fall through to boundedOptionalCache(), which serves a cached image before checking the network. That can preserve stale background files.
-- update-manager.js still sends BUILD_ID v75-bounded-startup, so it does not match the active worker's build ID for cache cleanup.
+PURPOSE
+This is a narrow, manually applied candidate for the online-only launch verification issue.
+It creates a new versioned Service Worker cache so the current main-branch application
+files are staged as a coherent shell before that worker can activate.
 
-CONTENTS
-- sw.js.patch: the minimal three-location diff for the existing service worker.
-- update-manager.js: complete replacement with the v78 BUILD_ID.
-- apply_v78_sun_fix.py: guarded script to patch the two existing source files locally.
+BASELINE INSPECTED
+Repository: z8t8fp99p9-glitch/Live-Earth
+Branch: main
+Inspected main commit: f9eb8d212eac8b17e95f24dd0b7e2e74db8b79d1
+Source sw.js blob: 396a2dad12bba2e2b693dd93bbe2ba3e444c76a8
+Source update-manager.js blob: 4aed73f978e8c834abe631ac897dc649653bacd5
 
-SAFEST APPLY METHOD
-1. Make a recovery copy of your repository/source before changes.
-2. If using a computer with Python, copy this script into the repository root beside the existing sw.js and update-manager.js, then run:
-     python3 apply_v78_sun_fix.py
-   It checks the exact expected baseline, creates two backups, and modifies only those two files. It refuses to run if a baseline is missing/ambiguous or backups already exist.
-3. Validate JavaScript syntax:
-     node --check sw.js
-     node --check update-manager.js
-4. If applying through GitHub's web editor instead, make the three service-worker changes shown in sw.js.patch, then replace the existing update-manager.js with the file in this bundle. Do not upload sw.js.patch or the ZIP as app source files.
-5. Commit only sw.js and update-manager.js with this title:
-     Fix v78 Sun background caching and update handoff
-6. Let GitHub Pages deploy, then test Sun View in portrait and landscape while online. Reload/relaunch once so the new service worker can install and activate; then verify again offline.
+FILES TO UPLOAD TO THE REPOSITORY ROOT
+1. sw.js
+2. update-manager.js
 
-SCOPE / SAFETY
-- No repository changes or deployment were performed by preparing this ZIP.
-- Do not replace the entire project with this bundle; it is a targeted repair bundle.
-- The existing LIVE_EARTH_APP_READY_V75 message type is intentionally retained for compatibility. The buildId field is what must match the worker's BUILD_ID.
-- The repair does not alter Home composition, Earth/Moon camera or geometry, orb layout, location privacy rules, or IndexedDB/data recovery.
-- Dynamic Sun lighting is separate work; this repair fixes background asset caching/update behavior only.
+Do not upload this ZIP itself. Do not upload or replace index.html, the Registry, renderer
+files, backgrounds, or other assets for this candidate. The current main versions of those
+files are staged by the new Service Worker using the existing APP_SHELL list.
 
-IMPORTANT
-The ZIP supplies the guarded patch and complete replacement updater, not a whole-repository archive. Review changes before committing. Real iPhone verification is still required after applying it.
+WHAT CHANGED
+- sw.js: changes BUILD_ID and CACHE_NAME to v90-coherent-app-shell; updates the header comment.
+- update-manager.js: changes BUILD_ID to match; updates the header comment.
+- No startup gate, readiness condition, online/offline branch, repair, timeout, rendering,
+  Location, IndexedDB, Home composition, Orb, or camera logic was altered.
+
+WHY THIS IS REVERSIBLE
+The existing install logic still waits for all listed shell files and runtime dependencies
+to pass its staging checks before activation. If the candidate install fails, the previous
+active worker/cache remains available. Older shell caches are retired only after the new
+build reports verified startup. IndexedDB and the separate optional-data cache are not
+deleted by this patch.
+
+IMPORTANT LIMIT
+This candidate addresses a concrete cache-version consistency risk found during the
+read-only audit. It does not prove that cache mixing is the exact cause of the shown
+runtime error, and static checks cannot prove the result on the iPhone. Do not call it
+fixed until the online launch is tested on the actual device.
+
+MANUAL DEPLOYMENT
+1. Keep this ZIP and the current working source as recovery references.
+2. Open the repository on branch main.
+3. Upload only sw.js and update-manager.js from this ZIP to the repository root.
+4. Commit both files together using:
+   LIVE // EARTH V90 — Restage a coherent app shell for launch
+5. Wait for GitHub Pages to finish publishing.
+6. Test one ONLINE launch first. If it reaches Home normally, test a second online launch.
+7. Then test offline launch and confirm the expected fast/offline path remains unchanged.
+8. If launch becomes worse or repeatedly fails, stop. Do not clear site data, IndexedDB,
+   browser storage, or delete the installed app. Restore the previous sw.js and
+   update-manager.js from the pre-change source/recovery copy.
+
+The assistant has not committed, pushed, or deployed anything.

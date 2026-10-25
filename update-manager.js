@@ -1,7 +1,7 @@
-/* LIVE // EARTH V87 — modular view lifecycle + verified startup gate. */
+/* LIVE // EARTH V90 — coherent app-shell release + verified startup gate. */
 (() => {
   "use strict";
-  const BUILD_ID = "v87-modular-view-lifecycle";
+  const BUILD_ID = "v90-coherent-app-shell";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {

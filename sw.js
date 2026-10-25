@@ -1,7 +1,7 @@
-/* LIVE // EARTH — V87 modular view lifecycle + cached lunar Arc geometry. */
+/* LIVE // EARTH — V90 coherent app-shell staging + cached lunar Arc geometry. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v87-modular-view-lifecycle";
-const CACHE_NAME = "live-earth-shell-v87-modular-view-lifecycle";
+const BUILD_ID = "v90-coherent-app-shell";
+const CACHE_NAME = "live-earth-shell-v90-coherent-app-shell";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
