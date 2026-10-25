@@ -1,7 +1,7 @@
-/* LIVE // EARTH V94 — two bounded automatic retries for online/offline startup failures. */
+/* LIVE // EARTH V95 — sidereal Earth/Moon alignment; preserve bounded startup retry. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v94-bounded-startup-retry";
-const CACHE_NAME = "live-earth-shell-v94-bounded-startup-retry";
+const BUILD_ID = "v95-lunar-earth-fixed-alignment";
+const CACHE_NAME = "live-earth-shell-v95-lunar-earth-fixed-alignment";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [

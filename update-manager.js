@@ -1,7 +1,7 @@
-/* LIVE // EARTH V94 — bounded online/offline startup retry + protected startup gate. */
+/* LIVE // EARTH V95 — sidereal Earth/Moon alignment + protected startup gate. */
 (() => {
   "use strict";
-  const BUILD_ID = "v94-bounded-startup-retry";
+  const BUILD_ID = "v95-lunar-earth-fixed-alignment";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
