@@ -1,7 +1,11 @@
-# LIVE // EARTH Safe Repository Cleanup manifest
-# One root-relative path per line. Do not upload this list as app code.
-# It intentionally preserves current APP_SHELL files/assets, the iOS fixes,
-# local data/recovery, all five Home Orb images, and Basic Map feature files.
+# LIVE // EARTH — reviewed one-time cleanup manifest
+# Audited against main at source snapshot 46e73d90ab5b33127331103739aadbc06f1cd0af.
+# One exact repository-relative file path per line. No wildcards or folders.
+# This list removes old notes/patches/rollback copies, dev-only previews and the 12
+# user-confirmed mis-cropped image assets. It preserves README.md, the continuity
+# register, all active app-shell/runtime assets, current iOS fixes, all five Home Orb
+# images, Location/privacy/data recovery and Basic Map files.
+# Do not edit this list without regenerating the workflow's expected Git blob SHA.
 
 APPLY-CAREFULLY.txt
 ARCHITECTURE-PHASE1.md
