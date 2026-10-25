@@ -1,7 +1,7 @@
-/* LIVE // EARTH V93 — two bounded automatic startup retries before the manual retry prompt. */
+/* LIVE // EARTH V94 — two bounded automatic retries for online/offline startup failures. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v93-bounded-automatic-retry";
-const CACHE_NAME = "live-earth-shell-v93-bounded-automatic-retry";
+const BUILD_ID = "v94-bounded-startup-retry";
+const CACHE_NAME = "live-earth-shell-v94-bounded-startup-retry";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -633,6 +633,7 @@ function injectStartupGate(html) {
     const CACHE_NAME = ${cacheName};
     const EXPECTED_PATHS = ${expectedPaths};
     const REPAIR_MARKER = 'le-startup-repair-' + BUILD_ID;
+    const RETRY_MARKER = 'le-startup-auto-retry-' + BUILD_ID;
     const gate = document.getElementById('le-startup-gate');
     const message = document.getElementById('le-gate-message');
     const detail = document.getElementById('le-gate-detail');
@@ -653,6 +654,12 @@ function injectStartupGate(html) {
     // This never bypasses cache integrity, controller, Location-OFF, or renderer checks.
     const MAX_AUTOMATIC_RETRIES = 2;
     let automaticRetriesUsed = 0;
+    try {
+      const savedRetries = Number(sessionStorage.getItem(RETRY_MARKER) || 0);
+      automaticRetriesUsed = Number.isFinite(savedRetries)
+        ? Math.max(0, Math.min(MAX_AUTOMATIC_RETRIES, Math.floor(savedRetries)))
+        : 0;
+    } catch (_) { /* Some private browsing modes may restrict session storage. */ }
 
     function setStage(percent, title, subline) {
       message.textContent = title;
@@ -829,6 +836,7 @@ function injectStartupGate(html) {
       window.dispatchEvent(new Event('live-earth-startup-ready'));
       automaticRetriesUsed = 0;
       try { sessionStorage.removeItem(REPAIR_MARKER); } catch (_) {}
+      try { sessionStorage.removeItem(RETRY_MARKER); } catch (_) {}
       ready = true;
       failure.hidden = true;
       setStage(100, 'Your world is ready', 'All essential systems verified · enjoy LIVE // EARTH');
@@ -983,18 +991,34 @@ function injectStartupGate(html) {
         const message = error && error.message ? error.message : 'Startup could not be verified.';
         // Retry only offline/network-style failures automatically. Other integrity
         // or readiness errors are surfaced immediately so we do not hide real faults.
-        const retryable = navigator.onLine === false || /online sync failed|fetchevent\.respondwith received an error|load failed|failed to fetch|network error|network request failed|networkerror|connection reset|connection closed|connection failed|network unreachable/i.test(message);
+        // Retry transient network failures AND one-off online startup/renderer faults.
+        // A full reload re-runs the script bootstrap; a persisted session counter prevents loops.
+        const retryable = navigator.onLine === false || /online sync failed|fetchevent\.respondwith received an error|load failed|failed to fetch|network error|network request failed|networkerror|connection reset|connection closed|connection failed|network unreachable|startup script or the earth renderer encountered an error|required startup script failed to load|startup task failed|globe or one of its controls did not finish initializing|earth renderer did not complete its first frame|one or more essential files still failed verification|a required file could not be repaired/i.test(message);
         if (retryable && automaticRetriesUsed < MAX_AUTOMATIC_RETRIES) {
           automaticRetriesUsed++;
+          let persistedRetry = false;
+          try {
+            sessionStorage.setItem(RETRY_MARKER, String(automaticRetriesUsed));
+            persistedRetry = sessionStorage.getItem(RETRY_MARKER) === String(automaticRetriesUsed);
+          } catch (_) {}
           failed = false;
           failure.hidden = true;
           retry.disabled = true;
           setStage(96, 'Retrying preparation automatically', 'Automatic retry ' + automaticRetriesUsed + ' of ' + MAX_AUTOMATIC_RETRIES + ' · Home remains protected');
-          // Let the current attempt finish and release the busy lock before retrying.
-          // Bounded delay prevents a hot loop while still recovering transient failures.
-          window.setTimeout(() => { if (!ready) prepare(false); }, 900);
+          // Reload to give script and renderer startup a genuinely fresh attempt.
+          // If session storage is unavailable, retry in place rather than risk a reload loop.
+          window.setTimeout(() => {
+            if (ready) return;
+            if (persistedRetry) {
+              location.reload();
+            } else {
+              sceneFailure = '';
+              prepare(false);
+            }
+          }, 900);
         } else {
           automaticRetriesUsed = 0;
+          try { sessionStorage.removeItem(RETRY_MARKER); } catch (_) {}
           fail(message + ' Your saved local data has not been changed by this check.');
         }
       } finally {

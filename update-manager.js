@@ -1,7 +1,7 @@
-/* LIVE // EARTH V93 — bounded automatic retry + protected offline startup gate. */
+/* LIVE // EARTH V94 — bounded online/offline startup retry + protected startup gate. */
 (() => {
   "use strict";
-  const BUILD_ID = "v93-bounded-automatic-retry";
+  const BUILD_ID = "v94-bounded-startup-retry";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
