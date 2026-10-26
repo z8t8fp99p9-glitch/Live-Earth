@@ -535,10 +535,37 @@
     const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
     const safe = (v, lo, hi) => clamp(v, lo, hi);
 
+    // Portrait density is calibrated to the approved iPhone Air reference layout
+    // (420 × 912 CSS px, about 554.4 CSS px of rendered arc). Measure the ACTUAL
+    // SVG path so tall phones/tablets receive enough stars for the same visual
+    // density, regardless of viewport dimensions. Landscape remains frozen at
+    // its current density while we finish and approve portrait first.
+    const PORTRAIT_REFERENCE_ARC_LENGTH = 554.4;
+    let renderedArcLength = PORTRAIT_REFERENCE_ARC_LENGTH;
+    if (!arcGeometry.landscape) {
+      const arcPath = $("#le-mv-main");
+      if (arcPath && typeof arcPath.getTotalLength === "function") {
+        try {
+          const measuredLength = arcPath.getTotalLength();
+          if (Number.isFinite(measuredLength) && measuredLength > 0) renderedArcLength = measuredLength;
+        } catch (_) { /* retain the iPhone Air reference as a safe fallback */ }
+      }
+    }
+    const densityRatio = arcGeometry.landscape
+      ? 1
+      : clamp(renderedArcLength / PORTRAIT_REFERENCE_ARC_LENGTH, 0.60, 3.0);
+    const trailParticleCount = arcGeometry.landscape
+      ? 300
+      : clamp(Math.round(300 * densityRatio), 180, 900);
+    const ambientDustCount = arcGeometry.landscape
+      ? 120
+      : clamp(Math.round(120 * densityRatio), 72, 360);
+    const coreParticleCount = Math.round(trailParticleCount * 0.8);
+
     // Extra ambient stardust: a second, much finer layer around BOTH sides of
-    // the trail. It is static, seeded, subtle, and placed first so the brighter
-    // trail grains and glints remain visually in front of it.
-    for (let i = 0; i < 120; i++) {
+    // the trail. Its portrait count adapts with the measured arc length; the
+    // established landscape count is preserved for the later landscape pass.
+    for (let i = 0; i < ambientDustCount; i++) {
       const t = 0.018 + rand() * 0.964;
       let normalOffset = (rand() + rand() - 1) * 27 * scale;
       if (rand() < 0.12) {
@@ -555,11 +582,12 @@
       group.appendChild(mote);
     }
 
-    // A star trail replaces the drawn line: 240 fine grains stay close to the
-    // curve, while 60 satellites drift farther out. All points follow the same
-    // curve geometry as the Moon, with deterministic, static placement.
-    for (let i = 0; i < 300; i++) {
-      const core = i < 240;
+    // A star trail replaces the drawn line. Portrait scales its particle count
+    // by rendered arc length; about 80% stay close to the curve while the rest
+    // drift farther out. Landscape keeps its existing 300-particle count.
+    // Points remain deterministic and static, with no animation loop.
+    for (let i = 0; i < trailParticleCount; i++) {
+      const core = i < coreParticleCount;
       const t = 0.025 + rand() * 0.95;
       let normalOffset;
       let tangentOffset;
