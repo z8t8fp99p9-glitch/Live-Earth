@@ -198,10 +198,10 @@
     #le-sky-view .le-mv-horizontal-rail-sparkles[hidden] { display:none !important; }
     #le-sky-view .le-mv-endpoint { fill:#deefff; filter:drop-shadow(0 0 5px #9bd8ff); }
     #le-sky-view .le-mv-endpoint-halo { fill:#73baff; fill-opacity:.15; }
-    #le-sky-view .le-mv-main-rise-set-icon { pointer-events:none; filter:drop-shadow(0 0 4px #57b8ff70); }
+    #le-sky-view .le-mv-main-rise-set-icon { pointer-events:none; filter:drop-shadow(0 0 2px #57b8ff4a); }
     #le-sky-view .le-mv-event-label { fill:#bddfff; font-size:10px; letter-spacing:1.7px; paint-order:stroke; stroke:#031020b0; stroke-width:2px; }
     #le-sky-view .le-mv-event-time { fill:#f4f9ff; font-size:16px; font-weight:500; paint-order:stroke; stroke:#031020c9; stroke-width:2.6px; }
-    #le-sky-view .le-mv-scroller-end-icon { display:block; flex:0 0 28px; width:28px; height:20px; overflow:visible; filter:drop-shadow(0 0 2.4px #65baff8a); }
+    #le-sky-view .le-mv-scroller-end-icon { display:block; flex:0 0 28px; width:28px; height:20px; overflow:visible; filter:drop-shadow(0 0 1.3px #65baff58); }
     #le-sky-view .le-mv-end-labels > .le-mv-endpoint-info { display:flex; align-items:center; gap:3px; min-width:0; text-align:left; }
     #le-sky-view .le-mv-end-label-copy { display:flex; flex-direction:column; align-items:flex-start; white-space:nowrap; line-height:1.05; }
     #le-sky-view .le-mv-end-labels .end { flex-direction:row; justify-content:flex-end; text-align:right; }
@@ -286,38 +286,42 @@
     <svg class="le-mv-svg" aria-label="Fixed Moon guide arc with local rise and set times" role="img">
       <defs>
         <linearGradient id="leMvArcGradient" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#f0b875" stop-opacity=".98"/><stop offset="9%" stop-color="#c8e7ff"/><stop offset="28%" stop-color="#e8f7ff"/><stop offset="52%" stop-color="#ffffff"/><stop offset="73%" stop-color="#d3ecff"/><stop offset="91%" stop-color="#ffe0ad"/><stop offset="100%" stop-color="#f2bd78" stop-opacity=".96"/></linearGradient>
-        <linearGradient id="leMvRiseMoonFill" x1="0" y1="-1" x2="0.9" y2="1"><stop offset="0%" stop-color="#fff4d5"/><stop offset="48%" stop-color="#bfe7ff"/><stop offset="100%" stop-color="#579fff"/></linearGradient>
-        <linearGradient id="leMvSetMoonFill" x1="0" y1="-1" x2="0.9" y2="1"><stop offset="0%" stop-color="#effaff"/><stop offset="55%" stop-color="#b0dcff"/><stop offset="100%" stop-color="#568cff"/></linearGradient>
-        <linearGradient id="leMvRiseWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#16395b" stop-opacity=".92"/><stop offset="100%" stop-color="#07182c" stop-opacity=".98"/></linearGradient>
-        <linearGradient id="leMvSetWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#143a61" stop-opacity=".92"/><stop offset="100%" stop-color="#06162b" stop-opacity=".98"/></linearGradient>
-        <clipPath id="leMvRiseMoonClip"><circle cx="0" cy="-8" r="10.5"/></clipPath>
-        <clipPath id="leMvSetMoonClip"><circle cx="0" cy="-8" r="10.5"/></clipPath>
+        <linearGradient id="leMvRiseMoonFill" x1="0" y1="-1" x2="0.9" y2="1"><stop offset="0%" stop-color="#fff5dc"/><stop offset="53%" stop-color="#c7eaff"/><stop offset="100%" stop-color="#6cb5ff"/></linearGradient>
+        <linearGradient id="leMvSetMoonFill" x1="0" y1="-1" x2="0.9" y2="1"><stop offset="0%" stop-color="#f2faff"/><stop offset="57%" stop-color="#b3ddff"/><stop offset="100%" stop-color="#629dff"/></linearGradient>
+        <linearGradient id="leMvRiseWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#183b5d" stop-opacity=".94"/><stop offset="100%" stop-color="#07172a" stop-opacity=".99"/></linearGradient>
+        <linearGradient id="leMvSetWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#14395f" stop-opacity=".94"/><stop offset="100%" stop-color="#061427" stop-opacity=".99"/></linearGradient>
+        <clipPath id="leMvRiseMoonClip" clipPathUnits="objectBoundingBox"><circle cx=".5" cy=".5" r=".5"/></clipPath>
+        <clipPath id="leMvSetMoonClip" clipPathUnits="objectBoundingBox"><circle cx=".5" cy=".5" r=".5"/></clipPath>
       </defs>
       <path class="le-mv-path le-mv-path-main" id="le-mv-main"/><g id="le-mv-arc-sparkles" aria-hidden="true"></g>
       <circle class="le-mv-endpoint-halo" id="le-mv-rise-halo" r="8"/><circle class="le-mv-endpoint" id="le-mv-rise-dot" r="2.2"/><circle class="le-mv-endpoint-halo" id="le-mv-set-halo" r="8"/><circle class="le-mv-endpoint" id="le-mv-set-dot" r="2.2"/>
       <g id="le-mv-rise-icon" class="le-mv-main-rise-set-icon" display="none" aria-hidden="true">
-        <circle cx="0" cy="-8" r="17" fill="#65baff" opacity=".12"/>
-        <path d="M-22 2 C-22 -25 22 -25 22 2" fill="none" stroke="#f0c17b" stroke-width=".9" stroke-opacity=".92" stroke-dasharray="1.4 3.2" stroke-linecap="round"/>
-        <path d="M-19 2 C-18 -20 18 -20 19 2" fill="none" stroke="#a8ddff" stroke-width=".65" stroke-opacity=".75"/>
-        <circle cx="0" cy="-8" r="10.5" fill="url(#leMvRiseMoonFill)" stroke="#f4fbff" stroke-width=".65"/>
-        <image href="${MOON_TEXTURE_DATA}" x="-10.5" y="-18.5" width="21" height="21" preserveAspectRatio="xMidYMid slice" clip-path="url(#leMvRiseMoonClip)" opacity=".96"/>
-        <path d="M-24 2 Q-12 0 0 2 T24 2 L24 10 L-24 10 Z" fill="url(#leMvRiseWater)"/>
-        <path d="M-24 2 Q-12 0 0 2 T24 2" fill="none" stroke="#ffe0a1" stroke-width="1.25" stroke-linecap="round" filter="drop-shadow(0 0 2px #ffd58b)"/>
-        <path d="M-10 4 Q-4 3 2 4 M-7 6 Q0 5 8 6 M-4 8 Q0 7.7 5 8" fill="none" stroke="#ffd99a" stroke-width=".7" stroke-linecap="round" opacity=".9"/>
-        <path d="M0 -36 L1.5 -30.5 L7 -29 L1.5 -27.5 L0 -22 L-1.5 -27.5 L-7 -29 L-1.5 -30.5 Z" fill="#ffe0a1" filter="drop-shadow(0 0 3px #ffd58b)"/>
-        <circle cx="-18" cy="-12" r=".9" fill="#fff1c9"/><circle cx="15" cy="-18" r=".8" fill="#9ad9ff"/>
+        <!-- Large reference pair: textured Moon half-emerging from an ocean horizon. -->
+        <circle cx="0" cy="-3" r="17.5" fill="#65baff" opacity=".10"/>
+        <path d="M-23.5 2 C-25 -34,25 -34,23.5 2" fill="none" stroke="#f2c47e" stroke-width=".92" stroke-opacity=".96" stroke-dasharray="1.05 3.15" stroke-linecap="round"/>
+        <path d="M-19.5 2 C-20.5 -25,20.5 -25,19.5 2" fill="none" stroke="#a6ddff" stroke-width=".62" stroke-opacity=".86"/>
+        <circle cx="0" cy="-3" r="10.5" fill="url(#leMvRiseMoonFill)" stroke="#eaf8ff" stroke-width=".62"/>
+        <image href="${MOON_TEXTURE_DATA}" x="-10.5" y="-13.5" width="21" height="21" preserveAspectRatio="xMidYMid slice" clip-path="url(#leMvRiseMoonClip)" opacity=".96"/>
+        <path d="M-24 2 C-16 -.2,-8 3.9,0 2 C8 .1,16 -.15,24 2 L24 10 L-24 10 Z" fill="url(#leMvRiseWater)"/>
+        <path d="M-24 2 C-16 -.2,-8 3.9,0 2 C8 .1,16 -.15,24 2" fill="none" stroke="#ffdf9d" stroke-width="1.1" stroke-linecap="round"/>
+        <path d="M-12 4.2 C-8 3.7,-4 4.7,-1 4.2 M-8 6.1 C-4 5.65,1 6.55,5 6.1 M-4 8 C-1.5 7.7,1.5 8.2,4 8" fill="none" stroke="#ffd993" stroke-width=".64" stroke-linecap="round" opacity=".94"/>
+        <path d="M0 -41 L1.55 -35.85 L6.7 -34 L1.55 -32.15 L0 -27 L-1.55 -32.15 L-6.7 -34 L-1.55 -35.85 Z" fill="#ffe2a5"/>
+        <path d="M-12 -27 L-11.2 -24.8 L-9 -24 L-11.2 -23.2 L-12 -21 L-12.8 -23.2 L-15 -24 L-12.8 -24.8 Z" fill="#fff0c7"/>
+        <circle cx="15" cy="-22" r=".65" fill="#b8e4ff"/>
       </g>
       <g id="le-mv-set-icon" class="le-mv-main-rise-set-icon" display="none" aria-hidden="true">
-        <circle cx="0" cy="-8" r="17" fill="#65baff" opacity=".12"/>
-        <path d="M-22 2 C-22 -25 22 -25 22 2" fill="none" stroke="#99d4ff" stroke-width=".95" stroke-opacity=".92" stroke-dasharray="1.4 3.2" stroke-linecap="round"/>
-        <path d="M-19 2 C-18 -20 18 -20 19 2" fill="none" stroke="#c9eaff" stroke-width=".65" stroke-opacity=".75"/>
-        <circle cx="0" cy="-8" r="10.5" fill="url(#leMvSetMoonFill)" stroke="#f4fbff" stroke-width=".65"/>
-        <image href="${MOON_TEXTURE_DATA}" x="-10.5" y="-18.5" width="21" height="21" preserveAspectRatio="xMidYMid slice" clip-path="url(#leMvSetMoonClip)" opacity=".96"/>
-        <path d="M-24 2 Q-12 0 0 2 T24 2 L24 10 L-24 10 Z" fill="url(#leMvSetWater)"/>
-        <path d="M-24 2 Q-12 0 0 2 T24 2" fill="none" stroke="#b7e3ff" stroke-width="1.25" stroke-linecap="round" filter="drop-shadow(0 0 2px #80c9ff)"/>
-        <path d="M-10 4 Q-4 3 2 4 M-7 6 Q0 5 8 6 M-4 8 Q0 7.7 5 8" fill="none" stroke="#9bd5ff" stroke-width=".7" stroke-linecap="round" opacity=".9"/>
-        <path d="M0 -36 L1.5 -30.5 L7 -29 L1.5 -27.5 L0 -22 L-1.5 -27.5 L-7 -29 L-1.5 -30.5 Z" fill="#a6dfff" filter="drop-shadow(0 0 3px #80c9ff)"/>
-        <circle cx="-18" cy="-12" r=".9" fill="#d8f0ff"/><circle cx="15" cy="-18" r=".8" fill="#ffe0a1"/>
+        <!-- Same ocean-horizon design, cooler moonlight and a slightly deeper set. -->
+        <circle cx="0" cy="-8" r="17.5" fill="#5caeff" opacity=".10"/>
+        <path d="M-23.5 2 C-25 -34,25 -34,23.5 2" fill="none" stroke="#90d1ff" stroke-width=".92" stroke-opacity=".96" stroke-dasharray="1.05 3.15" stroke-linecap="round"/>
+        <path d="M-19.5 2 C-20.5 -25,20.5 -25,19.5 2" fill="none" stroke="#c7eaff" stroke-width=".62" stroke-opacity=".82"/>
+        <circle cx="0" cy="-3" r="10.5" fill="url(#leMvSetMoonFill)" stroke="#eaf8ff" stroke-width=".62"/>
+        <image href="${MOON_TEXTURE_DATA}" x="-10.5" y="-13.5" width="21" height="21" preserveAspectRatio="xMidYMid slice" clip-path="url(#leMvSetMoonClip)" opacity=".96"/>
+        <path d="M-24 2 C-16 -.2,-8 3.9,0 2 C8 .1,16 -.15,24 2 L24 10 L-24 10 Z" fill="url(#leMvSetWater)"/>
+        <path d="M-24 2 C-16 -.2,-8 3.9,0 2 C8 .1,16 -.15,24 2" fill="none" stroke="#b8e4ff" stroke-width="1.1" stroke-linecap="round"/>
+        <path d="M-11 4.2 C-7 3.75,-3 4.65,0 4.2 M-7 6.1 C-3 5.7,2 6.5,6 6.1 M-3 8 C-.5 7.7,2.2 8.2,4.5 8" fill="none" stroke="#9dd7ff" stroke-width=".64" stroke-linecap="round" opacity=".92"/>
+        <path d="M0 -41 L1.55 -35.85 L6.7 -34 L1.55 -32.15 L0 -27 L-1.55 -32.15 L-6.7 -34 L-1.55 -35.85 Z" fill="#a9dcff"/>
+        <path d="M-12 -27 L-11.2 -24.8 L-9 -24 L-11.2 -23.2 L-12 -21 L-12.8 -23.2 L-15 -24 L-12.8 -24.8 Z" fill="#d8f0ff"/>
+        <circle cx="15" cy="-22" r=".65" fill="#ffe5b3"/>
       </g>
       <text class="le-mv-event-label" id="le-mv-rise-label" text-anchor="start">MOONRISE</text><text class="le-mv-event-time" id="le-mv-rise-time" text-anchor="start"></text>
       <text class="le-mv-event-label" id="le-mv-set-label" text-anchor="end">MOONSET</text><text class="le-mv-event-time" id="le-mv-set-time" text-anchor="end"></text>
@@ -376,24 +380,32 @@
       <div class="le-mv-end-labels">
         <div class="le-mv-endpoint-info le-mv-endpoint-info-rise">
           <svg class="le-mv-scroller-end-icon" viewBox="0 0 42 25" aria-hidden="true">
-            <path d="M2 16.5 Q10 12.3 18 16.5 T40 16.5" fill="none" stroke="#72c2ff" stroke-width="1.5" stroke-linecap="round"/>
-            <path d="M4 20 Q11 16.6 19 20 T38 20" fill="none" stroke="#8bd3ff" stroke-width=".85" opacity=".88" stroke-linecap="round"/>
-            <path d="M11 16.1 A6.8 6.8 0 0 1 24.6 16.1 Z" fill="#a9ddff" fill-opacity=".95" stroke="#effaff" stroke-width=".6"/>
-            <path d="M17.8 1.2 L19 4.8 L22.6 6 L19 7.2 L17.8 10.8 L16.6 7.2 L13 6 L16.6 4.8 Z" fill="#ffe0a1"/>
-            <path d="M2 16.5 Q18 18.4 40 16.5" fill="none" stroke="#f0c37c" stroke-width=".65" opacity=".92"/>
-            <path d="M14 22.4 Q18 21.9 22 22.4 M17 24 Q18 23.8 19 24" fill="none" stroke="#88ceff" stroke-width=".55" opacity=".8"/>
+            <defs><clipPath id="leMvTinyRiseMoonClip"><circle cx="17.8" cy="13.5" r="6.7"/></clipPath></defs>
+            <path d="M17.8 0.7 L18.8 3.7 L21.8 4.7 L18.8 5.7 L17.8 8.7 L16.8 5.7 L13.8 4.7 L16.8 3.7 Z" fill="#ffe2a5"/>
+            <path d="M17.8 8.5 L17.8 10.1" stroke="#d9f0ff" stroke-width=".62" stroke-dasharray=".65 1.5" stroke-linecap="round"/>
+            <circle cx="17.8" cy="13.5" r="6.7" fill="#b9e3ff" stroke="#effaff" stroke-width=".55"/>
+            <image href="${MOON_TEXTURE_DATA}" x="11.1" y="6.8" width="13.4" height="13.4" preserveAspectRatio="xMidYMid slice" clip-path="url(#leMvTinyRiseMoonClip)" opacity=".96"/>
+            <path d="M3 15.5 C8 13.5,12 16.3,17.8 15.5 C24 14.5,31 13.8,39 15.5 L39 25 L3 25 Z" fill="#0a1d34" fill-opacity=".92"/>
+            <path d="M2.7 15.5 C8 13.5,12 16.3,17.8 15.5 C24 14.5,31 13.8,39.3 15.5" fill="none" stroke="#8bd2ff" stroke-width=".92" stroke-linecap="round"/>
+            <path d="M5 19.2 Q10 17.9 15 19.2 T25 19.2 T37 19.2" fill="none" stroke="#6fbdff" stroke-width=".72" stroke-linecap="round" opacity=".96"/>
+            <path d="M11 21.1 Q15 20.4 18 21.1 M14 22.6 Q17 22.1 19.5 22.6 M21 20.8 Q24 20.2 27 20.8" fill="none" stroke="#ffd99b" stroke-width=".48" stroke-linecap="round" opacity=".92"/>
+            <circle cx="7" cy="12.4" r=".45" fill="#c6e9ff"/><circle cx="28.8" cy="11.9" r=".38" fill="#ffe5b3"/>
           </svg>
           <span class="le-mv-end-label-copy"><span class="start-label">--:--</span><small>RISE</small></span>
         </div>
         <div class="end le-mv-endpoint-info le-mv-endpoint-info-set">
           <span class="le-mv-end-label-copy"><span class="end-label">--:--</span><small>SET</small></span>
           <svg class="le-mv-scroller-end-icon" viewBox="0 0 42 25" aria-hidden="true">
-            <path d="M2 16.5 Q10 12.3 18 16.5 T40 16.5" fill="none" stroke="#72c2ff" stroke-width="1.5" stroke-linecap="round"/>
-            <path d="M4 20 Q11 16.6 19 20 T38 20" fill="none" stroke="#8bd3ff" stroke-width=".85" opacity=".88" stroke-linecap="round"/>
-            <path d="M11 16.1 A6.8 6.8 0 0 1 24.6 16.1 Z" fill="#9ed5ff" fill-opacity=".82" stroke="#effaff" stroke-width=".6"/>
-            <path d="M17.8 1.2 L19 4.8 L22.6 6 L19 7.2 L17.8 10.8 L16.6 7.2 L13 6 L16.6 4.8 Z" fill="#b8e2ff"/>
-            <path d="M2 16.5 Q18 18.4 40 16.5" fill="none" stroke="#f0c37c" stroke-width=".65" opacity=".92"/>
-            <path d="M14 22.4 Q18 21.9 22 22.4 M17 24 Q18 23.8 19 24" fill="none" stroke="#88ceff" stroke-width=".55" opacity=".8"/>
+            <defs><clipPath id="leMvTinySetMoonClip"><circle cx="17.8" cy="14.5" r="6.7"/></clipPath></defs>
+            <path d="M17.8 0.7 L18.8 3.7 L21.8 4.7 L18.8 5.7 L17.8 8.7 L16.8 5.7 L13.8 4.7 L16.8 3.7 Z" fill="#b8e4ff"/>
+            <path d="M17.8 8.5 L17.8 10.4" stroke="#d9f0ff" stroke-width=".62" stroke-dasharray=".65 1.5" stroke-linecap="round"/>
+            <circle cx="17.8" cy="14.5" r="6.7" fill="#a5d7ff" stroke="#effaff" stroke-width=".55"/>
+            <image href="${MOON_TEXTURE_DATA}" x="11.1" y="7.8" width="13.4" height="13.4" preserveAspectRatio="xMidYMid slice" clip-path="url(#leMvTinySetMoonClip)" opacity=".96"/>
+            <path d="M3 15.7 C8 13.7,12 16.5,17.8 15.7 C24 14.7,31 14,39 15.7 L39 25 L3 25 Z" fill="#08182d" fill-opacity=".94"/>
+            <path d="M2.7 15.7 C8 13.7,12 16.5,17.8 15.7 C24 14.7,31 14,39.3 15.7" fill="none" stroke="#9bd7ff" stroke-width=".92" stroke-linecap="round"/>
+            <path d="M5 19.3 Q10 18 15 19.3 T25 19.3 T37 19.3" fill="none" stroke="#72c4ff" stroke-width=".72" stroke-linecap="round" opacity=".96"/>
+            <path d="M11 21.2 Q15 20.5 18 21.2 M14 22.7 Q17 22.2 19.5 22.7 M21 20.9 Q24 20.3 27 20.9" fill="none" stroke="#b8dcff" stroke-width=".48" stroke-linecap="round" opacity=".9"/>
+            <circle cx="7" cy="12.6" r=".45" fill="#c6e9ff"/><circle cx="28.8" cy="12.1" r=".38" fill="#ffe5b3"/>
           </svg>
         </div>
       </div>
