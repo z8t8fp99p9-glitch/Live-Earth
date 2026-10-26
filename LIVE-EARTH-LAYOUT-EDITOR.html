@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#050a13">
+<title>LIVE // EARTH — Temporary Layout Editor</title>
+<style>
+:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#050a13;color:#eaf4ff}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050a13}button,input,select{font:inherit}button,select,input[type=number]{color:#eff8ff;background:#0c1928;border:1px solid #2a4760;border-radius:9px;min-height:36px}button{padding:7px 10px;cursor:pointer;touch-action:manipulation}button:active{background:#17324b}button:disabled{opacity:.4}select,input[type=number]{padding:7px;width:100%;min-width:0}input[type=checkbox]{accent-color:#70caff;width:18px;height:18px;vertical-align:middle}#appFrame{position:fixed;inset:0;width:100%;height:100%;border:0;background:#02050b;pointer-events:none}#toolHeader{position:fixed;z-index:10010;top:calc(env(safe-area-inset-top) + 8px);left:8px;right:8px;display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #31516b;border-radius:13px;background:#06111de8;box-shadow:0 6px 26px #0009;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}#brand{font-size:12px;font-weight:800;letter-spacing:.1em;white-space:nowrap}#brand span{color:#72d8ff}#status{font-size:11px;color:#a8bfd4;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#toolHeader button{min-height:32px;padding:5px 8px;font-size:12px}#panel{position:fixed;z-index:10011;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 8px);max-height:min(47vh,430px);overflow:auto;padding:11px;border:1px solid #31516b;border-radius:15px;background:#071321ed;box-shadow:0 7px 30px #000b;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);overscroll-behavior:contain}#panel.collapsed{max-height:none;overflow:hidden;padding:7px 10px}#panelHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}#panelHead strong{font-size:13px;letter-spacing:.02em}#panelHead .sub{color:#89a8c3;font-size:10px}#collapseBtn{min-height:29px;padding:4px 8px;font-size:11px}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}.field{min-width:0}.field label{display:block;font-size:10px;color:#9cb6ce;margin:0 0 4px 1px}.four{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:8px 0}.four .field input{height:36px}.actions{display:flex;flex-wrap:wrap;gap:6px;margin:7px 0}.actions button{flex:1 1 auto;font-size:11px;min-height:34px}.note{font-size:10px;line-height:1.4;color:#9db5ca;margin-top:7px}.switchrow{display:flex;align-items:center;gap:6px;font-size:11px;color:#c9d9e8;margin:7px 0}.fineprint{font-size:10px;color:#7f9bb4}#workspace{position:fixed;z-index:10000;inset:0;touch-action:none}#selectionBox{position:fixed;display:none;border:1.5px solid #75d5ff;background:#45baff0b;box-shadow:0 0 0 1px #051322,0 0 12px #4ec3ff38;pointer-events:auto;touch-action:none}#selectionBox:before{content:"";position:absolute;inset:-6px;border:1px dashed #7bcfff45;pointer-events:none}#selectionLabel{position:absolute;left:-1px;top:-23px;max-width:90vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#0b2940;color:#cfeeff;border:1px solid #4a9bcb;border-radius:5px;padding:2px 5px;font-size:10px;pointer-events:none}.handle{position:absolute;width:18px;height:18px;border:2px solid #051321;border-radius:5px;background:#8ce0ff;box-shadow:0 0 0 1px #52bdf6;touch-action:none}.handle.br{right:-9px;bottom:-9px;cursor:nwse-resize}.handle.bl{left:-9px;bottom:-9px;cursor:nesw-resize}.handle.tr{right:-9px;top:-9px;cursor:nesw-resize}.handle.tl{left:-9px;top:-9px;cursor:nwse-resize}#emptyState{position:fixed;z-index:10005;left:50%;top:50%;transform:translate(-50%,-50%);max-width:82vw;padding:12px 15px;border:1px solid #31516b;border-radius:12px;background:#071321eb;color:#cbe0f3;font-size:13px;line-height:1.5;text-align:center;display:none}#measurePreview{display:none;position:fixed;z-index:10012;left:8px;right:8px;top:calc(env(safe-area-inset-top) + 57px);max-height:22vh;overflow:auto;white-space:pre-wrap;word-break:break-word;border:1px solid #31516b;border-radius:10px;background:#071321f2;padding:8px;font:10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:#cce6fb}#measurePreview.show{display:block}@media(min-width:760px){#panel{left:auto;right:12px;top:72px;bottom:12px;width:360px;max-height:none;border-radius:15px}#toolHeader{left:12px;right:12px}#measurePreview{left:12px;right:auto;top:72px;width:min(450px,48vw);max-height:40vh}}@media(max-height:620px){#panel{max-height:40vh}.four{margin:5px 0}.row{margin-bottom:5px}.actions{margin:5px 0}}
+</style>
+</head>
+<body>
+<iframe id="appFrame" title="Actual LIVE // EARTH application preview" src="./index.html?layoutEditorPreview=1"></iframe>
+<div id="workspace" aria-label="Drag selected layout element or tap an element to select it">
+  <div id="selectionBox"><div id="selectionLabel"></div><div class="handle tl" data-handle="tl"></div><div class="handle tr" data-handle="tr"></div><div class="handle bl" data-handle="bl"></div><div class="handle br" data-handle="br"></div></div>
+</div>
+<div id="toolHeader">
+  <div id="brand">LIVE <span>//</span> LAYOUT LAB</div>
+  <div id="status">Connecting to the real app…</div>
+  <button id="reconnectBtn" type="button">Reconnect</button>
+</div>
+<div id="emptyState">Waiting for Moon View elements.<br>Make sure the app finishes loading, then tap Reconnect.</div>
+<pre id="measurePreview"></pre>
+<section id="panel">
+  <div id="panelHead"><div><strong>Temporary layout controls</strong><div class="sub">Changes are preview-only until you export them.</div></div><button id="collapseBtn" type="button">Hide controls</button></div>
+  <div class="row">
+    <div class="field"><label for="targetSelect">Element to adjust</label><select id="targetSelect"><option>Finding Moon View elements…</option></select></div>
+    <div class="field"><label for="stepSelect">Movement step</label><select id="stepSelect"><option value="1">Fine · 1 px</option><option value="2">2 px</option><option value="5" selected>Normal · 5 px</option><option value="10">Coarse · 10 px</option></select></div>
+  </div>
+  <div class="four">
+    <div class="field"><label for="xField">X · px</label><input id="xField" type="number" step="1" inputmode="numeric" value="0"></div>
+    <div class="field"><label for="yField">Y · px</label><input id="yField" type="number" step="1" inputmode="numeric" value="0"></div>
+    <div class="field"><label for="wField">Width · px</label><input id="wField" type="number" min="8" step="1" inputmode="numeric" value="0"></div>
+    <div class="field"><label for="hField">Height · px</label><input id="hField" type="number" min="8" step="1" inputmode="numeric" value="0"></div>
+  </div>
+  <div class="actions">
+    <button id="leftBtn" type="button">← Move</button><button id="upBtn" type="button">↑ Move</button><button id="downBtn" type="button">↓ Move</button><button id="rightBtn" type="button">Move →</button>
+  </div>
+  <div class="actions">
+    <button id="smallerBtn" type="button">− Size</button><button id="largerBtn" type="button">+ Size</button><button id="resetOneBtn" type="button">Reset element</button><button id="resetAllBtn" type="button">Reset all</button>
+  </div>
+  <label class="switchrow"><input id="revealHidden" type="checkbox"> Temporarily reveal hidden scroller items for layout work</label>
+  <div class="actions"><button id="exportBtn" type="button">Export measurements JSON</button><button id="copyBtn" type="button">Copy JSON</button><button id="cssBtn" type="button">Show CSS patch suggestion</button></div>
+  <div class="note">Drag an element on the screen to move it. Drag a corner handle to resize it. The exported measurements are for the real viewport and include percentages. Reload the app to discard every preview adjustment.</div>
+  <div class="fineprint" id="targetInfo">No layout target selected yet.</div>
+</section>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const frame = $('appFrame'), workspace = $('workspace'), box = $('selectionBox'), status = $('status'), empty = $('emptyState');
+const targetSelect = $('targetSelect'), preview = $('measurePreview'), panel = $('panel');
+const config = [
+  ['Lunar details · entire group', '.le-mv-lunar-info'],
+  ['Phase + illumination · center', '.le-mv-lunar-phase'],
+  ['Phase name', '#le-mv-phase-name'],
+  ['Illumination value', '.le-mv-lunar-illumination'],
+  ['Lunar age · left', '.le-mv-lunar-age'],
+  ['Next phase + countdown · right', '.le-mv-lunar-next'],
+  ['Main Moon arc + rise/set artwork', '.le-mv-svg'],
+  ['Scroller · entire rail and labels', '.le-mv-timeline'],
+  ['Mini Moon marker', '#le-mv-horizontal-moon-marker'],
+  ['Red selected-time clock', '.le-mv-selected-time'],
+  ['Scroller rise/set labels', '.le-mv-end-labels'],
+  ['Moonrise icon', '#le-mv-rise-icon'],
+  ['Moonset icon', '#le-mv-set-icon']
+];
+let doc = null, win = null, stage = null, current = null, records = new Map(), targets = [], dragState = null, revealOriginal = new Map(), targetId = 0, moonRequested = false;
+const number = (id) => Number($(id).value || 0);
+const px = v => `${Math.round(v*100)/100}px`;
+function setStatus(s){ status.textContent=s; }
+function getDoc(){ try { return frame.contentDocument && frame.contentDocument.documentElement ? frame.contentDocument : null; } catch(e) { return null; } }
+function ensureReveal(){
+  if (!$('revealHidden').checked || !doc) return;
+  const tl = doc.querySelector('.le-mv-timeline');
+  if (!tl) return;
+  if (!revealOriginal.has(tl)) revealOriginal.set(tl, {hidden:tl.hidden, cls:tl.classList.contains('le-mv-no-local-times')});
+  tl.hidden = false;
+  tl.classList.remove('le-mv-no-local-times');
+}
+function undoReveal(){
+  for (const [el, state] of revealOriginal) { if (!el.isConnected) continue; el.hidden = state.hidden; el.classList.toggle('le-mv-no-local-times', state.cls); }
+  revealOriginal.clear();
+}
+function prepConnection(){
+  doc=getDoc(); win=doc && doc.defaultView;
+  if(!doc){setStatus('App frame not accessible yet.');empty.style.display='block';return false;}
+  // Ask the actual app to display Moon View; the normal app controllers own all rendering.
+  const moonButton=doc.querySelector('.orbButton[data-view="moon"]');
+  const root=doc.querySelector('#le-sky-view');
+  const isMoon=!!root && root.dataset.view==='moon' && !root.hidden;
+  if(moonButton && !isMoon && !moonRequested){moonRequested=true;moonButton.click();setStatus('Opening Moon View in the actual app…');empty.style.display='block';return false;}
+  if(!root || !isMoon){setStatus('App loaded; waiting for Moon View to activate…');empty.style.display='block';return false;}
+  stage=root.querySelector('.le-mv-stage') || root;
+  frame.style.pointerEvents='none';
+  rebuildTargets();
+  setStatus(`${targets.length} Moon View elements found · preview-only`);
+  empty.style.display=targets.length?'none':'block';
+  return targets.length>0;
+}
+function rebuildTargets(){
+  targets=[];
+  for(const [label,selector] of config){
+    const el=doc.querySelector(selector);
+    if(!el || !el.isConnected) continue;
+    if(el.closest('svg') && !el.matches('svg, g, text, path, circle')) continue;
+    const st=win.getComputedStyle(el);
+    const hidden=st.display==='none'||st.visibility==='hidden'||el.getClientRects().length===0;
+    const rec={id:++targetId,label,selector,el,hidden};
+    if(!records.has(el)) records.set(el,{inline:{translate:el.style.translate,scale:el.style.scale,transformOrigin:el.style.transformOrigin},baseRect:null,baseTranslate:null,baseScale:null,dx:0,dy:0,sx:1,sy:1});
+    const data=records.get(el);
+    if(!data.baseRect && !hidden){ data.baseRect=rectOf(el); data.baseTranslate=parseTranslate(win.getComputedStyle(el).translate); data.baseScale=parseScale(win.getComputedStyle(el).scale); }
+    targets.push(rec);
+  }
+  targetSelect.innerHTML='';
+  for(let i=0;i<targets.length;i++){ const t=targets[i]; const option=document.createElement('option'); option.value=String(i); option.textContent=t.label+(t.hidden?' · hidden':''); targetSelect.appendChild(option); }
+  if(targets.length){targetSelect.value='0';selectTarget(targets[0]);}
+  else {current=null;box.style.display='none';$('targetInfo').textContent='No Moon View layout targets detected.';}
+}
+function parseTranslate(s){ if(!s||s==='none')return {x:0,y:0}; const m=s.match(/(-?[\d.]+)px(?:\s+|,\s*)(-?[\d.]+)px/);return m?{x:Number(m[1]),y:Number(m[2])}:{x:0,y:0}; }
+function parseScale(s){ if(!s||s==='none')return {x:1,y:1}; const a=s.trim().split(/[ ,]+/).map(Number); return {x:Number.isFinite(a[0])?a[0]:1,y:Number.isFinite(a[1])?a[1]:(Number.isFinite(a[0])?a[0]:1)}; }
+function rectOf(el){ const r=el.getBoundingClientRect(); return {x:r.left,y:r.top,w:r.width,h:r.height,width:r.width,height:r.height,right:r.right,bottom:r.bottom}; }
+function stageRect(){return stage?stage.getBoundingClientRect():{left:0,top:0,width:win?.innerWidth||innerWidth,height:win?.innerHeight||innerHeight};}
+function selectedRecord(){return current ? records.get(current.el) : null;}
+function finalRect(){return current?rectOf(current.el):null;}
+function syncFields(){
+  if(!current)return; const r=finalRect();
+  $('xField').value=Math.round((r.x-stageRect().left)*100)/100;
+  $('yField').value=Math.round((r.y-stageRect().top)*100)/100;
+  $('wField').value=Math.round(r.w*100)/100;
+  $('hField').value=Math.round(r.h*100)/100;
+  const d=selectedRecord();
+  $('targetInfo').textContent=`${current.selector} · ΔX ${Math.round(d.dx*100)/100}px · ΔY ${Math.round(d.dy*100)/100}px · scale ${d.sx.toFixed(3)} × ${d.sy.toFixed(3)}`;
+  drawBox();
+}
+function applyTransform(){
+  if(!current)return; const d=selectedRecord(); if(!d.baseRect)return;
+  current.el.style.translate=px(d.baseTranslate.x+d.dx)+' '+px(d.baseTranslate.y+d.dy);
+  current.el.style.scale=(d.baseScale.x*d.sx)+' '+(d.baseScale.y*d.sy);
+  current.el.style.transformOrigin='0 0';
+  syncFields();
+}
+function selectTarget(t){
+  if(!t)return; current=t;
+  const d=records.get(t.el);
+  if(!d.baseRect && $('revealHidden').checked){ensureReveal(); const st=win.getComputedStyle(t.el);if(st.display!=='none'&&t.el.getClientRects().length){d.baseRect=rectOf(t.el);d.baseTranslate=parseTranslate(st.translate);d.baseScale=parseScale(st.scale);}}
+  if(!d.baseRect){box.style.display='none';setStatus(`${t.label} is hidden in the current app state. Enable temporary reveal if you need to adjust it.`);syncButtons();return;}
+  setStatus(`${t.label} selected · drag to move`);syncFields();syncButtons();
+}
+function drawBox(){
+  if(!current||!current.el.isConnected){box.style.display='none';return;}
+  const r=rectOf(current.el); if(r.width<1||r.height<1){box.style.display='none';return;}
+  box.style.display='block';box.style.left=px(r.x);box.style.top=px(r.y);box.style.width=px(r.width);box.style.height=px(r.height);
+  $('selectionLabel').textContent=current.label;
+}
+function syncButtons(){const d=selectedRecord();const disabled=!d||!d.baseRect;for(const id of ['leftBtn','upBtn','downBtn','rightBtn','smallerBtn','largerBtn','resetOneBtn'])$(id).disabled=disabled;}
+function applyFields(){
+  const d=selectedRecord(); if(!d||!d.baseRect)return;
+  const sr=stageRect();
+  const wantX=number('xField')+sr.left, wantY=number('yField')+sr.top;
+  const wantW=Math.max(8,number('wField')),wantH=Math.max(8,number('hField'));
+  d.dx=wantX-d.baseRect.x;d.dy=wantY-d.baseRect.y;
+  d.sx=wantW/Math.max(1,d.baseRect.w);d.sy=wantH/Math.max(1,d.baseRect.h);
+  applyTransform();
+}
+function moveBy(dx,dy){const d=selectedRecord();if(!d||!d.baseRect)return;d.dx+=dx;d.dy+=dy;applyTransform();}
+function sizeBy(f){const d=selectedRecord();if(!d||!d.baseRect)return;d.sx=Math.max(0.15,Math.min(6,d.sx*f));d.sy=Math.max(0.15,Math.min(6,d.sy*f));applyTransform();}
+function resetElement(el){const d=records.get(el);if(!d)return;el.style.translate=d.inline.translate;el.style.scale=d.inline.scale;el.style.transformOrigin=d.inline.transformOrigin;d.dx=0;d.dy=0;d.sx=1;d.sy=1;}
+function resetAll(){for(const t of targets)resetElement(t.el);if($('revealHidden').checked)ensureReveal();else undoReveal();if(current)syncFields();setStatus('All preview adjustments reset.');}
+function exportData(){
+  const sr=stageRect(),viewport={width:win?.innerWidth||innerWidth,height:win?.innerHeight||innerHeight};
+  const elements=[];
+  for(const t of targets){const d=records.get(t.el);if(!d?.baseRect)continue;const r=rectOf(t.el);elements.push({label:t.label,selector:t.selector,viewport:{width:viewport.width,height:viewport.height},position:{x:round(r.x-sr.left),y:round(r.y-sr.top),width:round(r.w),height:round(r.h),xPercent:round((r.x-sr.left)/Math.max(1,sr.width)*100),yPercent:round((r.y-sr.top)/Math.max(1,sr.height)*100),widthPercent:round(r.w/Math.max(1,sr.width)*100),heightPercent:round(r.h/Math.max(1,sr.height)*100)},change:{translateX:round(d.dx),translateY:round(d.dy),scaleX:round(d.sx),scaleY:round(d.sy)},baseline:{x:round(d.baseRect.x-sr.left),y:round(d.baseRect.y-sr.top),width:round(d.baseRect.w),height:round(d.baseRect.h)}});}
+  return {tool:'LIVE // EARTH Temporary Layout Editor',formatVersion:1,exportedAt:new Date().toISOString(),note:'Preview measurements from the actual app iframe. These do not edit the repository. Review against the source CSS before making permanent changes.',view:'Moon View',viewport:{width:viewport.width,height:viewport.height,stageWidth:round(sr.width),stageHeight:round(sr.height)},elements};
+}
+function round(n){return Math.round(n*100)/100;}
+function jsonText(){return JSON.stringify(exportData(),null,2);}
+function saveText(name,text,mime){const a=document.createElement('a');const url=URL.createObjectURL(new Blob([text],{type:mime}));a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);}
+function cssText(){
+ const d=exportData();let out='/* Layout measurements from LIVE // EARTH Temporary Layout Editor. Review before applying. */\n';
+ for(const e of d.elements){if(Math.abs(e.change.translateX)<0.01&&Math.abs(e.change.translateY)<0.01&&Math.abs(e.change.scaleX-1)<0.001&&Math.abs(e.change.scaleY-1)<0.001)continue;out+=`#le-sky-view ${e.selector} {\n  translate: ${e.change.translateX}px ${e.change.translateY}px;\n  scale: ${e.change.scaleX} ${e.change.scaleY};\n  transform-origin: 0 0;\n}\n`;}
+ return out||'/* No preview changes have been made yet. */';
+}
+function pointerDown(e){
+ if(e.target.closest('#panel,#toolHeader,#measurePreview'))return;
+ if(!targets.length)return;
+ const handle=e.target.closest('[data-handle]');
+ let t=current;
+ if(!handle){const x=e.clientX,y=e.clientY;const hits=targets.filter(q=>{const d=records.get(q.el);if(!d?.baseRect||q.hidden&&!$('revealHidden').checked)return false;const r=rectOf(q.el);return x>=r.x-3&&x<=r.right+3&&y>=r.y-3&&y<=r.bottom+3;}).sort((a,b)=>{const ra=rectOf(a.el),rb=rectOf(b.el);return ra.width*ra.height-rb.width*rb.height;});if(hits.length){t=hits[0];targetSelect.value=String(targets.indexOf(t));selectTarget(t);}}
+ if(!t||!records.get(t.el)?.baseRect)return;
+ const d=records.get(t.el),r=rectOf(t.el);const mode=handle?'resize':(e.target===box||box.contains(e.target)||xInside(r,e.clientX,e.clientY))?'move':null;
+ if(!mode)return;
+ const corner=handle?.dataset.handle||'br';dragState={pointerId:e.pointerId,t,mode,corner,startX:e.clientX,startY:e.clientY,startDX:d.dx,startDY:d.dy,startSX:d.sx,startSY:d.sy,startRect:{...r}};
+ workspace.setPointerCapture?.(e.pointerId);e.preventDefault();e.stopPropagation();
+}
+function xInside(r,x,y){return x>=r.x&&x<=r.right&&y>=r.y&&y<=r.bottom;}
+function pointerMove(e){if(!dragState||e.pointerId!==dragState.pointerId)return;const d=records.get(dragState.t.el),dx=e.clientX-dragState.startX,dy=e.clientY-dragState.startY;
+ if(dragState.mode==='move'){d.dx=dragState.startDX+dx;d.dy=dragState.startDY+dy;}
+ else {let nw=dragState.startRect.width,nh=dragState.startRect.height,nx=0,ny=0;const c=dragState.corner;if(c.includes('r'))nw=Math.max(8,nw+dx);if(c.includes('l')){nw=Math.max(8,nw-dx);nx=dragState.startRect.width-nw;}if(c.includes('b'))nh=Math.max(8,nh+dy);if(c.includes('t')){nh=Math.max(8,nh-dy);ny=dragState.startRect.height-nh;}d.sx=dragState.startSX*(nw/Math.max(1,dragState.startRect.width));d.sy=dragState.startSY*(nh/Math.max(1,dragState.startRect.height));d.dx=dragState.startDX+nx;d.dy=dragState.startDY+ny;}
+ applyTransform();e.preventDefault();}
+function pointerUp(e){if(dragState&&e.pointerId===dragState.pointerId){dragState=null;}}
+$('reconnectBtn').addEventListener('click',()=>{moonRequested=false;try{if(prepConnection())setStatus(`${targets.length} Moon View elements found · preview-only`);}catch(e){setStatus('Could not connect: '+e.message);}});
+frame.addEventListener('load',()=>{setStatus('App frame loaded · locating Moon View…');let tries=0;const timer=setInterval(()=>{tries++;try{if(prepConnection()){clearInterval(timer);return;}}catch(e){setStatus('Waiting for app startup…');}if(tries>80){clearInterval(timer);setStatus('Could not find Moon View yet. Tap Reconnect.');}},500);});
+workspace.addEventListener('pointerdown',pointerDown,{passive:false});workspace.addEventListener('pointermove',pointerMove,{passive:false});workspace.addEventListener('pointerup',pointerUp);workspace.addEventListener('pointercancel',pointerUp);
+targetSelect.addEventListener('change',()=>selectTarget(targets[Number(targetSelect.value)]));
+for(const [id,dx,dy] of [['leftBtn',-1,0],['upBtn',0,-1],['downBtn',0,1],['rightBtn',1,0]])$(id).addEventListener('click',()=>{const s=Number($('stepSelect').value)||1;moveBy(dx*s,dy*s);});
+$('smallerBtn').addEventListener('click',()=>sizeBy(.95));$('largerBtn').addEventListener('click',()=>sizeBy(1.05));
+for(const id of ['xField','yField','wField','hField'])$(id).addEventListener('change',applyFields);
+$('resetOneBtn').addEventListener('click',()=>{if(current){resetElement(current.el);syncFields();setStatus('Selected element restored to its original preview position.');}});
+$('resetAllBtn').addEventListener('click',resetAll);
+$('revealHidden').addEventListener('change',()=>{if($('revealHidden').checked){ensureReveal();setStatus('Hidden scroller layout items revealed temporarily.');}else{undoReveal();setStatus('Hidden item visibility restored.');}const was=current;rebuildTargets();if(was){const i=targets.findIndex(t=>t.selector===was.selector);if(i>=0){targetSelect.value=String(i);selectTarget(targets[i]);}}});
+$('exportBtn').addEventListener('click',()=>{const text=jsonText();saveText('moon-view-layout-measurements.json',text,'application/json');preview.textContent=text;preview.classList.add('show');setStatus('Measurements JSON exported. Send that file back for the permanent patch.');});
+$('copyBtn').addEventListener('click',async()=>{const text=jsonText();preview.textContent=text;preview.classList.add('show');try{await navigator.clipboard.writeText(text);setStatus('JSON copied to clipboard.');}catch(e){setStatus('JSON is shown above. Long-press the text to copy it.');}});
+$('cssBtn').addEventListener('click',()=>{const text=cssText();preview.textContent=text;preview.classList.add('show');setStatus('CSS suggestion shown. It is not automatically applied to source code.');});
+$('collapseBtn').addEventListener('click',()=>{panel.classList.toggle('collapsed');$('collapseBtn').textContent=panel.classList.contains('collapsed')?'Show controls':'Hide controls';});
+window.addEventListener('resize',()=>{if(current)syncFields();});
+window.addEventListener('beforeunload',()=>{undoReveal();});
+setStatus('Connecting to the real app…');
+})();
+</script>
+</body>
+</html>
