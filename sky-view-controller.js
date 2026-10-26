@@ -175,7 +175,6 @@
     #le-sky-view .le-mv-canvas { position:absolute; z-index:2; inset:0; display:block; width:100%; height:100%; pointer-events:none; }
     #le-sky-view .le-mv-path { fill:none; stroke-linecap:round; stroke-linejoin:round; }
     #le-sky-view .le-mv-path-main { stroke:url(#leMvArcGradient); stroke-width:1.7; filter:drop-shadow(0 0 2.5px #a5d8ffb8) drop-shadow(0 0 6px #7bbcff50); }
-    #le-sky-view .le-mv-bokeh { filter:blur(2.2px); pointer-events:none; }
     #le-sky-view .le-mv-arc-sparkle { fill:#f8fcff; filter:drop-shadow(0 0 2px #d9efff) drop-shadow(0 0 5px #85c8ffb8); pointer-events:none; }
     #le-sky-view .le-mv-arc-star-glow { fill:#e5f4ff; opacity:.48; filter:drop-shadow(0 0 4px #a9d9ff) drop-shadow(0 0 9px #89caffb8); pointer-events:none; }
     #le-sky-view .le-mv-arc-star { fill:#ffffff; opacity:.99; filter:drop-shadow(0 0 2.8px #f3faff) drop-shadow(0 0 7px #9bd3ff); pointer-events:none; }
@@ -245,14 +244,14 @@
   stage.innerHTML = `
     <svg class="le-mv-svg" aria-label="Fixed Moon guide arc with local rise and set times" role="img">
       <defs><linearGradient id="leMvArcGradient" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#f0b875" stop-opacity=".98"/><stop offset="9%" stop-color="#c8e7ff"/><stop offset="28%" stop-color="#e8f7ff"/><stop offset="52%" stop-color="#ffffff"/><stop offset="73%" stop-color="#d3ecff"/><stop offset="91%" stop-color="#ffe0ad"/><stop offset="100%" stop-color="#f2bd78" stop-opacity=".96"/></linearGradient></defs>
-      <g id="le-mv-arc-bokeh" aria-hidden="true"></g><path class="le-mv-path le-mv-path-main" id="le-mv-main"/><g id="le-mv-arc-sparkles" aria-hidden="true"></g>
+      <path class="le-mv-path le-mv-path-main" id="le-mv-main"/><g id="le-mv-arc-sparkles" aria-hidden="true"></g>
       <circle class="le-mv-endpoint-halo" id="le-mv-rise-halo" r="8"/><circle class="le-mv-endpoint" id="le-mv-rise-dot" r="2.2"/><circle class="le-mv-endpoint-halo" id="le-mv-set-halo" r="8"/><circle class="le-mv-endpoint" id="le-mv-set-dot" r="2.2"/>
       <text class="le-mv-event-label" id="le-mv-rise-label" text-anchor="start">MOONRISE</text><text class="le-mv-event-time" id="le-mv-rise-time" text-anchor="start"></text>
       <text class="le-mv-event-label" id="le-mv-set-label" text-anchor="end">MOONSET</text><text class="le-mv-event-time" id="le-mv-set-time" text-anchor="end"></text>
     </svg>
     <canvas class="le-mv-canvas" aria-hidden="true"></canvas>
     <div class="le-mv-timeline" hidden>
-      <svg class="le-mv-horizontal-rail-sparkles" aria-hidden="true" viewBox="0 0 390 98" preserveAspectRatio="none"><g id="le-mv-horizontal-bokeh-group"></g><g id="le-mv-horizontal-sparkle-group"></g></svg>
+      <svg class="le-mv-horizontal-rail-sparkles" aria-hidden="true" viewBox="0 0 390 98" preserveAspectRatio="none"><g id="le-mv-horizontal-sparkle-group"></g></svg>
       <button class="le-mv-selected-time" type="button" aria-label="Tap to return to live lunar time">--:--</button>
       <input class="le-mv-range" type="range" min="0" max="1000" step="1" value="0" aria-label="Select a time between moonrise and moonset">
       <div class="le-mv-vertical-scroller" aria-hidden="true"><svg viewBox="0 0 100 300" preserveAspectRatio="none">
@@ -260,7 +259,6 @@
           <linearGradient id="leMvVerticalGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#cdeaff"/><stop offset="34%" stop-color="#66baff"/><stop offset="68%" stop-color="#83c5ff"/><stop offset="100%" stop-color="#c2e4ff"/></linearGradient>
           <radialGradient id="leMvVerticalMoon" cx="31%" cy="24%" r="78%"><stop offset="0%" stop-color="#fff"/><stop offset="42%" stop-color="#d9e7f8"/><stop offset="78%" stop-color="#92a9c6"/><stop offset="100%" stop-color="#516784"/></radialGradient>
         </defs>
-        <g id="le-mv-vertical-bokeh-group" aria-hidden="true"></g>
         <path class="le-mv-vertical-path-glow" d="M50 4 C20 42,80 69,50 101 S18 162,50 198 S79 255,50 296"/>
         <path class="le-mv-vertical-path" id="le-mv-vertical-path" d="M50 4 C20 42,80 69,50 101 S18 162,50 198 S79 255,50 296"/>
         <g id="le-mv-vertical-sparkle-group" aria-hidden="true"></g>
@@ -281,9 +279,6 @@
   const horizontalRailSparkles = $(".le-mv-horizontal-rail-sparkles");
   const horizontalSparkleGroup = $("#le-mv-horizontal-sparkle-group");
   const verticalSparkleGroup = $("#le-mv-vertical-sparkle-group");
-  const arcBokehGroup = $("#le-mv-arc-bokeh");
-  const horizontalBokehGroup = $("#le-mv-horizontal-bokeh-group");
-  const verticalBokehGroup = $("#le-mv-vertical-bokeh-group");
   const fmt = value => new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date(value));
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   const isLocationEnabled = () => window.liveEarthGetLocationState?.() === true;
@@ -423,16 +418,18 @@
     const x0 = w * (landscape ? 0.065 : 0.114);
     const x1 = w * (landscape ? 0.80 : 0.921);
     const baseline = referenceBaseline(h, landscape);
-    // Fixed upper half-ellipse calibrated against the supplied reference.
-    // Keep the horizontal diameter and endpoints unchanged. Portrait endpoints stay at
-    // 47.4% of viewport height; the crest rises to 26.6% (20.8% rise), creating the
-    // broad, near-semicircular sweep from the reference. Landscape keeps its own geometry.
+    // Custom cubic arch: keep the approved endpoints and exact crest height, but
+    // replace the half-ellipse's broad dome profile with a more lifted, graceful sweep.
+    // The control inset shapes the shoulders; the control height keeps the midpoint
+    // exactly baseline - ry. Landscape retains its independent endpoint/height ratios.
     const centerX = (x0 + x1) / 2;
     const rx = (x1 - x0) / 2;
     const ry = h * (landscape ? 0.35 : 0.208);
-    arcGeometry = { x0, x1, baseline, centerX, rx, ry, landscape };
+    const controlInset = (x1 - x0) * (landscape ? 0.30 : 0.28);
+    const controlY = baseline - (4 / 3) * ry;
+    arcGeometry = { x0, x1, baseline, centerX, rx, ry, controlInset, controlY, landscape };
     svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
-    $("#le-mv-main").setAttribute("d", `M ${x0.toFixed(2)} ${baseline.toFixed(2)} A ${rx.toFixed(2)} ${ry.toFixed(2)} 0 0 1 ${x1.toFixed(2)} ${baseline.toFixed(2)}`);
+    $("#le-mv-main").setAttribute("d", `M ${x0.toFixed(2)} ${baseline.toFixed(2)} C ${(x0 + controlInset).toFixed(2)} ${controlY.toFixed(2)}, ${(x1 - controlInset).toFixed(2)} ${controlY.toFixed(2)}, ${x1.toFixed(2)} ${baseline.toFixed(2)}`);
     drawArcSparkles();
     drawScrollerSparkles();
 
@@ -483,25 +480,31 @@
     range.value = String(Math.round(progress * 1000)); selectedLabel.textContent = fmt(selectedTime);
     drawPaths(); renderOnce();
   }
+  function arcCurve(amount) {
+    const t = clamp(amount, 0, 1), u = 1 - t;
+    const { x0, x1, baseline, controlInset, controlY } = arcGeometry;
+    const p0 = { x:x0, y:baseline };
+    const p1 = { x:x0 + controlInset, y:controlY };
+    const p2 = { x:x1 - controlInset, y:controlY };
+    const p3 = { x:x1, y:baseline };
+    const x = u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x;
+    const y = u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y;
+    const dx = 3*u*u*(p1.x-p0.x) + 6*u*t*(p2.x-p1.x) + 3*t*t*(p3.x-p2.x);
+    const dy = 3*u*u*(p1.y-p0.y) + 6*u*t*(p2.y-p1.y) + 3*t*t*(p3.y-p2.y);
+    return { x, y, dx, dy };
+  }
+
   function pointOnArc(amount) {
     if (!arcGeometry) return { x: dimensions.w * 0.5, y: mountainBaseline(dimensions.w, dimensions.h, dimensions.w > dimensions.h) };
-    const t = clamp(amount, 0, 1);
-    const angle = Math.PI * t;
-    const { centerX, rx, ry, baseline } = arcGeometry;
-    return {
-      x: centerX - rx * Math.cos(angle),
-      y: baseline - ry * Math.sin(angle)
-    };
+    const p = arcCurve(amount);
+    return { x:p.x, y:p.y };
   }
 
   function arcFrame(amount) {
-    const p = pointOnArc(amount);
-    const angle = Math.PI * clamp(amount, 0, 1);
-    const { rx, ry } = arcGeometry;
-    const dx = rx * Math.PI * Math.sin(angle);
-    const dy = -ry * Math.PI * Math.cos(angle);
-    const length = Math.hypot(dx, dy) || 1;
-    const tx = dx / length, ty = dy / length;
+    const curve = arcCurve(amount);
+    const p = { x:curve.x, y:curve.y };
+    const length = Math.hypot(curve.dx, curve.dy) || 1;
+    const tx = curve.dx / length, ty = curve.dy / length;
     // The chosen normal points out into the open sky above the upper arc.
     return { p, tx, ty, nx: ty, ny: -tx };
   }
@@ -521,31 +524,11 @@
     const group = $("#le-mv-arc-sparkles");
     if (!group || !arcGeometry) return;
     group.replaceChildren();
-    if (arcBokehGroup) arcBokehGroup.replaceChildren();
     const ns = "http://www.w3.org/2000/svg";
     const scale = clamp(Math.min(dimensions.w, dimensions.h) / 430, 0.82, 1.35);
     let seed = arcGeometry.landscape ? 0x53A71 : 0x2C0A7;
     const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
-    let bokehSeed = arcGeometry.landscape ? 0x6E624 : 0xA19C3;
-    const randBokeh = () => ((bokehSeed = (bokehSeed * 1664525 + 1013904223) >>> 0) / 4294967296);
     const safe = (v, lo, hi) => clamp(v, lo, hi);
-
-    // Soft, out-of-focus light discs sit BEHIND the sharp path. They use a separate
-    // deterministic seed and are drawn only when the fixed geometry is redrawn.
-    const bokehColors = ["#9acfff", "#d9edff", "#fff0d6", "#77baff"];
-    if (arcBokehGroup) {
-      for (let i = 0; i < 22; i++) {
-        const t = 0.025 + randBokeh() * 0.95;
-        const normalOffset = (randBokeh() + randBokeh() - 1) * 25 * scale;
-        const tangentOffset = (randBokeh() + randBokeh() - 1) * 15 * scale;
-        const p = offsetFromArc(t, normalOffset, tangentOffset);
-        appendBokeh(arcBokehGroup,
-          { x:safe(p.x, 5, dimensions.w - 5), y:safe(p.y, 5, dimensions.h - 5) },
-          (2.2 + randBokeh() * 4.2) * scale,
-          0.10 + randBokeh() * 0.13,
-          bokehColors[Math.floor(randBokeh() * bokehColors.length)], ns);
-      }
-    }
 
     // Homepage-inspired stardust: exactly 200 fine grains spread to BOTH sides of
     // the arc with irregular spacing. Wider drifters keep it organic rather than dotted.
@@ -626,38 +609,12 @@
     group.appendChild(dot);
   }
 
-  function appendBokeh(group, p, radius, opacity, color, ns) {
-    if (!group) return;
-    const circle = document.createElementNS(ns, "circle");
-    circle.setAttribute("cx", p.x.toFixed(2));
-    circle.setAttribute("cy", p.y.toFixed(2));
-    circle.setAttribute("r", radius.toFixed(2));
-    circle.setAttribute("fill", color);
-    circle.setAttribute("opacity", opacity.toFixed(2));
-    circle.setAttribute("class", "le-mv-bokeh");
-    group.appendChild(circle);
-  }
-
   function drawScrollerSparkles() {
     const ns = "http://www.w3.org/2000/svg";
     // Portrait: use the exact pixel width of the timeline so the four-point stars stay round.
     const railWidth = Math.max(1, timeline.clientWidth || dimensions.w * 0.86);
     horizontalRailSparkles.setAttribute("viewBox", `0 0 ${railWidth.toFixed(2)} 98`);
     horizontalSparkleGroup.replaceChildren();
-    if (horizontalBokehGroup) {
-      horizontalBokehGroup.replaceChildren();
-      const horizontalBokeh = [
-        {t:0.075,y:62,r:4.1,o:0.16,c:"#8fcaff"},
-        {t:0.19,y:43,r:3.0,o:0.13,c:"#d9edff"},
-        {t:0.315,y:80,r:4.5,o:0.14,c:"#fff0d6"},
-        {t:0.46,y:52,r:3.5,o:0.17,c:"#77baff"},
-        {t:0.59,y:75,r:4.2,o:0.13,c:"#d9edff"},
-        {t:0.735,y:42,r:3.2,o:0.15,c:"#9acfff"},
-        {t:0.865,y:65,r:4.4,o:0.14,c:"#fff0d6"},
-        {t:0.95,y:48,r:2.8,o:0.17,c:"#8fcaff"}
-      ];
-      horizontalBokeh.forEach(({t,y,r,o,c}) => appendBokeh(horizontalBokehGroup, {x:railWidth*t,y}, r, o, c, ns));
-    }
     const horizontalStars = [
       { t:0.055, s:1.45, y:51, r:-14 }, { t:0.125, s:1.85, y:69, r:12 },
       { t:0.205, s:2.2, y:44, r:24 }, { t:0.268, s:1.35, y:73, r:-8 },
@@ -673,26 +630,6 @@
     verticalSparkleGroup.replaceChildren();
     if (verticalPath && typeof verticalPath.getTotalLength === "function") {
       const length = verticalPath.getTotalLength();
-      if (verticalBokehGroup) {
-        verticalBokehGroup.replaceChildren();
-        const verticalBokeh = [
-          {t:0.08,r:3.4,o:0.15,o2:13,c:"#9acfff"},
-          {t:0.205,r:4.2,o:0.13,o2:-16,c:"#d9edff"},
-          {t:0.36,r:3.0,o:0.16,o2:15,c:"#fff0d6"},
-          {t:0.515,r:4.4,o:0.13,o2:-14,c:"#77baff"},
-          {t:0.68,r:3.5,o:0.15,o2:17,c:"#d9edff"},
-          {t:0.82,r:4.1,o:0.12,o2:-15,c:"#fff0d6"},
-          {t:0.94,r:3.0,o:0.16,o2:12,c:"#8fcaff"}
-        ];
-        verticalBokeh.forEach(({t,r,o,o2,c}) => {
-          const point = verticalPath.getPointAtLength(length*t);
-          const before = verticalPath.getPointAtLength(length*Math.max(0,t-0.006));
-          const after = verticalPath.getPointAtLength(length*Math.min(1,t+0.006));
-          const dx = after.x-before.x, dy = after.y-before.y, mag = Math.hypot(dx,dy)||1;
-          const x = point.x + (dy/mag)*o2, y = point.y - (dx/mag)*o2;
-          appendBokeh(verticalBokehGroup, {x,y}, r, o, c, ns);
-        });
-      }
       const verticalStars = [
         { t:0.055, s:1.45, o:6, r:-12 }, { t:0.135, s:1.85, o:-8, r:16 },
         { t:0.225, s:1.6, o:9, r:22 }, { t:0.315, s:2.25, o:-6, r:-15 },
