@@ -148,7 +148,7 @@
 
 
 /* Moon View 3D renderer is hosted here; no additional renderer file is loaded. */
-/* LIVE // EARTH Moon View — rounded-arch projection correction candidate.
+/* LIVE // EARTH Moon View — portrait arc-height refinement candidate.
  * Preserves the existing renderer lifecycle and app-shell readiness contract.
  * Home, moon-orbit.js, Earth scene, wallpaper, and Home orbital stardust are untouched.
  * The compact custom Moon albedo is embedded to preserve offline-first startup.
@@ -174,7 +174,7 @@
     #le-sky-view .le-mv-svg { position:absolute; z-index:1; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
     #le-sky-view .le-mv-canvas { position:absolute; z-index:2; inset:0; display:block; width:100%; height:100%; pointer-events:none; }
     #le-sky-view .le-mv-path { fill:none; stroke-linecap:round; stroke-linejoin:round; }
-    #le-sky-view .le-mv-path-faint { stroke:#8abcf2; stroke-width:1.25; stroke-opacity:.22; stroke-dasharray:3 5; filter:drop-shadow(0 0 3px #66afff35); }
+    #le-sky-view .le-mv-path-faint { stroke:#8abcf2; stroke-width:1.15; stroke-opacity:.15; stroke-dasharray:3 5; filter:drop-shadow(0 0 3px #66afff25); }
     #le-sky-view .le-mv-path-main { stroke:url(#leMvArcGradient); stroke-width:2; filter:drop-shadow(0 0 3px #a5d8ffb0) drop-shadow(0 0 9px #52a7ff42); }
     #le-sky-view .le-mv-endpoint { fill:#deefff; filter:drop-shadow(0 0 5px #9bd8ff); }
     #le-sky-view .le-mv-endpoint-halo { fill:#73baff; fill-opacity:.15; }
@@ -406,13 +406,19 @@
     const xSpan = landscape ? 0.735 : 0.83;
     const baseline = h * 0.515;
     const peakAltitude = Math.max(1, ...points.map(p => Math.max(0, p.altitude)));
-    const amplitude = h * clamp((landscape ? 0.105 : 0.095) + peakAltitude * 0.0028, 0.14, 0.34);
+    const baseAmplitude = clamp((landscape ? 0.105 : 0.095) + peakAltitude * 0.0028, 0.14, 0.34);
+    // Portrait has extra safe sky above the endpoint baseline, so use 18% more
+    // height while capping the crest 12.5% below the top edge. Landscape geometry
+    // intentionally keeps the already-approved amplitude unchanged.
+    const amplitude = h * (landscape ? baseAmplitude : Math.min(0.39, baseAmplitude * 1.18));
     return points.map(p => {
       const horizontalProgress = clamp((p.unwrapped - first) / span, 0, 1);
       const normalizedAltitude = clamp(Math.max(0, p.altitude) / peakAltitude, 0, 1);
-      // A power just above 1 gives the crest a visible rounded crown rather than
-      // the old flattened-looking plateau; real altitude still shapes 28% of it.
-      const roundedDome = Math.pow(Math.max(0, Math.sin(Math.PI * horizontalProgress)), 1.30);
+      // A slightly gentler portrait exponent softens the crown without making a
+      // plateau. Landscape retains its previous curve; real altitude still shapes
+      // 28% of each path so the calculated reference trajectories stay distinct.
+      const domeExponent = landscape ? 1.30 : 1.20;
+      const roundedDome = Math.pow(Math.max(0, Math.sin(Math.PI * horizontalProgress)), domeExponent);
       const shape = roundedDome * 0.72 + normalizedAltitude * 0.28;
       return {
         time: p.time, altitude: p.altitude, azimuth: p.azimuth,
