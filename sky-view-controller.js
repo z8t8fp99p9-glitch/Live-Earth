@@ -205,7 +205,18 @@
     #le-sky-view .le-mv-timeline:before { display:none; }
     #le-sky-view .le-mv-timeline:after { content:""; position:absolute; left:0; right:0; bottom:29px; height:14px; background:linear-gradient(90deg,transparent 0 4.8%,#9bd2ff 4.8% 5.05%,transparent 5.05% 94.95%,#9bd2ff 94.95% 95.2%,transparent 95.2% 100%); opacity:.7; pointer-events:none; }
     #le-sky-view .le-mv-timeline[hidden], #le-sky-view .le-mv-location-note[hidden] { display:none !important; }
-    #le-sky-view .le-mv-selected-time { position:absolute; top:0; left:0; right:0; display:block; width:100%; border:0; padding:0; margin:0; background:transparent; color:#f5faff; text-align:center; font:500 16px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; letter-spacing:.2px; text-shadow:0 1px 12px #000; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    #le-sky-view .le-mv-selected-time { position:absolute; top:0; left:50%; right:auto; display:block; width:max-content; max-width:78%; border:0; padding:0; margin:0; background:transparent; color:#ff7189; text-align:center; font:600 14px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; letter-spacing:.15px; text-shadow:0 0 4px #ff4b69bd,0 0 11px #ed173e91,0 1px 8px #000; cursor:pointer; -webkit-tap-highlight-color:transparent; transform:translate(-50%,-100%); z-index:5; }
+    #le-sky-view .le-mv-timeline.le-mv-no-local-times .le-mv-end-labels { display:none !important; }
+    #le-sky-view .le-mv-lunar-info { position:absolute; z-index:3; top:calc(10.5% + env(safe-area-inset-top,0px)); left:7%; right:7%; height:104px; pointer-events:none; color:#bce7ff; text-shadow:0 1px 9px #020b1ccc,0 0 8px #3da8ff20; }
+    #le-sky-view .le-mv-lunar-phase { position:absolute; top:0; left:50%; width:68%; transform:translateX(-50%); text-align:center; }
+    #le-sky-view .le-mv-lunar-kicker { color:#9bd9ff; font-size:10px; line-height:1.3; font-weight:600; letter-spacing:2.1px; text-transform:uppercase; white-space:nowrap; }
+    #le-sky-view .le-mv-lunar-illumination { margin-top:2px; color:#62baff; font-size:30px; line-height:1.05; font-weight:400; letter-spacing:.4px; text-shadow:0 0 5px #42aaff85,0 0 13px #168bff50; }
+    #le-sky-view .le-mv-lunar-subtitle { margin-top:3px; color:#9bdcff; font-size:9px; line-height:1.2; letter-spacing:2px; }
+    #le-sky-view .le-mv-lunar-side { position:absolute; top:65px; max-width:41%; }
+    #le-sky-view .le-mv-lunar-age { left:3%; text-align:left; }
+    #le-sky-view .le-mv-lunar-next { right:2%; text-align:right; }
+    #le-sky-view .le-mv-lunar-value { margin-top:3px; color:#c5eaff; font-size:15px; line-height:1.2; font-weight:500; letter-spacing:.1px; }
+    #le-sky-view .le-mv-lunar-countdown { margin-top:2px; color:#81c9ff; font-size:11px; line-height:1.25; }
     #le-sky-view .le-mv-range { position:absolute; left:0; right:0; bottom:14px; width:100%; height:44px; appearance:none; -webkit-appearance:none; background:transparent; margin:0; cursor:pointer; touch-action:pan-x; z-index:2; }
     #le-sky-view .le-mv-range::-webkit-slider-runnable-track { height:2px; border-radius:9px; background:transparent; }
     #le-sky-view .le-mv-range::-moz-range-track { height:2px; border-radius:9px; background:transparent; }
@@ -217,6 +228,8 @@
     #le-sky-view .le-mv-vertical-scroller { display:none; }
     #le-sky-view .le-mv-location-note { position:absolute; z-index:5; left:0; right:0; top:48%; padding:0 30px; color:#bfd1e6; font-size:11px; line-height:1.5; text-align:center; text-shadow:0 2px 10px #000; }
     @media (orientation:landscape) {
+      #le-sky-view .le-mv-lunar-info { display:none; }
+      #le-sky-view .le-mv-selected-time { color:#d8efff; text-shadow:0 0 5px #61b8ff62,0 1px 8px #000; transform:none; width:auto; }
       /* Landscape gets an independent vertical time rail at the side of the view.
          The rail controls time only; it does not control the Moon or arc layout. */
       #le-sky-view .le-mv-timeline { left:auto; right:2.4%; top:7.5%; bottom:7.5%; width:104px; height:auto; border:1px solid #9bcfff42; border-radius:22px; padding:8px; background:linear-gradient(160deg,#06172bf0,#071426c7); box-shadow:0 8px 32px #0005,inset 0 1px #ffffff12; -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
@@ -266,6 +279,22 @@
       <text class="le-mv-event-label" id="le-mv-set-label" text-anchor="end">MOONSET</text><text class="le-mv-event-time" id="le-mv-set-time" text-anchor="end"></text>
     </svg>
     <canvas class="le-mv-canvas" aria-hidden="true"></canvas>
+    <div class="le-mv-lunar-info" aria-label="Lunar details">
+      <div class="le-mv-lunar-phase">
+        <div id="le-mv-phase-name" class="le-mv-lunar-kicker">--</div>
+        <div class="le-mv-lunar-illumination"><span id="le-mv-illumination-value">--%</span></div>
+        <div class="le-mv-lunar-subtitle">ILLUMINATED</div>
+      </div>
+      <div class="le-mv-lunar-side le-mv-lunar-age">
+        <div class="le-mv-lunar-kicker">LUNAR AGE</div>
+        <div id="le-mv-lunar-age-value" class="le-mv-lunar-value">-- days</div>
+      </div>
+      <div class="le-mv-lunar-side le-mv-lunar-next">
+        <div class="le-mv-lunar-kicker">NEXT PHASE</div>
+        <div id="le-mv-next-phase-value" class="le-mv-lunar-value">--</div>
+        <div id="le-mv-next-phase-countdown" class="le-mv-lunar-countdown">--</div>
+      </div>
+    </div>
     <div class="le-mv-timeline" hidden>
       <svg class="le-mv-horizontal-rail-sparkles" aria-hidden="true" viewBox="0 0 390 98" preserveAspectRatio="none">
         <defs>
@@ -308,6 +337,9 @@
   const $ = selector => stage.querySelector(selector);
   const canvas = $(".le-mv-canvas"), svg = $(".le-mv-svg"), timeline = $(".le-mv-timeline");
   const selectedLabel = $(".le-mv-selected-time"), range = $(".le-mv-range"), locationNote = $(".le-mv-location-note");
+  const phaseNameNode = $("#le-mv-phase-name"), illuminationNode = $("#le-mv-illumination-value");
+  const lunarAgeNode = $("#le-mv-lunar-age-value"), nextPhaseNode = $("#le-mv-next-phase-value");
+  const nextPhaseCountdownNode = $("#le-mv-next-phase-countdown");
   const dayLabel = $(".start-label"), setLabel = $(".end-label");
   const verticalPath = $("#le-mv-vertical-path"), verticalMarker = $("#le-mv-vertical-marker");
   const horizontalRailSparkles = $(".le-mv-horizontal-rail-sparkles");
@@ -319,6 +351,58 @@
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   const isLocationEnabled = () => window.liveEarthGetLocationState?.() === true;
   const radians = Math.PI / 180;
+  const LUNAR_SYNODIC_MONTH_DAYS = 29.530588853;
+
+  function nextMajorLunarPhase(ageDays) {
+    const age = ((ageDays % LUNAR_SYNODIC_MONTH_DAYS) + LUNAR_SYNODIC_MONTH_DAYS) % LUNAR_SYNODIC_MONTH_DAYS;
+    const milestones = [
+      { day: LUNAR_SYNODIC_MONTH_DAYS / 4, name: "First Quarter" },
+      { day: LUNAR_SYNODIC_MONTH_DAYS / 2, name: "Full Moon" },
+      { day: LUNAR_SYNODIC_MONTH_DAYS * 3 / 4, name: "Last Quarter" },
+      { day: LUNAR_SYNODIC_MONTH_DAYS, name: "New Moon" }
+    ];
+    const next = milestones.find(item => item.day > age + 0.001) || { day: LUNAR_SYNODIC_MONTH_DAYS, name: "New Moon" };
+    const hours = Math.max(0, Math.round((next.day - age) * 24));
+    const daysPart = Math.floor(hours / 24), hoursPart = hours % 24;
+    const countdown = daysPart ? `in ${daysPart}d ${hoursPart}h` : `in ${hoursPart}h`;
+    return { name: next.name, countdown };
+  }
+
+  function updateLunarInfo() {
+    if (!astronomy || typeof astronomy.moonPosition !== "function") return;
+    try {
+      // Lunar phase, illumination and age are global lunar properties; calculating
+      // them at a neutral reference coordinate does not read or infer user location.
+      const lunar = astronomy.moonPosition(new Date(selectedTime), 0, 0);
+      if (!lunar) return;
+      phaseNameNode.textContent = String(lunar.phase || "Moon Phase").toUpperCase();
+      illuminationNode.textContent = `${Math.round(clamp(Number(lunar.illumination) || 0, 0, 1) * 100)}%`;
+      lunarAgeNode.textContent = `${Number(lunar.age).toFixed(1)} days`;
+      const next = nextMajorLunarPhase(Number(lunar.age) || 0);
+      nextPhaseNode.textContent = next.name;
+      nextPhaseCountdownNode.textContent = next.countdown;
+    } catch (_) { /* Leave the last valid text in place if a phase sample is unavailable. */ }
+  }
+
+  function setScrollerLocationMode(hasLocalTimes) {
+    // The visual scroller remains present regardless of Location. Only the local rise/set
+    // labels are hidden when no user location is actively available.
+    timeline.hidden = false;
+    timeline.classList.toggle("le-mv-no-local-times", !hasLocalTimes);
+    locationNote.hidden = true;
+  }
+
+  function fractionOfLocalDay(timestamp) {
+    const d = new Date(timestamp);
+    const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    return clamp((timestamp - dayStart) / 86400000, 0, 1);
+  }
+
+  function timestampAtLocalDayProgress(fraction, referenceTimestamp = Date.now()) {
+    const d = new Date(referenceTimestamp);
+    const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    return dayStart + clamp(fraction, 0, 1) * 86400000;
+  }
   let active = false, astronomy = null, THREE = null, renderer = null, scene = null, camera = null;
   let moon = null, moonTexture = null, moonLight = null, moonLightTarget = null;
   let frame = 0, timer = 0, observer = null, interval = null, selectedTime = Date.now(), progress = 0, live = false;
@@ -500,15 +584,17 @@
     if (!observer || !astronomy) return;
     const found = astronomy.moonRiseSetInterval(observer.latitude, observer.longitude, new Date(now));
     if (!found) {
-      interval = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true;
-      locationNote.hidden = false; locationNote.textContent = "No local Moonrise/set interval could be estimated for this location and date";
-      selectedTime = now; progress = 0.5; live = true; renderOnce(); return;
+      interval = null; cachedLightDirection = null; clearPaths();
+      setScrollerLocationMode(false);
+      selectedTime = now; progress = fractionOfLocalDay(now); live = true;
+      range.value = String(Math.round(progress * 1000)); selectedLabel.textContent = fmt(selectedTime);
+      renderOnce(); return;
     }
     interval = { rise: +found.rise, set: +found.set, aboveHorizonNow: found.aboveHorizonNow };
     // Cache one representative lighting direction for this viewing interval.
     // This is intentionally stable while the user watches or scrubs the timeline.
     cachedLightDirection = lightVectorAt(new Date((interval.rise + interval.set) / 2));
-    timeline.hidden = false; locationNote.hidden = true;
+    setScrollerLocationMode(true);
     $(".start-label").textContent = fmt(interval.rise); $(".end-label").textContent = fmt(interval.set);
     if (now >= interval.rise && now < interval.set) {
       progress = (now - interval.rise) / (interval.set - interval.rise); selectedTime = now; live = true;
@@ -833,6 +919,19 @@
     const x = trailStart + trailLength * t;
     const y = (blueCurveY(t) + goldCurveY(t)) / 2;
     horizontalMoonMarker.setAttribute("transform", `translate(${x.toFixed(2)} ${y.toFixed(2)})`);
+    selectedLabel.textContent = fmt(selectedTime);
+    if (dimensions.w <= dimensions.h) {
+      // Red clock is visually attached to the mini Moon; the transparent slider
+      // still occupies the full width for comfortable thumb reach.
+      selectedLabel.style.left = `${x.toFixed(2)}px`;
+      selectedLabel.style.right = "auto";
+      selectedLabel.style.width = "max-content";
+      selectedLabel.style.top = `${Math.max(22, y - 13).toFixed(2)}px`;
+      selectedLabel.style.transform = "translate(-50%,-100%)";
+      selectedLabel.style.color = "#ff7189";
+    } else {
+      ["left", "right", "width", "top", "transform", "color"].forEach(name => selectedLabel.style.removeProperty(name));
+    }
   }
   function updateVerticalMarker() {
     if (!verticalPath || !verticalMarker) return;
@@ -843,6 +942,7 @@
     } catch (_) { /* Keep the scroller usable if SVG path metrics are unavailable. */ }
   }
   function renderOnce() {
+    updateLunarInfo();
     updateHorizontalMarker();
     updateVerticalMarker();
     if (!active || !renderer || !scene || !camera || !moon) return;
@@ -864,9 +964,12 @@
         selectedLabel.textContent = fmt(selectedTime);
       }
     } else if (live && !interval) {
-      // With Location OFF, refresh only the Moon's time-dependent phase lighting;
-      // never calculate or display a local path or ask for device location.
+      // Location-independent scrub mode: use the device's local clock day only for
+      // slider placement. No local rise/set values are inferred or displayed.
       selectedTime = now;
+      progress = fractionOfLocalDay(now);
+      range.value = String(Math.round(progress * 1000));
+      selectedLabel.textContent = fmt(selectedTime);
     }
     renderOnce();
   }
@@ -875,16 +978,15 @@
     frame = requestAnimationFrame(() => { frame = 0; renderOnce(); });
   }
   async function refreshLocation() {
-    if (!active || !isLocationEnabled()) { observer = null; interval = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false; setLocalIntervalNoLocation(); return; }
-    if (!navigator.geolocation) { observer = null; interval = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false; locationNote.textContent = "Local Moon path unavailable · location service is not supported"; setLocalIntervalNoLocation(); return; }
+    if (!active || !isLocationEnabled()) { observer = null; interval = null; cachedLightDirection = null; clearPaths(); setScrollerLocationMode(false); setLocalIntervalNoLocation(); return; }
+    if (!navigator.geolocation) { observer = null; interval = null; cachedLightDirection = null; clearPaths(); setScrollerLocationMode(false); setLocalIntervalNoLocation(); return; }
     try {
       const pos = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: false, maximumAge: 120000, timeout: 10000 }));
       if (!active || !isLocationEnabled()) return;
       observer = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
         setLocalInterval(Date.now());
     } catch (error) {
-      observer = null; interval = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false;
-      locationNote.textContent = "Local Moon path unavailable · enable Location and allow access to calculate local rise/set";
+      observer = null; interval = null; cachedLightDirection = null; clearPaths(); setScrollerLocationMode(false);
       setLocalIntervalNoLocation();
       console.info("[LIVE // EARTH] Moon View local path unavailable.", error?.message || error);
     }
@@ -895,16 +997,20 @@
       if (!active || !initialized) return;
       resize();
       if (isLocationEnabled()) refreshLocation();
-      else { observer = null; cachedLightDirection = null; timeline.hidden = true; locationNote.hidden = false; locationNote.textContent = "Location is off · local Moon path and rise/set times are hidden"; setLocalIntervalNoLocation(); }
+      else { observer = null; interval = null; cachedLightDirection = null; setScrollerLocationMode(false); setLocalIntervalNoLocation(); }
       if (!timer) timer = window.setInterval(tickLiveTime, 1000);
       queueRender();
     });
   }
   function setLocalIntervalNoLocation() {
-    // Keep the fixed visual arc and park the Moon at its crest while local times are private.
-    // No geolocation or local rise/set data is requested or displayed in this state.
-    selectedTime = Date.now(); progress = 0.5; live = true;
+    // Keep the visual scroller available without asking for location. With no local
+    // rise/set interval, the marker is a neutral local-day scrub preview, not a claim
+    // about the user's geographical Moonrise/Moonset times.
+    setScrollerLocationMode(false);
+    selectedTime = Date.now(); progress = fractionOfLocalDay(selectedTime); live = true;
+    range.value = String(Math.round(progress * 1000)); selectedLabel.textContent = fmt(selectedTime);
     drawPaths();
+    updateLunarInfo();
     if (astronomy) renderOnce();
   }
   function deactivate() {
@@ -915,16 +1021,20 @@
     stage.hidden = true;
   }
   range.addEventListener("input", event => {
-    if (!interval) return;
     live = false; progress = Number(event.target.value) / 1000;
-    selectedTime = interval.rise + progress * (interval.set - interval.rise);
-    selectedLabel.textContent = fmt(selectedTime); queueRender();
+    if (interval && observer && isLocationEnabled()) {
+      selectedTime = interval.rise + progress * (interval.set - interval.rise);
+    } else {
+      selectedTime = timestampAtLocalDayProgress(progress, Date.now());
+    }
+    selectedLabel.textContent = fmt(selectedTime); updateLunarInfo(); queueRender();
   });
   selectedLabel.addEventListener("click", () => {
     if (observer && interval && Date.now() >= interval.rise && Date.now() < interval.set) {
       live = true; selectedTime = Date.now(); progress = (selectedTime - interval.rise) / (interval.set - interval.rise);
       range.value = String(Math.round(progress * 1000)); selectedLabel.textContent = fmt(selectedTime); queueRender();
     } else if (active && isLocationEnabled()) { if (observer) setLocalInterval(Date.now()); else refreshLocation(); }
+    else if (active) setLocalIntervalNoLocation();
   });
   function queueResize() {
     if (!active || resizeFrame) return;
@@ -943,12 +1053,11 @@
   window.addEventListener("live-earth-location-state", event => {
     if (!active) return;
     if (!!event.detail?.enabled && isLocationEnabled()) refreshLocation();
-    else { observer = null; interval = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false; locationNote.textContent = "Location is off · local Moon path and rise/set times are hidden"; setLocalIntervalNoLocation(); }
+    else { observer = null; interval = null; cachedLightDirection = null; clearPaths(); setScrollerLocationMode(false); setLocalIntervalNoLocation(); }
   });
   window.addEventListener("live-earth-location-stop", () => {
-    observer = null; interval = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true;
-    locationNote.hidden = false; locationNote.textContent = "Location is off · local Moon path and rise/set times are hidden";
-    setLocalIntervalNoLocation();
+    observer = null; interval = null; cachedLightDirection = null; clearPaths();
+    setScrollerLocationMode(false); setLocalIntervalNoLocation();
   });
   if (window.LiveEarthViewModules) {
     window.LiveEarthViewModules.register("moon-lunar-interface", { views: ["moon"], activate, deactivate });
