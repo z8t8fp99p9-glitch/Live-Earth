@@ -217,6 +217,7 @@
     #le-sky-view .le-mv-timeline[hidden], #le-sky-view .le-mv-location-note[hidden] { display:none !important; }
     #le-sky-view .le-mv-selected-time { position:absolute; top:0; left:50%; right:auto; display:block; width:max-content; max-width:78%; border:0; padding:0; margin:0; background:transparent; color:#ff7189; text-align:center; font:600 14px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; letter-spacing:.15px; text-shadow:0 0 4px #ff4b69bd,0 0 11px #ed173e91,0 1px 8px #000; cursor:pointer; -webkit-tap-highlight-color:transparent; transform:translate(-50%,-100%); z-index:5; }
     #le-sky-view .le-mv-timeline.le-mv-no-local-times .le-mv-end-labels { display:none !important; }
+    #le-sky-view .le-mv-timeline.le-mv-preview-mode .le-mv-end-labels { display:flex !important; }
     #le-sky-view .le-mv-lunar-info { position:absolute; z-index:3; top:calc(10.5% + env(safe-area-inset-top,0px) - 48px); left:7%; right:7%; height:104px; pointer-events:none; color:#bce7ff; text-shadow:0 1px 9px #020b1ccc,0 0 8px #3da8ff20; }
     #le-sky-view .le-mv-lunar-phase { position:absolute; top:0; left:50%; width:68%; transform:translate(-50%, 4px); text-align:center; }
     #le-sky-view .le-mv-lunar-kicker { color:#9bd9ff; font-size:10px; line-height:1.3; font-weight:600; letter-spacing:2.1px; text-transform:uppercase; white-space:nowrap; }
@@ -410,6 +411,8 @@
   const lunarAgeNode = $("#le-mv-lunar-age-value"), nextPhaseNode = $("#le-mv-next-phase-value");
   const nextPhaseCountdownNode = $("#le-mv-next-phase-countdown");
   const dayLabel = $(".start-label"), setLabel = $(".end-label");
+  const startCaption = $(".le-mv-endpoint-info-rise small");
+  const endCaption = $(".le-mv-endpoint-info-set small");
   const verticalPath = $("#le-mv-vertical-path"), verticalMarker = $("#le-mv-vertical-marker");
   const horizontalRailSparkles = $(".le-mv-horizontal-rail-sparkles");
   const horizontalTrailGroup = $("#le-mv-horizontal-trail-group");
@@ -417,10 +420,18 @@
   const horizontalMoonMarker = $("#le-mv-horizontal-moon-marker");
   const verticalSparkleGroup = $("#le-mv-vertical-sparkle-group");
   const fmt = value => new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date(value));
+  const fmtShortDate = value => new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(new Date(value));
+  const fmtPreviewSelection = value => `${fmtShortDate(value)} · ${fmt(value)}`;
+  const selectedTimeLabelText = value => TEMPORARY_MOON_LIGHTING_PREVIEW ? fmtPreviewSelection(value) : fmt(value);
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   const isLocationEnabled = () => window.liveEarthGetLocationState?.() === true;
   const radians = Math.PI / 180;
   const LUNAR_SYNODIC_MONTH_DAYS = 29.530588853;
+  // TEMPORARY TEST MODE: preview the next 20 days to inspect real changing Moon lighting.
+  // Restore the baseline controller from ROLLBACK-RESTORE after the visual test.
+  const TEMPORARY_MOON_LIGHTING_PREVIEW = true;
+  const MOON_LIGHTING_PREVIEW_DAYS = 20;
+  const MOON_LIGHTING_PREVIEW_MS = MOON_LIGHTING_PREVIEW_DAYS * 24 * 60 * 60 * 1000;
 
   function nextMajorLunarPhase(ageDays) {
     const age = ((ageDays % LUNAR_SYNODIC_MONTH_DAYS) + LUNAR_SYNODIC_MONTH_DAYS) % LUNAR_SYNODIC_MONTH_DAYS;
@@ -458,7 +469,31 @@
     // labels are hidden when no user location is actively available.
     timeline.hidden = false;
     timeline.classList.toggle("le-mv-no-local-times", !hasLocalTimes);
+    timeline.classList.toggle("le-mv-preview-mode", TEMPORARY_MOON_LIGHTING_PREVIEW);
     locationNote.hidden = true;
+  }
+
+  function updatePreviewEndpointLabels() {
+    if (!TEMPORARY_MOON_LIGHTING_PREVIEW) return;
+    dayLabel.textContent = fmtShortDate(previewStartTimestamp);
+    setLabel.textContent = fmtShortDate(previewStartTimestamp + MOON_LIGHTING_PREVIEW_MS);
+    if (startCaption) startCaption.textContent = "START";
+    if (endCaption) endCaption.textContent = `+${MOON_LIGHTING_PREVIEW_DAYS} DAYS`;
+    range.setAttribute("aria-label", `Preview Moon illumination and lighting from ${fmtShortDate(previewStartTimestamp)} through ${fmtShortDate(previewStartTimestamp + MOON_LIGHTING_PREVIEW_MS)}, over ${MOON_LIGHTING_PREVIEW_DAYS} days`);
+    selectedLabel.setAttribute("aria-label", `Reset the ${MOON_LIGHTING_PREVIEW_DAYS}-day Moon lighting preview to now`);
+  }
+
+  function resetPreviewToNow(now = Date.now()) {
+    if (!TEMPORARY_MOON_LIGHTING_PREVIEW) return;
+    previewStartTimestamp = now;
+    progress = 0;
+    selectedTime = now;
+    live = false;
+    range.value = "0";
+    updatePreviewEndpointLabels();
+    selectedLabel.textContent = selectedTimeLabelText(selectedTime);
+    updateLunarInfo();
+    queueRender();
   }
 
   function fractionOfLocalDay(timestamp) {
@@ -475,10 +510,11 @@
   let active = false, astronomy = null, THREE = null, renderer = null, scene = null, camera = null;
   let moon = null, moonTexture = null, moonLight = null, moonLightTarget = null;
   let frame = 0, timer = 0, observer = null, interval = null, selectedTime = Date.now(), progress = 0, live = false;
+  let previewStartTimestamp = Date.now();
   let dimensions = { w: 0, h: 0, radius: 0 };
   let arcGeometry = null;
   let horizontalScrollerGeometry = null;
-  let cachedLightDirection = null;
+  let cachedLightDirection = null, cachedLightTimestamp = null;
   let resizeFrame = 0, resizeObserver = null, lastResizeDpr = 0;
   let initialized = false, loading = null;
 
@@ -663,24 +699,32 @@
     if (!observer || !astronomy) return;
     const found = astronomy.moonRiseSetInterval(observer.latitude, observer.longitude, new Date(now));
     if (!found) {
-      interval = null; cachedLightDirection = null; clearPaths();
+      interval = null; cachedLightDirection = null; cachedLightTimestamp = null; clearPaths();
       setScrollerLocationMode(false);
-      selectedTime = now; progress = fractionOfLocalDay(now); live = true;
-      range.value = String(Math.round(progress * 1000)); selectedLabel.textContent = fmt(selectedTime);
+      if (TEMPORARY_MOON_LIGHTING_PREVIEW) { progress = 0; selectedTime = previewStartTimestamp; live = false; }
+      else { selectedTime = now; progress = fractionOfLocalDay(now); live = true; }
+      range.value = String(Math.round(progress * 1000));
+      updatePreviewEndpointLabels();
+      selectedLabel.textContent = selectedTimeLabelText(selectedTime);
       renderOnce(); return;
     }
     interval = { rise: +found.rise, set: +found.set, aboveHorizonNow: found.aboveHorizonNow };
-    // Cache one representative lighting direction for this viewing interval.
-    // This is intentionally stable while the user watches or scrubs the timeline.
+    // The ordinary view caches one representative direction for the current interval.
+    // The temporary 20-day preview deliberately refreshes direction at each selected date.
     cachedLightDirection = lightVectorAt(new Date((interval.rise + interval.set) / 2));
+    cachedLightTimestamp = null;
     setScrollerLocationMode(true);
     $(".start-label").textContent = fmt(interval.rise); $(".end-label").textContent = fmt(interval.set);
-    if (now >= interval.rise && now < interval.set) {
+    if (TEMPORARY_MOON_LIGHTING_PREVIEW) {
+      progress = 0; selectedTime = previewStartTimestamp; live = false;
+    } else if (now >= interval.rise && now < interval.set) {
       progress = (now - interval.rise) / (interval.set - interval.rise); selectedTime = now; live = true;
     } else {
       progress = 0; selectedTime = interval.rise; live = true;
     }
-    range.value = String(Math.round(progress * 1000)); selectedLabel.textContent = fmt(selectedTime);
+    range.value = String(Math.round(progress * 1000));
+    updatePreviewEndpointLabels();
+    selectedLabel.textContent = selectedTimeLabelText(selectedTime);
     drawPaths(); renderOnce();
   }
   function arcCurve(amount) {
@@ -983,9 +1027,17 @@
     // Camera bounds are [0,w] x [0,h], so convert SVG top-origin y to Three.js y once.
     moon.position.set(p.x, h - p.y, 0);
     moon.scale.setScalar(dimensions.radius);
-    // Light direction is cached for the active rise/set interval. Timeline ticks and scrubs
-    // only move the Moon mesh; they do not rerun Sun/Moon coordinate calculations.
-    if (!cachedLightDirection) cachedLightDirection = lightVectorAt(date);
+    // Normal mode keeps its efficient interval cache. The temporary preview recalculates
+    // the Sun/Moon direction for the selected date (at most once per selected minute).
+    const lightMinute = Math.floor(date.getTime() / 60000);
+    if (TEMPORARY_MOON_LIGHTING_PREVIEW) {
+      if (!cachedLightDirection || cachedLightTimestamp !== lightMinute) {
+        cachedLightDirection = lightVectorAt(date);
+        cachedLightTimestamp = lightMinute;
+      }
+    } else if (!cachedLightDirection) {
+      cachedLightDirection = lightVectorAt(date);
+    }
     const dir = cachedLightDirection;
     moonLight.position.set(moon.position.x + dir.x * 100, moon.position.y + dir.y * 100, moon.position.z + dir.z * 100);
     moonLightTarget.position.copy(moon.position);
@@ -998,7 +1050,7 @@
     const x = trailStart + trailLength * t;
     const y = (blueCurveY(t) + goldCurveY(t)) / 2;
     horizontalMoonMarker.setAttribute("transform", `translate(${x.toFixed(2)} ${y.toFixed(2)})`);
-    selectedLabel.textContent = fmt(selectedTime);
+    selectedLabel.textContent = selectedTimeLabelText(selectedTime);
     if (dimensions.w <= dimensions.h) {
       // Red clock is visually attached to the mini Moon; the transparent slider
       // still occupies the full width for comfortable thumb reach.
@@ -1040,7 +1092,7 @@
         selectedTime = now;
         progress = clamp((now - interval.rise) / (interval.set - interval.rise), 0, 1);
         range.value = String(Math.round(progress * 1000));
-        selectedLabel.textContent = fmt(selectedTime);
+        selectedLabel.textContent = selectedTimeLabelText(selectedTime);
       }
     } else if (live && !interval) {
       // Location-independent scrub mode: use the device's local clock day only for
@@ -1048,7 +1100,7 @@
       selectedTime = now;
       progress = fractionOfLocalDay(now);
       range.value = String(Math.round(progress * 1000));
-      selectedLabel.textContent = fmt(selectedTime);
+      selectedLabel.textContent = selectedTimeLabelText(selectedTime);
     }
     renderOnce();
   }
@@ -1072,6 +1124,7 @@
   }
   function activate() {
     active = true; stage.hidden = false;
+    if (TEMPORARY_MOON_LIGHTING_PREVIEW) resetPreviewToNow(Date.now());
     initRenderer().then(() => {
       if (!active || !initialized) return;
       resize();
@@ -1086,8 +1139,11 @@
     // rise/set interval, the marker is a neutral local-day scrub preview, not a claim
     // about the user's geographical Moonrise/Moonset times.
     setScrollerLocationMode(false);
-    selectedTime = Date.now(); progress = fractionOfLocalDay(selectedTime); live = true;
-    range.value = String(Math.round(progress * 1000)); selectedLabel.textContent = fmt(selectedTime);
+    if (TEMPORARY_MOON_LIGHTING_PREVIEW) { progress = 0; selectedTime = previewStartTimestamp; live = false; }
+    else { selectedTime = Date.now(); progress = fractionOfLocalDay(selectedTime); live = true; }
+    range.value = String(Math.round(progress * 1000));
+    updatePreviewEndpointLabels();
+    selectedLabel.textContent = selectedTimeLabelText(selectedTime);
     drawPaths();
     updateLunarInfo();
     if (astronomy) renderOnce();
@@ -1101,17 +1157,20 @@
   }
   range.addEventListener("input", event => {
     live = false; progress = Number(event.target.value) / 1000;
-    if (interval && observer && isLocationEnabled()) {
+    if (TEMPORARY_MOON_LIGHTING_PREVIEW) {
+      selectedTime = previewStartTimestamp + progress * MOON_LIGHTING_PREVIEW_MS;
+    } else if (interval && observer && isLocationEnabled()) {
       selectedTime = interval.rise + progress * (interval.set - interval.rise);
     } else {
       selectedTime = timestampAtLocalDayProgress(progress, Date.now());
     }
-    selectedLabel.textContent = fmt(selectedTime); updateLunarInfo(); queueRender();
+    selectedLabel.textContent = selectedTimeLabelText(selectedTime); updateLunarInfo(); queueRender();
   });
   selectedLabel.addEventListener("click", () => {
+    if (TEMPORARY_MOON_LIGHTING_PREVIEW) { resetPreviewToNow(Date.now()); return; }
     if (observer && interval && Date.now() >= interval.rise && Date.now() < interval.set) {
       live = true; selectedTime = Date.now(); progress = (selectedTime - interval.rise) / (interval.set - interval.rise);
-      range.value = String(Math.round(progress * 1000)); selectedLabel.textContent = fmt(selectedTime); queueRender();
+      range.value = String(Math.round(progress * 1000)); selectedLabel.textContent = selectedTimeLabelText(selectedTime); queueRender();
     } else if (active && isLocationEnabled()) { if (observer) setLocalInterval(Date.now()); else refreshLocation(); }
     else if (active) setLocalIntervalNoLocation();
   });
