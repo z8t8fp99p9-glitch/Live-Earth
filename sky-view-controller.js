@@ -243,7 +243,7 @@
   stage.hidden = true;
   stage.innerHTML = `
     <svg class="le-mv-svg" aria-label="Fixed Moon guide arc with local rise and set times" role="img">
-      <defs><linearGradient id="leMvArcGradient" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#f7c57f" stop-opacity=".98"/><stop offset="7%" stop-color="#fff0d6"/><stop offset="19%" stop-color="#d9efff"/><stop offset="42%" stop-color="#f8fcff"/><stop offset="56%" stop-color="#ffffff"/><stop offset="76%" stop-color="#cfeaff"/><stop offset="91%" stop-color="#fff0d2"/><stop offset="100%" stop-color="#f5c27b" stop-opacity=".98"/></linearGradient></defs>
+      <defs><linearGradient id="leMvArcGradient" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#f0b875" stop-opacity=".98"/><stop offset="9%" stop-color="#c8e7ff"/><stop offset="28%" stop-color="#e8f7ff"/><stop offset="52%" stop-color="#ffffff"/><stop offset="73%" stop-color="#d3ecff"/><stop offset="91%" stop-color="#ffe0ad"/><stop offset="100%" stop-color="#f2bd78" stop-opacity=".96"/></linearGradient></defs>
       <path class="le-mv-path le-mv-path-main" id="le-mv-main"/><g id="le-mv-arc-sparkles" aria-hidden="true"></g>
       <circle class="le-mv-endpoint-halo" id="le-mv-rise-halo" r="8"/><circle class="le-mv-endpoint" id="le-mv-rise-dot" r="2.2"/><circle class="le-mv-endpoint-halo" id="le-mv-set-halo" r="8"/><circle class="le-mv-endpoint" id="le-mv-set-dot" r="2.2"/>
       <text class="le-mv-event-label" id="le-mv-rise-label" text-anchor="start">MOONRISE</text><text class="le-mv-event-time" id="le-mv-rise-time" text-anchor="start"></text>
@@ -407,27 +407,23 @@
   // Moon arc composition before the background artwork is replaced. The arc remains stable
   // across devices and orientations; later wallpaper tuning can align the mountains to it.
   function referenceBaseline(h, landscape) {
-    // Measured from the supplied reference screenshots: portrait ~49.4%,
-    // landscape ~51.6% of viewport height.
-    return h * (landscape ? 0.516 : 0.494);
+    return h * (landscape ? 0.543 : 0.494);
   }
 
   function drawPaths() {
     if (!dimensions.w || !dimensions.h) return;
     const { w, h } = dimensions;
     const landscape = w > h;
-    // Reference proportions: portrait spans most of the width; landscape uses a
-    // narrower, taller oval so the side scroller has its own clear space.
-    const x0 = w * (landscape ? 0.283 : 0.114);
-    const x1 = w * (landscape ? 0.652 : 0.921);
+    const x0 = w * (landscape ? 0.065 : 0.114);
+    const x1 = w * (landscape ? 0.80 : 0.921);
     const baseline = referenceBaseline(h, landscape);
-    // Use a true half-ellipse rather than a quadratic Bezier. The same ellipse
-    // equation drives the Moon so it follows the exact rendered curve.
-    const rx = (x1 - x0) / 2;
-    const ry = h * (landscape ? 0.332 : 0.18);
+    // Fixed upper ellipse calibrated to the approved reference. The horizontal diameter
+    // and endpoints are preserved; only the portrait rise is increased for a taller,
+    // more circular dome. Landscape retains its previous crest height.
     const centerX = (x0 + x1) / 2;
-    const control = { x: centerX, y: baseline - 2 * ry };
-    arcGeometry = { x0, x1, baseline, centerX, rx, ry, controlX: centerX, controlY: control.y, landscape };
+    const rx = (x1 - x0) / 2;
+    const ry = h * (landscape ? 0.35 : 0.225);
+    arcGeometry = { x0, x1, baseline, centerX, rx, ry, landscape };
     svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
     $("#le-mv-main").setAttribute("d", `M ${x0.toFixed(2)} ${baseline.toFixed(2)} A ${rx.toFixed(2)} ${ry.toFixed(2)} 0 0 1 ${x1.toFixed(2)} ${baseline.toFixed(2)}`);
     drawArcSparkles();
@@ -481,101 +477,147 @@
     drawPaths(); renderOnce();
   }
   function pointOnArc(amount) {
-    if (!arcGeometry) return { x: dimensions.w * 0.5, y: referenceBaseline(dimensions.h, dimensions.w > dimensions.h) };
+    if (!arcGeometry) return { x: dimensions.w * 0.5, y: mountainBaseline(dimensions.w, dimensions.h, dimensions.w > dimensions.h) };
     const t = clamp(amount, 0, 1);
+    const angle = Math.PI * t;
     const { centerX, rx, ry, baseline } = arcGeometry;
     return {
-      x: centerX - rx * Math.cos(Math.PI * t),
-      y: baseline - ry * Math.sin(Math.PI * t)
+      x: centerX - rx * Math.cos(angle),
+      y: baseline - ry * Math.sin(angle)
     };
   }
-  function pointNearArc(amount, offset = 0) {
+
+  function arcFrame(amount) {
     const p = pointOnArc(amount);
-    if (!arcGeometry || !offset) return p;
-    const { rx, ry } = arcGeometry;
     const angle = Math.PI * clamp(amount, 0, 1);
-    // Perpendicular normal places fine grains just beside the glowing trajectory.
-    const nx = ry * Math.cos(angle), ny = rx * Math.sin(angle);
-    const n = Math.hypot(nx, ny) || 1;
-    return { x: p.x + offset * nx / n, y: p.y + offset * ny / n };
+    const { rx, ry } = arcGeometry;
+    const dx = rx * Math.PI * Math.sin(angle);
+    const dy = -ry * Math.PI * Math.cos(angle);
+    const length = Math.hypot(dx, dy) || 1;
+    const tx = dx / length, ty = dy / length;
+    // The chosen normal points out into the open sky above the upper arc.
+    return { p, tx, ty, nx: ty, ny: -tx };
+  }
+
+  function offsetFromArc(amount, normalOffset, tangentOffset = 0) {
+    const f = arcFrame(amount);
+    return {
+      x: f.p.x + f.nx * normalOffset + f.tx * tangentOffset,
+      y: f.p.y + f.ny * normalOffset + f.ty * tangentOffset
+    };
   }
   function currentPoint() { return pointOnArc(progress); }
 
-  // Irregular, static SVG glints. Tiny grains cluster around a few brighter flares,
-  // rather than forming evenly spaced ticks. No animation or per-frame work is added.
+  // Static stardust is scattered in a loose band around the arc, like the Home orbit.
+  // Every point is deterministic and is rebuilt only when geometry changes; no animation loop.
   function drawArcSparkles() {
     const group = $("#le-mv-arc-sparkles");
     if (!group || !arcGeometry) return;
     group.replaceChildren();
     const ns = "http://www.w3.org/2000/svg";
-    const motes = [
-      [0.038,-2.8,.48,.42],[0.067,2.3,.62,.62],[0.101,-1.2,.42,.38],
-      [0.139,3.4,.78,.68],[0.174,-2.5,.54,.55],[0.211,1.4,.46,.43],
-      [0.246,-3.7,.69,.72],[0.278,2.1,.48,.45],[0.326,-1.5,.58,.6],
-      [0.359,3.8,.44,.43],[0.403,-2.1,.72,.7],[0.438,1.2,.48,.46],
-      [0.472,-3.5,.6,.61],[0.503,2.7,.78,.78],[0.537,-1.6,.46,.45],
-      [0.579,3.4,.58,.58],[0.612,-2.9,.43,.4],[0.647,1.8,.7,.68],
-      [0.687,-1.1,.5,.46],[0.721,3.7,.76,.72],[0.758,-2.6,.47,.46],
-      [0.793,1.5,.62,.59],[0.831,-3.4,.48,.46],[0.864,2.4,.75,.7],
-      [0.901,-1.5,.45,.44],[0.936,3.1,.62,.57],[0.969,-2.0,.42,.4]
-    ];
-    motes.forEach(([t, offset, radius, opacity]) => {
-      const p = pointNearArc(t, offset);
+    const scale = clamp(Math.min(dimensions.w, dimensions.h) / 430, 0.8, 1.45);
+    let seed = arcGeometry.landscape ? 0x53A71 : 0x2C0A7;
+    const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+    const safe = (v, lo, hi) => clamp(v, lo, hi);
+
+    // Fine grains: uneven distribution and an outward-biased scatter band.
+    // A minority drift just inside the arch to create depth instead of a line of ticks.
+    for (let i = 0; i < 46; i++) {
+      const t = 0.035 + rand() * 0.93;
+      const outward = rand() < 0.78;
+      const offset = outward ? scale * (4 + rand() * 24) : -scale * (2 + rand() * 9);
+      const tangent = scale * ((rand() - 0.5) * 13);
+      const p = offsetFromArc(t, offset, tangent);
       const dot = document.createElementNS(ns, "circle");
-      dot.setAttribute("cx", p.x.toFixed(2)); dot.setAttribute("cy", p.y.toFixed(2));
-      dot.setAttribute("r", radius.toFixed(2)); dot.setAttribute("opacity", opacity.toFixed(2));
-      dot.setAttribute("class", "le-mv-arc-sparkle"); group.appendChild(dot);
+      dot.setAttribute("cx", safe(p.x, 3, dimensions.w - 3).toFixed(2));
+      dot.setAttribute("cy", safe(p.y, 3, dimensions.h - 3).toFixed(2));
+      dot.setAttribute("r", (scale * (0.28 + rand() * 0.82)).toFixed(2));
+      dot.setAttribute("opacity", (0.20 + rand() * 0.53).toFixed(2));
+      dot.setAttribute("class", "le-mv-arc-sparkle");
+      group.appendChild(dot);
+    }
+
+    // A few brighter four-point flares are irregularly clustered and sit around the arc,
+    // never in a uniform row on its stroke. Keep their footprint delicate.
+    const flares = [
+      { t:0.105, off:10, tan:-5, size:2.25, rot:-12 },
+      { t:0.178, off:25, tan:4, size:1.75, rot:18 },
+      { t:0.272, off:9, tan:3, size:2.7, rot:-8 },
+      { t:0.348, off:31, tan:-4, size:1.8, rot:24 },
+      { t:0.442, off:13, tan:5, size:2.1, rot:-20 },
+      { t:0.515, off:25, tan:-2, size:2.95, rot:9 },
+      { t:0.625, off:8, tan:4, size:1.9, rot:20 },
+      { t:0.704, off:29, tan:-5, size:2.3, rot:-13 },
+      { t:0.812, off:12, tan:2, size:2.6, rot:15 },
+      { t:0.891, off:23, tan:-3, size:1.8, rot:-18 }
+    ];
+    flares.forEach(({ t, off, tan, size, rot }) => {
+      const p = offsetFromArc(t, off * scale, tan * scale);
+      appendStaticStar(group, {
+        x: safe(p.x, 4, dimensions.w - 4),
+        y: safe(p.y, 4, dimensions.h - 4)
+      }, size * scale, ns, rot);
     });
-    const landscape = arcGeometry.landscape;
-    const flares = landscape
-      ? [[0.091,2.4,-2.2],[0.177,1.55,2.8],[0.292,3.1,-1.3],[0.391,1.7,3.4],[0.469,2.5,-2.5],[0.574,3.5,1.3],[0.691,1.65,-3.0],[0.773,2.8,2.1],[0.903,2.1,-1.7]]
-      : [[0.079,2.6,-2.8],[0.163,1.55,2.1],[0.237,3.45,-1.3],[0.318,1.8,3.2],[0.407,2.45,-2.6],[0.486,3.8,1.4],[0.568,1.65,-2.4],[0.653,2.9,2.5],[0.713,1.55,-3.3],[0.789,3.35,1.7],[0.862,1.65,-1.2],[0.931,2.6,-2.1]];
-    flares.forEach(([t, size, offset]) => appendStaticStar(group, pointNearArc(t, offset), size, ns));
   }
 
-  // Curved four-point stars with soft centres, shared by the arc and scroller rails.
-  function appendStaticStar(group, p, size, ns) {
+  // Matching starbursts sit on the scroller rails as static SVG decorations.
+  // They are generated only when the layout is built/resized, never during clock ticks or dragging.
+  function appendStaticStar(group, p, size, ns, rotation = 0) {
     const glow = document.createElementNS(ns, "circle");
-    glow.setAttribute("cx", p.x.toFixed(2)); glow.setAttribute("cy", p.y.toFixed(2));
+    glow.setAttribute("cx", p.x.toFixed(2));
+    glow.setAttribute("cy", p.y.toFixed(2));
     glow.setAttribute("r", (size * 1.35).toFixed(2));
-    glow.setAttribute("class", "le-mv-arc-star-glow"); group.appendChild(glow);
-    const sx=p.x, sy=p.y, a=size*2.2, b=size*1.15, c=size*0.19;
+    glow.setAttribute("class", "le-mv-arc-star-glow");
+    group.appendChild(glow);
+    const coreWidth = size * 0.16;
     const star = document.createElementNS(ns, "path");
-    star.setAttribute("d", `M ${sx.toFixed(2)} ${(sy-a).toFixed(2)} C ${(sx+c).toFixed(2)} ${(sy-b).toFixed(2)} ${(sx+c).toFixed(2)} ${(sy-c).toFixed(2)} ${(sx+b).toFixed(2)} ${sy.toFixed(2)} C ${(sx+c).toFixed(2)} ${(sy+c).toFixed(2)} ${(sx+c).toFixed(2)} ${(sy+b).toFixed(2)} ${sx.toFixed(2)} ${(sy+a).toFixed(2)} C ${(sx-c).toFixed(2)} ${(sy+b).toFixed(2)} ${(sx-c).toFixed(2)} ${(sy+c).toFixed(2)} ${(sx-b).toFixed(2)} ${sy.toFixed(2)} C ${(sx-c).toFixed(2)} ${(sy-c).toFixed(2)} ${(sx-c).toFixed(2)} ${(sy-b).toFixed(2)} ${sx.toFixed(2)} ${(sy-a).toFixed(2)} Z`);
-    star.setAttribute("class", "le-mv-arc-star"); group.appendChild(star);
-    const core = document.createElementNS(ns, "circle");
-    core.setAttribute("cx", sx.toFixed(2)); core.setAttribute("cy", sy.toFixed(2));
-    core.setAttribute("r", Math.max(0.62, size * 0.17).toFixed(2));
-    core.setAttribute("class", "le-mv-scroller-sparkle-core"); group.appendChild(core);
+    star.setAttribute("d", `M ${p.x.toFixed(2)} ${(p.y-size*2.1).toFixed(2)} L ${(p.x+coreWidth).toFixed(2)} ${(p.y-coreWidth).toFixed(2)} L ${(p.x+size*0.86).toFixed(2)} ${p.y.toFixed(2)} L ${(p.x+coreWidth).toFixed(2)} ${(p.y+coreWidth).toFixed(2)} L ${p.x.toFixed(2)} ${(p.y+size*2.1).toFixed(2)} L ${(p.x-coreWidth).toFixed(2)} ${(p.y+coreWidth).toFixed(2)} L ${(p.x-size*0.86).toFixed(2)} ${p.y.toFixed(2)} L ${(p.x-coreWidth).toFixed(2)} ${(p.y-coreWidth).toFixed(2)} Z`);
+    star.setAttribute("class", "le-mv-arc-star");
+    if (rotation) star.setAttribute("transform", `rotate(${rotation} ${p.x.toFixed(2)} ${p.y.toFixed(2)})`);
+    group.appendChild(star);
+    const dot = document.createElementNS(ns, "circle");
+    dot.setAttribute("cx", p.x.toFixed(2)); dot.setAttribute("cy", p.y.toFixed(2));
+    dot.setAttribute("r", Math.max(0.65, size * 0.18).toFixed(2));
+    dot.setAttribute("class", "le-mv-scroller-sparkle-core");
+    group.appendChild(dot);
   }
 
-  // Scroller behavior is unchanged; only static glints are redistributed around the rails.
   function drawScrollerSparkles() {
     const ns = "http://www.w3.org/2000/svg";
+    // Portrait: use the exact pixel width of the timeline so the four-point stars stay round.
     const railWidth = Math.max(1, timeline.clientWidth || dimensions.w * 0.86);
     horizontalRailSparkles.setAttribute("viewBox", `0 0 ${railWidth.toFixed(2)} 98`);
     horizontalSparkleGroup.replaceChildren();
     const horizontalStars = [
-      [0.065,1.5,-5],[0.142,2.25,4],[0.235,1.05,-2],[0.319,2.8,5],
-      [0.402,1.35,-6],[0.487,1.8,3],[0.558,3.0,-3],[0.641,1.15,6],
-      [0.724,2.2,-1.5],[0.807,1.55,4.5],[0.891,2.75,-4],[0.963,1.25,2]
+      { t:0.075, s:1.8, y:48, r:-14 }, { t:0.205, s:2.35, y:71, r:12 },
+      { t:0.292, s:1.45, y:54, r:24 }, { t:0.418, s:2.0, y:76, r:-8 },
+      { t:0.535, s:2.65, y:50, r:17 }, { t:0.638, s:1.6, y:69, r:-21 },
+      { t:0.755, s:2.15, y:46, r:8 }, { t:0.866, s:1.55, y:73, r:-12 },
+      { t:0.947, s:2.0, y:57, r:19 }
     ];
-    horizontalStars.forEach(([t,size,offset]) => appendStaticStar(horizontalSparkleGroup,
-      { x: railWidth*t, y: 62+offset }, size, ns));
+    horizontalStars.forEach(({t,s,y,r}) => appendStaticStar(horizontalSparkleGroup, { x: railWidth*t, y }, s, ns, r));
 
+    // Landscape: place the same fixed glints directly on the existing winding SVG rail.
     verticalSparkleGroup.replaceChildren();
     if (verticalPath && typeof verticalPath.getTotalLength === "function") {
       const length = verticalPath.getTotalLength();
       const verticalStars = [
-        [0.058,1.5,-3],[0.147,2.15,3],[0.273,1.1,-2],[0.364,2.7,3.5],
-        [0.452,1.4,-3],[0.541,2.05,2],[0.637,1.15,-4],[0.748,2.8,2.5],[0.864,1.65,-2]
+        { t:0.075, s:1.8, o:7, r:-12 }, { t:0.205, s:2.25, o:-9, r:16 },
+        { t:0.342, s:1.55, o:10, r:22 }, { t:0.485, s:2.3, o:-7, r:-15 },
+        { t:0.614, s:1.8, o:8, r:10 }, { t:0.765, s:2.5, o:-10, r:-18 },
+        { t:0.913, s:1.85, o:6, r:14 }
       ];
-      verticalStars.forEach(([t,size,offset]) => {
+      verticalStars.forEach(({t,s,o,r}) => {
         const point = verticalPath.getPointAtLength(length*t);
-        appendStaticStar(verticalSparkleGroup, {x:point.x+offset,y:point.y}, size, ns);
+        const before = verticalPath.getPointAtLength(length*Math.max(0,t-0.006));
+        const after = verticalPath.getPointAtLength(length*Math.min(1,t+0.006));
+        const dx = after.x-before.x, dy = after.y-before.y, mag = Math.hypot(dx,dy)||1;
+        const x = point.x + (dy/mag)*o, y = point.y - (dx/mag)*o;
+        appendStaticStar(verticalSparkleGroup, { x, y }, s, ns, r);
       });
     }
   }
+
   function updateLighting(date) {
     if (!moonLight || !moon || !moonLightTarget) return;
     const p = currentPoint(), h = dimensions.h;
