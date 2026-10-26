@@ -1003,7 +1003,7 @@
       selectedLabel.style.left = `${x.toFixed(2)}px`;
       selectedLabel.style.right = "auto";
       selectedLabel.style.width = "max-content";
-      selectedLabel.style.top = `${Math.max(22, y - 11).toFixed(2)}px`;
+      selectedLabel.style.top = `${Math.max(22, y - 13).toFixed(2)}px`;
       selectedLabel.style.transform = "translate(-50%,-100%)";
       selectedLabel.style.color = "#ff7189";
     } else {
