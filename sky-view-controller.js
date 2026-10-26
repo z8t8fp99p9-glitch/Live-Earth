@@ -149,11 +149,10 @@
 
 
 /* Moon View 3D renderer is hosted here; no additional renderer file is loaded. */
-/* LIVE // EARTH Moon View — mountain foreground layering foundation.
+/* LIVE // EARTH Moon View — lightweight mountain-ridge occlusion.
  * Keeps the existing transparent 3D Moon renderer and cinematic backgrounds.
- * A source-matched transparent ridge layer sits in front of the Moon canvas and
- * lets the existing mountain silhouette occlude the Moon at the visual horizon.
- * The rejected radial/searchlight-style atmosphere trial is intentionally removed.
+ * Clips only the Moon canvas to a ridge traced from the matching original wallpaper.
+ * No duplicated scenery assets, extra renderer, radial searchlight, or astronomy changes.
  * Home, moon-orbit.js, Earth scene, wallpaper and Home orbital stardust are untouched.
  * The compact custom Moon albedo remains embedded for offline-first startup.
  */
@@ -177,11 +176,7 @@
     #le-sky-view[data-view="moon"] { touch-action:auto; }
     #le-sky-view .le-mv-svg { position:absolute; z-index:1; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
     #le-sky-view .le-mv-canvas { position:absolute; z-index:2; inset:0; display:block; width:100%; height:100%; pointer-events:none; filter:drop-shadow(0 0 6px rgba(133,194,255,.72)) drop-shadow(0 0 16px rgba(65,136,255,.32)); }
-    /* A pixel-aligned copy of the existing artwork sits above the Moon canvas.
-       Its transparent sky lets the Moon stay visible; its opaque mountain/valley pixels
-       naturally hide the Moon when it crosses the visible ridge. */
-    #le-sky-view .le-mv-mountain-foreground { position:absolute; inset:0; z-index:3; background-image:url("./moon-sky-mountain-foreground-portrait.webp"); background-position:center center; background-size:cover; background-repeat:no-repeat; pointer-events:none; }
-    @media (orientation:landscape) { #le-sky-view .le-mv-mountain-foreground { background-image:url("./moon-sky-mountain-foreground-landscape.webp"); } }
+    /* The original wallpaper itself supplies the mountain pixels. The Moon canvas alone is clipped to its ridge below. */
     #le-sky-view .le-mv-path { fill:none; stroke-linecap:round; stroke-linejoin:round; }
     /* The geometric path remains for Moon positioning; fine particles render the visible star trail. */
     #le-sky-view .le-mv-path-main { stroke:none; stroke-width:0; filter:none; }
@@ -334,7 +329,6 @@
       <text class="le-mv-event-label" id="le-mv-set-label" text-anchor="end">MOONSET</text><text class="le-mv-event-time" id="le-mv-set-time" text-anchor="end"></text>
     </svg>
     <canvas class="le-mv-canvas" aria-hidden="true"></canvas>
-    <div class="le-mv-mountain-foreground" aria-hidden="true"></div>
     <div class="le-mv-lunar-info" aria-label="Lunar details">
       <div class="le-mv-lunar-phase">
         <div id="le-mv-phase-name" class="le-mv-lunar-kicker">--</div>
@@ -429,6 +423,71 @@
   const fmt = value => new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date(value));
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   const isLocationEnabled = () => window.liveEarthGetLocationState?.() === true;
+
+  // Ridge samples are percentage coordinates traced from the actual background artwork.
+  // They describe only the visible skyline; all clouds, mountains, and lake pixels remain
+  // in the original background. A tiny upward safety offset prevents a bright Moon fringe
+  // from sitting on top of the mountain edge after canvas compositing.
+  const MOON_RIDGE_PROFILES = {
+    portrait: [
+      [0,47.25],[2,47.00],[4,46.75],[6,46.20],[8.5,45.72],[10,46.10],[12,46.65],[14,47.25],
+      [16,47.70],[18,47.95],[20,47.80],[22,47.50],[24,47.35],[26,47.50],[28,47.85],[30,48.25],
+      [32,48.85],[34,49.30],[36,49.70],[38,50.10],[40,50.50],[42,50.90],[44,51.25],[46,51.65],
+      [48,52.00],[50,52.25],[52,52.30],[54,51.95],[56,51.80],[58,52.45],[60,52.55],[62,52.10],
+      [64,51.90],[66,51.85],[68,52.05],[70,52.15],[72,51.95],[74,51.75],[76,51.55],[78,51.30],
+      [80,50.95],[82,50.55],[84,49.95],[86,49.25],[87.5,48.75],[89,49.00],[91,49.55],[93,49.95],
+      [96,50.00],[98,49.80],[100,49.70]
+    ],
+    landscape: [
+      [0,53.45],[2,53.35],[4,53.50],[6,53.85],[8,54.65],[10,55.10],[12,53.85],[14,54.95],
+      [16,55.80],[18,53.55],[20,54.45],[22,56.10],[24,54.35],[26,52.65],[28,50.45],[30,51.65],
+      [32,53.75],[34,54.80],[36,55.25],[38,55.65],[40,56.20],[42,57.15],[44,57.60],[46,58.25],
+      [48,59.10],[50,59.80],[52,59.95],[54,59.90],[56,59.75],[58,59.25],[60,57.70],[62,56.45],
+      [64,57.20],[66,58.00],[68,58.50],[70,57.25],[72,56.55],[74,56.20],[76,56.60],[78,57.10],
+      [80,57.75],[82,58.10],[84,57.20],[86,56.65],[88,57.45],[90,56.70],[92,56.40],[94,57.25],
+      [96,56.20],[98,55.40],[100,55.05]
+    ]
+  };
+
+  function updateMoonHorizonClip() {
+    if (!canvas || !dimensions.w || !dimensions.h) return;
+    const landscape = dimensions.w > dimensions.h;
+    const sourceWidth = landscape ? 1824 : 1260;
+    const sourceHeight = landscape ? 840 : 2736;
+    const profile = landscape ? MOON_RIDGE_PROFILES.landscape : MOON_RIDGE_PROFILES.portrait;
+    const scale = Math.max(dimensions.w / sourceWidth, dimensions.h / sourceHeight);
+    const offsetX = (dimensions.w - sourceWidth * scale) / 2;
+    const offsetY = (dimensions.h - sourceHeight * scale) / 2;
+
+    // Match background-size:cover and background-position:center center. When a device's
+    // aspect ratio differs from the wallpaper, use only the source-image section in view.
+    const sourceStartX = clamp((0 - offsetX) / scale / sourceWidth * 100, 0, 100);
+    const sourceEndX = clamp((dimensions.w - offsetX) / scale / sourceWidth * 100, 0, 100);
+    const ridgeYAt = x => {
+      for (let i = 1; i < profile.length; i++) {
+        const [x1, y1] = profile[i - 1], [x2, y2] = profile[i];
+        if (x <= x2) return y1 + (y2 - y1) * ((x - x1) / (x2 - x1));
+      }
+      return profile[profile.length - 1][1];
+    };
+    const samples = [[sourceStartX, ridgeYAt(sourceStartX)]];
+    for (const point of profile) {
+      if (point[0] > sourceStartX && point[0] < sourceEndX) samples.push(point);
+    }
+    samples.push([sourceEndX, ridgeYAt(sourceEndX)]);
+
+    const screenPoint = ([xPct, yPct]) => {
+      const sourceX = xPct / 100 * sourceWidth;
+      // Clip a fraction above the traced ridge to avoid the Moon bleeding over a dark edge.
+      const sourceY = Math.max(0, yPct - 0.12) / 100 * sourceHeight;
+      const x = (sourceX * scale + offsetX) / dimensions.w * 100;
+      const y = (sourceY * scale + offsetY) / dimensions.h * 100;
+      return `${x.toFixed(3)}% ${y.toFixed(3)}%`;
+    };
+    const polygon = ["0% 0%", "100% 0%", ...samples.reverse().map(screenPoint)].join(", ");
+    canvas.style.clipPath = `polygon(${polygon})`;
+    canvas.style.webkitClipPath = `polygon(${polygon})`;
+  }
   const radians = Math.PI / 180;
   const LUNAR_SYNODIC_MONTH_DAYS = 29.530588853;
 
@@ -574,6 +633,7 @@
 
     const landscape = w > h;
     dimensions = { w, h, radius: clamp(Math.min(w, h) * 0.052, 16, 42) };
+    updateMoonHorizonClip();
     if (ratioChanged) {
       renderer.setPixelRatio(pixelRatio);
       lastResizeDpr = pixelRatio;
