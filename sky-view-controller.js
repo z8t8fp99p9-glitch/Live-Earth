@@ -404,13 +404,12 @@
     // screen-space mapping; rise/set calculations remain in astronomy.js.
     const xStart = landscape ? 0.065 : 0.085;
     const xSpan = landscape ? 0.735 : 0.83;
-    const baseline = h * 0.515;
+    // Translate the entire portrait arc downward without changing its height.
+    // The rise/set endpoints, crest, supporting paths, and Moon position all use
+    // this same projected geometry. Landscape keeps its original baseline.
+    const baseline = h * (landscape ? 0.515 : 0.61);
     const peakAltitude = Math.max(1, ...points.map(p => Math.max(0, p.altitude)));
     const baseAmplitude = clamp((landscape ? 0.105 : 0.095) + peakAltitude * 0.0028, 0.14, 0.34);
-    // Keep the approved smooth dome, but place the portrait crest lower in the
-    // sky so it sits closer to the mountain skyline. This reduces the portrait
-    // arc height by about 18% from the previous high-crest version. Landscape
-    // geometry intentionally keeps the already-approved amplitude unchanged.
     const amplitude = h * (landscape ? baseAmplitude : Math.min(0.32, baseAmplitude * 0.98));
     return points.map(p => {
       const horizontalProgress = clamp((p.unwrapped - first) / span, 0, 1);
