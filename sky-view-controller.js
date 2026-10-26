@@ -286,26 +286,38 @@
     <svg class="le-mv-svg" aria-label="Fixed Moon guide arc with local rise and set times" role="img">
       <defs>
         <linearGradient id="leMvArcGradient" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#f0b875" stop-opacity=".98"/><stop offset="9%" stop-color="#c8e7ff"/><stop offset="28%" stop-color="#e8f7ff"/><stop offset="52%" stop-color="#ffffff"/><stop offset="73%" stop-color="#d3ecff"/><stop offset="91%" stop-color="#ffe0ad"/><stop offset="100%" stop-color="#f2bd78" stop-opacity=".96"/></linearGradient>
-        <linearGradient id="leMvRiseMoonFill" x1="0" y1="-1" x2="0.9" y2="1"><stop offset="0%" stop-color="#fff5d8"/><stop offset="50%" stop-color="#bce5ff"/><stop offset="100%" stop-color="#5daeff"/></linearGradient>
-        <linearGradient id="leMvSetMoonFill" x1="0" y1="-1" x2="0.9" y2="1"><stop offset="0%" stop-color="#e7f7ff"/><stop offset="60%" stop-color="#a3d8ff"/><stop offset="100%" stop-color="#659bff"/></linearGradient>
+        <linearGradient id="leMvRiseMoonFill" x1="0" y1="-1" x2="0.9" y2="1"><stop offset="0%" stop-color="#fff4d5"/><stop offset="48%" stop-color="#bfe7ff"/><stop offset="100%" stop-color="#579fff"/></linearGradient>
+        <linearGradient id="leMvSetMoonFill" x1="0" y1="-1" x2="0.9" y2="1"><stop offset="0%" stop-color="#effaff"/><stop offset="55%" stop-color="#b0dcff"/><stop offset="100%" stop-color="#568cff"/></linearGradient>
+        <linearGradient id="leMvRiseWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#16395b" stop-opacity=".92"/><stop offset="100%" stop-color="#07182c" stop-opacity=".98"/></linearGradient>
+        <linearGradient id="leMvSetWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#143a61" stop-opacity=".92"/><stop offset="100%" stop-color="#06162b" stop-opacity=".98"/></linearGradient>
+        <clipPath id="leMvRiseMoonClip"><circle cx="0" cy="-8" r="10.5"/></clipPath>
+        <clipPath id="leMvSetMoonClip"><circle cx="0" cy="-8" r="10.5"/></clipPath>
       </defs>
       <path class="le-mv-path le-mv-path-main" id="le-mv-main"/><g id="le-mv-arc-sparkles" aria-hidden="true"></g>
       <circle class="le-mv-endpoint-halo" id="le-mv-rise-halo" r="8"/><circle class="le-mv-endpoint" id="le-mv-rise-dot" r="2.2"/><circle class="le-mv-endpoint-halo" id="le-mv-set-halo" r="8"/><circle class="le-mv-endpoint" id="le-mv-set-dot" r="2.2"/>
       <g id="le-mv-rise-icon" class="le-mv-main-rise-set-icon" display="none" aria-hidden="true">
-        <circle cx="0" cy="-8" r="14" fill="#65baff" opacity=".14"/>
-        <circle cx="0" cy="-8" r="9.2" fill="url(#leMvRiseMoonFill)" stroke="#f4fbff" stroke-width=".65"/>
-        <path d="M-19 2 L-10 -6 L-4 -1 L4 -10 L19 2 Z" fill="#102747" fill-opacity=".97" stroke="#76c7ff" stroke-width=".8" stroke-linejoin="round"/>
-        <path d="M-19 2 Q0 -1 19 2" fill="none" stroke="#9ad9ff" stroke-width="1.1"/>
-        <path d="M0 -31 L1.7 -25.2 L7 -23 L1.7 -20.8 L0 -15 L-1.7 -20.8 L-7 -23 L-1.7 -25.2 Z" fill="#ffe0a1" filter="drop-shadow(0 0 3px #ffd58b)"/>
-        <circle cx="-14" cy="-13" r="1.1" fill="#fff1c9"/><circle cx="13" cy="-17" r=".9" fill="#9ad9ff"/>
+        <circle cx="0" cy="-8" r="17" fill="#65baff" opacity=".12"/>
+        <path d="M-22 2 C-22 -25 22 -25 22 2" fill="none" stroke="#f0c17b" stroke-width=".9" stroke-opacity=".92" stroke-dasharray="1.4 3.2" stroke-linecap="round"/>
+        <path d="M-19 2 C-18 -20 18 -20 19 2" fill="none" stroke="#a8ddff" stroke-width=".65" stroke-opacity=".75"/>
+        <circle cx="0" cy="-8" r="10.5" fill="url(#leMvRiseMoonFill)" stroke="#f4fbff" stroke-width=".65"/>
+        <image href="${MOON_TEXTURE_DATA}" x="-10.5" y="-18.5" width="21" height="21" preserveAspectRatio="xMidYMid slice" clip-path="url(#leMvRiseMoonClip)" opacity=".96"/>
+        <path d="M-24 2 Q-12 0 0 2 T24 2 L24 10 L-24 10 Z" fill="url(#leMvRiseWater)"/>
+        <path d="M-24 2 Q-12 0 0 2 T24 2" fill="none" stroke="#ffe0a1" stroke-width="1.25" stroke-linecap="round" filter="drop-shadow(0 0 2px #ffd58b)"/>
+        <path d="M-10 4 Q-4 3 2 4 M-7 6 Q0 5 8 6 M-4 8 Q0 7.7 5 8" fill="none" stroke="#ffd99a" stroke-width=".7" stroke-linecap="round" opacity=".9"/>
+        <path d="M0 -36 L1.5 -30.5 L7 -29 L1.5 -27.5 L0 -22 L-1.5 -27.5 L-7 -29 L-1.5 -30.5 Z" fill="#ffe0a1" filter="drop-shadow(0 0 3px #ffd58b)"/>
+        <circle cx="-18" cy="-12" r=".9" fill="#fff1c9"/><circle cx="15" cy="-18" r=".8" fill="#9ad9ff"/>
       </g>
       <g id="le-mv-set-icon" class="le-mv-main-rise-set-icon" display="none" aria-hidden="true">
-        <circle cx="0" cy="-8" r="14" fill="#65baff" opacity=".14"/>
-        <circle cx="0" cy="-8" r="9.2" fill="url(#leMvSetMoonFill)" stroke="#f4fbff" stroke-width=".65"/>
-        <path d="M-19 2 L-10 -6 L-4 -1 L4 -10 L19 2 Z" fill="#102747" fill-opacity=".97" stroke="#76c7ff" stroke-width=".8" stroke-linejoin="round"/>
-        <path d="M-19 2 Q0 -1 19 2" fill="none" stroke="#9ad9ff" stroke-width="1.1"/>
-        <path d="M0 -31 L1.6 -25.4 L6.8 -23.2 L1.6 -21 L0 -15.4 L-1.6 -21 L-6.8 -23.2 L-1.6 -25.4 Z" fill="#a6dfff" filter="drop-shadow(0 0 3px #80c9ff)"/>
-        <circle cx="-14" cy="-13" r="1" fill="#d8f0ff"/><circle cx="13" cy="-17" r=".9" fill="#ffe0a1"/>
+        <circle cx="0" cy="-8" r="17" fill="#65baff" opacity=".12"/>
+        <path d="M-22 2 C-22 -25 22 -25 22 2" fill="none" stroke="#99d4ff" stroke-width=".95" stroke-opacity=".92" stroke-dasharray="1.4 3.2" stroke-linecap="round"/>
+        <path d="M-19 2 C-18 -20 18 -20 19 2" fill="none" stroke="#c9eaff" stroke-width=".65" stroke-opacity=".75"/>
+        <circle cx="0" cy="-8" r="10.5" fill="url(#leMvSetMoonFill)" stroke="#f4fbff" stroke-width=".65"/>
+        <image href="${MOON_TEXTURE_DATA}" x="-10.5" y="-18.5" width="21" height="21" preserveAspectRatio="xMidYMid slice" clip-path="url(#leMvSetMoonClip)" opacity=".96"/>
+        <path d="M-24 2 Q-12 0 0 2 T24 2 L24 10 L-24 10 Z" fill="url(#leMvSetWater)"/>
+        <path d="M-24 2 Q-12 0 0 2 T24 2" fill="none" stroke="#b7e3ff" stroke-width="1.25" stroke-linecap="round" filter="drop-shadow(0 0 2px #80c9ff)"/>
+        <path d="M-10 4 Q-4 3 2 4 M-7 6 Q0 5 8 6 M-4 8 Q0 7.7 5 8" fill="none" stroke="#9bd5ff" stroke-width=".7" stroke-linecap="round" opacity=".9"/>
+        <path d="M0 -36 L1.5 -30.5 L7 -29 L1.5 -27.5 L0 -22 L-1.5 -27.5 L-7 -29 L-1.5 -30.5 Z" fill="#a6dfff" filter="drop-shadow(0 0 3px #80c9ff)"/>
+        <circle cx="-18" cy="-12" r=".9" fill="#d8f0ff"/><circle cx="15" cy="-18" r=".8" fill="#ffe0a1"/>
       </g>
       <text class="le-mv-event-label" id="le-mv-rise-label" text-anchor="start">MOONRISE</text><text class="le-mv-event-time" id="le-mv-rise-time" text-anchor="start"></text>
       <text class="le-mv-event-label" id="le-mv-set-label" text-anchor="end">MOONSET</text><text class="le-mv-event-time" id="le-mv-set-time" text-anchor="end"></text>
@@ -364,22 +376,24 @@
       <div class="le-mv-end-labels">
         <div class="le-mv-endpoint-info le-mv-endpoint-info-rise">
           <svg class="le-mv-scroller-end-icon" viewBox="0 0 42 25" aria-hidden="true">
-            <path d="M3 17 Q10 13 18 17 T39 17" fill="none" stroke="#6dbfff" stroke-width="1.4" stroke-linecap="round"/>
-            <path d="M5 21 Q12 18 19 21 T37 21" fill="none" stroke="#70c4ff" stroke-width=".9" opacity=".8" stroke-linecap="round"/>
-            <path d="M10 16 A7.3 7.3 0 0 1 24.6 16 Z" fill="#9bd8ff" fill-opacity=".92" stroke="#e4f7ff" stroke-width=".65"/>
-            <path d="M17.3 2 L18.4 5.4 L21.8 6.5 L18.4 7.6 L17.3 11 L16.2 7.6 L12.8 6.5 L16.2 5.4 Z" fill="#ffe0a1"/>
-            <path d="M3 17 Q18 19 39 17" fill="none" stroke="#f3cb8b" stroke-width=".6" opacity=".85"/>
+            <path d="M2 16.5 Q10 12.3 18 16.5 T40 16.5" fill="none" stroke="#72c2ff" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M4 20 Q11 16.6 19 20 T38 20" fill="none" stroke="#8bd3ff" stroke-width=".85" opacity=".88" stroke-linecap="round"/>
+            <path d="M11 16.1 A6.8 6.8 0 0 1 24.6 16.1 Z" fill="#a9ddff" fill-opacity=".95" stroke="#effaff" stroke-width=".6"/>
+            <path d="M17.8 1.2 L19 4.8 L22.6 6 L19 7.2 L17.8 10.8 L16.6 7.2 L13 6 L16.6 4.8 Z" fill="#ffe0a1"/>
+            <path d="M2 16.5 Q18 18.4 40 16.5" fill="none" stroke="#f0c37c" stroke-width=".65" opacity=".92"/>
+            <path d="M14 22.4 Q18 21.9 22 22.4 M17 24 Q18 23.8 19 24" fill="none" stroke="#88ceff" stroke-width=".55" opacity=".8"/>
           </svg>
           <span class="le-mv-end-label-copy"><span class="start-label">--:--</span><small>RISE</small></span>
         </div>
         <div class="end le-mv-endpoint-info le-mv-endpoint-info-set">
           <span class="le-mv-end-label-copy"><span class="end-label">--:--</span><small>SET</small></span>
           <svg class="le-mv-scroller-end-icon" viewBox="0 0 42 25" aria-hidden="true">
-            <path d="M3 17 Q10 13 18 17 T39 17" fill="none" stroke="#6dbfff" stroke-width="1.4" stroke-linecap="round"/>
-            <path d="M5 21 Q12 18 19 21 T37 21" fill="none" stroke="#70c4ff" stroke-width=".9" opacity=".8" stroke-linecap="round"/>
-            <path d="M10 16 A7.3 7.3 0 0 1 24.6 16 Z" fill="#8dc9ff" fill-opacity=".7" stroke="#e4f7ff" stroke-width=".65"/>
-            <path d="M17.3 2 L18.4 5.4 L21.8 6.5 L18.4 7.6 L17.3 11 L16.2 7.6 L12.8 6.5 L16.2 5.4 Z" fill="#a9dcff"/>
-            <path d="M3 17 Q18 19 39 17" fill="none" stroke="#f3cb8b" stroke-width=".6" opacity=".85"/>
+            <path d="M2 16.5 Q10 12.3 18 16.5 T40 16.5" fill="none" stroke="#72c2ff" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M4 20 Q11 16.6 19 20 T38 20" fill="none" stroke="#8bd3ff" stroke-width=".85" opacity=".88" stroke-linecap="round"/>
+            <path d="M11 16.1 A6.8 6.8 0 0 1 24.6 16.1 Z" fill="#9ed5ff" fill-opacity=".82" stroke="#effaff" stroke-width=".6"/>
+            <path d="M17.8 1.2 L19 4.8 L22.6 6 L19 7.2 L17.8 10.8 L16.6 7.2 L13 6 L16.6 4.8 Z" fill="#b8e2ff"/>
+            <path d="M2 16.5 Q18 18.4 40 16.5" fill="none" stroke="#f0c37c" stroke-width=".65" opacity=".92"/>
+            <path d="M14 22.4 Q18 21.9 22 22.4 M17 24 Q18 23.8 19 24" fill="none" stroke="#88ceff" stroke-width=".55" opacity=".8"/>
           </svg>
         </div>
       </div>
