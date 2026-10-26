@@ -148,8 +148,8 @@
 
 
 /* Moon View 3D renderer is hosted here; no additional renderer file is loaded. */
-/* LIVE // EARTH V96 candidate — 3D Moon View renderer.
- * Drop-in replacement for the prior lunar overlay; preserves app-shell readiness contract.
+/* LIVE // EARTH Moon View — rounded-arch projection correction candidate.
+ * Preserves the existing renderer lifecycle and app-shell readiness contract.
  * Home, moon-orbit.js, Earth scene, wallpaper, and Home orbital stardust are untouched.
  * The compact custom Moon albedo is embedded to preserve offline-first startup.
  */
@@ -397,19 +397,27 @@
     const span = Math.abs(last - first) > 1 ? last - first : 1;
     const { w, h } = dimensions;
     const landscape = w > h;
-    // Use actual altitude to shape each path. Its peak controls the arc height,
-    // so low/mid/high reference dates remain distinct without clamping a plateau.
+    // Raw altitude alone can bunch many samples near the top and produce an
+    // overly flat crest. Use a deliberate rounded dome for the main silhouette,
+    // while retaining real altitude as a secondary influence so different
+    // calculated dates still produce distinct supporting paths. This is only a
+    // screen-space mapping; rise/set calculations remain in astronomy.js.
     const xStart = landscape ? 0.065 : 0.085;
     const xSpan = landscape ? 0.735 : 0.83;
     const baseline = h * 0.515;
     const peakAltitude = Math.max(1, ...points.map(p => Math.max(0, p.altitude)));
     const amplitude = h * clamp((landscape ? 0.105 : 0.095) + peakAltitude * 0.0028, 0.14, 0.34);
     return points.map(p => {
+      const horizontalProgress = clamp((p.unwrapped - first) / span, 0, 1);
       const normalizedAltitude = clamp(Math.max(0, p.altitude) / peakAltitude, 0, 1);
+      // A power just above 1 gives the crest a visible rounded crown rather than
+      // the old flattened-looking plateau; real altitude still shapes 28% of it.
+      const roundedDome = Math.pow(Math.max(0, Math.sin(Math.PI * horizontalProgress)), 1.30);
+      const shape = roundedDome * 0.72 + normalizedAltitude * 0.28;
       return {
         time: p.time, altitude: p.altitude, azimuth: p.azimuth,
-        x: w * (xStart + xSpan * (p.unwrapped - first) / span),
-        y: baseline - normalizedAltitude * amplitude
+        x: w * (xStart + xSpan * horizontalProgress),
+        y: baseline - shape * amplitude
       };
     });
   }
