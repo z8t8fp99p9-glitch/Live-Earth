@@ -1,10 +1,12 @@
-# Required service-worker candidate version bump
+# V97 service-worker version patch
 
-In repository-root `sw.js`, change only these two constants near the top:
+Apply this patch together with the corrected `sky-view-controller.js`. The service worker must use the same build ID as `update-manager.js` so the staged update gate and cache cleanup agree.
+
+In `sw.js`, replace only these two constants near the top:
 
 ```js
-const BUILD_ID = "v96-moon-view-inline-renderer-candidate";
-const CACHE_NAME = "live-earth-shell-v96-moon-view-inline-renderer-candidate";
+const BUILD_ID = "v97-lunar-arc-spline-blue-scroller";
+const CACHE_NAME = "live-earth-shell-v97-lunar-arc-spline-blue-scroller";
 ```
 
-Keep `CACHE_PREFIX`, `APP_SHELL`, retry logic, content validation, staging, rollback, data recovery, and fetch handling unchanged. The existing APP_SHELL already lists `sky-view-controller.js`, and the compact Moon texture is embedded in that file, so no APP_SHELL asset addition is required.
+Do not change `CACHE_PREFIX`, `OPTIONAL_CACHE`, `OPTIONAL_LIMIT`, `APP_SHELL`, fetch retries, cache integrity checks, recovery logic, or IndexedDB handling.

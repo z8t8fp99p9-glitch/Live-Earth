@@ -35,6 +35,9 @@
     #le-sky-view[data-view="sun"] .le-sky-bg {
       background-image: url("./sun-sky-background-portrait.webp");
     }
+    /* The sky view is its own stage; prevent the Home 3D scene from ghosting through it.
+       The five navigation Orbs remain visible and interactive above the stage. */
+    body.le-sky-view-open #scene { visibility:hidden !important; }
     body.le-sky-view-open #navButtons {
       z-index: 10 !important;
       pointer-events: auto !important;
@@ -167,23 +170,26 @@
 
   const css = `
     #le-sky-view .le-mv-stage { position:absolute; inset:0; z-index:3; overflow:hidden; pointer-events:none; color:#eaf5ff; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    #le-sky-view[data-view="moon"] { touch-action:auto; }
     #le-sky-view .le-mv-svg { position:absolute; z-index:1; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
     #le-sky-view .le-mv-canvas { position:absolute; z-index:2; inset:0; display:block; width:100%; height:100%; pointer-events:none; }
     #le-sky-view .le-mv-path { fill:none; stroke-linecap:round; stroke-linejoin:round; }
-    #le-sky-view .le-mv-path-faint { stroke:#8abcf2; stroke-width:1.2; stroke-opacity:.18; filter:drop-shadow(0 0 3px #66afff44); }
-    #le-sky-view .le-mv-path-main { stroke:url(#leMvArcGradient); stroke-width:1.8; filter:drop-shadow(0 0 3px #a5d8ff9c) drop-shadow(0 0 9px #52a7ff32); }
+    #le-sky-view .le-mv-path-faint { stroke:#8abcf2; stroke-width:1.25; stroke-opacity:.22; stroke-dasharray:3 5; filter:drop-shadow(0 0 3px #66afff35); }
+    #le-sky-view .le-mv-path-main { stroke:url(#leMvArcGradient); stroke-width:2; filter:drop-shadow(0 0 3px #a5d8ffb0) drop-shadow(0 0 9px #52a7ff42); }
     #le-sky-view .le-mv-endpoint { fill:#deefff; filter:drop-shadow(0 0 5px #9bd8ff); }
     #le-sky-view .le-mv-endpoint-halo { fill:#73baff; fill-opacity:.15; }
     #le-sky-view .le-mv-event-label { fill:#bdd5ef; font-size:10px; letter-spacing:1.7px; paint-order:stroke; stroke:#031020b0; stroke-width:2px; }
     #le-sky-view .le-mv-event-time { fill:#f4f9ff; font-size:15px; font-weight:500; paint-order:stroke; stroke:#031020b8; stroke-width:2.4px; }
-    #le-sky-view .le-mv-timeline { position:absolute; z-index:4; left:7%; right:7%; bottom:calc(20% + env(safe-area-inset-bottom, 0px)); height:86px; display:block; pointer-events:auto; }
+    #le-sky-view .le-mv-timeline { position:absolute; z-index:4; left:7%; right:7%; bottom:calc(19% + env(safe-area-inset-bottom, 0px)); height:98px; display:block; pointer-events:auto; }
+    #le-sky-view .le-mv-timeline:before { content:""; position:absolute; left:0; right:0; bottom:35px; height:2px; border-radius:9px; background:linear-gradient(90deg,#7dbdffb0,#e7f5ff,#65b3ff); box-shadow:0 0 7px #61b6ff5c; pointer-events:none; }
+    #le-sky-view .le-mv-timeline:after { content:""; position:absolute; left:0; right:0; bottom:29px; height:14px; background:linear-gradient(90deg,transparent 0 1px,#9bd2ff 1px 2px,transparent 2px calc(100% - 2px),#9bd2ff calc(100% - 2px) calc(100% - 1px),transparent calc(100% - 1px)); opacity:.7; pointer-events:none; }
     #le-sky-view .le-mv-timeline[hidden], #le-sky-view .le-mv-location-note[hidden] { display:none !important; }
     #le-sky-view .le-mv-selected-time { position:absolute; top:0; left:0; right:0; display:block; width:100%; border:0; padding:0; margin:0; background:transparent; color:#f5faff; text-align:center; font:500 16px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; letter-spacing:.2px; text-shadow:0 1px 12px #000; cursor:pointer; -webkit-tap-highlight-color:transparent; }
-    #le-sky-view .le-mv-range { position:absolute; left:0; right:0; bottom:24px; width:100%; height:22px; appearance:none; -webkit-appearance:none; background:transparent; margin:0; cursor:pointer; touch-action:pan-x; }
-    #le-sky-view .le-mv-range::-webkit-slider-runnable-track { height:2px; border-radius:9px; background:linear-gradient(90deg,#d9eaff9c,#80c9ff,#a8d9ff); }
-    #le-sky-view .le-mv-range::-moz-range-track { height:2px; border-radius:9px; background:linear-gradient(90deg,#d9eaff9c,#80c9ff,#a8d9ff); }
-    #le-sky-view .le-mv-range::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:15px; height:15px; margin-top:-6.5px; border-radius:50%; border:1px solid #eff8ff; background:radial-gradient(circle at 35% 30%,#fff,#d1e6fa 45%,#7798bd 100%); box-shadow:0 0 10px #91d5ffae,0 0 0 5px #89c9ff20; }
-    #le-sky-view .le-mv-range::-moz-range-thumb { width:14px; height:14px; border-radius:50%; border:1px solid #eff8ff; background:radial-gradient(circle at 35% 30%,#fff,#d1e6fa 45%,#7798bd 100%); box-shadow:0 0 10px #91d5ffae,0 0 0 5px #89c9ff20; }
+    #le-sky-view .le-mv-range { position:absolute; left:0; right:0; bottom:24px; width:100%; height:24px; appearance:none; -webkit-appearance:none; background:transparent; margin:0; cursor:pointer; touch-action:pan-x; z-index:2; }
+    #le-sky-view .le-mv-range::-webkit-slider-runnable-track { height:2px; border-radius:9px; background:transparent; }
+    #le-sky-view .le-mv-range::-moz-range-track { height:2px; border-radius:9px; background:transparent; }
+    #le-sky-view .le-mv-range::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:19px; height:19px; margin-top:-8.5px; border-radius:50%; border:1px solid #eff8ff; background:radial-gradient(circle at 35% 30%,#fff,#cce7ff 45%,#5c8ebd 100%); box-shadow:0 0 12px #91d5ffcb,0 0 0 5px #89c9ff28; }
+    #le-sky-view .le-mv-range::-moz-range-thumb { width:18px; height:18px; border-radius:50%; border:1px solid #eff8ff; background:radial-gradient(circle at 35% 30%,#fff,#cce7ff 45%,#5c8ebd 100%); box-shadow:0 0 12px #91d5ffcb,0 0 0 5px #89c9ff28; }
     #le-sky-view .le-mv-end-labels { position:absolute; left:0; right:0; bottom:0; display:flex; justify-content:space-between; margin:0; font-size:11px; color:#e0ecfb; }
     #le-sky-view .le-mv-end-labels small { display:block; margin-top:3px; color:#9fb6d2; font-size:8px; letter-spacing:1.7px; }
     #le-sky-view .le-mv-end-labels .end { text-align:right; }
@@ -192,7 +198,8 @@
     @media (orientation:landscape) {
       /* Landscape gets an independent vertical time rail at the side of the view.
          The rail controls time only; it does not control the Moon or arc layout. */
-      #le-sky-view .le-mv-timeline { left:auto; right:2.4%; top:8%; bottom:8%; width:104px; height:auto; border:1px solid #9bcfff32; border-radius:20px; padding:8px; background:linear-gradient(160deg,#06172bdc,#071426a8); box-shadow:0 8px 32px #0005,inset 0 1px #ffffff10; -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
+      #le-sky-view .le-mv-timeline { left:auto; right:2.4%; top:7.5%; bottom:7.5%; width:104px; height:auto; border:1px solid #9bcfff42; border-radius:22px; padding:8px; background:linear-gradient(160deg,#06172bf0,#071426c7); box-shadow:0 8px 32px #0005,inset 0 1px #ffffff12; -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
+      #le-sky-view .le-mv-timeline:before, #le-sky-view .le-mv-timeline:after { display:none; }
       #le-sky-view .le-mv-selected-time { top:10px; left:4px; right:4px; font-size:12px; line-height:1.25; padding:0 1px; z-index:2; }
       #le-sky-view .le-mv-vertical-scroller { display:block; position:absolute; top:76px; bottom:50px; left:4px; right:4px; pointer-events:none; }
       #le-sky-view .le-mv-vertical-scroller svg { display:block; width:100%; height:100%; overflow:visible; }
@@ -200,12 +207,12 @@
       #le-sky-view .le-mv-vertical-path { fill:none; stroke:url(#leMvVerticalGradient); stroke-width:2.4; stroke-linecap:round; filter:drop-shadow(0 0 5px #79c5ffb8); }
       #le-sky-view .le-mv-vertical-end { fill:#e9f5ff; stroke:#8ccaff; stroke-width:1.5; }
       #le-sky-view .le-mv-vertical-end-halo { fill:#79bdff; fill-opacity:.22; }
-      #le-sky-view .le-mv-vertical-marker-halo { fill:#5eafff; fill-opacity:.20; stroke:#a9d8ff; stroke-opacity:.54; stroke-width:1; }
+      #le-sky-view .le-mv-vertical-marker-halo { fill:#5eafff; fill-opacity:.24; stroke:#a9d8ff; stroke-opacity:.68; stroke-width:1; filter:drop-shadow(0 0 5px #65baff9c); }
       #le-sky-view .le-mv-vertical-marker-disc { fill:url(#leMvVerticalMoon); stroke:#e9f5ff; stroke-opacity:.88; stroke-width:1; }
       #le-sky-view .le-mv-vertical-crater { fill:#6b819c; fill-opacity:.64; }
       /* The transparent native range supplies accessible, reliable touch/keyboard input.
          Its visible marker is drawn on the independent curved SVG rail above. */
-      #le-sky-view .le-mv-range { top:calc(50% + 13px); left:50%; right:auto; bottom:auto; width:min(58vw,calc(84vh - 128px)); width:min(58vw,calc(84dvh - 128px)); min-width:140px; max-width:280px; height:72px; transform:translate(-50%,-50%) rotate(90deg); transform-origin:center; touch-action:none; z-index:3; opacity:.015; }
+      #le-sky-view .le-mv-range { top:calc(50% + 13px); left:50%; right:auto; bottom:auto; width:clamp(120px,calc(84vh - 126px),340px); width:clamp(120px,calc(84dvh - 126px),340px); min-width:0; max-width:none; height:28px; transform:translate(-50%,-50%) rotate(90deg); transform-origin:center; touch-action:none; z-index:3; opacity:.015; }
       #le-sky-view .le-mv-range::-webkit-slider-runnable-track { background:transparent; }
       #le-sky-view .le-mv-range::-moz-range-track { background:transparent; }
       #le-sky-view .le-mv-range::-webkit-slider-thumb { background:transparent; border-color:transparent; box-shadow:none; }
@@ -230,7 +237,7 @@
   stage.hidden = true;
   stage.innerHTML = `
     <svg class="le-mv-svg" aria-label="Calculated Moon path from moonrise to moonset" role="img">
-      <defs><linearGradient id="leMvArcGradient" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#fbd7ad" stop-opacity=".78"/><stop offset="22%" stop-color="#c6e7ff"/><stop offset="55%" stop-color="#f3f8ff"/><stop offset="100%" stop-color="#f6d3a5" stop-opacity=".85"/></linearGradient></defs>
+      <defs><linearGradient id="leMvArcGradient" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#8dc8ff" stop-opacity=".82"/><stop offset="24%" stop-color="#c9e8ff"/><stop offset="52%" stop-color="#f4fbff"/><stop offset="78%" stop-color="#9dd1ff"/><stop offset="100%" stop-color="#cfeaff" stop-opacity=".88"/></linearGradient></defs>
       <path class="le-mv-path le-mv-path-faint" id="le-mv-previous"/><path class="le-mv-path le-mv-path-faint" id="le-mv-next"/><path class="le-mv-path le-mv-path-main" id="le-mv-main"/>
       <circle class="le-mv-endpoint-halo" id="le-mv-rise-halo" r="8"/><circle class="le-mv-endpoint" id="le-mv-rise-dot" r="2.2"/><circle class="le-mv-endpoint-halo" id="le-mv-set-halo" r="8"/><circle class="le-mv-endpoint" id="le-mv-set-dot" r="2.2"/>
       <text class="le-mv-event-label" id="le-mv-rise-label" text-anchor="start">MOONRISE</text><text class="le-mv-event-time" id="le-mv-rise-time" text-anchor="start"></text>
@@ -242,7 +249,7 @@
       <input class="le-mv-range" type="range" min="0" max="1000" step="1" value="0" aria-label="Select a time between moonrise and moonset">
       <div class="le-mv-vertical-scroller" aria-hidden="true"><svg viewBox="0 0 100 300" preserveAspectRatio="none">
         <defs>
-          <linearGradient id="leMvVerticalGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#cdeaff"/><stop offset="46%" stop-color="#66baff"/><stop offset="76%" stop-color="#9ccaff"/><stop offset="100%" stop-color="#a7d5ff"/></linearGradient>
+          <linearGradient id="leMvVerticalGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#cdeaff"/><stop offset="34%" stop-color="#66baff"/><stop offset="68%" stop-color="#83c5ff"/><stop offset="100%" stop-color="#c2e4ff"/></linearGradient>
           <radialGradient id="leMvVerticalMoon" cx="31%" cy="24%" r="78%"><stop offset="0%" stop-color="#fff"/><stop offset="42%" stop-color="#d9e7f8"/><stop offset="78%" stop-color="#92a9c6"/><stop offset="100%" stop-color="#516784"/></radialGradient>
         </defs>
         <path class="le-mv-vertical-path-glow" d="M50 4 C20 42,80 69,50 101 S18 162,50 198 S79 255,50 296"/>
@@ -344,7 +351,7 @@
     if (!renderer || !camera) return;
     const w = Math.max(1, root.clientWidth), h = Math.max(1, root.clientHeight);
     const landscape = w > h;
-    dimensions = { w, h, radius: landscape ? clamp(Math.min(w, h) * 0.09, 30, 52) : clamp(Math.min(w, h) * 0.072, 29, 52) };
+    dimensions = { w, h, radius: landscape ? clamp(Math.min(w, h) * 0.095, 34, 54) : clamp(Math.min(w, h) * 0.085, 33, 48) };
     renderer.setSize(w, h, false);
     lastLightingTimestamp = null;
     camera.left = 0; camera.right = w; camera.top = h; camera.bottom = 0;
@@ -385,26 +392,55 @@
     return points;
   }
   function projectPath(points) {
-    if (!dimensions.w || !dimensions.h || !points.length) return [];
+    if (!dimensions.w || !dimensions.h || points.length < 2) return [];
     const first = points[0].unwrapped, last = points[points.length - 1].unwrapped;
     const span = Math.abs(last - first) > 1 ? last - first : 1;
     const { w, h } = dimensions;
     const landscape = w > h;
-    // Reserve the far-right strip for the independent vertical timeline in landscape.
-    // Keep the portrait path full-width and leave Home's geometry entirely untouched.
-    const xStart = landscape ? 0.075 : 0.10;
-    const xSpan = landscape ? 0.665 : 0.80;
-    const baseline = h * (landscape ? 0.61 : 0.49);
-    const verticalScale = h * (landscape ? 0.0041 : 0.0025);
-    const minY = h * (landscape ? 0.20 : 0.20);
-    const maxY = h * (landscape ? 0.63 : 0.50);
-    return points.map(p => ({
-      time: p.time, altitude: p.altitude, azimuth: p.azimuth,
-      x: w * (xStart + xSpan * (p.unwrapped - first) / span),
-      y: clamp(baseline - Math.max(0, p.altitude) * verticalScale, minY, maxY)
-    }));
+    // Use actual altitude to shape each path. Its peak controls the arc height,
+    // so low/mid/high reference dates remain distinct without clamping a plateau.
+    const xStart = landscape ? 0.065 : 0.085;
+    const xSpan = landscape ? 0.735 : 0.83;
+    const baseline = h * 0.515;
+    const peakAltitude = Math.max(1, ...points.map(p => Math.max(0, p.altitude)));
+    const amplitude = h * clamp((landscape ? 0.105 : 0.095) + peakAltitude * 0.0028, 0.14, 0.34);
+    return points.map(p => {
+      const normalizedAltitude = clamp(Math.max(0, p.altitude) / peakAltitude, 0, 1);
+      return {
+        time: p.time, altitude: p.altitude, azimuth: p.azimuth,
+        x: w * (xStart + xSpan * (p.unwrapped - first) / span),
+        y: baseline - normalizedAltitude * amplitude
+      };
+    });
   }
-  function pathData(points) { return points.map((p, i) => `${i ? "L" : "M"}${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(" "); }
+  // Catmull-Rom converted to cubic Beziers. The SVG arc and rendered Moon use these
+  // exact same segments so the Moon centre can remain attached to the visible path.
+  function cubicForSegment(points, i) {
+    const p1 = points[i], p2 = points[i + 1];
+    const p0 = points[i > 0 ? i - 1 : i];
+    const p3 = points[i + 2 < points.length ? i + 2 : i + 1];
+    return {
+      p1, p2,
+      c1: { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 },
+      c2: { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 }
+    };
+  }
+  function cubicPoint(segment, t) {
+    const u = 1 - t, uu = u * u, tt = t * t;
+    return {
+      x: uu * u * segment.p1.x + 3 * uu * t * segment.c1.x + 3 * u * tt * segment.c2.x + tt * t * segment.p2.x,
+      y: uu * u * segment.p1.y + 3 * uu * t * segment.c1.y + 3 * u * tt * segment.c2.y + tt * t * segment.p2.y
+    };
+  }
+  function pathData(points) {
+    if (!points.length) return "";
+    let d = `M${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+    for (let i = 0; i < points.length - 1; i++) {
+      const segment = cubicForSegment(points, i);
+      d += ` C${segment.c1.x.toFixed(2)} ${segment.c1.y.toFixed(2)},${segment.c2.x.toFixed(2)} ${segment.c2.y.toFixed(2)},${segment.p2.x.toFixed(2)} ${segment.p2.y.toFixed(2)}`;
+    }
+    return d;
+  }
   function setCircle(id, point) { const node = $("#" + id); node.removeAttribute("display"); node.setAttribute("cx", point.x); node.setAttribute("cy", point.y); }
   function clearPaths() {
     ["#le-mv-previous", "#le-mv-next", "#le-mv-main"].forEach(selector => $(selector).setAttribute("d", ""));
@@ -459,18 +495,24 @@
     if (referenceIntervals[1]) otherPaths.push({ kind: "high", points: referenceIntervals[1].points });
     timeline.hidden = false; locationNote.hidden = true;
     $(".start-label").textContent = fmt(interval.rise); $(".end-label").textContent = fmt(interval.set);
-    if (found.aboveHorizonNow && now >= interval.rise && now < interval.set) {
+    if (now >= interval.rise && now < interval.set) {
+      // Trust the interval timestamps for live selection even if the descriptive
+      // aboveHorizonNow flag disagrees near rise/set boundaries.
       progress = (now - interval.rise) / (interval.set - interval.rise); selectedTime = now; live = true;
-    } else { progress = 0; selectedTime = interval.rise; live = true; }
+    } else {
+      // Before rise, park at the start of the lunar interval.
+      progress = 0; selectedTime = interval.rise; live = true;
+    }
     range.value = String(Math.round(progress * 1000)); selectedLabel.textContent = fmt(selectedTime);
     drawPaths(); renderOnce();
   }
   function currentPoint() {
-    if (!projectedPrimarySamples.length || !interval) return { x: dimensions.w * 0.5, y: dimensions.h * 0.38 };
-    const t = clamp((selectedTime - interval.rise) / (interval.set - interval.rise), 0, 1);
-    const z = t * (projectedPrimarySamples.length - 1), i = Math.min(projectedPrimarySamples.length - 2, Math.floor(z)), f = z - i;
-    const a = projectedPrimarySamples[i], b = projectedPrimarySamples[i + 1];
-    return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f };
+    if (!projectedPrimarySamples.length || !interval) return { x: dimensions.w * 0.5, y: dimensions.h * 0.31 };
+    const timeFraction = clamp((selectedTime - interval.rise) / (interval.set - interval.rise), 0, 1);
+    const segmentPosition = timeFraction * (projectedPrimarySamples.length - 1);
+    const i = Math.min(projectedPrimarySamples.length - 2, Math.floor(segmentPosition));
+    const t = timeFraction >= 1 ? 1 : segmentPosition - i;
+    return cubicPoint(cubicForSegment(projectedPrimarySamples, i), t);
   }
   function updateLighting(date) {
     if (!moonLight || !moon || !moonLightTarget) return;
