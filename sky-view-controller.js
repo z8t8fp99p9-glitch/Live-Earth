@@ -183,13 +183,13 @@
     #le-sky-view .le-mv-arc-star-glow { fill:#e5f4ff; opacity:.48; filter:drop-shadow(0 0 4px #a9d9ff) drop-shadow(0 0 9px #89caffb8); pointer-events:none; }
     #le-sky-view .le-mv-arc-star { fill:#ffffff; opacity:.99; filter:drop-shadow(0 0 2.8px #f3faff) drop-shadow(0 0 7px #9bd3ff); pointer-events:none; }
     #le-sky-view .le-mv-horizontal-rail-sparkles { position:absolute; inset:0; z-index:1; display:block; width:100%; height:100%; overflow:visible; pointer-events:none; }
-    #le-sky-view .le-mv-horizontal-trail-blue { fill:url(#leMvHorizontalTrailBlue); filter:drop-shadow(0 0 3px #a8dcffb8) drop-shadow(0 0 7px #5bb8ff62); pointer-events:none; }
-    #le-sky-view .le-mv-horizontal-trail-gold { fill:url(#leMvHorizontalTrailGold); opacity:.88; filter:drop-shadow(0 0 2.5px #ffd59a9e) drop-shadow(0 0 6px #e9a85b60); pointer-events:none; }
-    #le-sky-view .le-mv-horizontal-dust-blue { fill:#dff3ff; filter:drop-shadow(0 0 1.5px #b7e5ff8c); pointer-events:none; }
-    #le-sky-view .le-mv-horizontal-dust-gold { fill:#ffe0ad; filter:drop-shadow(0 0 1.8px #ffca7d9e); pointer-events:none; }
-    #le-sky-view .le-mv-scroller-star-gold { fill:#ffe2b6; filter:drop-shadow(0 0 2.6px #fff0d2) drop-shadow(0 0 6px #ffc36cbd); }
-    #le-sky-view .le-mv-scroller-glow-gold { fill:#ffdba7; opacity:.48; filter:drop-shadow(0 0 4px #ffd28e) drop-shadow(0 0 8px #ffbc6e8c); }
-    #le-sky-view .le-mv-scroller-core-gold { fill:#fff0d3; filter:drop-shadow(0 0 2px #ffe9c4) drop-shadow(0 0 5px #ffbf6c); }
+    #le-sky-view .le-mv-horizontal-trail-blue { fill:url(#leMvHorizontalTrailBlue); filter:drop-shadow(0 0 2px #b9e5ffb0) drop-shadow(0 0 5px #4caeff60); pointer-events:none; }
+    #le-sky-view .le-mv-horizontal-trail-gold { fill:url(#leMvHorizontalTrailGold); opacity:.40; filter:drop-shadow(0 0 1.4px #ffd59a65); pointer-events:none; }
+    #le-sky-view .le-mv-horizontal-dust-blue { fill:#e2f5ff; filter:drop-shadow(0 0 1.1px #b7e5ff75); pointer-events:none; }
+    #le-sky-view .le-mv-horizontal-dust-gold { fill:#ffe7c2; filter:drop-shadow(0 0 1.2px #ffca7d70); pointer-events:none; }
+    #le-sky-view .le-mv-scroller-star-gold { fill:#ffe9c8; filter:drop-shadow(0 0 1.8px #fff0d2a0) drop-shadow(0 0 3.5px #ffc36c70); }
+    #le-sky-view .le-mv-scroller-glow-gold { fill:#ffdba7; opacity:.28; filter:drop-shadow(0 0 2.5px #ffd28e85) drop-shadow(0 0 5px #ffbc6e55); }
+    #le-sky-view .le-mv-scroller-core-gold { fill:#fff2dc; filter:drop-shadow(0 0 1.5px #ffe9c4) drop-shadow(0 0 3px #ffbf6c95); }
     #le-sky-view .le-mv-horizontal-moon-marker { pointer-events:none; filter:drop-shadow(0 0 5px #77c5ffb8) drop-shadow(0 0 9px #4d9fff56); }
     #le-sky-view .le-mv-horizontal-moon-halo { fill:#75bfff; opacity:.24; }
     #le-sky-view .le-mv-horizontal-moon-surface { stroke:#f0f8ff; stroke-opacity:.95; stroke-width:.85; }
@@ -270,10 +270,10 @@
       <svg class="le-mv-horizontal-rail-sparkles" aria-hidden="true" viewBox="0 0 390 98" preserveAspectRatio="none">
         <defs>
           <linearGradient id="leMvHorizontalTrailBlue" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#8bc9ff" stop-opacity=".55"/><stop offset="18%" stop-color="#c6e8ff"/><stop offset="36%" stop-color="#eaf8ff"/><stop offset="50%" stop-color="#ffffff"/><stop offset="65%" stop-color="#e7f4ff"/><stop offset="79%" stop-color="#c4e5ff"/><stop offset="91%" stop-color="#ffe0b2"/><stop offset="100%" stop-color="#e7b77b" stop-opacity=".62"/>
+            <stop offset="0%" stop-color="#80c3ff" stop-opacity=".45"/><stop offset="18%" stop-color="#bfe5ff"/><stop offset="36%" stop-color="#e8f7ff"/><stop offset="50%" stop-color="#ffffff"/><stop offset="65%" stop-color="#e5f4ff"/><stop offset="80%" stop-color="#a9d9ff"/><stop offset="92%" stop-color="#c8e8ff"/><stop offset="97%" stop-color="#ffe4bd" stop-opacity=".72"/><stop offset="100%" stop-color="#a9d8ff" stop-opacity=".55"/>
           </linearGradient>
           <linearGradient id="leMvHorizontalTrailGold" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#d39a5c" stop-opacity=".25"/><stop offset="20%" stop-color="#edc58a" stop-opacity=".75"/><stop offset="38%" stop-color="#ffe6b4"/><stop offset="53%" stop-color="#e3b16c"/><stop offset="70%" stop-color="#ffdfaa"/><stop offset="86%" stop-color="#e8bc83" stop-opacity=".85"/><stop offset="100%" stop-color="#c78d50" stop-opacity=".3"/>
+            <stop offset="0%" stop-color="#d9ae78" stop-opacity=".08"/><stop offset="22%" stop-color="#f0d5a5" stop-opacity=".25"/><stop offset="42%" stop-color="#ffe9c5" stop-opacity=".34"/><stop offset="57%" stop-color="#f1cb8a" stop-opacity=".28"/><stop offset="72%" stop-color="#ffe7bd" stop-opacity=".32"/><stop offset="88%" stop-color="#f2d4a8" stop-opacity=".23"/><stop offset="100%" stop-color="#c78d50" stop-opacity=".06"/>
           </linearGradient>
           <pattern id="leMvScrollerMoonTexture" patternUnits="objectBoundingBox" patternContentUnits="objectBoundingBox" width="1" height="1"><image href="${MOON_TEXTURE_DATA}" x="0" y="0" width="1" height="1" preserveAspectRatio="xMidYMid slice"/></pattern>
           <radialGradient id="leMvScrollerMoonShade" cx="30%" cy="23%" r="82%"><stop offset="0%" stop-color="#ffffff" stop-opacity=".30"/><stop offset="43%" stop-color="#d9e8f8" stop-opacity=".06"/><stop offset="100%" stop-color="#0c182b" stop-opacity=".62"/></radialGradient>
@@ -734,32 +734,34 @@
         " " + lower.reverse().map(p => `L ${fmt(p)}`).join(" ") + " Z";
     };
     const blueRibbon = document.createElementNS(ns, "path");
-    blueRibbon.setAttribute("d", makeTaperedRibbon(blueCurveY, 0.22, 4.85));
+    blueRibbon.setAttribute("d", makeTaperedRibbon(blueCurveY, 0.16, 2.05));
     blueRibbon.setAttribute("class", "le-mv-horizontal-trail-blue");
     horizontalTrailGroup.appendChild(blueRibbon);
     const goldRibbon = document.createElementNS(ns, "path");
-    goldRibbon.setAttribute("d", makeTaperedRibbon(goldCurveY, 0.18, 2.45));
+    goldRibbon.setAttribute("d", makeTaperedRibbon(goldCurveY, 0.10, 0.58));
     goldRibbon.setAttribute("class", "le-mv-horizontal-trail-gold");
     horizontalTrailGroup.appendChild(goldRibbon);
 
-    // Fine static dust orbits around both curves. Count adapts to the actual rail width;
-    // a seeded generator keeps the arrangement stable until the viewport changes.
+    // Pearl-like ambient stardust: ~100 very fine motes at the reference scroller width,
+    // with count adapting to rendered width. Spread them well beyond the ribbons for depth.
     let dustSeed = (0x4D00D + Math.round(railWidth * 7)) >>> 0;
     const randDust = () => ((dustSeed = (dustSeed * 1664525 + 1013904223) >>> 0) / 4294967296);
     const dustScale = clamp(railWidth / 360, 0.82, 1.3);
-    const dustCount = clamp(Math.round(100 * railWidth / 360), 70, 220);
+    const dustCount = clamp(Math.round(100 * railWidth / 360), 75, 200);
     for (let i = 0; i < dustCount; i++) {
-      const t = 0.025 + randDust() * 0.95;
-      const curveY = randDust() < 0.37 ? goldCurveY : blueCurveY;
-      let normalOffset = (randDust() + randDust() - 1) * 7.5 * dustScale;
-      if (randDust() < 0.16) normalOffset += (randDust() < 0.5 ? -1 : 1) * (5 + randDust() * 7) * dustScale;
-      const x = clamp(trailStart + trailLength * t + (randDust() + randDust() - 1) * 3.2 * dustScale, trailStart + 1, trailStart + trailLength - 1);
-      const y = clamp(curveY(t) + normalOffset, 35, 86);
+      const t = 0.012 + randDust() * 0.976;
+      const curveY = randDust() < 0.30 ? goldCurveY : blueCurveY;
+      // Broad, irregular spread up to ~20 px from the trail, with occasional farther pearls.
+      let normalOffset = (randDust() + randDust() - 1) * 19 * dustScale;
+      if (randDust() < 0.20) normalOffset += (randDust() < 0.5 ? -1 : 1) * (8 + randDust() * 15) * dustScale;
+      const x = clamp(trailStart + trailLength * t + (randDust() + randDust() - 1) * 9 * dustScale, 1, railWidth - 1);
+      const y = clamp(curveY(t) + normalOffset, 18, 94);
       const mote = document.createElementNS(ns, "circle");
       mote.setAttribute("cx", x.toFixed(2)); mote.setAttribute("cy", y.toFixed(2));
-      mote.setAttribute("r", (dustScale * (0.14 + randDust() * 0.34)).toFixed(2));
-      mote.setAttribute("opacity", (0.18 + randDust() * 0.46).toFixed(2));
-      mote.setAttribute("class", randDust() < 0.23 ? "le-mv-horizontal-dust-gold" : "le-mv-horizontal-dust-blue");
+      // Sub-pixel pearl points: noticeably smaller than the present dust, but still glinting.
+      mote.setAttribute("r", (dustScale * (0.10 + randDust() * 0.22)).toFixed(2));
+      mote.setAttribute("opacity", (0.16 + randDust() * 0.38).toFixed(2));
+      mote.setAttribute("class", randDust() < 0.08 ? "le-mv-horizontal-dust-gold" : "le-mv-horizontal-dust-blue");
       horizontalTrailGroup.appendChild(mote);
     }
 
@@ -779,7 +781,7 @@
       const y = clamp(curveY(t) + o, 38, 84);
       appendStaticStar(horizontalSparkleGroup, { x, y }, s * 0.72, ns, r);
       // Subtle gold glints alternate through the icy trail, without overpowering it.
-      if ([2, 7, 12, 17, 20].includes(index)) {
+      if ([3, 11, 19].includes(index)) {
         const base = index * 3;
         horizontalSparkleGroup.children[base].setAttribute("class", "le-mv-scroller-glow-gold");
         horizontalSparkleGroup.children[base + 1].setAttribute("class", "le-mv-arc-star le-mv-scroller-star-gold");
