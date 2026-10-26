@@ -1,7 +1,7 @@
 /* LIVE // EARTH V95 — sidereal Earth/Moon alignment; preserve bounded startup retry. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v95-lunar-earth-fixed-alignment";
-const CACHE_NAME = "live-earth-shell-v95-lunar-earth-fixed-alignment";
+const BUILD_ID = "v96-moon-mountain-foreground-layers";
+const CACHE_NAME = "live-earth-shell-v96-moon-mountain-foreground-layers";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -10,6 +10,7 @@ const APP_SHELL = [
  "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
  "./moon-sky-background-responsive.svg",
  "./moon-sky-background-portrait.webp","./moon-sky-background-landscape.webp",
+ "./moon-sky-mountain-foreground-portrait.webp","./moon-sky-mountain-foreground-landscape.webp",
  "./sun-sky-background-portrait.webp","./sun-sky-background-landscape.webp",
  "./update-manager.js","./data-recovery.js",
  "./earth.webp","./moon.webp","./sun.webp","./location.webp","./stacks.webp"
