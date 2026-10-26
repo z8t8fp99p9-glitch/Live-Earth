@@ -473,6 +473,7 @@
   }
   let active = false, astronomy = null, THREE = null, renderer = null, scene = null, camera = null;
   let moon = null, moonTexture = null, moonLight = null, moonLightTarget = null;
+  let moonFillLight = null, moonFillLightTarget = null;
   let frame = 0, timer = 0, observer = null, interval = null, selectedTime = Date.now(), progress = 0, live = false;
   let dimensions = { w: 0, h: 0, radius: 0 };
   let arcGeometry = null;
@@ -527,12 +528,20 @@
       camera = new THREE.OrthographicCamera(0, 1, 1, 0, 0.1, 500);
       camera.position.set(0, 0, 100);
       camera.lookAt(0, 0, 0);
-      scene.add(new THREE.AmbientLight(0x9cb7d6, 0.11));
-      const fill = new THREE.HemisphereLight(0xb5d1f1, 0x10182a, 0.045); scene.add(fill);
+      // Cinematic lunar lighting: slightly brighter cool ambient fill keeps surface detail
+      // readable, while the main white directional light still determines the true phase.
+      scene.add(new THREE.AmbientLight(0x9cb7d6, 0.14));
+      const fill = new THREE.HemisphereLight(0xb5d1f1, 0x10182a, 0.06); scene.add(fill);
       moonLight = new THREE.DirectionalLight(0xffffff, 2.0);
       moonLightTarget = new THREE.Object3D();
       scene.add(moonLight, moonLightTarget);
       moonLight.target = moonLightTarget;
+      // Very soft blue earthshine from the opposite direction gently reveals the night side
+      // without replacing the sun-driven light or flattening the lunar terminator.
+      moonFillLight = new THREE.DirectionalLight(0x9bcaff, 0.12);
+      moonFillLightTarget = new THREE.Object3D();
+      scene.add(moonFillLight, moonFillLightTarget);
+      moonFillLight.target = moonFillLightTarget;
       moonTexture = await new THREE.TextureLoader().loadAsync(MOON_TEXTURE_DATA);
       moonTexture.colorSpace = THREE.SRGBColorSpace;
       moonTexture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
@@ -989,6 +998,11 @@
     moonLight.position.set(moon.position.x + dir.x * 100, moon.position.y + dir.y * 100, moon.position.z + dir.z * 100);
     moonLightTarget.position.copy(moon.position);
     moonLightTarget.updateMatrixWorld();
+    if (moonFillLight && moonFillLightTarget) {
+      moonFillLight.position.set(moon.position.x - dir.x * 100, moon.position.y - dir.y * 100, moon.position.z - dir.z * 100);
+      moonFillLightTarget.position.copy(moon.position);
+      moonFillLightTarget.updateMatrixWorld();
+    }
   }
   function updateHorizontalMarker() {
     if (!horizontalMoonMarker || !horizontalScrollerGeometry) return;
