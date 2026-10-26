@@ -177,6 +177,7 @@
     /* The geometric path remains for Moon positioning; fine particles render the visible star trail. */
     #le-sky-view .le-mv-path-main { stroke:none; stroke-width:0; filter:none; }
     #le-sky-view .le-mv-arc-sparkle { fill:#f8fcff; filter:drop-shadow(0 0 2px #d9efff) drop-shadow(0 0 5px #85c8ffb8); pointer-events:none; }
+    #le-sky-view .le-mv-arc-dust-mote { fill:#cce8ff; opacity:.25; filter:drop-shadow(0 0 1.4px #8ecaff70); pointer-events:none; }
     #le-sky-view .le-mv-arc-sparkle-warm { fill:#ffe2b9; filter:drop-shadow(0 0 2px #fff0d8) drop-shadow(0 0 5px #ffbd6eaa); }
     #le-sky-view .le-mv-arc-sparkle-cool { fill:#d6efff; filter:drop-shadow(0 0 2px #f0faff) drop-shadow(0 0 5px #7bc5ffcc); }
     #le-sky-view .le-mv-arc-star-glow { fill:#e5f4ff; opacity:.48; filter:drop-shadow(0 0 4px #a9d9ff) drop-shadow(0 0 9px #89caffb8); pointer-events:none; }
@@ -534,11 +535,31 @@
     const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
     const safe = (v, lo, hi) => clamp(v, lo, hi);
 
-    // A star trail replaces the drawn line: 160 fine grains stay close to the
-    // curve, while 40 satellites drift farther out. All points follow the same
+    // Extra ambient stardust: a second, much finer layer around BOTH sides of
+    // the trail. It is static, seeded, subtle, and placed first so the brighter
+    // trail grains and glints remain visually in front of it.
+    for (let i = 0; i < 120; i++) {
+      const t = 0.018 + rand() * 0.964;
+      let normalOffset = (rand() + rand() - 1) * 27 * scale;
+      if (rand() < 0.12) {
+        normalOffset += (rand() < 0.5 ? -1 : 1) * (10 + rand() * 18) * scale;
+      }
+      const tangentOffset = (rand() + rand() - 1) * 14 * scale;
+      const p = offsetFromArc(t, normalOffset, tangentOffset);
+      const mote = document.createElementNS(ns, "circle");
+      mote.setAttribute("cx", safe(p.x, 1, dimensions.w - 1).toFixed(2));
+      mote.setAttribute("cy", safe(p.y, 1, dimensions.h - 1).toFixed(2));
+      mote.setAttribute("r", (scale * (0.22 + rand() * 0.46)).toFixed(2));
+      mote.setAttribute("opacity", (0.10 + rand() * 0.25).toFixed(2));
+      mote.setAttribute("class", "le-mv-arc-dust-mote");
+      group.appendChild(mote);
+    }
+
+    // A star trail replaces the drawn line: 240 fine grains stay close to the
+    // curve, while 60 satellites drift farther out. All points follow the same
     // curve geometry as the Moon, with deterministic, static placement.
-    for (let i = 0; i < 200; i++) {
-      const core = i < 160;
+    for (let i = 0; i < 300; i++) {
+      const core = i < 240;
       const t = 0.025 + rand() * 0.95;
       let normalOffset;
       let tangentOffset;
@@ -572,23 +593,18 @@
     const flares = [
       { t:0.035, off:7, tan:-6, size:1.8, rot:-12 },
       { t:0.079, off:-14, tan:4, size:2.15, rot:17 },
-      { t:0.101, off:11, tan:-3, size:1.55, rot:8 },
       { t:0.158, off:-5, tan:7, size:2.45, rot:-21 },
-      { t:0.185, off:17, tan:-5, size:1.75, rot:13 },
       { t:0.278, off:6, tan:-8, size:2.75, rot:-8 },
       { t:0.309, off:-16, tan:3, size:1.55, rot:19 },
-      { t:0.327, off:9, tan:5, size:2.0, rot:-15 },
       { t:0.397, off:-7, tan:-4, size:2.25, rot:10 },
       { t:0.433, off:15, tan:6, size:1.7, rot:-18 },
       { t:0.452, off:-19, tan:1, size:2.55, rot:22 },
       { t:0.523, off:5, tan:-7, size:3.0, rot:7 },
-      { t:0.553, off:-9, tan:4, size:1.6, rot:-11 },
       { t:0.628, off:16, tan:-3, size:2.2, rot:16 },
       { t:0.649, off:-12, tan:6, size:2.6, rot:-19 },
       { t:0.685, off:8, tan:-5, size:1.75, rot:12 },
       { t:0.713, off:-17, tan:2, size:2.0, rot:-9 },
       { t:0.773, off:10, tan:5, size:2.75, rot:18 },
-      { t:0.801, off:-6, tan:-7, size:1.55, rot:-14 },
       { t:0.863, off:14, tan:3, size:2.2, rot:11 },
       { t:0.882, off:-10, tan:-4, size:2.5, rot:-20 },
       { t:0.907, off:5, tan:7, size:1.65, rot:15 },
@@ -601,7 +617,7 @@
       appendStaticStar(group, {
         x: safe(p.x, 4, dimensions.w - 4),
         y: safe(p.y, 4, dimensions.h - 4)
-      }, size * scale, ns, rot);
+      }, size * scale * 0.82, ns, rot);
     });
   }
 
