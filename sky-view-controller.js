@@ -174,8 +174,11 @@
     #le-sky-view .le-mv-svg { position:absolute; z-index:1; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
     #le-sky-view .le-mv-canvas { position:absolute; z-index:2; inset:0; display:block; width:100%; height:100%; pointer-events:none; }
     #le-sky-view .le-mv-path { fill:none; stroke-linecap:round; stroke-linejoin:round; }
-    #le-sky-view .le-mv-path-main { stroke:url(#leMvArcGradient); stroke-width:1.7; filter:drop-shadow(0 0 2.5px #a5d8ffb8) drop-shadow(0 0 6px #7bbcff50); }
+    /* The geometric path remains for Moon positioning; fine particles render the visible star trail. */
+    #le-sky-view .le-mv-path-main { stroke:none; stroke-width:0; filter:none; }
     #le-sky-view .le-mv-arc-sparkle { fill:#f8fcff; filter:drop-shadow(0 0 2px #d9efff) drop-shadow(0 0 5px #85c8ffb8); pointer-events:none; }
+    #le-sky-view .le-mv-arc-sparkle-warm { fill:#ffe2b9; filter:drop-shadow(0 0 2px #fff0d8) drop-shadow(0 0 5px #ffbd6eaa); }
+    #le-sky-view .le-mv-arc-sparkle-cool { fill:#d6efff; filter:drop-shadow(0 0 2px #f0faff) drop-shadow(0 0 5px #7bc5ffcc); }
     #le-sky-view .le-mv-arc-star-glow { fill:#e5f4ff; opacity:.48; filter:drop-shadow(0 0 4px #a9d9ff) drop-shadow(0 0 9px #89caffb8); pointer-events:none; }
     #le-sky-view .le-mv-arc-star { fill:#ffffff; opacity:.99; filter:drop-shadow(0 0 2.8px #f3faff) drop-shadow(0 0 7px #9bd3ff); pointer-events:none; }
     #le-sky-view .le-mv-horizontal-rail-sparkles { position:absolute; inset:0; z-index:1; display:block; width:100%; height:100%; overflow:visible; pointer-events:none; }
@@ -418,12 +421,11 @@
     const x0 = w * (landscape ? 0.065 : 0.114);
     const x1 = w * (landscape ? 0.80 : 0.921);
     const baseline = referenceBaseline(h, landscape);
-    // Endpoint-only asymmetry trial: keep the approved control points and crest
-    // height; lift the start by 8 CSS px and lower the end by 8 CSS px.
-    // Their vertical offsets balance around the original baseline, preserving the
-    // midpoint crest while giving the arc a subtle rising-to-falling sweep.
+    // Endpoint-only asymmetry: keep the approved control points and crest region;
+    // lift the start by 8 CSS px and lower the end by 14 CSS px (6 px extra on the
+    // right compared with the previous trial). Only the end point is adjusted further.
     const startY = baseline - 8;
-    const endY = baseline + 8;
+    const endY = baseline + 14;
     const centerX = (x0 + x1) / 2;
     const rx = (x1 - x0) / 2;
     const ry = h * (landscape ? 0.35 : 0.208);
@@ -532,24 +534,36 @@
     const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
     const safe = (v, lo, hi) => clamp(v, lo, hi);
 
-    // Homepage-inspired stardust: exactly 200 fine grains spread to BOTH sides of
-    // the arc with irregular spacing. Wider drifters keep it organic rather than dotted.
+    // A star trail replaces the drawn line: 160 fine grains stay close to the
+    // curve, while 40 satellites drift farther out. All points follow the same
+    // curve geometry as the Moon, with deterministic, static placement.
     for (let i = 0; i < 200; i++) {
+      const core = i < 160;
       const t = 0.025 + rand() * 0.95;
-      const triangular = rand() + rand() - 1;
-      let normalOffset = triangular * 13 * scale;
-      if (rand() < 0.18) {
-        const side = rand() < 0.72 ? 1 : -1;
-        normalOffset += side * (5 + rand() * 11) * scale;
+      let normalOffset;
+      let tangentOffset;
+      if (core) {
+        // Dense but irregular center trail: tiny pinpricks, not a continuous stroke.
+        normalOffset = (rand() + rand() - 1) * 2.3 * scale;
+        tangentOffset = (rand() + rand() - 1) * 2.8 * scale;
+      } else {
+        // A smaller halo of drifting stardust gives the trail a natural, airy edge.
+        normalOffset = (rand() + rand() - 1) * 10 * scale;
+        if (rand() < 0.24) {
+          const side = rand() < 0.72 ? 1 : -1;
+          normalOffset += side * (4 + rand() * 8) * scale;
+        }
+        tangentOffset = (rand() + rand() - 1) * 8 * scale;
       }
-      const tangentOffset = (rand() + rand() - 1) * 10 * scale;
       const p = offsetFromArc(t, normalOffset, tangentOffset);
       const dot = document.createElementNS(ns, "circle");
       dot.setAttribute("cx", safe(p.x, 2, dimensions.w - 2).toFixed(2));
       dot.setAttribute("cy", safe(p.y, 2, dimensions.h - 2).toFixed(2));
-      dot.setAttribute("r", (scale * (0.42 + rand() * 0.95)).toFixed(2));
-      dot.setAttribute("opacity", (0.30 + rand() * 0.62).toFixed(2));
-      dot.setAttribute("class", "le-mv-arc-sparkle");
+      dot.setAttribute("r", (scale * (core ? 0.32 + rand() * 0.78 : 0.38 + rand() * 0.88)).toFixed(2));
+      dot.setAttribute("opacity", (core ? 0.42 + rand() * 0.56 : 0.22 + rand() * 0.66).toFixed(2));
+      const warmEnd = t < 0.105 || t > 0.895;
+      const coolGlint = !core && rand() < 0.45;
+      dot.setAttribute("class", warmEnd ? "le-mv-arc-sparkle le-mv-arc-sparkle-warm" : (coolGlint ? "le-mv-arc-sparkle le-mv-arc-sparkle-cool" : "le-mv-arc-sparkle"));
       group.appendChild(dot);
     }
 
