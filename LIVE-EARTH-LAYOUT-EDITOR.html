@@ -40,6 +40,8 @@
     <button id="smallerBtn" type="button">− Size</button><button id="largerBtn" type="button">+ Size</button><button id="resetOneBtn" type="button">Reset element</button><button id="resetAllBtn" type="button">Reset all</button>
   </div>
   <label class="switchrow"><input id="revealHidden" type="checkbox"> Temporarily reveal hidden scroller items for layout work</label>
+  <label class="switchrow"><input id="iconPreview" type="checkbox"> Show Moonrise/Moonset icons for layout (SIMULATED preview)</label>
+  <div id="iconPreviewNote" class="note" hidden>PREVIEW ONLY: icons are placed at the arc endpoints so you can adjust their design. They do not represent actual local Moonrise/Moonset events or times.</div>
   <div class="actions"><button id="exportBtn" type="button">Export measurements JSON</button><button id="copyBtn" type="button">Copy JSON</button><button id="cssBtn" type="button">Show CSS patch suggestion</button></div>
   <div class="note">Drag an element on the screen to move it. Drag a corner handle to resize it. The exported measurements are for the real viewport and include percentages. Reload the app to discard every preview adjustment.</div>
   <div class="fineprint" id="targetInfo">No layout target selected yet.</div>
@@ -67,7 +69,7 @@ const config = [
   ['Moonrise icon', '#le-mv-rise-icon'],
   ['Moonset icon', '#le-mv-set-icon']
 ];
-let doc = null, win = null, stage = null, current = null, records = new Map(), targets = [], dragState = null, revealOriginal = new Map(), targetId = 0, moonRequested = false;
+let doc = null, win = null, stage = null, current = null, records = new Map(), targets = [], dragState = null, revealOriginal = new Map(), targetId = 0, moonRequested = false, iconPreviewTimer = null, iconPreviewEnabled = false, iconPreviewOriginal = new Map();
 const number = (id) => Number($(id).value || 0);
 const px = v => `${Math.round(v*100)/100}px`;
 function setStatus(s){ status.textContent=s; }
@@ -83,6 +85,52 @@ function ensureReveal(){
 function undoReveal(){
   for (const [el, state] of revealOriginal) { if (!el.isConnected) continue; el.hidden = state.hidden; el.classList.toggle('le-mv-no-local-times', state.cls); }
   revealOriginal.clear();
+}
+function restoreIconPreview(){
+  for(const [icon,state] of iconPreviewOriginal){
+    if(!icon.isConnected) continue;
+    if(state.displayAttr===null) icon.removeAttribute('display'); else icon.setAttribute('display',state.displayAttr);
+    if(state.transformAttr===null) icon.removeAttribute('transform'); else icon.setAttribute('transform',state.transformAttr);
+    if(state.styleDisplay) icon.style.setProperty('display',state.styleDisplay,state.stylePriority); else icon.style.removeProperty('display');
+    icon.removeAttribute('data-le-layout-editor-simulated');
+  }
+  iconPreviewOriginal.clear();
+}
+function refreshIconPreview(){
+  if(!iconPreviewEnabled || !doc) return;
+  const pairs=[['le-mv-rise-icon','le-mv-rise-dot'],['le-mv-set-icon','le-mv-set-dot']];
+  for(const [iconId,dotId] of pairs){
+    const icon=doc.getElementById(iconId), dot=doc.getElementById(dotId);
+    if(!icon || !dot || !icon.isConnected || !dot.isConnected) continue;
+    if(!iconPreviewOriginal.has(icon)){
+      iconPreviewOriginal.set(icon,{displayAttr:icon.getAttribute('display'),transformAttr:icon.getAttribute('transform'),styleDisplay:icon.style.getPropertyValue('display'),stylePriority:icon.style.getPropertyPriority('display')});
+    }
+    const x=Number(dot.getAttribute('cx')), y=Number(dot.getAttribute('cy'));
+    if(!Number.isFinite(x)||!Number.isFinite(y)) continue;
+    icon.style.setProperty('display','inline','important');
+    icon.setAttribute('transform',`translate(${x.toFixed(2)} ${(y+6).toFixed(2)})`);
+    icon.setAttribute('data-le-layout-editor-simulated','true');
+  }
+}
+function setIconPreview(enabled){
+  iconPreviewEnabled=!!enabled;
+  $('iconPreviewNote').hidden=!iconPreviewEnabled;
+  if(iconPreviewTimer){clearInterval(iconPreviewTimer);iconPreviewTimer=null;}
+  if(iconPreviewEnabled){
+    if(!prepConnection()){setStatus('Icon preview is ready when Moon View finishes loading.');}
+    refreshIconPreview();
+    rebuildTargets();
+    iconPreviewTimer=setInterval(()=>{
+      try{refreshIconPreview();}
+      catch(e){setStatus('Icon preview paused: '+e.message);}
+    },300);
+    setStatus('SIMULATED icon preview on · no location data or local times used');
+  }else{
+    if(iconPreviewTimer){clearInterval(iconPreviewTimer);iconPreviewTimer=null;}
+    restoreIconPreview();
+    if(doc) rebuildTargets();
+    setStatus('Simulated icon preview off · normal app visibility restored');
+  }
 }
 function prepConnection(){
   doc=getDoc(); win=doc && doc.defaultView;
@@ -173,7 +221,7 @@ function exportData(){
   const sr=stageRect(),viewport={width:win?.innerWidth||innerWidth,height:win?.innerHeight||innerHeight};
   const elements=[];
   for(const t of targets){const d=records.get(t.el);if(!d?.baseRect)continue;const r=rectOf(t.el);elements.push({label:t.label,selector:t.selector,viewport:{width:viewport.width,height:viewport.height},position:{x:round(r.x-sr.left),y:round(r.y-sr.top),width:round(r.w),height:round(r.h),xPercent:round((r.x-sr.left)/Math.max(1,sr.width)*100),yPercent:round((r.y-sr.top)/Math.max(1,sr.height)*100),widthPercent:round(r.w/Math.max(1,sr.width)*100),heightPercent:round(r.h/Math.max(1,sr.height)*100)},change:{translateX:round(d.dx),translateY:round(d.dy),scaleX:round(d.sx),scaleY:round(d.sy)},baseline:{x:round(d.baseRect.x-sr.left),y:round(d.baseRect.y-sr.top),width:round(d.baseRect.w),height:round(d.baseRect.h)}});}
-  return {tool:'LIVE // EARTH Temporary Layout Editor — fixed independent targets + hide/show',formatVersion:2,exportedAt:new Date().toISOString(),note:'Preview measurements from the actual app iframe. These do not edit the repository. Review against the source CSS before making permanent changes.',view:'Moon View',viewport:{width:viewport.width,height:viewport.height,stageWidth:round(sr.width),stageHeight:round(sr.height)},elements};
+  return {tool:'LIVE // EARTH Temporary Layout Editor — independent targets + location-independent icon preview',formatVersion:3,exportedAt:new Date().toISOString(),note:'Preview measurements from the actual app iframe. These do not edit the repository. Review against the source CSS before making permanent changes.',previewModes:{simulatedRiseSetIcons:iconPreviewEnabled,warning:iconPreviewEnabled?'Rise/set icons were temporarily shown at the arc endpoints for layout only; they are not actual local events.':''},view:'Moon View',viewport:{width:viewport.width,height:viewport.height,stageWidth:round(sr.width),stageHeight:round(sr.height)},elements};
 }
 function round(n){return Math.round(n*100)/100;}
 function jsonText(){return JSON.stringify(exportData(),null,2);}
@@ -211,6 +259,7 @@ for(const id of ['xField','yField','wField','hField'])$(id).addEventListener('ch
 $('resetOneBtn').addEventListener('click',()=>{if(current){resetElement(current.el);syncFields();setStatus('Selected element restored to its original preview position.');}});
 $('resetAllBtn').addEventListener('click',resetAll);
 $('revealHidden').addEventListener('change',()=>{if($('revealHidden').checked){ensureReveal();setStatus('Hidden scroller layout items revealed temporarily.');}else{undoReveal();setStatus('Hidden item visibility restored.');}const was=current;rebuildTargets();if(was){const i=targets.findIndex(t=>t.selector===was.selector);if(i>=0){targetSelect.value=String(i);selectTarget(targets[i]);}}});
+$('iconPreview').addEventListener('change',()=>setIconPreview($('iconPreview').checked));
 $('exportBtn').addEventListener('click',()=>{const text=jsonText();saveText('moon-view-layout-measurements.json',text,'application/json');preview.textContent=text;preview.classList.add('show');setStatus('Measurements JSON exported. Send that file back for the permanent patch.');});
 $('copyBtn').addEventListener('click',async()=>{const text=jsonText();preview.textContent=text;preview.classList.add('show');try{await navigator.clipboard.writeText(text);setStatus('JSON copied to clipboard.');}catch(e){setStatus('JSON is shown above. Long-press the text to copy it.');}});
 $('cssBtn').addEventListener('click',()=>{const text=cssText();preview.textContent=text;preview.classList.add('show');setStatus('CSS suggestion shown. It is not automatically applied to source code.');});
@@ -219,7 +268,7 @@ function showControls(){panel.classList.remove('hidden');$('showControlsBtn').cl
 $('collapseBtn').addEventListener('click',hideControls);
 $('showControlsBtn').addEventListener('click',showControls);
 window.addEventListener('resize',()=>{if(current)syncFields();});
-window.addEventListener('beforeunload',()=>{undoReveal();});
+window.addEventListener('beforeunload',()=>{if(iconPreviewTimer)clearInterval(iconPreviewTimer);restoreIconPreview();undoReveal();});
 setStatus('Connecting to the real app…');
 })();
 </script>
