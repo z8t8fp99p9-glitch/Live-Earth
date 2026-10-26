@@ -174,7 +174,9 @@
     #le-sky-view .le-mv-svg { position:absolute; z-index:1; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
     #le-sky-view .le-mv-canvas { position:absolute; z-index:2; inset:0; display:block; width:100%; height:100%; pointer-events:none; }
     #le-sky-view .le-mv-path { fill:none; stroke-linecap:round; stroke-linejoin:round; }
-    #le-sky-view .le-mv-path-main { stroke:url(#leMvArcGradient); stroke-width:2; filter:drop-shadow(0 0 3px #a5d8ffb0) drop-shadow(0 0 9px #52a7ff42); }
+    #le-sky-view .le-mv-path-main { stroke:url(#leMvArcGradient); stroke-width:2.15; filter:drop-shadow(0 0 3px #a5d8ffb8) drop-shadow(0 0 8px #7bbcff50); }
+    #le-sky-view .le-mv-arc-sparkle { fill:#f5fbff; filter:drop-shadow(0 0 2px #d9efff) drop-shadow(0 0 5px #85c8ff90); pointer-events:none; }
+    #le-sky-view .le-mv-arc-star { fill:none; stroke:#f7fbff; stroke-width:.85; stroke-linecap:round; opacity:.82; filter:drop-shadow(0 0 3px #b7ddff); pointer-events:none; }
     #le-sky-view .le-mv-endpoint { fill:#deefff; filter:drop-shadow(0 0 5px #9bd8ff); }
     #le-sky-view .le-mv-endpoint-halo { fill:#73baff; fill-opacity:.15; }
     #le-sky-view .le-mv-event-label { fill:#bdd5ef; font-size:10px; letter-spacing:1.7px; paint-order:stroke; stroke:#031020b0; stroke-width:2px; }
@@ -236,8 +238,8 @@
   stage.hidden = true;
   stage.innerHTML = `
     <svg class="le-mv-svg" aria-label="Fixed Moon guide arc with local rise and set times" role="img">
-      <defs><linearGradient id="leMvArcGradient" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#8dc8ff" stop-opacity=".82"/><stop offset="24%" stop-color="#c9e8ff"/><stop offset="52%" stop-color="#f4fbff"/><stop offset="78%" stop-color="#9dd1ff"/><stop offset="100%" stop-color="#cfeaff" stop-opacity=".88"/></linearGradient></defs>
-      <path class="le-mv-path le-mv-path-main" id="le-mv-main"/>
+      <defs><linearGradient id="leMvArcGradient" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ffe0a5" stop-opacity=".98"/><stop offset="13%" stop-color="#d9eaff"/><stop offset="30%" stop-color="#bcdcff"/><stop offset="50%" stop-color="#f8fcff"/><stop offset="70%" stop-color="#bcdcff"/><stop offset="87%" stop-color="#dceaff"/><stop offset="100%" stop-color="#ffdda0" stop-opacity=".96"/></linearGradient></defs>
+      <path class="le-mv-path le-mv-path-main" id="le-mv-main"/><g id="le-mv-arc-sparkles" aria-hidden="true"></g>
       <circle class="le-mv-endpoint-halo" id="le-mv-rise-halo" r="8"/><circle class="le-mv-endpoint" id="le-mv-rise-dot" r="2.2"/><circle class="le-mv-endpoint-halo" id="le-mv-set-halo" r="8"/><circle class="le-mv-endpoint" id="le-mv-set-dot" r="2.2"/>
       <text class="le-mv-event-label" id="le-mv-rise-label" text-anchor="start">MOONRISE</text><text class="le-mv-event-time" id="le-mv-rise-time" text-anchor="start"></text>
       <text class="le-mv-event-label" id="le-mv-set-label" text-anchor="end">MOONSET</text><text class="le-mv-event-time" id="le-mv-set-time" text-anchor="end"></text>
@@ -410,11 +412,15 @@
     const x0 = w * (landscape ? 0.065 : 0.085);
     const x1 = w * (landscape ? 0.80 : 0.915);
     const baseline = mountainBaseline(w, h, landscape);
-    // A fixed, screen-space quadratic arc: its shape is not tied to per-minute astronomy.
-    const control = { x: (x0 + x1) / 2, y: baseline - h * 0.64 };
+    // One fixed, screen-space quadratic arc. Portrait uses the gentler crown from
+    // the approved reference; landscape keeps its broader, higher sweep. Neither
+    // shape is tied to per-minute astronomy.
+    const controlRise = h * (landscape ? 0.64 : 0.34);
+    const control = { x: (x0 + x1) / 2, y: baseline - controlRise };
     arcGeometry = { x0, x1, baseline, controlX: control.x, controlY: control.y, landscape };
     svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
     $("#le-mv-main").setAttribute("d", `M ${x0.toFixed(2)} ${baseline.toFixed(2)} Q ${control.x.toFixed(2)} ${control.y.toFixed(2)} ${x1.toFixed(2)} ${baseline.toFixed(2)}`);
+    drawArcSparkles();
 
     const rise = { x: x0, y: baseline }, set = { x: x1, y: baseline };
     ["le-mv-rise-halo", "le-mv-rise-dot", "le-mv-set-halo", "le-mv-set-dot"].forEach(id => $("#" + id).removeAttribute("display"));
@@ -463,14 +469,46 @@
     range.value = String(Math.round(progress * 1000)); selectedLabel.textContent = fmt(selectedTime);
     drawPaths(); renderOnce();
   }
-  function currentPoint() {
+  function pointOnArc(amount) {
     if (!arcGeometry) return { x: dimensions.w * 0.5, y: mountainBaseline(dimensions.w, dimensions.h, dimensions.w > dimensions.h) };
-    const t = clamp(progress, 0, 1), u = 1 - t;
+    const t = clamp(amount, 0, 1), u = 1 - t;
     const { x0, x1, baseline, controlX, controlY } = arcGeometry;
     return {
       x: u * u * x0 + 2 * u * t * controlX + t * t * x1,
       y: u * u * baseline + 2 * u * t * controlY + t * t * baseline
     };
+  }
+  function currentPoint() { return pointOnArc(progress); }
+
+  // A handful of static glints follow the exact same curve. They are rebuilt only
+  // when the viewport geometry changes; no particle loop or animation is added.
+  function drawArcSparkles() {
+    const group = $("#le-mv-arc-sparkles");
+    if (!group || !arcGeometry) return;
+    group.replaceChildren();
+    const landscape = arcGeometry.landscape;
+    const dots = landscape
+      ? [0.105, 0.17, 0.245, 0.33, 0.42, 0.50, 0.59, 0.68, 0.765, 0.84, 0.905]
+      : [0.11, 0.19, 0.28, 0.39, 0.50, 0.61, 0.72, 0.81, 0.89];
+    const ns = "http://www.w3.org/2000/svg";
+    dots.forEach((t, index) => {
+      const p = pointOnArc(t);
+      const dot = document.createElementNS(ns, "circle");
+      dot.setAttribute("cx", p.x.toFixed(2));
+      dot.setAttribute("cy", p.y.toFixed(2));
+      dot.setAttribute("r", (index % 4 === 1 ? 1.45 : index % 3 === 0 ? 1.05 : 0.72).toString());
+      dot.setAttribute("opacity", (index % 3 === 0 ? 0.86 : 0.55).toString());
+      dot.setAttribute("class", "le-mv-arc-sparkle");
+      group.appendChild(dot);
+    });
+    [0.22, 0.50, 0.78].forEach((t, index) => {
+      const p = pointOnArc(t);
+      const size = index === 1 ? 4.2 : 3.1;
+      const flare = document.createElementNS(ns, "path");
+      flare.setAttribute("d", `M ${(p.x-size).toFixed(2)} ${p.y.toFixed(2)} L ${(p.x+size).toFixed(2)} ${p.y.toFixed(2)} M ${p.x.toFixed(2)} ${(p.y-size*1.65).toFixed(2)} L ${p.x.toFixed(2)} ${(p.y+size*1.65).toFixed(2)}`);
+      flare.setAttribute("class", "le-mv-arc-star");
+      group.appendChild(flare);
+    });
   }
   function updateLighting(date) {
     if (!moonLight || !moon || !moonLightTarget) return;
