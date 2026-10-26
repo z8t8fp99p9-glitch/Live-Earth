@@ -175,9 +175,12 @@
     #le-sky-view .le-mv-canvas { position:absolute; z-index:2; inset:0; display:block; width:100%; height:100%; pointer-events:none; }
     #le-sky-view .le-mv-path { fill:none; stroke-linecap:round; stroke-linejoin:round; }
     #le-sky-view .le-mv-path-main { stroke:url(#leMvArcGradient); stroke-width:1.7; filter:drop-shadow(0 0 2.5px #a5d8ffb8) drop-shadow(0 0 6px #7bbcff50); }
-    #le-sky-view .le-mv-arc-sparkle { fill:#f5fbff; filter:drop-shadow(0 0 2px #d9efff) drop-shadow(0 0 4px #85c8ff90); pointer-events:none; }
-    #le-sky-view .le-mv-arc-star-glow { fill:#dbefff; opacity:.32; filter:drop-shadow(0 0 4px #a9d9ff) drop-shadow(0 0 8px #89caff88); pointer-events:none; }
-    #le-sky-view .le-mv-arc-star { fill:#ffffff; opacity:.96; filter:drop-shadow(0 0 2.5px #f3faff) drop-shadow(0 0 6px #9bd3ff); pointer-events:none; }
+    #le-sky-view .le-mv-arc-sparkle { fill:#f8fcff; filter:drop-shadow(0 0 2px #d9efff) drop-shadow(0 0 5px #85c8ffb8); pointer-events:none; }
+    #le-sky-view .le-mv-arc-star-glow { fill:#e5f4ff; opacity:.48; filter:drop-shadow(0 0 4px #a9d9ff) drop-shadow(0 0 9px #89caffb8); pointer-events:none; }
+    #le-sky-view .le-mv-arc-star { fill:#ffffff; opacity:.99; filter:drop-shadow(0 0 2.8px #f3faff) drop-shadow(0 0 7px #9bd3ff); pointer-events:none; }
+    #le-sky-view .le-mv-horizontal-rail-sparkles { position:absolute; inset:0; z-index:1; display:block; width:100%; height:100%; overflow:visible; pointer-events:none; }
+    #le-sky-view .le-mv-scroller-sparkle-core { fill:#ffffff; filter:drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 5px #9ed5ff); pointer-events:none; }
+    #le-sky-view .le-mv-horizontal-rail-sparkles[hidden] { display:none !important; }
     #le-sky-view .le-mv-endpoint { fill:#deefff; filter:drop-shadow(0 0 5px #9bd8ff); }
     #le-sky-view .le-mv-endpoint-halo { fill:#73baff; fill-opacity:.15; }
     #le-sky-view .le-mv-event-label { fill:#bdd5ef; font-size:10px; letter-spacing:1.7px; paint-order:stroke; stroke:#031020b0; stroke-width:2px; }
@@ -202,6 +205,7 @@
          The rail controls time only; it does not control the Moon or arc layout. */
       #le-sky-view .le-mv-timeline { left:auto; right:2.4%; top:7.5%; bottom:7.5%; width:104px; height:auto; border:1px solid #9bcfff42; border-radius:22px; padding:8px; background:linear-gradient(160deg,#06172bf0,#071426c7); box-shadow:0 8px 32px #0005,inset 0 1px #ffffff12; -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
       #le-sky-view .le-mv-timeline:before, #le-sky-view .le-mv-timeline:after { display:none; }
+      #le-sky-view .le-mv-horizontal-rail-sparkles { display:none; }
       #le-sky-view .le-mv-selected-time { top:10px; left:4px; right:4px; font-size:12px; line-height:1.25; padding:0 1px; z-index:2; }
       #le-sky-view .le-mv-vertical-scroller { display:block; position:absolute; top:76px; bottom:50px; left:4px; right:4px; pointer-events:none; }
       #le-sky-view .le-mv-vertical-scroller svg { display:block; width:100%; height:100%; overflow:visible; }
@@ -247,6 +251,7 @@
     </svg>
     <canvas class="le-mv-canvas" aria-hidden="true"></canvas>
     <div class="le-mv-timeline" hidden>
+      <svg class="le-mv-horizontal-rail-sparkles" aria-hidden="true" viewBox="0 0 390 98" preserveAspectRatio="none"><g id="le-mv-horizontal-sparkle-group"></g></svg>
       <button class="le-mv-selected-time" type="button" aria-label="Tap to return to live lunar time">--:--</button>
       <input class="le-mv-range" type="range" min="0" max="1000" step="1" value="0" aria-label="Select a time between moonrise and moonset">
       <div class="le-mv-vertical-scroller" aria-hidden="true"><svg viewBox="0 0 100 300" preserveAspectRatio="none">
@@ -256,6 +261,7 @@
         </defs>
         <path class="le-mv-vertical-path-glow" d="M50 4 C20 42,80 69,50 101 S18 162,50 198 S79 255,50 296"/>
         <path class="le-mv-vertical-path" id="le-mv-vertical-path" d="M50 4 C20 42,80 69,50 101 S18 162,50 198 S79 255,50 296"/>
+        <g id="le-mv-vertical-sparkle-group" aria-hidden="true"></g>
         <circle class="le-mv-vertical-end-halo" cx="50" cy="5" r="8"/><circle class="le-mv-vertical-end" cx="50" cy="5" r="3"/>
         <circle class="le-mv-vertical-end-halo" cx="50" cy="295" r="8"/><circle class="le-mv-vertical-end" cx="50" cy="295" r="3"/>
         <g id="le-mv-vertical-marker" transform="translate(50 150)"><circle class="le-mv-vertical-marker-halo" r="19"/><circle class="le-mv-vertical-marker-disc" r="13"/><circle class="le-mv-vertical-crater" cx="-4" cy="-4" r="2.6"/><circle class="le-mv-vertical-crater" cx="4.5" cy="3" r="2.1"/><circle class="le-mv-vertical-crater" cx="-1" cy="6" r="1.3"/></g>
@@ -270,6 +276,9 @@
   const selectedLabel = $(".le-mv-selected-time"), range = $(".le-mv-range"), locationNote = $(".le-mv-location-note");
   const dayLabel = $(".start-label"), setLabel = $(".end-label");
   const verticalPath = $("#le-mv-vertical-path"), verticalMarker = $("#le-mv-vertical-marker");
+  const horizontalRailSparkles = $(".le-mv-horizontal-rail-sparkles");
+  const horizontalSparkleGroup = $("#le-mv-horizontal-sparkle-group");
+  const verticalSparkleGroup = $("#le-mv-vertical-sparkle-group");
   const fmt = value => new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date(value));
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   const isLocationEnabled = () => window.liveEarthGetLocationState?.() === true;
@@ -417,6 +426,7 @@
     svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
     $("#le-mv-main").setAttribute("d", `M ${x0.toFixed(2)} ${baseline.toFixed(2)} Q ${control.x.toFixed(2)} ${control.y.toFixed(2)} ${x1.toFixed(2)} ${baseline.toFixed(2)}`);
     drawArcSparkles();
+    drawScrollerSparkles();
 
     const rise = { x: x0, y: baseline }, set = { x: x1, y: baseline };
     ["le-mv-rise-halo", "le-mv-rise-dot", "le-mv-set-halo", "le-mv-set-dot"].forEach(id => $("#" + id).removeAttribute("display"));
@@ -501,8 +511,8 @@
     });
     // Four-point luminous glints, with a soft halo under each bright centre.
     const flares = landscape
-      ? [{t:0.14,s:2.6},{t:0.25,s:2.2},{t:0.37,s:2.5},{t:0.50,s:3.1},{t:0.64,s:2.6},{t:0.78,s:2.4},{t:0.89,s:2.8}]
-      : [{t:0.16,s:2.7},{t:0.27,s:2.4},{t:0.39,s:2.7},{t:0.59,s:3.2},{t:0.73,s:2.8},{t:0.86,s:2.5}];
+      ? [{t:0.105,s:3.2},{t:0.19,s:2.7},{t:0.285,s:3.4},{t:0.37,s:2.6},{t:0.465,s:3.7},{t:0.555,s:2.8},{t:0.645,s:3.5},{t:0.735,s:2.7},{t:0.835,s:3.2},{t:0.91,s:2.8}]
+      : [{t:0.135,s:3.4},{t:0.235,s:2.8},{t:0.325,s:3.1},{t:0.415,s:2.7},{t:0.505,s:3.8},{t:0.60,s:2.9},{t:0.685,s:3.4},{t:0.775,s:2.7},{t:0.865,s:3.2}];
     flares.forEach(({t,s}) => {
       const p = pointOnArc(t);
       const glow = document.createElementNS(ns, "circle");
@@ -511,13 +521,69 @@
       glow.setAttribute("r", (s * 1.1).toFixed(2));
       glow.setAttribute("class", "le-mv-arc-star-glow");
       group.appendChild(glow);
-      const narrow = s * 0.14;
+      const narrow = s * 0.17;
       const star = document.createElementNS(ns, "path");
-      star.setAttribute("d", `M ${p.x.toFixed(2)} ${(p.y-s*1.65).toFixed(2)} L ${(p.x+narrow).toFixed(2)} ${(p.y-narrow).toFixed(2)} L ${(p.x+s).toFixed(2)} ${p.y.toFixed(2)} L ${(p.x+narrow).toFixed(2)} ${(p.y+narrow).toFixed(2)} L ${p.x.toFixed(2)} ${(p.y+s*1.65).toFixed(2)} L ${(p.x-narrow).toFixed(2)} ${(p.y+narrow).toFixed(2)} L ${(p.x-s).toFixed(2)} ${p.y.toFixed(2)} L ${(p.x-narrow).toFixed(2)} ${(p.y-narrow).toFixed(2)} Z`);
+      star.setAttribute("d", `M ${p.x.toFixed(2)} ${(p.y-s*2.05).toFixed(2)} L ${(p.x+narrow).toFixed(2)} ${(p.y-narrow).toFixed(2)} L ${(p.x+s*0.92).toFixed(2)} ${p.y.toFixed(2)} L ${(p.x+narrow).toFixed(2)} ${(p.y+narrow).toFixed(2)} L ${p.x.toFixed(2)} ${(p.y+s*2.05).toFixed(2)} L ${(p.x-narrow).toFixed(2)} ${(p.y+narrow).toFixed(2)} L ${(p.x-s*0.92).toFixed(2)} ${p.y.toFixed(2)} L ${(p.x-narrow).toFixed(2)} ${(p.y-narrow).toFixed(2)} Z`);
       star.setAttribute("class", "le-mv-arc-star");
       group.appendChild(star);
+      const core = document.createElementNS(ns, "circle");
+      core.setAttribute("cx", p.x.toFixed(2));
+      core.setAttribute("cy", p.y.toFixed(2));
+      core.setAttribute("r", Math.max(0.65, s * 0.18).toFixed(2));
+      core.setAttribute("class", "le-mv-scroller-sparkle-core");
+      group.appendChild(core);
     });
   }
+
+  // Matching starbursts sit on the scroller rails as static SVG decorations.
+  // They are generated only when the layout is built/resized, never during clock ticks or dragging.
+  function appendStaticStar(group, p, size, ns) {
+    const glow = document.createElementNS(ns, "circle");
+    glow.setAttribute("cx", p.x.toFixed(2));
+    glow.setAttribute("cy", p.y.toFixed(2));
+    glow.setAttribute("r", (size * 1.35).toFixed(2));
+    glow.setAttribute("class", "le-mv-arc-star-glow");
+    group.appendChild(glow);
+    const coreWidth = size * 0.16;
+    const star = document.createElementNS(ns, "path");
+    star.setAttribute("d", `M ${p.x.toFixed(2)} ${(p.y-size*2.1).toFixed(2)} L ${(p.x+coreWidth).toFixed(2)} ${(p.y-coreWidth).toFixed(2)} L ${(p.x+size*0.86).toFixed(2)} ${p.y.toFixed(2)} L ${(p.x+coreWidth).toFixed(2)} ${(p.y+coreWidth).toFixed(2)} L ${p.x.toFixed(2)} ${(p.y+size*2.1).toFixed(2)} L ${(p.x-coreWidth).toFixed(2)} ${(p.y+coreWidth).toFixed(2)} L ${(p.x-size*0.86).toFixed(2)} ${p.y.toFixed(2)} L ${(p.x-coreWidth).toFixed(2)} ${(p.y-coreWidth).toFixed(2)} Z`);
+    star.setAttribute("class", "le-mv-arc-star");
+    group.appendChild(star);
+    const dot = document.createElementNS(ns, "circle");
+    dot.setAttribute("cx", p.x.toFixed(2)); dot.setAttribute("cy", p.y.toFixed(2));
+    dot.setAttribute("r", Math.max(0.65, size * 0.18).toFixed(2));
+    dot.setAttribute("class", "le-mv-scroller-sparkle-core");
+    group.appendChild(dot);
+  }
+
+  function drawScrollerSparkles() {
+    const ns = "http://www.w3.org/2000/svg";
+    // Portrait: use the exact pixel width of the timeline so the four-point stars stay round.
+    const railWidth = Math.max(1, timeline.clientWidth || dimensions.w * 0.86);
+    horizontalRailSparkles.setAttribute("viewBox", `0 0 ${railWidth.toFixed(2)} 98`);
+    horizontalSparkleGroup.replaceChildren();
+    const horizontalStars = [
+      { t:0.08, s:2.0 }, { t:0.19, s:2.8 }, { t:0.31, s:1.8 },
+      { t:0.43, s:2.4 }, { t:0.54, s:3.1 }, { t:0.66, s:1.9 },
+      { t:0.77, s:2.7 }, { t:0.89, s:2.0 }, { t:0.96, s:2.4 }
+    ];
+    horizontalStars.forEach(({t,s}) => appendStaticStar(horizontalSparkleGroup, { x: railWidth*t, y:62 }, s, ns));
+
+    // Landscape: place the same fixed glints directly on the existing winding SVG rail.
+    verticalSparkleGroup.replaceChildren();
+    if (verticalPath && typeof verticalPath.getTotalLength === "function") {
+      const length = verticalPath.getTotalLength();
+      const verticalStars = [
+        { t:0.07, s:2.2 }, { t:0.20, s:2.8 }, { t:0.34, s:1.9 },
+        { t:0.47, s:2.6 }, { t:0.61, s:2.0 }, { t:0.74, s:2.9 }, { t:0.89, s:2.2 }
+      ];
+      verticalStars.forEach(({t,s}) => {
+        const point = verticalPath.getPointAtLength(length*t);
+        appendStaticStar(verticalSparkleGroup, { x:point.x, y:point.y }, s, ns);
+      });
+    }
+  }
+
   function updateLighting(date) {
     if (!moonLight || !moon || !moonLightTarget) return;
     const p = currentPoint(), h = dimensions.h;
