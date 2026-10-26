@@ -418,22 +418,24 @@
     const x0 = w * (landscape ? 0.065 : 0.114);
     const x1 = w * (landscape ? 0.80 : 0.921);
     const baseline = referenceBaseline(h, landscape);
-    // Custom cubic arch: keep the approved endpoints and exact crest height, but
-    // replace the half-ellipse's broad dome profile with a more lifted, graceful sweep.
-    // The control inset shapes the shoulders; the control height keeps the midpoint
-    // exactly baseline - ry. Landscape retains its independent endpoint/height ratios.
+    // Endpoint-only asymmetry trial: keep the approved control points and crest
+    // height; lift the start by 8 CSS px and lower the end by 8 CSS px.
+    // Their vertical offsets balance around the original baseline, preserving the
+    // midpoint crest while giving the arc a subtle rising-to-falling sweep.
+    const startY = baseline - 8;
+    const endY = baseline + 8;
     const centerX = (x0 + x1) / 2;
     const rx = (x1 - x0) / 2;
     const ry = h * (landscape ? 0.35 : 0.208);
     const controlInset = (x1 - x0) * (landscape ? 0.30 : 0.15);
     const controlY = baseline - (4 / 3) * ry;
-    arcGeometry = { x0, x1, baseline, centerX, rx, ry, controlInset, controlY, landscape };
+    arcGeometry = { x0, x1, baseline, startY, endY, centerX, rx, ry, controlInset, controlY, landscape };
     svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
-    $("#le-mv-main").setAttribute("d", `M ${x0.toFixed(2)} ${baseline.toFixed(2)} C ${(x0 + controlInset).toFixed(2)} ${controlY.toFixed(2)}, ${(x1 - controlInset).toFixed(2)} ${controlY.toFixed(2)}, ${x1.toFixed(2)} ${baseline.toFixed(2)}`);
+    $("#le-mv-main").setAttribute("d", `M ${x0.toFixed(2)} ${startY.toFixed(2)} C ${(x0 + controlInset).toFixed(2)} ${controlY.toFixed(2)}, ${(x1 - controlInset).toFixed(2)} ${controlY.toFixed(2)}, ${x1.toFixed(2)} ${endY.toFixed(2)}`);
     drawArcSparkles();
     drawScrollerSparkles();
 
-    const rise = { x: x0, y: baseline }, set = { x: x1, y: baseline };
+    const rise = { x: x0, y: startY }, set = { x: x1, y: endY };
     ["le-mv-rise-halo", "le-mv-rise-dot", "le-mv-set-halo", "le-mv-set-dot"].forEach(id => $("#" + id).removeAttribute("display"));
     setCircle("le-mv-rise-halo", rise); setCircle("le-mv-rise-dot", rise);
     setCircle("le-mv-set-halo", set); setCircle("le-mv-set-dot", set);
@@ -482,11 +484,11 @@
   }
   function arcCurve(amount) {
     const t = clamp(amount, 0, 1), u = 1 - t;
-    const { x0, x1, baseline, controlInset, controlY } = arcGeometry;
-    const p0 = { x:x0, y:baseline };
+    const { x0, x1, startY, endY, controlInset, controlY } = arcGeometry;
+    const p0 = { x:x0, y:startY };
     const p1 = { x:x0 + controlInset, y:controlY };
     const p2 = { x:x1 - controlInset, y:controlY };
-    const p3 = { x:x1, y:baseline };
+    const p3 = { x:x1, y:endY };
     const x = u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x;
     const y = u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y;
     const dx = 3*u*u*(p1.x-p0.x) + 6*u*t*(p2.x-p1.x) + 3*t*t*(p3.x-p2.x);
