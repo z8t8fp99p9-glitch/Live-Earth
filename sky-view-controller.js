@@ -202,6 +202,7 @@
     #le-sky-view .le-mv-event-label { fill:#bddfff; font-size:10px; letter-spacing:1.7px; paint-order:stroke; stroke:#031020b0; stroke-width:2px; }
     #le-sky-view .le-mv-event-time { fill:#f4f9ff; font-size:16px; font-weight:500; paint-order:stroke; stroke:#031020c9; stroke-width:2.6px; }
     #le-sky-view .le-mv-scroller-end-icon { display:block; flex:0 0 20px; width:30px; height:20px; align-self:center; margin:0 auto 1px; overflow:visible; filter:drop-shadow(0 0 2.4px #65baff8a); }
+    @media (orientation:portrait) { #le-sky-view .le-mv-end-labels { transform:translate(2px, 20px); } }
     #le-sky-view .le-mv-end-labels > .le-mv-endpoint-info { display:flex; flex-direction:column; align-items:center; gap:1px; min-width:0; text-align:center; }
     #le-sky-view .le-mv-end-label-copy { display:flex; flex-direction:column; align-items:center; white-space:nowrap; line-height:1.05; }
     #le-sky-view .le-mv-end-labels .end { flex-direction:column; justify-content:flex-start; align-items:center; text-align:center; }
@@ -216,13 +217,13 @@
     #le-sky-view .le-mv-selected-time { position:absolute; top:0; left:50%; right:auto; display:block; width:max-content; max-width:78%; border:0; padding:0; margin:0; background:transparent; color:#ff7189; text-align:center; font:600 14px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; letter-spacing:.15px; text-shadow:0 0 4px #ff4b69bd,0 0 11px #ed173e91,0 1px 8px #000; cursor:pointer; -webkit-tap-highlight-color:transparent; transform:translate(-50%,-100%); z-index:5; }
     #le-sky-view .le-mv-timeline.le-mv-no-local-times .le-mv-end-labels { display:none !important; }
     #le-sky-view .le-mv-lunar-info { position:absolute; z-index:3; top:calc(10.5% + env(safe-area-inset-top,0px) - 8px); left:7%; right:7%; height:104px; pointer-events:none; color:#bce7ff; text-shadow:0 1px 9px #020b1ccc,0 0 8px #3da8ff20; }
-    #le-sky-view .le-mv-lunar-phase { position:absolute; top:0; left:50%; width:68%; transform:translateX(-50%); text-align:center; }
+    #le-sky-view .le-mv-lunar-phase { position:absolute; top:0; left:50%; width:68%; transform:translate(-50%, 4px); text-align:center; }
     #le-sky-view .le-mv-lunar-kicker { color:#9bd9ff; font-size:10px; line-height:1.3; font-weight:600; letter-spacing:2.1px; text-transform:uppercase; white-space:nowrap; }
     #le-sky-view .le-mv-lunar-illumination { margin-top:2px; color:#62baff; font-size:30px; line-height:1.05; font-weight:400; letter-spacing:.4px; text-shadow:0 0 5px #42aaff85,0 0 13px #168bff50; }
     #le-sky-view .le-mv-lunar-subtitle { margin-top:3px; color:#9bdcff; font-size:9px; line-height:1.2; letter-spacing:2px; }
     #le-sky-view .le-mv-lunar-side { position:absolute; top:65px; max-width:41%; }
-    #le-sky-view .le-mv-lunar-age { left:3%; text-align:left; }
-    #le-sky-view .le-mv-lunar-next { right:2%; text-align:right; }
+    #le-sky-view .le-mv-lunar-age { left:3%; text-align:left; transform:translateY(-15px); }
+    #le-sky-view .le-mv-lunar-next { right:2%; text-align:right; transform:translateY(-15px); }
     #le-sky-view .le-mv-lunar-value { margin-top:3px; color:#c5eaff; font-size:15px; line-height:1.2; font-weight:500; letter-spacing:.1px; }
     #le-sky-view .le-mv-lunar-countdown { margin-top:2px; color:#81c9ff; font-size:11px; line-height:1.25; }
     #le-sky-view .le-mv-range { position:absolute; left:0; right:0; bottom:14px; width:100%; height:44px; appearance:none; -webkit-appearance:none; background:transparent; margin:0; cursor:pointer; touch-action:pan-x; z-index:2; }
@@ -641,19 +642,19 @@
       else icon.setAttribute("display", "none");
     });
     if (showLargeRiseSetIcons) {
-      $("#le-mv-rise-icon").setAttribute("transform", `translate(${rise.x.toFixed(2)} ${(rise.y + 6).toFixed(2)})`);
-      $("#le-mv-set-icon").setAttribute("transform", `translate(${set.x.toFixed(2)} ${(set.y + 6).toFixed(2)})`);
+      $("#le-mv-rise-icon").setAttribute("transform", `translate(${(rise.x + 4).toFixed(2)} ${(rise.y + 33).toFixed(2)})`);
+      $("#le-mv-set-icon").setAttribute("transform", `translate(${set.x.toFixed(2)} ${(set.y + 31).toFixed(2)})`);
     }
     if (showLocalTimes) {
-      $("#le-mv-rise-label").setAttribute("x", Math.max(18, rise.x));
-      $("#le-mv-rise-label").setAttribute("y", rise.y + 28);
-      $("#le-mv-rise-time").setAttribute("x", Math.max(18, rise.x));
-      $("#le-mv-rise-time").setAttribute("y", rise.y + 47);
+      $("#le-mv-rise-label").setAttribute("x", Math.max(18, rise.x + 4));
+      $("#le-mv-rise-label").setAttribute("y", rise.y + 55);
+      $("#le-mv-rise-time").setAttribute("x", Math.max(18, rise.x + 4));
+      $("#le-mv-rise-time").setAttribute("y", rise.y + 74);
       $("#le-mv-rise-time").textContent = fmt(interval.rise);
       $("#le-mv-set-label").setAttribute("x", Math.min(w - 18, set.x));
-      $("#le-mv-set-label").setAttribute("y", set.y + 28);
+      $("#le-mv-set-label").setAttribute("y", set.y + 53);
       $("#le-mv-set-time").setAttribute("x", Math.min(w - 18, set.x));
-      $("#le-mv-set-time").setAttribute("y", set.y + 47);
+      $("#le-mv-set-time").setAttribute("y", set.y + 72);
       $("#le-mv-set-time").textContent = fmt(interval.set);
     }
   }
