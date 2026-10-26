@@ -425,7 +425,7 @@
     const centerX = (x0 + x1) / 2;
     const rx = (x1 - x0) / 2;
     const ry = h * (landscape ? 0.35 : 0.208);
-    const controlInset = (x1 - x0) * (landscape ? 0.30 : 0.28);
+    const controlInset = (x1 - x0) * (landscape ? 0.30 : 0.15);
     const controlY = baseline - (4 / 3) * ry;
     arcGeometry = { x0, x1, baseline, centerX, rx, ry, controlInset, controlY, landscape };
     svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
