@@ -172,7 +172,7 @@
     #le-sky-view .le-mv-stage { position:absolute; inset:0; z-index:3; overflow:hidden; pointer-events:none; color:#eaf5ff; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
     #le-sky-view[data-view="moon"] { touch-action:auto; }
     #le-sky-view .le-mv-svg { position:absolute; z-index:1; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
-    #le-sky-view .le-mv-canvas { position:absolute; z-index:2; inset:0; display:block; width:100%; height:100%; pointer-events:none; }
+    #le-sky-view .le-mv-canvas { position:absolute; z-index:2; inset:0; display:block; width:100%; height:100%; pointer-events:none; filter:drop-shadow(0 0 6px rgba(133,194,255,.72)) drop-shadow(0 0 16px rgba(65,136,255,.32)); }
     #le-sky-view .le-mv-path { fill:none; stroke-linecap:round; stroke-linejoin:round; }
     /* The geometric path remains for Moon positioning; fine particles render the visible star trail. */
     #le-sky-view .le-mv-path-main { stroke:none; stroke-width:0; filter:none; }
@@ -200,6 +200,7 @@
     #le-sky-view .le-mv-endpoint-halo { fill:#73baff; fill-opacity:.15; }
     #le-sky-view .le-mv-main-rise-set-icon { pointer-events:none; filter:drop-shadow(0 0 4px #57b8ff70); }
     #le-sky-view .le-mv-event-label { fill:#bddfff; font-size:10px; letter-spacing:1.7px; paint-order:stroke; stroke:#031020b0; stroke-width:2px; }
+    #le-sky-view #le-mv-rise-time, #le-sky-view #le-mv-set-time { display:none !important; }
     #le-sky-view .le-mv-event-time { fill:#f4f9ff; font-size:16px; font-weight:500; paint-order:stroke; stroke:#031020c9; stroke-width:2.6px; }
     #le-sky-view .le-mv-scroller-end-icon { display:block; flex:0 0 20px; width:30px; height:20px; align-self:center; margin:0 auto 1px; overflow:visible; filter:drop-shadow(0 0 2.4px #65baff8a); }
     @media (orientation:portrait) { #le-sky-view .le-mv-end-labels { transform:translate(2px, 20px); } }
@@ -216,7 +217,7 @@
     #le-sky-view .le-mv-timeline[hidden], #le-sky-view .le-mv-location-note[hidden] { display:none !important; }
     #le-sky-view .le-mv-selected-time { position:absolute; top:0; left:50%; right:auto; display:block; width:max-content; max-width:78%; border:0; padding:0; margin:0; background:transparent; color:#ff7189; text-align:center; font:600 14px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; letter-spacing:.15px; text-shadow:0 0 4px #ff4b69bd,0 0 11px #ed173e91,0 1px 8px #000; cursor:pointer; -webkit-tap-highlight-color:transparent; transform:translate(-50%,-100%); z-index:5; }
     #le-sky-view .le-mv-timeline.le-mv-no-local-times .le-mv-end-labels { display:none !important; }
-    #le-sky-view .le-mv-lunar-info { position:absolute; z-index:3; top:calc(10.5% + env(safe-area-inset-top,0px) - 8px); left:7%; right:7%; height:104px; pointer-events:none; color:#bce7ff; text-shadow:0 1px 9px #020b1ccc,0 0 8px #3da8ff20; }
+    #le-sky-view .le-mv-lunar-info { position:absolute; z-index:3; top:calc(10.5% + env(safe-area-inset-top,0px) - 48px); left:7%; right:7%; height:104px; pointer-events:none; color:#bce7ff; text-shadow:0 1px 9px #020b1ccc,0 0 8px #3da8ff20; }
     #le-sky-view .le-mv-lunar-phase { position:absolute; top:0; left:50%; width:68%; transform:translate(-50%, 4px); text-align:center; }
     #le-sky-view .le-mv-lunar-kicker { color:#9bd9ff; font-size:10px; line-height:1.3; font-weight:600; letter-spacing:2.1px; text-transform:uppercase; white-space:nowrap; }
     #le-sky-view .le-mv-lunar-illumination { margin-top:2px; color:#62baff; font-size:30px; line-height:1.05; font-weight:400; letter-spacing:.4px; text-shadow:0 0 5px #42aaff85,0 0 13px #168bff50; }
@@ -473,7 +474,6 @@
   }
   let active = false, astronomy = null, THREE = null, renderer = null, scene = null, camera = null;
   let moon = null, moonTexture = null, moonLight = null, moonLightTarget = null;
-  let moonFillLight = null, moonFillLightTarget = null;
   let frame = 0, timer = 0, observer = null, interval = null, selectedTime = Date.now(), progress = 0, live = false;
   let dimensions = { w: 0, h: 0, radius: 0 };
   let arcGeometry = null;
@@ -528,20 +528,12 @@
       camera = new THREE.OrthographicCamera(0, 1, 1, 0, 0.1, 500);
       camera.position.set(0, 0, 100);
       camera.lookAt(0, 0, 0);
-      // Cinematic lunar lighting: slightly brighter cool ambient fill keeps surface detail
-      // readable, while the main white directional light still determines the true phase.
-      scene.add(new THREE.AmbientLight(0x9cb7d6, 0.14));
-      const fill = new THREE.HemisphereLight(0xb5d1f1, 0x10182a, 0.06); scene.add(fill);
-      moonLight = new THREE.DirectionalLight(0xffffff, 2.0);
+      scene.add(new THREE.AmbientLight(0x9cb7d6, 0.12));
+      const fill = new THREE.HemisphereLight(0xb5d1f1, 0x10182a, 0.055); scene.add(fill);
+      moonLight = new THREE.DirectionalLight(0xffffff, 3.0);
       moonLightTarget = new THREE.Object3D();
       scene.add(moonLight, moonLightTarget);
       moonLight.target = moonLightTarget;
-      // Very soft blue earthshine from the opposite direction gently reveals the night side
-      // without replacing the sun-driven light or flattening the lunar terminator.
-      moonFillLight = new THREE.DirectionalLight(0x9bcaff, 0.12);
-      moonFillLightTarget = new THREE.Object3D();
-      scene.add(moonFillLight, moonFillLightTarget);
-      moonFillLight.target = moonFillLightTarget;
       moonTexture = await new THREE.TextureLoader().loadAsync(MOON_TEXTURE_DATA);
       moonTexture.colorSpace = THREE.SRGBColorSpace;
       moonTexture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
@@ -998,11 +990,6 @@
     moonLight.position.set(moon.position.x + dir.x * 100, moon.position.y + dir.y * 100, moon.position.z + dir.z * 100);
     moonLightTarget.position.copy(moon.position);
     moonLightTarget.updateMatrixWorld();
-    if (moonFillLight && moonFillLightTarget) {
-      moonFillLight.position.set(moon.position.x - dir.x * 100, moon.position.y - dir.y * 100, moon.position.z - dir.z * 100);
-      moonFillLightTarget.position.copy(moon.position);
-      moonFillLightTarget.updateMatrixWorld();
-    }
   }
   function updateHorizontalMarker() {
     if (!horizontalMoonMarker || !horizontalScrollerGeometry) return;
