@@ -277,6 +277,7 @@
   let dimensions = { w: 0, h: 0, radius: 0 };
   let arcGeometry = null;
   let cachedLightDirection = null;
+  let resizeFrame = 0, resizeObserver = null, lastResizeDpr = 0;
   let initialized = false, loading = null;
 
   function vectorFromAltAz(altitude, azimuth) {
@@ -349,24 +350,42 @@
   }
   function resize() {
     if (!renderer || !camera) return;
-    const w = Math.max(1, root.clientWidth), h = Math.max(1, root.clientHeight);
+    // Read the laid-out viewport instead of trusting a possibly stale iOS inner/client size
+    // during the portrait <-> landscape transition.
+    const rect = root.getBoundingClientRect();
+    const w = Math.max(1, Math.round(rect.width));
+    const h = Math.max(1, Math.round(rect.height));
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+    const sizeChanged = w !== dimensions.w || h !== dimensions.h;
+    const ratioChanged = pixelRatio !== lastResizeDpr;
+    if (!sizeChanged && !ratioChanged) return;
+
     const landscape = w > h;
     dimensions = { w, h, radius: landscape ? clamp(Math.min(w, h) * 0.095, 34, 54) : clamp(Math.min(w, h) * 0.085, 33, 48) };
+    if (ratioChanged) {
+      renderer.setPixelRatio(pixelRatio);
+      lastResizeDpr = pixelRatio;
+    }
     renderer.setSize(w, h, false);
+    // Pixel-space orthographic projection: world (x,y) maps directly to screen
+    // (x, h-y). This keeps the 3D sphere circular and aligned with SVG after rotation.
     camera.left = 0; camera.right = w; camera.top = h; camera.bottom = 0;
     camera.near = 0.1; camera.far = 500; camera.position.set(0, 0, 100); camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
-    if (interval && observer) drawPaths();
+    drawPaths();
     renderOnce();
   }
   function setCircle(id, point) { const node = $("#" + id); node.removeAttribute("display"); node.setAttribute("cx", point.x); node.setAttribute("cy", point.y); }
 
   function clearPaths() {
-    $("#le-mv-main").setAttribute("d", "");
-    ["le-mv-rise-halo", "le-mv-rise-dot", "le-mv-set-halo", "le-mv-set-dot", "le-mv-rise-label", "le-mv-rise-time", "le-mv-set-label", "le-mv-set-time"].forEach(id => {
-      const node = $("#" + id); node.setAttribute("display", "none"); if (node.tagName.toLowerCase() === "text") node.textContent = "";
+    // Location OFF hides only private/local rise-set text and interval data.
+    // The decorative fixed arc remains visible, independent of geolocation.
+    ["le-mv-rise-label", "le-mv-rise-time", "le-mv-set-label", "le-mv-set-time"].forEach(id => {
+      const node = $("#" + id);
+      node.setAttribute("display", "none");
+      node.textContent = "";
     });
-    arcGeometry = null;
+    if (dimensions.w && dimensions.h) drawPaths();
   }
 
   // The decorative arc is intentionally fixed: it is a stable visual guide, not a live
@@ -385,42 +404,50 @@
   }
 
   function drawPaths() {
-    if (!interval || !observer || !dimensions.w || !dimensions.h) return;
-    ["le-mv-rise-halo", "le-mv-rise-dot", "le-mv-set-halo", "le-mv-set-dot", "le-mv-rise-label", "le-mv-rise-time", "le-mv-set-label", "le-mv-set-time"]
-      .forEach(id => $("#" + id).removeAttribute("display"));
+    if (!dimensions.w || !dimensions.h) return;
     const { w, h } = dimensions;
     const landscape = w > h;
     const x0 = w * (landscape ? 0.065 : 0.085);
     const x1 = w * (landscape ? 0.80 : 0.915);
     const baseline = mountainBaseline(w, h, landscape);
-    // Quadratic Bezier: a single soft, rounded dome with constant relative height.
-    // The Moon marker below uses the exact same equation, so its center stays on the arc.
+    // A fixed, screen-space quadratic arc: its shape is not tied to per-minute astronomy.
     const control = { x: (x0 + x1) / 2, y: baseline - h * 0.64 };
     arcGeometry = { x0, x1, baseline, controlX: control.x, controlY: control.y, landscape };
     svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
     $("#le-mv-main").setAttribute("d", `M ${x0.toFixed(2)} ${baseline.toFixed(2)} Q ${control.x.toFixed(2)} ${control.y.toFixed(2)} ${x1.toFixed(2)} ${baseline.toFixed(2)}`);
 
     const rise = { x: x0, y: baseline }, set = { x: x1, y: baseline };
+    ["le-mv-rise-halo", "le-mv-rise-dot", "le-mv-set-halo", "le-mv-set-dot"].forEach(id => $("#" + id).removeAttribute("display"));
     setCircle("le-mv-rise-halo", rise); setCircle("le-mv-rise-dot", rise);
     setCircle("le-mv-set-halo", set); setCircle("le-mv-set-dot", set);
-    $("#le-mv-rise-label").setAttribute("x", Math.max(18, rise.x));
-    $("#le-mv-rise-label").setAttribute("y", rise.y + 22);
-    $("#le-mv-rise-time").setAttribute("x", Math.max(18, rise.x));
-    $("#le-mv-rise-time").setAttribute("y", rise.y + 41);
-    $("#le-mv-rise-time").textContent = fmt(interval.rise);
-    $("#le-mv-set-label").setAttribute("x", Math.min(w - 18, set.x));
-    $("#le-mv-set-label").setAttribute("y", set.y + 22);
-    $("#le-mv-set-time").setAttribute("x", Math.min(w - 18, set.x));
-    $("#le-mv-set-time").setAttribute("y", set.y + 41);
-    $("#le-mv-set-time").textContent = fmt(interval.set);
+
+    const showLocalTimes = Boolean(interval && observer && isLocationEnabled());
+    const textIds = ["le-mv-rise-label", "le-mv-rise-time", "le-mv-set-label", "le-mv-set-time"];
+    textIds.forEach(id => {
+      const node = $("#" + id);
+      if (showLocalTimes) node.removeAttribute("display");
+      else { node.setAttribute("display", "none"); node.textContent = ""; }
+    });
+    if (showLocalTimes) {
+      $("#le-mv-rise-label").setAttribute("x", Math.max(18, rise.x));
+      $("#le-mv-rise-label").setAttribute("y", rise.y + 22);
+      $("#le-mv-rise-time").setAttribute("x", Math.max(18, rise.x));
+      $("#le-mv-rise-time").setAttribute("y", rise.y + 41);
+      $("#le-mv-rise-time").textContent = fmt(interval.rise);
+      $("#le-mv-set-label").setAttribute("x", Math.min(w - 18, set.x));
+      $("#le-mv-set-label").setAttribute("y", set.y + 22);
+      $("#le-mv-set-time").setAttribute("x", Math.min(w - 18, set.x));
+      $("#le-mv-set-time").setAttribute("y", set.y + 41);
+      $("#le-mv-set-time").textContent = fmt(interval.set);
+    }
   }
   function setLocalInterval(now = Date.now()) {
     if (!observer || !astronomy) return;
     const found = astronomy.moonRiseSetInterval(observer.latitude, observer.longitude, new Date(now));
     if (!found) {
-      interval = null; arcGeometry = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true;
+      interval = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true;
       locationNote.hidden = false; locationNote.textContent = "No local Moonrise/set interval could be estimated for this location and date";
-      selectedTime = now; live = true; renderOnce(); return;
+      selectedTime = now; progress = 0.5; live = true; renderOnce(); return;
     }
     interval = { rise: +found.rise, set: +found.set, aboveHorizonNow: found.aboveHorizonNow };
     // Cache one representative lighting direction for this viewing interval.
@@ -499,15 +526,15 @@
     frame = requestAnimationFrame(() => { frame = 0; renderOnce(); });
   }
   async function refreshLocation() {
-    if (!active || !isLocationEnabled()) { observer = null; interval = null; arcGeometry = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false; setLocalIntervalNoLocation(); return; }
-    if (!navigator.geolocation) { observer = null; interval = null; arcGeometry = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false; locationNote.textContent = "Local Moon path unavailable · location service is not supported"; setLocalIntervalNoLocation(); return; }
+    if (!active || !isLocationEnabled()) { observer = null; interval = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false; setLocalIntervalNoLocation(); return; }
+    if (!navigator.geolocation) { observer = null; interval = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false; locationNote.textContent = "Local Moon path unavailable · location service is not supported"; setLocalIntervalNoLocation(); return; }
     try {
       const pos = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: false, maximumAge: 120000, timeout: 10000 }));
       if (!active || !isLocationEnabled()) return;
       observer = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
         setLocalInterval(Date.now());
     } catch (error) {
-      observer = null; interval = null; arcGeometry = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false;
+      observer = null; interval = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false;
       locationNote.textContent = "Local Moon path unavailable · enable Location and allow access to calculate local rise/set";
       setLocalIntervalNoLocation();
       console.info("[LIVE // EARTH] Moon View local path unavailable.", error?.message || error);
@@ -525,14 +552,16 @@
     });
   }
   function setLocalIntervalNoLocation() {
-    // Phase lighting may still be calculated without local data; no path, rise/set,
-    // or device geolocation is used while the user's Location feature is OFF.
-    selectedTime = Date.now(); progress = 0; live = true;
+    // Keep the fixed visual arc and park the Moon at its crest while local times are private.
+    // No geolocation or local rise/set data is requested or displayed in this state.
+    selectedTime = Date.now(); progress = 0.5; live = true;
+    drawPaths();
     if (astronomy) renderOnce();
   }
   function deactivate() {
     active = false;
     if (frame) cancelAnimationFrame(frame); frame = 0;
+    if (resizeFrame) cancelAnimationFrame(resizeFrame); resizeFrame = 0;
     if (timer) clearInterval(timer); timer = 0;
     stage.hidden = true;
   }
@@ -548,15 +577,27 @@
       range.value = String(Math.round(progress * 1000)); selectedLabel.textContent = fmt(selectedTime); queueRender();
     } else if (active && isLocationEnabled()) { if (observer) setLocalInterval(Date.now()); else refreshLocation(); }
   });
-  window.addEventListener("resize", () => { if (active) resize(); }, { passive: true });
-  window.visualViewport?.addEventListener("resize", () => { if (active) resize(); }, { passive: true });
+  function queueResize() {
+    if (!active || resizeFrame) return;
+    resizeFrame = window.requestAnimationFrame(() => {
+      resizeFrame = 0;
+      if (active) resize();
+    });
+  }
+  window.addEventListener("resize", queueResize, { passive: true });
+  window.visualViewport?.addEventListener("resize", queueResize, { passive: true });
+  window.addEventListener("orientationchange", queueResize, { passive: true });
+  if (typeof ResizeObserver !== "undefined") {
+    resizeObserver = new ResizeObserver(queueResize);
+    resizeObserver.observe(root);
+  }
   window.addEventListener("live-earth-location-state", event => {
     if (!active) return;
     if (!!event.detail?.enabled && isLocationEnabled()) refreshLocation();
-    else { observer = null; interval = null; arcGeometry = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false; locationNote.textContent = "Location is off · local Moon path and rise/set times are hidden"; setLocalIntervalNoLocation(); }
+    else { observer = null; interval = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false; locationNote.textContent = "Location is off · local Moon path and rise/set times are hidden"; setLocalIntervalNoLocation(); }
   });
   window.addEventListener("live-earth-location-stop", () => {
-    observer = null; interval = null; arcGeometry = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true;
+    observer = null; interval = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true;
     locationNote.hidden = false; locationNote.textContent = "Location is off · local Moon path and rise/set times are hidden";
     setLocalIntervalNoLocation();
   });
