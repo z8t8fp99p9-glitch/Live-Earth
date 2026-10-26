@@ -418,12 +418,13 @@
     const x0 = w * (landscape ? 0.065 : 0.114);
     const x1 = w * (landscape ? 0.80 : 0.921);
     const baseline = referenceBaseline(h, landscape);
-    // Fixed upper ellipse calibrated against the supplied screenshot, not a live astronomical path.
-    // Keep the horizontal diameter fixed. Portrait apex is ~31.2% of viewport height and
-    // endpoints ~47.4%; landscape retains its separately tuned arc proportions.
+    // Fixed upper half-ellipse calibrated against the supplied reference.
+    // Keep the horizontal diameter and endpoints unchanged. Portrait endpoints stay at
+    // 47.4% of viewport height; the crest rises to 26.6% (20.8% rise), creating the
+    // broad, near-semicircular sweep from the reference. Landscape keeps its own geometry.
     const centerX = (x0 + x1) / 2;
     const rx = (x1 - x0) / 2;
-    const ry = h * (landscape ? 0.35 : 0.162);
+    const ry = h * (landscape ? 0.35 : 0.208);
     arcGeometry = { x0, x1, baseline, centerX, rx, ry, landscape };
     svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
     $("#le-mv-main").setAttribute("d", `M ${x0.toFixed(2)} ${baseline.toFixed(2)} A ${rx.toFixed(2)} ${ry.toFixed(2)} 0 0 1 ${x1.toFixed(2)} ${baseline.toFixed(2)}`);
