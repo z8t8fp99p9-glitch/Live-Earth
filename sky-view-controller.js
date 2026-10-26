@@ -198,8 +198,16 @@
     #le-sky-view .le-mv-horizontal-rail-sparkles[hidden] { display:none !important; }
     #le-sky-view .le-mv-endpoint { fill:#deefff; filter:drop-shadow(0 0 5px #9bd8ff); }
     #le-sky-view .le-mv-endpoint-halo { fill:#73baff; fill-opacity:.15; }
-    #le-sky-view .le-mv-event-label { fill:#bdd5ef; font-size:10px; letter-spacing:1.7px; paint-order:stroke; stroke:#031020b0; stroke-width:2px; }
-    #le-sky-view .le-mv-event-time { fill:#f4f9ff; font-size:15px; font-weight:500; paint-order:stroke; stroke:#031020b8; stroke-width:2.4px; }
+    #le-sky-view .le-mv-main-rise-set-icon { pointer-events:none; filter:drop-shadow(0 0 4px #57b8ff70); }
+    #le-sky-view .le-mv-event-label { fill:#bddfff; font-size:10px; letter-spacing:1.7px; paint-order:stroke; stroke:#031020b0; stroke-width:2px; }
+    #le-sky-view .le-mv-event-time { fill:#f4f9ff; font-size:16px; font-weight:500; paint-order:stroke; stroke:#031020c9; stroke-width:2.6px; }
+    #le-sky-view .le-mv-scroller-end-icon { display:block; flex:0 0 28px; width:28px; height:20px; overflow:visible; filter:drop-shadow(0 0 2.4px #65baff8a); }
+    #le-sky-view .le-mv-end-labels > .le-mv-endpoint-info { display:flex; align-items:center; gap:3px; min-width:0; text-align:left; }
+    #le-sky-view .le-mv-end-label-copy { display:flex; flex-direction:column; align-items:flex-start; white-space:nowrap; line-height:1.05; }
+    #le-sky-view .le-mv-end-labels .end { flex-direction:row; justify-content:flex-end; text-align:right; }
+    #le-sky-view .le-mv-end-labels .end .le-mv-end-label-copy { align-items:flex-end; }
+    #le-sky-view .le-mv-end-labels .start-label, #le-sky-view .le-mv-end-labels .end-label { font-size:12px; line-height:1.15; font-weight:500; color:#e4f4ff; }
+    #le-sky-view .le-mv-end-labels .le-mv-end-label-copy small { margin-top:3px; font-size:8px; letter-spacing:1.7px; color:#9fcfff; }
     #le-sky-view .le-mv-timeline { position:absolute; z-index:4; left:7%; right:7%; bottom:calc(19% + env(safe-area-inset-bottom, 0px)); height:98px; display:block; pointer-events:auto; }
     /* The straight rail is replaced by two tapered SVG star-trail ribbons in portrait. */
     #le-sky-view .le-mv-timeline:before { display:none; }
@@ -229,6 +237,10 @@
     #le-sky-view .le-mv-location-note { position:absolute; z-index:5; left:0; right:0; top:48%; padding:0 30px; color:#bfd1e6; font-size:11px; line-height:1.5; text-align:center; text-shadow:0 2px 10px #000; }
     @media (orientation:landscape) {
       #le-sky-view .le-mv-lunar-info { display:none; }
+      #le-sky-view .le-mv-main-rise-set-icon { display:none !important; }
+      #le-sky-view .le-mv-scroller-end-icon { display:none; }
+      #le-sky-view .le-mv-end-labels > .le-mv-endpoint-info { display:block; text-align:center; }
+      #le-sky-view .le-mv-end-labels .le-mv-end-label-copy { align-items:center; }
       #le-sky-view .le-mv-selected-time { color:#d8efff; text-shadow:0 0 5px #61b8ff62,0 1px 8px #000; transform:none; width:auto; }
       /* Landscape gets an independent vertical time rail at the side of the view.
          The rail controls time only; it does not control the Moon or arc layout. */
@@ -272,9 +284,29 @@
   stage.hidden = true;
   stage.innerHTML = `
     <svg class="le-mv-svg" aria-label="Fixed Moon guide arc with local rise and set times" role="img">
-      <defs><linearGradient id="leMvArcGradient" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#f0b875" stop-opacity=".98"/><stop offset="9%" stop-color="#c8e7ff"/><stop offset="28%" stop-color="#e8f7ff"/><stop offset="52%" stop-color="#ffffff"/><stop offset="73%" stop-color="#d3ecff"/><stop offset="91%" stop-color="#ffe0ad"/><stop offset="100%" stop-color="#f2bd78" stop-opacity=".96"/></linearGradient></defs>
+      <defs>
+        <linearGradient id="leMvArcGradient" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#f0b875" stop-opacity=".98"/><stop offset="9%" stop-color="#c8e7ff"/><stop offset="28%" stop-color="#e8f7ff"/><stop offset="52%" stop-color="#ffffff"/><stop offset="73%" stop-color="#d3ecff"/><stop offset="91%" stop-color="#ffe0ad"/><stop offset="100%" stop-color="#f2bd78" stop-opacity=".96"/></linearGradient>
+        <linearGradient id="leMvRiseMoonFill" x1="0" y1="-1" x2="0.9" y2="1"><stop offset="0%" stop-color="#fff5d8"/><stop offset="50%" stop-color="#bce5ff"/><stop offset="100%" stop-color="#5daeff"/></linearGradient>
+        <linearGradient id="leMvSetMoonFill" x1="0" y1="-1" x2="0.9" y2="1"><stop offset="0%" stop-color="#e7f7ff"/><stop offset="60%" stop-color="#a3d8ff"/><stop offset="100%" stop-color="#659bff"/></linearGradient>
+      </defs>
       <path class="le-mv-path le-mv-path-main" id="le-mv-main"/><g id="le-mv-arc-sparkles" aria-hidden="true"></g>
       <circle class="le-mv-endpoint-halo" id="le-mv-rise-halo" r="8"/><circle class="le-mv-endpoint" id="le-mv-rise-dot" r="2.2"/><circle class="le-mv-endpoint-halo" id="le-mv-set-halo" r="8"/><circle class="le-mv-endpoint" id="le-mv-set-dot" r="2.2"/>
+      <g id="le-mv-rise-icon" class="le-mv-main-rise-set-icon" display="none" aria-hidden="true">
+        <circle cx="0" cy="-8" r="14" fill="#65baff" opacity=".14"/>
+        <circle cx="0" cy="-8" r="9.2" fill="url(#leMvRiseMoonFill)" stroke="#f4fbff" stroke-width=".65"/>
+        <path d="M-19 2 L-10 -6 L-4 -1 L4 -10 L19 2 Z" fill="#102747" fill-opacity=".97" stroke="#76c7ff" stroke-width=".8" stroke-linejoin="round"/>
+        <path d="M-19 2 Q0 -1 19 2" fill="none" stroke="#9ad9ff" stroke-width="1.1"/>
+        <path d="M0 -31 L1.7 -25.2 L7 -23 L1.7 -20.8 L0 -15 L-1.7 -20.8 L-7 -23 L-1.7 -25.2 Z" fill="#ffe0a1" filter="drop-shadow(0 0 3px #ffd58b)"/>
+        <circle cx="-14" cy="-13" r="1.1" fill="#fff1c9"/><circle cx="13" cy="-17" r=".9" fill="#9ad9ff"/>
+      </g>
+      <g id="le-mv-set-icon" class="le-mv-main-rise-set-icon" display="none" aria-hidden="true">
+        <circle cx="0" cy="-8" r="14" fill="#65baff" opacity=".14"/>
+        <circle cx="0" cy="-8" r="9.2" fill="url(#leMvSetMoonFill)" stroke="#f4fbff" stroke-width=".65"/>
+        <path d="M-19 2 L-10 -6 L-4 -1 L4 -10 L19 2 Z" fill="#102747" fill-opacity=".97" stroke="#76c7ff" stroke-width=".8" stroke-linejoin="round"/>
+        <path d="M-19 2 Q0 -1 19 2" fill="none" stroke="#9ad9ff" stroke-width="1.1"/>
+        <path d="M0 -31 L1.6 -25.4 L6.8 -23.2 L1.6 -21 L0 -15.4 L-1.6 -21 L-6.8 -23.2 L-1.6 -25.4 Z" fill="#a6dfff" filter="drop-shadow(0 0 3px #80c9ff)"/>
+        <circle cx="-14" cy="-13" r="1" fill="#d8f0ff"/><circle cx="13" cy="-17" r=".9" fill="#ffe0a1"/>
+      </g>
       <text class="le-mv-event-label" id="le-mv-rise-label" text-anchor="start">MOONRISE</text><text class="le-mv-event-time" id="le-mv-rise-time" text-anchor="start"></text>
       <text class="le-mv-event-label" id="le-mv-set-label" text-anchor="end">MOONSET</text><text class="le-mv-event-time" id="le-mv-set-time" text-anchor="end"></text>
     </svg>
@@ -329,7 +361,28 @@
         <circle class="le-mv-vertical-end-halo" cx="50" cy="295" r="8"/><circle class="le-mv-vertical-end" cx="50" cy="295" r="3"/>
         <g id="le-mv-vertical-marker" transform="translate(50 150)"><circle class="le-mv-vertical-marker-halo" r="19"/><circle class="le-mv-vertical-marker-disc" r="13"/><circle class="le-mv-vertical-crater" cx="-4" cy="-4" r="2.6"/><circle class="le-mv-vertical-crater" cx="4.5" cy="3" r="2.1"/><circle class="le-mv-vertical-crater" cx="-1" cy="6" r="1.3"/></g>
       </svg></div>
-      <div class="le-mv-end-labels"><div><span class="start-label">--:--</span><small>RISE</small></div><div class="end"><span class="end-label">--:--</span><small>SET</small></div></div>
+      <div class="le-mv-end-labels">
+        <div class="le-mv-endpoint-info le-mv-endpoint-info-rise">
+          <svg class="le-mv-scroller-end-icon" viewBox="0 0 42 25" aria-hidden="true">
+            <path d="M3 17 Q10 13 18 17 T39 17" fill="none" stroke="#6dbfff" stroke-width="1.4" stroke-linecap="round"/>
+            <path d="M5 21 Q12 18 19 21 T37 21" fill="none" stroke="#70c4ff" stroke-width=".9" opacity=".8" stroke-linecap="round"/>
+            <path d="M10 16 A7.3 7.3 0 0 1 24.6 16 Z" fill="#9bd8ff" fill-opacity=".92" stroke="#e4f7ff" stroke-width=".65"/>
+            <path d="M17.3 2 L18.4 5.4 L21.8 6.5 L18.4 7.6 L17.3 11 L16.2 7.6 L12.8 6.5 L16.2 5.4 Z" fill="#ffe0a1"/>
+            <path d="M3 17 Q18 19 39 17" fill="none" stroke="#f3cb8b" stroke-width=".6" opacity=".85"/>
+          </svg>
+          <span class="le-mv-end-label-copy"><span class="start-label">--:--</span><small>RISE</small></span>
+        </div>
+        <div class="end le-mv-endpoint-info le-mv-endpoint-info-set">
+          <span class="le-mv-end-label-copy"><span class="end-label">--:--</span><small>SET</small></span>
+          <svg class="le-mv-scroller-end-icon" viewBox="0 0 42 25" aria-hidden="true">
+            <path d="M3 17 Q10 13 18 17 T39 17" fill="none" stroke="#6dbfff" stroke-width="1.4" stroke-linecap="round"/>
+            <path d="M5 21 Q12 18 19 21 T37 21" fill="none" stroke="#70c4ff" stroke-width=".9" opacity=".8" stroke-linecap="round"/>
+            <path d="M10 16 A7.3 7.3 0 0 1 24.6 16 Z" fill="#8dc9ff" fill-opacity=".7" stroke="#e4f7ff" stroke-width=".65"/>
+            <path d="M17.3 2 L18.4 5.4 L21.8 6.5 L18.4 7.6 L17.3 11 L16.2 7.6 L12.8 6.5 L16.2 5.4 Z" fill="#a9dcff"/>
+            <path d="M3 17 Q18 19 39 17" fill="none" stroke="#f3cb8b" stroke-width=".6" opacity=".85"/>
+          </svg>
+        </div>
+      </div>
     </div>
     <div class="le-mv-location-note" hidden>Location is off · local Moon path and rise/set times are hidden</div>`;
   root.appendChild(stage);
@@ -567,6 +620,16 @@
       if (showLocalTimes) node.removeAttribute("display");
       else { node.setAttribute("display", "none"); node.textContent = ""; }
     });
+    const showLargeRiseSetIcons = showLocalTimes && !landscape;
+    ["le-mv-rise-icon", "le-mv-set-icon"].forEach(id => {
+      const icon = $("#" + id);
+      if (showLargeRiseSetIcons) icon.removeAttribute("display");
+      else icon.setAttribute("display", "none");
+    });
+    if (showLargeRiseSetIcons) {
+      $("#le-mv-rise-icon").setAttribute("transform", `translate(${rise.x.toFixed(2)} ${rise.y.toFixed(2)})`);
+      $("#le-mv-set-icon").setAttribute("transform", `translate(${set.x.toFixed(2)} ${set.y.toFixed(2)})`);
+    }
     if (showLocalTimes) {
       $("#le-mv-rise-label").setAttribute("x", Math.max(18, rise.x));
       $("#le-mv-rise-label").setAttribute("y", rise.y + 22);
