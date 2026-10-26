@@ -174,7 +174,6 @@
     #le-sky-view .le-mv-svg { position:absolute; z-index:1; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
     #le-sky-view .le-mv-canvas { position:absolute; z-index:2; inset:0; display:block; width:100%; height:100%; pointer-events:none; }
     #le-sky-view .le-mv-path { fill:none; stroke-linecap:round; stroke-linejoin:round; }
-    #le-sky-view .le-mv-path-faint { stroke:#8abcf2; stroke-width:1.15; stroke-opacity:.15; stroke-dasharray:3 5; filter:drop-shadow(0 0 3px #66afff25); }
     #le-sky-view .le-mv-path-main { stroke:url(#leMvArcGradient); stroke-width:2; filter:drop-shadow(0 0 3px #a5d8ffb0) drop-shadow(0 0 9px #52a7ff42); }
     #le-sky-view .le-mv-endpoint { fill:#deefff; filter:drop-shadow(0 0 5px #9bd8ff); }
     #le-sky-view .le-mv-endpoint-halo { fill:#73baff; fill-opacity:.15; }
@@ -236,9 +235,9 @@
   stage.className = "le-mv-stage";
   stage.hidden = true;
   stage.innerHTML = `
-    <svg class="le-mv-svg" aria-label="Calculated Moon path from moonrise to moonset" role="img">
+    <svg class="le-mv-svg" aria-label="Fixed Moon guide arc with local rise and set times" role="img">
       <defs><linearGradient id="leMvArcGradient" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#8dc8ff" stop-opacity=".82"/><stop offset="24%" stop-color="#c9e8ff"/><stop offset="52%" stop-color="#f4fbff"/><stop offset="78%" stop-color="#9dd1ff"/><stop offset="100%" stop-color="#cfeaff" stop-opacity=".88"/></linearGradient></defs>
-      <path class="le-mv-path le-mv-path-faint" id="le-mv-previous"/><path class="le-mv-path le-mv-path-faint" id="le-mv-next"/><path class="le-mv-path le-mv-path-main" id="le-mv-main"/>
+      <path class="le-mv-path le-mv-path-main" id="le-mv-main"/>
       <circle class="le-mv-endpoint-halo" id="le-mv-rise-halo" r="8"/><circle class="le-mv-endpoint" id="le-mv-rise-dot" r="2.2"/><circle class="le-mv-endpoint-halo" id="le-mv-set-halo" r="8"/><circle class="le-mv-endpoint" id="le-mv-set-dot" r="2.2"/>
       <text class="le-mv-event-label" id="le-mv-rise-label" text-anchor="start">MOONRISE</text><text class="le-mv-event-time" id="le-mv-rise-time" text-anchor="start"></text>
       <text class="le-mv-event-label" id="le-mv-set-label" text-anchor="end">MOONSET</text><text class="le-mv-event-time" id="le-mv-set-time" text-anchor="end"></text>
@@ -275,8 +274,9 @@
   let active = false, astronomy = null, THREE = null, renderer = null, scene = null, camera = null;
   let moon = null, moonTexture = null, moonLight = null, moonLightTarget = null;
   let frame = 0, timer = 0, observer = null, interval = null, selectedTime = Date.now(), progress = 0, live = false;
-  let primarySamples = [], projectedPrimarySamples = [], otherPaths = [], dimensions = { w: 0, h: 0, radius: 0 };
-  let lastLightingTimestamp = null;
+  let dimensions = { w: 0, h: 0, radius: 0 };
+  let arcGeometry = null;
+  let cachedLightDirection = null;
   let initialized = false, loading = null;
 
   function vectorFromAltAz(altitude, azimuth) {
@@ -353,192 +353,109 @@
     const landscape = w > h;
     dimensions = { w, h, radius: landscape ? clamp(Math.min(w, h) * 0.095, 34, 54) : clamp(Math.min(w, h) * 0.085, 33, 48) };
     renderer.setSize(w, h, false);
-    lastLightingTimestamp = null;
     camera.left = 0; camera.right = w; camera.top = h; camera.bottom = 0;
-    camera.near = 0.1; camera.far = 500; camera.position.set(w / 2, h / 2, 100); camera.lookAt(w / 2, h / 2, 0);
+    camera.near = 0.1; camera.far = 500; camera.position.set(0, 0, 100); camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
-    if (interval) drawPaths();
+    if (interval && observer) drawPaths();
     renderOnce();
   }
-  function crossingsAround(center, lat, lon) {
-    const step = 5 * 60 * 1000, from = center - 36 * 3600000, to = center + 36 * 3600000, events = [];
-    let previousTime = from, previousAlt = astronomy.moonPosition(new Date(from), lat, lon).altitude;
-    for (let t = from + step; t <= to; t += step) {
-      const altitude = astronomy.moonPosition(new Date(t), lat, lon).altitude;
-      if (previousAlt <= 0 && altitude > 0) events.push({ type: "rise", time: previousTime + step * previousAlt / (previousAlt - altitude) });
-      else if (previousAlt > 0 && altitude <= 0) events.push({ type: "set", time: previousTime + step * previousAlt / (previousAlt - altitude) });
-      previousTime = t; previousAlt = altitude;
-    }
-    const result = [];
-    for (let i = 0; i < events.length; i++) if (events[i].type === "rise") {
-      const set = events.slice(i + 1).find(e => e.type === "set");
-      if (set && set.time > events[i].time) result.push({ rise: events[i].time, set: set.time });
-    }
-    return result.sort((a, b) => Math.abs((a.rise + a.set) / 2 - center) - Math.abs((b.rise + b.set) / 2 - center));
-  }
-  function sampleInterval(item, lat, lon, count = 80) {
-    const points = [];
-    for (let i = 0; i <= count; i++) {
-      const time = item.rise + (item.set - item.rise) * i / count;
-      const p = astronomy.moonPosition(new Date(time), lat, lon);
-      points.push({ time, altitude: p.altitude, azimuth: p.azimuth });
-    }
-    let unwrapped = points[0].azimuth; points[0].unwrapped = unwrapped;
-    for (let i = 1; i < points.length; i++) {
-      let delta = points[i].azimuth - points[i - 1].azimuth;
-      while (delta > 180) delta -= 360; while (delta < -180) delta += 360;
-      unwrapped += delta; points[i].unwrapped = unwrapped;
-    }
-    return points;
-  }
-  function projectPath(points) {
-    if (!dimensions.w || !dimensions.h || points.length < 2) return [];
-    const first = points[0].unwrapped, last = points[points.length - 1].unwrapped;
-    const span = Math.abs(last - first) > 1 ? last - first : 1;
-    const { w, h } = dimensions;
-    const landscape = w > h;
-    // Raw altitude alone can bunch many samples near the top and produce an
-    // overly flat crest. Use a deliberate rounded dome for the main silhouette,
-    // while retaining real altitude as a secondary influence so different
-    // calculated dates still produce distinct supporting paths. This is only a
-    // screen-space mapping; rise/set calculations remain in astronomy.js.
-    const xStart = landscape ? 0.065 : 0.085;
-    const xSpan = landscape ? 0.735 : 0.83;
-    // Translate the entire portrait arc downward without changing its height.
-    // The rise/set endpoints, crest, supporting paths, and Moon position all use
-    // this same projected geometry. Landscape keeps its original baseline.
-    const baseline = h * (landscape ? 0.515 : 0.61);
-    const peakAltitude = Math.max(1, ...points.map(p => Math.max(0, p.altitude)));
-    const baseAmplitude = clamp((landscape ? 0.105 : 0.095) + peakAltitude * 0.0028, 0.14, 0.34);
-    const amplitude = h * (landscape ? baseAmplitude : Math.min(0.32, baseAmplitude * 0.98));
-    return points.map(p => {
-      const horizontalProgress = clamp((p.unwrapped - first) / span, 0, 1);
-      const normalizedAltitude = clamp(Math.max(0, p.altitude) / peakAltitude, 0, 1);
-      // A slightly gentler portrait exponent softens the crown without making a
-      // plateau. Landscape retains its previous curve; real altitude still shapes
-      // 28% of each path so the calculated reference trajectories stay distinct.
-      const domeExponent = landscape ? 1.30 : 1.20;
-      const roundedDome = Math.pow(Math.max(0, Math.sin(Math.PI * horizontalProgress)), domeExponent);
-      const shape = roundedDome * 0.72 + normalizedAltitude * 0.28;
-      return {
-        time: p.time, altitude: p.altitude, azimuth: p.azimuth,
-        x: w * (xStart + xSpan * horizontalProgress),
-        y: baseline - shape * amplitude
-      };
-    });
-  }
-  // Catmull-Rom converted to cubic Beziers. The SVG arc and rendered Moon use these
-  // exact same segments so the Moon centre can remain attached to the visible path.
-  function cubicForSegment(points, i) {
-    const p1 = points[i], p2 = points[i + 1];
-    const p0 = points[i > 0 ? i - 1 : i];
-    const p3 = points[i + 2 < points.length ? i + 2 : i + 1];
-    return {
-      p1, p2,
-      c1: { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 },
-      c2: { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 }
-    };
-  }
-  function cubicPoint(segment, t) {
-    const u = 1 - t, uu = u * u, tt = t * t;
-    return {
-      x: uu * u * segment.p1.x + 3 * uu * t * segment.c1.x + 3 * u * tt * segment.c2.x + tt * t * segment.p2.x,
-      y: uu * u * segment.p1.y + 3 * uu * t * segment.c1.y + 3 * u * tt * segment.c2.y + tt * t * segment.p2.y
-    };
-  }
-  function pathData(points) {
-    if (!points.length) return "";
-    let d = `M${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
-    for (let i = 0; i < points.length - 1; i++) {
-      const segment = cubicForSegment(points, i);
-      d += ` C${segment.c1.x.toFixed(2)} ${segment.c1.y.toFixed(2)},${segment.c2.x.toFixed(2)} ${segment.c2.y.toFixed(2)},${segment.p2.x.toFixed(2)} ${segment.p2.y.toFixed(2)}`;
-    }
-    return d;
-  }
   function setCircle(id, point) { const node = $("#" + id); node.removeAttribute("display"); node.setAttribute("cx", point.x); node.setAttribute("cy", point.y); }
+
   function clearPaths() {
-    ["#le-mv-previous", "#le-mv-next", "#le-mv-main"].forEach(selector => $(selector).setAttribute("d", ""));
+    $("#le-mv-main").setAttribute("d", "");
     ["le-mv-rise-halo", "le-mv-rise-dot", "le-mv-set-halo", "le-mv-set-dot", "le-mv-rise-label", "le-mv-rise-time", "le-mv-set-label", "le-mv-set-time"].forEach(id => {
       const node = $("#" + id); node.setAttribute("display", "none"); if (node.tagName.toLowerCase() === "text") node.textContent = "";
     });
-    projectedPrimarySamples = [];
+    arcGeometry = null;
   }
+
+  // The decorative arc is intentionally fixed: it is a stable visual guide, not a live
+  // projection of changing altitude/azimuth samples. Its endpoints follow the mountain
+  // skyline in the background artwork after the same centered CSS `cover` crop is applied.
+  // Background source dimensions are verified from the image headers: portrait 900x1600, landscape 1536x960.
+  // Anchor rows are tuned to the approved screenshots; their display y follows the centered `cover` crop.
+  function mountainBaseline(w, h, landscape) {
+    const background = landscape
+      ? { width: 1536, height: 960, mountainY: 491 }
+      : { width: 900, height: 1600, mountainY: 976 };
+    const coverScale = Math.max(w / background.width, h / background.height);
+    const renderedHeight = background.height * coverScale;
+    const cropTop = (renderedHeight - h) / 2;
+    return clamp(background.mountainY * coverScale - cropTop, h * 0.48, h * 0.72);
+  }
+
   function drawPaths() {
-    if (!interval || !observer) return;
-    ["le-mv-rise-halo", "le-mv-rise-dot", "le-mv-set-halo", "le-mv-set-dot", "le-mv-rise-label", "le-mv-rise-time", "le-mv-set-label", "le-mv-set-time"].forEach(id => $("#" + id).removeAttribute("display"));
-    svg.setAttribute("viewBox", `0 0 ${dimensions.w} ${dimensions.h}`);
-    const projected = otherPaths.map(p => ({ kind: p.kind, points: projectPath(p.points) }));
-    const prev = projected.find(p => p.kind === "low")?.points || [];
-    const next = projected.find(p => p.kind === "high")?.points || [];
-    const main = projectPath(primarySamples);
-    projectedPrimarySamples = main;
-    $("#le-mv-previous").setAttribute("d", pathData(prev));
-    $("#le-mv-next").setAttribute("d", pathData(next));
-    $("#le-mv-main").setAttribute("d", pathData(main));
-    if (main.length) {
-      const rise = main[0], set = main[main.length - 1];
-      setCircle("le-mv-rise-halo", rise); setCircle("le-mv-rise-dot", rise);
-      setCircle("le-mv-set-halo", set); setCircle("le-mv-set-dot", set);
-      $("#le-mv-rise-label").setAttribute("x", Math.max(18, rise.x)); $("#le-mv-rise-label").setAttribute("y", rise.y + 22);
-      $("#le-mv-rise-time").setAttribute("x", Math.max(18, rise.x)); $("#le-mv-rise-time").setAttribute("y", rise.y + 41); $("#le-mv-rise-time").textContent = fmt(interval.rise);
-      $("#le-mv-set-label").setAttribute("x", Math.min(dimensions.w - 18, set.x)); $("#le-mv-set-label").setAttribute("y", set.y + 22);
-      $("#le-mv-set-time").setAttribute("x", Math.min(dimensions.w - 18, set.x)); $("#le-mv-set-time").setAttribute("y", set.y + 41); $("#le-mv-set-time").textContent = fmt(interval.set);
-    }
+    if (!interval || !observer || !dimensions.w || !dimensions.h) return;
+    ["le-mv-rise-halo", "le-mv-rise-dot", "le-mv-set-halo", "le-mv-set-dot", "le-mv-rise-label", "le-mv-rise-time", "le-mv-set-label", "le-mv-set-time"]
+      .forEach(id => $("#" + id).removeAttribute("display"));
+    const { w, h } = dimensions;
+    const landscape = w > h;
+    const x0 = w * (landscape ? 0.065 : 0.085);
+    const x1 = w * (landscape ? 0.80 : 0.915);
+    const baseline = mountainBaseline(w, h, landscape);
+    // Quadratic Bezier: a single soft, rounded dome with constant relative height.
+    // The Moon marker below uses the exact same equation, so its center stays on the arc.
+    const control = { x: (x0 + x1) / 2, y: baseline - h * 0.64 };
+    arcGeometry = { x0, x1, baseline, controlX: control.x, controlY: control.y, landscape };
+    svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+    $("#le-mv-main").setAttribute("d", `M ${x0.toFixed(2)} ${baseline.toFixed(2)} Q ${control.x.toFixed(2)} ${control.y.toFixed(2)} ${x1.toFixed(2)} ${baseline.toFixed(2)}`);
+
+    const rise = { x: x0, y: baseline }, set = { x: x1, y: baseline };
+    setCircle("le-mv-rise-halo", rise); setCircle("le-mv-rise-dot", rise);
+    setCircle("le-mv-set-halo", set); setCircle("le-mv-set-dot", set);
+    $("#le-mv-rise-label").setAttribute("x", Math.max(18, rise.x));
+    $("#le-mv-rise-label").setAttribute("y", rise.y + 22);
+    $("#le-mv-rise-time").setAttribute("x", Math.max(18, rise.x));
+    $("#le-mv-rise-time").setAttribute("y", rise.y + 41);
+    $("#le-mv-rise-time").textContent = fmt(interval.rise);
+    $("#le-mv-set-label").setAttribute("x", Math.min(w - 18, set.x));
+    $("#le-mv-set-label").setAttribute("y", set.y + 22);
+    $("#le-mv-set-time").setAttribute("x", Math.min(w - 18, set.x));
+    $("#le-mv-set-time").setAttribute("y", set.y + 41);
+    $("#le-mv-set-time").textContent = fmt(interval.set);
   }
   function setLocalInterval(now = Date.now()) {
     if (!observer || !astronomy) return;
     const found = astronomy.moonRiseSetInterval(observer.latitude, observer.longitude, new Date(now));
-    if (!found) { interval = null; primarySamples = []; otherPaths = []; clearPaths(); timeline.hidden = true; locationNote.hidden = false; locationNote.textContent = "No local Moonrise/set interval could be estimated for this location and date"; selectedTime = now; live = true; renderOnce(); return; }
+    if (!found) {
+      interval = null; arcGeometry = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true;
+      locationNote.hidden = false; locationNote.textContent = "No local Moonrise/set interval could be estimated for this location and date";
+      selectedTime = now; live = true; renderOnce(); return;
+    }
     interval = { rise: +found.rise, set: +found.set, aboveHorizonNow: found.aboveHorizonNow };
-    lastLightingTimestamp = null;
-    primarySamples = sampleInterval(interval, observer.latitude, observer.longitude);
-    const mid = (interval.rise + interval.set) / 2;
-    otherPaths = [];
-    // Two additional *real date samples* create low/mid/high path context. They are not
-    // fabricated screen curves and they do not move the active day's Moon. Sampling dates
-    // roughly nine days earlier and three days later usually spans a useful altitude range;
-    // sort by computed maximum altitude so the two reference lines are called low and high.
-    const referenceIntervals = [
-      crossingsAround(mid - 9 * 24.84 * 3600000, observer.latitude, observer.longitude)[0],
-      crossingsAround(mid + 3 * 24.84 * 3600000, observer.latitude, observer.longitude)[0]
-    ].filter(Boolean).map(item => {
-      const points = sampleInterval(item, observer.latitude, observer.longitude, 48);
-      return { item, points, peak: Math.max(...points.map(point => point.altitude)) };
-    }).sort((a, b) => a.peak - b.peak);
-    if (referenceIntervals[0]) otherPaths.push({ kind: "low", points: referenceIntervals[0].points });
-    if (referenceIntervals[1]) otherPaths.push({ kind: "high", points: referenceIntervals[1].points });
+    // Cache one representative lighting direction for this viewing interval.
+    // This is intentionally stable while the user watches or scrubs the timeline.
+    cachedLightDirection = lightVectorAt(new Date((interval.rise + interval.set) / 2));
     timeline.hidden = false; locationNote.hidden = true;
     $(".start-label").textContent = fmt(interval.rise); $(".end-label").textContent = fmt(interval.set);
     if (now >= interval.rise && now < interval.set) {
-      // Trust the interval timestamps for live selection even if the descriptive
-      // aboveHorizonNow flag disagrees near rise/set boundaries.
       progress = (now - interval.rise) / (interval.set - interval.rise); selectedTime = now; live = true;
     } else {
-      // Before rise, park at the start of the lunar interval.
       progress = 0; selectedTime = interval.rise; live = true;
     }
     range.value = String(Math.round(progress * 1000)); selectedLabel.textContent = fmt(selectedTime);
     drawPaths(); renderOnce();
   }
   function currentPoint() {
-    if (!projectedPrimarySamples.length || !interval) return { x: dimensions.w * 0.5, y: dimensions.h * 0.31 };
-    const timeFraction = clamp((selectedTime - interval.rise) / (interval.set - interval.rise), 0, 1);
-    const segmentPosition = timeFraction * (projectedPrimarySamples.length - 1);
-    const i = Math.min(projectedPrimarySamples.length - 2, Math.floor(segmentPosition));
-    const t = timeFraction >= 1 ? 1 : segmentPosition - i;
-    return cubicPoint(cubicForSegment(projectedPrimarySamples, i), t);
+    if (!arcGeometry) return { x: dimensions.w * 0.5, y: mountainBaseline(dimensions.w, dimensions.h, dimensions.w > dimensions.h) };
+    const t = clamp(progress, 0, 1), u = 1 - t;
+    const { x0, x1, baseline, controlX, controlY } = arcGeometry;
+    return {
+      x: u * u * x0 + 2 * u * t * controlX + t * t * x1,
+      y: u * u * baseline + 2 * u * t * controlY + t * t * baseline
+    };
   }
   function updateLighting(date) {
     if (!moonLight || !moon || !moonLightTarget) return;
     const p = currentPoint(), h = dimensions.h;
+    // Camera bounds are [0,w] x [0,h], so convert SVG top-origin y to Three.js y once.
     moon.position.set(p.x, h - p.y, 0);
     moon.scale.setScalar(dimensions.radius);
-    const timestamp = date.getTime();
-    if (lastLightingTimestamp !== timestamp) {
-      const dir = lightVectorAt(date);
-      moonLight.position.set(moon.position.x + dir.x * 100, moon.position.y + dir.y * 100, moon.position.z + dir.z * 100);
-      lastLightingTimestamp = timestamp;
-    }
+    // Light direction is cached for the active rise/set interval. Timeline ticks and scrubs
+    // only move the Moon mesh; they do not rerun Sun/Moon coordinate calculations.
+    if (!cachedLightDirection) cachedLightDirection = lightVectorAt(date);
+    const dir = cachedLightDirection;
+    moonLight.position.set(moon.position.x + dir.x * 100, moon.position.y + dir.y * 100, moon.position.z + dir.z * 100);
     moonLightTarget.position.copy(moon.position);
     moonLightTarget.updateMatrixWorld();
   }
@@ -582,16 +499,15 @@
     frame = requestAnimationFrame(() => { frame = 0; renderOnce(); });
   }
   async function refreshLocation() {
-    if (!active || !isLocationEnabled()) { observer = null; interval = null; primarySamples = []; otherPaths = []; lastLightingTimestamp = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false; setLocalIntervalNoLocation(); return; }
-    if (!navigator.geolocation) { observer = null; interval = null; primarySamples = []; otherPaths = []; lastLightingTimestamp = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false; locationNote.textContent = "Local Moon path unavailable · location service is not supported"; setLocalIntervalNoLocation(); return; }
+    if (!active || !isLocationEnabled()) { observer = null; interval = null; arcGeometry = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false; setLocalIntervalNoLocation(); return; }
+    if (!navigator.geolocation) { observer = null; interval = null; arcGeometry = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false; locationNote.textContent = "Local Moon path unavailable · location service is not supported"; setLocalIntervalNoLocation(); return; }
     try {
       const pos = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: false, maximumAge: 120000, timeout: 10000 }));
       if (!active || !isLocationEnabled()) return;
       observer = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
-      lastLightingTimestamp = null;
-      setLocalInterval(Date.now());
+        setLocalInterval(Date.now());
     } catch (error) {
-      observer = null; interval = null; primarySamples = []; otherPaths = []; lastLightingTimestamp = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false;
+      observer = null; interval = null; arcGeometry = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false;
       locationNote.textContent = "Local Moon path unavailable · enable Location and allow access to calculate local rise/set";
       setLocalIntervalNoLocation();
       console.info("[LIVE // EARTH] Moon View local path unavailable.", error?.message || error);
@@ -603,7 +519,7 @@
       if (!active || !initialized) return;
       resize();
       if (isLocationEnabled()) refreshLocation();
-      else { observer = null; lastLightingTimestamp = null; timeline.hidden = true; locationNote.hidden = false; locationNote.textContent = "Location is off · local Moon path and rise/set times are hidden"; setLocalIntervalNoLocation(); }
+      else { observer = null; cachedLightDirection = null; timeline.hidden = true; locationNote.hidden = false; locationNote.textContent = "Location is off · local Moon path and rise/set times are hidden"; setLocalIntervalNoLocation(); }
       if (!timer) timer = window.setInterval(tickLiveTime, 1000);
       queueRender();
     });
@@ -637,10 +553,10 @@
   window.addEventListener("live-earth-location-state", event => {
     if (!active) return;
     if (!!event.detail?.enabled && isLocationEnabled()) refreshLocation();
-    else { observer = null; interval = null; primarySamples = []; otherPaths = []; lastLightingTimestamp = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false; locationNote.textContent = "Location is off · local Moon path and rise/set times are hidden"; setLocalIntervalNoLocation(); }
+    else { observer = null; interval = null; arcGeometry = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true; locationNote.hidden = false; locationNote.textContent = "Location is off · local Moon path and rise/set times are hidden"; setLocalIntervalNoLocation(); }
   });
   window.addEventListener("live-earth-location-stop", () => {
-    observer = null; interval = null; primarySamples = []; otherPaths = []; lastLightingTimestamp = null; clearPaths(); timeline.hidden = true;
+    observer = null; interval = null; arcGeometry = null; cachedLightDirection = null; clearPaths(); timeline.hidden = true;
     locationNote.hidden = false; locationNote.textContent = "Location is off · local Moon path and rise/set times are hidden";
     setLocalIntervalNoLocation();
   });
