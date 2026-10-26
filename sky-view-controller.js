@@ -183,14 +183,21 @@
     #le-sky-view .le-mv-arc-star-glow { fill:#e5f4ff; opacity:.48; filter:drop-shadow(0 0 4px #a9d9ff) drop-shadow(0 0 9px #89caffb8); pointer-events:none; }
     #le-sky-view .le-mv-arc-star { fill:#ffffff; opacity:.99; filter:drop-shadow(0 0 2.8px #f3faff) drop-shadow(0 0 7px #9bd3ff); pointer-events:none; }
     #le-sky-view .le-mv-horizontal-rail-sparkles { position:absolute; inset:0; z-index:1; display:block; width:100%; height:100%; overflow:visible; pointer-events:none; }
-    #le-sky-view .le-mv-scroller-sparkle-core { fill:#ffffff; filter:drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 5px #9ed5ff); pointer-events:none; }
+    #le-sky-view .le-mv-horizontal-trail-blue { fill:url(#leMvHorizontalTrailBlue); filter:drop-shadow(0 0 3px #a8dcffb8) drop-shadow(0 0 7px #5bb8ff62); pointer-events:none; }
+    #le-sky-view .le-mv-horizontal-trail-gold { fill:url(#leMvHorizontalTrailGold); opacity:.88; filter:drop-shadow(0 0 2.5px #ffd59a9e) drop-shadow(0 0 6px #e9a85b60); pointer-events:none; }
+    #le-sky-view .le-mv-horizontal-dust-blue { fill:#dff3ff; filter:drop-shadow(0 0 1.5px #b7e5ff8c); pointer-events:none; }
+    #le-sky-view .le-mv-horizontal-dust-gold { fill:#ffe0ad; filter:drop-shadow(0 0 1.8px #ffca7d9e); pointer-events:none; }
+    #le-sky-view .le-mv-scroller-star-gold { fill:#ffe2b6; filter:drop-shadow(0 0 2.6px #fff0d2) drop-shadow(0 0 6px #ffc36cbd); }
+    #le-sky-view .le-mv-scroller-glow-gold { fill:#ffdba7; opacity:.48; filter:drop-shadow(0 0 4px #ffd28e) drop-shadow(0 0 8px #ffbc6e8c); }
+    #le-sky-view .le-mv-scroller-core-gold { fill:#fff0d3; filter:drop-shadow(0 0 2px #ffe9c4) drop-shadow(0 0 5px #ffbf6c); }
     #le-sky-view .le-mv-horizontal-rail-sparkles[hidden] { display:none !important; }
     #le-sky-view .le-mv-endpoint { fill:#deefff; filter:drop-shadow(0 0 5px #9bd8ff); }
     #le-sky-view .le-mv-endpoint-halo { fill:#73baff; fill-opacity:.15; }
     #le-sky-view .le-mv-event-label { fill:#bdd5ef; font-size:10px; letter-spacing:1.7px; paint-order:stroke; stroke:#031020b0; stroke-width:2px; }
     #le-sky-view .le-mv-event-time { fill:#f4f9ff; font-size:15px; font-weight:500; paint-order:stroke; stroke:#031020b8; stroke-width:2.4px; }
     #le-sky-view .le-mv-timeline { position:absolute; z-index:4; left:7%; right:7%; bottom:calc(19% + env(safe-area-inset-bottom, 0px)); height:98px; display:block; pointer-events:auto; }
-    #le-sky-view .le-mv-timeline:before { content:""; position:absolute; left:0; right:0; bottom:35px; height:2px; border-radius:9px; background:linear-gradient(90deg,#7dbdffb0,#e7f5ff,#65b3ff); box-shadow:0 0 7px #61b6ff5c; pointer-events:none; }
+    /* The straight rail is replaced by two tapered SVG star-trail ribbons in portrait. */
+    #le-sky-view .le-mv-timeline:before { display:none; }
     #le-sky-view .le-mv-timeline:after { content:""; position:absolute; left:0; right:0; bottom:29px; height:14px; background:linear-gradient(90deg,transparent 0 1px,#9bd2ff 1px 2px,transparent 2px calc(100% - 2px),#9bd2ff calc(100% - 2px) calc(100% - 1px),transparent calc(100% - 1px)); opacity:.7; pointer-events:none; }
     #le-sky-view .le-mv-timeline[hidden], #le-sky-view .le-mv-location-note[hidden] { display:none !important; }
     #le-sky-view .le-mv-selected-time { position:absolute; top:0; left:0; right:0; display:block; width:100%; border:0; padding:0; margin:0; background:transparent; color:#f5faff; text-align:center; font:500 16px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; letter-spacing:.2px; text-shadow:0 1px 12px #000; cursor:pointer; -webkit-tap-highlight-color:transparent; }
@@ -255,7 +262,17 @@
     </svg>
     <canvas class="le-mv-canvas" aria-hidden="true"></canvas>
     <div class="le-mv-timeline" hidden>
-      <svg class="le-mv-horizontal-rail-sparkles" aria-hidden="true" viewBox="0 0 390 98" preserveAspectRatio="none"><g id="le-mv-horizontal-sparkle-group"></g></svg>
+      <svg class="le-mv-horizontal-rail-sparkles" aria-hidden="true" viewBox="0 0 390 98" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="leMvHorizontalTrailBlue" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#8bc9ff" stop-opacity=".55"/><stop offset="18%" stop-color="#c6e8ff"/><stop offset="36%" stop-color="#eaf8ff"/><stop offset="50%" stop-color="#ffffff"/><stop offset="65%" stop-color="#e7f4ff"/><stop offset="79%" stop-color="#c4e5ff"/><stop offset="91%" stop-color="#ffe0b2"/><stop offset="100%" stop-color="#e7b77b" stop-opacity=".62"/>
+          </linearGradient>
+          <linearGradient id="leMvHorizontalTrailGold" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#d39a5c" stop-opacity=".25"/><stop offset="20%" stop-color="#edc58a" stop-opacity=".75"/><stop offset="38%" stop-color="#ffe6b4"/><stop offset="53%" stop-color="#e3b16c"/><stop offset="70%" stop-color="#ffdfaa"/><stop offset="86%" stop-color="#e8bc83" stop-opacity=".85"/><stop offset="100%" stop-color="#c78d50" stop-opacity=".3"/>
+          </linearGradient>
+        </defs>
+        <g id="le-mv-horizontal-trail-group"></g><g id="le-mv-horizontal-sparkle-group"></g>
+      </svg>
       <button class="le-mv-selected-time" type="button" aria-label="Tap to return to live lunar time">--:--</button>
       <input class="le-mv-range" type="range" min="0" max="1000" step="1" value="0" aria-label="Select a time between moonrise and moonset">
       <div class="le-mv-vertical-scroller" aria-hidden="true"><svg viewBox="0 0 100 300" preserveAspectRatio="none">
@@ -281,6 +298,7 @@
   const dayLabel = $(".start-label"), setLabel = $(".end-label");
   const verticalPath = $("#le-mv-vertical-path"), verticalMarker = $("#le-mv-vertical-marker");
   const horizontalRailSparkles = $(".le-mv-horizontal-rail-sparkles");
+  const horizontalTrailGroup = $("#le-mv-horizontal-trail-group");
   const horizontalSparkleGroup = $("#le-mv-horizontal-sparkle-group");
   const verticalSparkleGroup = $("#le-mv-vertical-sparkle-group");
   const fmt = value => new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date(value));
@@ -674,7 +692,57 @@
     // Portrait: use the exact pixel width of the timeline so the four-point stars stay round.
     const railWidth = Math.max(1, timeline.clientWidth || dimensions.w * 0.86);
     horizontalRailSparkles.setAttribute("viewBox", `0 0 ${railWidth.toFixed(2)} 98`);
+    horizontalTrailGroup.replaceChildren();
     horizontalSparkleGroup.replaceChildren();
+
+    // Two hand-shaped tapered ribbons replace the plain line. Their thickness grows
+    // smoothly through the centre and narrows toward each end. All values are in CSS px.
+    const blueCurveY = t => 60 + Math.sin(2 * Math.PI * t - 0.62) * 3.8 + Math.sin(4 * Math.PI * t + 0.18) * 1.0;
+    const goldCurveY = t => 63.2 + Math.sin(2 * Math.PI * t + 0.38) * 3.15 + Math.sin(4 * Math.PI * t + 0.72) * 0.85;
+    const makeTaperedRibbon = (curveY, endWidth, addedWidth, waveSamples = null) => {
+      const samples = waveSamples || Math.max(90, Math.min(180, Math.ceil(railWidth / 2.5)));
+      const upper = [], lower = [];
+      for (let i = 0; i <= samples; i++) {
+        const t = i / samples;
+        const taper = Math.pow(Math.max(0, Math.sin(Math.PI * t)), 1.22);
+        const fullWidth = endWidth + addedWidth * taper;
+        const x = railWidth * t, y = curveY(t), half = fullWidth / 2;
+        upper.push([x, y - half]); lower.push([x, y + half]);
+      }
+      const fmt = p => `${p[0].toFixed(2)} ${p[1].toFixed(2)}`;
+      return `M ${fmt(upper[0])} ` + upper.slice(1).map(p => `L ${fmt(p)}`).join(" ") +
+        " " + lower.reverse().map(p => `L ${fmt(p)}`).join(" ") + " Z";
+    };
+    const blueRibbon = document.createElementNS(ns, "path");
+    blueRibbon.setAttribute("d", makeTaperedRibbon(blueCurveY, 0.48, 3.25));
+    blueRibbon.setAttribute("class", "le-mv-horizontal-trail-blue");
+    horizontalTrailGroup.appendChild(blueRibbon);
+    const goldRibbon = document.createElementNS(ns, "path");
+    goldRibbon.setAttribute("d", makeTaperedRibbon(goldCurveY, 0.34, 1.8));
+    goldRibbon.setAttribute("class", "le-mv-horizontal-trail-gold");
+    horizontalTrailGroup.appendChild(goldRibbon);
+
+    // Fine static dust orbits around both curves. Count adapts to the actual rail width;
+    // a seeded generator keeps the arrangement stable until the viewport changes.
+    let dustSeed = (0x4D00D + Math.round(railWidth * 7)) >>> 0;
+    const randDust = () => ((dustSeed = (dustSeed * 1664525 + 1013904223) >>> 0) / 4294967296);
+    const dustScale = clamp(railWidth / 360, 0.82, 1.3);
+    const dustCount = clamp(Math.round(66 * railWidth / 360), 44, 150);
+    for (let i = 0; i < dustCount; i++) {
+      const t = 0.025 + randDust() * 0.95;
+      const curveY = randDust() < 0.37 ? goldCurveY : blueCurveY;
+      let normalOffset = (randDust() + randDust() - 1) * 7.5 * dustScale;
+      if (randDust() < 0.16) normalOffset += (randDust() < 0.5 ? -1 : 1) * (5 + randDust() * 7) * dustScale;
+      const x = clamp(railWidth * t + (randDust() + randDust() - 1) * 3.5 * dustScale, 1, railWidth - 1);
+      const y = clamp(curveY(t) + normalOffset, 35, 86);
+      const mote = document.createElementNS(ns, "circle");
+      mote.setAttribute("cx", x.toFixed(2)); mote.setAttribute("cy", y.toFixed(2));
+      mote.setAttribute("r", (dustScale * (0.22 + randDust() * 0.53)).toFixed(2));
+      mote.setAttribute("opacity", (0.18 + randDust() * 0.46).toFixed(2));
+      mote.setAttribute("class", randDust() < 0.23 ? "le-mv-horizontal-dust-gold" : "le-mv-horizontal-dust-blue");
+      horizontalTrailGroup.appendChild(mote);
+    }
+
     const horizontalStars = [
       { t:0.055, s:1.45, y:51, r:-14 }, { t:0.125, s:1.85, y:69, r:12 },
       { t:0.205, s:2.2, y:44, r:24 }, { t:0.268, s:1.35, y:73, r:-8 },
@@ -684,7 +752,16 @@
       { t:0.779, s:1.45, y:68, r:16 }, { t:0.851, s:2.25, y:53, r:-19 },
       { t:0.925, s:1.7, y:73, r:11 }, { t:0.972, s:1.35, y:57, r:-16 }
     ];
-    horizontalStars.forEach(({t,s,y,r}) => appendStaticStar(horizontalSparkleGroup, { x: railWidth*t, y }, s, ns, r));
+    horizontalStars.forEach(({t,s,y,r}, index) => {
+      appendStaticStar(horizontalSparkleGroup, { x: railWidth*t, y }, s, ns, r);
+      // A few glints pick up warm gold to echo the sunrise/sunset ends of the lunar path.
+      if ([2, 5, 8, 11].includes(index)) {
+        const base = index * 3;
+        horizontalSparkleGroup.children[base].setAttribute("class", "le-mv-scroller-glow-gold");
+        horizontalSparkleGroup.children[base + 1].setAttribute("class", "le-mv-arc-star le-mv-scroller-star-gold");
+        horizontalSparkleGroup.children[base + 2].setAttribute("class", "le-mv-scroller-sparkle-core le-mv-scroller-core-gold");
+      }
+    });
 
     // Landscape: place the same fixed glints directly on the existing winding SVG rail.
     verticalSparkleGroup.replaceChildren();
