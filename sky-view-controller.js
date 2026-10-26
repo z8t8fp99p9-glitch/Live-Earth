@@ -407,10 +407,11 @@
     const baseline = h * 0.515;
     const peakAltitude = Math.max(1, ...points.map(p => Math.max(0, p.altitude)));
     const baseAmplitude = clamp((landscape ? 0.105 : 0.095) + peakAltitude * 0.0028, 0.14, 0.34);
-    // Portrait has extra safe sky above the endpoint baseline, so use 18% more
-    // height while capping the crest 12.5% below the top edge. Landscape geometry
-    // intentionally keeps the already-approved amplitude unchanged.
-    const amplitude = h * (landscape ? baseAmplitude : Math.min(0.39, baseAmplitude * 1.18));
+    // Keep the approved smooth dome, but place the portrait crest lower in the
+    // sky so it sits closer to the mountain skyline. This reduces the portrait
+    // arc height by about 18% from the previous high-crest version. Landscape
+    // geometry intentionally keeps the already-approved amplitude unchanged.
+    const amplitude = h * (landscape ? baseAmplitude : Math.min(0.32, baseAmplitude * 0.98));
     return points.map(p => {
       const horizontalProgress = clamp((p.unwrapped - first) / span, 0, 1);
       const normalizedAltitude = clamp(Math.max(0, p.altitude) / peakAltitude, 0, 1);
