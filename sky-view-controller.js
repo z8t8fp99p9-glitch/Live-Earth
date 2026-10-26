@@ -714,9 +714,10 @@
 
     // Keep a full-width transparent touch range, but draw the visible artwork in the
     // middle 90% so rise/set gestures never require an uncomfortable edge reach.
-    // Ribbon thickness blooms gently through the middle and tapers at both ends.
-    const blueCurveY = t => 60 + Math.sin(2 * Math.PI * t - 0.62) * 3.8 + Math.sin(4 * Math.PI * t + 0.18) * 1.0;
-    const goldCurveY = t => 63.2 + Math.sin(2 * Math.PI * t + 0.38) * 3.15 + Math.sin(4 * Math.PI * t + 0.72) * 0.85;
+    // Reference-matched broad wave: clear upper sweep, lower return, and a slight end-to-end tilt.
+    // Both ribbons bloom through the middle and taper to fine tips at the ends.
+    const blueCurveY = t => 61 + 6 * (1 - t) - 6 * t - 14.5 * Math.sin(2 * Math.PI * t) + 1.2 * Math.sin(4 * Math.PI * t - 0.30);
+    const goldCurveY = t => 63.2 + 5 * (1 - t) - 5.8 * t - 13.0 * Math.sin(2 * Math.PI * t + 0.035) + 1.0 * Math.sin(4 * Math.PI * t + 0.28);
     horizontalScrollerGeometry = { railWidth, trailStart, trailLength, blueCurveY, goldCurveY };
     const makeTaperedRibbon = (curveY, endWidth, addedWidth, waveSamples = null) => {
       const samples = waveSamples || Math.max(90, Math.min(180, Math.ceil(railWidth / 2.5)));
@@ -733,11 +734,11 @@
         " " + lower.reverse().map(p => `L ${fmt(p)}`).join(" ") + " Z";
     };
     const blueRibbon = document.createElementNS(ns, "path");
-    blueRibbon.setAttribute("d", makeTaperedRibbon(blueCurveY, 0.48, 4.05));
+    blueRibbon.setAttribute("d", makeTaperedRibbon(blueCurveY, 0.22, 4.85));
     blueRibbon.setAttribute("class", "le-mv-horizontal-trail-blue");
     horizontalTrailGroup.appendChild(blueRibbon);
     const goldRibbon = document.createElementNS(ns, "path");
-    goldRibbon.setAttribute("d", makeTaperedRibbon(goldCurveY, 0.34, 2.2));
+    goldRibbon.setAttribute("d", makeTaperedRibbon(goldCurveY, 0.18, 2.45));
     goldRibbon.setAttribute("class", "le-mv-horizontal-trail-gold");
     horizontalTrailGroup.appendChild(goldRibbon);
 
