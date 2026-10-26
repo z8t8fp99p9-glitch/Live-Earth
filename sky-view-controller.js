@@ -190,6 +190,11 @@
     #le-sky-view .le-mv-scroller-star-gold { fill:#ffe2b6; filter:drop-shadow(0 0 2.6px #fff0d2) drop-shadow(0 0 6px #ffc36cbd); }
     #le-sky-view .le-mv-scroller-glow-gold { fill:#ffdba7; opacity:.48; filter:drop-shadow(0 0 4px #ffd28e) drop-shadow(0 0 8px #ffbc6e8c); }
     #le-sky-view .le-mv-scroller-core-gold { fill:#fff0d3; filter:drop-shadow(0 0 2px #ffe9c4) drop-shadow(0 0 5px #ffbf6c); }
+    #le-sky-view .le-mv-horizontal-moon-marker { pointer-events:none; filter:drop-shadow(0 0 5px #77c5ffb8) drop-shadow(0 0 9px #4d9fff56); }
+    #le-sky-view .le-mv-horizontal-moon-halo { fill:#75bfff; opacity:.24; }
+    #le-sky-view .le-mv-horizontal-moon-surface { stroke:#f0f8ff; stroke-opacity:.95; stroke-width:.85; }
+    #le-sky-view .le-mv-horizontal-moon-shade { pointer-events:none; }
+    #le-sky-view .le-mv-horizontal-moon-rim { fill:none; stroke:#eef8ff; stroke-opacity:.9; stroke-width:.9; }
     #le-sky-view .le-mv-horizontal-rail-sparkles[hidden] { display:none !important; }
     #le-sky-view .le-mv-endpoint { fill:#deefff; filter:drop-shadow(0 0 5px #9bd8ff); }
     #le-sky-view .le-mv-endpoint-halo { fill:#73baff; fill-opacity:.15; }
@@ -198,14 +203,14 @@
     #le-sky-view .le-mv-timeline { position:absolute; z-index:4; left:7%; right:7%; bottom:calc(19% + env(safe-area-inset-bottom, 0px)); height:98px; display:block; pointer-events:auto; }
     /* The straight rail is replaced by two tapered SVG star-trail ribbons in portrait. */
     #le-sky-view .le-mv-timeline:before { display:none; }
-    #le-sky-view .le-mv-timeline:after { content:""; position:absolute; left:0; right:0; bottom:29px; height:14px; background:linear-gradient(90deg,transparent 0 1px,#9bd2ff 1px 2px,transparent 2px calc(100% - 2px),#9bd2ff calc(100% - 2px) calc(100% - 1px),transparent calc(100% - 1px)); opacity:.7; pointer-events:none; }
+    #le-sky-view .le-mv-timeline:after { content:""; position:absolute; left:0; right:0; bottom:29px; height:14px; background:linear-gradient(90deg,transparent 0 4.8%,#9bd2ff 4.8% 5.05%,transparent 5.05% 94.95%,#9bd2ff 94.95% 95.2%,transparent 95.2% 100%); opacity:.7; pointer-events:none; }
     #le-sky-view .le-mv-timeline[hidden], #le-sky-view .le-mv-location-note[hidden] { display:none !important; }
     #le-sky-view .le-mv-selected-time { position:absolute; top:0; left:0; right:0; display:block; width:100%; border:0; padding:0; margin:0; background:transparent; color:#f5faff; text-align:center; font:500 16px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; letter-spacing:.2px; text-shadow:0 1px 12px #000; cursor:pointer; -webkit-tap-highlight-color:transparent; }
-    #le-sky-view .le-mv-range { position:absolute; left:0; right:0; bottom:24px; width:100%; height:24px; appearance:none; -webkit-appearance:none; background:transparent; margin:0; cursor:pointer; touch-action:pan-x; z-index:2; }
+    #le-sky-view .le-mv-range { position:absolute; left:0; right:0; bottom:14px; width:100%; height:44px; appearance:none; -webkit-appearance:none; background:transparent; margin:0; cursor:pointer; touch-action:pan-x; z-index:2; }
     #le-sky-view .le-mv-range::-webkit-slider-runnable-track { height:2px; border-radius:9px; background:transparent; }
     #le-sky-view .le-mv-range::-moz-range-track { height:2px; border-radius:9px; background:transparent; }
-    #le-sky-view .le-mv-range::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:19px; height:19px; margin-top:-8.5px; border-radius:50%; border:1px solid #eff8ff; background:radial-gradient(circle at 35% 30%,#fff,#cce7ff 45%,#5c8ebd 100%); box-shadow:0 0 12px #91d5ffcb,0 0 0 5px #89c9ff28; }
-    #le-sky-view .le-mv-range::-moz-range-thumb { width:18px; height:18px; border-radius:50%; border:1px solid #eff8ff; background:radial-gradient(circle at 35% 30%,#fff,#cce7ff 45%,#5c8ebd 100%); box-shadow:0 0 12px #91d5ffcb,0 0 0 5px #89c9ff28; }
+    #le-sky-view .le-mv-range::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:26px; height:26px; margin-top:-12px; border-radius:50%; border:1px solid transparent; background:transparent; box-shadow:none; }
+    #le-sky-view .le-mv-range::-moz-range-thumb { width:26px; height:26px; border-radius:50%; border:1px solid transparent; background:transparent; box-shadow:none; }
     #le-sky-view .le-mv-end-labels { position:absolute; left:0; right:0; bottom:0; display:flex; justify-content:space-between; margin:0; font-size:11px; color:#e0ecfb; }
     #le-sky-view .le-mv-end-labels small { display:block; margin-top:3px; color:#9fb6d2; font-size:8px; letter-spacing:1.7px; }
     #le-sky-view .le-mv-end-labels .end { text-align:right; }
@@ -270,8 +275,16 @@
           <linearGradient id="leMvHorizontalTrailGold" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stop-color="#d39a5c" stop-opacity=".25"/><stop offset="20%" stop-color="#edc58a" stop-opacity=".75"/><stop offset="38%" stop-color="#ffe6b4"/><stop offset="53%" stop-color="#e3b16c"/><stop offset="70%" stop-color="#ffdfaa"/><stop offset="86%" stop-color="#e8bc83" stop-opacity=".85"/><stop offset="100%" stop-color="#c78d50" stop-opacity=".3"/>
           </linearGradient>
+          <pattern id="leMvScrollerMoonTexture" patternUnits="objectBoundingBox" patternContentUnits="objectBoundingBox" width="1" height="1"><image href="${MOON_TEXTURE_DATA}" x="0" y="0" width="1" height="1" preserveAspectRatio="xMidYMid slice"/></pattern>
+          <radialGradient id="leMvScrollerMoonShade" cx="30%" cy="23%" r="82%"><stop offset="0%" stop-color="#ffffff" stop-opacity=".30"/><stop offset="43%" stop-color="#d9e8f8" stop-opacity=".06"/><stop offset="100%" stop-color="#0c182b" stop-opacity=".62"/></radialGradient>
         </defs>
         <g id="le-mv-horizontal-trail-group"></g><g id="le-mv-horizontal-sparkle-group"></g>
+        <g id="le-mv-horizontal-moon-marker" class="le-mv-horizontal-moon-marker" transform="translate(0 62)" aria-hidden="true">
+          <circle class="le-mv-horizontal-moon-halo" r="16"/>
+          <circle class="le-mv-horizontal-moon-surface" r="12.6" fill="url(#leMvScrollerMoonTexture)"/>
+          <circle class="le-mv-horizontal-moon-shade" r="12.6" fill="url(#leMvScrollerMoonShade)"/>
+          <circle class="le-mv-horizontal-moon-rim" r="12.6"/>
+        </g>
       </svg>
       <button class="le-mv-selected-time" type="button" aria-label="Tap to return to live lunar time">--:--</button>
       <input class="le-mv-range" type="range" min="0" max="1000" step="1" value="0" aria-label="Select a time between moonrise and moonset">
@@ -300,6 +313,7 @@
   const horizontalRailSparkles = $(".le-mv-horizontal-rail-sparkles");
   const horizontalTrailGroup = $("#le-mv-horizontal-trail-group");
   const horizontalSparkleGroup = $("#le-mv-horizontal-sparkle-group");
+  const horizontalMoonMarker = $("#le-mv-horizontal-moon-marker");
   const verticalSparkleGroup = $("#le-mv-vertical-sparkle-group");
   const fmt = value => new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date(value));
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -310,6 +324,7 @@
   let frame = 0, timer = 0, observer = null, interval = null, selectedTime = Date.now(), progress = 0, live = false;
   let dimensions = { w: 0, h: 0, radius: 0 };
   let arcGeometry = null;
+  let horizontalScrollerGeometry = null;
   let cachedLightDirection = null;
   let resizeFrame = 0, resizeObserver = null, lastResizeDpr = 0;
   let initialized = false, loading = null;
@@ -691,14 +706,18 @@
     const ns = "http://www.w3.org/2000/svg";
     // Portrait: use the exact pixel width of the timeline so the four-point stars stay round.
     const railWidth = Math.max(1, timeline.clientWidth || dimensions.w * 0.86);
+    const trailStart = railWidth * 0.05;
+    const trailLength = railWidth * 0.90;
     horizontalRailSparkles.setAttribute("viewBox", `0 0 ${railWidth.toFixed(2)} 98`);
     horizontalTrailGroup.replaceChildren();
     horizontalSparkleGroup.replaceChildren();
 
-    // Two hand-shaped tapered ribbons replace the plain line. Their thickness grows
-    // smoothly through the centre and narrows toward each end. All values are in CSS px.
+    // Keep a full-width transparent touch range, but draw the visible artwork in the
+    // middle 90% so rise/set gestures never require an uncomfortable edge reach.
+    // Ribbon thickness blooms gently through the middle and tapers at both ends.
     const blueCurveY = t => 60 + Math.sin(2 * Math.PI * t - 0.62) * 3.8 + Math.sin(4 * Math.PI * t + 0.18) * 1.0;
     const goldCurveY = t => 63.2 + Math.sin(2 * Math.PI * t + 0.38) * 3.15 + Math.sin(4 * Math.PI * t + 0.72) * 0.85;
+    horizontalScrollerGeometry = { railWidth, trailStart, trailLength, blueCurveY, goldCurveY };
     const makeTaperedRibbon = (curveY, endWidth, addedWidth, waveSamples = null) => {
       const samples = waveSamples || Math.max(90, Math.min(180, Math.ceil(railWidth / 2.5)));
       const upper = [], lower = [];
@@ -706,7 +725,7 @@
         const t = i / samples;
         const taper = Math.pow(Math.max(0, Math.sin(Math.PI * t)), 1.22);
         const fullWidth = endWidth + addedWidth * taper;
-        const x = railWidth * t, y = curveY(t), half = fullWidth / 2;
+        const x = trailStart + trailLength * t, y = curveY(t), half = fullWidth / 2;
         upper.push([x, y - half]); lower.push([x, y + half]);
       }
       const fmt = p => `${p[0].toFixed(2)} ${p[1].toFixed(2)}`;
@@ -714,11 +733,11 @@
         " " + lower.reverse().map(p => `L ${fmt(p)}`).join(" ") + " Z";
     };
     const blueRibbon = document.createElementNS(ns, "path");
-    blueRibbon.setAttribute("d", makeTaperedRibbon(blueCurveY, 0.48, 3.25));
+    blueRibbon.setAttribute("d", makeTaperedRibbon(blueCurveY, 0.48, 4.05));
     blueRibbon.setAttribute("class", "le-mv-horizontal-trail-blue");
     horizontalTrailGroup.appendChild(blueRibbon);
     const goldRibbon = document.createElementNS(ns, "path");
-    goldRibbon.setAttribute("d", makeTaperedRibbon(goldCurveY, 0.34, 1.8));
+    goldRibbon.setAttribute("d", makeTaperedRibbon(goldCurveY, 0.34, 2.2));
     goldRibbon.setAttribute("class", "le-mv-horizontal-trail-gold");
     horizontalTrailGroup.appendChild(goldRibbon);
 
@@ -727,41 +746,46 @@
     let dustSeed = (0x4D00D + Math.round(railWidth * 7)) >>> 0;
     const randDust = () => ((dustSeed = (dustSeed * 1664525 + 1013904223) >>> 0) / 4294967296);
     const dustScale = clamp(railWidth / 360, 0.82, 1.3);
-    const dustCount = clamp(Math.round(66 * railWidth / 360), 44, 150);
+    const dustCount = clamp(Math.round(100 * railWidth / 360), 70, 220);
     for (let i = 0; i < dustCount; i++) {
       const t = 0.025 + randDust() * 0.95;
       const curveY = randDust() < 0.37 ? goldCurveY : blueCurveY;
       let normalOffset = (randDust() + randDust() - 1) * 7.5 * dustScale;
       if (randDust() < 0.16) normalOffset += (randDust() < 0.5 ? -1 : 1) * (5 + randDust() * 7) * dustScale;
-      const x = clamp(railWidth * t + (randDust() + randDust() - 1) * 3.5 * dustScale, 1, railWidth - 1);
+      const x = clamp(trailStart + trailLength * t + (randDust() + randDust() - 1) * 3.2 * dustScale, trailStart + 1, trailStart + trailLength - 1);
       const y = clamp(curveY(t) + normalOffset, 35, 86);
       const mote = document.createElementNS(ns, "circle");
       mote.setAttribute("cx", x.toFixed(2)); mote.setAttribute("cy", y.toFixed(2));
-      mote.setAttribute("r", (dustScale * (0.22 + randDust() * 0.53)).toFixed(2));
+      mote.setAttribute("r", (dustScale * (0.14 + randDust() * 0.34)).toFixed(2));
       mote.setAttribute("opacity", (0.18 + randDust() * 0.46).toFixed(2));
       mote.setAttribute("class", randDust() < 0.23 ? "le-mv-horizontal-dust-gold" : "le-mv-horizontal-dust-blue");
       horizontalTrailGroup.appendChild(mote);
     }
 
     const horizontalStars = [
-      { t:0.055, s:1.45, y:51, r:-14 }, { t:0.125, s:1.85, y:69, r:12 },
-      { t:0.205, s:2.2, y:44, r:24 }, { t:0.268, s:1.35, y:73, r:-8 },
-      { t:0.344, s:1.75, y:55, r:17 }, { t:0.421, s:2.15, y:77, r:-21 },
-      { t:0.493, s:1.4, y:47, r:8 }, { t:0.558, s:2.6, y:63, r:-12 },
-      { t:0.632, s:1.6, y:75, r:19 }, { t:0.704, s:2.05, y:48, r:-7 },
-      { t:0.779, s:1.45, y:68, r:16 }, { t:0.851, s:2.25, y:53, r:-19 },
-      { t:0.925, s:1.7, y:73, r:11 }, { t:0.972, s:1.35, y:57, r:-16 }
+      {t:.045,s:1.25,o:-8,r:-14},{t:.085,s:1.0,o:6,r:12},{t:.132,s:1.3,o:-5,r:24},
+      {t:.176,s:1.05,o:7,r:-8},{t:.218,s:1.22,o:-7,r:17},{t:.262,s:.92,o:5,r:-21},
+      {t:.307,s:1.18,o:-4,r:8},{t:.352,s:1.3,o:7,r:-12},{t:.397,s:.96,o:-6,r:19},
+      {t:.441,s:1.16,o:5,r:-7},{t:.486,s:1.32,o:-5,r:16},{t:.531,s:1.0,o:6,r:-19},
+      {t:.576,s:1.22,o:-7,r:11},{t:.621,s:.9,o:4,r:-16},{t:.666,s:1.24,o:-5,r:18},
+      {t:.711,s:1.02,o:7,r:-11},{t:.756,s:1.28,o:-6,r:15},{t:.801,s:.96,o:5,r:-18},
+      {t:.846,s:1.2,o:-4,r:9},{t:.89,s:1.0,o:7,r:-13},{t:.932,s:1.24,o:-6,r:20},
+      {t:.965,s:.95,o:4,r:-9}
     ];
-    horizontalStars.forEach(({t,s,y,r}, index) => {
-      appendStaticStar(horizontalSparkleGroup, { x: railWidth*t, y }, s, ns, r);
-      // A few glints pick up warm gold to echo the sunrise/sunset ends of the lunar path.
-      if ([2, 5, 8, 11].includes(index)) {
+    horizontalStars.forEach(({t,s,o,r}, index) => {
+      const curveY = index % 2 ? goldCurveY : blueCurveY;
+      const x = trailStart + trailLength * t;
+      const y = clamp(curveY(t) + o, 38, 84);
+      appendStaticStar(horizontalSparkleGroup, { x, y }, s * 0.72, ns, r);
+      // Subtle gold glints alternate through the icy trail, without overpowering it.
+      if ([2, 7, 12, 17, 20].includes(index)) {
         const base = index * 3;
         horizontalSparkleGroup.children[base].setAttribute("class", "le-mv-scroller-glow-gold");
         horizontalSparkleGroup.children[base + 1].setAttribute("class", "le-mv-arc-star le-mv-scroller-star-gold");
         horizontalSparkleGroup.children[base + 2].setAttribute("class", "le-mv-scroller-sparkle-core le-mv-scroller-core-gold");
       }
     });
+    updateHorizontalMarker();
 
     // Landscape: place the same fixed glints directly on the existing winding SVG rail.
     verticalSparkleGroup.replaceChildren();
@@ -800,6 +824,14 @@
     moonLightTarget.position.copy(moon.position);
     moonLightTarget.updateMatrixWorld();
   }
+  function updateHorizontalMarker() {
+    if (!horizontalMoonMarker || !horizontalScrollerGeometry) return;
+    const { trailStart, trailLength, blueCurveY, goldCurveY } = horizontalScrollerGeometry;
+    const t = clamp(progress, 0, 1);
+    const x = trailStart + trailLength * t;
+    const y = (blueCurveY(t) + goldCurveY(t)) / 2;
+    horizontalMoonMarker.setAttribute("transform", `translate(${x.toFixed(2)} ${y.toFixed(2)})`);
+  }
   function updateVerticalMarker() {
     if (!verticalPath || !verticalMarker) return;
     try {
@@ -809,6 +841,7 @@
     } catch (_) { /* Keep the scroller usable if SVG path metrics are unavailable. */ }
   }
   function renderOnce() {
+    updateHorizontalMarker();
     updateVerticalMarker();
     if (!active || !renderer || !scene || !camera || !moon) return;
     updateLighting(new Date(selectedTime));
