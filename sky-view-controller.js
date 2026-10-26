@@ -407,7 +407,8 @@
   // Moon arc composition before the background artwork is replaced. The arc remains stable
   // across devices and orientations; later wallpaper tuning can align the mountains to it.
   function referenceBaseline(h, landscape) {
-    return h * (landscape ? 0.543 : 0.494);
+    // Portrait endpoints follow the reference's ~47.4% viewport line; landscape remains independent.
+    return h * (landscape ? 0.543 : 0.474);
   }
 
   function drawPaths() {
@@ -417,12 +418,12 @@
     const x0 = w * (landscape ? 0.065 : 0.114);
     const x1 = w * (landscape ? 0.80 : 0.921);
     const baseline = referenceBaseline(h, landscape);
-    // Fixed upper ellipse calibrated to the approved reference. The horizontal diameter
-    // and endpoints are preserved; only the portrait rise is increased for a taller,
-    // more circular dome. Landscape retains its previous crest height.
+    // Fixed upper ellipse calibrated against the supplied screenshot, not a live astronomical path.
+    // Keep the horizontal diameter fixed. Portrait apex is ~31.2% of viewport height and
+    // endpoints ~47.4%; landscape retains its separately tuned arc proportions.
     const centerX = (x0 + x1) / 2;
     const rx = (x1 - x0) / 2;
-    const ry = h * (landscape ? 0.35 : 0.225);
+    const ry = h * (landscape ? 0.35 : 0.162);
     arcGeometry = { x0, x1, baseline, centerX, rx, ry, landscape };
     svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
     $("#le-mv-main").setAttribute("d", `M ${x0.toFixed(2)} ${baseline.toFixed(2)} A ${rx.toFixed(2)} ${ry.toFixed(2)} 0 0 1 ${x1.toFixed(2)} ${baseline.toFixed(2)}`);
@@ -515,41 +516,52 @@
     if (!group || !arcGeometry) return;
     group.replaceChildren();
     const ns = "http://www.w3.org/2000/svg";
-    const scale = clamp(Math.min(dimensions.w, dimensions.h) / 430, 0.8, 1.45);
+    const scale = clamp(Math.min(dimensions.w, dimensions.h) / 430, 0.82, 1.35);
     let seed = arcGeometry.landscape ? 0x53A71 : 0x2C0A7;
     const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
     const safe = (v, lo, hi) => clamp(v, lo, hi);
 
-    // Fine grains: uneven distribution and an outward-biased scatter band.
-    // A minority drift just inside the arch to create depth instead of a line of ticks.
-    for (let i = 0; i < 46; i++) {
-      const t = 0.035 + rand() * 0.93;
-      const outward = rand() < 0.78;
-      const offset = outward ? scale * (4 + rand() * 24) : -scale * (2 + rand() * 9);
-      const tangent = scale * ((rand() - 0.5) * 13);
-      const p = offsetFromArc(t, offset, tangent);
+    // Homepage-inspired stardust: many fine grains spread to BOTH sides of the
+    // arc with irregular spacing. A few grains drift further outward to create a
+    // loose luminous trail instead of a dotted line or evenly spaced tick marks.
+    for (let i = 0; i < 96; i++) {
+      const t = 0.025 + rand() * 0.95;
+      const triangular = rand() + rand() - 1;
+      let normalOffset = triangular * 13 * scale;
+      if (rand() < 0.18) {
+        const side = rand() < 0.72 ? 1 : -1;
+        normalOffset += side * (5 + rand() * 11) * scale;
+      }
+      const tangentOffset = (rand() + rand() - 1) * 10 * scale;
+      const p = offsetFromArc(t, normalOffset, tangentOffset);
       const dot = document.createElementNS(ns, "circle");
-      dot.setAttribute("cx", safe(p.x, 3, dimensions.w - 3).toFixed(2));
-      dot.setAttribute("cy", safe(p.y, 3, dimensions.h - 3).toFixed(2));
-      dot.setAttribute("r", (scale * (0.28 + rand() * 0.82)).toFixed(2));
-      dot.setAttribute("opacity", (0.20 + rand() * 0.53).toFixed(2));
+      dot.setAttribute("cx", safe(p.x, 2, dimensions.w - 2).toFixed(2));
+      dot.setAttribute("cy", safe(p.y, 2, dimensions.h - 2).toFixed(2));
+      dot.setAttribute("r", (scale * (0.42 + rand() * 0.95)).toFixed(2));
+      dot.setAttribute("opacity", (0.30 + rand() * 0.62).toFixed(2));
       dot.setAttribute("class", "le-mv-arc-sparkle");
       group.appendChild(dot);
     }
 
-    // A few brighter four-point flares are irregularly clustered and sit around the arc,
-    // never in a uniform row on its stroke. Keep their footprint delicate.
+    // Varied four-point glints: offset above AND below the curve, with intentional
+    // clusters and quiet gaps like the reference's natural starlight trail.
     const flares = [
-      { t:0.105, off:10, tan:-5, size:2.25, rot:-12 },
-      { t:0.178, off:25, tan:4, size:1.75, rot:18 },
-      { t:0.272, off:9, tan:3, size:2.7, rot:-8 },
-      { t:0.348, off:31, tan:-4, size:1.8, rot:24 },
-      { t:0.442, off:13, tan:5, size:2.1, rot:-20 },
-      { t:0.515, off:25, tan:-2, size:2.95, rot:9 },
-      { t:0.625, off:8, tan:4, size:1.9, rot:20 },
-      { t:0.704, off:29, tan:-5, size:2.3, rot:-13 },
-      { t:0.812, off:12, tan:2, size:2.6, rot:15 },
-      { t:0.891, off:23, tan:-3, size:1.8, rot:-18 }
+      { t:0.075, off:5, tan:-4, size:1.9, rot:-12 },
+      { t:0.128, off:13, tan:3, size:1.45, rot:19 },
+      { t:0.184, off:-7, tan:-3, size:2.15, rot:8 },
+      { t:0.236, off:4, tan:5, size:1.55, rot:-21 },
+      { t:0.302, off:16, tan:-2, size:2.05, rot:13 },
+      { t:0.368, off:-5, tan:4, size:1.45, rot:-9 },
+      { t:0.426, off:8, tan:-5, size:2.35, rot:14 },
+      { t:0.482, off:-11, tan:2, size:1.7, rot:-17 },
+      { t:0.535, off:5, tan:-3, size:2.8, rot:7 },
+      { t:0.594, off:-6, tan:5, size:1.55, rot:22 },
+      { t:0.651, off:15, tan:-4, size:2.0, rot:-13 },
+      { t:0.714, off:-9, tan:3, size:1.8, rot:17 },
+      { t:0.766, off:6, tan:2, size:2.45, rot:-8 },
+      { t:0.824, off:-14, tan:-3, size:1.55, rot:16 },
+      { t:0.879, off:9, tan:4, size:2.15, rot:-19 },
+      { t:0.93, off:-4, tan:-2, size:1.65, rot:11 }
     ];
     flares.forEach(({ t, off, tan, size, rot }) => {
       const p = offsetFromArc(t, off * scale, tan * scale);
@@ -560,8 +572,6 @@
     });
   }
 
-  // Matching starbursts sit on the scroller rails as static SVG decorations.
-  // They are generated only when the layout is built/resized, never during clock ticks or dragging.
   function appendStaticStar(group, p, size, ns, rotation = 0) {
     const glow = document.createElementNS(ns, "circle");
     glow.setAttribute("cx", p.x.toFixed(2));
@@ -589,11 +599,13 @@
     horizontalRailSparkles.setAttribute("viewBox", `0 0 ${railWidth.toFixed(2)} 98`);
     horizontalSparkleGroup.replaceChildren();
     const horizontalStars = [
-      { t:0.075, s:1.8, y:48, r:-14 }, { t:0.205, s:2.35, y:71, r:12 },
-      { t:0.292, s:1.45, y:54, r:24 }, { t:0.418, s:2.0, y:76, r:-8 },
-      { t:0.535, s:2.65, y:50, r:17 }, { t:0.638, s:1.6, y:69, r:-21 },
-      { t:0.755, s:2.15, y:46, r:8 }, { t:0.866, s:1.55, y:73, r:-12 },
-      { t:0.947, s:2.0, y:57, r:19 }
+      { t:0.055, s:1.45, y:51, r:-14 }, { t:0.125, s:1.85, y:69, r:12 },
+      { t:0.205, s:2.2, y:44, r:24 }, { t:0.268, s:1.35, y:73, r:-8 },
+      { t:0.344, s:1.75, y:55, r:17 }, { t:0.421, s:2.15, y:77, r:-21 },
+      { t:0.493, s:1.4, y:47, r:8 }, { t:0.558, s:2.6, y:63, r:-12 },
+      { t:0.632, s:1.6, y:75, r:19 }, { t:0.704, s:2.05, y:48, r:-7 },
+      { t:0.779, s:1.45, y:68, r:16 }, { t:0.851, s:2.25, y:53, r:-19 },
+      { t:0.925, s:1.7, y:73, r:11 }, { t:0.972, s:1.35, y:57, r:-16 }
     ];
     horizontalStars.forEach(({t,s,y,r}) => appendStaticStar(horizontalSparkleGroup, { x: railWidth*t, y }, s, ns, r));
 
@@ -602,10 +614,12 @@
     if (verticalPath && typeof verticalPath.getTotalLength === "function") {
       const length = verticalPath.getTotalLength();
       const verticalStars = [
-        { t:0.075, s:1.8, o:7, r:-12 }, { t:0.205, s:2.25, o:-9, r:16 },
-        { t:0.342, s:1.55, o:10, r:22 }, { t:0.485, s:2.3, o:-7, r:-15 },
-        { t:0.614, s:1.8, o:8, r:10 }, { t:0.765, s:2.5, o:-10, r:-18 },
-        { t:0.913, s:1.85, o:6, r:14 }
+        { t:0.055, s:1.45, o:6, r:-12 }, { t:0.135, s:1.85, o:-8, r:16 },
+        { t:0.225, s:1.6, o:9, r:22 }, { t:0.315, s:2.25, o:-6, r:-15 },
+        { t:0.405, s:1.5, o:8, r:10 }, { t:0.49, s:2.2, o:-9, r:-18 },
+        { t:0.575, s:1.65, o:7, r:14 }, { t:0.665, s:2.05, o:-6, r:-8 },
+        { t:0.755, s:1.45, o:9, r:19 }, { t:0.855, s:2.2, o:-8, r:-12 },
+        { t:0.945, s:1.55, o:6, r:16 }
       ];
       verticalStars.forEach(({t,s,o,r}) => {
         const point = verticalPath.getPointAtLength(length*t);
