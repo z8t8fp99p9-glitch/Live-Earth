@@ -185,6 +185,13 @@
     #le-sky-view .le-mv-horizontal-rail-sparkles { position:absolute; inset:0; z-index:1; display:block; width:100%; height:100%; overflow:visible; pointer-events:none; }
     #le-sky-view .le-mv-horizontal-trail-blue { fill:url(#leMvHorizontalTrailBlue); opacity:1; filter:drop-shadow(0 0 3.5px #8bd0ffed) drop-shadow(0 0 8px #369bff9a); pointer-events:none; }
     #le-sky-view .le-mv-horizontal-trail-gold { fill:url(#leMvHorizontalTrailGold); opacity:.98; filter:drop-shadow(0 0 2px #ffd58bba) drop-shadow(0 0 5px #e9a85b6b); pointer-events:none; }
+    #le-sky-view .le-mv-vertical-ribbon-glow { fill:#58aaff; fill-opacity:.30; filter:blur(3px); pointer-events:none; }
+    #le-sky-view .le-mv-vertical-trail-blue { fill:url(#leMvVerticalGradient); opacity:1; filter:drop-shadow(0 0 3.5px #8bd0ffed) drop-shadow(0 0 8px #369bff9a); pointer-events:none; }
+    #le-sky-view .le-mv-vertical-trail-gold { fill:url(#leMvVerticalGoldGradient); opacity:.98; filter:drop-shadow(0 0 2px #ffd58bba) drop-shadow(0 0 5px #e9a85b6b); pointer-events:none; }
+    #le-sky-view .le-mv-vertical-dust-blue { fill:#d9f0ff; filter:drop-shadow(0 0 2px #b7e5ffdf) drop-shadow(0 0 4px #6ebdff78); pointer-events:none; }
+    #le-sky-view .le-mv-vertical-dust-gold { fill:#ffd58c; filter:drop-shadow(0 0 2px #ffcb7dd9) drop-shadow(0 0 4px #ffb84d80); pointer-events:none; }
+    #le-sky-view .le-mv-vertical-star-core { fill:#f8fcff; filter:drop-shadow(0 0 2px #e1f4ff) drop-shadow(0 0 4px #75bdffbd); }
+    #le-sky-view .le-mv-vertical-star-core-gold { fill:#fff0d3; filter:drop-shadow(0 0 2px #ffe9c4) drop-shadow(0 0 5px #ffbf6c); }
     #le-sky-view .le-mv-horizontal-dust-blue { fill:#d9f0ff; filter:drop-shadow(0 0 2px #b7e5ffdf) drop-shadow(0 0 4px #6ebdff78); pointer-events:none; }
     #le-sky-view .le-mv-horizontal-dust-gold { fill:#ffd58c; filter:drop-shadow(0 0 2px #ffcb7dd9) drop-shadow(0 0 4px #ffb84d80); pointer-events:none; }
     #le-sky-view .le-mv-scroller-star-gold { fill:#ffe2b6; filter:drop-shadow(0 0 2.6px #fff0d2) drop-shadow(0 0 6px #ffc36cbd); }
@@ -240,20 +247,20 @@
     @media (orientation:landscape) {
       #le-sky-view .le-mv-lunar-info { display:none; }
       #le-sky-view .le-mv-main-rise-set-icon { display:none !important; }
-      #le-sky-view .le-mv-scroller-end-icon { display:block; }
+      #le-sky-view .le-mv-scroller-end-icon { display:block; width:24px; height:15px; flex:0 0 15px; margin:0 auto 1px; }
       #le-sky-view .le-mv-end-labels > .le-mv-endpoint-info { display:block; text-align:center; }
       #le-sky-view .le-mv-end-labels .le-mv-end-label-copy { align-items:center; }
       #le-sky-view .le-mv-selected-time { color:#d8efff; text-shadow:0 0 5px #61b8ff62,0 1px 8px #000; transform:none; width:auto; }
       /* Landscape gets an independent vertical time rail at the side of the view.
          The rail controls time only; it does not control the Moon or arc layout. */
-      #le-sky-view .le-mv-timeline { left:auto; right:2.4%; top:7.5%; bottom:7.5%; width:104px; height:auto; border:1px solid #9bcfff42; border-radius:22px; padding:8px; background:linear-gradient(160deg,#06172bf0,#071426c7); box-shadow:0 8px 32px #0005,inset 0 1px #ffffff12; -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
+      #le-sky-view .le-mv-timeline { left:auto; right:2.4%; top:7.5%; bottom:7.5%; width:104px; height:auto; border:0; border-radius:0; padding:8px; background:transparent; box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
       #le-sky-view .le-mv-timeline:before, #le-sky-view .le-mv-timeline:after { display:none; }
       #le-sky-view .le-mv-horizontal-rail-sparkles { display:none; }
       #le-sky-view .le-mv-selected-time { top:10px; left:4px; right:4px; font-size:12px; line-height:1.25; padding:0 1px; z-index:2; }
       #le-sky-view .le-mv-vertical-scroller { display:block; position:absolute; top:76px; bottom:50px; left:4px; right:4px; pointer-events:none; }
       #le-sky-view .le-mv-vertical-scroller svg { display:block; width:100%; height:100%; overflow:visible; }
-      #le-sky-view .le-mv-vertical-path-glow { fill:none; stroke:#58aaff; stroke-opacity:.25; stroke-width:9; stroke-linecap:round; filter:blur(4px); }
-      #le-sky-view .le-mv-vertical-path { fill:none; stroke:url(#leMvVerticalGradient); stroke-width:2.4; stroke-linecap:round; filter:drop-shadow(0 0 5px #79c5ffb8); }
+      /* Keep the curve as geometry only; the visible path is the same tapered stardust ribbon style as Portrait. */
+      #le-sky-view .le-mv-vertical-path-glow, #le-sky-view .le-mv-vertical-path { fill:none; stroke:none; stroke-width:0; opacity:0; filter:none; }
       #le-sky-view .le-mv-vertical-end { fill:#e9f5ff; stroke:#8ccaff; stroke-width:1.5; }
       #le-sky-view .le-mv-vertical-end-halo { fill:#79bdff; fill-opacity:.22; }
       #le-sky-view .le-mv-vertical-marker-halo { fill:#5eafff; fill-opacity:.24; stroke:#a9d8ff; stroke-opacity:.68; stroke-width:1; filter:drop-shadow(0 0 5px #65baff9c); }
@@ -366,10 +373,13 @@
       <div class="le-mv-vertical-scroller" aria-hidden="true"><svg viewBox="0 0 100 300" preserveAspectRatio="none">
         <defs>
           <linearGradient id="leMvVerticalGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#cdeaff"/><stop offset="34%" stop-color="#66baff"/><stop offset="68%" stop-color="#83c5ff"/><stop offset="100%" stop-color="#c2e4ff"/></linearGradient>
+          <linearGradient id="leMvVerticalGoldGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#f4c987" stop-opacity=".72"/><stop offset="25%" stop-color="#ffe4b6"/><stop offset="55%" stop-color="#ffca78"/><stop offset="78%" stop-color="#ffe7bd"/><stop offset="100%" stop-color="#edbd77" stop-opacity=".72"/></linearGradient>
           <radialGradient id="leMvVerticalMoon" cx="31%" cy="24%" r="78%"><stop offset="0%" stop-color="#fff"/><stop offset="42%" stop-color="#d9e7f8"/><stop offset="78%" stop-color="#92a9c6"/><stop offset="100%" stop-color="#516784"/></radialGradient>
         </defs>
         <path class="le-mv-vertical-path-glow" d="M50 4 C20 42,80 69,50 101 S18 162,50 198 S79 255,50 296"/>
         <path class="le-mv-vertical-path" id="le-mv-vertical-path" d="M50 4 C20 42,80 69,50 101 S18 162,50 198 S79 255,50 296"/>
+        <g id="le-mv-vertical-trail-group" aria-hidden="true"></g>
+        <g id="le-mv-vertical-dust-group" aria-hidden="true"></g>
         <g id="le-mv-vertical-sparkle-group" aria-hidden="true"></g>
         <circle class="le-mv-vertical-end-halo" cx="50" cy="5" r="8"/><circle class="le-mv-vertical-end" cx="50" cy="5" r="3"/>
         <circle class="le-mv-vertical-end-halo" cx="50" cy="295" r="8"/><circle class="le-mv-vertical-end" cx="50" cy="295" r="3"/>
@@ -411,6 +421,8 @@
   const nextPhaseCountdownNode = $("#le-mv-next-phase-countdown");
   const dayLabel = $(".start-label"), setLabel = $(".end-label");
   const verticalPath = $("#le-mv-vertical-path"), verticalMarker = $("#le-mv-vertical-marker");
+  const verticalTrailGroup = $("#le-mv-vertical-trail-group"), verticalDustGroup = $("#le-mv-vertical-dust-group");
+  const verticalScrollerSvg = $(".le-mv-vertical-scroller svg");
   const horizontalRailSparkles = $(".le-mv-horizontal-rail-sparkles");
   const horizontalTrailGroup = $("#le-mv-horizontal-trail-group");
   const horizontalSparkleGroup = $("#le-mv-horizontal-sparkle-group");
@@ -954,26 +966,98 @@
     });
     updateHorizontalMarker();
 
-    // Landscape: place the same fixed glints directly on the existing winding SVG rail.
+    // Landscape: rotate the portrait scroller's tapered two-colour ribbons into a
+    // vertical winding rail. Density and particle sizing adapt to the rendered rail
+    // height, while a seeded layout keeps the stardust stable between resizes.
+    verticalTrailGroup.replaceChildren();
+    verticalDustGroup.replaceChildren();
     verticalSparkleGroup.replaceChildren();
-    if (verticalPath && typeof verticalPath.getTotalLength === "function") {
-      const length = verticalPath.getTotalLength();
-      const verticalStars = [
-        { t:0.055, s:1.45, o:6, r:-12 }, { t:0.135, s:1.85, o:-8, r:16 },
-        { t:0.225, s:1.6, o:9, r:22 }, { t:0.315, s:2.25, o:-6, r:-15 },
-        { t:0.405, s:1.5, o:8, r:10 }, { t:0.49, s:2.2, o:-9, r:-18 },
-        { t:0.575, s:1.65, o:7, r:14 }, { t:0.665, s:2.05, o:-6, r:-8 },
-        { t:0.755, s:1.45, o:9, r:19 }, { t:0.855, s:2.2, o:-8, r:-12 },
-        { t:0.945, s:1.55, o:6, r:16 }
-      ];
-      verticalStars.forEach(({t,s,o,r}) => {
-        const point = verticalPath.getPointAtLength(length*t);
-        const before = verticalPath.getPointAtLength(length*Math.max(0,t-0.006));
-        const after = verticalPath.getPointAtLength(length*Math.min(1,t+0.006));
-        const dx = after.x-before.x, dy = after.y-before.y, mag = Math.hypot(dx,dy)||1;
-        const x = point.x + (dy/mag)*o, y = point.y - (dx/mag)*o;
-        appendStaticStar(verticalSparkleGroup, { x, y }, s, ns, r);
-      });
+    if (dimensions.w > dimensions.h && verticalPath && typeof verticalPath.getTotalLength === "function") {
+      try {
+        const length = verticalPath.getTotalLength();
+        const verticalRect = verticalScrollerSvg ? verticalScrollerSvg.getBoundingClientRect() : { width: 0, height: 0 };
+        const renderedHeight = Math.max(120, verticalRect.height || Math.min(dimensions.h * 0.36, dimensions.w * 0.70));
+        const adapt = clamp(renderedHeight / 230, 0.68, 1.5);
+        const samples = clamp(Math.ceil(renderedHeight / 1.35), 120, 280);
+        const pointOnRail = t => {
+          const p = verticalPath.getPointAtLength(length * clamp(t, 0, 1));
+          const before = verticalPath.getPointAtLength(length * clamp(t - 0.0035, 0, 1));
+          const after = verticalPath.getPointAtLength(length * clamp(t + 0.0035, 0, 1));
+          const dx = after.x - before.x, dy = after.y - before.y;
+          const mag = Math.hypot(dx, dy) || 1;
+          return { x:p.x, y:p.y, tx:dx/mag, ty:dy/mag, nx:dy/mag, ny:-dx/mag };
+        };
+        const ribbonD = (endWidth, addedWidth, normalOffset = 0) => {
+          const upper = [], lower = [];
+          for (let i = 0; i <= samples; i++) {
+            const t = i / samples;
+            const frame = pointOnRail(t);
+            const taper = Math.pow(Math.max(0, Math.sin(Math.PI * t)), 1.22);
+            const halfWidth = (endWidth + addedWidth * taper) / 2;
+            const cx = frame.x + frame.nx * normalOffset;
+            const cy = frame.y + frame.ny * normalOffset;
+            upper.push([cx + frame.nx * halfWidth, cy + frame.ny * halfWidth]);
+            lower.push([cx - frame.nx * halfWidth, cy - frame.ny * halfWidth]);
+          }
+          const fmt = p => `${p[0].toFixed(2)} ${p[1].toFixed(2)}`;
+          return `M ${fmt(upper[0])} ` + upper.slice(1).map(p => `L ${fmt(p)}`).join(" ") +
+            " " + lower.reverse().map(p => `L ${fmt(p)}`).join(" ") + " Z";
+        };
+        const appendRibbon = (className, d) => {
+          const path = document.createElementNS(ns, "path");
+          path.setAttribute("d", d);
+          path.setAttribute("class", className);
+          verticalTrailGroup.appendChild(path);
+        };
+        appendRibbon("le-mv-vertical-ribbon-glow", ribbonD(0.3, 8.2));
+        appendRibbon("le-mv-vertical-trail-blue", ribbonD(0.14, 3.25));
+        appendRibbon("le-mv-vertical-trail-gold", ribbonD(0.08, 0.78, 0.42));
+
+        let dustSeed = (0x725ED + Math.round(renderedHeight * 13) + Math.round((verticalRect.width || 80) * 7)) >>> 0;
+        const randDust = () => ((dustSeed = (dustSeed * 1664525 + 1013904223) >>> 0) / 4294967296);
+        const dustCount = clamp(Math.round(renderedHeight * 0.29), 36, 145);
+        for (let i = 0; i < dustCount; i++) {
+          const t = 0.018 + randDust() * 0.964;
+          const frame = pointOnRail(t);
+          let normalOffset = (randDust() + randDust() - 1) * 12 * adapt;
+          if (randDust() < 0.18) normalOffset += (randDust() < 0.5 ? -1 : 1) * (10 + randDust() * 12) * adapt;
+          const tangentOffset = (randDust() + randDust() - 1) * 4.5 * adapt;
+          const x = clamp(frame.x + frame.nx * normalOffset + frame.tx * tangentOffset, 1.5, 98.5);
+          const y = clamp(frame.y + frame.ny * normalOffset + frame.ty * tangentOffset, 1.5, 298.5);
+          const mote = document.createElementNS(ns, "circle");
+          mote.setAttribute("cx", x.toFixed(2));
+          mote.setAttribute("cy", y.toFixed(2));
+          mote.setAttribute("r", (adapt * (0.30 + randDust() * 0.44)).toFixed(2));
+          mote.setAttribute("opacity", (0.28 + randDust() * 0.52).toFixed(2));
+          mote.setAttribute("class", randDust() < 0.16 ? "le-mv-vertical-dust-gold" : "le-mv-vertical-dust-blue");
+          verticalDustGroup.appendChild(mote);
+        }
+
+        const starCount = clamp(Math.round(renderedHeight / 13.5), 12, 32);
+        for (let i = 0; i < starCount; i++) {
+          const t = (i + 0.5 + (randDust() - 0.5) * 0.28) / starCount;
+          const frame = pointOnRail(t);
+          let offset = (randDust() + randDust() - 1) * 7.2 * adapt;
+          if (randDust() < 0.28) offset += (randDust() < 0.5 ? -1 : 1) * (3 + randDust() * 5) * adapt;
+          const along = (randDust() + randDust() - 1) * 2.2 * adapt;
+          const p = {
+            x: clamp(frame.x + frame.nx * offset + frame.tx * along, 3, 97),
+            y: clamp(frame.y + frame.ny * offset + frame.ty * along, 3, 297)
+          };
+          const starSize = (0.8 + randDust() * 0.58) * adapt;
+          const rotation = Math.round(randDust() * 48 - 24);
+          const first = verticalSparkleGroup.children.length;
+          appendStaticStar(verticalSparkleGroup, p, starSize, ns, rotation);
+          const gold = i % 5 === 2 || i % 7 === 5;
+          verticalSparkleGroup.children[first + 2].setAttribute("class", gold ? "le-mv-vertical-star-core-gold" : "le-mv-vertical-star-core");
+          if (gold) {
+            verticalSparkleGroup.children[first].setAttribute("class", "le-mv-scroller-glow-gold");
+            verticalSparkleGroup.children[first + 1].setAttribute("class", "le-mv-scroller-star-gold");
+          }
+        }
+      } catch (_) {
+        // Keep Moon/time input usable if this browser lacks SVG path measurements.
+      }
     }
   }
 
