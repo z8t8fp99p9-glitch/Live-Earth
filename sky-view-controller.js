@@ -279,8 +279,15 @@
       #le-sky-view .le-mv-range::-moz-range-track { background:transparent; }
       #le-sky-view .le-mv-range::-webkit-slider-thumb { background:transparent; border-color:transparent; box-shadow:none; }
       #le-sky-view .le-mv-range::-moz-range-thumb { background:transparent; border-color:transparent; box-shadow:none; }
-      #le-sky-view .le-mv-end-labels { top:28px; bottom:18px; left:4px; right:4px; flex-direction:column-reverse; align-items:center; justify-content:space-between; text-align:center; font-size:10px; pointer-events:none; }
-      #le-sky-view .le-mv-end-labels > div { text-align:center; }
+      /* Keep Rise and Set icons pinned to independent top/bottom anchors. Their positions must not depend on whether the local-time text is hidden when Location is OFF. */
+      #le-sky-view .le-mv-end-labels { top:28px; bottom:18px; left:4px; right:4px; display:block; text-align:center; font-size:10px; pointer-events:none; }
+      #le-sky-view .le-mv-end-labels > .le-mv-endpoint-info { display:block; position:static; text-align:center; }
+      #le-sky-view .le-mv-end-labels .le-mv-scroller-end-icon { position:absolute; left:50%; top:0; bottom:auto; display:block; width:24px; height:15px; flex:none; margin:0; transform:translateX(-50%); }
+      #le-sky-view .le-mv-endpoint-info-set .le-mv-scroller-end-icon { top:0; bottom:auto; transform:translateX(-50%); }
+      #le-sky-view .le-mv-endpoint-info-rise .le-mv-scroller-end-icon { top:auto; bottom:0; transform:translate(-50%,10px); }
+      #le-sky-view .le-mv-end-labels .le-mv-end-label-copy { position:absolute; left:0; right:0; align-items:center; text-align:center; }
+      #le-sky-view .le-mv-endpoint-info-set .le-mv-end-label-copy { top:18px; bottom:auto; }
+      #le-sky-view .le-mv-endpoint-info-rise .le-mv-end-label-copy { top:calc(100% + 18px); bottom:auto; }
       #le-sky-view .le-mv-end-labels .end { text-align:center; }
       #le-sky-view .le-mv-end-labels small { font-size:7px; letter-spacing:1.3px; }
       #le-sky-view .le-mv-range:focus-visible { opacity:.1; outline:1px solid #a6d7ff; outline-offset:2px; border-radius:12px; }
