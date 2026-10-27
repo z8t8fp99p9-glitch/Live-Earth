@@ -256,13 +256,16 @@
       #le-sky-view .le-mv-timeline { left:auto; right:2.4%; top:7.5%; bottom:7.5%; width:104px; height:auto; border:0; border-radius:0; padding:8px; background:transparent; box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
       #le-sky-view .le-mv-timeline:before, #le-sky-view .le-mv-timeline:after { display:none; }
       #le-sky-view .le-mv-horizontal-rail-sparkles { display:none; }
-      #le-sky-view .le-mv-selected-time { top:10px; left:4px; right:4px; color:#ff7189; font-size:12px; line-height:1.25; padding:0 1px; z-index:4; text-shadow:0 0 5px #ff718966,0 1px 8px #000; }
+      #le-sky-view .le-mv-selected-time { top:10px; left:4px; right:4px; font-size:12px; line-height:1.25; padding:0 1px; z-index:2; }
       #le-sky-view .le-mv-vertical-scroller { display:block; position:absolute; top:76px; bottom:50px; left:4px; right:4px; pointer-events:none; }
       #le-sky-view .le-mv-vertical-scroller svg { display:block; width:100%; height:100%; overflow:visible; }
       /* Keep the curve as geometry only; the visible path is the same tapered stardust ribbon style as Portrait. */
       #le-sky-view .le-mv-vertical-path-glow, #le-sky-view .le-mv-vertical-path { fill:none; stroke:none; stroke-width:0; opacity:0; filter:none; }
       #le-sky-view .le-mv-vertical-end { fill:#e9f5ff; stroke:#8ccaff; stroke-width:1.5; }
       #le-sky-view .le-mv-vertical-end-halo { fill:#79bdff; fill-opacity:.22; }
+      #le-sky-view .le-mv-vertical-marker-halo { fill:#5eafff; fill-opacity:.24; stroke:#a9d8ff; stroke-opacity:.68; stroke-width:1; filter:drop-shadow(0 0 5px #65baff9c); }
+      #le-sky-view .le-mv-vertical-marker-disc { fill:url(#leMvVerticalMoon); stroke:#e9f5ff; stroke-opacity:.88; stroke-width:1; }
+      #le-sky-view .le-mv-vertical-crater { fill:#6b819c; fill-opacity:.64; }
       /* The transparent native range supplies accessible, reliable touch/keyboard input.
          Its visible marker is drawn on the independent curved SVG rail above. */
       #le-sky-view .le-mv-range { top:calc(50% + 13px); left:50%; right:auto; bottom:auto; width:clamp(120px,calc(84vh - 126px),340px); width:clamp(120px,calc(84dvh - 126px),340px); min-width:0; max-width:none; height:28px; transform:translate(-50%,-50%) rotate(90deg); transform-origin:center; touch-action:none; z-index:3; opacity:.015; }
@@ -270,7 +273,7 @@
       #le-sky-view .le-mv-range::-moz-range-track { background:transparent; }
       #le-sky-view .le-mv-range::-webkit-slider-thumb { background:transparent; border-color:transparent; box-shadow:none; }
       #le-sky-view .le-mv-range::-moz-range-thumb { background:transparent; border-color:transparent; box-shadow:none; }
-      #le-sky-view .le-mv-end-labels { top:28px; bottom:18px; left:4px; right:4px; flex-direction:column-reverse; align-items:center; justify-content:space-between; text-align:center; font-size:10px; pointer-events:none; }
+      #le-sky-view .le-mv-end-labels { top:28px; bottom:18px; left:4px; right:4px; flex-direction:column; align-items:center; justify-content:space-between; text-align:center; font-size:10px; pointer-events:none; }
       #le-sky-view .le-mv-end-labels > div { text-align:center; }
       #le-sky-view .le-mv-end-labels .end { text-align:center; }
       #le-sky-view .le-mv-end-labels small { font-size:7px; letter-spacing:1.3px; }
@@ -371,17 +374,16 @@
         <defs>
           <linearGradient id="leMvVerticalGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#cdeaff"/><stop offset="34%" stop-color="#66baff"/><stop offset="68%" stop-color="#83c5ff"/><stop offset="100%" stop-color="#c2e4ff"/></linearGradient>
           <linearGradient id="leMvVerticalGoldGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#f4c987" stop-opacity=".72"/><stop offset="25%" stop-color="#ffe4b6"/><stop offset="55%" stop-color="#ffca78"/><stop offset="78%" stop-color="#ffe7bd"/><stop offset="100%" stop-color="#edbd77" stop-opacity=".72"/></linearGradient>
-          <pattern id="leMvVerticalMoonTexture" patternUnits="objectBoundingBox" patternContentUnits="objectBoundingBox" width="1" height="1"><image href="${MOON_TEXTURE_DATA}" x="0" y="0" width="1" height="1" preserveAspectRatio="xMidYMid slice"/></pattern>
-          <radialGradient id="leMvVerticalMoonShade" cx="30%" cy="23%" r="82%"><stop offset="0%" stop-color="#ffffff" stop-opacity=".30"/><stop offset="43%" stop-color="#d9e8f8" stop-opacity=".06"/><stop offset="100%" stop-color="#0c182b" stop-opacity=".62"/></radialGradient>
+          <radialGradient id="leMvVerticalMoon" cx="31%" cy="24%" r="78%"><stop offset="0%" stop-color="#fff"/><stop offset="42%" stop-color="#d9e7f8"/><stop offset="78%" stop-color="#92a9c6"/><stop offset="100%" stop-color="#516784"/></radialGradient>
         </defs>
-        <path class="le-mv-vertical-path-glow" d="M50 4 C18 58,82 96,50 150 C18 204,82 242,50 296"/>
-        <path class="le-mv-vertical-path" id="le-mv-vertical-path" d="M50 4 C18 58,82 96,50 150 C18 204,82 242,50 296"/>
+        <path class="le-mv-vertical-path-glow" d="M50 4 C20 42,80 69,50 101 S18 162,50 198 S79 255,50 296"/>
+        <path class="le-mv-vertical-path" id="le-mv-vertical-path" d="M50 4 C20 42,80 69,50 101 S18 162,50 198 S79 255,50 296"/>
         <g id="le-mv-vertical-trail-group" aria-hidden="true"></g>
         <g id="le-mv-vertical-dust-group" aria-hidden="true"></g>
         <g id="le-mv-vertical-sparkle-group" aria-hidden="true"></g>
         <circle class="le-mv-vertical-end-halo" cx="50" cy="5" r="8"/><circle class="le-mv-vertical-end" cx="50" cy="5" r="3"/>
         <circle class="le-mv-vertical-end-halo" cx="50" cy="295" r="8"/><circle class="le-mv-vertical-end" cx="50" cy="295" r="3"/>
-        <g id="le-mv-vertical-marker" class="le-mv-horizontal-moon-marker" transform="translate(50 150)"><circle class="le-mv-horizontal-moon-halo" r="16"/><circle class="le-mv-horizontal-moon-surface" r="12.6" fill="url(#leMvVerticalMoonTexture)"/><circle class="le-mv-horizontal-moon-shade" r="12.6" fill="url(#leMvVerticalMoonShade)"/><circle class="le-mv-horizontal-moon-rim" r="12.6"/></g>
+        <g id="le-mv-vertical-marker" transform="translate(50 150)"><circle class="le-mv-vertical-marker-halo" r="19"/><circle class="le-mv-vertical-marker-disc" r="13"/><circle class="le-mv-vertical-crater" cx="-4" cy="-4" r="2.6"/><circle class="le-mv-vertical-crater" cx="4.5" cy="3" r="2.1"/><circle class="le-mv-vertical-crater" cx="-1" cy="6" r="1.3"/></g>
       </svg></div>
       <div class="le-mv-end-labels">
         <div class="le-mv-endpoint-info le-mv-endpoint-info-rise">
@@ -1098,28 +1100,8 @@
     if (!verticalPath || !verticalMarker) return;
     try {
       const length = verticalPath.getTotalLength();
-      // Landscape runs Moonrise at the bottom and Moonset at the top.
-      // Reverse only this vertical rail; Portrait keeps its original left-to-right progress.
-      const landscape = dimensions.w > dimensions.h;
-      const railProgress = landscape ? 1 - clamp(progress, 0, 1) : clamp(progress, 0, 1);
-      const point = verticalPath.getPointAtLength(length * railProgress);
+      const point = verticalPath.getPointAtLength(length * clamp(progress, 0, 1));
       verticalMarker.setAttribute("transform", `translate(${point.x} ${point.y})`);
-      if (landscape && verticalScrollerSvg) {
-        const railRect = verticalScrollerSvg.getBoundingClientRect();
-        const timelineRect = timeline.getBoundingClientRect();
-        const y = railRect.top - timelineRect.top + (point.y / 300) * railRect.height;
-        // Position the clock immediately to the left of the Moon marker.
-        selectedLabel.style.left = `${Math.max(2, railRect.left - timelineRect.left + railRect.width * (point.x / 100) - 8)}px`;
-        selectedLabel.style.right = "auto";
-        selectedLabel.style.width = "max-content";
-        selectedLabel.style.top = `${y}px`;
-        selectedLabel.style.transform = "translate(-100%,-50%)";
-        selectedLabel.style.color = "#ff7189";
-        selectedLabel.style.textAlign = "right";
-        selectedLabel.style.textShadow = "0 0 5px #ff718966,0 1px 8px #000";
-      } else if (!landscape) {
-        ["left", "right", "width", "top", "transform", "color", "text-align", "text-shadow"].forEach(name => selectedLabel.style.removeProperty(name));
-      }
     } catch (_) { /* Keep the scroller usable if SVG path metrics are unavailable. */ }
   }
   function renderOnce() {
