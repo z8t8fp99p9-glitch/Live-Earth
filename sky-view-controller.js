@@ -617,8 +617,8 @@
     if (!dimensions.w || !dimensions.h) return;
     const { w, h } = dimensions;
     const landscape = w > h;
-    const x0 = w * (landscape ? 0.065 : 0.114);
-    const x1 = w * (landscape ? 0.80 : 0.921);
+    const x0 = w * (landscape ? 0.16 : 0.114);
+    const x1 = w * (landscape ? 0.80 : 0.921) - (landscape ? 6 : 0);
     const baseline = referenceBaseline(h, landscape);
     // Endpoint-only asymmetry: keep the approved control points and crest region;
     // lift the start by 8 CSS px and lower the end by 14 CSS px (6 px extra on the
