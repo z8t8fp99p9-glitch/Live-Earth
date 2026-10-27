@@ -223,7 +223,7 @@
     #le-sky-view .le-mv-timeline:after { content:""; position:absolute; left:0; right:0; bottom:29px; height:14px; background:linear-gradient(90deg,transparent 0 4.8%,#9bd2ff 4.8% 5.05%,transparent 5.05% 94.95%,#9bd2ff 94.95% 95.2%,transparent 95.2% 100%); opacity:.7; pointer-events:none; }
     #le-sky-view .le-mv-timeline[hidden], #le-sky-view .le-mv-location-note[hidden] { display:none !important; }
     #le-sky-view .le-mv-selected-time { position:absolute; top:0; left:50%; right:auto; display:block; width:max-content; max-width:78%; border:0; padding:0; margin:0; background:transparent; color:#ff7189; text-align:center; font:600 14px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; letter-spacing:.15px; text-shadow:0 0 4px #ff4b69bd,0 0 11px #ed173e91,0 1px 8px #000; cursor:pointer; -webkit-tap-highlight-color:transparent; transform:translate(-50%,-100%); z-index:5; }
-    #le-sky-view .le-mv-timeline.le-mv-no-local-times .le-mv-end-labels { display:none !important; }
+    #le-sky-view .le-mv-timeline.le-mv-no-local-times .le-mv-end-labels .le-mv-end-label-copy { display:none !important; }
     #le-sky-view .le-mv-lunar-info { position:absolute; z-index:3; top:calc(10.5% + env(safe-area-inset-top,0px) - 48px); left:7%; right:7%; height:104px; pointer-events:none; color:#bce7ff; text-shadow:0 1px 9px #020b1ccc,0 0 8px #3da8ff20; }
     #le-sky-view .le-mv-lunar-phase { position:absolute; top:0; left:50%; width:68%; transform:translate(-50%, 4px); text-align:center; }
     #le-sky-view .le-mv-lunar-kicker { color:#9bd9ff; font-size:10px; line-height:1.3; font-weight:600; letter-spacing:2.1px; text-transform:uppercase; white-space:nowrap; }
@@ -247,12 +247,13 @@
     @media (orientation:landscape) {
       /* Landscape-only information row. Lunar Age is anchored to the viewport's exact horizontal midpoint. */
       #le-sky-view .le-mv-lunar-info { display:block; top:3.5%; left:0; right:0; height:86px; }
-      #le-sky-view .le-mv-lunar-phase { top:0; left:7%; width:28%; transform:translateY(4px); text-align:center; }
-      #le-sky-view .le-mv-lunar-age { top:0; left:50%; right:auto; width:max-content; max-width:none; transform:translateX(-50%); text-align:center; }
-      #le-sky-view .le-mv-lunar-next { top:0; left:auto; right:16%; width:max-content; max-width:none; transform:none; text-align:center; }
+      #le-sky-view .le-mv-lunar-phase { top:0; left:3%; width:26%; transform:translateY(4px); text-align:center; }
+      #le-sky-view .le-mv-lunar-age { display:flex; align-items:baseline; justify-content:center; gap:9px; white-space:nowrap; top:0; left:50%; right:auto; width:max-content; max-width:none; transform:translateX(-50%); text-align:center; }
+      #le-sky-view .le-mv-lunar-age .le-mv-lunar-value { margin-top:0; white-space:nowrap; }
+      #le-sky-view .le-mv-lunar-next { top:0; left:auto; right:13.5%; width:max-content; max-width:none; transform:none; text-align:center; }
       #le-sky-view .le-mv-main-rise-set-icon { display:none !important; }
       #le-sky-view .le-mv-scroller-end-icon { display:block; width:24px; height:15px; flex:0 0 15px; margin:0 auto 1px; }
-      #le-sky-view .le-mv-endpoint-info-rise .le-mv-scroller-end-icon { transform:translateY(5px); }
+      #le-sky-view .le-mv-endpoint-info-rise .le-mv-scroller-end-icon { transform:translateY(10px); }
       #le-sky-view .le-mv-end-labels > .le-mv-endpoint-info { display:block; text-align:center; }
       #le-sky-view .le-mv-end-labels .le-mv-end-label-copy { align-items:center; }
       #le-sky-view .le-mv-selected-time { color:#ff7189; text-shadow:0 0 4px #ff4b69bd,0 0 10px #ed173e78,0 1px 8px #000; transform:none; width:auto; }
