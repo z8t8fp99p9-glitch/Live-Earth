@@ -210,7 +210,17 @@
     #le-sky-view #le-mv-rise-time, #le-sky-view #le-mv-set-time { display:none !important; }
     #le-sky-view .le-mv-event-time { fill:#f4f9ff; font-size:16px; font-weight:500; paint-order:stroke; stroke:#031020c9; stroke-width:2.6px; }
     #le-sky-view .le-mv-scroller-end-icon { display:block; flex:0 0 20px; width:30px; height:20px; align-self:center; margin:0 auto 1px; overflow:visible; filter:drop-shadow(0 0 2.4px #65baff8a); }
-    @media (orientation:portrait) { #le-sky-view .le-mv-end-labels { transform:translate(2px, 20px); min-height:44px; } }
+    @media (orientation:portrait) {
+      /* Pin Portrait endpoint icons and their labels to fixed rail ends. Their horizontal
+         positions must not depend on whether Location ON makes the time text appear. */
+      #le-sky-view .le-mv-end-labels { transform:translate(2px, 20px); height:48px; min-height:48px; }
+      #le-sky-view .le-mv-end-labels > .le-mv-endpoint-info { position:static; display:block; }
+      #le-sky-view .le-mv-end-labels .le-mv-scroller-end-icon { position:absolute; top:0; bottom:auto; width:30px; height:20px; flex:none; margin:0; transform:translateX(-50%); }
+      #le-sky-view .le-mv-endpoint-info-rise .le-mv-scroller-end-icon { left:5%; right:auto; transform:translateX(-50%); }
+      #le-sky-view .le-mv-endpoint-info-set .le-mv-scroller-end-icon { left:95%; right:auto; transform:translateX(-50%); }
+      #le-sky-view .le-mv-end-labels .le-mv-end-label-copy { position:absolute; top:21px; left:5%; right:auto; transform:translateX(-50%); align-items:center; text-align:center; }
+      #le-sky-view .le-mv-endpoint-info-set .le-mv-end-label-copy { left:95%; }
+    }
     #le-sky-view .le-mv-end-labels > .le-mv-endpoint-info { display:flex; flex-direction:column; align-items:center; gap:1px; min-width:0; text-align:center; }
     #le-sky-view .le-mv-end-label-copy { display:flex; flex-direction:column; align-items:center; white-space:nowrap; line-height:1.05; }
     #le-sky-view .le-mv-end-labels .end { flex-direction:column; justify-content:flex-start; align-items:center; text-align:center; }
