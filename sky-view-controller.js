@@ -29,24 +29,6 @@
       background-repeat: no-repeat;
       pointer-events: none;
     }
-    /* Moon View alone gets a restrained scene-brightness response to lunar phase. */
-    #le-sky-view[data-view="moon"] .le-sky-bg {
-      filter: brightness(var(--moon-scene-brightness, 1));
-      transition: filter .55s ease;
-    }
-    #le-sky-view .le-moonlight-atmosphere {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-      opacity: var(--moonlight-strength, 0);
-      mix-blend-mode: screen;
-      background:
-        radial-gradient(ellipse 42% 25% at var(--moonlight-x, 50%) var(--moonlight-y, 34%), rgba(137, 196, 255, .34) 0%, rgba(101, 165, 237, .16) 34%, rgba(77, 137, 213, .055) 58%, transparent 78%),
-        radial-gradient(ellipse 88% 25% at 50% 68%, rgba(91, 158, 229, .18) 0%, rgba(63, 123, 190, .075) 43%, transparent 78%);
-      transition: opacity .5s ease;
-    }
-    #le-sky-view[data-view="sun"] .le-moonlight-atmosphere { display: none; }
     #le-sky-view[data-view="moon"] .le-sky-bg {
       background-image: url("./moon-sky-background-portrait.webp");
     }
@@ -91,7 +73,7 @@
   root.hidden = true;
   root.setAttribute("aria-label", "Sky View");
   root.setAttribute("aria-hidden", "true");
-  root.innerHTML = `<div class="le-sky-bg" aria-hidden="true"></div><div class="le-moonlight-atmosphere" aria-hidden="true"></div>`;
+  root.innerHTML = `<div class="le-sky-bg" aria-hidden="true"></div>`;
   document.body.appendChild(root);
 
   let activeView = null;
@@ -423,8 +405,6 @@
 
   const $ = selector => stage.querySelector(selector);
   const canvas = $(".le-mv-canvas"), svg = $(".le-mv-svg"), timeline = $(".le-mv-timeline");
-  const skyRoot = document.querySelector("#le-sky-view");
-  const skyAtmosphere = document.querySelector("#le-sky-view .le-moonlight-atmosphere");
   const selectedLabel = $(".le-mv-selected-time"), range = $(".le-mv-range"), locationNote = $(".le-mv-location-note");
   const phaseNameNode = $("#le-mv-phase-name"), illuminationNode = $("#le-mv-illumination-value");
   const lunarAgeNode = $("#le-mv-lunar-age-value"), nextPhaseNode = $("#le-mv-next-phase-value");
@@ -1040,39 +1020,12 @@
       verticalMarker.setAttribute("transform", `translate(${point.x} ${point.y})`);
     } catch (_) { /* Keep the scroller usable if SVG path metrics are unavailable. */ }
   }
-  function updateSkyMoonlight(date) {
-    if (!skyAtmosphere || !skyRoot || !astronomy || typeof astronomy.moonPosition !== "function") return;
-    try {
-      // Illumination is a global lunar property; altitude is used only with an
-      // explicitly enabled observer. With Location OFF, no local altitude is inferred.
-      const lat = observer?.latitude ?? 0, lon = observer?.longitude ?? 0;
-      const lunar = astronomy.moonPosition(date, lat, lon);
-      if (!lunar) return;
-      const illumination = clamp(Number(lunar.illumination) || 0, 0, 1);
-      const horizonFactor = observer
-        ? clamp((Number(lunar.altitude) + 8) / 35, 0, 1)
-        : 0.82;
-      const moonlight = Math.pow(illumination, 1.12) * horizonFactor;
-      const p = currentPoint();
-      const x = dimensions.w > 0 ? clamp((p.x / dimensions.w) * 100, 12, 88) : 50;
-      const y = dimensions.h > 0 ? clamp((p.y / dimensions.h) * 100, 10, 62) : 34;
-      skyAtmosphere.style.setProperty("--moonlight-x", `${x.toFixed(2)}%`);
-      skyAtmosphere.style.setProperty("--moonlight-y", `${y.toFixed(2)}%`);
-      // Keep the glow subtle: it should support the artwork, never wash it out.
-      skyAtmosphere.style.setProperty("--moonlight-strength", (moonlight * 0.68).toFixed(3));
-      // The scene's baseline stays cinematic; full Moon is only modestly brighter.
-      skyRoot.style.setProperty("--moon-scene-brightness", (0.88 + moonlight * 0.12).toFixed(3));
-    } catch (_) { /* Keep the existing background if a sample is unavailable. */ }
-  }
-
   function renderOnce() {
     updateLunarInfo();
     updateHorizontalMarker();
     updateVerticalMarker();
     if (!active || !renderer || !scene || !camera || !moon) return;
-    const selectedDate = new Date(selectedTime);
-    updateSkyMoonlight(selectedDate);
-    updateLighting(selectedDate);
+    updateLighting(new Date(selectedTime));
     renderer.render(scene, camera);
   }
   function tickLiveTime() {
