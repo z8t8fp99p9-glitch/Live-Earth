@@ -636,7 +636,7 @@
       if (showLocalTimes) node.removeAttribute("display");
       else { node.setAttribute("display", "none"); node.textContent = ""; }
     });
-    const showLargeRiseSetIcons = showLocalTimes && !landscape;
+    const showLargeRiseSetIcons = false;
     ["le-mv-rise-icon", "le-mv-set-icon"].forEach(id => {
       const icon = $("#" + id);
       if (showLargeRiseSetIcons) icon.removeAttribute("display");
