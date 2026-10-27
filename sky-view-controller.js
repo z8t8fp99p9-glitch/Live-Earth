@@ -284,7 +284,7 @@
       #le-sky-view .le-mv-end-labels > .le-mv-endpoint-info { display:block; position:static; text-align:center; }
       #le-sky-view .le-mv-end-labels .le-mv-scroller-end-icon { position:absolute; left:50%; top:0; bottom:auto; display:block; width:24px; height:15px; flex:none; margin:0; transform:translateX(-50%); }
       #le-sky-view .le-mv-endpoint-info-set .le-mv-scroller-end-icon { top:0; bottom:auto; transform:translateX(-50%); }
-      #le-sky-view .le-mv-endpoint-info-rise .le-mv-scroller-end-icon { top:auto; bottom:0; transform:translate(-50%,10px); }
+      #le-sky-view .le-mv-endpoint-info-rise .le-mv-scroller-end-icon { top:auto; bottom:20px; transform:translateX(-50%); }
       #le-sky-view .le-mv-end-labels .le-mv-end-label-copy { position:absolute; left:0; right:0; align-items:center; text-align:center; }
       #le-sky-view .le-mv-endpoint-info-set .le-mv-end-label-copy { top:18px; bottom:auto; }
       #le-sky-view .le-mv-endpoint-info-rise .le-mv-end-label-copy { top:calc(100% + 18px); bottom:auto; }
@@ -391,8 +391,8 @@
           <pattern id="leMvVerticalMoonTexture" patternUnits="objectBoundingBox" patternContentUnits="objectBoundingBox" width="1" height="1"><image href="${MOON_TEXTURE_DATA}" x="0" y="0" width="1" height="1" preserveAspectRatio="xMidYMid slice"/></pattern>
           <radialGradient id="leMvVerticalMoonShade" cx="30%" cy="23%" r="82%"><stop offset="0%" stop-color="#ffffff" stop-opacity=".30"/><stop offset="43%" stop-color="#d9e8f8" stop-opacity=".06"/><stop offset="100%" stop-color="#0c182b" stop-opacity=".62"/></radialGradient>
         </defs>
-        <path class="le-mv-vertical-path-glow" d="M50 4 C18 52 18 100 50 150 C82 200 82 248 50 296"/>
-        <path class="le-mv-vertical-path" id="le-mv-vertical-path" d="M50 4 C18 52 18 100 50 150 C82 200 82 248 50 296"/>
+        <path class="le-mv-vertical-path-glow" d="M50 4 C38 52 38 100 50 150 C62 200 62 248 50 296"/>
+        <path class="le-mv-vertical-path" id="le-mv-vertical-path" d="M50 4 C38 52 38 100 50 150 C62 200 62 248 50 296"/>
         <g id="le-mv-vertical-trail-group" aria-hidden="true"></g>
         <g id="le-mv-vertical-dust-group" aria-hidden="true"></g>
         <g id="le-mv-vertical-sparkle-group" aria-hidden="true"></g>
