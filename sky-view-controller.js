@@ -240,7 +240,7 @@
     @media (orientation:landscape) {
       #le-sky-view .le-mv-lunar-info { display:none; }
       #le-sky-view .le-mv-main-rise-set-icon { display:none !important; }
-      #le-sky-view .le-mv-scroller-end-icon { display:none; }
+      #le-sky-view .le-mv-scroller-end-icon { display:block; }
       #le-sky-view .le-mv-end-labels > .le-mv-endpoint-info { display:block; text-align:center; }
       #le-sky-view .le-mv-end-labels .le-mv-end-label-copy { align-items:center; }
       #le-sky-view .le-mv-selected-time { color:#d8efff; text-shadow:0 0 5px #61b8ff62,0 1px 8px #000; transform:none; width:auto; }
