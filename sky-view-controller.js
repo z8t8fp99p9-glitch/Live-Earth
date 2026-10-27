@@ -287,7 +287,7 @@
       #le-sky-view .le-mv-endpoint-info-rise .le-mv-scroller-end-icon { top:auto; bottom:18px; transform:translateX(-50%); }
       #le-sky-view .le-mv-end-labels .le-mv-end-label-copy { position:absolute; left:0; right:0; align-items:center; text-align:center; }
       #le-sky-view .le-mv-endpoint-info-set .le-mv-end-label-copy { top:18px; bottom:auto; }
-      #le-sky-view .le-mv-endpoint-info-rise .le-mv-end-label-copy { top:auto; bottom:36px; }
+      #le-sky-view .le-mv-endpoint-info-rise .le-mv-end-label-copy { top:calc(100% - 15px); bottom:auto; }
       #le-sky-view .le-mv-end-labels .end { text-align:center; }
       #le-sky-view .le-mv-end-labels small { font-size:7px; letter-spacing:1.3px; }
       #le-sky-view .le-mv-range:focus-visible { opacity:.1; outline:1px solid #a6d7ff; outline-offset:2px; border-radius:12px; }
