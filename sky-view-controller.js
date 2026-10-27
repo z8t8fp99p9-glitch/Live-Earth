@@ -245,9 +245,14 @@
     #le-sky-view .le-mv-vertical-scroller { display:none; }
     #le-sky-view .le-mv-location-note { position:absolute; z-index:5; left:0; right:0; top:48%; padding:0 30px; color:#bfd1e6; font-size:11px; line-height:1.5; text-align:center; text-shadow:0 2px 10px #000; }
     @media (orientation:landscape) {
-      #le-sky-view .le-mv-lunar-info { display:none; }
+      /* Landscape-only information row. Lunar Age is anchored to the viewport's exact horizontal midpoint. */
+      #le-sky-view .le-mv-lunar-info { display:block; top:3.5%; left:0; right:0; height:86px; }
+      #le-sky-view .le-mv-lunar-phase { top:0; left:7%; width:28%; transform:translateY(4px); text-align:center; }
+      #le-sky-view .le-mv-lunar-age { top:0; left:50%; right:auto; width:max-content; max-width:none; transform:translateX(-50%); text-align:center; }
+      #le-sky-view .le-mv-lunar-next { top:0; left:auto; right:16%; width:max-content; max-width:none; transform:none; text-align:center; }
       #le-sky-view .le-mv-main-rise-set-icon { display:none !important; }
       #le-sky-view .le-mv-scroller-end-icon { display:block; width:24px; height:15px; flex:0 0 15px; margin:0 auto 1px; }
+      #le-sky-view .le-mv-endpoint-info-rise .le-mv-scroller-end-icon { transform:translateY(5px); }
       #le-sky-view .le-mv-end-labels > .le-mv-endpoint-info { display:block; text-align:center; }
       #le-sky-view .le-mv-end-labels .le-mv-end-label-copy { align-items:center; }
       #le-sky-view .le-mv-selected-time { color:#ff7189; text-shadow:0 0 4px #ff4b69bd,0 0 10px #ed173e78,0 1px 8px #000; transform:none; width:auto; }
