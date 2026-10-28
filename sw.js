@@ -1,7 +1,7 @@
-/* LIVE // EARTH V99 — Alien World first playable prototype; preserve V97 Stacks and startup recovery. */
+/* LIVE // EARTH V100 — Alien World cinematic graphics upgrade; preserve V97 Stacks and startup recovery. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v99-mathematical-universe-cinematic-2p5d";
-const CACHE_NAME = "live-earth-shell-v99-mathematical-universe-cinematic-2p5d";
+const BUILD_ID = "v100-cinematic-material-upgrade";
+const CACHE_NAME = "live-earth-shell-v100-cinematic-material-upgrade";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -12,7 +12,7 @@ const APP_SHELL = [
  "./moon-sky-background-portrait.webp","./moon-sky-background-landscape.webp",
  "./sun-sky-background-portrait.webp","./sun-sky-background-landscape.webp",
  "./update-manager.js","./data-recovery.js",
- "./earth.webp","./moon.webp","./sun.webp","./location.webp","./stacks.webp"
+ "./earth.webp","./moon.webp","./alien-world-moon-surface.jpg","./sun.webp","./location.webp","./stacks.webp"
 ];
 
 // These runtime assets are cached under same-origin virtual URLs. That lets the
