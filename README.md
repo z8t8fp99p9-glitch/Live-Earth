@@ -2,8 +2,9 @@
 
 **Repository:** `z8t8fp99p9-glitch/Live-Earth` · branch `main`  
 **Live site:** https://z8t8fp99p9-glitch.github.io/Live-Earth/  
-**Current source build:** V93 — `v93-bounded-automatic-retry`  
-**Last owner-reported device result:** online and offline launches both complete smoothly, with the previous preparation error gone.
+**Repository baseline:** V96 — `v96-moon-view-controller-separated`  
+**Package in this handoff:** V97 — `v97-online-stacks-views` (five Stacks entries for owner testing; not yet approved)  
+**Last owner-reported device result:** V96 opened and passed the owner's checks, including online/offline launch and Moon/Sun navigation.
 
 ## Start here before any code change
 
@@ -21,11 +22,11 @@
 - **Location privacy:** Location defaults OFF. No automatic geolocation request from Home, startup checks or Moon View. Local lunar times remain hidden while Location is OFF.
 - **Data safety:** Never clear IndexedDB, local data/recovery, website data or caches as a generic troubleshooting step. Never uninstall/reinstall the app to bypass a bug.
 - **Startup gate:** Keep online freshness checks, offline verified-shell fallback, renderer readiness and bounded retry semantics. Never bypass verification to hide an error.
-- **Changes to `sw.js`:** Do not remove an APP_SHELL entry or change `BUILD_ID`/`CACHE_NAME` in isolation. `sw.js` and `update-manager.js` currently share `v93-bounded-automatic-retry`.
+- **Changes to `sw.js`:** Do not remove an APP_SHELL entry or change `BUILD_ID`/`CACHE_NAME` in isolation. This V97 candidate keeps `sw.js` and `update-manager.js` aligned on `v97-online-stacks-views`; the repository V96 checkpoint remains the rollback baseline.
 
-## Essential startup resources (33 resources)
+## Essential startup resources (35 resources in the V97 candidate)
 
-`sw.js` contains **30 APP_SHELL entries** including the `./` root route, plus **3 runtime dependencies** cached under virtual same-origin paths.
+`sw.js` contains **32 APP_SHELL entries** including the `./` root route, plus **3 runtime dependencies** cached under virtual same-origin paths. The V97 candidate adds `stacks-feature-views.js` while preserving the existing Earth/Moon/Sun startup files.
 
 | File | Purpose |
 |---|---|
@@ -36,6 +37,7 @@
 | `earth-mode-navigation.js` | Earth exploration, quality and utility controls |
 | `view-manager.js` | Primary view transition coordinator |
 | `view-module-registry.js` | Current view/module implementation and feature Orb behavior |
+| `stacks-feature-views.js` | V97 Stacks data views: Clouds, Weather, Elevation, Earthquakes and Traffic preview; reuses the existing Earth layer interface |
 | `sky-view-controller.js` | Shared Sun/Moon full-screen sky stage and lifecycle |
 | `moon-view-controller.js` | Moon-only 3D renderer and lunar view behaviour |
 | `moon-lunar-interface.js` | Moon-only lunar Arc/scroller UI and lifecycle |
@@ -64,7 +66,7 @@
 | `./vendor/three.module.js` | Three.js renderer module cached by the worker |
 | `./runtime-assets/earth-land-ocean-ice-2048.png` | Earth surface texture cached by the worker |
 
-`basic-map.html` and `basic-map.js` are retained as potentially supported Basic Map functionality. They are not one of the 33 startup resources; resolve the intended Location route before considering their removal.
+`basic-map.html` and `basic-map.js` are retained as potentially supported Basic Map functionality. They are not entries in the V97 APP_SHELL or runtime dependency lists; resolve the intended Location route before considering their removal.
 
 ## Cleanup scope
 
@@ -93,4 +95,15 @@ Do not clear site data or IndexedDB during these tests.
 - `view-manager.js` remains the global authority for primary-view navigation and Orb open/close behavior.
 - `moon-lunar-interface.js` is retained for compatibility. The Moon renderer loads before it so the existing registry key and startup contract remain compatible.
 - Service-worker `BUILD_ID` and `update-manager.js` `BUILD_ID` are both `v96-moon-view-controller-separated`. The new controller is an essential APP_SHELL resource and is included in startup repair.
-- This is a source separation candidate only. It is not yet uploaded, deployed, or iPhone-tested.
+- Status note preserved from the original V96 package-preparation moment: it was then a source candidate. The owner subsequently reported V96 uploaded and all checks good on 28 October 2026.
+
+
+## V97 candidate — online Stacks views
+
+- Adds `stacks-feature-views.js` for Clouds, Weather, Elevation, Earthquakes and Traffic preview, using the existing `LiveEarthFeatureViews` catalog and `LiveEarthScene.registerLayer` interface. It creates no second Earth.
+- Alien World remains the existing placeholder and is intentionally untouched for a later phase.
+- Weather requests use only a recent location fix already provided while the red Location Orb is ON. This module never calls browser geolocation; Location OFF aborts requests and clears local weather display.
+- Live data/images use network-only requests (`cache: no-store`) and are not replayed as current data offline. The script itself is cached as part of the app shell so views can clearly report when internet access is needed.
+- NASA cloud fraction is a daily observational product, not a minute-by-minute cloud feed. Open-Meteo weather is current-model output. USGS latest-day earthquake events are refreshed while open. Elevation imagery/point queries require internet. Traffic is navigation/layout preview only until a trustworthy feed is selected.
+- Candidate build identifiers match: `v97-online-stacks-views`. The module includes a retry hook for the registry/DOMContentLoaded load-order race.
+- Validation: JavaScript syntax checks passed. A local Chromium harness using mocked API responses passed 34/34 feature/offline-state checks, and a second harness using the actual `view-module-registry.js` passed 12/12 navigation/Orb integration checks. These are isolated tests—not live-provider, deployed-site or owner-iPhone verification. Test the views online after upload before approving V97. Keep the V96 ZIP as rollback.

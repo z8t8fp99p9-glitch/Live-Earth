@@ -2,9 +2,9 @@
 
 **Repository:** `z8t8fp99p9-glitch/Live-Earth` · **branch:** `main`  
 **Live site:** https://z8t8fp99p9-glitch.github.io/Live-Earth/  
-**Audited source snapshot:** `46e73d90ab5b33127331103739aadbc06f1cd0af` (V93 code sources below unchanged)  
-**Current source build:** V93 — `v93-bounded-automatic-retry`  
-**Last owner-reported device result:** V93 online and offline launch both smooth, without the old startup preparation error. This is the user's device report, not a device test performed by ChatGPT.
+**Historical audit snapshot:** `46e73d90ab5b33127331103739aadbc06f1cd0af` (V93 findings are historical, not the current app version)  
+**Last owner-tested checkpoint:** V96 — Moon/Sky controller separation; the owner reported the targeted flows all good on 28 October 2026.  
+**Prepared candidate:** V97 — `v97-online-stacks-views`; not uploaded or deployed. The isolated module test harness passed 34/34 checks, but this is not a full-page, deployed, or iPhone integration test.
 
 > **Read this register before cleanup or code edits.** The purpose is to preserve the intent behind hard-won fixes so a future inspection does not remove something merely because it looks redundant in isolation. Do not delete, simplify, relocate or rewrite a protected workaround without tracing it, explaining a safe alternative, and testing the affected iPhone flows.
 
@@ -52,9 +52,9 @@ The feature Orb scatter uses a single full-screen coordinate space. Each visible
 - With Location OFF, observer-local Moon rise/set times and location-derived values remain hidden by design. This is privacy behavior, not evidence the astronomy calculator is broken.
 - Never clear saved/local data as a location or launch troubleshooting step.
 
-### FIX-07 — Verified startup, V93 bounded retries and online/offline contract
+### FIX-07 — Verified startup, bounded retries and online/offline contract
 
-**Current source IDs:** `sw.js` and `update-manager.js` share `BUILD_ID = "v93-bounded-automatic-retry"`; worker cache name is `live-earth-shell-v93-bounded-automatic-retry`.
+**Historical V93 audit note:** the V93 snapshot used `BUILD_ID = "v93-bounded-automatic-retry"` and cache `live-earth-shell-v93-bounded-automatic-retry`. The V96 owner-tested checkpoint superseded that snapshot. The prepared V97 candidate uses matching `v97-online-stacks-views` build IDs in `sw.js` and `update-manager.js`; keep V96 files available for rollback.
 
 - Online: request fresh essential resources and validate responses before releasing Home.
 - Offline: verify the saved shell and runtime dependencies; never simply bypass checks to hide an error.
@@ -78,47 +78,51 @@ With Location OFF, local rise/set information intentionally remains hidden. Neve
 
 ### FIX-10 — Basic Map is retained pending route clarification
 
-`basic-map.html` and `basic-map.js` are not part of the current 33-resource startup list and the static active-source scan did not find their names in the main bootstrap. They are retained in this cleanup because the project previously specified a Basic Map / 2D Location experience. Check the current Location route and intended product flow before removing either.
+`basic-map.html` and `basic-map.js` are retained as potentially supported Basic Map functionality. They are not entries in the prepared V97 APP_SHELL or runtime dependency lists; check the intended Location route before considering their removal.
 
-## 2. Current essential startup resources
+## 2. Essential startup resources — V97 candidate
 
-`sw.js` currently defines 30 APP_SHELL entries (including `./` root) and three extra runtime dependencies. Keep the exact list coherent with the worker unless a code release deliberately changes it.
+The V97 candidate `sw.js` defines **32 APP_SHELL entries** (including `./` root) and **3 virtual runtime dependencies**. The new `stacks-feature-views.js` is included in the app shell, startup repair detection, fallback script paths and repaired HTML loader. Keep this list in sync with the service worker.
 
 | # | Resource | Purpose |
 |---:|---|---|
 | 1 | `./` | Root launch route |
-| 2 | `index.html` | Home scene and five Home Orbs |
-| 3 | `ios-standalone-root-flow.js` | iOS full-screen root-flow/viewport workaround |
-| 4 | `orb-controls-v4.js` | Active Orb controls and orientation-only scroll reset |
-| 5 | `earth-mode-navigation.js` | Explorer, quality and utility controls |
-| 6 | `view-manager.js` | Primary view transitions |
-| 7 | `view-module-registry.js` | View modules and feature Orb interactions |
-| 8 | `sky-view-controller.js` | Sun/Moon full-screen views |
-| 9 | `moon-lunar-interface.js` | Moon Arc and time scroller |
-| 10 | `location.html` | Location/3D globe page |
-| 11 | `earth-orb-globe.js` | Interactive globe module |
-| 12 | `manifest.json` | Installed-app metadata |
-| 13 | `icon.svg` | App icon |
-| 14 | `data-store.js` | Local dataset/store utilities |
-| 15 | `location-scanner.js` | Location scanner |
-| 16 | `astronomy.js` | Astronomy helper functions |
-| 17 | `moon-orbit.js` | Lunar orbit visualization |
-| 18 | `dataset-manifest.json` | Dataset definitions/metadata |
-| 19 | `moon-sky-background-responsive.svg` | Responsive sky background still in APP_SHELL |
-| 20 | `moon-sky-background-portrait.webp` | Moon portrait art |
-| 21 | `moon-sky-background-landscape.webp` | Moon landscape art |
-| 22 | `sun-sky-background-portrait.webp` | Sun portrait art |
-| 23 | `sun-sky-background-landscape.webp` | Sun landscape art |
-| 24 | `update-manager.js` | Verification gate and retry logic |
-| 25 | `data-recovery.js` | Local backup/recovery UI and helpers |
-| 26 | `earth.webp` | Earth Home Orb artwork |
-| 27 | `moon.webp` | Moon Home Orb artwork |
-| 28 | `sun.webp` | Sun Home Orb artwork |
-| 29 | `location.webp` | Location Home Orb artwork |
-| 30 | `stacks.webp` | Stacks Home Orb artwork |
-| 31 | `./vendor/three.core.js` | Three.js core cached under a same-origin virtual URL |
-| 32 | `./vendor/three.module.js` | Three.js module cached under a same-origin virtual URL |
-| 33 | `./runtime-assets/earth-land-ocean-ice-2048.png` | Earth surface texture cached under a virtual URL |
+| 2 | `./index.html` | Home scene and five Home Orbs |
+| 3 | `./ios-standalone-root-flow.js` | iOS full-screen root-flow/viewport workaround |
+| 4 | `./orb-controls-v4.js` | Active Orb controls and orientation-only scroll reset |
+| 5 | `./earth-mode-navigation.js` | Earth exploration, quality and utility controls |
+| 6 | `./view-manager.js` | Primary view transitions |
+| 7 | `./view-module-registry.js` | View modules and global Stacks feature-Orb behaviour |
+| 8 | `./stacks-feature-views.js` | V97 Clouds, Weather, Elevation, Earthquakes and Traffic preview |
+| 9 | `./sky-view-controller.js` | Shared Sun/Moon full-screen sky stage and lifecycle |
+| 10 | `./moon-view-controller.js` | Moon-specific 3D renderer and lunar view behaviour |
+| 11 | `./moon-lunar-interface.js` | Moon Arc and time-scroller compatibility layer |
+| 12 | `./location.html` | Location/3D globe screen |
+| 13 | `./earth-orb-globe.js` | Interactive globe module |
+| 14 | `./manifest.json` | Installed-app metadata |
+| 15 | `./icon.svg` | App icon |
+| 16 | `./data-store.js` | Versioned local data-store helpers |
+| 17 | `./location-scanner.js` | Existing Location scanner |
+| 18 | `./astronomy.js` | Astronomy calculation helpers |
+| 19 | `./moon-orbit.js` | Moon orbital visualization/calculations |
+| 20 | `./dataset-manifest.json` | Dataset metadata |
+| 21 | `./moon-sky-background-responsive.svg` | Responsive sky-art resource still declared in APP_SHELL |
+| 22 | `./moon-sky-background-portrait.webp` | Moon portrait background |
+| 23 | `./moon-sky-background-landscape.webp` | Moon landscape background |
+| 24 | `./sun-sky-background-portrait.webp` | Sun portrait background |
+| 25 | `./sun-sky-background-landscape.webp` | Sun landscape background |
+| 26 | `./update-manager.js` | Startup readiness and staged-update handshake |
+| 27 | `./data-recovery.js` | Local recovery support |
+| 28 | `./earth.webp` | Earth Home Orb artwork |
+| 29 | `./moon.webp` | Moon Home Orb artwork |
+| 30 | `./sun.webp` | Sun Home Orb artwork |
+| 31 | `./location.webp` | Location Home Orb artwork |
+| 32 | `./stacks.webp` | Stacks Home Orb artwork |
+| 33 | `./vendor/three.core.js` | Three.js core cached under a same-origin virtual URL |
+| 34 | `./vendor/three.module.js` | Three.js renderer module cached under a same-origin virtual URL |
+| 35 | `./runtime-assets/earth-land-ocean-ice-2048.png` | Earth surface texture cached under a same-origin virtual URL |
+
+`basic-map.html` and `basic-map.js` are retained as potentially supported Basic Map functionality; they are not entries in the V97 APP_SHELL or runtime dependency lists. Resolve the intended Location route before considering their removal.
 
 ## 3. Cleanup scope and why the old files can go
 
@@ -128,7 +132,7 @@ It retains all current APP_SHELL resources, current iOS fix sources, all five Ho
 
 The manifest itself and the one-time cleanup workflow are listed for self-removal after the cleanup commit so the repository ends with only the two maintained documentation files at root. Git history retains prior revisions. Do not rewrite history or force-push.
 
-## 4. Source audit anchors at reviewed V93 baseline
+## 4. Historical source audit anchors at reviewed V93 baseline
 
 | File | Git blob SHA at audit | Why protected |
 |---|---|---|
@@ -142,7 +146,7 @@ The manifest itself and the one-time cleanup workflow are listed for self-remova
 | `sky-view-controller.js` | `8e94f73bf6c62b5b0aec09fd19921db6a7ac0753` | Active Sun/Moon controller |
 | `moon-lunar-interface.js` | `1d004e42bba7bbda2875da0d590d8e6f5c7ef976` | Active Moon overlay/scroller |
 
-The cleanup workflow pins the current app-source blob SHAs. If any protected source changes before the cleanup runs, it must abort instead of deleting files under a stale audit.
+These blob SHAs describe the historical V93 audit only and must not be used as current V97 deployment IDs. The cleanup workflow discussed in the old audit is a separate historical task; do not run cleanup as part of this V97 view release.
 
 ## 5. Known historical documentation traps
 
@@ -150,7 +154,7 @@ The cleanup workflow pins the current app-source blob SHAs. If any protected sou
 - The old `README-CLEANUP.txt`/`DELETE-FILES.txt` described an earlier Sun/Moon cleanup proposal and conflicted with current active Sun/Moon code. They must not be followed as-is.
 - `sky-views.js`, `sky-view-adaptive-layer.js`, `orb-controls.js`, `orb-controls-v5.js`, `orientation-manager.js`, `rotation-recovery.js` and `view-state.js` are legacy alternatives absent from the audited active bootstrap/dependency paths. Their similarly named current replacements remain protected. If the app architecture changes later, redo the reference audit before restoring any alternative.
 - The exact selector for the owner-identified hidden Home image/visual remains unresolved. Keep it protected until mapped in source.
-- Static code/package checks do not equal a published runtime test. The V93 online/offline result is owner-reported from the device.
+- Static code/package checks do not equal a published runtime test. The V93 online/offline result was owner-reported from the device at that time; V96 was later owner-tested as recorded at the top of this document.
 - GitHub's connected integration previously returned HTTP 403 for direct delete/write operations. No repository files were deleted by ChatGPT. The owner will install and invoke a manually guarded GitHub Actions workflow through their own repository permissions.
 
 ## 6. Required post-cleanup test
@@ -175,4 +179,17 @@ If any test fails, stop cleanup-related code changes and investigate the exact r
 - `index.html` loads `sky-view-controller.js`, then `moon-view-controller.js`, then the legacy `moon-lunar-interface.js` compatibility resource.
 - `sw.js` and `update-manager.js` use matching V96 build identifiers; the new Moon controller is an essential cached resource and a startup-repair target.
 - Moon renderer registration key and readiness compatibility flags are preserved. No Moon UI, geometry, calculations, textures or interactions were intentionally rewritten.
-- Status: prepared candidate; static validation pending; not uploaded, deployed, or user-device verified.
+- Status at preparation time: candidate; static validation pending. Superseded by the owner's later report on 28 October 2026 that V96 was uploaded and all checks were good.
+
+
+### FIX-12 — V97 online Stacks data-view candidate (28 October 2026)
+
+- Current protected baseline: V96 Moon/Sky controller separation. The owner reported V96 checks passed. Keep the V96 ZIP as rollback.
+- V97 candidate adds `stacks-feature-views.js` and connects Clouds, Weather, Elevation, Earthquakes, and Traffic preview to the existing `LiveEarthFeatureViews` catalog and `LiveEarthScene.registerLayer` interface. The feature layers are children of the existing Earth mesh; the candidate does not create a second Earth or modify the Home composition.
+- `view-module-registry.js` remains the authority for the global Stacks Orb standard: exactly five Home Orbs; a feature view uses the existing three-Orb dock (active feature, Location, Stacks); only one Stacks feature is active and its cleanup runs before the next view opens.
+- Alien World remains the existing placeholder, not connected or rewritten in this candidate.
+- Weather uses only a fresh location already supplied by the Location system when Location is ON. This module never invokes geolocation. Turning Location OFF clears the weather panel and aborts its request.
+- The view script is included in the app shell so its screens can explain connectivity state, but provider data is requested with `cache: no-store` and is never presented as current offline. Clouds/relief textures and earthquake markers/data are cleared on an offline transition; a follow-up test caught and fixed an early-return path that could leave earthquake markers behind. Failed imagery keeps the original Earth visible and unchanged.
+- Data truth: NASA cloud-fraction image is a daily product, not minute-level live cloud coverage; Open-Meteo weather is current-model data; USGS latest-day GeoJSON is the earthquake feed and refreshes while view is open; point elevation/relief require a connection; Traffic view is honest preview only because no verified feed is configured.
+- The module waits for the existing feature Orb registry if it is initialized after the module script, avoiding a cache/load race.
+- `sw.js` BUILD_ID and `update-manager.js` BUILD_ID both set `v97-online-stacks-views`; the script is in APP_SHELL and startup repair checks its installation flag. V97 candidate source is not uploaded, deployed or owner-device tested yet.

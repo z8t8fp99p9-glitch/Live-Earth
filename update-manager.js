@@ -1,9 +1,9 @@
-/* LIVE // EARTH V95-compatible update manager + optional offline-cached procedural Sun. */
+/* LIVE // EARTH V97 update manager + existing optional offline-cached procedural Sun. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v96-moon-view-controller-separated";
+  const BUILD_ID = "v97-online-stacks-views";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
@@ -15,6 +15,7 @@
       window.LiveEarthViewModules.has("sun-procedural-renderer") &&
       window.LiveEarthViewModules.has("moon-lunar-interface") &&
       window.__liveEarthMoonRendererInstalled === true &&
+      window.__liveEarthStacksFeatureViewsInstalled === true &&
       window.LiveEarthSkyViews &&
       window.__liveEarthControlsInstalled &&
       window.__liveEarthLocationScannerInstalled &&
@@ -26,7 +27,7 @@
   function signalVerifiedStartup() {
     const controller = navigator.serviceWorker.controller;
     if (!controller || !readyControllersPresent()) return;
-    // Keep the existing message type and V95 build id so the protected cache lifecycle is unchanged.
+    // The service worker and update manager share the V97 cache identity.
     controller.postMessage({ type: "LIVE_EARTH_APP_READY_V75", buildId: BUILD_ID });
   }
 

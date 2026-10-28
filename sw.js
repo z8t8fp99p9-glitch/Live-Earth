@@ -1,11 +1,11 @@
-/* LIVE // EARTH V95 — sidereal Earth/Moon alignment; preserve bounded startup retry. */
+/* LIVE // EARTH V97 — online Stacks data views; preserve bounded startup retry. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v96-moon-view-controller-separated";
-const CACHE_NAME = "live-earth-shell-v96-moon-view-controller-separated";
+const BUILD_ID = "v97-online-stacks-views";
+const CACHE_NAME = "live-earth-shell-v97-online-stacks-views";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
- "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./view-manager.js","./view-module-registry.js","./sky-view-controller.js","./moon-view-controller.js","./moon-lunar-interface.js",
+ "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./view-manager.js","./view-module-registry.js","./stacks-feature-views.js","./sky-view-controller.js","./moon-view-controller.js","./moon-lunar-interface.js",
  "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js","./location-scanner.js",
  "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
  "./moon-sky-background-responsive.svg",
@@ -235,6 +235,8 @@ window.LiveEarthScene = (() => {
   let locationEnabled = false;
   let scannerVisible = false;
   let hasLocation = false;
+  let locationCoordinates = null;
+  const featureLayers = new Map();
   function syncLocationMarker() {
     locationMarker.visible = hasLocation && locationEnabled && (!unlocked || scannerVisible);
     draw();
@@ -248,13 +250,14 @@ window.LiveEarthScene = (() => {
     locationVector.set(Math.cos(phi)*Math.cos(lambda), Math.sin(phi), -Math.cos(phi)*Math.sin(lambda)).normalize();
     locationHalo.position.copy(locationVector).multiplyScalar(1.006);
     locationDot.position.copy(locationVector).multiplyScalar(1.019);
+    locationCoordinates = { latitude: lat, longitude: lon, capturedAt: Date.now() };
     hasLocation = true;
     syncLocationMarker();
     return true;
   }
   function setLocationEnabled(enabled) {
     locationEnabled = !!enabled;
-    if (!locationEnabled) { hasLocation = false; scannerVisible = false; }
+    if (!locationEnabled) { hasLocation = false; scannerVisible = false; locationCoordinates = null; }
     syncLocationMarker();
   }
   function setScannerVisible(visible) {
@@ -262,6 +265,32 @@ window.LiveEarthScene = (() => {
     syncLocationMarker();
   }
   function getScannerVisible() { return scannerVisible; }
+  function getLocation() {
+    if (!locationEnabled || !hasLocation || !locationCoordinates) return null;
+    if (Date.now() - locationCoordinates.capturedAt > 120000) return null;
+    return { latitude: locationCoordinates.latitude, longitude: locationCoordinates.longitude, capturedAt: locationCoordinates.capturedAt };
+  }
+  function removeLayer(id) {
+    const cleanup = featureLayers.get(id);
+    if (!cleanup) return false;
+    featureLayers.delete(id);
+    try { cleanup(); } catch (error) { console.warn("[LIVE // EARTH] Layer cleanup failed:", id, error); }
+    draw();
+    return true;
+  }
+  function registerLayer(id, factory) {
+    if (typeof id !== "string" || !id.trim() || typeof factory !== "function") {
+      throw new TypeError("An Earth layer needs a stable id and a factory function.");
+    }
+    removeLayer(id);
+    const cleanup = factory({
+      THREE: T, scene, earth, group, camera, renderer,
+      redraw: draw, requestRender: draw, getLocation
+    });
+    if (typeof cleanup === "function") featureLayers.set(id, cleanup);
+    draw();
+    return () => removeLayer(id);
+  }
   function restoreHomeVisualState() {
     earth.geometry = homeGeometry;
     renderer.setPixelRatio(homePixelRatio);
@@ -414,7 +443,12 @@ window.LiveEarthScene = (() => {
   }, {passive:true});
   // Apply the saved global profile from first render; Basic is the safe default.
   renderQuality(quality);
-  return {unlock,lock,setQuality,zoomBy,isUnlocked:()=>unlocked,getQuality:()=>quality,setLocation,setLocationEnabled,setScannerVisible,getScannerVisible};
+  return {
+    unlock, lock, setQuality, zoomBy,
+    isUnlocked:()=>unlocked, getQuality:()=>quality,
+    setLocation, setLocationEnabled, setScannerVisible, getScannerVisible, getLocation,
+    registerLayer, unregisterLayer:removeLayer, getTHREE:()=>T, requestRender:draw
+  };
 })();
 window.dispatchEvent(new Event("live-earth-scene-ready"));
 `;
@@ -804,6 +838,7 @@ function injectStartupGate(html) {
       if (!window.LiveEarthViewManager) paths.push('./view-manager.js');
       if (!window.LiveEarthSkyViews) paths.push('./sky-view-controller.js');
       if (!window.__liveEarthMoonRendererInstalled) paths.push('./moon-view-controller.js');
+      if (!window.__liveEarthStacksFeatureViewsInstalled) paths.push('./stacks-feature-views.js');
       if (!window.__liveEarthControlsInstalled || typeof window.liveEarthLocationAllowed !== 'function') paths.push('./orb-controls-v4.js');
       if (!window.__liveEarthLocationScannerInstalled) paths.push('./location-scanner.js');
       const brokenImages = [...document.querySelectorAll('#navButtons .orbImage')].filter(img => img.complete && img.naturalWidth === 0);
@@ -851,7 +886,7 @@ function injectStartupGate(html) {
       const orbImages = [...document.querySelectorAll('#navButtons .orbImage')];
       const imagesReady = orbImages.length === 5 && orbImages.every(img => img.complete && img.naturalWidth > 0);
       return document.readyState === 'complete' &&
-        !!window.LiveEarthScene && !!window.LiveEarthViewManager && !!window.LiveEarthViewModules && window.LiveEarthViewModules.has('sky-container') && window.LiveEarthViewModules.has('moon-lunar-interface') && window.__liveEarthMoonRendererInstalled === true && !!window.LiveEarthSkyViews &&
+        !!window.LiveEarthScene && !!window.LiveEarthViewManager && !!window.LiveEarthViewModules && window.LiveEarthViewModules.has('sky-container') && window.LiveEarthViewModules.has('moon-lunar-interface') && window.__liveEarthMoonRendererInstalled === true && window.__liveEarthStacksFeatureViewsInstalled === true && !!window.LiveEarthSkyViews &&
         window.__liveEarthControlsInstalled === true && window.__liveEarthLocationScannerInstalled === true &&
         typeof window.liveEarthLocationAllowed === 'function' && window.liveEarthLocationAllowed() === false && imagesReady;
     }
@@ -1038,7 +1073,7 @@ function injectStartupGate(html) {
     window.addEventListener('error', event => {
       if (event.target && event.target.tagName === 'SCRIPT') {
         const src = event.target.src || '';
-        const scriptPaths = ['./orb-controls-v4.js','./earth-mode-navigation.js','./view-manager.js','./view-module-registry.js','./sky-view-controller.js','./moon-view-controller.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
+        const scriptPaths = ['./orb-controls-v4.js','./earth-mode-navigation.js','./view-manager.js','./view-module-registry.js','./stacks-feature-views.js','./sky-view-controller.js','./moon-view-controller.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
         for (const path of scriptPaths) if (src.endsWith(path.slice(1))) knownBadPaths.push(path);
         sceneFailure = 'A required startup script failed to load.';
       } else if (event.error) {
@@ -1117,6 +1152,14 @@ async function transformHomeHTML(request, response, forceHome = false) {
       html = html.replace(bootstrapAnchor, bootstrapAnchor + "\n    './view-module-registry.js',");
     } else {
       html = html.replace(/<\/body\s*>/i, '<script src="./view-module-registry.js" defer></script>\n</body>');
+    }
+  }
+  if (!html.includes("stacks-feature-views.js")) {
+    const registryAnchor = "'./view-module-registry.js',";
+    if (html.includes(registryAnchor)) {
+      html = html.replace(registryAnchor, registryAnchor + "\n    './stacks-feature-views.js',");
+    } else {
+      html = html.replace(/<\/body\s*>/i, '<script src="./stacks-feature-views.js" defer></script>\n</body>');
     }
   }
   if (!html.includes("update-manager.js")) {
