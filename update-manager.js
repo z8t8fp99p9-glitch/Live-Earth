@@ -1,9 +1,9 @@
-/* LIVE // EARTH V97 update manager + existing optional offline-cached procedural Sun. */
+/* LIVE // EARTH V98 update manager + optional offline-cached Sun and Alien World game. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v97-online-stacks-views";
+  const BUILD_ID = "v98-alien-world-first-playable";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {

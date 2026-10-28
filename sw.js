@@ -1,11 +1,11 @@
-/* LIVE // EARTH V97 — online Stacks data views; preserve bounded startup retry. */
+/* LIVE // EARTH V98 — Alien World first playable prototype; preserve V97 Stacks and startup recovery. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v97-online-stacks-views";
-const CACHE_NAME = "live-earth-shell-v97-online-stacks-views";
+const BUILD_ID = "v98-alien-world-first-playable";
+const CACHE_NAME = "live-earth-shell-v98-alien-world-first-playable";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
- "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./view-manager.js","./view-module-registry.js","./stacks-feature-views.js","./sky-view-controller.js","./moon-view-controller.js","./moon-lunar-interface.js",
+ "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./view-manager.js","./view-module-registry.js","./stacks-feature-views.js","./alien-world-game.js","./sky-view-controller.js","./moon-view-controller.js","./moon-lunar-interface.js",
  "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js","./location-scanner.js",
  "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
  "./moon-sky-background-responsive.svg",
@@ -1073,7 +1073,7 @@ function injectStartupGate(html) {
     window.addEventListener('error', event => {
       if (event.target && event.target.tagName === 'SCRIPT') {
         const src = event.target.src || '';
-        const scriptPaths = ['./orb-controls-v4.js','./earth-mode-navigation.js','./view-manager.js','./view-module-registry.js','./stacks-feature-views.js','./sky-view-controller.js','./moon-view-controller.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
+        const scriptPaths = ['./orb-controls-v4.js','./earth-mode-navigation.js','./view-manager.js','./view-module-registry.js','./stacks-feature-views.js','./alien-world-game.js','./sky-view-controller.js','./moon-view-controller.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
         for (const path of scriptPaths) if (src.endsWith(path.slice(1))) knownBadPaths.push(path);
         sceneFailure = 'A required startup script failed to load.';
       } else if (event.error) {
@@ -1161,6 +1161,11 @@ async function transformHomeHTML(request, response, forceHome = false) {
     } else {
       html = html.replace(/<\/body\s*>/i, '<script src="./stacks-feature-views.js" defer></script>\n</body>');
     }
+  }
+  // The game is an optional feature view, not a startup controller. Inject it after
+  // HTML parsing and let it wait for the Stacks registry; its failure never blocks Home.
+  if (!html.includes('src="./alien-world-game.js"')) {
+    html = html.replace(/<\/body\s*>/i, '<script src="./alien-world-game.js" defer></script>\n</body>');
   }
   if (!html.includes("update-manager.js")) {
     html = html.replace(/<\/body\s*>/i, '<script src="./update-manager.js" defer></script>\n</body>');
