@@ -1,12 +1,12 @@
-/* LIVE // EARTH V103 — Alien World full-screen Stacks feature view.
-   Opens inside the existing Stacks stage and keeps the three-Orb feature dock.
-   Content is online-only: no localStorage, IndexedDB, Cache API, or offline content snapshots.
+/* LIVE // EARTH V104 — Alien World image-led full-screen Stacks feature.
+   Keeps the shared three-Orb dock and uses each article's publisher-supplied image_url.
+   Content is online-only: no app-managed offline story/image cache or saved content snapshots.
    NASA media API results are filtered to exclude explicit illustration/artist-concept labels.
-   News is text-only and links directly to the reporting outlet; news thumbnails are not reused. */
+   No AI-generated or locally fabricated pictures are used as content fallbacks. */
 (() => {
   'use strict';
   const FEATURE_ID = 'alien-world';
-  const STYLE_ID = 'le-alien-world-discovery-v102-style';
+  const STYLE_ID = 'le-alien-world-discovery-v104-style';
   const ROOT_ID = 'le-aw-discovery-root';
   if (window.__liveEarthAlienWorldDiscoveryInstalled) return;
 
@@ -79,7 +79,8 @@
   };
 
   const CSS = `
-    #${ROOT_ID}{position:fixed;inset:0;z-index:6;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;color:#f0f7ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(ellipse at 80% 0%,rgba(23,66,97,.42),transparent 46%),linear-gradient(180deg,#050b14,#071321 55%,#030811);pointer-events:auto;padding:calc(env(safe-area-inset-top) + 10px) 15px calc(env(safe-area-inset-bottom) + 126px);box-sizing:border-box}
+    #${ROOT_ID}{position:fixed;inset:0;z-index:6;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;color:#f0f7ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(ellipse at 80% 0%,rgba(23,66,97,.42),transparent 46%),linear-gradient(180deg,#050b14,#071321 55%,#030811);pointer-events:auto;padding:calc(env(safe-area-inset-top) + 10px) 15px calc(env(safe-area-inset-bottom) + 178px);box-sizing:border-box}
+    #${ROOT_ID}::after{content:"";position:fixed;z-index:10;left:0;right:0;bottom:0;height:calc(env(safe-area-inset-bottom) + 150px);pointer-events:none;background:linear-gradient(180deg,rgba(3,8,17,0),rgba(3,8,17,.34) 28%,rgba(3,8,17,.76) 64%,rgba(3,8,17,.94) 100%)}
     #${ROOT_ID}::-webkit-scrollbar{display:none}
     #${ROOT_ID} *{box-sizing:border-box}
     #${ROOT_ID} button,#${ROOT_ID} input{font:inherit}
@@ -102,12 +103,18 @@
     .aw-h2{margin:0;color:#eff7ff;font-size:clamp(17px,4.4vw,22px);font-weight:800;letter-spacing:-.02em;line-height:1.18}
     .aw-subtle{margin:7px 0 0;color:#91aabe;font-size:10px;line-height:1.5}
     .aw-inline-link{color:#83d9ff;text-decoration:none;font-size:9px;font-weight:750;white-space:nowrap}
-    .aw-news-list{display:grid;gap:8px}
-    .aw-news-card{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;padding:12px 13px;border:1px solid #a2cde51c;border-radius:15px;background:linear-gradient(125deg,#0d2131e8,#07121fe6);box-shadow:inset 1px 1px 1px #ffffff08}
-    .aw-news-title{margin:0;color:#f0f7ff;font-size:12px;line-height:1.36;font-weight:750}
-    .aw-news-summary{margin:6px 0 0;color:#a9bdce;font-size:10px;line-height:1.45}
-    .aw-news-meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;color:#7393ac;font-size:8px;letter-spacing:.025em}
-    .aw-news-open{display:inline-flex;align-items:center;justify-content:center;border:1px solid #80c6e92e;border-radius:10px;padding:8px;color:#aee4ff;text-decoration:none;font-size:9px;white-space:nowrap}
+    .aw-news-list{display:grid;gap:12px}
+    .aw-news-card{display:flex;min-width:0;flex-direction:column;gap:0;overflow:hidden;border:1px solid #a2cde52b;border-radius:17px;background:linear-gradient(145deg,#0d2131f2,#07121ff0);box-shadow:inset 1px 1px 1px #ffffff08,0 8px 22px #0002}
+    .aw-news-media{position:relative;display:block;width:100%;aspect-ratio:16/8;max-height:220px;overflow:hidden;background:#07111b;text-decoration:none}
+    .aw-news-media img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;transition:transform .35s ease}
+    .aw-news-media:active img{transform:scale(1.015)}
+    .aw-news-image-source{position:absolute;left:9px;bottom:9px;max-width:calc(100% - 18px);padding:5px 8px;border:1px solid #d9edff24;border-radius:8px;background:rgba(2,8,15,.76);color:#e2f1fc;font-size:8px;line-height:1.25;letter-spacing:.025em;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+    .aw-news-body{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:start;padding:12px 13px 13px}
+    .aw-news-copy{min-width:0}
+    .aw-news-title{margin:0;color:#f0f7ff;font-size:13px;line-height:1.36;font-weight:760}
+    .aw-news-summary{margin:7px 0 0;color:#afc2d2;font-size:10px;line-height:1.5}
+    .aw-news-meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px;color:#7896ac;font-size:8px;letter-spacing:.025em}
+    .aw-news-open{display:inline-flex;align-items:center;justify-content:center;border:1px solid #80c6e93a;border-radius:10px;padding:8px 9px;color:#b5e8ff;text-decoration:none;font-size:9px;white-space:nowrap;background:#091c2a}
     .aw-featured{position:relative;overflow:hidden;border:1px solid #8bc9ec2b;border-radius:20px;background:linear-gradient(140deg,#102c40,#07111d);box-shadow:0 14px 30px #0003}
     .aw-featured-media{position:relative;aspect-ratio:16/9;min-height:154px;background:radial-gradient(ellipse at 74% 30%,#24465c,#09131f 65%);overflow:hidden}
     .aw-featured-media img{display:block;width:100%;height:100%;object-fit:cover}
@@ -156,7 +163,7 @@
     .aw-footer{margin:22px 0 0;padding:14px 0 0;border-top:1px solid #84adc51a;color:#6e8ca2;font-size:8px;line-height:1.55}
     .aw-footer a{color:#9bdcf7;text-decoration:none}
     @media(min-width:700px){.aw-news-list{grid-template-columns:repeat(2,minmax(0,1fr))}.aw-world-grid,.aw-photo-grid,.aw-exoplanet-list{grid-template-columns:repeat(3,minmax(0,1fr))}.aw-featured{display:grid;grid-template-columns:1.1fr 1fr}.aw-featured-media{height:100%;min-height:250px;aspect-ratio:auto}.aw-featured-body{align-self:center;padding:22px}.aw-world-hero{display:grid;grid-template-columns:1.1fr 1fr}.aw-world-hero img{height:100%;max-height:none;min-height:260px;aspect-ratio:auto}.aw-world-intro{align-self:center;padding:24px}}
-    @media(orientation:landscape){#${ROOT_ID}{padding-top:calc(env(safe-area-inset-top) + 8px);padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));padding-bottom:calc(env(safe-area-inset-bottom) + 104px)}.aw-topbar{padding-bottom:10px}.aw-section{margin-bottom:19px}.aw-featured-media{min-height:116px}.aw-world-grid,.aw-photo-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media(orientation:landscape){#${ROOT_ID}{padding-top:calc(env(safe-area-inset-top) + 8px);padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));padding-bottom:calc(env(safe-area-inset-bottom) + 144px)}#${ROOT_ID}::after{height:calc(env(safe-area-inset-bottom) + 118px)}.aw-topbar{padding-bottom:10px}.aw-section{margin-bottom:19px}.aw-featured-media{min-height:116px}.aw-world-grid,.aw-photo-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.aw-news-media{aspect-ratio:16/7;max-height:190px}}
     @media(prefers-reduced-motion:reduce){#${ROOT_ID} *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
   `;
 
@@ -171,6 +178,17 @@
       const parsed = new URL(value);
       return parsed.protocol === 'https:' ? parsed.href : null;
     } catch (_) { return null; }
+  }
+  function safeImageUrl(value) {
+    // Article providers may still publish legacy http image URLs. Upgrade these
+    // to HTTPS for the embedded image request; if that host cannot serve HTTPS,
+    // the image's error handler removes it instead of fabricating a fallback.
+    try {
+      const parsed = new URL(value);
+      if (parsed.protocol === 'https:') return parsed.href;
+      if (parsed.protocol === 'http:') { parsed.protocol = 'https:'; return parsed.href; }
+    } catch (_) {}
+    return null;
   }
   function formatDate(value) {
     if (!value) return 'Date not supplied';
@@ -358,16 +376,37 @@
       }
       valid.forEach(article => {
         const card = node('article', 'aw-news-card');
-        const body = node('div');
-        body.appendChild(node('h3', 'aw-news-title', article.title));
-        if (article.summary) body.appendChild(node('p', 'aw-news-summary', shorten(article.summary, 205)));
+        const articleUrl = safeUrl(article.url);
+        const publisher = String(article.news_site || article.source || 'Space news source');
+        // Spaceflight News API's image_url is the cover/header image attached to
+        // the publisher's article. Show that exact online image; never generate or
+        // invent a replacement. Cross-origin image requests are not handled by the
+        // app's same-origin service worker and no app-managed image cache is used.
+        const imageUrl = safeImageUrl(article.image_url);
+        if (imageUrl && articleUrl) {
+          const imageLink = node('a', 'aw-news-media');
+          imageLink.href = articleUrl; imageLink.target = '_blank'; imageLink.rel = 'noopener noreferrer';
+          imageLink.setAttribute('aria-label', `Open original article: ${article.title}`);
+          const img = node('img');
+          img.alt = `Image supplied with article: ${article.title}`;
+          img.loading = 'lazy'; img.decoding = 'async'; img.referrerPolicy = 'no-referrer';
+          img.src = imageUrl;
+          img.addEventListener('error', () => imageLink.remove(), { once: true });
+          imageLink.appendChild(img);
+          imageLink.appendChild(node('span', 'aw-news-image-source', `ARTICLE IMAGE · ${publisher}`));
+          card.appendChild(imageLink);
+        }
+        const body = node('div', 'aw-news-body');
+        const copy = node('div', 'aw-news-copy');
+        copy.appendChild(node('h3', 'aw-news-title', article.title));
+        if (article.summary) copy.appendChild(node('p', 'aw-news-summary', shorten(article.summary, 205)));
         const meta = node('div', 'aw-news-meta');
-        meta.appendChild(node('span', '', article.news_site || article.source || 'Space news source'));
+        meta.appendChild(node('span', '', publisher));
         meta.appendChild(node('span', '', formatDate(article.published_at)));
         if (article.updated_at && article.updated_at !== article.published_at) meta.appendChild(node('span', '', `Updated ${formatDate(article.updated_at)}`));
-        body.appendChild(meta);
-        const link = node('a', 'aw-news-open', 'Original ↗'); link.href = safeUrl(article.url); link.target = '_blank'; link.rel = 'noopener noreferrer';
-        card.append(body, link); container.appendChild(card);
+        copy.appendChild(meta);
+        const link = node('a', 'aw-news-open', 'Original ↗'); link.href = articleUrl; link.target = '_blank'; link.rel = 'noopener noreferrer';
+        body.append(copy, link); card.appendChild(body); container.appendChild(card);
       });
     } catch (error) {
       if (!isCurrent(token) || error?.name === 'AbortError') return;

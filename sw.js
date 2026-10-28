@@ -1,7 +1,7 @@
-/* LIVE // EARTH V103 — Alien World is a full-screen Stacks feature; online content remains uncached. */
+/* LIVE // EARTH V104 — Alien World is a full-screen Stacks feature; online content remains uncached. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v103-stacks-alien-world-view";
-const CACHE_NAME = "live-earth-shell-v103-stacks-alien-world-view";
+const BUILD_ID = "v104-alien-world-article-images";
+const CACHE_NAME = "live-earth-shell-v104-alien-world-article-images";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
