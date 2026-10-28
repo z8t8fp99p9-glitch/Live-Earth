@@ -1,9 +1,9 @@
-/* LIVE // EARTH V100 update manager + optional offline-cached Sun and Alien World game. */
+/* LIVE // EARTH V103 update manager; Alien World is an online-only full-screen Stacks feature. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v100-cinematic-material-upgrade";
+  const BUILD_ID = "v103-stacks-alien-world-view";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
@@ -16,6 +16,7 @@
       window.LiveEarthViewModules.has("moon-lunar-interface") &&
       window.__liveEarthMoonRendererInstalled === true &&
       window.__liveEarthStacksFeatureViewsInstalled === true &&
+      window.__liveEarthAlienWorldDiscoveryInstalled === true &&
       window.LiveEarthSkyViews &&
       window.__liveEarthControlsInstalled &&
       window.__liveEarthLocationScannerInstalled &&
@@ -27,7 +28,7 @@
   function signalVerifiedStartup() {
     const controller = navigator.serviceWorker.controller;
     if (!controller || !readyControllersPresent()) return;
-    // The service worker and update manager share the V100 cache identity.
+    // The service worker and update manager share the V103 cache identity.
     controller.postMessage({ type: "LIVE_EARTH_APP_READY_V75", buildId: BUILD_ID });
   }
 
@@ -51,9 +52,9 @@
     return loading;
   }
 
-  // The renderer is a small, local JavaScript asset. The existing service worker
-  // caches non-shell assets in its bounded optional cache, so the Sun works offline
-  // after its first successful online load. A failure never blocks Home or Moon.
+  // The procedural Sun remains an optional local renderer, cached by the existing
+  // service-worker policy. Alien World content is fetched separately with no-store.
+  // An optional-view failure never blocks Home or Moon.
   loadProceduralSun().then(() => {
     window.__liveEarthSunRendererReady = true;
     signalVerifiedStartup();

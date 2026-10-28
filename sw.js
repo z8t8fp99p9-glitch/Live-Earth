@@ -1,18 +1,18 @@
-/* LIVE // EARTH V100 — Alien World cinematic graphics upgrade; preserve V97 Stacks and startup recovery. */
+/* LIVE // EARTH V103 — Alien World is a full-screen Stacks feature; online content remains uncached. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v100-cinematic-material-upgrade";
-const CACHE_NAME = "live-earth-shell-v100-cinematic-material-upgrade";
+const BUILD_ID = "v103-stacks-alien-world-view";
+const CACHE_NAME = "live-earth-shell-v103-stacks-alien-world-view";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
- "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./view-manager.js","./view-module-registry.js","./stacks-feature-views.js","./alien-world-game.js","./sky-view-controller.js","./moon-view-controller.js","./moon-lunar-interface.js",
+ "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./view-manager.js","./view-module-registry.js","./stacks-feature-views.js","./alien-world-view-controller.js","./sky-view-controller.js","./moon-view-controller.js","./moon-lunar-interface.js",
  "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js","./location-scanner.js",
  "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
  "./moon-sky-background-responsive.svg",
  "./moon-sky-background-portrait.webp","./moon-sky-background-landscape.webp",
  "./sun-sky-background-portrait.webp","./sun-sky-background-landscape.webp",
  "./update-manager.js","./data-recovery.js",
- "./earth.webp","./moon.webp","./alien-world-moon-surface.jpg","./sun.webp","./location.webp","./stacks.webp"
+ "./earth.webp","./moon.webp","./sun.webp","./location.webp","./stacks.webp"
 ];
 
 // These runtime assets are cached under same-origin virtual URLs. That lets the
@@ -839,6 +839,7 @@ function injectStartupGate(html) {
       if (!window.LiveEarthSkyViews) paths.push('./sky-view-controller.js');
       if (!window.__liveEarthMoonRendererInstalled) paths.push('./moon-view-controller.js');
       if (!window.__liveEarthStacksFeatureViewsInstalled) paths.push('./stacks-feature-views.js');
+      if (!window.__liveEarthAlienWorldDiscoveryInstalled) paths.push('./alien-world-view-controller.js');
       if (!window.__liveEarthControlsInstalled || typeof window.liveEarthLocationAllowed !== 'function') paths.push('./orb-controls-v4.js');
       if (!window.__liveEarthLocationScannerInstalled) paths.push('./location-scanner.js');
       const brokenImages = [...document.querySelectorAll('#navButtons .orbImage')].filter(img => img.complete && img.naturalWidth === 0);
@@ -1073,7 +1074,7 @@ function injectStartupGate(html) {
     window.addEventListener('error', event => {
       if (event.target && event.target.tagName === 'SCRIPT') {
         const src = event.target.src || '';
-        const scriptPaths = ['./orb-controls-v4.js','./earth-mode-navigation.js','./view-manager.js','./view-module-registry.js','./stacks-feature-views.js','./alien-world-game.js','./sky-view-controller.js','./moon-view-controller.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
+        const scriptPaths = ['./orb-controls-v4.js','./earth-mode-navigation.js','./view-manager.js','./view-module-registry.js','./stacks-feature-views.js','./alien-world-view-controller.js','./sky-view-controller.js','./moon-view-controller.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
         for (const path of scriptPaths) if (src.endsWith(path.slice(1))) knownBadPaths.push(path);
         sceneFailure = 'A required startup script failed to load.';
       } else if (event.error) {
@@ -1162,12 +1163,14 @@ async function transformHomeHTML(request, response, forceHome = false) {
       html = html.replace(/<\/body\s*>/i, '<script src="./stacks-feature-views.js" defer></script>\n</body>');
     }
   }
-  // Alien World is an optional gameplay view, not a core readiness controller.
-  // Its compact script is also cached in APP_SHELL so the game can work offline after
-  // installation. The coreReady() gate deliberately does not require game registration;
-  // a runtime/gameplay issue must not hold Home, Moon or Sun hostage.
-  if (!html.includes('src="./alien-world-game.js"')) {
-    html = html.replace(/<\/body\s*>/i, '<script src="./alien-world-game.js" defer></script>\n</body>');
+  // Remove the previous game entry point from stale transformed HTML. Alien World
+  // is registered as a full-screen Stacks feature and therefore uses the shared
+  // three-Orb dock. Only its controller code is in the shell; news, photographs and
+  // world data use cache:'no-store' and are never added to CacheStorage. Offline,
+  // Alien World clears content while the rest of Live Earth keeps its normal shell.
+  html = html.replace(/<script\b[^>]*src=[\"']\.\/alien-world-game\.js[\"'][^>]*>\s*<\/script>/gi, '');
+  if (!html.includes('src="./alien-world-view-controller.js"')) {
+    html = html.replace(/<\/body\s*>/i, '<script src="./alien-world-view-controller.js" defer></script>\n</body>');
   }
   if (!html.includes("update-manager.js")) {
     html = html.replace(/<\/body\s*>/i, '<script src="./update-manager.js" defer></script>\n</body>');
