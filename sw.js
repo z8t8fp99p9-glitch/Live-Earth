@@ -1,7 +1,7 @@
-/* LIVE // EARTH V98 — Alien World first playable prototype; preserve V97 Stacks and startup recovery. */
+/* LIVE // EARTH V99 — Alien World first playable prototype; preserve V97 Stacks and startup recovery. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v98-alien-world-first-playable";
-const CACHE_NAME = "live-earth-shell-v98-alien-world-first-playable";
+const BUILD_ID = "v99-mathematical-universe-cinematic-2p5d";
+const CACHE_NAME = "live-earth-shell-v99-mathematical-universe-cinematic-2p5d";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -1162,8 +1162,10 @@ async function transformHomeHTML(request, response, forceHome = false) {
       html = html.replace(/<\/body\s*>/i, '<script src="./stacks-feature-views.js" defer></script>\n</body>');
     }
   }
-  // The game is an optional feature view, not a startup controller. Inject it after
-  // HTML parsing and let it wait for the Stacks registry; its failure never blocks Home.
+  // Alien World is an optional gameplay view, not a core readiness controller.
+  // Its compact script is also cached in APP_SHELL so the game can work offline after
+  // installation. The coreReady() gate deliberately does not require game registration;
+  // a runtime/gameplay issue must not hold Home, Moon or Sun hostage.
   if (!html.includes('src="./alien-world-game.js"')) {
     html = html.replace(/<\/body\s*>/i, '<script src="./alien-world-game.js" defer></script>\n</body>');
   }

@@ -1,9 +1,9 @@
-/* LIVE // EARTH V98 update manager + optional offline-cached Sun and Alien World game. */
+/* LIVE // EARTH V99 update manager + optional offline-cached Sun and Alien World game. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v98-alien-world-first-playable";
+  const BUILD_ID = "v99-mathematical-universe-cinematic-2p5d";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
@@ -27,7 +27,7 @@
   function signalVerifiedStartup() {
     const controller = navigator.serviceWorker.controller;
     if (!controller || !readyControllersPresent()) return;
-    // The service worker and update manager share the V97 cache identity.
+    // The service worker and update manager share the V99 cache identity.
     controller.postMessage({ type: "LIVE_EARTH_APP_READY_V75", buildId: BUILD_ID });
   }
 
