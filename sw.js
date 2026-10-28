@@ -1,11 +1,11 @@
 /* LIVE // EARTH V95 — sidereal Earth/Moon alignment; preserve bounded startup retry. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v95-lunar-earth-fixed-alignment";
-const CACHE_NAME = "live-earth-shell-v95-lunar-earth-fixed-alignment";
+const BUILD_ID = "v96-moon-view-controller-separated";
+const CACHE_NAME = "live-earth-shell-v96-moon-view-controller-separated";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
- "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./view-manager.js","./view-module-registry.js","./sky-view-controller.js","./moon-lunar-interface.js",
+ "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./view-manager.js","./view-module-registry.js","./sky-view-controller.js","./moon-view-controller.js","./moon-lunar-interface.js",
  "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js","./location-scanner.js",
  "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
  "./moon-sky-background-responsive.svg",
@@ -803,6 +803,7 @@ function injectStartupGate(html) {
       if (!window.LiveEarthScene) paths.push('./vendor/three.module.js','./vendor/three.core.js','./runtime-assets/earth-land-ocean-ice-2048.png');
       if (!window.LiveEarthViewManager) paths.push('./view-manager.js');
       if (!window.LiveEarthSkyViews) paths.push('./sky-view-controller.js');
+      if (!window.__liveEarthMoonRendererInstalled) paths.push('./moon-view-controller.js');
       if (!window.__liveEarthControlsInstalled || typeof window.liveEarthLocationAllowed !== 'function') paths.push('./orb-controls-v4.js');
       if (!window.__liveEarthLocationScannerInstalled) paths.push('./location-scanner.js');
       const brokenImages = [...document.querySelectorAll('#navButtons .orbImage')].filter(img => img.complete && img.naturalWidth === 0);
@@ -850,7 +851,7 @@ function injectStartupGate(html) {
       const orbImages = [...document.querySelectorAll('#navButtons .orbImage')];
       const imagesReady = orbImages.length === 5 && orbImages.every(img => img.complete && img.naturalWidth > 0);
       return document.readyState === 'complete' &&
-        !!window.LiveEarthScene && !!window.LiveEarthViewManager && !!window.LiveEarthViewModules && window.LiveEarthViewModules.has('sky-container') && window.LiveEarthViewModules.has('moon-lunar-interface') && !!window.LiveEarthSkyViews &&
+        !!window.LiveEarthScene && !!window.LiveEarthViewManager && !!window.LiveEarthViewModules && window.LiveEarthViewModules.has('sky-container') && window.LiveEarthViewModules.has('moon-lunar-interface') && window.__liveEarthMoonRendererInstalled === true && !!window.LiveEarthSkyViews &&
         window.__liveEarthControlsInstalled === true && window.__liveEarthLocationScannerInstalled === true &&
         typeof window.liveEarthLocationAllowed === 'function' && window.liveEarthLocationAllowed() === false && imagesReady;
     }
@@ -1037,7 +1038,7 @@ function injectStartupGate(html) {
     window.addEventListener('error', event => {
       if (event.target && event.target.tagName === 'SCRIPT') {
         const src = event.target.src || '';
-        const scriptPaths = ['./orb-controls-v4.js','./earth-mode-navigation.js','./view-manager.js','./view-module-registry.js','./sky-view-controller.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
+        const scriptPaths = ['./orb-controls-v4.js','./earth-mode-navigation.js','./view-manager.js','./view-module-registry.js','./sky-view-controller.js','./moon-view-controller.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
         for (const path of scriptPaths) if (src.endsWith(path.slice(1))) knownBadPaths.push(path);
         sceneFailure = 'A required startup script failed to load.';
       } else if (event.error) {
@@ -1101,6 +1102,9 @@ async function transformHomeHTML(request, response, forceHome = false) {
   }
   if (!html.includes("sky-view-controller.js")) {
     html = html.replace(/<\/body\s*>/i, '<script src="./sky-view-controller.js" defer></script>\n</body>');
+  }
+  if (!html.includes("moon-view-controller.js")) {
+    html = html.replace(/<\/body\s*>/i, '<script src="./moon-view-controller.js" defer></script>\n</body>');
   }
   if (!html.includes("view-manager.js")) {
     html = html.replace(/<\/body\s*>/i, '<script src="./view-manager.js" defer></script>\n</body>');

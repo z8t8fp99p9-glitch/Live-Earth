@@ -166,3 +166,13 @@ After the cleanup commit and after GitHub Pages finishes publishing, verify on t
 8. Local data/recovery remains intact; Basic Map route works if exposed by the current app.
 
 If any test fails, stop cleanup-related code changes and investigate the exact regression. Do not clear site data, IndexedDB or caches as a shortcut.
+
+
+### FIX-11 — Moon renderer separated from shared Sky View host (V96 candidate)
+
+- The prior `sky-view-controller.js` contained two IIFEs: the shared Sun/Moon sky stage and the Moon-specific 3D renderer. The Moon renderer has been extracted intact to `moon-view-controller.js`.
+- `sky-view-controller.js` retains the shared sky stage, background selection, visibility and lifecycle. The global `view-manager.js` remains the single authority for primary-view transitions.
+- `index.html` loads `sky-view-controller.js`, then `moon-view-controller.js`, then the legacy `moon-lunar-interface.js` compatibility resource.
+- `sw.js` and `update-manager.js` use matching V96 build identifiers; the new Moon controller is an essential cached resource and a startup-repair target.
+- Moon renderer registration key and readiness compatibility flags are preserved. No Moon UI, geometry, calculations, textures or interactions were intentionally rewritten.
+- Status: prepared candidate; static validation pending; not uploaded, deployed, or user-device verified.

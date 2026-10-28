@@ -3,7 +3,7 @@
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v95-lunar-earth-fixed-alignment";
+  const BUILD_ID = "v96-moon-view-controller-separated";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
@@ -14,6 +14,7 @@
       window.LiveEarthViewModules.has("sky-container") &&
       window.LiveEarthViewModules.has("sun-procedural-renderer") &&
       window.LiveEarthViewModules.has("moon-lunar-interface") &&
+      window.__liveEarthMoonRendererInstalled === true &&
       window.LiveEarthSkyViews &&
       window.__liveEarthControlsInstalled &&
       window.__liveEarthLocationScannerInstalled &&

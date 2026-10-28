@@ -36,7 +36,8 @@
 | `earth-mode-navigation.js` | Earth exploration, quality and utility controls |
 | `view-manager.js` | Primary view transition coordinator |
 | `view-module-registry.js` | Current view/module implementation and feature Orb behavior |
-| `sky-view-controller.js` | Current Sun/Moon view lifecycle and portrait/landscape backgrounds |
+| `sky-view-controller.js` | Shared Sun/Moon full-screen sky stage and lifecycle |
+| `moon-view-controller.js` | Moon-only 3D renderer and lunar view behaviour |
 | `moon-lunar-interface.js` | Moon-only lunar Arc/scroller UI and lifecycle |
 | `location.html` | Location/3D globe screen |
 | `earth-orb-globe.js` | Interactive Location globe implementation |
@@ -83,3 +84,13 @@ The cleanup is intentionally manual. First update this guide, `LIVE-EARTH-CONTIN
 8. Existing local data and recovery remain intact.
 
 Do not clear site data or IndexedDB during these tests.
+
+
+## Moon/Sky controller separation — V96
+
+- `sky-view-controller.js` owns the shared full-screen sky stage, background selection, visibility and lifecycle for Sun/Moon sky views.
+- `moon-view-controller.js` owns the extracted Moon-specific 3D renderer and lunar view behaviour. Its implementation is moved intact from the former inline section.
+- `view-manager.js` remains the global authority for primary-view navigation and Orb open/close behavior.
+- `moon-lunar-interface.js` is retained for compatibility. The Moon renderer loads before it so the existing registry key and startup contract remain compatible.
+- Service-worker `BUILD_ID` and `update-manager.js` `BUILD_ID` are both `v96-moon-view-controller-separated`. The new controller is an essential APP_SHELL resource and is included in startup repair.
+- This is a source separation candidate only. It is not yet uploaded, deployed, or iPhone-tested.
