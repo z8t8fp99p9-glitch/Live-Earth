@@ -1,9 +1,9 @@
-/* LIVE // EARTH V105 update manager; Alien World is an online-only full-screen Stacks feature. */
+/* LIVE // EARTH V106 update manager; Weekly Publish data remains outside the launch shell. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v105-alien-world-magazine";
+  const BUILD_ID = "v106-weekly-publish-store";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
@@ -28,7 +28,7 @@
   function signalVerifiedStartup() {
     const controller = navigator.serviceWorker.controller;
     if (!controller || !readyControllersPresent()) return;
-    // The service worker and update manager share the V104 cache identity.
+    // The service worker and update manager must share the exact V106 cache identity.
     controller.postMessage({ type: "LIVE_EARTH_APP_READY_V75", buildId: BUILD_ID });
   }
 

@@ -1,9 +1,11 @@
-/* LIVE // EARTH V105 — Alien World is a full-screen Stacks feature; online content remains uncached. */
+/* LIVE // EARTH V106 — verified app shell. Weekly reader code and Sunday payloads are optional and outside this shell. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v105-alien-world-magazine";
-const CACHE_NAME = "live-earth-shell-v105-alien-world-magazine";
+const BUILD_ID = "v106-weekly-publish-store";
+const CACHE_NAME = "live-earth-shell-v106-weekly-publish-store";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
+const WEEKLY_READER_CACHE = "live-earth-weekly-reader-v1";
+const WEEKLY_READER_PATH = "./alien-world-weekly-publish.js";
 const APP_SHELL = [
  "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./view-manager.js","./view-module-registry.js","./stacks-feature-views.js","./alien-world-view-controller.js","./alien-world-magazine-v105.js","./sky-view-controller.js","./moon-view-controller.js","./moon-lunar-interface.js",
  "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js","./location-scanner.js",
@@ -1166,9 +1168,10 @@ async function transformHomeHTML(request, response, forceHome = false) {
   }
   // Remove the previous game entry point from stale transformed HTML. Alien World
   // is registered as a full-screen Stacks feature and therefore uses the shared
-  // three-Orb dock. Only its controller code is in the shell; news, photographs and
-  // world data use cache:'no-store' and are never added to CacheStorage. Offline,
-  // Alien World clears content while the rest of Live Earth keeps its normal shell.
+  // three-Orb dock. Live news, photographs and world data remain online-only. The
+  // small Weekly Publish reader is fetched only on user request and stored in its own
+  // optional cache; issue text/metadata is kept in IndexedDB, never the app shell.
+  // Offline Live Updates clears current headlines; the separate weekly library remains usable.
   html = html.replace(/<script\b[^>]*src=[\"']\.\/alien-world-game\.js[\"'][^>]*>\s*<\/script>/gi, '');
   if (!html.includes('src="./alien-world-view-controller.js"')) {
     html = html.replace(/<\/body\s*>/i, '<script src="./alien-world-view-controller.js" defer></script>\n</body>');
@@ -1226,6 +1229,37 @@ async function networkFirst(request) {
     return offlineFallback(error);
   }
 }
+async function weeklyReaderResponse(request) {
+  const cache = await caches.open(WEEKLY_READER_CACHE);
+  const cached = await cache.match(request);
+  if (self.navigator && self.navigator.onLine === false) {
+    if (cached) return cached;
+    return new Response("Weekly Publish has not been opened online on this device yet.", {
+      status: 503,
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" }
+    });
+  }
+  try {
+    const response = await fetch(request, { cache: "no-store", credentials: "same-origin" });
+    const type = response.headers.get("content-type") || "";
+    if (!response.ok || !/(javascript|ecmascript)/i.test(type)) {
+      throw new Error("The optional Weekly Publish reader did not return a JavaScript response.");
+    }
+    const source = await response.clone().text();
+    if (source.length < 100 || !source.includes("LiveEarthWeeklyPublish") || !source.includes("v106")) {
+      throw new Error("The optional Weekly Publish reader failed its content check.");
+    }
+    await cache.put(request, response.clone());
+    return response;
+  } catch (error) {
+    if (cached) return cached;
+    return new Response("Weekly Publish reader could not be loaded. Connect once and open Weekly Publish to prepare it for offline use.", {
+      status: 503,
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" }
+    });
+  }
+}
+
 async function boundedOptionalCache(request) {
   const cache = await caches.open(OPTIONAL_CACHE);
 
@@ -1301,6 +1335,11 @@ self.addEventListener("fetch", event => {
   // startup sync above specifically refuses a silent cache fallback while online.
   if (request.mode === "navigate" || request.destination === "document" || url.pathname.endsWith(".html") || url.pathname.endsWith("/")) {
     event.respondWith(networkFirst(request));
+    return;
+  }
+  const weeklyReaderPath = runtimePath(WEEKLY_READER_PATH);
+  if (url.pathname === weeklyReaderPath) {
+    event.respondWith(weeklyReaderResponse(request));
     return;
   }
   const runtimeDependency = RUNTIME_DEPENDENCIES.find(dependency => runtimePath(dependency.path) === url.pathname);

@@ -1,6 +1,6 @@
-/* LIVE // EARTH V104 — Alien World image-led full-screen Stacks feature.
-   Keeps the shared three-Orb dock and uses each article's publisher-supplied image_url.
-   Content is online-only: no app-managed offline story/image cache or saved content snapshots.
+/* LIVE // EARTH V106 — Alien World with separate Live Updates and Weekly Publish modes.
+   Live Updates remains network-only. Weekly Publish reads an independent IndexedDB archive;
+   no issue text, image bundle or weekly payload is part of the verified app shell.
    NASA media API results are filtered to exclude explicit illustration/artist-concept labels.
    No AI-generated or locally fabricated pictures are used as content fallbacks. */
 (() => {
@@ -71,6 +71,13 @@
     category: 'planets',
     worldOffset: 0,
     searchText: '',
+    mode: 'live',
+    modeBar: null,
+    liveModeButton: null,
+    weeklyModeButton: null,
+    searchbar: null,
+    modePillLabel: null,
+    weeklyScriptPromise: null,
     token: 0,
     controllers: new Set(),
     objectUrls: new Set(),
@@ -91,7 +98,12 @@
     .aw-brand-sub{margin:7px 0 0;color:#8eb8d3;font-size:9px;letter-spacing:.18em;text-transform:uppercase}
     .aw-live-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #5299bd42;border-radius:999px;padding:7px 9px;background:#0a1b2ab0;color:#b7d8eb;white-space:nowrap;font-size:8px;letter-spacing:.12em;text-transform:uppercase}
     .aw-live-dot{width:6px;height:6px;border-radius:50%;background:#6fe5bd;box-shadow:0 0 9px #6fe5bd75}
-    .aw-searchbar{display:flex;gap:8px;margin:0 0 21px;padding:5px;border:1px solid #98c8e328;border-radius:15px;background:#091725d9;box-shadow:inset 1px 1px 2px #ffffff08}
+    .aw-searchbar{display:flex;gap:8px;margin:0 0 12px;padding:5px;border:1px solid #98c8e328;border-radius:15px;background:#091725d9;box-shadow:inset 1px 1px 2px #ffffff08}
+    .aw-modebar{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:0 0 20px;padding:4px;border:1px solid rgba(153,194,220,.17);border-radius:15px;background:rgba(5,13,23,.76)}
+    .aw-mode-button{min-height:39px;padding:9px 8px;border:1px solid transparent;border-radius:11px;background:transparent;color:#a3b8c8;font-size:10px;font-weight:800;letter-spacing:.01em;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+    .aw-mode-button[aria-pressed="true"]{border-color:rgba(125,202,235,.34);background:linear-gradient(135deg,rgba(26,74,100,.9),rgba(8,24,39,.96));color:#f0faff;box-shadow:inset 0 1px rgba(255,255,255,.06)}
+    .aw-mode-button[data-mode="weekly"][aria-pressed="true"]{border-color:rgba(218,173,130,.42);background:linear-gradient(135deg,rgba(92,59,40,.72),rgba(18,23,30,.96));color:#fff2e4}
+    .aw-searchbar[hidden]{display:none!important}
     .aw-searchbar input{min-width:0;flex:1;border:0;outline:0;background:transparent;color:#edf7ff;padding:9px 10px;font-size:13px}
     .aw-searchbar input::placeholder{color:#718ba2}
     .aw-icon-button,.aw-button{border:1px solid #8dc9e83a;border-radius:12px;background:linear-gradient(135deg,#19425a9c,#0a1725);color:#eaf8ff;padding:10px 13px;font-size:10px;font-weight:750;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
@@ -285,7 +297,8 @@
     header.append(brand);
     const online = node('span', 'aw-live-pill');
     online.appendChild(node('span', 'aw-live-dot'));
-    online.appendChild(node('span', '', 'ONLINE EXPLORER'));
+    state.modePillLabel = node('span', '', 'LIVE UPDATES · ONLINE');
+    online.appendChild(state.modePillLabel);
     header.appendChild(online);
     return header;
   }
@@ -306,16 +319,80 @@
     });
     return form;
   }
+  function updateModeUI() {
+    const weekly = state.mode === 'weekly';
+    if (state.liveModeButton) state.liveModeButton.setAttribute('aria-pressed', String(!weekly));
+    if (state.weeklyModeButton) state.weeklyModeButton.setAttribute('aria-pressed', String(weekly));
+    if (state.searchbar) state.searchbar.hidden = weekly;
+    if (state.modePillLabel) state.modePillLabel.textContent = weekly ? 'LOCAL WEEKLY ARCHIVE' : 'LIVE UPDATES · ONLINE';
+  }
+  function loadWeeklyScript() {
+    if (window.LiveEarthWeeklyPublish?.version === 'v106') return Promise.resolve(window.LiveEarthWeeklyPublish);
+    if (state.weeklyScriptPromise) return state.weeklyScriptPromise;
+    state.weeklyScriptPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = new URL('./alien-world-weekly-publish.js', document.baseURI).href;
+      script.async = true;
+      script.onload = () => {
+        if (window.LiveEarthWeeklyPublish?.version === 'v106') resolve(window.LiveEarthWeeklyPublish);
+        else reject(new Error('The weekly reader did not initialize correctly.'));
+      };
+      script.onerror = () => reject(new Error('The small weekly reader could not be loaded. No magazine issue was downloaded.'));
+      document.body.appendChild(script);
+    }).catch(error => { state.weeklyScriptPromise = null; throw error; });
+    return state.weeklyScriptPromise;
+  }
+  function renderWeeklyView() {
+    if (!state.active || state.mode !== 'weekly' || !state.page) return;
+    const token = ++state.token;
+    state.root?.removeAttribute('data-state');
+    state.page.replaceChildren();
+    const waiting = node('p', 'aw-status', 'Opening the local Weekly Publish library…');
+    state.page.appendChild(waiting);
+    loadWeeklyScript().then(api => {
+      if (!isCurrent(token) || state.mode !== 'weekly') return;
+      return api.render(state.page, {});
+    }).catch(error => {
+      if (!isCurrent(token) || state.mode !== 'weekly') return;
+      state.page.replaceChildren();
+      const card = node('section', 'aw-featured-body');
+      card.appendChild(node('p', 'aw-eyebrow', 'WEEKLY PUBLISH'));
+      card.appendChild(node('h2', 'aw-h2', 'The local library is unavailable'));
+      card.appendChild(node('p', 'aw-subtle', `${error?.message || 'The weekly reader could not be opened.'} Live Earth launch and other views remain independent.`));
+      const retry = node('button', 'aw-button primary', 'Retry library');
+      retry.type = 'button'; retry.addEventListener('click', () => renderWeeklyView());
+      card.appendChild(retry); state.page.appendChild(card);
+    });
+  }
+  function enterWeeklyPublish() {
+    if (!state.active) return;
+    abortRequests();
+    state.mode = 'weekly';
+    state.route = { name: 'weekly' };
+    updateModeUI();
+    renderWeeklyView();
+    if (state.root) state.root.scrollTo({ top: 0, behavior: 'auto' });
+  }
+  function enterLiveUpdates() {
+    if (!state.active) return;
+    abortRequests();
+    state.mode = 'live';
+    state.route = { name: 'home' };
+    updateModeUI();
+    renderCurrent();
+    if (state.root) state.root.scrollTo({ top: 0, behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ? 'auto' : 'smooth' });
+  }
   function showOffline() {
     abortRequests();
-    const token = ++state.token;
     if (!state.page || !state.active) return;
+    if (state.mode === 'weekly') { renderWeeklyView(); return; }
+    state.token++;
     state.page.replaceChildren();
     const card = node('section', 'aw-featured-body');
-    card.appendChild(node('p', 'aw-eyebrow', 'ALIEN WORLD IS ONLINE-ONLY'));
-    card.appendChild(node('h2', 'aw-h2', 'Connect to explore the universe'));
-    card.appendChild(node('p', 'aw-subtle', 'News, photographs and planet information are loaded directly from their original online sources. We do not keep an offline copy in Alien World. Reconnect to load fresh content.'));
-    const button = node('button', 'aw-button primary', 'Try again');
+    card.appendChild(node('p', 'aw-eyebrow', 'LIVE UPDATES · OFFLINE'));
+    card.appendChild(node('h2', 'aw-h2', 'Current headlines are unavailable'));
+    card.appendChild(node('p', 'aw-subtle', 'Live Updates never shows old headlines as current and makes no network requests while offline. Use the Weekly Publish tab above to read saved Sunday editions.'));
+    const button = node('button', 'aw-button primary', 'Try Live Updates again');
     button.type = 'button'; button.addEventListener('click', () => { if (navigator.onLine !== false) renderCurrent(); });
     card.appendChild(button); state.page.appendChild(card);
     state.root.setAttribute('data-state', 'offline');
@@ -326,16 +403,28 @@
     const root = node('div'); root.id = ROOT_ID; root.setAttribute('role', 'region'); root.setAttribute('aria-label', 'Alien World space discovery');
     const wrap = node('div', 'aw-wrap');
     wrap.appendChild(buildHeader());
-    wrap.appendChild(buildSearchbar());
+    state.searchbar = buildSearchbar();
+    wrap.appendChild(state.searchbar);
+    const modes = node('nav', 'aw-modebar');
+    modes.setAttribute('aria-label', 'Alien World modes');
+    state.liveModeButton = node('button', 'aw-mode-button', 'Live Updates');
+    state.liveModeButton.type = 'button'; state.liveModeButton.dataset.mode = 'live';
+    state.liveModeButton.addEventListener('click', enterLiveUpdates);
+    state.weeklyModeButton = node('button', 'aw-mode-button', 'Weekly Publish');
+    state.weeklyModeButton.type = 'button'; state.weeklyModeButton.dataset.mode = 'weekly';
+    state.weeklyModeButton.addEventListener('click', enterWeeklyPublish);
+    modes.append(state.liveModeButton, state.weeklyModeButton);
+    state.modeBar = modes; wrap.appendChild(modes);
     const page = node('main', 'aw-main');
     wrap.appendChild(page);
     const footer = node('footer', 'aw-footer');
-    footer.appendChild(document.createTextNode('REAL SOURCES · NO GENERATED PLANET PHOTOGRAPHS · ONLINE CONTENT IS NOT SAVED FOR OFFLINE USE. '));
+    footer.appendChild(document.createTextNode('LIVE UPDATES ARE ONLINE-ONLY · WEEKLY PUBLISH SAVES THE LATEST 3 TEXT EDITIONS LOCALLY. '));
     const nasa = node('a', '', 'NASA Image Library'); nasa.href = 'https://images.nasa.gov/'; nasa.target = '_blank'; nasa.rel = 'noopener noreferrer'; footer.appendChild(nasa);
     footer.appendChild(document.createTextNode(' · '));
     const archive = node('a', '', 'NASA Exoplanet Archive'); archive.href = 'https://exoplanetarchive.ipac.caltech.edu/'; archive.target = '_blank'; archive.rel = 'noopener noreferrer'; footer.appendChild(archive);
     wrap.appendChild(footer); root.appendChild(wrap); host.appendChild(root);
     state.root = root; state.page = page;
+    updateModeUI();
     return true;
   }
   function setPageRoute(route) { state.route = route; }
@@ -742,6 +831,7 @@
   }
   function renderCurrent() {
     if (!state.active || !state.page) return;
+    if (state.mode === 'weekly') { renderWeeklyView(); return; }
     if (navigator.onLine === false) { showOffline(); return; }
     abortRequests();
     const token = ++state.token;
@@ -768,6 +858,7 @@
     if (!renderShell()) { state.active = false; if (state.stageCard) state.stageCard.hidden = false; return; }
     state.route = { name: 'home' };
     state.category = 'planets'; state.worldOffset = 0;
+    state.mode = 'live';
     state.offlineHandler = () => { if (state.active) showOffline(); };
     state.onlineHandler = () => { if (state.active) renderCurrent(); };
     window.addEventListener('offline', state.offlineHandler);
@@ -783,14 +874,15 @@
     if (state.root) state.root.remove();
     if (state.stageCard) state.stageCard.hidden = false;
     state.root = null; state.page = null; state.stage = null; state.stageCard = null;
-    state.route = { name: 'home' }; state.searchText = ''; state.worldOffset = 0;
+    state.modeBar = null; state.liveModeButton = null; state.weeklyModeButton = null; state.searchbar = null; state.modePillLabel = null;
+    state.route = { name: 'home' }; state.mode = 'live'; state.searchText = ''; state.worldOffset = 0;
   }
   function install() {
     const api = window.LiveEarthFeatureViews;
     if (!api || typeof api.register !== 'function') return false;
     api.register(FEATURE_ID, {
       title: 'Alien World', shortLabel: 'Alien World', symbol: '🪐',
-      description: 'A cinematic, online-only universe explorer with real-source imagery, astronomy news, and sourced world information.',
+      description: 'Explore real-source astronomy online, or read your saved Sunday editions offline with Weekly Publish.',
       connected: true, activate, deactivate
     });
     state.featureRegistrationInstalled = true;
