@@ -1,4 +1,4 @@
-/* LIVE // EARTH V106 — Alien World with separate Live Updates and Weekly Publish modes.
+/* LIVE // EARTH V108 compatibility fix — Alien World with separate Live Updates and Weekly Publish modes.
    Live Updates remains network-only. Weekly Publish reads an independent IndexedDB archive;
    no issue text, image bundle or weekly payload is part of the verified app shell.
    NASA media API results are filtered to exclude explicit illustration/artist-concept labels.
@@ -327,14 +327,14 @@
     if (state.modePillLabel) state.modePillLabel.textContent = weekly ? 'LOCAL WEEKLY ARCHIVE' : 'LIVE UPDATES · ONLINE';
   }
   function loadWeeklyScript() {
-    if (['v106', 'v107'].includes(window.LiveEarthWeeklyPublish?.version)) return Promise.resolve(window.LiveEarthWeeklyPublish);
+    if (['v106', 'v107', 'v108'].includes(window.LiveEarthWeeklyPublish?.version)) return Promise.resolve(window.LiveEarthWeeklyPublish);
     if (state.weeklyScriptPromise) return state.weeklyScriptPromise;
     state.weeklyScriptPromise = new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = new URL('./alien-world-weekly-publish.js', document.baseURI).href;
       script.async = true;
       script.onload = () => {
-        if (['v106', 'v107'].includes(window.LiveEarthWeeklyPublish?.version)) resolve(window.LiveEarthWeeklyPublish);
+        if (['v106', 'v107', 'v108'].includes(window.LiveEarthWeeklyPublish?.version)) resolve(window.LiveEarthWeeklyPublish);
         else reject(new Error('The weekly reader did not initialize correctly.'));
       };
       script.onerror = () => reject(new Error('The small weekly reader could not be loaded. No magazine issue was downloaded.'));
