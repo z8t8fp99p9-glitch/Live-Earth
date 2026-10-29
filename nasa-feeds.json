@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "feeds": [
+    {"name": "NASA News", "url": "https://www.nasa.gov/news-release/feed/", "sourcePolicy": "Official NASA feed"},
+    {"name": "NASA Science", "url": "https://science.nasa.gov/feed/", "sourcePolicy": "Official NASA feed"},
+    {"name": "NASA Image of the Day", "url": "https://www.nasa.gov/feeds/iotd-feed/", "sourcePolicy": "Official NASA feed"},
+    {"name": "NASA Artemis", "url": "https://www.nasa.gov/blogs/artemis/feed/", "sourcePolicy": "Official NASA feed"},
+    {"name": "NASA Space Station", "url": "https://www.nasa.gov/blogs/spacestation/feed/", "sourcePolicy": "Official NASA feed"}
+  ],
+  "rules": {
+    "freshnessDays": 8,
+    "minimumStories": 5,
+    "maximumStories": 8,
+    "minimumNewStoriesVsPriorIssue": 3,
+    "maximumIssuePages": 20,
+    "minimumIssuePages": 10,
+    "maximumPdfBytes": 16777216,
+    "retainedPdfCount": 3
+  }
+}
