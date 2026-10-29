@@ -1,11 +1,11 @@
-/* LIVE // EARTH V106 — optional Weekly Publish reader and local issue store.
+/* LIVE // EARTH V107 — optional Weekly Publish reader and local issue store plus the reusable Magazine Engine.
    Issue payloads are NEVER part of the app shell or service-worker caches.
    This small controller is loaded from the verified shell only when the user
    opens Weekly Publish. Issue metadata/text is fetched on-demand and saved to
    IndexedDB; at most three complete editions are retained. */
 (() => {
   'use strict';
-  if (window.LiveEarthWeeklyPublish?.version === 'v106') return;
+  if (window.LiveEarthWeeklyPublish?.version === 'v107') return;
 
   const DB_NAME = 'liveEarthWeeklyPublish';
   const DB_VERSION = 1;
@@ -16,7 +16,8 @@
   const REQUEST_TIMEOUT_MS = 12000;
   const MAX_MANIFEST_BYTES = 16 * 1024;
   const MAX_ISSUE_BYTES = 64 * 1024;
-  const STYLE_ID = 'le-aw-weekly-publish-v106-style';
+  const STYLE_ID = 'le-aw-weekly-publish-v107-style';
+  let magazineEnginePromise = null;
   let dbPromise = null;
   let publishPromise = null;
   let selectedIssueId = null;
@@ -218,6 +219,17 @@
       const url = safeUrl(story?.url);
       const publishedAt = Date.parse(story?.publishedAt);
       if (!title || !summary || !url || !Number.isFinite(publishedAt)) return null;
+      const visualSource = story?.visual;
+      const visualUrl = visualSource?.approved === true ? safeUrl(visualSource.url) : null;
+      const visualCredit = clip(visualSource?.credit, 180);
+      const visualRights = clip(visualSource?.rights, 180);
+      const visual = visualUrl && visualCredit && visualRights ? {
+        approved: true,
+        url: visualUrl,
+        alt: clip(visualSource?.alt || title, 240),
+        credit: visualCredit,
+        rights: visualRights
+      } : null;
       return {
         id: clip(story?.id || `report-${index + 1}`, 100),
         title,
@@ -225,7 +237,8 @@
         publisher: clip(story?.publisher || 'Original source', 100),
         publishedAt,
         url,
-        imageUrl: safeImageUrl(story?.imageUrl) || ''
+        imageUrl: safeImageUrl(story?.imageUrl) || '',
+        visual
       };
     }).filter(Boolean);
     if (stories.length !== entry.storyCount) throw new Error('One or more stories failed validation. Saved editions remain untouched.');
@@ -233,9 +246,12 @@
     if (!Number.isFinite(publishedAt) || publishedAt !== Date.parse(entry.publishedAt)) {
       throw new Error('The issue publication date did not match its manifest. Saved editions remain untouched.');
     }
+    const requestedProfile = clip(raw.magazineProfile || raw.profile || 'space-journal', 80);
+    const magazineProfile = /^[a-z0-9-]+$/.test(requestedProfile) ? requestedProfile : 'space-journal';
     return {
       id: raw.id,
       kind: 'sunday',
+      magazineProfile,
       title: clip(raw.title, 160),
       publishedAt,
       savedAt: Date.now(),
@@ -274,6 +290,23 @@
     const status = el('p', `aw-weekly-status${error ? ' error' : ''}`, message);
     parent.appendChild(status); return status;
   }
+  function loadMagazineEngine() {
+    if (window.LiveEarthMagazineEngine?.version === 'v1') return Promise.resolve(window.LiveEarthMagazineEngine);
+    if (magazineEnginePromise) return magazineEnginePromise;
+    magazineEnginePromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = new URL('./magazine-engine-v1.js', document.baseURI).href;
+      script.async = true;
+      script.onload = () => {
+        if (window.LiveEarthMagazineEngine?.version === 'v1') resolve(window.LiveEarthMagazineEngine);
+        else reject(new Error('The optional Magazine Engine did not initialize correctly.'));
+      };
+      script.onerror = () => reject(new Error('The optional Magazine Engine is not ready on this device. The saved edition can still use its built-in reader.'));
+      document.body.appendChild(script);
+    }).catch(error => { magazineEnginePromise = null; throw error; });
+    return magazineEnginePromise;
+  }
+
   function renderStory(issue, story, online) {
     const card = el('article', 'aw-weekly-story');
     if (online && story.imageUrl) {
@@ -304,7 +337,7 @@
   function printIssue() {
     try { window.print(); } catch (_) { /* Printing is optional on standalone browsers. */ }
   }
-  function renderIssue(parent, issue, online) {
+  function renderIssueLegacy(parent, issue, online) {
     const edition = el('section', 'aw-weekly-edition');
     const heading = el('header', 'aw-weekly-edition-head');
     heading.appendChild(el('p', 'aw-weekly-kicker', 'SUNDAY RELEASE'));
@@ -319,6 +352,18 @@
     edition.appendChild(list);
     return edition;
   }
+  function renderIssue(parent, issue, online) {
+    const engine = window.LiveEarthMagazineEngine;
+    if (engine?.version === 'v1' && typeof engine.renderEdition === 'function') {
+      return engine.renderEdition(issue, {
+        profile: issue.magazineProfile || issue.profile || 'space-journal',
+        online,
+        onPrint: printIssue
+      });
+    }
+    return renderIssueLegacy(parent, issue, online);
+  }
+
   async function render(container, options = {}) {
     addStyle();
     askForPersistentStorage();
@@ -330,6 +375,8 @@
     catch (error) { statusLine(container, `The local magazine library could not be opened: ${error?.message || error}`, true); return; }
 
     let updated = false;
+    // The reusable renderer is optional, loaded only on this screen and cached separately from launch essentials.
+    try { await loadMagazineEngine(); } catch (_) { /* Preserve the built-in reader as an offline/recovery fallback. */ }
     if (online) {
       statusLine(container, 'Checking the small Sunday manifest…');
       try {
@@ -390,7 +437,7 @@
   }
 
   window.LiveEarthWeeklyPublish = {
-    version: 'v106',
+    version: 'v107',
     render,
     getSavedIssues: readAllIssues
   };

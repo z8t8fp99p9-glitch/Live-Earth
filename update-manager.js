@@ -1,9 +1,9 @@
-/* LIVE // EARTH V106 update manager; Weekly Publish data remains outside the launch shell. */
+/* LIVE // EARTH V107 update manager; the Magazine Engine remains optional and outside the launch shell. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v106-weekly-publish-store";
+  const BUILD_ID = "v107-magazine-engine-core";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {

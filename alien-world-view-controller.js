@@ -327,14 +327,14 @@
     if (state.modePillLabel) state.modePillLabel.textContent = weekly ? 'LOCAL WEEKLY ARCHIVE' : 'LIVE UPDATES · ONLINE';
   }
   function loadWeeklyScript() {
-    if (window.LiveEarthWeeklyPublish?.version === 'v106') return Promise.resolve(window.LiveEarthWeeklyPublish);
+    if (['v106', 'v107'].includes(window.LiveEarthWeeklyPublish?.version)) return Promise.resolve(window.LiveEarthWeeklyPublish);
     if (state.weeklyScriptPromise) return state.weeklyScriptPromise;
     state.weeklyScriptPromise = new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = new URL('./alien-world-weekly-publish.js', document.baseURI).href;
       script.async = true;
       script.onload = () => {
-        if (window.LiveEarthWeeklyPublish?.version === 'v106') resolve(window.LiveEarthWeeklyPublish);
+        if (['v106', 'v107'].includes(window.LiveEarthWeeklyPublish?.version)) resolve(window.LiveEarthWeeklyPublish);
         else reject(new Error('The weekly reader did not initialize correctly.'));
       };
       script.onerror = () => reject(new Error('The small weekly reader could not be loaded. No magazine issue was downloaded.'));

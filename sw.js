@@ -1,11 +1,12 @@
-/* LIVE // EARTH V106 — verified app shell. Weekly reader code and Sunday payloads are optional and outside this shell. */
+/* LIVE // EARTH V107 — verified app shell. Weekly reader, Magazine Engine and Sunday payloads remain optional and outside this shell. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v106-weekly-publish-store";
-const CACHE_NAME = "live-earth-shell-v106-weekly-publish-store";
+const BUILD_ID = "v107-magazine-engine-core";
+const CACHE_NAME = "live-earth-shell-v107-magazine-engine-core";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const WEEKLY_READER_CACHE = "live-earth-weekly-reader-v1";
 const WEEKLY_READER_PATH = "./alien-world-weekly-publish.js";
+const WEEKLY_ENGINE_PATH = "./magazine-engine-v1.js";
 const APP_SHELL = [
  "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./view-manager.js","./view-module-registry.js","./stacks-feature-views.js","./alien-world-view-controller.js","./alien-world-magazine-v105.js","./sky-view-controller.js","./moon-view-controller.js","./moon-lunar-interface.js",
  "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js","./location-scanner.js",
@@ -1229,31 +1230,36 @@ async function networkFirst(request) {
     return offlineFallback(error);
   }
 }
-async function weeklyReaderResponse(request) {
+async function weeklyOptionalScriptResponse(request, expectedExport, expectedVersion, label, compatibleVersions = []) {
   const cache = await caches.open(WEEKLY_READER_CACHE);
   const cached = await cache.match(request);
+  const isValidScript = async response => {
+    if (!response) return false;
+    try {
+      const type = response.headers.get("content-type") || "";
+      if (!/(javascript|ecmascript)/i.test(type)) return false;
+      const source = await response.clone().text();
+      return source.length >= 100 && source.includes(expectedExport) && (source.includes(expectedVersion) || compatibleVersions.some(version => source.includes(version)));
+    } catch (_) { return false; }
+  };
+
   if (self.navigator && self.navigator.onLine === false) {
-    if (cached) return cached;
-    return new Response("Weekly Publish has not been opened online on this device yet.", {
+    if (await isValidScript(cached)) return cached;
+    return new Response(`${label} has not been prepared for offline use on this device yet.`, {
       status: 503,
       headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" }
     });
   }
   try {
     const response = await fetch(request, { cache: "no-store", credentials: "same-origin" });
-    const type = response.headers.get("content-type") || "";
-    if (!response.ok || !/(javascript|ecmascript)/i.test(type)) {
-      throw new Error("The optional Weekly Publish reader did not return a JavaScript response.");
-    }
-    const source = await response.clone().text();
-    if (source.length < 100 || !source.includes("LiveEarthWeeklyPublish") || !source.includes("v106")) {
-      throw new Error("The optional Weekly Publish reader failed its content check.");
+    if (!response.ok || !(await isValidScript(response))) {
+      throw new Error(`The optional ${label} did not return the expected version of JavaScript.`);
     }
     await cache.put(request, response.clone());
     return response;
   } catch (error) {
-    if (cached) return cached;
-    return new Response("Weekly Publish reader could not be loaded. Connect once and open Weekly Publish to prepare it for offline use.", {
+    if (await isValidScript(cached)) return cached;
+    return new Response(`${label} could not be loaded. Connect once and open Weekly Publish to prepare it for offline use.`, {
       status: 503,
       headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" }
     });
@@ -1339,7 +1345,12 @@ self.addEventListener("fetch", event => {
   }
   const weeklyReaderPath = runtimePath(WEEKLY_READER_PATH);
   if (url.pathname === weeklyReaderPath) {
-    event.respondWith(weeklyReaderResponse(request));
+    event.respondWith(weeklyOptionalScriptResponse(request, "LiveEarthWeeklyPublish", "version: 'v107'", "Weekly Publish reader", ["version: 'v106'"]));
+    return;
+  }
+  const weeklyEnginePath = runtimePath(WEEKLY_ENGINE_PATH);
+  if (url.pathname === weeklyEnginePath) {
+    event.respondWith(weeklyOptionalScriptResponse(request, "LiveEarthMagazineEngine", "version: 'v1'", "Magazine Engine"));
     return;
   }
   const runtimeDependency = RUNTIME_DEPENDENCIES.find(dependency => runtimePath(dependency.path) === url.pathname);
