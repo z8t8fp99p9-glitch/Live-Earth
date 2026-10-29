@@ -1,0 +1,47 @@
+name: LIVE // EARTH Weekly Magazine Publisher
+
+on:
+  schedule:
+    # Sunday 03:00 UTC = 08:30 Asia/Kolkata. GitHub may delay scheduled jobs during load.
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live-earth-weekly-magazine-publisher
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: publisher/requirements.txt
+      - name: Install the PDF publisher
+        run: python -m pip install -r publisher/requirements.txt
+      - name: Build and validate a weekly issue
+        run: python publisher/weekly_publisher.py --repo-root .
+      - name: Commit only validated publication artifacts
+        shell: bash
+        run: |
+          if [[ -z "$(git status --porcelain -- published-magazines)" ]]; then
+            echo "No new validated issue. Last-good magazine remains unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add published-magazines
+          git commit -m "Publish validated Sunday Space Journal PDF"
+          git push
+
