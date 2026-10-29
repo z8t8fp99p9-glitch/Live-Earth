@@ -298,6 +298,16 @@
     if (next.image.complete && next.image.naturalWidth > 0) next.image.onload();
   }
 
+  function clearAmbient() {
+    lastImageUrl = '';
+    for (const item of layers) {
+      item.layer.classList.remove('is-active');
+      item.image.onload = null;
+      item.image.onerror = null;
+      item.image.removeAttribute('src');
+    }
+  }
+
   function visibleCards(root) {
     return Array.from(root.querySelectorAll(CARD_SELECTOR)).filter(card => {
       if (!card.isConnected || card.closest('.aw-atmosphere-v105')) return false;
@@ -309,8 +319,15 @@
   function updateAmbient(root) {
     raf = 0;
     if (!root || !root.isConnected || !layers.length) return;
+    if (navigator.onLine === false || root.getAttribute('data-state') === 'offline') {
+      clearAmbient();
+      return;
+    }
     const cards = visibleCards(root);
-    if (!cards.length) return;
+    if (!cards.length) {
+      clearAmbient();
+      return;
+    }
     // Favor the story occupying the central reading area, not merely the first
     // image near the top. This keeps the ambient colour moving with the reader.
     const targetY = Math.min(window.innerHeight * 0.43, window.innerHeight - 160);
@@ -326,6 +343,7 @@
       if (score < bestScore) { best = image; bestScore = score; }
     }
     if (best) setAmbientImage(best);
+    else clearAmbient();
   }
 
   function scheduleAmbient(root) {

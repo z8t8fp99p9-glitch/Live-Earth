@@ -1,9 +1,9 @@
-/* LIVE // EARTH V104 update manager; Alien World is an online-only full-screen Stacks feature. */
+/* LIVE // EARTH V105 update manager; Alien World is an online-only full-screen Stacks feature. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v104-alien-world-article-images";
+  const BUILD_ID = "v105-alien-world-magazine";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
