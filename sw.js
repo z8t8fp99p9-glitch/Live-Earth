@@ -1,7 +1,7 @@
 /* LIVE // EARTH V107 — verified app shell. Weekly reader, Magazine Engine and Sunday payloads remain optional and outside this shell. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v107-magazine-engine-core";
-const CACHE_NAME = "live-earth-shell-v107-magazine-engine-core";
+const BUILD_ID = "v108-real-magazine-reader";
+const CACHE_NAME = "live-earth-shell-v108-real-magazine-reader";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const WEEKLY_READER_CACHE = "live-earth-weekly-reader-v1";
@@ -1345,12 +1345,12 @@ self.addEventListener("fetch", event => {
   }
   const weeklyReaderPath = runtimePath(WEEKLY_READER_PATH);
   if (url.pathname === weeklyReaderPath) {
-    event.respondWith(weeklyOptionalScriptResponse(request, "LiveEarthWeeklyPublish", "version: 'v107'", "Weekly Publish reader", ["version: 'v106'"]));
+    event.respondWith(weeklyOptionalScriptResponse(request, "LiveEarthWeeklyPublish", "version: 'v108'", "Weekly Publish reader", ["version: 'v107'", "version: 'v106'"]));
     return;
   }
   const weeklyEnginePath = runtimePath(WEEKLY_ENGINE_PATH);
   if (url.pathname === weeklyEnginePath) {
-    event.respondWith(weeklyOptionalScriptResponse(request, "LiveEarthMagazineEngine", "version: 'v1'", "Magazine Engine"));
+    event.respondWith(weeklyOptionalScriptResponse(request, "LiveEarthMagazineEngine", "version: 'v108'", "Magazine Engine", ["version: 'v1'"]));
     return;
   }
   const runtimeDependency = RUNTIME_DEPENDENCIES.find(dependency => runtimePath(dependency.path) === url.pathname);

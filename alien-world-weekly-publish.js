@@ -1,11 +1,11 @@
-/* LIVE // EARTH V107 — optional Weekly Publish reader and local issue store plus the reusable Magazine Engine.
+/* LIVE // EARTH V108 — paged Weekly Publish reader and local issue store plus the reusable Magazine Engine.
    Issue payloads are NEVER part of the app shell or service-worker caches.
    This small controller is loaded from the verified shell only when the user
    opens Weekly Publish. Issue metadata/text is fetched on-demand and saved to
    IndexedDB; at most three complete editions are retained. */
 (() => {
   'use strict';
-  if (window.LiveEarthWeeklyPublish?.version === 'v107') return;
+  if (window.LiveEarthWeeklyPublish?.version === 'v108') return;
 
   const DB_NAME = 'liveEarthWeeklyPublish';
   const DB_VERSION = 1;
@@ -16,7 +16,7 @@
   const REQUEST_TIMEOUT_MS = 12000;
   const MAX_MANIFEST_BYTES = 16 * 1024;
   const MAX_ISSUE_BYTES = 64 * 1024;
-  const STYLE_ID = 'le-aw-weekly-publish-v107-style';
+  const STYLE_ID = 'le-aw-weekly-publish-v108-style';
   let magazineEnginePromise = null;
   let dbPromise = null;
   let publishPromise = null;
@@ -291,14 +291,14 @@
     parent.appendChild(status); return status;
   }
   function loadMagazineEngine() {
-    if (window.LiveEarthMagazineEngine?.version === 'v1') return Promise.resolve(window.LiveEarthMagazineEngine);
+    if (window.LiveEarthMagazineEngine?.version === 'v108') return Promise.resolve(window.LiveEarthMagazineEngine);
     if (magazineEnginePromise) return magazineEnginePromise;
     magazineEnginePromise = new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = new URL('./magazine-engine-v1.js', document.baseURI).href;
       script.async = true;
       script.onload = () => {
-        if (window.LiveEarthMagazineEngine?.version === 'v1') resolve(window.LiveEarthMagazineEngine);
+        if (window.LiveEarthMagazineEngine?.version === 'v108') resolve(window.LiveEarthMagazineEngine);
         else reject(new Error('The optional Magazine Engine did not initialize correctly.'));
       };
       script.onerror = () => reject(new Error('The optional Magazine Engine is not ready on this device. The saved edition can still use its built-in reader.'));
@@ -354,7 +354,7 @@
   }
   function renderIssue(parent, issue, online) {
     const engine = window.LiveEarthMagazineEngine;
-    if (engine?.version === 'v1' && typeof engine.renderEdition === 'function') {
+    if (engine?.version === 'v108' && typeof engine.renderEdition === 'function') {
       return engine.renderEdition(issue, {
         profile: issue.magazineProfile || issue.profile || 'space-journal',
         online,
@@ -394,7 +394,7 @@
     const hero = el('section', 'aw-weekly-hero');
     hero.appendChild(el('p', 'aw-weekly-kicker', 'LIVE // EARTH · WEEKLY PUBLISH'));
     hero.appendChild(el('h2', 'aw-weekly-title', 'The Sunday Space Journal'));
-    hero.appendChild(el('p', 'aw-weekly-lede', 'Published Sunday editions are checked only when you open this screen. A tiny manifest is checked first; the issue file is downloaded only if this device is missing it or its published revision changed. Verified text and source details are saved locally—not in the app launch bundle.'));
+    hero.appendChild(el('p', 'aw-weekly-lede', 'A new issue of the Sunday Space Journal. Explore the cover, swipe through each story, and save a print-ready PDF. Your latest editions stay available offline on this device.'));
     const meta = el('div', 'aw-weekly-meta');
     meta.appendChild(el('span', 'aw-weekly-tag', `${Math.min(issues.length, MAX_ISSUES)} of ${MAX_ISSUES} editions saved`));
     meta.appendChild(el('span', 'aw-weekly-tag', online ? 'Manifest checked online' : 'Offline reading'));
@@ -437,7 +437,7 @@
   }
 
   window.LiveEarthWeeklyPublish = {
-    version: 'v107',
+    version: 'v108',
     render,
     getSavedIssues: readAllIssues
   };
