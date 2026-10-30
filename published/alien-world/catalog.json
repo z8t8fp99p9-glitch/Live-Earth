@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "viewId": "alien-world",
+  "generatedAt": "2026-10-30T21:00:32Z",
+  "latest": {
+    "issueId": "alien-world-20261030-2100",
+    "title": "The Space Journal",
+    "publishedAt": "2026-10-30T21:00:32Z",
+    "coverageStart": "2026-10-28T21:00:32Z",
+    "coverageEnd": "2026-10-30T21:00:32Z",
+    "windowHours": 48,
+    "pdfUrl": "https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/published/alien-world/magazines/alien-world-20261030-2100.pdf",
+    "pages": 8,
+    "bytes": 28330,
+    "sha256": "ad7cd04a4135c383572cbf4c72481aab1f6e5dcf9f5b403541fb0dcf7dd0dc3b",
+    "customRequest": "Create a minimal, light-editorial, text-led 8-page Space Journal. Include an explainer, a timeline, source notes, visible credits and a strong closing page. Avoid documentary images.",
+    "customRequestReceipt": {
+      "applied": [
+        "minimal light editorial palette",
+        "text-led layout; no documentary images",
+        "timeline page",
+        "explainer page",
+        "target length: 8 pages",
+        "source and image-credit notes",
+        "closing page",
+        "visible source/image credits"
+      ],
+      "unmapped": [
+        "Unmapped direction: light editorial avoid documentary images"
+      ],
+      "palette": "minimal-light",
+      "photoLed": false,
+      "includeTimeline": true,
+      "includeExplainer": true,
+      "requestedPageCount": 8,
+      "actualPageCount": 8,
+      "note": "At least one full lead-feature page, source notes and a closing page are preserved. Optional sections may be omitted when needed to meet the requested page count.",
+      "engineLimitation": "This no-AI build applies supported layout/section directives only. It does not rewrite story copy in a requested voice or independently corroborate every factual claim; source provenance comes from the Publisher's official-source policy. Unsupported directions are listed above rather than claimed as applied."
+    },
+    "storyCount": 8
+  },
+  "issues": [
+    {
+      "issueId": "alien-world-20261030-2100",
+      "title": "The Space Journal",
+      "publishedAt": "2026-10-30T21:00:32Z",
+      "coverageStart": "2026-10-28T21:00:32Z",
+      "coverageEnd": "2026-10-30T21:00:32Z",
+      "windowHours": 48,
+      "pdfUrl": "https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/published/alien-world/magazines/alien-world-20261030-2100.pdf",
+      "pages": 8,
+      "bytes": 28330,
+      "sha256": "ad7cd04a4135c383572cbf4c72481aab1f6e5dcf9f5b403541fb0dcf7dd0dc3b",
+      "customRequest": "Create a minimal, light-editorial, text-led 8-page Space Journal. Include an explainer, a timeline, source notes, visible credits and a strong closing page. Avoid documentary images.",
+      "customRequestReceipt": {
+        "applied": [
+          "minimal light editorial palette",
+          "text-led layout; no documentary images",
+          "timeline page",
+          "explainer page",
+          "target length: 8 pages",
+          "source and image-credit notes",
+          "closing page",
+          "visible source/image credits"
+        ],
+        "unmapped": [
+          "Unmapped direction: light editorial avoid documentary images"
+        ],
+        "palette": "minimal-light",
+        "photoLed": false,
+        "includeTimeline": true,
+        "includeExplainer": true,
+        "requestedPageCount": 8,
+        "actualPageCount": 8,
+        "note": "At least one full lead-feature page, source notes and a closing page are preserved. Optional sections may be omitted when needed to meet the requested page count.",
+        "engineLimitation": "This no-AI build applies supported layout/section directives only. It does not rewrite story copy in a requested voice or independently corroborate every factual claim; source provenance comes from the Publisher's official-source policy. Unsupported directions are listed above rather than claimed as applied."
+      },
+      "storyCount": 8
+    }
+  ]
+}
