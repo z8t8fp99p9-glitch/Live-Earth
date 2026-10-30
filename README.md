@@ -2,9 +2,9 @@
 
 **Repository:** `z8t8fp99p9-glitch/Live-Earth` · branch `main`  
 **Live site:** https://z8t8fp99p9-glitch.github.io/Live-Earth/  
-**Repository baseline:** V96 — `v96-moon-view-controller-separated`  
-**Package in this handoff:** V97 — `v97-online-stacks-views` (five Stacks entries for owner testing; not yet approved)  
-**Last owner-reported device result:** V96 opened and passed the owner's checks, including online/offline launch and Moon/Sun navigation.
+**Repository runtime baseline:** V108 — `v108-real-magazine-reader`  
+**Prepared package:** V109 — `v109-alien-view-reset` (Alien View shell cleanup; not yet uploaded or owner-device tested)  
+**Protected milestone:** Moon View was user-verified in Portrait and Landscape on 28 October 2026 and is locked. Do not modify it during this cleanup.
 
 ## Start here before any code change
 
@@ -22,11 +22,11 @@
 - **Location privacy:** Location defaults OFF. No automatic geolocation request from Home, startup checks or Moon View. Local lunar times remain hidden while Location is OFF.
 - **Data safety:** Never clear IndexedDB, local data/recovery, website data or caches as a generic troubleshooting step. Never uninstall/reinstall the app to bypass a bug.
 - **Startup gate:** Keep online freshness checks, offline verified-shell fallback, renderer readiness and bounded retry semantics. Never bypass verification to hide an error.
-- **Changes to `sw.js`:** Do not remove an APP_SHELL entry or change `BUILD_ID`/`CACHE_NAME` in isolation. This V97 candidate keeps `sw.js` and `update-manager.js` aligned on `v97-online-stacks-views`; the repository V96 checkpoint remains the rollback baseline.
+- **Changes to `sw.js`:** Do not remove an APP_SHELL entry or change `BUILD_ID`/`CACHE_NAME` in isolation. This V109 candidate keeps `sw.js` and `update-manager.js` aligned on `v109-alien-view-reset`; it uses a new V109 cache namespace and leaves all Moon View source/assets untouched.
 
-## Essential startup resources (35 resources in the V97 candidate)
+## Essential startup resources (V109 candidate)
 
-`sw.js` contains **32 APP_SHELL entries** including the `./` root route, plus **3 runtime dependencies** cached under virtual same-origin paths. The V97 candidate adds `stacks-feature-views.js` while preserving the existing Earth/Moon/Sun startup files.
+`sw.js` contains the verified app shell plus **3 runtime dependencies** cached under virtual same-origin paths. V109 adds the lightweight Alien View shell while preserving the existing Earth/Moon/Sun startup resources.
 
 | File | Purpose |
 |---|---|
@@ -37,7 +37,8 @@
 | `earth-mode-navigation.js` | Earth exploration, quality and utility controls |
 | `view-manager.js` | Primary view transition coordinator |
 | `view-module-registry.js` | Current view/module implementation and feature Orb behavior |
-| `stacks-feature-views.js` | V97 Stacks data views: Clouds, Weather, Elevation, Earthquakes and Traffic preview; reuses the existing Earth layer interface |
+| `stacks-feature-views.js` | Stacks data views: Clouds, Weather, Elevation, Earthquakes and Traffic preview; reuses the existing Earth layer interface |
+| `alien-world-view-controller.js` | Empty full-screen Alien View shell; shared Feature Orb system retains control of Orb behavior |
 | `sky-view-controller.js` | Shared Sun/Moon full-screen sky stage and lifecycle |
 | `moon-view-controller.js` | Moon-only 3D renderer and lunar view behaviour |
 | `moon-lunar-interface.js` | Moon-only lunar Arc/scroller UI and lifecycle |
@@ -70,9 +71,7 @@
 
 ## Cleanup scope
 
-The reviewed manifest removes 101 exact paths: old root-level support notes/patch files and historical rollback copies, development/preview/diagnostic files, unreferenced legacy alternatives, the 12 user-confirmed mis-cropped artwork files, and one-time cleanup control files. It does **not** remove current app-shell files/assets, the two documentation source-of-truth files, the active iOS fix files, or Basic Map files. Deleted historical files remain retrievable from Git history because this is a normal commit, not a history rewrite.
-
-The cleanup is intentionally manual. First update this guide, `LIVE-EARTH-CONTINUITY.md`, and `DELETE-FILES.txt`; then add `.github/workflows/live-earth-cleanup.yml` by copying the visible `live-earth-cleanup.yml.txt` source from the package. Before execution, verify the workflow is visible in GitHub Actions. At run time it checks the exact deletion-manifest Git blob and pins the active source-file blob IDs; it must abort if the app source or manifest differs from the reviewed baseline.
+The older 101-path V97 cleanup proposal and its one-time cleanup workflow are historical only; they are not part of this V109 package. This V109 package removes only the obsolete Alien browser-side game/magazine/weekly-reader files and the stray retry ZIP. It does not modify the GitHub workflow or the publisher scripts/configuration used by that workflow.
 
 ## After cleanup, test on the owner’s iPhone
 
@@ -101,9 +100,21 @@ Do not clear site data or IndexedDB during these tests.
 ## V97 candidate — online Stacks views
 
 - Adds `stacks-feature-views.js` for Clouds, Weather, Elevation, Earthquakes and Traffic preview, using the existing `LiveEarthFeatureViews` catalog and `LiveEarthScene.registerLayer` interface. It creates no second Earth.
-- Alien World remains the existing placeholder and is intentionally untouched for a later phase.
 - Weather requests use only a recent location fix already provided while the red Location Orb is ON. This module never calls browser geolocation; Location OFF aborts requests and clears local weather display.
 - Live data/images use network-only requests (`cache: no-store`) and are not replayed as current data offline. The script itself is cached as part of the app shell so views can clearly report when internet access is needed.
 - NASA cloud fraction is a daily observational product, not a minute-by-minute cloud feed. Open-Meteo weather is current-model output. USGS latest-day earthquake events are refreshed while open. Elevation imagery/point queries require internet. Traffic is navigation/layout preview only until a trustworthy feed is selected.
 - Candidate build identifiers match: `v97-online-stacks-views`. The module includes a retry hook for the registry/DOMContentLoaded load-order race.
 - Validation: JavaScript syntax checks passed. A local Chromium harness using mocked API responses passed 34/34 feature/offline-state checks, and a second harness using the actual `view-module-registry.js` passed 12/12 navigation/Orb integration checks. These are isolated tests—not live-provider, deployed-site or owner-iPhone verification. Test the views online after upload before approving V97. Keep the V96 ZIP as rollback.
+
+
+## 2026-10-30 — Alien World reset (V109 candidate)
+
+- Replaces the old Alien discovery/game controller with a clean full-screen Alien View shell. The shell registers with the existing global Feature Orb system and does not collect data or build magazines.
+- Removes obsolete browser-side Alien game/magazine/weekly-reader files and the old issue payloads/surface image.
+- The existing `.github/workflows/weekly-magazine-publisher.yml` is intentionally untouched for now. Its Python publisher files and `config/nasa-feeds.json` remain until the workflow is manually separated later; removing them now would break its scheduled job.
+- No workflow file is included in the ZIP, overwritten, renamed or deleted. The existing ZIP extractor/importer remains unchanged.
+- Feature Orb opening/closing, animation, glow, Location and Stacks utility behavior remain owned by the shared Feature Orb system.
+- Alien content collection, Publisher profiles, the Universal Editorial Engine and the shared PDF reader remain separate future/global integrations.
+- Home/Earth composition, Sun View, locked Moon View, local IndexedDB, Location-OFF privacy behavior, Orb artwork and Moon/Sun background assets are not modified.
+- `sw.js` and `update-manager.js` share `v109-alien-view-reset`; the service worker uses a fresh `live-earth-shell-v109-alien-view-reset` cache and deletes only the obsolete weekly-reader cache, never user IndexedDB.
+- This is a local candidate only. It has not been uploaded, committed, deployed or verified on the owner’s iPhone.

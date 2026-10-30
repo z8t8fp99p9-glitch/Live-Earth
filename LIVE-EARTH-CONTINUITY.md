@@ -124,13 +124,9 @@ The V97 candidate `sw.js` defines **32 APP_SHELL entries** (including `./` root)
 
 `basic-map.html` and `basic-map.js` are retained as potentially supported Basic Map functionality; they are not entries in the V97 APP_SHELL or runtime dependency lists. Resolve the intended Location route before considering their removal.
 
-## 3. Cleanup scope and why the old files can go
+## 3. Earlier V97 cleanup proposal — historical only
 
-The reviewed deletion manifest contains 101 exact paths: 100 currently existing repository files at audit time plus the workflow path that will exist after installation. It removes old root-level notes and patch guides (their useful architecture/fix knowledge is represented here and in README), historical rollback copies (recoverable from Git history without rewriting history), dev/preview/diagnostic pages, patcher and validation/support scripts, legacy alternatives with no references from the audited active code paths, and the 12 mis-cropped images specifically rejected by the owner.
-
-It retains all current APP_SHELL resources, current iOS fix sources, all five Home Orb images, all four active Sun/Moon WebP backgrounds, `moon-sky-background-responsive.svg`, `README.md`, this continuity record, and Basic Map files. The cleanup does not modify runtime source code; it deletes exact root-relative file paths through a normal Git commit.
-
-The manifest itself and the one-time cleanup workflow are listed for self-removal after the cleanup commit so the repository ends with only the two maintained documentation files at root. Git history retains prior revisions. Do not rewrite history or force-push.
+The 101-path deletion manifest and one-time cleanup workflow described in the earlier V97 proposal are historical records. They are not part of the 30 October 2026 V109 Alien reset package. Do not apply that older manifest or its one-time cleanup workflow as part of this task. The V109 package uses its own narrow list of Alien browser-side removals.
 
 ## 4. Historical source audit anchors at reviewed V93 baseline
 
@@ -187,9 +183,21 @@ If any test fails, stop cleanup-related code changes and investigate the exact r
 - Current protected baseline: V96 Moon/Sky controller separation. The owner reported V96 checks passed. Keep the V96 ZIP as rollback.
 - V97 candidate adds `stacks-feature-views.js` and connects Clouds, Weather, Elevation, Earthquakes, and Traffic preview to the existing `LiveEarthFeatureViews` catalog and `LiveEarthScene.registerLayer` interface. The feature layers are children of the existing Earth mesh; the candidate does not create a second Earth or modify the Home composition.
 - `view-module-registry.js` remains the authority for the global Stacks Orb standard: exactly five Home Orbs; a feature view uses the existing three-Orb dock (active feature, Location, Stacks); only one Stacks feature is active and its cleanup runs before the next view opens.
-- Alien World remains the existing placeholder, not connected or rewritten in this candidate.
 - Weather uses only a fresh location already supplied by the Location system when Location is ON. This module never invokes geolocation. Turning Location OFF clears the weather panel and aborts its request.
 - The view script is included in the app shell so its screens can explain connectivity state, but provider data is requested with `cache: no-store` and is never presented as current offline. Clouds/relief textures and earthquake markers/data are cleared on an offline transition; a follow-up test caught and fixed an early-return path that could leave earthquake markers behind. Failed imagery keeps the original Earth visible and unchanged.
 - Data truth: NASA cloud-fraction image is a daily product, not minute-level live cloud coverage; Open-Meteo weather is current-model data; USGS latest-day GeoJSON is the earthquake feed and refreshes while view is open; point elevation/relief require a connection; Traffic view is honest preview only because no verified feed is configured.
 - The module waits for the existing feature Orb registry if it is initialized after the module script, avoiding a cache/load race.
 - `sw.js` BUILD_ID and `update-manager.js` BUILD_ID both set `v97-online-stacks-views`; the script is in APP_SHELL and startup repair checks its installation flag. V97 candidate source is not uploaded, deployed or owner-device tested yet.
+
+
+## 2026-10-30 — Alien World reset (V109 candidate)
+
+- Replaces the legacy Alien discovery/game controller with a clean full-screen view shell registered through the existing global Feature Orb system. The shell does not collect data or build magazines.
+- Removes obsolete browser-side Alien game/magazine/weekly-reader files and the old issue payloads/surface image.
+- The existing `.github/workflows/weekly-magazine-publisher.yml` is intentionally left untouched for manual separation later. Its `publisher/` Python files and `config/nasa-feeds.json` remain because the scheduled workflow still calls them.
+- No workflow file is included, overwritten, renamed or deleted by this package. The ZIP extractor/importer remains unchanged.
+- Feature Orb opening/closing, animation, glow, Location and Stacks utility behavior remain owned by the shared Feature Orb system.
+- Alien content collection, Publisher profiles, the Universal Editorial Engine and the shared PDF reader remain separate future/global integrations.
+- Home/Earth composition, Sun View, locked Moon View, local IndexedDB, Location-OFF privacy behavior, Orb images and Moon/Sun background assets remain untouched.
+- `sw.js` and `update-manager.js` share `v109-alien-view-reset`. The service worker uses a fresh `live-earth-shell-v109-alien-view-reset` cache and deletes only the obsolete weekly-reader cache, never user IndexedDB.
+- This package is a local candidate only. It has not been uploaded, committed, deployed or verified on the owner’s iPhone.

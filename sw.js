@@ -1,14 +1,11 @@
-/* LIVE // EARTH V107 — verified app shell. Weekly reader, Magazine Engine and Sunday payloads remain optional and outside this shell. */
+/* LIVE // EARTH V109 — clean global Feature Orb shell with a fresh Alien World view. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v108-real-magazine-reader";
-const CACHE_NAME = "live-earth-shell-v108-real-magazine-reader";
+const BUILD_ID = "v109-alien-view-reset";
+const CACHE_NAME = "live-earth-shell-v109-alien-view-reset";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
-const WEEKLY_READER_CACHE = "live-earth-weekly-reader-v1";
-const WEEKLY_READER_PATH = "./alien-world-weekly-publish.js";
-const WEEKLY_ENGINE_PATH = "./magazine-engine-v1.js";
 const APP_SHELL = [
- "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./view-manager.js","./view-module-registry.js","./stacks-feature-views.js","./alien-world-view-controller.js","./alien-world-magazine-v105.js","./sky-view-controller.js","./moon-view-controller.js","./moon-lunar-interface.js",
+ "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./view-manager.js","./view-module-registry.js","./stacks-feature-views.js","./alien-world-view-controller.js","./sky-view-controller.js","./moon-view-controller.js","./moon-lunar-interface.js",
  "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js","./location-scanner.js",
  "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
  "./moon-sky-background-responsive.svg",
@@ -590,7 +587,9 @@ self.addEventListener("install", event => {
 });
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
-    // Keep the previous shared shell until this build reports verified startup.
+    // The old weekly Alien reader cache is obsolete. User IndexedDB and other
+    // bounded optional resources remain untouched.
+    await caches.delete("live-earth-weekly-reader-v1");
     await self.clients.claim();
   })());
 });
@@ -842,8 +841,7 @@ function injectStartupGate(html) {
       if (!window.LiveEarthSkyViews) paths.push('./sky-view-controller.js');
       if (!window.__liveEarthMoonRendererInstalled) paths.push('./moon-view-controller.js');
       if (!window.__liveEarthStacksFeatureViewsInstalled) paths.push('./stacks-feature-views.js');
-      if (!window.__liveEarthAlienWorldDiscoveryInstalled) paths.push('./alien-world-view-controller.js');
-      if (!window.__liveEarthAlienWorldMagazineV105Installed) paths.push('./alien-world-magazine-v105.js');
+      if (!window.__liveEarthAlienWorldViewInstalled) paths.push('./alien-world-view-controller.js');
       if (!window.__liveEarthControlsInstalled || typeof window.liveEarthLocationAllowed !== 'function') paths.push('./orb-controls-v4.js');
       if (!window.__liveEarthLocationScannerInstalled) paths.push('./location-scanner.js');
       const brokenImages = [...document.querySelectorAll('#navButtons .orbImage')].filter(img => img.complete && img.naturalWidth === 0);
@@ -1078,7 +1076,7 @@ function injectStartupGate(html) {
     window.addEventListener('error', event => {
       if (event.target && event.target.tagName === 'SCRIPT') {
         const src = event.target.src || '';
-        const scriptPaths = ['./orb-controls-v4.js','./earth-mode-navigation.js','./view-manager.js','./view-module-registry.js','./stacks-feature-views.js','./alien-world-view-controller.js','./alien-world-magazine-v105.js','./sky-view-controller.js','./moon-view-controller.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
+        const scriptPaths = ['./orb-controls-v4.js','./earth-mode-navigation.js','./view-manager.js','./view-module-registry.js','./stacks-feature-views.js','./alien-world-view-controller.js','./sky-view-controller.js','./moon-view-controller.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
         for (const path of scriptPaths) if (src.endsWith(path.slice(1))) knownBadPaths.push(path);
         sceneFailure = 'A required startup script failed to load.';
       } else if (event.error) {
@@ -1167,19 +1165,6 @@ async function transformHomeHTML(request, response, forceHome = false) {
       html = html.replace(/<\/body\s*>/i, '<script src="./stacks-feature-views.js" defer></script>\n</body>');
     }
   }
-  // Remove the previous game entry point from stale transformed HTML. Alien World
-  // is registered as a full-screen Stacks feature and therefore uses the shared
-  // three-Orb dock. Live news, photographs and world data remain online-only. The
-  // small Weekly Publish reader is fetched only on user request and stored in its own
-  // optional cache; issue text/metadata is kept in IndexedDB, never the app shell.
-  // Offline Live Updates clears current headlines; the separate weekly library remains usable.
-  html = html.replace(/<script\b[^>]*src=[\"']\.\/alien-world-game\.js[\"'][^>]*>\s*<\/script>/gi, '');
-  if (!html.includes('src="./alien-world-view-controller.js"')) {
-    html = html.replace(/<\/body\s*>/i, '<script src="./alien-world-view-controller.js" defer></script>\n</body>');
-  }
-  if (!html.includes('src="./alien-world-magazine-v105.js"')) {
-    html = html.replace(/<\/body\s*>/i, '<script src="./alien-world-magazine-v105.js" defer></script>\n</body>');
-  }
   if (!html.includes("update-manager.js")) {
     html = html.replace(/<\/body\s*>/i, '<script src="./update-manager.js" defer></script>\n</body>');
   }
@@ -1230,42 +1215,6 @@ async function networkFirst(request) {
     return offlineFallback(error);
   }
 }
-async function weeklyOptionalScriptResponse(request, expectedExport, expectedVersion, label, compatibleVersions = []) {
-  const cache = await caches.open(WEEKLY_READER_CACHE);
-  const cached = await cache.match(request);
-  const isValidScript = async response => {
-    if (!response) return false;
-    try {
-      const type = response.headers.get("content-type") || "";
-      if (!/(javascript|ecmascript)/i.test(type)) return false;
-      const source = await response.clone().text();
-      return source.length >= 100 && source.includes(expectedExport) && (source.includes(expectedVersion) || compatibleVersions.some(version => source.includes(version)));
-    } catch (_) { return false; }
-  };
-
-  if (self.navigator && self.navigator.onLine === false) {
-    if (await isValidScript(cached)) return cached;
-    return new Response(`${label} has not been prepared for offline use on this device yet.`, {
-      status: 503,
-      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" }
-    });
-  }
-  try {
-    const response = await fetch(request, { cache: "no-store", credentials: "same-origin" });
-    if (!response.ok || !(await isValidScript(response))) {
-      throw new Error(`The optional ${label} did not return the expected version of JavaScript.`);
-    }
-    await cache.put(request, response.clone());
-    return response;
-  } catch (error) {
-    if (await isValidScript(cached)) return cached;
-    return new Response(`${label} could not be loaded. Connect once and open Weekly Publish to prepare it for offline use.`, {
-      status: 503,
-      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" }
-    });
-  }
-}
-
 async function boundedOptionalCache(request) {
   const cache = await caches.open(OPTIONAL_CACHE);
 
@@ -1341,16 +1290,6 @@ self.addEventListener("fetch", event => {
   // startup sync above specifically refuses a silent cache fallback while online.
   if (request.mode === "navigate" || request.destination === "document" || url.pathname.endsWith(".html") || url.pathname.endsWith("/")) {
     event.respondWith(networkFirst(request));
-    return;
-  }
-  const weeklyReaderPath = runtimePath(WEEKLY_READER_PATH);
-  if (url.pathname === weeklyReaderPath) {
-    event.respondWith(weeklyOptionalScriptResponse(request, "LiveEarthWeeklyPublish", "version: 'v108'", "Weekly Publish reader", ["version: 'v107'", "version: 'v106'"]));
-    return;
-  }
-  const weeklyEnginePath = runtimePath(WEEKLY_ENGINE_PATH);
-  if (url.pathname === weeklyEnginePath) {
-    event.respondWith(weeklyOptionalScriptResponse(request, "LiveEarthMagazineEngine", "version: 'v108'", "Magazine Engine", ["version: 'v1'"]));
     return;
   }
   const runtimeDependency = RUNTIME_DEPENDENCIES.find(dependency => runtimePath(dependency.path) === url.pathname);

@@ -1,9 +1,9 @@
-/* LIVE // EARTH V107 update manager; the Magazine Engine remains optional and outside the launch shell. */
+/* LIVE // EARTH V109 update manager. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v108-real-magazine-reader";
+  const BUILD_ID = "v109-alien-view-reset";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
@@ -16,7 +16,7 @@
       window.LiveEarthViewModules.has("moon-lunar-interface") &&
       window.__liveEarthMoonRendererInstalled === true &&
       window.__liveEarthStacksFeatureViewsInstalled === true &&
-      window.__liveEarthAlienWorldDiscoveryInstalled === true &&
+      window.__liveEarthAlienWorldViewInstalled === true &&
       window.LiveEarthSkyViews &&
       window.__liveEarthControlsInstalled &&
       window.__liveEarthLocationScannerInstalled &&
@@ -28,7 +28,7 @@
   function signalVerifiedStartup() {
     const controller = navigator.serviceWorker.controller;
     if (!controller || !readyControllersPresent()) return;
-    // The service worker and update manager must share the exact V106 cache identity.
+    // The service worker and update manager must share the exact V109 build identity.
     controller.postMessage({ type: "LIVE_EARTH_APP_READY_V75", buildId: BUILD_ID });
   }
 
@@ -53,7 +53,7 @@
   }
 
   // The procedural Sun remains an optional local renderer, cached by the existing
-  // service-worker policy. Alien World content is fetched separately with no-store.
+  // service-worker policy. Alien World is a lightweight full-screen view shell.
   // An optional-view failure never blocks Home or Moon.
   loadProceduralSun().then(() => {
     window.__liveEarthSunRendererReady = true;
