@@ -1,31 +1,170 @@
-name: LIVE // EARTH Weekly Magazine Publisher
+name: LIVE // EARTH Main Upload + Weekly Magazine Publisher
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "LIVE_EARTH_MAIN_UPLOAD.zip"
   schedule:
-    # Sunday 03:00 UTC = 08:30 Asia/Kolkata. GitHub may delay scheduled jobs during load.
-    - cron: '0 3 * * 0'
+    # Sunday 03:00 UTC = 08:30 Asia/Kolkata.
+    - cron: "0 3 * * 0"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: live-earth-weekly-magazine-publisher
+  group: live-earth-main-upload-and-magazine
   cancel-in-progress: false
 
 jobs:
+  import-main-upload:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate and apply the one-file ZIP upload
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib, json, shutil, stat, subprocess, tempfile, zipfile
+          from pathlib import Path, PurePosixPath
+
+          repo = Path.cwd().resolve()
+          archive = repo / "LIVE_EARTH_MAIN_UPLOAD.zip"
+          if not archive.is_file():
+              raise SystemExit("Upload ZIP not found at repository root.")
+          if archive.stat().st_size > 100 * 1024 * 1024:
+              raise SystemExit("Upload ZIP exceeds the 100 MiB safety limit.")
+
+          def safe_path(value):
+              if not isinstance(value, str) or not value or "\\" in value or "\x00" in value:
+                  raise ValueError(f"Invalid path in manifest: {value!r}")
+              p = PurePosixPath(value)
+              if p.is_absolute() or any(part in ("", ".", "..") for part in p.parts):
+                  raise ValueError(f"Unsafe path in manifest: {value!r}")
+              if p.parts[0] == ".git":
+                  raise ValueError("The .git directory may never be changed by an upload.")
+              if ":" in p.parts[0]:
+                  raise ValueError(f"Drive-qualified path is not allowed: {value!r}")
+              return p
+
+          with zipfile.ZipFile(archive) as zf:
+              infos = [i for i in zf.infolist() if not i.is_dir()]
+              if len(infos) > 5000:
+                  raise SystemExit("Upload contains more than 5,000 files.")
+              names = [i.filename for i in infos]
+              if len(names) != len(set(names)):
+                  raise SystemExit("Upload contains duplicate ZIP paths.")
+              if "UPLOAD_MANIFEST.json" not in names:
+                  raise SystemExit("UPLOAD_MANIFEST.json is missing.")
+              manifest_raw = zf.read("UPLOAD_MANIFEST.json")
+              if len(manifest_raw) > 2 * 1024 * 1024:
+                  raise SystemExit("Upload manifest is unexpectedly large.")
+              manifest = json.loads(manifest_raw)
+              if manifest.get("schemaVersion") != 1 or not isinstance(manifest.get("files"), list):
+                  raise SystemExit("Unsupported or invalid upload manifest.")
+              expected = {}
+              for item in manifest["files"]:
+                  rel = safe_path(item.get("path"))
+                  path = rel.as_posix()
+                  if path in expected:
+                      raise SystemExit(f"Duplicate manifest path: {path}")
+                  expected[path] = item
+              archive_payload = set(names) - {"UPLOAD_MANIFEST.json"}
+              if archive_payload != set(expected):
+                  raise SystemExit("ZIP contents do not exactly match the manifest file list.")
+              deletions = manifest.get("delete", [])
+              if not isinstance(deletions, list):
+                  raise SystemExit("Manifest delete field must be a list.")
+              delete_paths = [safe_path(p).as_posix() for p in deletions]
+              if len(delete_paths) != len(set(delete_paths)) or set(delete_paths) & set(expected):
+                  raise SystemExit("Duplicate or conflicting deletion paths in manifest.")
+              total_uncompressed = 0
+              for info in infos:
+                  mode = (info.external_attr >> 16) & 0xFFFF
+                  if stat.S_ISLNK(mode):
+                      raise SystemExit(f"Symbolic links are not allowed: {info.filename}")
+                  if info.file_size > 50 * 1024 * 1024:
+                      raise SystemExit(f"File exceeds 50 MiB: {info.filename}")
+                  total_uncompressed += info.file_size
+              if total_uncompressed > 250 * 1024 * 1024:
+                  raise SystemExit("Uncompressed upload exceeds 250 MiB.")
+              with tempfile.TemporaryDirectory(prefix="live-earth-import-") as td:
+                  stage = Path(td)
+                  for name, item in expected.items():
+                      data = zf.read(name)
+                      if len(data) != item.get("size"):
+                          raise SystemExit(f"Size mismatch: {name}")
+                      digest = hashlib.sha256(data).hexdigest()
+                      if digest != item.get("sha256"):
+                          raise SystemExit(f"SHA-256 mismatch: {name}")
+                      target = stage / name
+                      target.parent.mkdir(parents=True, exist_ok=True)
+                      target.write_bytes(data)
+                  # Apply only after the entire archive has passed validation.
+                  for name in sorted(expected):
+                      rel = safe_path(name)
+                      target = repo.joinpath(*rel.parts)
+                      target.parent.mkdir(parents=True, exist_ok=True)
+                      for ancestor in [target, *target.parents]:
+                          if ancestor == repo.parent:
+                              break
+                          if ancestor.is_symlink():
+                              raise SystemExit(f"Refusing to write through a symbolic link: {name}")
+                      if repo not in target.resolve().parents:
+                          raise SystemExit(f"Destination escapes repository: {name}")
+                      shutil.copy2(stage / name, target)
+                      print(f"Applied: {name}")
+                  for name in delete_paths:
+                      rel = safe_path(name)
+                      target = repo.joinpath(*rel.parts)
+                      if target.is_symlink():
+                          raise SystemExit(f"Refusing to delete a symbolic link: {name}")
+                      if target.exists() and target.is_file():
+                          target.unlink()
+                          print(f"Deleted: {name}")
+                      elif target.exists():
+                          raise SystemExit(f"Refusing to delete a directory: {name}")
+
+          archive.unlink()
+          subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
+          subprocess.run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"], check=True)
+          subprocess.run(["git", "add", "-A"], check=True)
+          changed = subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode != 0
+          if changed:
+              subprocess.run(["git", "commit", "-m", "Apply LIVE // EARTH Main Upload"], check=True)
+              subprocess.run(["git", "push", "origin", "HEAD:main"], check=True)
+              print("Main upload applied and committed to main.")
+          else:
+              print("No repository changes were present in the upload.")
+          PY
+
   build-and-publish:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Check out the repository
+      - name: Check out main
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: pip
           cache-dependency-path: publisher/requirements.txt
       - name: Install the PDF publisher
@@ -43,5 +182,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add published-magazines
           git commit -m "Publish validated Sunday Space Journal PDF"
-          git push
-
+          git push origin HEAD:main
