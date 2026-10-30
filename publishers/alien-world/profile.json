@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "viewId": "alien-world",
+  "publisherId": "alien-world-publisher",
+  "displayName": "Alien World Publisher",
+  "subjectScope": [
+    "space science",
+    "astronomy",
+    "planetary science",
+    "spaceflight missions",
+    "human space exploration",
+    "NASA discoveries and research"
+  ],
+  "sourcePolicy": {
+    "policy": "Official NASA source feeds only for the first release",
+    "allowedArticleDomains": ["nasa.gov"],
+    "requireHttps": true,
+    "keepOriginalSourceUrl": true,
+    "rejectMissingPublicationDate": true
+  },
+  "sources": [
+    {"name": "NASA News", "feedUrl": "https://www.nasa.gov/news-release/feed/"},
+    {"name": "NASA Science", "feedUrl": "https://science.nasa.gov/feed/"},
+    {"name": "NASA Image of the Day", "feedUrl": "https://www.nasa.gov/feeds/iotd-feed/"},
+    {"name": "NASA Artemis", "feedUrl": "https://www.nasa.gov/blogs/artemis/feed/"},
+    {"name": "NASA Space Station", "feedUrl": "https://www.nasa.gov/blogs/spacestation/feed/"}
+  ],
+  "collection": {
+    "refreshHours": 3,
+    "maximumFeedBytes": 4194304,
+    "maximumImageBytes": 7340032,
+    "networkAccessOwner": "AlienWorldPublisher"
+  },
+  "database": {
+    "engine": "SQLite",
+    "scope": "one independent database for Alien World only",
+    "retentionDays": 30,
+    "maximumRecords": 500,
+    "persistence": "Publisher-owned GitHub Actions cache; rebuildable from allowed public feeds if cache is evicted",
+    "containsPersonalData": false
+  },
+  "publication": {
+    "liveFeedWindowHours": 48,
+    "issueWindowHours": 48,
+    "magazineCadence": "weekly; manual workflow dispatch is also available for testing",
+    "minimumStories": 5,
+    "maximumStories": 8,
+    "maximumRetainedIssues": 3
+  },
+  "editorialProfile": {
+    "publicationTitle": "The Space Journal",
+    "tone": "cinematic science journalism",
+    "defaultCustomRequest": "Create a cinematic, image-led space journal with a dramatic cover, clear story hierarchy, an explainer page, a timeline, source notes and a strong closing page. Use only Publisher-screened NASA imagery and retain visible credits and usage notes.",
+    "maximumDocumentaryImages": 5,
+    "visualProfile": {
+      "palette": "cinematic-dark",
+      "photoLed": true,
+      "includeTimeline": true,
+      "includeExplainer": true,
+      "pageTarget": 9,
+      "tone": "cinematic science journalism"
+    }
+  },
+  "output": {
+    "directory": "published/alien-world",
+    "liveFeed": "live-feed.json",
+    "catalog": "catalog.json",
+    "latestPublication": "latest-publication.json"
+  }
+}
