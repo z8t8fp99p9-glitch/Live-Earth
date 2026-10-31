@@ -65,6 +65,29 @@ class CollectorTests(unittest.TestCase):
         self.assertIn("https://www.nasa.gov/wp-content/uploads/mission-hero.jpg", urls)
         self.assertIn("https://www.nasa.gov/wp-content/uploads/mission-photo.jpg", urls)
 
+    def test_jsonld_string_image_url_is_extracted(self):
+        article = "https://www.nasa.gov/news/example/"
+        html = (b'<script type="application/ld+json">'
+                b'{"@type":"NewsArticle","image":"https://www.nasa.gov/wp-content/uploads/story-image.jpg"}'
+                b'</script>')
+        with mock.patch.object(COLLECTOR, "fetch_bytes", return_value=html):
+            candidates = COLLECTOR.article_media(article, [])
+        self.assertEqual(candidates[0]["url"], "https://www.nasa.gov/wp-content/uploads/story-image.jpg")
+
+    def test_atom_escaped_html_summary_keeps_original_article_image(self):
+        payload = b'''<?xml version="1.0"?>
+        <feed xmlns="http://www.w3.org/2005/Atom">
+          <entry><title>NASA science report with source image</title>
+            <link href="https://science.nasa.gov/example/report/" rel="alternate"/>
+            <summary type="html">&amp;lt;p&amp;gt;A source report with enough context.&amp;lt;/p&amp;gt;&amp;lt;img src=&amp;quot;https://assets.science.nasa.gov/example/report.jpg&amp;quot; alt=&amp;quot;Original NASA image&amp;quot;/&amp;gt;</summary>
+            <published>2026-10-31T00:00:00Z</published>
+          </entry>
+        </feed>'''
+        records = COLLECTOR.parse_feed(payload, "NASA Science", "https://science.nasa.gov/feed/")
+        self.assertEqual(len(records), 1)
+        urls = {entry["url"] for entry in records[0]["imageCandidates"]}
+        self.assertIn("https://assets.science.nasa.gov/example/report.jpg", urls)
+
     def test_article_metadata_prefers_the_actual_source_post_hero_image(self):
         article = "https://www.nasa.gov/news/example-mission/"
         html = b'''<html><head>
@@ -77,6 +100,19 @@ class CollectorTests(unittest.TestCase):
         self.assertGreaterEqual(len(candidates), 1)
         self.assertEqual(candidates[0]["url"], "https://www.nasa.gov/wp-content/uploads/mission-hero.jpg")
         self.assertEqual(candidates[0]["credit"], "NASA / Kennedy Space Center")
+
+    def test_modern_nasa_article_jsonld_and_lazy_srcset_images_are_extracted(self):
+        article = "https://science.nasa.gov/missions/example/"
+        html = (b'<html><head>'
+                b'<script type="application/ld+json">{"@context":"https://schema.org","@type":"NewsArticle","image":{"@type":"ImageObject","url":"https://assets.science.nasa.gov/cms/example/lead.jpg","caption":"NASA spacecraft image","creditText":"NASA"}}</script>'
+                b'</head><body><picture><source data-lazy-srcset="https://assets.science.nasa.gov/cms/example/small.jpg 640w, https://assets.science.nasa.gov/cms/example/large.jpg 1920w"/></picture></body></html>')
+        with mock.patch.object(COLLECTOR, "fetch_bytes", return_value=html):
+            candidates = COLLECTOR.article_media(article, [])
+        urls = [item["url"] for item in candidates]
+        self.assertIn("https://assets.science.nasa.gov/cms/example/lead.jpg", urls)
+        self.assertNotIn(article, urls)
+        self.assertLess(urls.index("https://assets.science.nasa.gov/cms/example/large.jpg"),
+                        urls.index("https://assets.science.nasa.gov/cms/example/small.jpg"))
 
     def test_non_nasa_image_hosts_are_rejected(self):
         self.assertFalse(COLLECTOR.nasa_host_url("https://images.example.com/space.jpg"))
@@ -118,9 +154,12 @@ class CollectorTests(unittest.TestCase):
             self.assertEqual(stats["databaseRecords"], 6)
             self.assertTrue(COLLECTOR.DB_PATH.is_file())
             self.assertFalse((base / "published").exists())
-            with sqlite3.connect(COLLECTOR.DB_PATH) as con:
+            con = sqlite3.connect(COLLECTOR.DB_PATH)
+            try:
                 count = con.execute("SELECT COUNT(*) FROM stories WHERE view_id='alien-world'").fetchone()[0]
                 self.assertEqual(count, 6)
+            finally:
+                con.close()
 
     def test_original_article_image_is_downloaded_and_provenance_is_retained(self):
         image_bytes = io.BytesIO()
@@ -132,13 +171,60 @@ class CollectorTests(unittest.TestCase):
         }
         with tempfile.TemporaryDirectory() as temp:
             target = Path(temp) / "mission.jpg"
-            with mock.patch.object(COLLECTOR, "fetch_bytes", return_value=image_bytes.getvalue()):
+            with mock.patch.object(COLLECTOR, "fetch_bytes", return_value=image_bytes.getvalue()) as fetch_mock:
                 result = COLLECTOR.download_article_image(candidate, "https://www.nasa.gov/news/mission/", target)
+            fetch_mock.assert_called_once_with(
+                candidate["url"], COLLECTOR.MAX_IMAGE_BYTES, timeout=20,
+                referer="https://www.nasa.gov/news/mission/",
+            )
             self.assertIsNotNone(result)
             self.assertTrue(target.is_file())
             self.assertEqual(result["url"], candidate["url"])
             self.assertEqual(result["source_url"], "https://www.nasa.gov/news/mission/")
             self.assertIn("third-party usage terms", result["rights_note"])
+
+    def test_missing_image_is_retried_even_when_recent_failure_timestamp_exists(self):
+        now = datetime.now(timezone.utc).replace(microsecond=0)
+        image_bytes = io.BytesIO()
+        Image.new("RGB", (320, 200), "navy").save(image_bytes, format="JPEG")
+        candidate = {
+            "url": "https://assets.science.nasa.gov/cms/example/lead.jpg",
+            "caption": "NASA source article hero image",
+            "credit": "NASA",
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            old_paths = (COLLECTOR.DB_DIR, COLLECTOR.DB_PATH, COLLECTOR.MEDIA_DIR)
+            COLLECTOR.DB_DIR = base / ".publisher-data" / "alien-world"
+            COLLECTOR.DB_PATH = COLLECTOR.DB_DIR / "alien-world.sqlite3"
+            COLLECTOR.MEDIA_DIR = COLLECTOR.DB_DIR / "media"
+            profile = json.loads(json.dumps(PROFILE))
+            profile["sources"] = []
+            profile["editorialProfile"]["maximumDocumentaryImages"] = 1
+            db = COLLECTOR.open_writer_db(profile)
+            published = now - timedelta(hours=1)
+            db.execute("""INSERT INTO stories(
+                story_id,view_id,url,title,summary,source_name,source_url,feed_guid,
+                published_at,retrieved_at,image_checked_at
+            ) VALUES(?,?,?,?,?,?,?,?,?,?,?)""", (
+                "retry-story", "alien-world", "https://www.nasa.gov/news/retry-story/",
+                "NASA image retry test story", "A substantial summary for a retry test story.",
+                "NASA News", "https://www.nasa.gov/news-release/feed/", "retry-story",
+                published.timestamp(), now.timestamp(), now.timestamp() - 60,
+            ))
+            db.commit()
+            db.close()
+            logs: list[str] = []
+            try:
+                with mock.patch.object(COLLECTOR, "article_media", return_value=[candidate]) as media_mock, \
+                     mock.patch.object(COLLECTOR, "fetch_bytes", return_value=image_bytes.getvalue()) as fetch_mock:
+                    stats = COLLECTOR.collect(profile, now, logs)
+                self.assertEqual(stats["imagesPrepared"], 1)
+                self.assertEqual(stats["databaseImages"], 1)
+                media_mock.assert_called_once()
+                fetch_mock.assert_called_once()
+            finally:
+                COLLECTOR.DB_DIR, COLLECTOR.DB_PATH, COLLECTOR.MEDIA_DIR = old_paths
 
 
 class ArchitectureBoundaryTests(unittest.TestCase):
