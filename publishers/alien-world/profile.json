@@ -13,30 +13,51 @@
   ],
   "sourcePolicy": {
     "policy": "Official NASA source feeds only for the first release",
-    "allowedArticleDomains": ["nasa.gov"],
+    "allowedArticleDomains": [
+      "nasa.gov"
+    ],
     "requireHttps": true,
     "keepOriginalSourceUrl": true,
     "rejectMissingPublicationDate": true
   },
   "sources": [
-    {"name": "NASA News", "feedUrl": "https://www.nasa.gov/news-release/feed/"},
-    {"name": "NASA Science", "feedUrl": "https://science.nasa.gov/feed/"},
-    {"name": "NASA Image of the Day", "feedUrl": "https://www.nasa.gov/feeds/iotd-feed/"},
-    {"name": "NASA Artemis", "feedUrl": "https://www.nasa.gov/blogs/artemis/feed/"},
-    {"name": "NASA Space Station", "feedUrl": "https://www.nasa.gov/blogs/spacestation/feed/"}
+    {
+      "name": "NASA News",
+      "feedUrl": "https://www.nasa.gov/news-release/feed/"
+    },
+    {
+      "name": "NASA Science",
+      "feedUrl": "https://science.nasa.gov/feed/"
+    },
+    {
+      "name": "NASA Image of the Day",
+      "feedUrl": "https://www.nasa.gov/feeds/iotd-feed/"
+    },
+    {
+      "name": "NASA Artemis",
+      "feedUrl": "https://www.nasa.gov/blogs/artemis/feed/"
+    },
+    {
+      "name": "NASA Space Station",
+      "feedUrl": "https://www.nasa.gov/blogs/spacestation/feed/"
+    }
   ],
   "collection": {
+    "owner": "Alien World Data Collection",
+    "entrypoint": "data-collection/alien-world/collector.py",
     "refreshHours": 3,
     "maximumFeedBytes": 4194304,
     "maximumImageBytes": 7340032,
-    "networkAccessOwner": "AlienWorldPublisher"
+    "networkAccessOwner": "AlienWorldDataCollector",
+    "writesDatabase": true,
+    "writesPublicationOutputs": false
   },
   "database": {
     "engine": "SQLite",
     "scope": "one independent database for Alien World only",
     "retentionDays": 30,
     "maximumRecords": 500,
-    "persistence": "Publisher-owned GitHub Actions cache; rebuildable from allowed public feeds if cache is evicted",
+    "persistence": "Data Collection-owned GitHub Actions cache; rebuildable from allowed public feeds if cache is evicted",
     "containsPersonalData": false
   },
   "publication": {
@@ -50,7 +71,7 @@
   "editorialProfile": {
     "publicationTitle": "The Space Journal",
     "tone": "cinematic science journalism",
-    "defaultCustomRequest": "Create a cinematic, image-led space journal with a dramatic cover, clear story hierarchy, an explainer page, a timeline, source notes and a strong closing page. Use only Publisher-screened NASA imagery and retain visible credits and usage notes.",
+    "defaultCustomRequest": "Create a cinematic, image-led space journal with a dramatic cover, clear story hierarchy, an explainer page, a timeline, source notes and a strong closing page. Use only Data-Collection-screened NASA imagery and retain visible credits and usage notes.",
     "maximumDocumentaryImages": 5,
     "visualProfile": {
       "palette": "cinematic-dark",
@@ -65,6 +86,8 @@
     "directory": "published/alien-world",
     "liveFeed": "live-feed.json",
     "catalog": "catalog.json",
-    "latestPublication": "latest-publication.json"
+    "latestPublication": "latest-publication.json",
+    "publisherNetworkAccess": false,
+    "publisherDatabaseWriteAccess": false
   }
 }
