@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "viewId": "alien-world",
   "publisherId": "alien-world-publisher",
-  "generatedAt": "2026-10-31T03:41:27Z",
+  "generatedAt": "2026-10-31T03:55:33Z",
   "windowHours": 48,
   "storyCount": 8,
   "stories": [
@@ -14,10 +14,10 @@
       "sourceName": "NASA News",
       "sourceUrl": "https://www.nasa.gov/news-release/feed/",
       "publishedAt": "2026-10-30T19:31:02Z",
-      "imageUrl": null,
-      "imageCredit": null,
-      "imageSourceUrl": null,
-      "imageRightsNote": null
+      "imageUrl": "https://www.nasa.gov/wp-content/uploads/2026/10/grc-2026-c-06389large.jpg",
+      "imageCredit": "NASA — individual image credit not stated in feed metadata",
+      "imageSourceUrl": "https://www.nasa.gov/news-release/nasa-releases-max-power-key-events-for-media-participants/",
+      "imageRightsNote": "Image from the original NASA article/feed; not independently rights-cleared. Source attribution is retained; NASA and asset-specific third-party usage terms still apply."
     },
     {
       "id": "bea3d4046373d5a64a70fac9",
@@ -27,10 +27,10 @@
       "sourceName": "NASA Space Station",
       "sourceUrl": "https://www.nasa.gov/blogs/spacestation/feed/",
       "publishedAt": "2026-10-30T17:50:49Z",
-      "imageUrl": null,
-      "imageCredit": null,
-      "imageSourceUrl": null,
-      "imageRightsNote": null
+      "imageUrl": "https://images-assets.nasa.gov/image/iss075e0227271/iss075e0227271~large.jpg",
+      "imageCredit": "NASA — individual image credit not stated in feed metadata",
+      "imageSourceUrl": "https://www.nasa.gov/blogs/spacestation/2026/10/30/space-crops-and-advanced-tech-wrap-up-week-following-spacewalk/",
+      "imageRightsNote": "Image from the original NASA article/feed; not independently rights-cleared. Source attribution is retained; NASA and asset-specific third-party usage terms still apply."
     },
     {
       "id": "94dcca4ef3140fe3502441b5",
@@ -40,10 +40,10 @@
       "sourceName": "NASA Image of the Day",
       "sourceUrl": "https://www.nasa.gov/feeds/iotd-feed/",
       "publishedAt": "2026-10-30T15:57:00Z",
-      "imageUrl": null,
-      "imageCredit": null,
-      "imageSourceUrl": null,
-      "imageRightsNote": null
+      "imageUrl": "https://www.nasa.gov/wp-content/uploads/2026/10/full-res-for-display.png",
+      "imageCredit": "NASA — individual image credit not stated in feed metadata",
+      "imageSourceUrl": "https://www.nasa.gov/image-detail/full-res-for-display-6/",
+      "imageRightsNote": "Image from the original NASA article/feed; not independently rights-cleared. Source attribution is retained; NASA and asset-specific third-party usage terms still apply."
     },
     {
       "id": "9fe773cbfea8af218499ce45",
@@ -53,10 +53,10 @@
       "sourceName": "NASA News",
       "sourceUrl": "https://www.nasa.gov/news-release/feed/",
       "publishedAt": "2026-10-30T15:56:26Z",
-      "imageUrl": null,
-      "imageCredit": null,
-      "imageSourceUrl": null,
-      "imageRightsNote": null
+      "imageUrl": "https://www.nasa.gov/wp-content/uploads/2026/10/full-res-for-display.png",
+      "imageCredit": "NASA — individual image credit not stated in feed metadata",
+      "imageSourceUrl": "https://www.nasa.gov/image-article/nasas-james-webb-space-telescope-captures-eerie-cats-head/",
+      "imageRightsNote": "Image from the original NASA article/feed; not independently rights-cleared. Source attribution is retained; NASA and asset-specific third-party usage terms still apply."
     },
     {
       "id": "7aa6dab0376044f6c887c5ca",
@@ -66,10 +66,10 @@
       "sourceName": "NASA News",
       "sourceUrl": "https://www.nasa.gov/news-release/feed/",
       "publishedAt": "2026-10-30T14:51:21Z",
-      "imageUrl": null,
-      "imageCredit": null,
-      "imageSourceUrl": null,
-      "imageRightsNote": null
+      "imageUrl": "https://assets.science.nasa.gov/content/dam/science/cds/general/images/2023/04/2/27946391011_d40ff10573_h.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg",
+      "imageCredit": "NASA — individual image credit not stated in feed metadata",
+      "imageSourceUrl": "https://science.nasa.gov/missions/hubble/nasa-explores-potential-commercial-servicing-for-hubble-telescope/",
+      "imageRightsNote": "Image from the original NASA article/feed; not independently rights-cleared. Source attribution is retained; NASA and asset-specific third-party usage terms still apply."
     },
     {
       "id": "cf83ba876333ba2e913de39f",
