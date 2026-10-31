@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
   "viewId": "alien-world",
-  "generatedAt": "2026-10-31T03:40:55Z",
+  "generatedAt": "2026-10-31T03:41:27Z",
   "latest": {
-    "issueId": "alien-world-20261031-0340",
+    "issueId": "alien-world-20261031-0341",
     "title": "The Space Journal",
-    "publishedAt": "2026-10-31T03:40:55Z",
-    "coverageStart": "2026-10-29T03:40:55Z",
-    "coverageEnd": "2026-10-31T03:40:55Z",
+    "publishedAt": "2026-10-31T03:41:27Z",
+    "coverageStart": "2026-10-29T03:41:27Z",
+    "coverageEnd": "2026-10-31T03:41:27Z",
     "windowHours": 48,
-    "pdfUrl": "https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/published/alien-world/magazines/alien-world-20261031-0340.pdf",
+    "pdfUrl": "https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/published/alien-world/magazines/alien-world-20261031-0341.pdf",
     "pages": 9,
     "bytes": 32101,
-    "sha256": "f00ae54643394e4bdfb89c7471d4323e79a4f0eda68f93dc14bfb79e1ef731c6",
+    "sha256": "d81088cd29820aaba0e22dc5b4448d0df5cf678eb1b7c295abc35169f2344ff7",
     "customRequest": "Create a cinematic, image-led space journal with a dramatic cover, clear story hierarchy, an explainer page, a timeline, source notes and a strong closing page. Use only Data-Collection-screened NASA imagery and retain visible credits and usage notes.",
     "customRequestReceipt": {
       "applied": [
@@ -42,6 +42,45 @@
     "storyCount": 8
   },
   "issues": [
+    {
+      "issueId": "alien-world-20261031-0341",
+      "title": "The Space Journal",
+      "publishedAt": "2026-10-31T03:41:27Z",
+      "coverageStart": "2026-10-29T03:41:27Z",
+      "coverageEnd": "2026-10-31T03:41:27Z",
+      "windowHours": 48,
+      "pdfUrl": "https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/published/alien-world/magazines/alien-world-20261031-0341.pdf",
+      "pages": 9,
+      "bytes": 32101,
+      "sha256": "d81088cd29820aaba0e22dc5b4448d0df5cf678eb1b7c295abc35169f2344ff7",
+      "customRequest": "Create a cinematic, image-led space journal with a dramatic cover, clear story hierarchy, an explainer page, a timeline, source notes and a strong closing page. Use only Data-Collection-screened NASA imagery and retain visible credits and usage notes.",
+      "customRequestReceipt": {
+        "applied": [
+          "cinematic dark art direction",
+          "image-led feature hierarchy (only Publisher-screened images)",
+          "timeline page",
+          "explainer page",
+          "built-in magazine cover",
+          "built-in title and story hierarchy",
+          "source and image-credit notes",
+          "closing page",
+          "visible source/image credits",
+          "image-usage disclosure"
+        ],
+        "unmapped": [
+          "Unmapped direction: data collection screened"
+        ],
+        "palette": "cinematic-dark",
+        "photoLed": true,
+        "includeTimeline": true,
+        "includeExplainer": true,
+        "requestedPageCount": 9,
+        "actualPageCount": 9,
+        "note": "At least one full lead-feature page, source notes and a closing page are preserved. Optional sections may be omitted when needed to meet the requested page count.",
+        "engineLimitation": "This no-AI build applies supported layout/section directives only. It does not rewrite story copy in a requested voice or independently corroborate every factual claim; source provenance comes from the Publisher's official-source policy. Unsupported directions are listed above rather than claimed as applied."
+      },
+      "storyCount": 8
+    },
     {
       "issueId": "alien-world-20261031-0340",
       "title": "The Space Journal",
