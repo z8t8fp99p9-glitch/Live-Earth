@@ -22,7 +22,13 @@
   function safeNasaImage(value) {
     try {
       const u = new URL(value);
-      return u.protocol === 'https:' && u.hostname === 'images-assets.nasa.gov' && !u.username && !u.password;
+      const host = u.hostname.toLowerCase().replace(/\.$/, '');
+      // NASA publishes original article images across several first-party
+      // subdomains (www.nasa.gov, assets.science.nasa.gov,
+      // images-assets.nasa.gov). Accept the nasa.gov DNS boundary, not
+      // lookalike hosts such as nasa.gov.example.com.
+      const nasaOwnedHost = host === 'nasa.gov' || host.endsWith('.nasa.gov');
+      return u.protocol === 'https:' && nasaOwnedHost && !u.username && !u.password;
     } catch (_) { return false; }
   }
   function validateFeed(payload, expectedViewId) {
