@@ -10,7 +10,7 @@
 
 Read-only inspection of GitHub `main` on 31 October 2026 found:
 
-- Current inspected `main` HEAD: `8a8b8671a9278391e07d7df5b02114b61ac6ba97` — `Apply LIVE // EARTH Main Upload`.
+- Initial Views Separation audit `main` HEAD: `8a8b8671a9278391e07d7df5b02114b61ac6ba97` — `Apply LIVE // EARTH Main Upload`.
 - Cleanup upload commit: `0c62906439a06d7f2fb48e2b7c90fc87e62c1362` — `Remove obsolete setup and V97 patch documentation`.
 - The following extractor commit confirms the package application: `8a8b8671a9278391e07d7df5b02114b61ac6ba97`.
 - Current recursive Git tree at that inspection: 64 tracked files, 15 directories, approximately 4.89 MB total blob payload. This is a source-tree inventory, not a measurement of the deployed app or browser cache.
@@ -91,7 +91,7 @@ This section records the current boundaries observed in source. It is not an ins
 
 The previous root `README.md` still described the Alien World view as an empty shell, the Publisher/Engine/shared reader as future integrations, and V109 as a package that had not yet been uploaded. Those statements no longer describe current `main` or the user's iPhone verification.
 
-The README refresh in the accompanying documentation package corrects the current guide while preserving `LIVE-EARTH-CONTINUITY.md` as the historical fixes register. Historical V96/V97/V109 entries are not erased; they are clearly superseded by this dated current-state record.
+The README refresh was subsequently applied to `main` in the documentation package. It corrects the current guide while preserving `LIVE-EARTH-CONTINUITY.md` as the historical fixes register. Historical V96/V97/V109 entries are not erased; they remain history rather than current deployment instructions.
 
 ## 7. Deferred cleanup candidates — do not delete yet
 
@@ -112,3 +112,43 @@ The README refresh in the accompanying documentation package corrects the curren
 5. Do not modify Home composition/five primary Orbs, Sun View, Moon View, Stacks lifecycle, Location privacy, app startup/offline recovery, databases, or the Alien World Publisher/Engine contract during an unrelated view separation task.
 
 **Current milestone:** Cleanup 01 verified; PDF Reader v4.0.0 working on the owner's iPhone; current source map updated; Views Separation audit is the next engineering phase. No application runtime code was changed by Cleanup 01 or by this documentation refresh package.
+
+
+## 9. Universal Editorial System consolidation — upload candidate (31 October 2026)
+
+**Inspected base:** `main` at `60b7008f7b67621293d5052c1dbbd69e9d630164` (`Apply LIVE // EARTH Main Upload`). The following changes are prepared locally in one root-ZIP package and are not yet uploaded, deployed or iPhone-verified.
+
+### Agreed global architecture
+
+The owner approved naming this shared infrastructure the **LIVE // EARTH Universal Editorial System**. It is global app infrastructure, not an Alien World-only subsystem. There is one shared system with two execution layers and one separate global PDF Reader:
+
+- Browser companion: `editorial-engine/universal-editorial-engine.js`; the existing global remains `window.LiveEarthUniversalEditorialEngine` and the output-validation/helper API is unchanged.
+- Python production Engine: `editorial-engine/universal_editorial_engine.py`; the existing `run_engine(...)` interface is unchanged.
+- Python dependencies and system guidance remain beside both implementations as `editorial-engine/requirements.txt` and `editorial-engine/README.md`.
+- Each content-producing view owns its own logical database and Publisher. Its Collector, when needed, owns external collection and writes to that view database. The Publisher reads only its own database read-only and calls the one shared Python Engine.
+- Browser views load the shared JavaScript companion on demand and validate their own view-specific feed/catalogue. All views use the one global PDF Reader for PDF outputs.
+- No separate Engine, browser validator or PDF Reader should be created for a new view. The shared Engine does not collect external data, open databases, own a schedule or write view records.
+
+### Prepared file operations
+
+| Operation | Path | Purpose |
+|---|---|---|
+| Add | `editorial-engine/universal-editorial-engine.js` | Place the browser companion beside the Python Engine. |
+| Update | `alien-world-view-controller.js` | Load the browser companion from its new shared directory; no other Alien World view behaviour is intentionally changed. |
+| Update | `editorial-engine/README.md` | Document both execution layers and the universal integration contract. |
+| Update | `README.md` | Record the global architecture and directory layout. |
+| Update | This addendum | Preserve the approved architectural decision and exact package scope. |
+| Delete | `universal-editorial-engine.js` | Remove the old root-level copy after moving the implementation. |
+| Delete | `config/nasa-feeds.json` | Remove the obsolete duplicate feed configuration; the active Collector reads `publishers/alien-world/profile.json`. |
+
+The Python Engine, Python requirements, Collector, Publisher, Publisher profile, publication workflow, published data/PDFs, tests, global PDF Reader and all view controllers other than the one script-loading path remain unchanged. The current workflow continues to use `editorial-engine/requirements.txt`, `data-collection/alien-world/collector.py` and `publishers/alien-world/publisher.py`.
+
+### Cache and rollout decision
+
+The browser companion is loaded on demand by Alien World and is not in the essential `APP_SHELL`. Its requests use the existing service worker's bounded optional-resource cache. The new folder URL is a distinct request key and is fetched network-first when online. No service-worker shell entry, service-worker build ID, update-manager build ID, startup dependency, or cache database is changed by this move. Alien World remains online-only; it must not show live content as current while offline. The previous root path is no longer requested by the updated controller.
+
+### Validation and owner acceptance still required
+
+Before upload, validate the ZIP manifest/path allowlist and hashes, JavaScript syntax, the controller's single new script path, and the absence of any active references to the deleted root script or Config JSON. After the owner uploads it through the existing root ZIP Extractor, re-inspect `main` and test on iPhone: open Alien World, load Live Feeds, load the magazine catalogue, open a magazine in the global PDF Reader, close back to Alien World, and confirm offline state does not present live feed data as current. Home composition, five Home Orbs, Sun View, locked Moon View, Stacks lifecycle, Location-OFF privacy, startup/offline recovery, local databases and saved PDFs must remain untouched.
+
+**Status:** prepared package only. Do not mark this consolidation complete until GitHub application and owner iPhone acceptance are confirmed.

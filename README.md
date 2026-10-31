@@ -12,6 +12,7 @@
 - Alien World is connected to its Collector → database → Publisher → Universal Editorial Engine → published output pipeline. The browser view reads completed outputs; it does not collect news.
 - Moon View was user-verified in Portrait and Landscape on 28 October 2026 and remains locked.
 - Cleanup 01 was applied successfully on 31 October 2026. The four obsolete setup/patch notes and temporary upload ZIP were removed. No application code was changed by that cleanup.
+- The Universal Editorial System consolidation is prepared as a coordinated upload package: the browser companion joins the Python Engine under `editorial-engine/`, and the obsolete duplicate Config feed file is removed. This remains a candidate until the owner uploads it and the iPhone test passes.
 
 For the detailed dated source audit and current Views Separation notes, see [`LIVE-EARTH-CONTINUITY-ADDENDUM-VIEWS-SEPARATION-2026-10-31.md`](./LIVE-EARTH-CONTINUITY-ADDENDUM-VIEWS-SEPARATION-2026-10-31.md). The older [`LIVE-EARTH-CONTINUITY.md`](./LIVE-EARTH-CONTINUITY.md) remains the historical engineering register; its earlier V96/V97/V109 entries are retained as history, not current deployment instructions.
 
@@ -66,20 +67,39 @@ For the detailed dated source audit and current Views Separation notes, see [`LI
 
 The primary-view manager and the view-module registry have distinct responsibilities. Some controllers retain compatibility/fallback event handling for load-order or older-cache resilience. Do not remove those handlers merely because they appear duplicative; trace the exact startup and iPhone paths first.
 
-### Alien World publishing architecture
+### LIVE // EARTH Universal Editorial System
+
+The Universal Editorial System is shared infrastructure for the whole app, not an Alien World-only feature. Its browser and production implementations live together in `editorial-engine/`:
+
+| File | Environment | Responsibility |
+|---|---|---|
+| `editorial-engine/universal-editorial-engine.js` | Browser | Shared output-contract validation and safe helpers exposed as `window.LiveEarthUniversalEditorialEngine` |
+| `editorial-engine/universal_editorial_engine.py` | Python production | Shared view-independent feed and PDF generation through `run_engine(...)` |
+| `editorial-engine/requirements.txt` | Python workflow | Pinned runtime dependencies for the production Engine |
+| `editorial-engine/README.md` | Documentation | Architecture, responsibilities and integration contract for every view |
+
+The JavaScript and Python files are complementary layers of one Universal Editorial System, not duplicate Engines. The browser layer validates and safely exposes published view outputs. The Python layer generates those outputs. Neither layer collects external sources, owns a view database, or contains an Alien World-specific feed list.
+
+**Shared-system rules:**
+
+1. Each content-producing view owns its own logical database and its own Publisher.
+2. Each view's Collector, when needed, is the only component allowed to fetch that view's external sources and write to that view's database.
+3. A Publisher reads only its own view database in read-only mode, then supplies its profile, command and bounded output destination to the shared Python Engine.
+4. The Universal Editorial Engine is view-independent. It does not fetch the internet, open databases, own schedules or write view database records.
+5. The browser companion is loaded on demand from `./editorial-engine/universal-editorial-engine.js` and keeps the shared `window.LiveEarthUniversalEditorialEngine` API. Future views reuse this same file and contract instead of creating their own browser validator.
+6. All views use the one global PDF Reader for completed PDF publications. Publishers do not create separate PDF readers.
+
+### Alien World publishing integration
 
 Alien World is an online-only cinematic astronomy and space-discovery magazine/browser, not a game.
 
 1. `data-collection/alien-world/collector.py` is the only Alien World component that fetches external sources and writes source records/media into the Alien World database.
-2. `publishers/alien-world/publisher.py` reads that database in read-only mode and supplies Publisher instructions to the shared Engine. Publisher network access and database write access remain disabled.
-3. `editorial-engine/universal_editorial_engine.py` is the shared, view-independent production engine. It receives the selected database records and Publisher instructions; it does not collect news or independently browse sources.
-4. `published/alien-world/` contains completed feed, catalogue and magazine outputs.
-5. `alien-world-publisher-client.js` reads completed outputs and opens the actual PDF with the shared reader. It does not collect news, open the source database or generate magazines.
-6. `alien-world-view-controller.js` owns the Alien World view interface, not collection, database writes, magazine composition or global PDF reader implementation.
+2. `publishers/alien-world/publisher.py` reads that database in read-only mode and supplies Publisher instructions to the shared Python Engine. Publisher network access and database write access remain disabled.
+3. `published/alien-world/` contains completed feed, catalogue and magazine outputs.
+4. `alien-world-publisher-client.js` reads completed outputs and opens the actual PDF with the shared reader. It does not collect news, open the source database or generate magazines.
+5. `alien-world-view-controller.js` owns the Alien World view interface, not collection, database writes, magazine composition or global PDF reader implementation.
 
-The workflow `.github/workflows/alien-world-publisher.yml` runs the collection and publication pipeline. It supports manual publication modes and its configured scheduled runs. Keep the Publisher read-only and the Collector as the only component with external-source collection/database-write responsibility.
-
-Each future content-producing view must own its own logical database and Publisher. Publishers reuse the same Universal Editorial Engine and global PDF Reader; they do not create additional independent magazine engines or readers.
+The workflow `.github/workflows/alien-world-publisher.yml` runs the collection and publication pipeline. It supports manual publication modes and its configured scheduled runs. Its existing Python paths and dependency path remain unchanged by the folder consolidation.
 
 ### Global PDF Reader
 

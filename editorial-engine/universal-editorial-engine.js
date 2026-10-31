@@ -1,5 +1,5 @@
 /* LIVE // EARTH — GLOBAL Universal Editorial Engine client contract.
-   The publishing implementation is editorial-engine/universal_editorial_engine.py.
+   The publishing implementation is universal_editorial_engine.py in this folder.
    This browser layer is subject-independent: it validates published view outputs
    and exposes safe shared helpers; it does not fetch sources or write databases. */
 (() => {

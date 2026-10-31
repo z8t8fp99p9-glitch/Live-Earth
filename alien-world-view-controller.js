@@ -52,7 +52,7 @@
   function ensureServices() {
     if (window.LiveEarthUniversalEditorialEngine && window.LiveEarthUniversalPDFViewer && window.LiveEarthAlienWorldPublisher) return Promise.resolve();
     if (servicesPromise) return servicesPromise;
-    servicesPromise = loadScript('./universal-editorial-engine.js')
+    servicesPromise = loadScript('./editorial-engine/universal-editorial-engine.js')
       .then(() => loadScript('./universal-pdf-viewer.js'))
       .then(() => loadScript('./alien-world-publisher-client.js'))
       .then(() => {
