@@ -26,13 +26,13 @@ permissions:
   pages: write
 
 concurrency:
-  group: alien-world-publisher
+  group: alien-world-publication-pipeline
   cancel-in-progress: false
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Check out main
         uses: actions/checkout@v4
@@ -47,7 +47,7 @@ jobs:
           cache: pip
           cache-dependency-path: editorial-engine/requirements.txt
 
-      - name: Restore Alien World Publisher database
+      - name: Restore the Alien World source database
         uses: actions/cache@v4
         with:
           path: .publisher-data/alien-world/
@@ -55,9 +55,8 @@ jobs:
           restore-keys: |
             alien-world-db-v1-${{ runner.os }}-
 
-      - name: Install Publisher and Engine dependencies
-        run: |
-          python -m pip install --disable-pip-version-check -r editorial-engine/requirements.txt
+      - name: Install Data Collector and Engine dependencies
+        run: python -m pip install --disable-pip-version-check -r editorial-engine/requirements.txt
 
       - name: Select publication mode
         shell: bash
@@ -80,7 +79,14 @@ jobs:
           echo "PUBLISH_MODE=$mode" >> "$GITHUB_ENV"
           echo "Selected Alien World publication mode: $mode"
 
-      - name: Collect, store and publish through the Universal Editorial Engine
+      - name: Collect external sources into the database
+        shell: bash
+        run: |
+          set -euo pipefail
+          python data-collection/alien-world/collector.py \
+            | tee "$RUNNER_TEMP/alien-world-collection-result.json"
+
+      - name: Command the Universal Editorial Engine and route its output
         shell: bash
         env:
           CUSTOM_REQUEST: ${{ inputs.custom_request }}
@@ -91,7 +97,7 @@ jobs:
             --custom-request "$CUSTOM_REQUEST" \
             | tee "$RUNNER_TEMP/alien-world-publisher-result.json"
 
-      - name: Commit only completed Alien World publications
+      - name: Commit only completed Alien World view outputs
         id: publish_commit
         shell: bash
         run: |
