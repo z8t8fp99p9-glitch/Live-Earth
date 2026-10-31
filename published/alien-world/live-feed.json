@@ -2,10 +2,23 @@
   "schemaVersion": 1,
   "viewId": "alien-world",
   "publisherId": "alien-world-publisher",
-  "generatedAt": "2026-10-31T03:55:33Z",
+  "generatedAt": "2026-10-31T06:19:59Z",
   "windowHours": 48,
   "storyCount": 8,
   "stories": [
+    {
+      "id": "ebf9e7f0e97f4b65a13c3566",
+      "title": "APOD: 2026 October 31 – Night on a Spooky Planet",
+      "summary": "APOD Science APOD APOD: 2026 October 31 –… Today’s APOD Archive Submissions Index Search Calendar RSS Education About Discuss APOD Astronomy Picture of the Day Discover the cosmos! Each day a different image or photograph of our fascinating universe is featured, along with a brief explanation written by a professional astronomer. Night on a Spooky Planet Explanation: What spooky planet is this? Planet Earth on a dark and stormy night, of course. The ghostly scene was photographed at Hverir , a geothermally active area found along northeastern Iceland’s volcanic landscape . Triggered by solar activity , geomagnetic storms have unleashed energetic particles trapped in Earth’s magnetic field. Penetrating the planet’s upper atmosphere at high latitudes, the particles create auroral displays in the starry night sky. Ghostly towers of steam and gas are venting from local fumaroles to dance against the eerie, greenish northern lights. For now, auroral activity on planet Earth remains in a high state as the Sun is only in early phases of decline from the peak of its solar activity cycle . And soon, other ghostly apparitions may dance in your neighborhood. Happy Halloween ! Tomorrow’s picture: Sunday’s Childe Date: October 31, 2026 Credit & Copyright: Stéphane Vetter ( Nuits sacrées ) Authors & editors: Jerry Bonnell, Cecilia Chirenti, Robert Nemiroff, Keighley Rockcliffe A service of: ASD at NASA / GSFC , NASA Science Activation & Michigan Tech. U. Random APOD Generator Yesterday’s Image APOD: 2026 October 30 – Haunting the Cepheus Flare Tomorrow’s Image",
+      "url": "https://science.nasa.gov/image-article/apod-2026-october-31-night-on-a-spooky-planet/",
+      "sourceName": "NASA News",
+      "sourceUrl": "https://www.nasa.gov/news-release/feed/",
+      "publishedAt": "2026-10-31T04:05:00Z",
+      "imageUrl": "https://assets.science.nasa.gov/content/dam/science/cds/apod/apod/Hverir_Vetter_1300.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg",
+      "imageCredit": "NASA",
+      "imageSourceUrl": "https://science.nasa.gov/image-article/apod-2026-october-31-night-on-a-spooky-planet/",
+      "imageRightsNote": "Automated screening policy v3. NASA-source image for factual editorial context. Credit: NASA (NASA source-level attribution; no separate image credit exposed). Displayed only beside its originating factual story and source link. No NASA endorsement is implied. Automated screening is not a licence, rights-holder permission, or legal clearance."
+    },
     {
       "id": "41fa33a940a90fd4f50dce1c",
       "title": "NASA Releases MAX POWER Key Events for Media, Participants",
@@ -15,9 +28,9 @@
       "sourceUrl": "https://www.nasa.gov/news-release/feed/",
       "publishedAt": "2026-10-30T19:31:02Z",
       "imageUrl": "https://www.nasa.gov/wp-content/uploads/2026/10/grc-2026-c-06389large.jpg",
-      "imageCredit": "NASA — individual image credit not stated in feed metadata",
+      "imageCredit": "NASA",
       "imageSourceUrl": "https://www.nasa.gov/news-release/nasa-releases-max-power-key-events-for-media-participants/",
-      "imageRightsNote": "Image from the original NASA article/feed; not independently rights-cleared. Source attribution is retained; NASA and asset-specific third-party usage terms still apply."
+      "imageRightsNote": "Automated screening policy v3. NASA-source image for factual editorial context. Credit: NASA (NASA source-level attribution; no separate image credit exposed). Displayed only beside its originating factual story and source link. No NASA endorsement is implied. Automated screening is not a licence, rights-holder permission, or legal clearance."
     },
     {
       "id": "bea3d4046373d5a64a70fac9",
@@ -28,9 +41,9 @@
       "sourceUrl": "https://www.nasa.gov/blogs/spacestation/feed/",
       "publishedAt": "2026-10-30T17:50:49Z",
       "imageUrl": "https://images-assets.nasa.gov/image/iss075e0227271/iss075e0227271~large.jpg",
-      "imageCredit": "NASA — individual image credit not stated in feed metadata",
+      "imageCredit": "NASA",
       "imageSourceUrl": "https://www.nasa.gov/blogs/spacestation/2026/10/30/space-crops-and-advanced-tech-wrap-up-week-following-spacewalk/",
-      "imageRightsNote": "Image from the original NASA article/feed; not independently rights-cleared. Source attribution is retained; NASA and asset-specific third-party usage terms still apply."
+      "imageRightsNote": "Automated screening policy v3. NASA-source image for factual editorial context. Credit: NASA (NASA source-level attribution; no separate image credit exposed). Displayed only beside its originating factual story and source link. No NASA endorsement is implied. Automated screening is not a licence, rights-holder permission, or legal clearance."
     },
     {
       "id": "94dcca4ef3140fe3502441b5",
@@ -41,9 +54,9 @@
       "sourceUrl": "https://www.nasa.gov/feeds/iotd-feed/",
       "publishedAt": "2026-10-30T15:57:00Z",
       "imageUrl": "https://www.nasa.gov/wp-content/uploads/2026/10/full-res-for-display.png",
-      "imageCredit": "NASA — individual image credit not stated in feed metadata",
+      "imageCredit": "NASA",
       "imageSourceUrl": "https://www.nasa.gov/image-detail/full-res-for-display-6/",
-      "imageRightsNote": "Image from the original NASA article/feed; not independently rights-cleared. Source attribution is retained; NASA and asset-specific third-party usage terms still apply."
+      "imageRightsNote": "Automated screening policy v3. NASA-source image for factual editorial context. Credit: NASA (NASA source-level attribution; no separate image credit exposed). Displayed only beside its originating factual story and source link. No NASA endorsement is implied. Automated screening is not a licence, rights-holder permission, or legal clearance."
     },
     {
       "id": "9fe773cbfea8af218499ce45",
@@ -54,9 +67,9 @@
       "sourceUrl": "https://www.nasa.gov/news-release/feed/",
       "publishedAt": "2026-10-30T15:56:26Z",
       "imageUrl": "https://www.nasa.gov/wp-content/uploads/2026/10/full-res-for-display.png",
-      "imageCredit": "NASA — individual image credit not stated in feed metadata",
+      "imageCredit": "NASA",
       "imageSourceUrl": "https://www.nasa.gov/image-article/nasas-james-webb-space-telescope-captures-eerie-cats-head/",
-      "imageRightsNote": "Image from the original NASA article/feed; not independently rights-cleared. Source attribution is retained; NASA and asset-specific third-party usage terms still apply."
+      "imageRightsNote": "Automated screening policy v3. NASA-source image for factual editorial context. Credit: NASA (NASA source-level attribution; no separate image credit exposed). Displayed only beside its originating factual story and source link. No NASA endorsement is implied. Automated screening is not a licence, rights-holder permission, or legal clearance."
     },
     {
       "id": "7aa6dab0376044f6c887c5ca",
@@ -66,10 +79,10 @@
       "sourceName": "NASA News",
       "sourceUrl": "https://www.nasa.gov/news-release/feed/",
       "publishedAt": "2026-10-30T14:51:21Z",
-      "imageUrl": "https://assets.science.nasa.gov/content/dam/science/cds/general/images/2023/04/2/27946391011_d40ff10573_h.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg",
-      "imageCredit": "NASA — individual image credit not stated in feed metadata",
-      "imageSourceUrl": "https://science.nasa.gov/missions/hubble/nasa-explores-potential-commercial-servicing-for-hubble-telescope/",
-      "imageRightsNote": "Image from the original NASA article/feed; not independently rights-cleared. Source attribution is retained; NASA and asset-specific third-party usage terms still apply."
+      "imageUrl": null,
+      "imageCredit": null,
+      "imageSourceUrl": null,
+      "imageRightsNote": null
     },
     {
       "id": "cf83ba876333ba2e913de39f",
@@ -92,19 +105,6 @@
       "sourceName": "NASA News",
       "sourceUrl": "https://www.nasa.gov/news-release/feed/",
       "publishedAt": "2026-10-30T04:05:00Z",
-      "imageUrl": null,
-      "imageCredit": null,
-      "imageSourceUrl": null,
-      "imageRightsNote": null
-    },
-    {
-      "id": "9917aa7e49dd71d1691678ce",
-      "title": "Vega Island Frozen in Fright",
-      "summary": "Earth Observatory Science Earth Observatory Vega Island Frozen in Fright Earth Earth Observatory Image of the Day EO Explorer Topics All Topics Atmosphere Land Heat & Radiation Life on Earth Human Dimensions Natural Events Oceans Remote Sensing Technology Snow & Ice Water More Content Collections Global Maps World of Change Articles Earth Matters Blog Blue Marble: Next Generation EO Kids Mission: Biomes About About Us Subscribe 🛜 RSS Contact Us Search March 22, 2025 October 10, 2026 Part of an ice-covered Antarctic island has the appearance of a grinning skull in profile, with a rock outcrop as an eye socket and lateral moraine as a mouth. NASA Earth Observatory / Lauren Dauphin Part of an ice-covered Antarctic island has the appearance of a grinning skull in profile. Some of the face has a gray appearance where seasonal snow is gone and bare ice is exposed. NASA Earth Observatory / Lauren Dauphin March 22, 2025 October 10, 2026 Part of an ice-covered Antarctic island has the appearance of a grinning skull in profile, with a rock outcrop as an eye socket and lateral moraine as a mouth. NASA Earth Observatory / Lauren Dauphin Part of an ice-covered Antarctic island has the appearance of a grinning skull in profile. Some of the face has a gray appearance where seasonal snow is gone and bare ice is exposed. NASA Earth Observatory / Lauren Dauphin March 22, 2025 October 10, 2026 Curtain Toggle 2-Up Shrouded in ice in the lonely Weddell Sea, Vega Island is an eerie sight to behold. On this speck of land east of the Antarctic Peninsula, ice, rock outcrops, and glacial moraines combine to create the appearance of a smirking skull in profile looking toward Devil Island. These images show Vega Island’s creepy countenance at the start of austral autumn (left) and in spring (right). They were acquired with the OLI (Operational Land Imager) on Landsat 9 on March 22, 2025, and Oct",
-      "url": "https://science.nasa.gov/earth/earth-observatory/vega-island-frozen-in-fright/",
-      "sourceName": "NASA News",
-      "sourceUrl": "https://www.nasa.gov/news-release/feed/",
-      "publishedAt": "2026-10-30T04:01:00Z",
       "imageUrl": null,
       "imageCredit": null,
       "imageSourceUrl": null,
