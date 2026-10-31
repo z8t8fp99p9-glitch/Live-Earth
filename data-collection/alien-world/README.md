@@ -1,19 +1,29 @@
 # Alien World Data Collection
 
-This is the only Alien World component allowed to access external sources and write source records/media into the Alien World SQLite database.
+The Collector is the only Alien World component allowed to access external sources and write source records/media into the Alien World SQLite database. It remains fully automatic. No person has to approve stories or images one by one.
 
-## Image collection
+## Automatic image collection and safeguards (version 3)
 
-The Collector prefers the image actually attached to the original NASA feed/article. It checks RSS/Atom media fields, feed HTML, Open Graph/Twitter metadata, JSON-LD `ImageObject` data, ordinary image tags, responsive `srcset` and common lazy-loading attributes. It also checks inline background-image URLs used by some source pages. Entity-escaped Atom HTML is decoded before its image tags are parsed.
+For each recent story, the Collector looks for the image actually attached to that original NASA post. It checks RSS/Atom media fields, feed HTML, Open Graph/Twitter metadata, JSON-LD `ImageObject` metadata, article image elements, responsive `srcset`, common lazy-loading attributes and inline background-image references. It does not search for a merely similar image or substitute unrelated NASA artwork.
 
-The Collector does not perform keyword-based image searches or substitute a merely similar NASA image. It fetches only HTTPS URLs on the NASA.gov host family, checks redirects, applies byte and image-size limits, normalizes supported image files, and retains the original image URL, article URL, caption, credit and image-type/usage note. The original NASA page is sent as the media request Referer where allowed. Third-party exclusion rules remain active; non-NASA hosts remain rejected.
+Every candidate is screened automatically:
 
-A story with no valid original-post image remains text-only. A failed image attempt is recorded for diagnostics but does not lock the story out for seven days; missing images are retried during the next bounded Collector run. Successfully downloaded media is reused when its local cached file is present.
+- HTTPS only, and only the NASA.gov host family; redirects are checked and must remain on that host family.
+- Image must be attached to the originating story/feed and is stored with the original article URL and image URL.
+- Use the exact image credit when the page/feed exposes one. When no separate image credit is published in the extracted metadata, credit NASA as the source in keeping with NASA's media-use guidance. The article author/byline is never used as an image credit.
+- Hold back explicit copyright/licence restrictions, identified protected third-party assets and known stock-agency sources. A joint institutional credit such as NASA/ESA/CSA is not rejected merely because more than one agency is named; explicit rights restrictions still take precedence.
+- Keep illustrations clearly labelled as illustrations/artist concepts.
+- Validate file type, dimensions and size; reject unsuitable assets and automatically try the next candidate.
 
-## What it does not do
+The Collector scans a bounded set of recent stories so an article with no suitable image does not prevent another eligible story from receiving one. It screens the complete recent publication window even after reaching the five-image target, retaining only the first five current-policy images and clearing stale or over-quota cached image fields from the remaining stories. Failed or restricted candidates stay text-only and are retried on the next scheduled run. Existing pre-v3 cached images are re-collected through the automated screen; no database reset or app cache reset occurs.
 
-- It does not create live-feed JSON, magazine layouts, PDFs or public manifests.
-- It does not grant independent image rights; NASA guidance and asset-specific third-party terms still apply.
-- It does not write into the app's local IndexedDB or browser cache.
+The policy is for factual editorial use only. Images remain with their corresponding stories and source links. No NASA endorsement is implied. The internal screening flag is not a licence, rights-holder permission or legal clearance. NASA's official Media Usage Guidelines remain controlling; explicit third-party copyright notices require the rights holder's permission.
 
-The active workflow runs this Collector first. The Publisher then reads the resulting database in read-only mode and commands the shared Universal Editorial Engine.
+## Architecture boundaries
+
+- Collector: external fetch, image discovery, screening and database writes only.
+- Publisher: read-only database access; no network access or collection.
+- Universal Editorial Engine: shared view-independent engine; receives database records from the Publisher and creates feed/PDF outputs.
+- Alien World Main Page: displays finished output only.
+
+The Collector never creates feeds, magazine layouts, PDFs or public manifests and never writes to browser IndexedDB.

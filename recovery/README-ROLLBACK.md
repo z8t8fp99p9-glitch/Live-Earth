@@ -1,9 +1,5 @@
-# Alien World Image Collector Rollback
+# Recovery
 
-`data-collection/alien-world/collector.py.before-image-fix-2026-10-31` is the exact Collector source that was active immediately before the 31 October 2026 image-extraction follow-up.
+This is an overlay update. It does not delete files, reset SQLite, clear browser IndexedDB, change caches, edit workflow YAML, or touch the Main Page.
 
-To roll back only this change, restore that file to:
-
-`data-collection/alien-world/collector.py`
-
-Do not restore or replace the Publisher, Universal Editorial Engine, workflow YAML, database, Actions cache, app shell, or other view files as part of this narrow rollback.
+If the new Collector does not pass its tests, the Publisher workflow will stop before replacing public outputs and preserve the last-known-good feed/PDF. To roll back, restore the previous versions of only `data-collection/alien-world/collector.py`, `publishers/alien-world/profile.json`, `publishers/alien-world/publisher.py`, the two updated README files, and `tests/test_alien_world_pipeline.py`. Keep `.publisher-data/alien-world/` intact.

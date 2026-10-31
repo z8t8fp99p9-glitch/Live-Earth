@@ -40,6 +40,7 @@ def load_module(name: str, path: Path):
 
 
 COLLECTOR = load_module("alien_world_collector_tests", COLLECTOR_PATH)
+PUBLISHER = load_module("alien_world_publisher_tests", PUBLISHER_PATH)
 PROFILE = json.loads(PROFILE_PATH.read_text(encoding="utf-8"))
 
 
@@ -114,6 +115,154 @@ class CollectorTests(unittest.TestCase):
         self.assertLess(urls.index("https://assets.science.nasa.gov/cms/example/large.jpg"),
                         urls.index("https://assets.science.nasa.gov/cms/example/small.jpg"))
 
+    def test_missing_individual_credit_uses_nasa_source_attribution(self):
+        url = "https://www.nasa.gov/wp-content/uploads/example.jpg"
+        item = {"url": url, "caption": "NASA image", "credit": "NASA"}
+        self.assertTrue(COLLECTOR.image_is_eligible(item, "NASA science report"))
+        self.assertFalse(COLLECTOR.image_is_eligible({"url": url.replace("https://", "http://")}, "NASA science report"))
+        self.assertEqual(COLLECTOR.VALID_IMAGE_STATUS, "nasa-guideline-reviewed-exclusion-screened")
+
+    def test_article_byline_is_not_substituted_for_image_credit(self):
+        article = "https://www.nasa.gov/news/example/"
+        page = b'''<html><head>
+          <meta name="author" content="NASA Article Author"/>
+          <meta property="og:image" content="https://www.nasa.gov/wp-content/uploads/example.jpg"/>
+        </head></html>'''
+        with mock.patch.object(COLLECTOR, "fetch_bytes", return_value=page):
+            candidates = COLLECTOR.article_media(article, [])
+        self.assertEqual(candidates[0]["credit"], "NASA")
+        self.assertNotEqual(candidates[0]["credit"], "NASA Article Author")
+        self.assertTrue(COLLECTOR.image_is_eligible(candidates[0], "NASA science report"))
+
+    def test_explicit_copyright_or_licence_notice_holds_image_back(self):
+        item = {
+            "url": "https://www.nasa.gov/wp-content/uploads/example.jpg",
+            "caption": "NASA image",
+            "credit": "NASA",
+            "rightsNotice": "Copyright © Example Rights Holder; all rights reserved",
+        }
+        self.assertFalse(COLLECTOR.image_is_eligible(item, "NASA science report"))
+
+    def test_automatic_image_discovery_is_enabled_without_manual_allowlists(self):
+        self.assertTrue(PROFILE["imageUsePolicy"]["automaticImageDiscovery"])
+        self.assertEqual(PROFILE["imageUsePolicy"]["mode"], "automatic-source-asset-screening")
+        self.assertNotIn("verifiedArticleAssets", PROFILE["imageUsePolicy"])
+        self.assertTrue(PROFILE["imageUsePolicy"]["magazineImagesAllowed"])
+        self.assertFalse(PROFILE["imageUsePolicy"]["promotionalUseAllowed"])
+
+    def test_previous_unreviewed_cached_images_are_removed_before_publication(self):
+        now = datetime.now(timezone.utc).replace(microsecond=0)
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            old_paths = (COLLECTOR.DB_DIR, COLLECTOR.DB_PATH, COLLECTOR.MEDIA_DIR)
+            COLLECTOR.DB_DIR = base / ".publisher-data" / "alien-world"
+            COLLECTOR.DB_PATH = COLLECTOR.DB_DIR / "alien-world.sqlite3"
+            COLLECTOR.MEDIA_DIR = COLLECTOR.DB_DIR / "media"
+            profile = json.loads(json.dumps(PROFILE))
+            profile["sources"] = []
+            profile["editorialProfile"]["maximumDocumentaryImages"] = 1
+            db = COLLECTOR.open_writer_db(profile)
+            published = now - timedelta(hours=1)
+            local = COLLECTOR.MEDIA_DIR / "old-unreviewed.jpg"
+            local.parent.mkdir(parents=True, exist_ok=True)
+            local.write_bytes(b"old cached image")
+            db.execute('''INSERT INTO stories(
+                story_id,view_id,url,title,summary,source_name,source_url,feed_guid,
+                published_at,retrieved_at,image_url,image_local_path,image_caption,image_credit,
+                image_source_url,image_rights_status,image_rights_note,image_checked_at
+            ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (
+                "old-story", "alien-world", "https://www.nasa.gov/news/unreviewed-story/",
+                "NASA previously cached image story", "A substantial summary for cache policy testing.",
+                "NASA News", "https://www.nasa.gov/news-release/feed/", "old-story",
+                published.timestamp(), now.timestamp(), "https://www.nasa.gov/wp-content/uploads/old.jpg",
+                str(local), "Old image", "NASA — individual image credit not stated in feed metadata",
+                "https://www.nasa.gov/news/unreviewed-story/", COLLECTOR.VALID_IMAGE_STATUS,
+                "Old heuristic status", now.timestamp(),
+            ))
+            db.commit()
+            db.close()
+            try:
+                stats = COLLECTOR.collect(profile, now, [])
+                self.assertEqual(stats["databaseImages"], 0)
+                self.assertFalse(local.exists())
+                with sqlite3.connect(COLLECTOR.DB_PATH) as check:
+                    row = check.execute("SELECT image_url,image_local_path,image_rights_status FROM stories WHERE story_id='old-story'").fetchone()
+                self.assertEqual(row, (None, None, None))
+            finally:
+                COLLECTOR.DB_DIR, COLLECTOR.DB_PATH, COLLECTOR.MEDIA_DIR = old_paths
+
+    def test_image_quota_cleans_later_cached_images_in_engine_story_window(self):
+        now = datetime.now(timezone.utc).replace(microsecond=0)
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            old_paths = (COLLECTOR.DB_DIR, COLLECTOR.DB_PATH, COLLECTOR.MEDIA_DIR)
+            COLLECTOR.DB_DIR = base / ".publisher-data" / "alien-world"
+            COLLECTOR.DB_PATH = COLLECTOR.DB_DIR / "alien-world.sqlite3"
+            COLLECTOR.MEDIA_DIR = COLLECTOR.DB_DIR / "media"
+            profile = json.loads(json.dumps(PROFILE))
+            profile["sources"] = []
+            profile["editorialProfile"]["maximumDocumentaryImages"] = 1
+            db = COLLECTOR.open_writer_db(profile)
+            for index in range(2):
+                local = COLLECTOR.MEDIA_DIR / f"cached-{index}.jpg"
+                local.parent.mkdir(parents=True, exist_ok=True)
+                local.write_bytes(b"cached image")
+                published = now - timedelta(minutes=index + 1)
+                db.execute(
+                    "INSERT INTO stories(story_id,view_id,url,title,summary,source_name,source_url,feed_guid,published_at,retrieved_at,image_url,image_local_path,image_caption,image_credit,image_source_url,image_rights_status,image_rights_note,image_checked_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (f"story-{index}", "alien-world", f"https://www.nasa.gov/news/story-{index}/",
+                     f"NASA cached image story {index}", "A substantial source-linked summary for this story.",
+                     "NASA News", "https://www.nasa.gov/news-release/feed/", f"story-{index}",
+                     published.timestamp(), now.timestamp(), f"https://www.nasa.gov/images/{index}.jpg",
+                     str(local), "NASA image", "NASA", f"https://www.nasa.gov/news/story-{index}/",
+                     COLLECTOR.VALID_IMAGE_STATUS,
+                     "Automated screening policy v3. NASA source image.", now.timestamp())
+                )
+            db.commit()
+            db.close()
+            try:
+                with mock.patch.object(COLLECTOR, "article_media", return_value=[]) as media_mock:
+                    stats = COLLECTOR.collect(profile, now, [])
+                self.assertEqual(stats["imagesReused"], 1)
+                self.assertEqual(stats["databaseImages"], 1)
+                media_mock.assert_not_called()
+                with sqlite3.connect(COLLECTOR.DB_PATH) as check:
+                    rows = check.execute("SELECT story_id,image_url,image_local_path FROM stories ORDER BY published_at DESC").fetchall()
+                self.assertIsNotNone(rows[0][1])
+                self.assertIsNone(rows[1][1])
+                self.assertIsNone(rows[1][2])
+                self.assertFalse((COLLECTOR.MEDIA_DIR / "cached-1.jpg").exists())
+            finally:
+                COLLECTOR.DB_DIR, COLLECTOR.DB_PATH, COLLECTOR.MEDIA_DIR = old_paths
+
+    def test_jsonld_copyright_notice_is_not_misused_as_image_credit(self):
+        article = "https://www.nasa.gov/news/example/"
+        html = (b'<script type="application/ld+json">'
+                b'{"@type":"NewsArticle","image":{"@type":"ImageObject",'
+                b'"url":"https://www.nasa.gov/wp-content/uploads/example.jpg",'
+                b'"creditText":"NASA/JPL-Caltech","copyrightNotice":"Copyright Example Agency"}}'
+                b'</script>')
+        with mock.patch.object(COLLECTOR, "fetch_bytes", return_value=html):
+            candidates = COLLECTOR.article_media(article, [])
+        self.assertEqual(candidates[0]["credit"], "NASA/JPL-Caltech")
+        self.assertIn("Copyright Example Agency", candidates[0]["rightsNotice"])
+        self.assertFalse(COLLECTOR.image_is_eligible(candidates[0], "NASA science report"))
+
+    def test_joint_institutional_credit_is_not_rejected_without_restriction(self):
+        item = {
+            "url": "https://www.nasa.gov/wp-content/uploads/webb.jpg",
+            "caption": "James Webb telescope image",
+            "credit": "NASA, ESA, CSA, STScI; Image Processing: Joseph DePasquale (STScI)",
+            "rightsNotice": "",
+        }
+        self.assertTrue(COLLECTOR.image_is_eligible(item, "NASA science report"))
+
+    def test_known_stock_agency_and_explicit_rights_notice_are_held_back(self):
+        for credit in ("NASA / Getty Images", "NASA / Shutterstock"):
+            self.assertFalse(COLLECTOR.image_is_eligible({
+                "url": "https://www.nasa.gov/wp-content/uploads/example.jpg", "credit": credit
+            }, "NASA science report"))
+
     def test_non_nasa_image_hosts_are_rejected(self):
         self.assertFalse(COLLECTOR.nasa_host_url("https://images.example.com/space.jpg"))
         self.assertFalse(COLLECTOR.nasa_host_url("http://www.nasa.gov/space.jpg"))
@@ -181,7 +330,40 @@ class CollectorTests(unittest.TestCase):
             self.assertTrue(target.is_file())
             self.assertEqual(result["url"], candidate["url"])
             self.assertEqual(result["source_url"], "https://www.nasa.gov/news/mission/")
-            self.assertIn("third-party usage terms", result["rights_note"])
+            self.assertIn("Automated screening policy v3", result["rights_note"])
+            self.assertIn("not a licence, rights-holder permission, or legal clearance", result["rights_note"])
+            self.assertEqual(result["rights_status"], "nasa-guideline-reviewed-exclusion-screened")
+
+    def test_restricted_candidate_is_skipped_and_next_eligible_image_is_used(self):
+        image_bytes = io.BytesIO()
+        Image.new("RGB", (320, 200), "navy").save(image_bytes, format="JPEG")
+        candidates = [
+            {
+                "url": "https://www.nasa.gov/wp-content/uploads/restricted.jpg",
+                "caption": "NASA source image",
+                "credit": "NASA",
+                "rightsNotice": "Copyright Example Rights Holder; all rights reserved",
+            },
+            {
+                "url": "https://www.nasa.gov/wp-content/uploads/eligible.jpg",
+                "caption": "NASA source image",
+                "credit": "NASA",
+                "rightsNotice": "",
+            },
+        ]
+        with tempfile.TemporaryDirectory() as temp:
+            target = Path(temp) / "selected.jpg"
+            with mock.patch.object(COLLECTOR, "fetch_bytes", return_value=image_bytes.getvalue()) as fetch_mock:
+                found = None
+                for candidate in candidates:
+                    found = COLLECTOR.download_article_image(
+                        candidate, "https://www.nasa.gov/news/example/", target
+                    )
+                    if found:
+                        break
+            self.assertIsNotNone(found)
+            self.assertEqual(found["url"], candidates[1]["url"])
+            fetch_mock.assert_called_once()
 
     def test_missing_image_is_retried_even_when_recent_failure_timestamp_exists(self):
         now = datetime.now(timezone.utc).replace(microsecond=0)
@@ -251,6 +433,12 @@ class ArchitectureBoundaryTests(unittest.TestCase):
         self.assertIn("read_only_connection", calls)
         self.assertIn("run_contract_tests", calls)
 
+    def test_automated_images_remain_enabled_for_magazine_story_pages(self):
+        self.assertTrue(PROFILE["imageUsePolicy"]["magazineImagesAllowed"])
+        self.assertTrue(PROFILE["editorialProfile"]["visualProfile"]["photoLed"])
+        source = PUBLISHER_PATH.read_text(encoding="utf-8")
+        self.assertNotIn("text-led no images", source)
+
     def test_collector_is_the_only_declared_source_and_database_owner(self):
         self.assertEqual(PROFILE["collection"]["networkAccessOwner"], "AlienWorldDataCollector")
         self.assertTrue(PROFILE["collection"]["writesDatabase"])
@@ -258,6 +446,8 @@ class ArchitectureBoundaryTests(unittest.TestCase):
         self.assertFalse(PROFILE["output"]["publisherNetworkAccess"])
         self.assertFalse(PROFILE["output"]["publisherDatabaseWriteAccess"])
 
+    @unittest.skipUnless((ROOT / "alien-world-publisher-client.js").is_file(),
+                         "Main Page client is part of the complete repository only")
     def test_main_page_client_clears_online_stories_and_lists_saved_pdfs(self):
         client_path = ROOT / "alien-world-publisher-client.js"
         source = client_path.read_text(encoding="utf-8")

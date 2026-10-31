@@ -5,10 +5,9 @@ This is the only Alien World component that accesses external sources and writes
 source records/media into the Alien World database. It never publishes a feed or
 builds a magazine. The Publisher and Universal Editorial Engine remain network-free.
 
-Image policy: prefer the actual image exposed by the original NASA feed/article
-(Open Graph/Twitter image, RSS media:content/enclosure, or an article-body image).
-Do not search for a merely similar image. If no source-post image can be obtained
-from an allowlisted NASA host, the story remains text-only.
+Image policy: automatically discover images actually attached to the original NASA feed/article,
+then screen host, source provenance, credit and explicit third-party/copyright restrictions.
+No manual article/image allowlist and no similar-image search are required.
 """
 from __future__ import annotations
 
@@ -42,7 +41,9 @@ USER_AGENT = (
     "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 "
     "LIVE-EARTH-AlienWorldDataCollector/1.2"
 )
-VALID_IMAGE_STATUS = "nasa-guideline-reviewed-exclusion-screened"
+VALID_IMAGE_STATUS = "nasa-guideline-reviewed-exclusion-screened"  # shared Universal Editorial Engine compatibility
+MISSING_CREDIT_MARKERS = ("individual image credit not stated", "image supplied by the original source", "nasa image library")
+COPYRIGHT_NOTICE_MARKERS = ("©", "copyright", "all rights reserved", "license", "licence", "licensed from", "licensed exclusively", "permission required", "restricted use")
 THIRD_PARTY_MARKERS = (
     "getty images", "shutterstock", "reuters", "associated press", "ap photo",
     "afp/getty", "esa photo", "© esa", "jaxa photo", "© jaxa", "all rights reserved",
@@ -177,10 +178,11 @@ class ArticleMetadataParser(HTMLParser):
         self._jsonld_active = False
         self._jsonld_parts: list[str] = []
 
-    def _add_image(self, url: str, caption: str = "", credit: str = "") -> None:
+    def _add_image(self, url: str, caption: str = "", credit: str = "", rights_notice: str = "") -> None:
         value = (url or "").strip()
         if value:
-            self.images.append({"url": value, "caption": caption or "", "credit": credit or ""})
+            self.images.append({"url": value, "caption": caption or "", "credit": credit or "",
+                                "rightsNotice": rights_notice or ""})
 
     def _add_jsonld_images(self, value: Any, image_context: bool = False) -> None:
         """Extract only JSON-LD image fields; ignore the article's own page URL."""
@@ -198,12 +200,18 @@ class ArticleMetadataParser(HTMLParser):
         types = raw_type if isinstance(raw_type, list) else [raw_type]
         is_image_object = image_context or any("imageobject" in str(kind).lower() for kind in types)
         caption = str(value.get("caption") or value.get("name") or "")
-        credit = str(value.get("creditText") or value.get("copyrightNotice") or "")
+        credit_value = value.get("creditText") or value.get("creator") or value.get("provider") or ""
+        if isinstance(credit_value, dict):
+            credit_value = credit_value.get("name", "")
+        elif isinstance(credit_value, list):
+            credit_value = ", ".join(str(part.get("name", "") if isinstance(part, dict) else part) for part in credit_value)
+        credit = str(credit_value or "")
+        rights_notice = str(value.get("copyrightNotice") or value.get("license") or value.get("usageInfo") or "")
         if is_image_object:
             for key in ("contentUrl", "thumbnailUrl", "url"):
                 item = value.get(key)
                 if isinstance(item, str):
-                    self._add_image(item, caption, credit)
+                    self._add_image(item, caption, credit, rights_notice)
                 elif isinstance(item, (dict, list)):
                     self._add_jsonld_images(item, image_context=True)
         # Enter image context only through explicit image-bearing properties.
@@ -228,7 +236,8 @@ class ArticleMetadataParser(HTMLParser):
                 self.meta[key] = value
                 if key in {"og:image", "og:image:url", "twitter:image", "twitter:image:src", "image"}:
                     self._add_image(value, self.meta.get("og:image:alt") or self.meta.get("twitter:image:alt", ""),
-                                    self.meta.get("image:credit") or self.meta.get("og:image:credit", ""))
+                                    self.meta.get("image:credit") or self.meta.get("og:image:credit", ""),
+                                    self.meta.get("image:copyright") or self.meta.get("copyright") or self.meta.get("rights", ""))
         elif tag == "link" and ("image" in attr.get("rel", "").lower() or attr.get("itemprop", "").lower() == "image"):
             self._add_image(attr.get("href", ""))
         elif tag in {"img", "source"}:
@@ -238,14 +247,17 @@ class ArticleMetadataParser(HTMLParser):
                     "data-image", "data-image-url", "data-full-src", "data-hero-image", "data-background-image")
             found = next((attr.get(key, "") for key in keys if attr.get(key)), "")
             if found:
-                self._add_image(found, attr.get("alt") or attr.get("title", ""), attr.get("data-credit", ""))
+                self._add_image(found, attr.get("alt") or attr.get("title", ""), attr.get("data-credit", ""),
+                                attr.get("data-rights") or attr.get("data-license", ""))
             for key in ("srcset", "data-srcset", "data-lazy-srcset"):
                 for candidate in _srcset_urls(attr.get(key, "")):
-                    self._add_image(candidate, attr.get("alt") or attr.get("title", ""), attr.get("data-credit", ""))
+                    self._add_image(candidate, attr.get("alt") or attr.get("title", ""), attr.get("data-credit", ""),
+                                    attr.get("data-rights") or attr.get("data-license", ""))
         # Some hero images are published as inline background-image declarations.
         style = attr.get("style", "")
         for match in re.findall(r"url\(\s*['\"]?([^'\")]+)", style, flags=re.IGNORECASE):
-            self._add_image(match, attr.get("alt") or attr.get("title", ""), attr.get("data-credit", ""))
+            self._add_image(match, attr.get("alt") or attr.get("title", ""), attr.get("data-credit", ""),
+                            attr.get("data-rights") or attr.get("data-license", ""))
 
     def handle_data(self, data: str) -> None:
         if self._jsonld_active:
@@ -271,6 +283,12 @@ def _node_text(node: ET.Element | None) -> str:
 
 def _feed_image_candidates(node: ET.Element, article_url: str) -> list[dict[str, str]]:
     candidates: list[dict[str, str]] = []
+    feed_credits = [clean_html(_node_text(child), 180) for child in node.iter()
+                    if child.tag.rsplit("}", 1)[-1].lower() in {"credit"} and _node_text(child)]
+    feed_rights = [clean_html(_node_text(child), 300) for child in node.iter()
+                   if child.tag.rsplit("}", 1)[-1].lower() in {"rights", "copyright", "license"} and _node_text(child)]
+    default_credit = feed_credits[0] if len(set(feed_credits)) == 1 and feed_credits else ""
+    default_rights = feed_rights[0] if len(set(feed_rights)) == 1 and feed_rights else ""
     for child in node.iter():
         local = child.tag.rsplit("}", 1)[-1].lower()
         attrs = child.attrib
@@ -281,7 +299,8 @@ def _feed_image_candidates(node: ET.Element, article_url: str) -> list[dict[str,
                 candidates.append({
                     "url": urllib.parse.urljoin(article_url, media_url),
                     "caption": clean_html(attrs.get("title") or attrs.get("label") or "", 240),
-                    "credit": clean_html(attrs.get("credit") or "", 180),
+                    "credit": clean_html(attrs.get("credit") or default_credit, 180),
+                    "rightsNotice": clean_html(attrs.get("rights") or attrs.get("copyright") or default_rights, 300),
                 })
     # RSS content:encoded and Atom content/summary may carry the article's actual
     # lead image. Extract only image references and captions, never article text.
@@ -301,6 +320,7 @@ def _feed_image_candidates(node: ET.Element, article_url: str) -> list[dict[str,
                     "url": urllib.parse.urljoin(article_url, item["url"]),
                     "caption": clean_html(item.get("caption"), 240),
                     "credit": clean_html(item.get("credit"), 180),
+                    "rightsNotice": clean_html(item.get("rightsNotice"), 300),
                 })
     unique: dict[str, dict[str, str]] = {}
     for item in candidates:
@@ -399,10 +419,20 @@ def article_media(
         path = urllib.parse.urlparse(url).path.lower()
         if path.endswith((".svg", ".gif", ".webm", ".mp4")):
             continue
+        image_credit = clean_html(
+            item.get("credit") or meta.get("image:credit") or meta.get("og:image:credit") or "", 180
+        )
         result.append({
             "url": url,
             "caption": clean_html(item.get("caption") or meta.get("og:image:alt") or meta.get("og:description") or meta.get("description") or "", 240),
-            "credit": clean_html(item.get("credit") or meta.get("image:credit") or meta.get("og:image:credit") or meta.get("author") or "", 180),
+            # NASA is acknowledged as the source if the original page does not
+            # expose a separate image credit. Article-author/byline metadata is
+            # intentionally never treated as image credit.
+            "credit": image_credit or "NASA",
+            "creditSource": "image-specific source metadata" if image_credit else "NASA source-level attribution; no separate image credit exposed",
+            "rightsNotice": clean_html(item.get("rightsNotice") or meta.get("image:copyright") or meta.get("copyright") or meta.get("rights")
+                                       or meta.get("dcterms.rights") or meta.get("dc.rights")
+                                       or meta.get("license") or "", 300),
         })
     if diagnostics is not None:
         diagnostics.append(
@@ -415,25 +445,49 @@ def article_media(
 def image_descriptors(item: dict[str, str], article_title: str) -> str:
     return " ".join([
         str(item.get("caption", "")), str(item.get("credit", "")),
-        str(item.get("url", "")), article_title,
+        str(item.get("rightsNotice", "")), str(item.get("url", "")), article_title,
     ]).lower()
 
 
+def has_restrictive_rights_notice(item: dict[str, str]) -> bool:
+    """Detect explicit restrictions and known stock/third-party rights signals.
+
+    NASA's published media guidance says third-party copyrighted assets appearing
+    on NASA sites are identified as protected and name the copyright holder. We
+    hold those assets back automatically. A missing individual photographer
+    credit alone is not treated as a restriction: NASA is credited as the source
+    when the official page exposes no separate image credit.
+    """
+    credit_and_rights = " ".join([
+        str(item.get("credit", "")), str(item.get("rightsNotice", "")),
+        str(item.get("caption", "")),
+    ]).lower()
+    explicit_restriction_markers = COPYRIGHT_NOTICE_MARKERS + (
+        "permission required", "all rights reserved", "not for reuse",
+        "do not reproduce", "used with permission", "licensed exclusively",
+        "courtesy of getty", "courtesy of shutterstock", "rights managed",
+    )
+    if any(marker in credit_and_rights for marker in explicit_restriction_markers):
+        return True
+    if any(marker in credit_and_rights for marker in THIRD_PARTY_MARKERS):
+        return True
+    return False
+
+
 def image_is_eligible(item: dict[str, str], article_title: str) -> bool:
-    descriptor = image_descriptors(item, article_title)
-    if any(marker in descriptor for marker in THIRD_PARTY_MARKERS):
+    """Automated eligibility gate for NASA-hosted images in factual story context."""
+    if not nasa_host_url(item.get("url", "")):
         return False
-    # An explicitly labelled NASA illustration can still be shown as an
-    # illustration; the rights note below labels it clearly rather than calling
-    # it a documentary photograph.
-    return nasa_host_url(item.get("url", ""))
+    if has_restrictive_rights_notice(item):
+        return False
+    return True
 
 
 def image_type_label(item: dict[str, str]) -> str:
     descriptor = image_descriptors(item, "")
     if any(marker in descriptor for marker in NON_PHOTOGRAPHIC_MARKERS):
         return "NASA source illustration / artist concept (not a documentary photograph)"
-    return "Image from the original NASA article/feed; not independently rights-cleared"
+    return "NASA-source image for factual editorial context"
 
 
 def download_article_image(
@@ -448,7 +502,7 @@ def download_article_image(
         return None
     if not image_is_eligible(candidate, article_url):
         if diagnostics is not None:
-            diagnostics.append("Image candidate rejected by the third-party rights exclusion screen.")
+            diagnostics.append("Image candidate held back by the automated third-party/copyright restriction screen.")
         return None
     try:
         raw = fetch_bytes(url, byte_limit, timeout=20, referer=article_url)
@@ -466,7 +520,8 @@ def download_article_image(
             finally:
                 image.close()
         caption = clean_html(candidate.get("caption") or "Image supplied by the original source post", 180)
-        credit = clean_html(candidate.get("credit") or "NASA — individual image credit not stated in feed metadata", 180)
+        credit = clean_html(candidate.get("credit") or "NASA", 180)
+        credit_source = clean_html(candidate.get("creditSource") or "NASA source-level attribution", 180)
         kind = image_type_label(candidate)
         if diagnostics is not None:
             diagnostics.append(f"Source image downloaded and validated ({saved_size[0]}×{saved_size[1]}).")
@@ -476,7 +531,9 @@ def download_article_image(
             "credit": credit,
             "source_url": article_url,
             "rights_status": VALID_IMAGE_STATUS,
-            "rights_note": f"{kind}. Source attribution is retained; NASA and asset-specific third-party usage terms still apply.",
+            "rights_note": (f"Automated screening policy v3. {kind}. Credit: {credit} ({credit_source}). "
+                            "Displayed only beside its originating factual story and source link. No NASA endorsement is implied. "
+                            "Automated screening is not a licence, rights-holder permission, or legal clearance."),
         }
     except Exception as exc:
         target.unlink(missing_ok=True)
@@ -581,19 +638,53 @@ def collect(profile: dict[str, Any], now: datetime, logs: list[str]) -> dict[str
                 collected += 1
         con.commit()
 
-        # Only enrich the most recent bounded set; media lookup remains Collector-owned.
+        # Automatically screen the most recent bounded set of source articles.
+        # Scan more stories than the target image count so one text-only article
+        # does not prevent later eligible source images from being collected.
         max_images = max(0, min(12, int(profile.get("editorialProfile", {}).get("maximumDocumentaryImages", 5))))
-        rows = con.execute("""SELECT story_id,title,url,image_local_path,image_checked_at
+        scan_limit = min(40, max(8, max_images * 3)) if max_images else 0
+        rows = con.execute("""SELECT story_id,title,url,image_url,image_local_path,image_caption,image_credit,
+                                      image_source_url,image_rights_status,image_rights_note,image_checked_at
                             FROM stories WHERE view_id=? ORDER BY published_at DESC LIMIT ?""",
-                           (profile["viewId"], max_images)).fetchall()
+                           (profile["viewId"], scan_limit)).fetchall()
         prepared = 0
+        reused = 0
+        held_back = 0
+        usable_count = 0
         for row in rows:
+            # Process the full scan window even after the image quota is met.
+            # This also removes stale pre-v3 assets from stories the Engine may
+            # still include in its eight-story publication window.
             local = Path(row["image_local_path"]) if row["image_local_path"] else None
-            if local and local.is_file():
+            cache_is_current = bool(
+                local is not None and local.is_file()
+                and row["image_rights_status"] == VALID_IMAGE_STATUS
+                and row["image_source_url"] == row["url"]
+                and clean_html(row["image_credit"], 180)
+                and "automated screening policy v3" in clean_html(row["image_rights_note"], 600).lower()
+            )
+            if cache_is_current and usable_count < max_images:
+                usable_count += 1
+                reused += 1
                 continue
-            # Missing images are retried on each bounded Collector run. Earlier
-            # failures must not freeze a story as text-only for seven days after a
-            # temporary CDN/WAF/metadata issue. The profile caps this pass at 5.
+
+            # Rebuild legacy/unknown image records from the originating article.
+            # Also remove valid-but-over-quota images so no older cached asset
+            # can leak into the Engine's story window after the image cap is met.
+            if local and local.is_file():
+                local.unlink(missing_ok=True)
+            if (row["image_url"] or row["image_local_path"] or row["image_rights_status"]
+                    or row["image_rights_note"]):
+                con.execute("""UPDATE stories SET image_url=NULL,image_local_path=NULL,image_caption=NULL,
+                    image_credit=NULL,image_source_url=NULL,image_rights_status=NULL,image_rights_note=NULL,
+                    image_checked_at=NULL WHERE story_id=?""", (row["story_id"],))
+
+            # Image quota is already filled. The story remains in the database
+            # as text, and the next scheduled run can reconsider it if capacity
+            # becomes available.
+            if usable_count >= max_images:
+                continue
+
             story_logs: list[str] = []
             candidates = article_media(
                 str(row["url"]), pending_media.get(str(row["story_id"]), []), story_logs
@@ -613,14 +704,17 @@ def collect(profile: dict[str, Any], now: datetime, logs: list[str]) -> dict[str
                     (found["url"], str(target), found["caption"], found["credit"], found["source_url"],
                      found["rights_status"], found["rights_note"], now.timestamp(), row["story_id"]))
                 prepared += 1
+                usable_count += 1
             else:
-                con.execute("UPDATE stories SET image_checked_at=? WHERE story_id=?",
-                            (now.timestamp(), row["story_id"]))
+                con.execute("""UPDATE stories SET image_checked_at=?,image_rights_status=NULL,
+                    image_rights_note=NULL WHERE story_id=?""", (now.timestamp(), row["story_id"]))
                 target.unlink(missing_ok=True)
+                held_back += 1
                 if not candidates:
-                    logs.append(f"Image not prepared for '{str(row['title'])[:72]}': no approved original-post image candidate; will retry next run.")
+                    logs.append(f"Image not prepared for '{str(row['title'])[:72]}': no original-post image candidate was exposed; will retry next run.")
                 elif not story_logs:
-                    logs.append(f"Image not prepared for '{str(row['title'])[:72]}': no approved source image passed validation; will retry next run.")
+                    logs.append(f"Image not prepared for '{str(row['title'])[:72]}': all source candidates failed automated validation; will retry next run.")
+
         con.commit()
 
         retention_seconds = int(profile.get("database", {}).get("retentionDays", 30)) * 86400
@@ -643,7 +737,8 @@ def collect(profile: dict[str, Any], now: datetime, logs: list[str]) -> dict[str
 
         remaining = con.execute("SELECT COUNT(*) FROM stories WHERE view_id=?", (profile["viewId"],)).fetchone()[0]
         image_count = con.execute("SELECT COUNT(*) FROM stories WHERE view_id=? AND image_local_path IS NOT NULL", (profile["viewId"],)).fetchone()[0]
-        return {"collected": collected, "imagesPrepared": prepared, "databaseRecords": int(remaining), "databaseImages": int(image_count)}
+        return {"collected": collected, "imagesPrepared": prepared, "imagesReused": reused,
+                "imagesHeldBack": held_back, "databaseRecords": int(remaining), "databaseImages": int(image_count)}
     finally:
         con.close()
 

@@ -71,7 +71,7 @@
   "editorialProfile": {
     "publicationTitle": "The Space Journal",
     "tone": "cinematic science journalism",
-    "defaultCustomRequest": "Create a cinematic, image-led space journal with a dramatic cover, clear story hierarchy, an explainer page, a timeline, source notes and a strong closing page. Use only Data-Collection-screened NASA imagery and retain visible credits and usage notes.",
+    "defaultCustomRequest": "Create a cinematic, image-led space journal with a dramatic editorial cover, clear story hierarchy, an explainer page, a timeline, source notes and a strong closing page. Use automatically screened NASA source-post imagery beside its originating factual stories and retain visible credits and usage notes.",
     "maximumDocumentaryImages": 5,
     "visualProfile": {
       "palette": "cinematic-dark",
@@ -89,5 +89,22 @@
     "latestPublication": "latest-publication.json",
     "publisherNetworkAccess": false,
     "publisherDatabaseWriteAccess": false
+  },
+  "imageUsePolicy": {
+    "policyVersion": 3,
+    "mode": "automatic-source-asset-screening",
+    "automaticImageDiscovery": true,
+    "sourceAssetPreference": "Use the actual image attached to the originating NASA feed/article (metadata, JSON-LD, RSS/Atom media fields, or article image elements). Never substitute a merely similar image.",
+    "sourceRequirement": "Require the original story and image to be served from HTTPS NASA.gov host family; redirects must remain in that host family.",
+    "creditRequirement": "Use image-specific credit when exposed by the source. If no separate image credit is published in extracted metadata, acknowledge NASA as the source under NASA Media Usage Guidelines. Never substitute the article author/byline.",
+    "copyrightRequirement": "Automatically hold back images with explicit copyright/licence restrictions, known stock-agency markers, or a clearly identified third-party rights restriction. A normal joint institutional credit (for example NASA/ESA/CSA) is not itself treated as a copyright restriction unless the source identifies it as protected.",
+    "contextRestriction": "Display only alongside the corresponding factual story, original source link and credit. Do not use NASA imagery as advertising, product branding, promotional creative or an implied NASA endorsement.",
+    "magazineImagesAllowed": true,
+    "storyImagesAllowed": true,
+    "coverImagesAllowed": true,
+    "promotionalUseAllowed": false,
+    "missingCreditBehavior": "Use NASA source-level attribution; never use the article byline as image credit.",
+    "unknownRightsBehavior": "Hold back the image and retry at the next bounded Collector run; keep the story text available.",
+    "screeningDisclaimer": "The automated eligibility flag is an internal factual-editorial screening result. It is not a licence, rights-holder permission, or legal advice."
   }
 }
