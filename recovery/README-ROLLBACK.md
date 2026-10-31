@@ -1,24 +1,20 @@
-# V110 Recovery Instructions
+# LIVE // EARTH — Alien World pipeline rollback note
 
-## Protected baseline
-- Repository: `z8t8fp99p9-glitch/Live-Earth`
-- Branch: `main`
-- Alien World controller before this package: `alien-world-view-controller.js`
-- Baseline blob SHA: `d8027e5896eec46f732cb75706a203b0b63d980a`
+This release changes only:
+- `data-collection/alien-world/collector.py`
+- `data-collection/alien-world/README.md`
+- `publishers/alien-world/publisher.py`
+- `publishers/alien-world/README.md`
+- `alien-world-publisher-client.js`
+- `tests/test_alien_world_pipeline.py`
+- this recovery/documentation material
 
-The baseline controller is copied beside this note as `alien-world-view-controller.js.v109-baseline.txt`.
+It does not change `.github/workflows/`, `sw.js`, `update-manager.js`, `index.html`, `view-manager.js`, the Home/Earth/Moon/Sun views, Orb assets, or the shared PDF Viewer.
 
-## Rollback procedure
-1. Restore the original `alien-world-view-controller.js` from GitHub file history (preferred) or copy the supplied V109 baseline text into that exact repository path.
-2. Remove only the newly added V110 files:
-   - `alien-world-publisher-client.js`
-   - `universal-editorial-engine.js`
-   - `universal-pdf-viewer.js`
-   - `editorial-engine/`
-   - `publishers/alien-world/`
-3. Remove only V110 publication outputs under `published/alien-world/` if they exist.
-4. Do not delete or reset `live-earth-local` IndexedDB, any other existing app database, Moon/Sun assets, Orb assets, or `sw.js`/`index.html`.
-5. The shared reader's separate `live-earth-pdf-library` database is bounded to three PDFs / 70 MiB; it is isolated from the existing app database. It can remain untouched during rollback.
-6. The Publisher database exists only in the workflow's Actions cache, not in the application repo. Removing/letting that cache expire does not affect the app's existing local data.
+## Known-good pre-release GitHub baseline
 
-No existing Home, Earth, Moon, Sun, Orb, service-worker, update-manager or recovery source file is changed by this V110 package.
+Repository: `z8t8fp99p9-glitch/Live-Earth`
+Branch: `main`
+Baseline commit: `2aab07c2fb51259a49fcc376b2f55dad606cef15`
+
+The previous versions of the changed source files remain in Git history at this baseline. If rollback is ever needed, use GitHub's **Revert** action on the single commit created by the ZIP Extractor for this package. Do not delete the recovery folder or reset app storage. The active Publisher workflow is not part of this release and must remain untouched.

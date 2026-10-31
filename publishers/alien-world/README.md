@@ -1,19 +1,26 @@
 # Alien World Publisher
 
-The Publisher is a view-specific production manager. It does not browse the web, fetch feeds, scrape pages, search for images, or write to the source database.
+The Publisher is the instruction and routing layer for the Alien World view. It does not browse the web, collect feeds, scrape article pages, search for images or write source records.
 
-## Runtime boundaries
+## One simple publication flow
 
-1. **Data Collection** — `data-collection/alien-world/collector.py` is the only Alien World pipeline component with external-source access. It collects the configured source records, performs the approved media screening/enrichment, and writes the view-scoped SQLite database and media assets.
-2. **Database** — `.publisher-data/alien-world/` is the Collector-owned source-of-truth store. GitHub Actions restores and saves it through the existing workflow cache.
-3. **Universal Editorial Engine** — `editorial-engine/universal_editorial_engine.py` receives a read-only SQLite handle, the view profile and a Publisher command. It does not access the network or write to the source database. It selects eligible records and builds the feed/PDF artifacts.
-4. **Publisher** — `publishers/alien-world/publisher.py` opens the database read-only, sends the command to the Engine, and routes the Engine's completed artifacts to `published/alien-world/` for the view to display.
-5. **Alien World Main Page** — the existing client reads those publication outputs only. It does not collect or edit source material.
+1. **Collector** — `data-collection/alien-world/collector.py` fetches the approved NASA source feeds and original source-post images, then writes the view-scoped SQLite database and media assets.
+2. **Database** — `.publisher-data/alien-world/` contains Alien World's collected information and provenance. The existing GitHub Actions workflow restores/saves this Collector-owned store through its cache.
+3. **Publisher** — `publishers/alien-world/publisher.py` opens the database read-only and tells the Universal Editorial Engine what publication mode and editorial instructions to use.
+4. **Universal Editorial Engine** — `editorial-engine/universal_editorial_engine.py` uses the supplied records and Publisher brief to produce the finished live feed and/or a self-contained magazine PDF.
+5. **Publisher routing** — the Publisher places only completed Engine outputs in `published/alien-world/` for the Alien World Main Page to display.
 
-The workflow must run the Collector step before the Publisher step, in the same job and with the same restored database cache. A collection failure stops that run; the Publisher does not silently collect data itself.
+The Publisher runs deterministic contract tests before publication. A failed test prevents a new publication; the last-known-good outputs are retained.
 
-## Data and provenance
+## Important boundaries
 
-Each stored story retains its title, full feed-provided summary/content excerpt, original URL, source name and feed URL, publication timestamp, retrieval timestamp, and stable record identity. Image assets retain their source URL, caption, credit and screening notes. The existing source allowlist, database bounds, schedule, view identity, output format and publication retention settings are preserved.
+- Network/source access belongs to the Collector.
+- Source database writes belong to the Collector.
+- The Publisher reads the database with SQLite read-only mode and `PRAGMA query_only=ON`.
+- The Universal Editorial Engine does not fetch sources or open the database itself; the Publisher supplies the already-open read-only connection.
+- The Alien World Main Page reads finished outputs only. It does not collect news or build PDFs.
+- The global PDF Viewer is shared by every view. It saves only PDFs the reader explicitly opens, not story feeds or article images.
 
-Image screening is not a legal rights guarantee. NASA media guidance and asset-specific restrictions still apply. The Engine must label the provenance and limitations of source material rather than claim independent verification it has not performed.
+## Limitations disclosed by the first Engine release
+
+The current no-AI Engine applies its supported layout and section instructions. It does not claim to rewrite source copy into an arbitrary voice or independently corroborate every factual claim. It keeps original source links and the publication receipt discloses unsupported directions. These are documented limitations, not hidden quality claims.

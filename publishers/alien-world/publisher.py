@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Alien World Publisher — command the Universal Editorial Engine and route output.
+"""Alien World Publisher — instruct the shared Engine and route its outputs.
 
-Publisher is deliberately network-free and database-read-only. The separate
-Data Collector owns source access, enrichment and writes to the SQLite store.
-This Publisher reads that store, issues an Engine command, and places only the
-Engine's completed deliverables into the Alien World view's public output area.
+Responsibilities are intentionally narrow: read the Alien World database in
+read-only mode, issue a publication command to the Universal Editorial Engine,
+and route only the Engine's completed outputs to the Alien World view.
+The Collector is the only component with external-source/database-write access.
 """
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ import hashlib
 import json
 import os
 import sqlite3
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -24,6 +25,7 @@ PROFILE_PATH = Path(__file__).with_name("profile.json")
 ENGINE_DIR = ROOT / "editorial-engine"
 DB_PATH = ROOT / ".publisher-data" / "alien-world" / "alien-world.sqlite3"
 OUTPUT_DIR = ROOT / "published" / "alien-world"
+TEST_FILE = ROOT / "tests" / "test_alien_world_pipeline.py"
 
 
 def load_profile() -> dict[str, Any]:
@@ -32,7 +34,25 @@ def load_profile() -> dict[str, Any]:
         raise RuntimeError("Publisher profile failed its schema/view identity check.")
     if profile.get("publisherId") != "alien-world-publisher":
         raise RuntimeError("Publisher profile identity is not the registered Alien World Publisher.")
+    if profile.get("output", {}).get("publisherNetworkAccess") is not False:
+        raise RuntimeError("Publisher network access must remain disabled.")
+    if profile.get("output", {}).get("publisherDatabaseWriteAccess") is not False:
+        raise RuntimeError("Publisher database write access must remain disabled.")
     return profile
+
+
+def run_contract_tests() -> None:
+    """Run deterministic local contract checks before any publication is produced."""
+    if not TEST_FILE.is_file():
+        raise RuntimeError("Pipeline contract tests are missing; publication is blocked.")
+    result = subprocess.run(
+        [sys.executable, "-m", "unittest", "discover", "-s", str(TEST_FILE.parent),
+         "-p", TEST_FILE.name, "-v"],
+        cwd=ROOT,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise RuntimeError("Alien World pipeline contract tests failed; no publication was changed.")
 
 
 def read_only_connection() -> sqlite3.Connection:
@@ -53,7 +73,7 @@ def atomic_json(path: Path, payload: dict[str, Any]) -> None:
 
 
 def route_engine_outputs(result: dict[str, Any], mode: str) -> None:
-    """Publish only completed Engine outputs; do not compose or edit their content."""
+    """Publish only completed Engine outputs; Publisher does not edit their content."""
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     if "feed" in result:
         atomic_json(OUTPUT_DIR / "live-feed.json", result["feed"])
@@ -87,7 +107,6 @@ def route_engine_outputs(result: dict[str, Any], mode: str) -> None:
     }
     atomic_json(OUTPUT_DIR / "latest-publication.json", publication)
 
-    # Keep the existing catalog/issue-retention behaviour unchanged.
     catalog_path = OUTPUT_DIR / "catalog.json"
     if catalog_path.exists():
         try:
@@ -98,7 +117,8 @@ def route_engine_outputs(result: dict[str, Any], mode: str) -> None:
         catalog = {"schemaVersion": 1, "viewId": "alien-world", "issues": []}
     issues = [item for item in catalog.get("issues", []) if item.get("issueId") != magazine["issueId"]]
     issues.insert(0, issue_record)
-    issues = issues[:3]
+    keep_count = max(1, min(10, int(load_profile().get("publication", {}).get("maximumRetainedIssues", 3))))
+    issues = issues[:keep_count]
     catalog = {
         "schemaVersion": 1,
         "viewId": "alien-world",
@@ -125,6 +145,7 @@ def main() -> int:
     connection: sqlite3.Connection | None = None
     try:
         profile = load_profile()
+        run_contract_tests()
         connection = read_only_connection()
         command = {
             "commandId": hashlib.sha256(
@@ -139,7 +160,7 @@ def main() -> int:
         sys.path.insert(0, str(ENGINE_DIR))
         from universal_editorial_engine import run_engine
 
-        # Engine receives only a read-only database handle, profile and command.
+        # Engine receives only a read-only connection, the view profile and this command.
         result = run_engine(connection, profile, command, OUTPUT_DIR, now)
         connection.close()
         connection = None
