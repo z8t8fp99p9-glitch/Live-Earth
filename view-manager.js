@@ -59,6 +59,46 @@
     // Location and Stacks are independent utilities. They never change activeView.
   }, true);
 
+  // Magazine is a separate peer view. Keep the Alien World and Nature views
+  // focused on their own live reports; remove their former embedded issue UI.
+  window.addEventListener("live-earth-alien-world-view-change", event => {
+    if (!event?.detail?.active) return;
+    const root = document.getElementById("le-alien-world-view");
+    // Keep the Live Feeds control in place: the publisher client uses it to
+    // refresh the live feed after reconnecting. Hide only its Magazine tab.
+    const weeklyTab = root?.querySelector('[data-tab="weekly"]');
+    if (weeklyTab) weeklyTab.hidden = true;
+    root?.querySelector(".le-aw-weekly")?.remove();
+  });
+
+  window.addEventListener("live-earth-nature-view-change", event => {
+    if (!event?.detail?.active) return;
+    const root = document.getElementById("le-nature-view");
+    root?.querySelector(".le-nature-tabs")?.remove();
+    root?.querySelector(".le-nature-journal")?.remove();
+    const reports = root?.querySelector(".le-nature-discover");
+    if (reports && !reports.querySelector(".le-nature-section-title")) {
+      const heading = document.createElement("h2");
+      heading.className = "le-nature-section-title";
+      heading.textContent = "Field Reports";
+      reports.prepend(heading);
+    }
+  });
+
+  // Nature's former in-view monthly journal must not load its catalogue or
+  // saved-edition list. The Global PDF Reader and all existing saved PDF data
+  // remain untouched and available through their normal app entry points.
+  window.addEventListener("live-earth-nature-publisher-client-ready", () => {
+    const publisher = window.LiveEarthNaturePublisher;
+    if (!publisher || publisher.__magazineSectionDisabled) return;
+    window.LiveEarthNaturePublisher = Object.freeze({
+      ...publisher,
+      __magazineSectionDisabled: true,
+      loadCatalog: async () => ({ issues: [] }),
+      listSavedMagazines: async () => []
+    });
+  });
+
   paintPrimaryOrbs(activeView);
   window.LiveEarthViewManager = Object.freeze({
     requestView,
