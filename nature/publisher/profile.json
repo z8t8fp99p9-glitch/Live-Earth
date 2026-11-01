@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "viewId": "nature",
+  "publisherId": "nature-publisher",
+  "publication": {
+    "windowMode": "calendar-month",
+    "minimumStories": 5,
+    "maximumStories": 8,
+    "minimumDocumentaryImages": 4,
+    "maximumSourceAgeDays": 180,
+    "singleCurrentIssue": true
+  },
+  "sources": [
+    {
+      "name": "Nature Portfolio — Ecology",
+      "url": "https://www.nature.com/subjects/ecology.rss",
+      "domain": "nature.com"
+    },
+    {
+      "name": "ScienceDaily — Environment",
+      "url": "https://www.sciencedaily.com/rss/top/environment.xml",
+      "domain": "sciencedaily.com"
+    },
+    {
+      "name": "Phys.org — Environment",
+      "url": "https://phys.org/rss-feed/earth-news/environment/",
+      "domain": "phys.org"
+    },
+    {
+      "name": "Mongabay",
+      "url": "https://news.mongabay.com/feed/",
+      "domain": "news.mongabay.com"
+    }
+  ],
+  "editorialProfile": {
+    "publicationTitle": "The Living World",
+    "tone": "curious, grounded nature and conservation journalism",
+    "defaultCustomRequest": "Create a photo-led, considered nature field journal with a strong documentary-photography rhythm, a clear editorial hierarchy, a useful explainer, a concise monthly chronology, source notes and a thoughtful closing page. Use only Publisher-screened documentary photographs supplied with their original credits and contextual captions. Never invent photography, misidentify a species, or present a contextual photograph as the image from a research paper or source article. Preserve all supplied reporting context. Use generous typography and a book-like mobile portrait composition. Do not pad pages.",
+    "visualProfile": {
+      "palette": "nature-forest",
+      "photoLed": true,
+      "includeTimeline": true,
+      "includeExplainer": true,
+      "pageTarget": 20,
+      "tone": "curious, grounded nature and conservation journalism"
+    }
+  },
+  "imagePolicy": {
+    "allowedLicenses": [
+      "Public domain",
+      "CC0",
+      "CC BY",
+      "CC BY-SA"
+    ],
+    "rejectNoDerivativesWhenModified": true,
+    "minimumDocumentaryImages": 4,
+    "maximumImageBytes": 7000000,
+    "maximumImageWidth": 1600,
+    "optimization": "Wikimedia Commons thumbnail up to 1600px; preserve attribution and ShareAlike notice"
+  },
+  "imageAllowlist": [
+    {
+      "fileTitle": "File:Tiger, India.jpg",
+      "expectedCreator": "Ayush Baheti",
+      "expectedLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "category": "tiger",
+      "contextCaption": "A tiger photographed in India. Context photograph for the wider conservation-recovery discussion; it is not the tiger shown in the linked report.",
+      "usageNote": "Context photograph; not a photograph supplied by the linked Guardian/WWF report."
+    },
+    {
+      "fileTitle": "File:Deep sea hydrothermal sea vent cucumber Chiridota heheva.jpg",
+      "expectedCreator": "Yujin Pu",
+      "expectedLicenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "category": "deep-sea",
+      "contextCaption": "A deep-sea sea cucumber photographed at the Kairei hydrothermal-vent field in the Indian Ocean.",
+      "usageNote": "Context photograph from the Indian Ocean; not a photograph from the Argentine Mar del Plata Canyon expedition."
+    },
+    {
+      "fileTitle": "File:Landscape of Nameri National Park.jpg",
+      "expectedCreator": "Debuapriyo",
+      "expectedLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "category": "nameri",
+      "contextCaption": "River and forest landscape in Nameri National Park, Assam, India.",
+      "usageNote": "Context landscape photograph; not an image from the global conservation-area research dataset."
+    },
+    {
+      "fileTitle": "File:INDIAN PITTA.jpg",
+      "expectedCreator": "Arup Ruidas",
+      "expectedLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "category": "indian-birds",
+      "contextCaption": "An Indian pitta photographed in Bankura, West Bengal.",
+      "usageNote": "Representative Indian bird photograph; it is not claimed to depict a specific bird assessed by the national Red List project."
+    },
+    {
+      "fileTitle": "File:An Indian Sloth Bear.jpg",
+      "expectedCreator": "Vishalsh521",
+      "expectedLicenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "category": "sloth-bear",
+      "contextCaption": "An Indian sloth bear photographed in the wild.",
+      "usageNote": "Context photograph; it is not claimed to depict one of the individual bears sampled in the Central Terai study."
+    },
+    {
+      "fileTitle": "File:Rub' Al Khali Desert.jpg",
+      "expectedCreator": "Cheezgraterz",
+      "expectedLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "category": "arabian-desert",
+      "contextCaption": "A desert camp in the Rub' al Khali region of Abu Dhabi.",
+      "usageNote": "Context photograph; not an image from the geoarchaeological survey transect described in the linked paper."
+    }
+  ]
+}

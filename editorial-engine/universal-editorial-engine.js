@@ -1,14 +1,15 @@
 /* LIVE // EARTH — GLOBAL Universal Editorial Engine client contract.
    The publishing implementation is universal_editorial_engine.py in this folder.
-   This browser layer is subject-independent: it validates published view outputs
-   and exposes safe shared helpers; it does not fetch sources or write databases. */
+   This browser layer validates published view outputs; it does not fetch sources
+   or write databases. Nature has a separate, strict published-image URL boundary. */
 (() => {
   'use strict';
   if (window.__liveEarthUniversalEditorialEngineInstalled) return;
 
-  const VERSION = '1.0.0';
+  const VERSION = '1.0.1';
   const ENGINE = 'Universal Editorial Engine';
   const MAX_FEED_STORIES = 100;
+  const NATURE_RAW_PREFIX = '/z8t8fp99p9-glitch/Live-Earth/main/nature/published/';
 
   function safeText(value, limit = 3000) {
     return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, limit) : '';
@@ -23,12 +24,24 @@
     try {
       const u = new URL(value);
       const host = u.hostname.toLowerCase().replace(/\.$/, '');
-      // NASA publishes original article images across several first-party
-      // subdomains (www.nasa.gov, assets.science.nasa.gov,
-      // images-assets.nasa.gov). Accept the nasa.gov DNS boundary, not
-      // lookalike hosts such as nasa.gov.example.com.
       const nasaOwnedHost = host === 'nasa.gov' || host.endsWith('.nasa.gov');
       return u.protocol === 'https:' && nasaOwnedHost && !u.username && !u.password;
+    } catch (_) { return false; }
+  }
+  function safeNaturePublicationImage(value) {
+    try {
+      const u = new URL(value);
+      return u.protocol === 'https:' && u.hostname.toLowerCase() === 'raw.githubusercontent.com' &&
+        u.pathname.startsWith(NATURE_RAW_PREFIX + 'assets/') &&
+        !u.username && !u.password;
+    } catch (_) { return false; }
+  }
+  function safeNaturePdf(value) {
+    try {
+      const u = new URL(value);
+      return u.protocol === 'https:' && u.hostname.toLowerCase() === 'raw.githubusercontent.com' &&
+        u.pathname === NATURE_RAW_PREFIX + 'current.pdf' &&
+        !u.username && !u.password;
     } catch (_) { return false; }
   }
   function validateFeed(payload, expectedViewId) {
@@ -43,7 +56,9 @@
       const url = safeText(item && item.url, 1000);
       if (!id || !title || !safeHttps(url) || seen.has(url)) continue;
       seen.add(url);
-      const imageUrl = safeNasaImage(item.imageUrl) ? item.imageUrl : '';
+      const imageUrl = expectedViewId === 'nature'
+        ? (safeNaturePublicationImage(item.imageUrl) ? item.imageUrl : '')
+        : (safeNasaImage(item.imageUrl) ? item.imageUrl : '');
       stories.push({
         id, title, url,
         summary: safeText(item.summary, 1900),
@@ -51,9 +66,12 @@
         sourceUrl: safeHttps(item.sourceUrl) ? item.sourceUrl : '',
         publishedAt: safeText(item.publishedAt, 80),
         imageUrl,
-        imageCredit: safeText(item.imageCredit, 240),
+        imageCredit: safeText(item.imageCredit, 500),
+        imageCaption: expectedViewId === 'nature' ? safeText(item.imageCaption, 500) : '',
+        imageLicense: expectedViewId === 'nature' ? safeText(item.imageLicense, 100) : '',
+        imageLicenseUrl: expectedViewId === 'nature' && safeHttps(item.imageLicenseUrl) ? item.imageLicenseUrl : '',
         imageSourceUrl: safeHttps(item.imageSourceUrl) ? item.imageSourceUrl : '',
-        imageRightsNote: safeText(item.imageRightsNote, 500)
+        imageRightsNote: safeText(item.imageRightsNote, 700)
       });
     }
     return Object.freeze({
@@ -62,6 +80,7 @@
       generatedAt: safeText(payload.generatedAt, 80),
       windowHours: Number.isFinite(payload.windowHours) ? payload.windowHours : 48,
       storyCount: stories.length,
+      documentaryImageCount: Number(payload.documentaryImageCount) || stories.filter(s => s.imageUrl).length,
       stories: Object.freeze(stories)
     });
   }
@@ -94,12 +113,17 @@
       throw new Error('The magazine catalog does not match the requested view contract.');
     }
     const issues = [];
-    for (const issue of payload.issues.slice(0, 8)) {
+    const sourceIssues = expectedViewId === 'nature' ? payload.issues.slice(0, 1) : payload.issues.slice(0, 8);
+    for (const issue of sourceIssues) {
       if (!issue) continue;
       const issueId = safeText(issue.issueId, 100);
-      const pdfUrl = normalizedHttpsUrl(issue.pdfUrl);
+      const pdfUrl = expectedViewId === 'nature'
+        ? (safeNaturePdf(issue.pdfUrl) ? issue.pdfUrl : '')
+        : normalizedHttpsUrl(issue.pdfUrl);
       const sha256 = /^[a-f0-9]{64}$/i.test(String(issue.sha256 || '')) ? String(issue.sha256).toLowerCase() : '';
       if (!issueId || !pdfUrl || !sha256) continue;
+      const coverImageUrl = expectedViewId === 'nature' && safeNaturePublicationImage(issue.coverImageUrl)
+        ? issue.coverImageUrl : '';
       issues.push({
         issueId,
         title: safeText(issue.title, 180),
@@ -112,6 +136,10 @@
         bytes: Number(issue.bytes) || 0,
         sha256,
         storyCount: Number(issue.storyCount) || 0,
+        documentaryImageCount: Number(issue.documentaryImageCount) || 0,
+        coverImageUrl,
+        coverImageCredit: expectedViewId === 'nature' ? safeText(issue.coverImageCredit, 500) : '',
+        coverImageCaption: expectedViewId === 'nature' ? safeText(issue.coverImageCaption, 500) : '',
         customRequest: safeText(issue.customRequest, 1200),
         customRequestReceipt: validateReceipt(issue.customRequestReceipt)
       });

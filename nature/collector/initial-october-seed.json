@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "seedId": "nature-initial-october-2026",
+  "coverageStart": "2026-10-01T00:00:00Z",
+  "coverageEnd": "2026-11-01T00:00:00Z",
+  "useOnlyForFirstOctoberPublication": true,
+  "editorialNote": "Eight source-linked editorial summaries preserved from the existing October 2026 Nature monthly research fixture. They are paraphrased digests, not original article text. The seed is imported once, only during November 2026. Documentary photos are collected separately from exact Commons file pages.",
+  "stories": [
+    {
+      "id": "nature-20261008-wildlife-recovery",
+      "title": "Tigers, tuna and sea turtles show that wildlife recovery is possible",
+      "url": "https://www.theguardian.com/environment/2026/oct/08/world-must-change-food-avoid-biodiversity-collapse-wwf",
+      "summary": "A report discussed by The Guardian describes conservation recoveries among wild tigers, tuna and green sea turtles, while also warning that wider biodiversity loss remains severe. The WWF analysis considered nearly 36,000 animal populations across more than 5,000 species. The examples of recovery show that sustained action can help populations rebound, but they do not cancel the broader pressures on ecosystems.\n\nThe report points to food production as a major part of the challenge ahead. The useful distinction is between local recovery and the global trend: both can be true at the same time, and progress in one species or place does not remove the need for wider changes in land and food systems.",
+      "sourceName": "The Guardian / WWF report",
+      "sourceUrl": "https://www.theguardian.com/environment/conservation/2026/oct/07/all",
+      "publishedAt": "2026-10-08T00:00:00Z",
+      "rightsNote": "Text summary paraphrased for this digest. Consult the linked source for the original reporting and full context."
+    },
+    {
+      "id": "nature-20261009-giant-water-lily",
+      "title": "A giant water lily is confirmed as a new, critically endangered species",
+      "url": "https://news.mongabay.com/short-article/2026/10/an-instafamous-giant-water-lily-is-confirmed-as-a-new-species-and-critically-endangered/",
+      "summary": "Mongabay reported that a giant water lily made famous through online photographs was confirmed as a distinct species and assessed as critically endangered. The story is a reminder that a striking plant can be widely admired while its conservation status remains precarious. Identification is only one step: the next challenge is protecting the habitat and conditions the species needs to survive.\n\nThe report sits at the intersection of botanical discovery and conservation urgency. A new name adds scientific clarity, but it does not itself secure the wetlands on which the plant depends.",
+      "sourceName": "Mongabay",
+      "sourceUrl": "https://news.mongabay.com/list/species-discovery/",
+      "publishedAt": "2026-10-09T00:00:00Z",
+      "rightsNote": "Text summary paraphrased from the linked report listing. Check the source for the full article and species details."
+    },
+    {
+      "id": "nature-20261013-argentina-deep-sea",
+      "title": "An Argentine deep-sea canyon yields 57 species new to science",
+      "url": "https://news.mongabay.com/2026/10/patrick-sea-star-went-viral-but-argentine-deep-sea-canyon-held-57-new-species/",
+      "summary": "A taxonomic workshop identified 57 species new to science and five new genera from samples collected in Argentina's Mar del Plata Submarine Canyon. The discoveries include sea cucumbers, copepods, corals, sea pens and a small mollusc. Researchers had examined only a fraction of some sample groups, suggesting that further work may reveal more diversity.\n\nThe same expedition recorded plastic and fishing-related litter on the deep seabed. The canyon is remote, but not untouched. The report holds two ideas together: deep-ocean ecosystems still contain much that science has not described, and human impacts can reach places far below ordinary view.",
+      "sourceName": "Mongabay",
+      "sourceUrl": "https://news.mongabay.com/list/species-discovery/",
+      "publishedAt": "2026-10-13T00:00:00Z",
+      "rightsNote": "Text summary paraphrased for this digest. Image material is not reproduced; consult the linked report for the original research and credits."
+    },
+    {
+      "id": "nature-20261014-conservation-area-coverage",
+      "title": "Conservation areas may cover more of Earth's land than official figures show",
+      "url": "https://www.nature.com/articles/s41586-026-11157-4",
+      "summary": "A Nature study using a globally representative sample across 25 countries and territories estimated that conservation areas may already cover 26.81 percent of the terrestrial realm. The estimate includes nationally recognised areas and possible other effective area-based conservation measures that are not all reflected in the headline global figures.\n\nThe authors also caution that greater mapped coverage does not automatically mean ecosystems are represented well or managed effectively. Some ecological regions remain under-represented. The study therefore argues for more strategic, inclusive and adequately funded conservation, rather than treating a single percentage as the whole measure of success.",
+      "sourceName": "Nature",
+      "sourceUrl": "https://www.nature.com/articles/s41586-026-11157-4",
+      "publishedAt": "2026-10-14T00:00:00Z",
+      "rightsNote": "Open-access research summary paraphrased for this digest. See the source article for methods, uncertainty and full results."
+    },
+    {
+      "id": "nature-20261019-india-bird-redlist",
+      "title": "India launches a collaborative Red List assessment of 1,211 bird species",
+      "url": "https://www.wti.org.in/news/india-launches-collaborative-national-red-list-assessment-of-1211-bird-species/",
+      "summary": "The Wildlife Trust of India reported on a national assessment effort involving the Zoological Survey of India, the IUCN Species Survival Commission's India network and the State of India's Birds initiative. The collaboration aims to assess 1,211 Indian bird species. The work draws on scientific expertise and citizen-science observations to strengthen knowledge of distribution and population trends.\n\nThe source notes that population estimates remain unavailable for many of India's birds, which makes the evidence-gathering process important. More than 100 species had been assessed and shared for expert input at the time of the report. A credible Red List depends on filling gaps as well as assigning categories.",
+      "sourceName": "Wildlife Trust of India",
+      "sourceUrl": "https://www.wti.org.in/resource-centre/news/",
+      "publishedAt": "2026-10-19T00:00:00Z",
+      "rightsNote": "Text summary paraphrased from the organisation's update. Consult the source for its full programme details."
+    },
+    {
+      "id": "nature-20261027-pakke-nameri-guides",
+      "title": "Young nature guides strengthen conservation across the Pakke–Nameri landscape",
+      "url": "https://www.wti.org.in/news/empowering-young-nature-guides-to-strengthen-wildlife-conservation-at-pakke-nameri-landscape/",
+      "summary": "A Wildlife Trust of India update described a training programme for young nature guides in the Pakke–Nameri landscape of north-eastern India. The area supports a rich range of wildlife, including threatened species, and local guides can help visitors understand the landscape while strengthening community links to conservation.\n\nThe programme is a reminder that protecting a habitat also involves people who know it closely. Interpretation, local knowledge and responsible visitor engagement can become part of the conservation infrastructure around a protected landscape.",
+      "sourceName": "Wildlife Trust of India",
+      "sourceUrl": "https://www.wti.org.in/resource-centre/news/",
+      "publishedAt": "2026-10-27T00:00:00Z",
+      "rightsNote": "Text summary paraphrased from the organisation's update. Consult the source for its full programme details."
+    },
+    {
+      "id": "nature-20261027-terai-sloth-bears",
+      "title": "Landscape fragmentation threatens connectivity for sloth bears in India's Terai",
+      "url": "https://www.nature.com/articles/s41437-026-00897-8",
+      "summary": "A study published in Heredity examined sloth bears in India's Central Terai landscape, a human-used region where habitat fragmentation can leave animal populations isolated. Researchers used non-invasive faecal samples and genetic analysis to identify 66 individuals from 209 samples. The work focuses on how fragmented habitat can reduce connectivity and genetic exchange.\n\nThe finding makes landscape connections central to conservation. Protecting a species is not only about keeping isolated patches intact; it is also about maintaining routes and habitat links that allow populations to remain connected across a changing landscape.",
+      "sourceName": "Heredity / Nature Portfolio",
+      "sourceUrl": "https://www.nature.com/articles/s41437-026-00897-8",
+      "publishedAt": "2026-10-27T00:00:00Z",
+      "rightsNote": "Text summary paraphrased from the published abstract. Consult the source for its methods, caveats and full findings."
+    },
+    {
+      "id": "nature-20261028-green-arabia",
+      "title": "Stone and water shaped early human movement through Arabia's deserts",
+      "url": "https://www.nature.com/articles/s41586-026-11180-5",
+      "summary": "An open-access Nature paper reports that water alone may not explain where early people moved through the Rub' al Khali. An approximately 1,500-kilometre geoarchaeological survey found ancient lake evidence at some locations but no stone tools or workable tool-making stone along the surveyed transect. The authors argue that access to both freshwater and suitable stone influenced where people could settle or travel.\n\nThe research offers a more layered account of past environments: a landscape can hold water and appear habitable, yet still lack a resource essential to daily life. It connects geology, ecology and human history through the practical limits imposed by a desert environment.",
+      "sourceName": "Nature",
+      "sourceUrl": "https://www.nature.com/articles/s41586-026-11180-5",
+      "publishedAt": "2026-10-28T00:00:00Z",
+      "rightsNote": "Open-access research summary paraphrased for this digest. See the source article for methods and full interpretation."
+    }
+  ]
+}

@@ -1,23 +1,8 @@
-# Nature monthly test fixture
+# Archived Nature monthly test scaffold
 
-This is the first in-app test edition for the Stacks **Nature** view.
+This folder is retained only for historical test-fixture traceability. Production Nature code, tests, Collector, Publisher, database schema, media policy and public outputs have moved under the root `nature/` folder.
 
-- Coverage: 1–31 October 2026 (UTC, start inclusive and end exclusive).
-- Input: eight curated source-linked October reports in `stories.json`.
-- Database: a disposable in-memory SQLite database created by the test runner; no existing app or Alien World database is opened.
-- Engine: the production `Universal Editorial Engine` (`editorial-engine/universal_editorial_engine.py`).
-- Output: a 10-page, 420 × 912 pt phone-portrait magazine at `published/nature/magazines/nature-202610.pdf`.
-
-Rebuild and validate the editorial output:
-
-```bash
-python tests/nature-monthly/run_nature_monthly.py
-```
-
-Validate browser contracts, Stacks registration, optional startup loading and the shared PDF Reader handoff:
-
-```bash
-node tests/nature-monthly/test_app_contracts.js
-```
-
-The fixture is a test source set, not an ongoing Collector or live Nature database. It does not introduce a new scheduled workflow. The next production step is a Nature-owned Collector/database/Publisher and monthly schedule. The Alien World pipeline remains separate and unchanged.
+- `stories.json` is an October 2026 test fixture, not a source of production records.
+- `build-result.json`, `profile.json`, and `run_nature_monthly.py` were removed from the active upload because they built an in-memory, fixture-only test magazine.
+- The canonical test suite is now `nature/tests/`.
+- Never publish this fixture PDF or treat its summaries as newly collected live reporting.

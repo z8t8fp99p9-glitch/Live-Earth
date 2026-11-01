@@ -1,0 +1,64 @@
+{
+  "policyVersion": 1,
+  "sourcePageVerification": "Wikimedia Commons API imageinfo extmetadata for exact File: page title; compare creator and exact licence URL on every Collector run.",
+  "accepted": [
+    "Public Domain",
+    "CC0",
+    "CC BY",
+    "CC BY-SA when ShareAlike terms are met"
+  ],
+  "notAllowed": [
+    "Unknown or incomplete rights",
+    "CC BY-NC",
+    "CC BY-ND when modified",
+    "Getty/stock/third-party restrictions without explicit permission"
+  ],
+  "assets": [
+    {
+      "fileTitle": "File:Tiger, India.jpg",
+      "creator": "Ayush Baheti",
+      "license": "CC BY-SA 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Tiger,_India.jpg",
+      "role": "contextual India tiger photograph"
+    },
+    {
+      "fileTitle": "File:Deep sea hydrothermal sea vent cucumber Chiridota heheva.jpg",
+      "creator": "Yujin Pu, Yang Zhou, Jun Liu, Haibin Zhang",
+      "license": "CC BY 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Deep_sea_hydrothermal_sea_vent_cucumber_Chiridota_heheva.jpg",
+      "role": "contextual Indian Ocean deep-sea photograph"
+    },
+    {
+      "fileTitle": "File:Landscape of Nameri National Park.jpg",
+      "creator": "Debuapriyo",
+      "license": "CC BY-SA 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Landscape_of_Nameri_National_Park.jpg",
+      "role": "contextual Nameri landscape"
+    },
+    {
+      "fileTitle": "File:INDIAN PITTA.jpg",
+      "creator": "Arup Ruidas",
+      "license": "CC BY-SA 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:INDIAN_PITTA.jpg",
+      "role": "representative Indian bird photograph"
+    },
+    {
+      "fileTitle": "File:An Indian Sloth Bear.jpg",
+      "creator": "Vishalsh521",
+      "license": "CC BY 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:An_Indian_Sloth_Bear.jpg",
+      "role": "contextual sloth-bear photograph"
+    },
+    {
+      "fileTitle": "File:Rub' Al Khali Desert.jpg",
+      "creator": "Cheezgraterz",
+      "license": "CC BY-SA 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Rub%27_Al_Khali_Desert.jpg",
+      "role": "contextual Arabian desert photograph"
+    }
+  ],
+  "explicitExclusion": {
+    "fileTitle": "File:Victoria amazonica.jpg",
+    "reason": "This is Victoria amazonica photographed in a botanical garden, not the newly described Victoria colombiana from Colombia. Do not use it as an image for the giant-water-lily discovery."
+  }
+}
