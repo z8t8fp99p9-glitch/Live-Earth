@@ -118,11 +118,12 @@ class BrowserContractTests(unittest.TestCase):
         self.assertIn("./nature/view/nature-publisher-client.js",view)
         self.assertIn("REFRESH_MS",view)
 
-    def test_actual_controller_is_folder_owned_and_root_is_compatibility_loader(self):
+    def test_actual_controller_is_folder_owned_and_loaded_directly(self):
         view=(ROOT/"nature/view/nature-view-controller.js").read_text(encoding="utf-8")
-        loader=(ROOT/"nature-view-controller.js").read_text(encoding="utf-8")
+        update_manager=(ROOT/"update-manager.js").read_text(encoding="utf-8")
         self.assertIn("api.register(VIEW_ID",view)
-        self.assertIn("./nature/view/nature-view-controller.js",loader)
+        self.assertIn('./nature/view/nature-view-controller.js',update_manager)
+        self.assertFalse((ROOT/"nature-view-controller.js").exists())
 
 if __name__=="__main__":
     unittest.main(verbosity=2)

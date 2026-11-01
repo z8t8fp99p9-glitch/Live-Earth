@@ -60,7 +60,7 @@
     if (window.__liveEarthNatureViewLoadPromise) return window.__liveEarthNatureViewLoadPromise;
     const loading = new Promise((resolve, reject) => {
       const script = document.createElement("script");
-      script.src = new URL("./nature-view-controller.js", document.baseURI).href;
+      script.src = new URL("./nature/view/nature-view-controller.js", document.baseURI).href;
       script.async = true;
       script.onload = () => {
         if (window.__liveEarthNatureViewInstalled) resolve(true);
