@@ -29,7 +29,7 @@ from xml.sax.saxutils import escape
 from pypdf import PdfReader
 
 ENGINE_NAME = "Universal Editorial Engine"
-ENGINE_VERSION = "1.2.0"
+ENGINE_VERSION = "1.3.0"
 VALID_IMAGE_STATUS = "nasa-guideline-reviewed-exclusion-screened"
 
 # Phone-first portrait page: 420 × 912 pt. A PDF page viewed at fit-to-width
@@ -57,6 +57,10 @@ class EditorialBrief:
     publisher_id: str
     title: str
     issue_window_hours: int
+    window_mode: str
+    coverage_start: datetime
+    coverage_end: datetime
+    window_label: str
     minimum_stories: int
     maximum_stories: int
     custom_request: str
@@ -240,24 +244,41 @@ def parse_custom_request(request: str, defaults: dict[str, Any]) -> dict[str, An
     return plan
 
 
-def build_brief(profile: dict[str, Any], command: dict[str, Any]) -> EditorialBrief:
+def build_brief(profile: dict[str, Any], command: dict[str, Any], now: datetime | None = None) -> EditorialBrief:
     view_id = text(command.get("viewId"), 80)
     publisher_id = text(command.get("publisherId"), 100)
     if not view_id or view_id != text(profile.get("viewId"), 80):
         raise EditorialEngineError("Publisher command viewId does not match the supplied Publisher profile.")
     if not publisher_id or publisher_id != text(profile.get("publisherId"), 100):
         raise EditorialEngineError("Publisher command publisherId does not match the supplied Publisher profile.")
-    window_hours = int(profile.get("publication", {}).get("issueWindowHours", 48))
-    if not 1 <= window_hours <= 168:
-        raise EditorialEngineError("Publisher issue window must be between 1 and 168 hours.")
+    now = now or datetime.now(timezone.utc)
+    now = now.replace(tzinfo=timezone.utc) if now.tzinfo is None else now.astimezone(timezone.utc)
+    publication = profile.get("publication", {})
+    window_mode = text(publication.get("windowMode", "rolling-hours"), 40).lower()
+    if window_mode == "calendar-month":
+        coverage_end = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        previous_month_day = coverage_end - timedelta(days=1)
+        coverage_start = previous_month_day.replace(day=1)
+        window_hours = int((coverage_end - coverage_start).total_seconds() // 3600)
+        window_label = coverage_start.strftime("%B %Y")
+    elif window_mode == "rolling-hours":
+        window_hours = int(publication.get("issueWindowHours", 48))
+        if not 1 <= window_hours <= 168:
+            raise EditorialEngineError("Rolling Publisher issue window must be between 1 and 168 hours.")
+        coverage_end = now
+        coverage_start = now - timedelta(hours=window_hours)
+        window_label = f"the previous {window_hours} hours"
+    else:
+        raise EditorialEngineError("Publisher windowMode must be rolling-hours or calendar-month.")
     editorial = profile.get("editorialProfile", {})
     custom = text(command.get("customRequest") or editorial.get("defaultCustomRequest", ""), 1200)
     return EditorialBrief(
         view_id=view_id, publisher_id=publisher_id,
         title=text(editorial.get("publicationTitle", "The Journal"), 160),
-        issue_window_hours=window_hours,
-        minimum_stories=max(2, int(profile.get("publication", {}).get("minimumStories", 5))),
-        maximum_stories=max(2, min(12, int(profile.get("publication", {}).get("maximumStories", 8)))),
+        issue_window_hours=window_hours, window_mode=window_mode,
+        coverage_start=coverage_start, coverage_end=coverage_end, window_label=window_label,
+        minimum_stories=max(2, int(publication.get("minimumStories", 5))),
+        maximum_stories=max(2, min(12, int(publication.get("maximumStories", 8)))),
         custom_request=custom, visual_profile=dict(editorial.get("visualProfile", {})),
     )
 
@@ -269,15 +290,16 @@ def read_view_records(readonly_db: Any, brief: EditorialBrief, now: datetime) ->
         meta = readonly_db.execute("SELECT value FROM publisher_meta WHERE key='view_id'").fetchone()
         if not meta or text(meta[0]) != brief.view_id:
             raise EditorialEngineError("The database handle is not scoped to the requested view.")
-        cutoff = (now - timedelta(hours=brief.issue_window_hours)).timestamp()
+        start_ts = brief.coverage_start.timestamp()
+        end_ts = brief.coverage_end.timestamp() if brief.window_mode == "calendar-month" else (now + timedelta(hours=2)).timestamp()
         rows = readonly_db.execute(
             """SELECT story_id, title, url, summary, source_name, source_url,
                       published_at, retrieved_at, image_url, image_local_path,
                       image_caption, image_credit, image_source_url, image_rights_status,
                       image_rights_note
-               FROM stories WHERE published_at >= ? AND published_at <= ?
+               FROM stories WHERE published_at >= ? AND published_at < ?
                ORDER BY published_at DESC LIMIT 500""",
-            (cutoff, (now + timedelta(hours=2)).timestamp()),
+            (start_ts, end_ts),
         ).fetchall()
     except EditorialEngineError:
         raise
@@ -434,12 +456,13 @@ def _draw_cover(c: canvas.Canvas, brief: EditorialBrief, stories: list[dict[str,
     lead = stories[0]
     palette = str(brief.visual_profile.get("palette", "cinematic-dark")).lower()
     light_cover = palette in {"minimal-light", "warm-editorial", "lifestyle-light"}
-    cover_bg = PAPER if light_cover else DEEP
-    cover_ink = INK if light_cover else colors.white
-    cover_muted = MUTED if light_cover else colors.HexColor("#D5DDE3")
-    accent = colors.HexColor("#A66F43") if light_cover else GOLD
+    nature_cover = palette in {"nature-forest", "forest-editorial"}
+    cover_bg = colors.HexColor("#10251D") if nature_cover else (PAPER if light_cover else DEEP)
+    cover_ink = colors.HexColor("#F2EBDD") if nature_cover else (INK if light_cover else colors.white)
+    cover_muted = colors.HexColor("#C5D0BC") if nature_cover else (MUTED if light_cover else colors.HexColor("#D5DDE3"))
+    accent = colors.HexColor("#C8B77A") if nature_cover else (colors.HexColor("#A66F43") if light_cover else GOLD)
     _background(c, cover_bg)
-    if not light_cover:
+    if not light_cover and not nature_cover:
         _starfield(c, lead.get("title", brief.title), y_start=PAGE_H*.25, y_end=PAGE_H)
     image_path = lead.get("image_local_path")
     if _draw_image(c, image_path, 0, PAGE_H*.70, PAGE_W, PAGE_H*.68):
@@ -456,14 +479,35 @@ def _draw_cover(c: canvas.Canvas, brief: EditorialBrief, stories: list[dict[str,
     c.setFont(masthead_style, masthead_size)
     c.drawString(MARGIN_X, PAGE_H-112, masthead)
     c.setFillColor(accent); c.setFont("Helvetica-Bold", 8)
-    c.drawString(MARGIN_X+2, PAGE_H-132, "A CONSIDERED GUIDE TO EVERYDAY LIFE" if light_cover else "AN INDEPENDENT DIGITAL JOURNAL")
+    strapline = ("WILDLIFE  ·  ECOLOGY  ·  CONSERVATION" if nature_cover else
+                "A CONSIDERED GUIDE TO EVERYDAY LIFE" if light_cover else
+                "AN INDEPENDENT DIGITAL JOURNAL")
+    c.drawString(MARGIN_X+2, PAGE_H-132, strapline)
     c.setStrokeColor(accent); c.setLineWidth(.7)
     c.line(MARGIN_X, PAGE_H-149, PAGE_W-MARGIN_X, PAGE_H-149)
     if not (image_path and Path(str(image_path)).is_file()):
         # Category-neutral vector artwork: a botanical-inspired line study for
         # light lifestyle editions, orbital seal for cinematic science editions.
         c.saveState()
-        if light_cover:
+        if nature_cover:
+            # Original vector field illustration: layered ridgelines, a low sun,
+            # and tree silhouettes. No unlicensed or synthetic editorial photos.
+            from reportlab.pdfbase.pdfmetrics import stringWidth
+            c.setFillColor(colors.HexColor("#D4BE7D")); c.circle(PAGE_W-108, PAGE_H*.585, 42, stroke=0, fill=1)
+            for colour, points in [
+                ("#355A43", [(0, PAGE_H*.40),(75,PAGE_H*.50),(160,PAGE_H*.43),(250,PAGE_H*.52),(340,PAGE_H*.44),(420,PAGE_H*.49),(420,PAGE_H*.20),(0,PAGE_H*.20)]),
+                ("#294737", [(0, PAGE_H*.34),(80,PAGE_H*.40),(170,PAGE_H*.34),(270,PAGE_H*.43),(360,PAGE_H*.35),(420,PAGE_H*.39),(420,PAGE_H*.18),(0,PAGE_H*.18)]),
+                ("#1B3529", [(0, PAGE_H*.27),(95,PAGE_H*.33),(180,PAGE_H*.28),(290,PAGE_H*.35),(380,PAGE_H*.28),(420,PAGE_H*.31),(420,PAGE_H*.16),(0,PAGE_H*.16)])]:
+                path=c.beginPath(); path.moveTo(*points[0])
+                for pt in points[1:]: path.lineTo(*pt)
+                path.close(); c.setFillColor(colors.HexColor(colour)); c.drawPath(path,stroke=0,fill=1)
+            c.setStrokeColor(colors.HexColor("#8FA078")); c.setLineWidth(1.4)
+            for x,base,ht in [(44,.23,70),(75,.24,92),(330,.23,82),(370,.22,110)]:
+                y0=PAGE_H*base; y1=y0+ht
+                c.line(x,y0,x,y1)
+                c.line(x,y1,x-22,y1-30); c.line(x,y1,x+22,y1-30)
+                c.line(x,y1-18,x-18,y1-44); c.line(x,y1-18,x+18,y1-44)
+        elif light_cover:
             c.setStrokeColor(colors.HexColor("#B98A65")); c.setLineWidth(1.15)
             c.setFillColor(colors.HexColor("#E8DCCB")); c.circle(PAGE_W-100, PAGE_H*.57, 76, stroke=0, fill=1)
             c.setStrokeColor(colors.HexColor("#9D775D")); c.setLineWidth(1.1)
@@ -481,8 +525,13 @@ def _draw_cover(c: canvas.Canvas, brief: EditorialBrief, stories: list[dict[str,
             c.setFillColor(GOLD); c.circle(PAGE_W-92, PAGE_H*.57, 2.3, stroke=0, fill=1)
         c.restoreState()
     c.setFillColor(accent); c.setFont("Helvetica-Bold", 7.5)
-    edition_label = "THE LIFESTYLE EDITION  /  " if light_cover else "THE 48-HOUR EDITION  /  "
-    c.drawString(MARGIN_X, PAGE_H*.395, edition_label + issue_date.strftime("%d %B %Y").upper())
+    if brief.window_mode == "calendar-month":
+        edition_label = "THE MONTHLY EDITION  /  "
+        edition_date = brief.window_label.upper()
+    else:
+        edition_label = "THE LIFESTYLE EDITION  /  " if light_cover else "THE 48-HOUR EDITION  /  "
+        edition_date = issue_date.strftime("%d %B %Y").upper()
+    c.drawString(MARGIN_X, PAGE_H*.395, edition_label + edition_date)
     title = _paragraph(lead.get("title", brief.title), "Times-Bold", 31, 34, cover_ink)
     _, title_h = title.wrap(CONTENT_W, 260)
     if title_h > 260:
@@ -720,7 +769,7 @@ def _draw_timeline(c: canvas.Canvas, stories: list[dict[str, Any]], page_number:
 
 def _draw_context(c: canvas.Canvas, brief: EditorialBrief, stories: list[dict[str, Any]],
                   page_number: int) -> None:
-    light = str(brief.visual_profile.get("palette", "cinematic-dark")).lower() in {"minimal-light", "warm-editorial", "lifestyle-light"}
+    light = str(brief.visual_profile.get("palette", "cinematic-dark")).lower() in {"minimal-light", "warm-editorial", "lifestyle-light", "nature-forest", "forest-editorial"}
     _background(c, PAPER if light else NAVY)
     if not light:
         _starfield(c, brief.title+" context", y_start=PAGE_H*.44, y_end=PAGE_H)
@@ -729,7 +778,8 @@ def _draw_context(c: canvas.Canvas, brief: EditorialBrief, stories: list[dict[st
     title = _paragraph("A considered collection" if light else "The reporting window", "Times-Bold", 30, 34, INK if light else PALE)
     _, title_h = title.wrap(CONTENT_W, 80)
     title.drawOn(c, MARGIN_X, PAGE_H-110)
-    count_p = _paragraph(f"{len(stories)} stories  /  {brief.issue_window_hours} hours",
+    count_label = f"{len(stories)} stories  /  {brief.window_label}"
+    count_p = _paragraph(count_label,
                          "Helvetica-Bold", 10.5, 14, colors.HexColor("#A66F43") if light else GOLD)
     _, count_h = count_p.wrap(CONTENT_W, 24)
     count_p.drawOn(c, MARGIN_X, PAGE_H-151)
@@ -751,7 +801,11 @@ def _draw_context(c: canvas.Canvas, brief: EditorialBrief, stories: list[dict[st
     if stories:
         c.setStrokeColor(colors.HexColor("#A66F43") if light else GOLD); c.setLineWidth(.7)
         c.line(MARGIN_X, 245, MARGIN_X+48, 245)
-        q = _paragraph("A good life is built from small things, noticed and cared for." if light else "The universe is not short of stories. The task is to give each one the room it deserves.",
+        quote = ("Living systems thrive through connection, care and time."
+                 if str(brief.visual_profile.get("palette", "")).lower() in {"nature-forest", "forest-editorial"}
+                 else "A good life is built from small things, noticed and cared for." if light
+                 else "The universe is not short of stories. The task is to give each one the room it deserves.")
+        q = _paragraph(quote,
                        "Times-Italic", 16, 21, colors.HexColor("#8A684D") if light else colors.HexColor("#E4D3B8"))
         _, qh = q.wrap(CONTENT_W, 115)
         q.drawOn(c, MARGIN_X, 224-qh)
@@ -800,7 +854,7 @@ def _draw_sources(c: canvas.Canvas, stories: list[dict[str, Any]], page_number: 
 
 
 def _draw_closing(c: canvas.Canvas, brief: EditorialBrief, page_number: int) -> None:
-    light = str(brief.visual_profile.get("palette", "cinematic-dark")).lower() in {"minimal-light", "warm-editorial", "lifestyle-light"}
+    light = str(brief.visual_profile.get("palette", "cinematic-dark")).lower() in {"minimal-light", "warm-editorial", "lifestyle-light", "nature-forest", "forest-editorial"}
     _background(c, PAPER if light else DEEP)
     if not light:
         _starfield(c, brief.title+" closing", y_start=0, y_end=PAGE_H)
@@ -845,11 +899,12 @@ def _story_groups(stories: list[dict[str, Any]]) -> list[list[int]]:
 
 
 def _draw_briefing_page(c: canvas.Canvas, group: list[dict[str, Any]],
-                        indexes: list[int], page_number: int) -> None:
+                        indexes: list[int], page_number: int, palette: str = "") -> None:
     _background(c, PAPER)
     c.setFillColor(GOLD); c.setFont("Helvetica-Bold", 7.5)
     c.drawString(MARGIN_X, PAGE_H-50, "FIELD NOTES  /  SHORT REPORTS")
-    heading = _paragraph("The smaller signals", "Times-Bold", 27, 31, INK)
+    heading_text = "Field notes from the month" if str(palette).lower() in {"nature-forest", "forest-editorial"} else "The smaller signals"
+    heading = _paragraph(heading_text, "Times-Bold", 27, 31, INK)
     _, hh = heading.wrap(CONTENT_W, 60)
     heading.drawOn(c, MARGIN_X, PAGE_H-94)
     y = PAGE_H-126
@@ -900,7 +955,7 @@ def build_magazine_pdf(brief: EditorialBrief, stories: list[dict[str, Any]],
             # Validate grouped composition before writing any PDF pages.
             probe = canvas.Canvas(str(output_pdf.with_suffix(".layout-probe.pdf")), pagesize=(PAGE_W, PAGE_H))
             try:
-                _draw_briefing_page(probe, [stories[i] for i in group_indexes], group_indexes, next_page)
+                _draw_briefing_page(probe, [stories[i] for i in group_indexes], group_indexes, next_page, str(brief.visual_profile.get("palette", "")))
             finally:
                 probe.save()
                 output_pdf.with_suffix(".layout-probe.pdf").unlink(missing_ok=True)
@@ -933,14 +988,14 @@ def build_magazine_pdf(brief: EditorialBrief, stories: list[dict[str, Any]],
     c = canvas.Canvas(str(temp_pdf), pagesize=(PAGE_W, PAGE_H), pageCompression=1)
     c.setTitle(brief.title)
     c.setAuthor("LIVE // EARTH - Universal Editorial Engine")
-    c.setSubject(f"{brief.issue_window_hours}-hour source-linked edition; Publisher {brief.publisher_id}")
+    c.setSubject(f"{brief.window_label} source-linked edition; Publisher {brief.publisher_id}")
     c.setKeywords(f"LIVE EARTH, {brief.view_id}, editorial, offline magazine")
     _draw_cover(c, brief, stories, now)
     _draw_contents(c, stories, story_layouts, section_pages, total_pages, now)
     page_number = 3
     for group_indexes in groups:
         if len(group_indexes) == 2:
-            _draw_briefing_page(c, [stories[i] for i in group_indexes], group_indexes, page_number)
+            _draw_briefing_page(c, [stories[i] for i in group_indexes], group_indexes, page_number, str(brief.visual_profile.get("palette", "")))
             page_number += 1
         else:
             index = group_indexes[0]
@@ -1029,15 +1084,16 @@ def run_engine(readonly_db: Any, profile: dict[str, Any], command: dict[str, Any
     """Main shared interface. `readonly_db` is supplied by the view Publisher."""
     now = now or datetime.now(timezone.utc)
     now = now.replace(tzinfo=timezone.utc) if now.tzinfo is None else now.astimezone(timezone.utc)
-    brief = build_brief(profile, command)
+    brief = build_brief(profile, command, now)
     stories = read_view_records(readonly_db, brief, now)
     mode = text(command.get("mode", "all"), 20)
     result: dict[str, Any] = {
         "engine": ENGINE_NAME, "engineVersion": ENGINE_VERSION,
         "viewId": brief.view_id, "publisherId": brief.publisher_id,
         "generatedAt": utc_iso(now),
-        "coverageStart": utc_iso(now-timedelta(hours=brief.issue_window_hours)),
-        "coverageEnd": utc_iso(now), "windowHours": brief.issue_window_hours,
+        "coverageStart": utc_iso(brief.coverage_start),
+        "coverageEnd": utc_iso(brief.coverage_end), "windowHours": brief.issue_window_hours,
+        "windowMode": brief.window_mode, "windowLabel": brief.window_label,
         "eligibleStoryCount": len(stories),
     }
     if mode in ("live", "all"):
@@ -1045,7 +1101,9 @@ def run_engine(readonly_db: Any, profile: dict[str, Any], command: dict[str, Any
             raise EditorialEngineError("No eligible stories are available for a live feed; previous output is preserved.")
         result["feed"] = build_live_feed(brief, stories, now)
     if mode in ("magazine", "all"):
-        issue_id = f"{brief.view_id}-{now.strftime('%Y%m%d-%H%M')}"
+        issue_id = (f"{brief.view_id}-{brief.coverage_start.strftime('%Y%m')}"
+                    if brief.window_mode == "calendar-month"
+                    else f"{brief.view_id}-{now.strftime('%Y%m%d-%H%M')}")
         relative = Path("magazines")/f"{issue_id}.pdf"
         magazine = build_magazine_pdf(brief, stories, output_root/relative, command, now)
         result["magazine"] = {**magazine, "issueId": issue_id, "relativePath": relative.as_posix()}

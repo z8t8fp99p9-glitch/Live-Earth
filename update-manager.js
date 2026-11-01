@@ -52,15 +52,40 @@
     return loading;
   }
 
-  // The procedural Sun remains an optional local renderer, cached by the existing
-  // service-worker policy. Alien World is a lightweight full-screen view shell.
-  // An optional-view failure never blocks Home or Moon.
+  // Nature is an optional Stacks view. It loads only after the shared feature
+  // registry exists, and its failure must never block Home, Moon or app startup.
+  async function loadNatureView() {
+    if (window.__liveEarthNatureViewInstalled) return true;
+    if (!window.LiveEarthFeatureViews?.register) throw new Error("The Stacks feature registry is not ready yet.");
+    if (window.__liveEarthNatureViewLoadPromise) return window.__liveEarthNatureViewLoadPromise;
+    const loading = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = new URL("./nature-view-controller.js", document.baseURI).href;
+      script.async = true;
+      script.onload = () => {
+        if (window.__liveEarthNatureViewInstalled) resolve(true);
+        else reject(new Error("The Nature controller loaded but did not register its view."));
+      };
+      script.onerror = () => reject(new Error("The Nature view file could not be loaded."));
+      document.head.appendChild(script);
+    });
+    window.__liveEarthNatureViewLoadPromise = loading;
+    return loading.catch(error => {
+      window.__liveEarthNatureViewLoadPromise = null;
+      throw error;
+    });
+  }
+
+  // The procedural Sun and Nature remain optional; failure never blocks Home or Moon.
   loadProceduralSun().then(() => {
     window.__liveEarthSunRendererReady = true;
     signalVerifiedStartup();
   }).catch(error => {
     window.__liveEarthSunRendererReady = false;
     console.warn("[LIVE // EARTH] Procedural Sun is not available yet; Home and Moon remain available.", error?.message || error);
+  });
+  loadNatureView().catch(error => {
+    console.warn("[LIVE // EARTH] Nature view is not available yet; Home, Moon and the existing Stacks views remain available.", error?.message || error);
   });
 
   window.addEventListener("live-earth-scene-ready", signalVerifiedStartup);
