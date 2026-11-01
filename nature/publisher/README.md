@@ -1,7 +1,7 @@
-# Nature Publisher
+# Nature Live Publisher
 
-The Publisher has no network client and opens the Nature database with SQLite `mode=ro` plus `PRAGMA query_only=ON`. It invokes the shared Python Universal Editorial Engine in a separate process. It does not scrape sources, fetch photos, or write to the source database.
+The Publisher is Live-Feed-only. It accepts `--mode live`, reads `.publisher-data/nature/nature.sqlite3` with SQLite `mode=ro` and `PRAGMA query_only=ON`, and invokes the shared Python Universal Editorial Engine in live mode.
 
-The Engine version in the inspected repository uses a NASA-named generic image status constant. Nature sets that module constant to its own view-specific sentinel in the Publisher process only; the global Engine source is not edited and Alien World's separate process is unaffected.
+It does not collect source material, connect to RSS/Commons, write to the source database, generate PDFs, publish catalogues, or maintain an issue archive. It validates the rolling feed contract and source/image provenance before replacing `nature/published/live-feed.json`.
 
-The Publisher checks the source count, verified documentary-photo count, image-credit records, source links and the finished PDF before it replaces `nature/published/current.pdf`, `live-feed.json` and `catalog.json`. It retains one public issue only.
+Approved documentary photographs are optional in the live feed. When a story has a current, verified Nature image record, the Publisher copies the hash-named file to `nature/published/assets/` and writes its rights/credit record to `assets/image-rights.json`. A story without a verified image remains eligible as a text report. Failed validation preserves the last-good feed.

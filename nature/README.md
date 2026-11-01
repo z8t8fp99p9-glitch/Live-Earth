@@ -1,21 +1,19 @@
 # LIVE // EARTH — Nature
 
-Nature is an independent editorial view inside Stacks.
+Nature is an independent Live Feeds view inside Stacks.
 
 ## Ownership
-- `collector/` is the only Nature component allowed to access external sources and write the Nature database.
-- `publisher/` reads the Nature database read-only, has no source-network code, and commands the shared `editorial-engine/`.
-- `view/` consumes completed files under `nature/published/` only.
-- The shared `editorial-engine/` and root `universal-pdf-viewer.js` are reused.
-- `assets/` contains rights-policy and allowlist records, not a second copy of the shared Engine.
-- The runtime SQLite store and prepared source media live in `.publisher-data/nature/` and are not committed.
+- `collector/` is the only Nature component allowed to access approved external sources and write the Nature database.
+- `publisher/` reads the Nature database read-only and publishes only the rolling Live Feed.
+- `view/` owns both the Nature view controller and its browser-side feed client.
+- The shared `editorial-engine/` validates and generates the finished feed; it is not duplicated for Nature.
+- `assets/` contains the reviewed image allowlist and rights-policy records.
+- The runtime SQLite store and prepared image cache live in `.publisher-data/nature/` and are not committed.
 
-The first November 2026 run imports the eight source-linked October summaries from `nature/collector/initial-october-seed.json` exactly once. The seed is production Collector input, not a test-folder fixture. The old fixture PDF is not imported. Later monthly runs use the continuing feed collection path.
+## Live publication
+The feed uses a rolling 48-hour window and is refreshed by GitHub Actions every three hours. Nature sources are collected by the Collector before the Publisher runs. Only the current `live-feed.json` and current feed media/rights manifest are public outputs. No Nature magazine PDF, monthly catalogue or issue history is generated.
 
-## Publication
-The Publisher generates the previous complete UTC calendar month. Public output contains one current PDF (`nature/published/current.pdf`), one catalogue record and the current live feed. A new issue is staged and validated before the current files are replaced. If any gate fails, existing public files are left unchanged.
-
-The 20–40 page goal is an editorial aspiration, not a minimum. No filler is added to reach a page target. At least five source-linked stories and a configurable minimum of four fully verified documentary photographs are the initial release gates. These are engineering settings in `publisher/profile.json`; they do not override licence checks.
+Documentary photographs are optional per story. The Collector must verify the original Wikimedia Commons file page, creator and accepted licence. Reports without a verified photograph remain publishable as text reports. Image rights checks are not waived by the Live-Feed-only change.
 
 ## Workflow
-The active GitHub Actions workflow is `.github/workflows/nature-publisher.yml`. It supports manual `collect`, `publish` and `all` modes plus scheduled collection/publication. It caches only `.publisher-data/nature/`, never commits the database, and commits only validated files under `nature/published/`. See [`docs/WORKFLOW.md`](docs/WORKFLOW.md) for the current operating instructions.
+The active workflow is `.github/workflows/nature-publisher.yml`. Replace its entire contents with the separately supplied `nature-live-feed-workflow.yml`. It caches the existing `.publisher-data/nature/` key family, never commits the database, and commits only validated files beneath `nature/published/`.

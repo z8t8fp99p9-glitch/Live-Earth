@@ -3,12 +3,10 @@
   "viewId": "nature",
   "publisherId": "nature-publisher",
   "publication": {
-    "windowMode": "calendar-month",
-    "minimumStories": 5,
+    "windowMode": "rolling-hours",
+    "issueWindowHours": 48,
     "maximumStories": 8,
-    "minimumDocumentaryImages": 4,
-    "maximumSourceAgeDays": 180,
-    "singleCurrentIssue": true
+    "maximumSourceAgeDays": 180
   },
   "sources": [
     {
@@ -33,17 +31,9 @@
     }
   ],
   "editorialProfile": {
-    "publicationTitle": "The Living World",
-    "tone": "curious, grounded nature and conservation journalism",
-    "defaultCustomRequest": "Create a photo-led, considered nature field journal with a strong documentary-photography rhythm, a clear editorial hierarchy, a useful explainer, a concise monthly chronology, source notes and a thoughtful closing page. Use only Publisher-screened documentary photographs supplied with their original credits and contextual captions. Never invent photography, misidentify a species, or present a contextual photograph as the image from a research paper or source article. Preserve all supplied reporting context. Use generous typography and a book-like mobile portrait composition. Do not pad pages.",
-    "visualProfile": {
-      "palette": "nature-forest",
-      "photoLed": true,
-      "includeTimeline": true,
-      "includeExplainer": true,
-      "pageTarget": 20,
-      "tone": "curious, grounded nature and conservation journalism"
-    }
+    "publicationTitle": "Nature Live Feeds",
+    "tone": "curious, grounded nature and conservation reporting",
+    "defaultCustomRequest": "Prepare a balanced, source-linked rolling live feed about wildlife, ecology, oceans, biodiversity, climate and conservation. Preserve the original reporting context. Use documentary photographs only when their exact source page, creator, licence and contextual caption have been independently verified by the Nature Collector. Never invent photography, misidentify a species, or present a contextual photograph as the image from a research paper or source article. A report without an approved photograph remains eligible as a text report. Prioritize the newest eligible reporting while retaining useful topic variety."
   },
   "imagePolicy": {
     "allowedLicenses": [
@@ -53,7 +43,7 @@
       "CC BY-SA"
     ],
     "rejectNoDerivativesWhenModified": true,
-    "minimumDocumentaryImages": 4,
+    "minimumDocumentaryImages": 0,
     "maximumImageBytes": 7000000,
     "maximumImageWidth": 1600,
     "optimization": "Wikimedia Commons thumbnail up to 1600px; preserve attribution and ShareAlike notice"

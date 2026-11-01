@@ -1,21 +1,13 @@
-# Nature publishing workflow
+# Nature Live Feed workflow
 
-**Status: Active.** The live workflow is `.github/workflows/nature-publisher.yml`. It is already present in the repository; it does not need to be created manually from the template.
+**Active workflow path:** `.github/workflows/nature-publisher.yml`
 
-## Manual runs
+Replace the entire current workflow with the separately supplied `nature-live-feed-workflow.yml`.
 
-Open **GitHub → Actions → Nature Monthly Publisher → Run workflow** and choose:
+The workflow runs the Nature Collector followed by the Live-Feed-only Nature Publisher every three hours. Manual **Run workflow** does the same complete refresh.
 
-- `collect` to run the Nature Collector only.
-- `publish` to run the read-only Nature Publisher only, using the Collector database restored by the workflow cache.
-- `all` to run collection followed by publication. Use this for a complete refresh.
+- Collector: approved RSS/Atom collection, Commons file-page rights screening, and writes `.publisher-data/nature/`.
+- Publisher: read-only SQLite access, shared Editorial Engine live mode, and validation/publication of `nature/published/live-feed.json` plus current image assets/rights metadata.
+- GitHub Actions: schedule, cache the existing Nature database key family, and commit only validated public output.
 
-## Data and publication boundaries
-
-- The Collector alone accesses approved external sources and writes `.publisher-data/nature/`.
-- The Publisher has no source-network access and opens the database read-only.
-- The workflow caches the private runtime database but does not commit it.
-- Only validated files under `nature/published/` are committed.
-- Failed publication gates preserve the previous last-good public files.
-
-`nature/publisher/NATURE_PUBLISHER_WORKFLOW_TEMPLATE.yml` is retained as a reference template. Do not create a duplicate workflow from it while the active workflow already exists.
+There is no monthly trigger, magazine mode, PDF output, catalogue or issue archive. Failed publication validation leaves the previous last-good feed in place. Saved PDFs in the Global PDF Reader remain outside this publication workflow and are not modified.

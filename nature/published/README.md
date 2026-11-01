@@ -1,9 +1,8 @@
-# Nature public output
+# Nature published output
 
-Only completed, validated outputs belong here:
-- `live-feed.json`
-- `catalog.json` (one current issue record)
-- `current.pdf` (one public current issue)
-- `assets/` (only rights-screened image copies referenced by the current issue)
+This folder contains only the current Nature Live Feed and its current supporting media.
 
-The Publisher generates in staging and replaces output only after validation. On failure, existing files remain. No runtime SQLite database, unpublished source article body, or unverified media belongs here.
+- `live-feed.json` — validated rolling 48-hour Nature reports.
+- `assets/` — only approved, current feed images and `image-rights.json` attribution/provenance.
+
+No magazine PDF, monthly catalogue or issue history is published here. The Collector database and prepared-image cache remain private under `.publisher-data/nature/`.
