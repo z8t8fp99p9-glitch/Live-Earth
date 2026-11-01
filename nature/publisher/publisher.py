@@ -66,6 +66,89 @@ def current_month_window(now: datetime):
         start = end.replace(month=end.month - 1)
     return start, end
 
+
+def select_engine_story_rows(rows, verified_images, maximum_stories: int):
+    """Retain Nature's verified photo stories in the Engine's limited sample.
+
+    The shared Engine ordinarily takes only the newest N stories. Nature's
+    Commons-screened photographs can belong to slightly older stories in the
+    same completed month, so a recency-only cut can drop every image even when
+    the Collector has attached them. Select verified-image stories first,
+    fill remaining slots by recency, then restore chronological order. This
+    adapter is Nature-only; the shared Engine and other views stay unchanged.
+    """
+    rows = list(rows)
+    preferred = []
+    for row in rows:
+        record = verified_images.get(str(row["story_id"]))
+        if not record:
+            continue
+        local_path = str(row["image_local_path"] or "")
+        if (
+            row["image_rights_status"] == IMAGE_STATUS
+            and local_path == str(record["local_path"])
+            and str(row["image_url"] or "") == str(record["image_url"])
+            and str(row["image_credit"] or "") == str(record["credit"])
+            and str(row["image_source_url"] or "") == str(record["source_page"])
+            and bool(str(row["image_rights_note"] or "").strip())
+            and bool(local_path)
+            and (ROOT / local_path).is_file()
+        ):
+            preferred.append(row)
+    selected = preferred[:maximum_stories]
+    selected_ids = {str(row["story_id"]) for row in selected}
+    for row in rows:
+        if len(selected) >= maximum_stories:
+            break
+        story_id = str(row["story_id"])
+        if story_id not in selected_ids:
+            selected.append(row)
+            selected_ids.add(story_id)
+    selected.sort(key=lambda row: float(row["published_at"] or 0), reverse=True)
+    return selected
+
+
+class _BufferedRows:
+    """Minimal cursor facade for the Engine's existing fetchall() call."""
+    def __init__(self, rows):
+        self._rows = rows
+
+    def fetchall(self):
+        return self._rows
+
+
+class NatureEngineReadOnlyConnection:
+    """Read-only DB adapter that keeps approved Nature images in the Engine sample."""
+    def __init__(self, connection, verified_images, maximum_stories):
+        self._connection = connection
+        self._verified_images = verified_images
+        self._maximum_stories = maximum_stories
+        self.story_selection_applied = False
+        self.selected_documentary_images = 0
+
+    def execute(self, sql, parameters=()):
+        cursor = self._connection.execute(sql, parameters)
+        normalized = " ".join(str(sql).lower().split())
+        if "from stories where published_at" not in normalized:
+            return cursor
+        rows = cursor.fetchall()
+        selected = select_engine_story_rows(rows, self._verified_images, self._maximum_stories)
+        self.story_selection_applied = True
+        self.selected_documentary_images = sum(
+            1 for row in selected
+            if str(row["story_id"]) in self._verified_images
+            and row["image_rights_status"] == IMAGE_STATUS
+            and str(row["image_local_path"] or "") == str(self._verified_images[str(row["story_id"])]["local_path"])
+            and str(row["image_url"] or "") == str(self._verified_images[str(row["story_id"])]["image_url"])
+            and str(row["image_credit"] or "") == str(self._verified_images[str(row["story_id"])]["credit"])
+            and str(row["image_source_url"] or "") == str(self._verified_images[str(row["story_id"])]["source_page"])
+            and bool(str(row["image_rights_note"] or "").strip())
+            and bool(str(row["image_local_path"] or ""))
+            and (ROOT / str(row["image_local_path"])).is_file()
+        )
+        return _BufferedRows(selected)
+
+
 def publish(now: datetime | None = None):
     os.chdir(ROOT)
     now = now or datetime.now(timezone.utc)
@@ -126,7 +209,17 @@ def publish(now: datetime | None = None):
             "mode": "all",
             "customRequest": profile["editorialProfile"]["defaultCustomRequest"]
         }
-        result = engine.run_engine(con, profile, command, stage, now)
+        rights_by_story = {r["story_id"]: r for r in verified}
+        maximum_stories = max(2, min(12, int(profile["publication"].get("maximumStories", 8))))
+        engine_db = NatureEngineReadOnlyConnection(con, rights_by_story, maximum_stories)
+        result = engine.run_engine(engine_db, profile, command, stage, now)
+        if not engine_db.story_selection_applied:
+            raise RuntimeError("Shared Engine did not use Nature's verified-image selection boundary.")
+        if engine_db.selected_documentary_images < min_images:
+            raise RuntimeError(
+                f"Only {engine_db.selected_documentary_images} verified documentary image stories "
+                f"fit the Engine selection; {min_images} are required. Last-good Nature issue preserved."
+            )
         if result.get("viewId") != "nature" or result.get("windowMode") != "calendar-month":
             raise RuntimeError("Shared Engine returned the wrong Nature publication contract.")
         if result.get("coverageStart") != start.isoformat().replace("+00:00", "Z"):
@@ -134,7 +227,6 @@ def publish(now: datetime | None = None):
         if result.get("coverageEnd") != end.isoformat().replace("+00:00", "Z"):
             raise RuntimeError("Engine coverage end differs from the previous UTC calendar month.")
         feed = result["feed"]
-        rights_by_story = {r["story_id"]: r for r in verified}
         for story in feed.get("stories", []):
             record = rights_by_story.get(story["id"])
             if record and story.get("imageUrl"):

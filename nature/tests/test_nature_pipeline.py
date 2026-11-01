@@ -248,6 +248,103 @@ class CollectorContractTests(unittest.TestCase):
         self.assertIn("NATURE_RAW_PREFIX + 'current.pdf'",source)
 
 class PublisherContractTests(unittest.TestCase):
+    def test_nature_engine_selection_keeps_verified_images_and_preserves_chronology(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            fake_root = Path(tmp)
+            old_root = publisher.ROOT
+            publisher.ROOT = fake_root
+            try:
+                rows = []
+                verified = {}
+                # Eight newest text-only items precede six older illustrated items.
+                for i in range(14):
+                    story_id = f"story-{i}"
+                    row = {
+                        "story_id": story_id,
+                        "published_at": float(1000 - i),
+                        "image_rights_status": None,
+                        "image_local_path": None,
+                        "image_url": None,
+                        "image_credit": None,
+                        "image_source_url": None,
+                        "image_rights_note": None,
+                    }
+                    if i >= 8:
+                        local = Path("media") / f"{story_id}.jpg"
+                        target = fake_root / local
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        target.write_bytes(b"verified-image")
+                        record = {
+                            "local_path": local.as_posix(),
+                            "image_url": f"https://raw.githubusercontent.com/example/{story_id}.jpg",
+                            "credit": f"Creator {i} · CC BY 4.0",
+                            "source_page": f"https://commons.wikimedia.org/wiki/File:{story_id}.jpg",
+                        }
+                        verified[story_id] = record
+                        row.update({
+                            "image_rights_status": publisher.IMAGE_STATUS,
+                            "image_local_path": record["local_path"],
+                            "image_url": record["image_url"],
+                            "image_credit": record["credit"],
+                            "image_source_url": record["source_page"],
+                            "image_rights_note": "CC BY 4.0 · documented use",
+                        })
+                    rows.append(row)
+                selected = publisher.select_engine_story_rows(rows, verified, 8)
+                self.assertEqual(len(selected), 8)
+                self.assertEqual(sum(1 for row in selected if row["story_id"] in verified), 6)
+                self.assertEqual(
+                    [row["published_at"] for row in selected],
+                    sorted((row["published_at"] for row in selected), reverse=True),
+                )
+                self.assertEqual(
+                    {row["story_id"] for row in selected if row["story_id"] in verified},
+                    set(verified),
+                )
+            finally:
+                publisher.ROOT = old_root
+
+    def test_nature_engine_connection_intercepts_story_selection_without_writes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            old_root = publisher.ROOT
+            publisher.ROOT = root
+            con = sqlite3.connect(":memory:")
+            con.row_factory = sqlite3.Row
+            try:
+                con.execute("CREATE TABLE stories(story_id TEXT, published_at REAL, image_rights_status TEXT, image_local_path TEXT, image_url TEXT, image_credit TEXT, image_source_url TEXT, image_rights_note TEXT, title TEXT)")
+                verified = {}
+                for i in range(10):
+                    story_id = f"story-{i}"
+                    fields = (None, None, None, None, None, None)
+                    if i >= 6:
+                        local = Path("media") / f"{story_id}.jpg"
+                        target = root / local
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        target.write_bytes(b"verified-image")
+                        record = {
+                            "local_path": local.as_posix(),
+                            "image_url": f"https://raw.githubusercontent.com/example/{story_id}.jpg",
+                            "credit": f"Creator {i} · CC BY 4.0",
+                            "source_page": f"https://commons.wikimedia.org/wiki/File:{story_id}.jpg",
+                        }
+                        verified[story_id] = record
+                        fields = (publisher.IMAGE_STATUS, record["local_path"], record["image_url"], record["credit"], record["source_page"], "CC BY 4.0 · documented use")
+                    con.execute("INSERT INTO stories VALUES(?,?,?,?,?,?,?,?,?)", (story_id, float(100-i), *fields, story_id))
+                con.execute("PRAGMA query_only=ON")
+                adapter = publisher.NatureEngineReadOnlyConnection(con, verified, 8)
+                cursor = adapter.execute("SELECT story_id,title,published_at,image_rights_status,image_local_path,image_url,image_credit,image_source_url,image_rights_note FROM stories WHERE published_at >= ? AND published_at < ? ORDER BY published_at DESC LIMIT 500", (0, 200))
+                selected = cursor.fetchall()
+                self.assertTrue(adapter.story_selection_applied)
+                self.assertEqual(adapter.selected_documentary_images, 4)
+                self.assertEqual(len(selected), 8)
+                self.assertEqual(sum(1 for row in selected if row["story_id"] in verified), 4)
+                with self.assertRaises(sqlite3.OperationalError):
+                    con.execute("INSERT INTO stories VALUES('nope',0,NULL,NULL,NULL,NULL,NULL,NULL,'nope')")
+            finally:
+                con.close()
+                publisher.ROOT = old_root
+
     def test_publisher_opens_database_read_only(self):
         with tempfile.TemporaryDirectory() as tmp:
             db=Path(tmp)/"nature.sqlite3"
