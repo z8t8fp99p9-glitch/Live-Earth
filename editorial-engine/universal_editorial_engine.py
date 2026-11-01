@@ -29,7 +29,7 @@ from xml.sax.saxutils import escape
 from pypdf import PdfReader
 
 ENGINE_NAME = "Universal Editorial Engine"
-ENGINE_VERSION = "1.1.0"
+ENGINE_VERSION = "1.2.0"
 VALID_IMAGE_STATUS = "nasa-guideline-reviewed-exclusion-screened"
 
 # Phone-first portrait page: 420 × 912 pt. A PDF page viewed at fit-to-width
@@ -432,49 +432,70 @@ def _cover_teaser(value: Any) -> str:
 def _draw_cover(c: canvas.Canvas, brief: EditorialBrief, stories: list[dict[str, Any]],
                 issue_date: datetime) -> None:
     lead = stories[0]
-    _background(c, DEEP)
-    _starfield(c, lead.get("title", brief.title), y_start=PAGE_H*.25, y_end=PAGE_H)
+    palette = str(brief.visual_profile.get("palette", "cinematic-dark")).lower()
+    light_cover = palette in {"minimal-light", "warm-editorial", "lifestyle-light"}
+    cover_bg = PAPER if light_cover else DEEP
+    cover_ink = INK if light_cover else colors.white
+    cover_muted = MUTED if light_cover else colors.HexColor("#D5DDE3")
+    accent = colors.HexColor("#A66F43") if light_cover else GOLD
+    _background(c, cover_bg)
+    if not light_cover:
+        _starfield(c, lead.get("title", brief.title), y_start=PAGE_H*.25, y_end=PAGE_H)
     image_path = lead.get("image_local_path")
     if _draw_image(c, image_path, 0, PAGE_H*.70, PAGE_W, PAGE_H*.68):
         c.saveState(); c.setFillAlpha(.52); c.setFillColor(DEEP)
         c.rect(0, 0, PAGE_W, PAGE_H*.43, stroke=0, fill=1); c.restoreState()
-    c.setFillColor(GOLD); c.setFont("Helvetica-Bold", 8.5)
+    c.setFillColor(accent); c.setFont("Helvetica-Bold", 8.5)
     c.drawString(MARGIN_X, PAGE_H-43, "LIVE // EARTH")
-    c.setFillColor(SLATE); c.setFont("Helvetica", 7)
+    c.setFillColor(MUTED if light_cover else SLATE); c.setFont("Helvetica", 7)
     c.drawRightString(PAGE_W-MARGIN_X, PAGE_H-43, "AN INDEPENDENT DIGITAL JOURNAL")
-    c.setFillColor(colors.HexColor("#F2E8D8")); c.setFont("Times-Bold", 34)
-    c.drawString(MARGIN_X, PAGE_H-112, "THE SPACE")
-    c.setFillColor(GOLD); c.setFont("Helvetica-Bold", 9)
-    c.drawString(MARGIN_X+2, PAGE_H-132, "J O U R N A L")
-    c.setStrokeColor(GOLD); c.setLineWidth(.7)
+    c.setFillColor(cover_ink); c.setFont("Times-Bold", 34)
+    masthead = brief.title.upper()
+    masthead_style = "Times-Bold" if len(masthead) < 22 else "Helvetica-Bold"
+    masthead_size = 28 if len(masthead) < 22 else 19
+    c.setFont(masthead_style, masthead_size)
+    c.drawString(MARGIN_X, PAGE_H-112, masthead)
+    c.setFillColor(accent); c.setFont("Helvetica-Bold", 8)
+    c.drawString(MARGIN_X+2, PAGE_H-132, "A CONSIDERED GUIDE TO EVERYDAY LIFE" if light_cover else "AN INDEPENDENT DIGITAL JOURNAL")
+    c.setStrokeColor(accent); c.setLineWidth(.7)
     c.line(MARGIN_X, PAGE_H-149, PAGE_W-MARGIN_X, PAGE_H-149)
     if not (image_path and Path(str(image_path)).is_file()):
-        # A restrained vector orbital seal fills the cover without inventing
-        # or substituting documentary photography.
+        # Category-neutral vector artwork: a botanical-inspired line study for
+        # light lifestyle editions, orbital seal for cinematic science editions.
         c.saveState()
-        c.setFillColor(colors.HexColor("#10283D")); c.circle(PAGE_W-92, PAGE_H*.57, 78, stroke=0, fill=1)
-        c.setStrokeColor(colors.HexColor("#5D7890")); c.setLineWidth(.7)
-        c.circle(PAGE_W-92, PAGE_H*.57, 78, stroke=1, fill=0)
-        c.setStrokeColor(colors.Color(.77,.61,.39,alpha=.7)); c.setLineWidth(.8)
-        c.ellipse(PAGE_W-205, PAGE_H*.57-22, PAGE_W+18, PAGE_H*.57+22, stroke=1, fill=0)
-        c.ellipse(PAGE_W-188, PAGE_H*.57-50, PAGE_W+4, PAGE_H*.57+50, stroke=1, fill=0)
-        c.setFillColor(GOLD); c.circle(PAGE_W-92, PAGE_H*.57, 2.3, stroke=0, fill=1)
+        if light_cover:
+            c.setStrokeColor(colors.HexColor("#B98A65")); c.setLineWidth(1.15)
+            c.setFillColor(colors.HexColor("#E8DCCB")); c.circle(PAGE_W-100, PAGE_H*.57, 76, stroke=0, fill=1)
+            c.setStrokeColor(colors.HexColor("#9D775D")); c.setLineWidth(1.1)
+            c.bezier(PAGE_W-152,PAGE_H*.48,PAGE_W-72,PAGE_H*.58,PAGE_W-136,PAGE_H*.68,PAGE_W-84,PAGE_H*.76)
+            for x,y,angle in [(PAGE_W-137,PAGE_H*.53,-1),(PAGE_W-105,PAGE_H*.61,1),(PAGE_W-121,PAGE_H*.69,-1),(PAGE_W-91,PAGE_H*.73,1)]:
+                c.saveState(); c.translate(x,y); c.rotate(angle*28)
+                c.ellipse(-18,-7,18,7,stroke=1,fill=0); c.restoreState()
+        else:
+            c.setFillColor(colors.HexColor("#10283D")); c.circle(PAGE_W-92, PAGE_H*.57, 78, stroke=0, fill=1)
+            c.setStrokeColor(colors.HexColor("#5D7890")); c.setLineWidth(.7)
+            c.circle(PAGE_W-92, PAGE_H*.57, 78, stroke=1, fill=0)
+            c.setStrokeColor(colors.Color(.77,.61,.39,alpha=.7)); c.setLineWidth(.8)
+            c.ellipse(PAGE_W-205, PAGE_H*.57-22, PAGE_W+18, PAGE_H*.57+22, stroke=1, fill=0)
+            c.ellipse(PAGE_W-188, PAGE_H*.57-50, PAGE_W+4, PAGE_H*.57+50, stroke=1, fill=0)
+            c.setFillColor(GOLD); c.circle(PAGE_W-92, PAGE_H*.57, 2.3, stroke=0, fill=1)
         c.restoreState()
-    c.setFillColor(GOLD); c.setFont("Helvetica-Bold", 7.5)
-    c.drawString(MARGIN_X, PAGE_H*.395, "THE 48-HOUR EDITION  /  " + issue_date.strftime("%d %B %Y").upper())
-    title = _paragraph(lead.get("title", brief.title), "Times-Bold", 31, 34, colors.white)
+    c.setFillColor(accent); c.setFont("Helvetica-Bold", 7.5)
+    edition_label = "THE LIFESTYLE EDITION  /  " if light_cover else "THE 48-HOUR EDITION  /  "
+    c.drawString(MARGIN_X, PAGE_H*.395, edition_label + issue_date.strftime("%d %B %Y").upper())
+    title = _paragraph(lead.get("title", brief.title), "Times-Bold", 31, 34, cover_ink)
     _, title_h = title.wrap(CONTENT_W, 260)
     if title_h > 260:
-        title = _paragraph(lead.get("title", brief.title), "Times-Bold", 26, 29, colors.white)
+        title = _paragraph(lead.get("title", brief.title), "Times-Bold", 26, 29, cover_ink)
         _, title_h = title.wrap(CONTENT_W, 260)
     title.drawOn(c, MARGIN_X, PAGE_H*.375-title_h)
     teaser = _cover_teaser(lead.get("editorialSummary", lead.get("summary", "")))
-    teaser_p = _paragraph(teaser, "Helvetica", 11.5, 16, colors.HexColor("#D5DDE3"))
+    teaser_p = _paragraph(teaser, "Helvetica", 11.5, 16, cover_muted)
     _, teaser_h = teaser_p.wrap(CONTENT_W, 105)
     teaser_p.drawOn(c, MARGIN_X, PAGE_H*.205-teaser_h)
-    c.setFillColor(GOLD); c.setFont("Helvetica-Bold", 7)
+    c.setFillColor(accent); c.setFont("Helvetica-Bold", 7)
     c.drawString(MARGIN_X, 52, "A SOURCE-LINKED EDITION")
-    c.setFillColor(SLATE); c.setFont("Helvetica", 7)
+    c.setFillColor(MUTED if light_cover else SLATE); c.setFont("Helvetica", 7)
     c.drawRightString(PAGE_W-MARGIN_X, 52, "READ OFFLINE  /  KEEP EXPLORING")
     c.showPage()
 
@@ -699,32 +720,39 @@ def _draw_timeline(c: canvas.Canvas, stories: list[dict[str, Any]], page_number:
 
 def _draw_context(c: canvas.Canvas, brief: EditorialBrief, stories: list[dict[str, Any]],
                   page_number: int) -> None:
-    _background(c, NAVY)
-    _starfield(c, brief.title+" context", y_start=PAGE_H*.44, y_end=PAGE_H)
-    c.setFillColor(GOLD); c.setFont("Helvetica-Bold", 7.8)
+    light = str(brief.visual_profile.get("palette", "cinematic-dark")).lower() in {"minimal-light", "warm-editorial", "lifestyle-light"}
+    _background(c, PAPER if light else NAVY)
+    if not light:
+        _starfield(c, brief.title+" context", y_start=PAGE_H*.44, y_end=PAGE_H)
+    c.setFillColor(colors.HexColor("#A66F43") if light else GOLD); c.setFont("Helvetica-Bold", 7.8)
     c.drawString(MARGIN_X, PAGE_H-58, "A NOTE ON THIS EDITION")
-    title = _paragraph("The reporting window", "Times-Bold", 30, 34, PALE)
+    title = _paragraph("A considered collection" if light else "The reporting window", "Times-Bold", 30, 34, INK if light else PALE)
     _, title_h = title.wrap(CONTENT_W, 80)
     title.drawOn(c, MARGIN_X, PAGE_H-110)
     count_p = _paragraph(f"{len(stories)} stories  /  {brief.issue_window_hours} hours",
-                         "Helvetica-Bold", 10.5, 14, GOLD)
+                         "Helvetica-Bold", 10.5, 14, colors.HexColor("#A66F43") if light else GOLD)
     _, count_h = count_p.wrap(CONTENT_W, 24)
     count_p.drawOn(c, MARGIN_X, PAGE_H-151)
     body_text = (
-        "This issue brings together reports from the Publisher's approved source records. "
-        "Each story remains attributed to its originating source. The editorial layout "
-        "organises the material for a calm, uninterrupted reading experience; it does "
-        "not replace the original reporting or add unverified claims. Image credits and "
-        "usage notes are retained with the relevant material and in the printed source pages."
+        ("This edition brings together selected ideas from the Publisher's approved records. "
+         "Each story remains attributed to its originating source. The editorial layout "
+         "organises the material for a calm, uninterrupted reading experience; it does "
+         "not replace the original reporting or add unverified claims. Source details and "
+         "credits are retained in the printed reference pages.") if light else
+        ("This issue brings together reports from the Publisher's approved source records. "
+         "Each story remains attributed to its originating source. The editorial layout "
+         "organises the material for a calm, uninterrupted reading experience; it does "
+         "not replace the original reporting or add unverified claims. Image credits and "
+         "usage notes are retained with the relevant material and in the printed source pages.")
     )
-    body = _paragraph(body_text, "Times-Roman", 13, 19, PALE)
+    body = _paragraph(body_text, "Times-Roman", 13, 19, INK if light else PALE)
     _, h = body.wrap(CONTENT_W, 310)
     body.drawOn(c, MARGIN_X, PAGE_H-204-h)
     if stories:
-        c.setStrokeColor(GOLD); c.setLineWidth(.7)
+        c.setStrokeColor(colors.HexColor("#A66F43") if light else GOLD); c.setLineWidth(.7)
         c.line(MARGIN_X, 245, MARGIN_X+48, 245)
-        q = _paragraph("The universe is not short of stories. The task is to give each one the room it deserves.",
-                       "Times-Italic", 16, 21, colors.HexColor("#E4D3B8"))
+        q = _paragraph("A good life is built from small things, noticed and cared for." if light else "The universe is not short of stories. The task is to give each one the room it deserves.",
+                       "Times-Italic", 16, 21, colors.HexColor("#8A684D") if light else colors.HexColor("#E4D3B8"))
         _, qh = q.wrap(CONTENT_W, 115)
         q.drawOn(c, MARGIN_X, 224-qh)
     _footer(c, page_number, "EDITORIAL NOTE")
@@ -772,19 +800,26 @@ def _draw_sources(c: canvas.Canvas, stories: list[dict[str, Any]], page_number: 
 
 
 def _draw_closing(c: canvas.Canvas, brief: EditorialBrief, page_number: int) -> None:
-    _background(c, DEEP)
-    _starfield(c, brief.title+" closing", y_start=0, y_end=PAGE_H)
-    c.setFillColor(GOLD); c.setFont("Helvetica-Bold", 8)
-    c.drawString(MARGIN_X, PAGE_H*.61, "KEEP LOOKING UP")
-    heading = _paragraph("The next question is waiting.", "Times-Bold", 31, 36, colors.white)
+    light = str(brief.visual_profile.get("palette", "cinematic-dark")).lower() in {"minimal-light", "warm-editorial", "lifestyle-light"}
+    _background(c, PAPER if light else DEEP)
+    if not light:
+        _starfield(c, brief.title+" closing", y_start=0, y_end=PAGE_H)
+    accent = colors.HexColor("#A66F43") if light else GOLD
+    main_ink = INK if light else colors.white
+    muted_ink = MUTED if light else colors.HexColor("#C7D0D8")
+    c.setFillColor(accent); c.setFont("Helvetica-Bold", 8)
+    c.drawString(MARGIN_X, PAGE_H*.61, "UNTIL NEXT TIME" if light else "KEEP LOOKING UP")
+    heading_text = "Make room for what matters." if light else "The next question is waiting."
+    heading = _paragraph(heading_text, "Times-Bold", 31, 36, main_ink)
     _, hh = heading.wrap(CONTENT_W, 180)
     heading.drawOn(c, MARGIN_X, PAGE_H*.57-hh)
-    body = _paragraph("A source-linked window on the universe. Follow the reporting, question the evidence and keep exploring.",
-                      "Times-Italic", 13, 19, colors.HexColor("#C7D0D8"))
+    body_text = ("A thoughtful life is not assembled all at once. It grows through attention, care and the small choices we make every day." if light else
+                 "A source-linked window on the universe. Follow the reporting, question the evidence and keep exploring.")
+    body = _paragraph(body_text, "Times-Italic", 13, 19, muted_ink)
     _, bh = body.wrap(CONTENT_W, 100)
     body.drawOn(c, MARGIN_X, PAGE_H*.36-bh)
-    c.setFillColor(GOLD); c.setFont("Helvetica-Bold", 7.2)
-    c.drawString(MARGIN_X, 52, "LIVE // EARTH  /  THE SPACE JOURNAL")
+    c.setFillColor(accent); c.setFont("Helvetica-Bold", 7.2)
+    c.drawString(MARGIN_X, 52, f"LIVE // EARTH  /  {brief.title.upper()}")
     c.showPage()
 
 
@@ -899,7 +934,7 @@ def build_magazine_pdf(brief: EditorialBrief, stories: list[dict[str, Any]],
     c.setTitle(brief.title)
     c.setAuthor("LIVE // EARTH - Universal Editorial Engine")
     c.setSubject(f"{brief.issue_window_hours}-hour source-linked edition; Publisher {brief.publisher_id}")
-    c.setKeywords("LIVE EARTH, space, science, editorial, offline magazine")
+    c.setKeywords(f"LIVE EARTH, {brief.view_id}, editorial, offline magazine")
     _draw_cover(c, brief, stories, now)
     _draw_contents(c, stories, story_layouts, section_pages, total_pages, now)
     page_number = 3
@@ -1010,7 +1045,7 @@ def run_engine(readonly_db: Any, profile: dict[str, Any], command: dict[str, Any
             raise EditorialEngineError("No eligible stories are available for a live feed; previous output is preserved.")
         result["feed"] = build_live_feed(brief, stories, now)
     if mode in ("magazine", "all"):
-        issue_id = f"alien-world-{now.strftime('%Y%m%d-%H%M')}"
+        issue_id = f"{brief.view_id}-{now.strftime('%Y%m%d-%H%M')}"
         relative = Path("magazines")/f"{issue_id}.pdf"
         magazine = build_magazine_pdf(brief, stories, output_root/relative, command, now)
         result["magazine"] = {**magazine, "issueId": issue_id, "relativePath": relative.as_posix()}
