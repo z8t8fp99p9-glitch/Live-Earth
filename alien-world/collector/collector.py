@@ -29,7 +29,7 @@ from typing import Any
 from PIL import Image, ImageOps
 
 ROOT = Path(__file__).resolve().parents[2]
-PROFILE_PATH = ROOT / "publishers" / "alien-world" / "profile.json"
+PROFILE_PATH = ROOT / "alien-world" / "publisher" / "profile.json"
 DB_DIR = ROOT / ".publisher-data" / "alien-world"
 DB_PATH = DB_DIR / "alien-world.sqlite3"
 MEDIA_DIR = DB_DIR / "media"

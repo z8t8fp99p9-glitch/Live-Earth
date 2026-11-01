@@ -44,7 +44,7 @@
   ],
   "collection": {
     "owner": "Alien World Data Collection",
-    "entrypoint": "data-collection/alien-world/collector.py",
+    "entrypoint": "alien-world/collector/collector.py",
     "refreshHours": 3,
     "maximumFeedBytes": 4194304,
     "maximumImageBytes": 7340032,
@@ -83,7 +83,7 @@
     }
   },
   "output": {
-    "directory": "published/alien-world",
+    "directory": "alien-world/published",
     "liveFeed": "live-feed.json",
     "catalog": "catalog.json",
     "latestPublication": "latest-publication.json",

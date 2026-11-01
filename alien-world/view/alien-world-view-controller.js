@@ -1,35 +1,69 @@
-/* LIVE // EARTH — Alien World Main Page.
-   This existing Main Page remains the view entry/consumer layer. It owns no feed
-   collection, database writes, PDF composition or global reader implementation.
-   Orb lifecycle/glow/navigation remains entirely owned by the shared Feature Orb system. */
+/* LIVE // EARTH — Alien World feature view.
+   Displays finished Collector/Publisher output only. The Collector owns source
+   access and the database; the Publisher owns editorial production; shared
+   services provide the Editorial Engine and Global PDF Reader. */
 (() => {
   'use strict';
   if (window.__liveEarthAlienWorldViewInstalled || window.__liveEarthAlienWorldViewWaiting) return;
   window.__liveEarthAlienWorldViewWaiting = true;
 
+  const VIEW_ID = 'alien-world';
+  const ROOT_ID = 'le-alien-world-view';
   const ACTIONS_URL = 'https://github.com/z8t8fp99p9-glitch/Live-Earth/actions/workflows/alien-world-publisher.yml';
-  const DEFAULT_REQUEST = 'Create a cinematic, image-led space journal with a dramatic cover, clear story hierarchy, an explainer page, a timeline, source notes and a strong closing page. Use only Publisher-screened NASA imagery, retain visible credits and usage notes, and omit unsuitable images.';
-  let servicesPromise = null;
-  let refreshTimer = 0;
-  let currentTab = 'live';
-  let active = false;
-  let root = null;
-  let stage = null;
-  let liveBody = null;
-  let weeklyBody = null;
-  let liveStatus = null;
-  let weeklyStatus = null;
-  let liveCount = null;
-  let issueList = null;
-  let requestBox = null;
-  let latestCatalog = null;
+  const DEFAULT_BRIEF = 'Create a cinematic, image-led space journal with a dramatic cover, clear story hierarchy, a useful explainer, a mission/discovery timeline, source notes and a memorable closing page. Use only automatically screened NASA source-post imagery beside its originating factual story. Preserve exact source links, visible image credits and rights notes. Do not imply NASA endorsement and do not pad the edition.';
+  const REFRESH_MS = 5 * 60 * 1000;
 
-  function loadScript(src) {
-    const absolute = new URL(src, document.baseURI).href;
+  let active = false;
+  let activeTab = 'live';
+  let refreshTimer = 0;
+  let servicesPromise = null;
+  let root = null;
+  let livePanel = null;
+  let journalPanel = null;
+  let liveList = null;
+  let issueList = null;
+  let liveStatus = null;
+  let journalStatus = null;
+  let liveCount = null;
+  let briefInput = null;
+  let savedList = null;
+
+  const element = (tag, className, text) => {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined && text !== null) node.textContent = String(text);
+    return node;
+  };
+
+  function setStatus(node, message, state = 'info') {
+    if (!node) return;
+    node.textContent = message || '';
+    node.dataset.state = state;
+    node.hidden = !message;
+  }
+
+  function dateLabel(value) {
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return 'Recently published';
+    return new Intl.DateTimeFormat(undefined, {
+      day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit'
+    }).format(date);
+  }
+
+  function safeHttpsUrl(value) {
+    try {
+      const url = new URL(String(value || ''));
+      return url.protocol === 'https:' ? url.href : '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function loadScript(path, ready) {
+    if (ready()) return Promise.resolve();
+    const url = new URL(path, document.baseURI).href;
     return new Promise((resolve, reject) => {
-      const existing = [...document.scripts].find(script => script.src === absolute);
-      if (existing && existing.dataset.leLoaded === '1') { resolve(); return; }
-      const script = existing || document.createElement('script');
+      let script = [...document.scripts].find(item => item.src === url);
       let settled = false;
       let timer = 0;
       const finish = callback => {
@@ -38,310 +72,386 @@
         window.clearTimeout(timer);
         callback();
       };
-      const done = () => finish(() => { script.dataset.leLoaded = '1'; resolve(); });
-      const fail = () => finish(() => reject(new Error(`Could not load ${src}.`)));
-      script.addEventListener('load', done, { once: true });
-      script.addEventListener('error', fail, { once: true });
-      if (!existing) { script.src = absolute; script.async = true; document.head.appendChild(script); }
-      else if (script.dataset.leLoaded === '1' || script.readyState === 'complete') done();
-      // A stalled optional service must not freeze Alien World indefinitely.
-      timer = window.setTimeout(fail, 15000);
+      const onLoad = () => finish(() => ready()
+        ? resolve()
+        : reject(new Error(`${path} loaded but did not register its service.`)));
+      const onError = () => finish(() => reject(new Error(`Could not load ${path}.`)));
+
+      if (script && script.dataset.leLoaded === '1' && ready()) {
+        resolve();
+        return;
+      }
+      if (!script) {
+        script = document.createElement('script');
+        script.src = url;
+        script.async = true;
+      }
+      script.addEventListener('load', () => {
+        script.dataset.leLoaded = '1';
+        onLoad();
+      }, { once: true });
+      script.addEventListener('error', onError, { once: true });
+      if (!script.isConnected) document.head.appendChild(script);
+      else if (script.readyState === 'complete' && ready()) onLoad();
+      timer = window.setTimeout(onError, 15000);
     });
   }
 
   function ensureServices() {
-    if (window.LiveEarthUniversalEditorialEngine && window.LiveEarthUniversalPDFViewer && window.LiveEarthAlienWorldPublisher) return Promise.resolve();
+    const ready = () => Boolean(
+      window.LiveEarthUniversalEditorialEngine &&
+      window.LiveEarthUniversalPDFViewer &&
+      window.LiveEarthAlienWorldPublisher
+    );
+    if (ready()) return Promise.resolve();
     if (servicesPromise) return servicesPromise;
-    servicesPromise = loadScript('./editorial-engine/universal-editorial-engine.js')
-      .then(() => loadScript('./universal-pdf-viewer.js'))
-      .then(() => loadScript('./alien-world/view/alien-world-publisher-client.js'))
-      .then(() => {
-        if (!window.LiveEarthUniversalEditorialEngine || !window.LiveEarthUniversalPDFViewer || !window.LiveEarthAlienWorldPublisher) {
-          throw new Error('A shared publication service did not register correctly.');
-        }
-      }).catch(error => { servicesPromise = null; throw error; });
+    servicesPromise = loadScript('./editorial-engine/universal-editorial-engine.js',
+      () => Boolean(window.LiveEarthUniversalEditorialEngine))
+      .then(() => loadScript('./universal-pdf-viewer.js',
+        () => Boolean(window.LiveEarthUniversalPDFViewer)))
+      .then(() => loadScript('./alien-world/view/alien-world-publisher-client.js',
+        () => Boolean(window.LiveEarthAlienWorldPublisher)))
+      .catch(error => {
+        servicesPromise = null;
+        throw error;
+      });
     return servicesPromise;
   }
 
-  function create(tag, className, value) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (value !== undefined) node.textContent = value;
-    return node;
+  function addStyles() {
+    if (document.getElementById('le-alien-world-style')) return;
+    const style = element('style');
+    style.id = 'le-alien-world-style';
+    style.textContent = `
+      #${ROOT_ID}{position:fixed;inset:0;z-index:6;color:#edf4fb;background:radial-gradient(ellipse at 50% 0%,#1a293b 0%,#0a111c 42%,#050910 100%);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+      #${ROOT_ID}[hidden]{display:none!important}
+      #${ROOT_ID}:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.45;background-image:radial-gradient(1px 1px at 12% 18%,#d5eaffaa 98%,transparent),radial-gradient(1px 1px at 83% 13%,#c8e7ffaa 98%,transparent),radial-gradient(1px 1px at 71% 59%,#d5eaff77 98%,transparent),radial-gradient(1px 1px at 21% 77%,#d5eaff66 98%,transparent),radial-gradient(1px 1px at 92% 88%,#d5eaff88 98%,transparent)}
+      #${ROOT_ID} .le-aw-scroll{position:absolute;inset:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top) + 24px) max(17px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 132px) max(17px,env(safe-area-inset-left));}
+      #${ROOT_ID} .le-aw-wrap{width:min(100%,820px);margin:0 auto;position:relative}
+      #${ROOT_ID} .le-aw-masthead{position:relative;padding:18px 4px 20px;border-bottom:1px solid #9eb5ca24}
+      #${ROOT_ID} .le-aw-orbit-mark{position:absolute;right:10px;top:10px;width:84px;height:84px;border:1px solid #c58d5540;border-radius:50%;transform:rotate(-28deg) scaleY(.45);pointer-events:none}
+      #${ROOT_ID} .le-aw-orbit-mark:after{content:"";position:absolute;left:18%;top:5%;width:7px;height:7px;border-radius:50%;background:#d9a46d;box-shadow:0 0 14px #d9a46dcc}
+      #${ROOT_ID} .le-aw-kicker{margin:0 0 9px;color:#d5a875;font-size:10px;font-weight:800;letter-spacing:.24em;text-transform:uppercase}
+      #${ROOT_ID} .le-aw-title{margin:0;color:#f4f6fa;font-size:clamp(29px,8vw,43px);line-height:1;letter-spacing:.10em;font-weight:850;text-shadow:0 5px 26px #0008}
+      #${ROOT_ID} .le-aw-subtitle{margin:11px 0 0;color:#a9bacb;font-size:13px;line-height:1.5;letter-spacing:.025em;max-width:420px}
+      #${ROOT_ID} .le-aw-tabs{display:flex;gap:8px;margin:18px 0 16px;padding:5px;border:1px solid #adbacb30;border-radius:14px;background:#09121dd9;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+      #${ROOT_ID} .le-aw-tab{flex:1;min-height:42px;padding:9px 10px;border:1px solid transparent;border-radius:10px;background:transparent;color:#9fb0c1;font:750 10px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.10em;text-transform:uppercase;touch-action:manipulation}
+      #${ROOT_ID} .le-aw-tab[aria-pressed="true"]{border-color:#d3a16b7a;background:linear-gradient(140deg,#aa764b42,#ffffff08);color:#f2d6b4;box-shadow:inset 1px 1px 1px #ffffff18,0 6px 18px #0005}
+      #${ROOT_ID} .le-aw-section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:15px 1px 10px}
+      #${ROOT_ID} .le-aw-section-title{margin:0;color:#f0f3f7;font-size:17px;font-weight:760;letter-spacing:.015em}
+      #${ROOT_ID} .le-aw-count{flex:0 0 auto;color:#d9a976;font-size:9px;font-weight:800;letter-spacing:.13em}
+      #${ROOT_ID} .le-aw-status{margin:10px 0 14px;padding:12px 13px;border:1px solid #8296ab30;border-radius:12px;background:#0d1824b8;color:#aebfd0;font-size:11px;line-height:1.5}
+      #${ROOT_ID} .le-aw-status[hidden]{display:none}
+      #${ROOT_ID} .le-aw-status[data-state="success"]{border-color:#7ebc9b55;color:#bfe0ce}
+      #${ROOT_ID} .le-aw-status[data-state="warning"]{border-color:#d19c5b66;color:#e4c49c}
+      #${ROOT_ID} .le-aw-status[data-state="empty"]{color:#9aabba}
+      #${ROOT_ID} .le-aw-story-list,#${ROOT_ID} .le-aw-issue-list{display:grid;gap:12px}
+      #${ROOT_ID} .le-aw-story{overflow:hidden;border:1px solid #a6b9ca2c;border-radius:16px;background:linear-gradient(145deg,#172434e8,#09121ceF 72%);box-shadow:inset 1px 1px 1px #ffffff10,0 12px 28px #0005;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+      #${ROOT_ID} .le-aw-story-media{margin:0;background:#050b12}
+      #${ROOT_ID} .le-aw-story-image{display:block;width:100%;max-height:270px;object-fit:cover;background:#0a111a}
+      #${ROOT_ID} .le-aw-story-copy{padding:14px 15px 15px}
+      #${ROOT_ID} .le-aw-story-meta{margin:0 0 8px;color:#d0a16e;font-size:9px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+      #${ROOT_ID} .le-aw-story-title{margin:0 0 9px;color:#f2f5f8;font-size:17px;line-height:1.25;font-weight:780}
+      #${ROOT_ID} .le-aw-story-summary{margin:0;color:#b2c1ce;font-size:12px;line-height:1.6}
+      #${ROOT_ID} .le-aw-image-credit{padding:8px 12px;color:#9eacb9;background:#060d15;font-size:9px;line-height:1.45}
+      #${ROOT_ID} .le-aw-image-rights{display:block;padding:0 12px 10px;color:#75899a;background:#060d15;font-size:8px;line-height:1.45}
+      #${ROOT_ID} .le-aw-story-footer{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:13px;padding-top:10px;border-top:1px solid #9eb5ca20}
+      #${ROOT_ID} .le-aw-story-source{color:#8295a7;font-size:9px;letter-spacing:.07em;text-transform:uppercase}
+      #${ROOT_ID} .le-aw-source-link{color:#e2b988;font-size:10px;font-weight:750;text-decoration:none;white-space:nowrap}
+      #${ROOT_ID} .le-aw-issue{display:grid;grid-template-columns:minmax(112px,34%) 1fr;gap:13px;padding:12px;border:1px solid #a6b9ca32;border-radius:16px;background:linear-gradient(145deg,#172434e8,#09121ceF 72%);box-shadow:inset 1px 1px 1px #ffffff10,0 12px 28px #0005}
+      #${ROOT_ID} .le-aw-cover{min-height:150px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;padding:13px 11px;border:1px solid #dbad784d;border-radius:11px;background:radial-gradient(ellipse at 60% 18%,#8f64494d,transparent 48%),linear-gradient(155deg,#27384a,#0a121d 65%,#05080d);position:relative}
+      #${ROOT_ID} .le-aw-cover:after{content:"";position:absolute;width:125%;height:48px;left:-10%;top:42%;border:1px solid #d4a16c66;border-radius:50%;transform:rotate(-34deg);pointer-events:none}
+      #${ROOT_ID} .le-aw-cover-kicker{position:relative;z-index:1;color:#d8af83;font-size:8px;font-weight:850;letter-spacing:.16em}
+      #${ROOT_ID} .le-aw-cover-title{position:relative;z-index:1;color:#f4f1ea;font-size:clamp(15px,4vw,21px);line-height:1.05;font-weight:850;letter-spacing:.035em;overflow-wrap:anywhere}
+      #${ROOT_ID} .le-aw-cover-meta{position:relative;z-index:1;color:#97a8b7;font-size:8px;letter-spacing:.13em}
+      #${ROOT_ID} .le-aw-issue-info{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:6px}
+      #${ROOT_ID} .le-aw-issue-title{margin:0;color:#f1f4f7;font-size:14px;line-height:1.25;font-weight:780}
+      #${ROOT_ID} .le-aw-issue-meta{margin:0;color:#aab9c7;font-size:10px;line-height:1.5}
+      #${ROOT_ID} .le-aw-issue-brief{margin-top:4px;padding:9px 10px;border-left:2px solid #bc8d5d;background:#c48d5020;color:#b7c2cc;font-size:9px;line-height:1.5}
+      #${ROOT_ID} .le-aw-issue-brief strong{display:block;margin-bottom:4px;color:#e3bd91;font-size:8px;letter-spacing:.12em}
+      #${ROOT_ID} .le-aw-button{display:inline-flex;align-items:center;justify-content:center;min-height:39px;padding:9px 13px;border:1px solid #b7c5d244;border-radius:10px;background:#152333;color:#dce6ee;text-decoration:none;font:750 9px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.08em;text-transform:uppercase;touch-action:manipulation}
+      #${ROOT_ID} .le-aw-button-primary{border-color:#d7a56d99;background:linear-gradient(140deg,#a9764a66,#ffffff09);color:#f0d3ad}
+      #${ROOT_ID} .le-aw-button:focus-visible,#${ROOT_ID} .le-aw-tab:focus-visible{outline:2px solid #e8be91;outline-offset:3px}
+      #${ROOT_ID} .le-aw-issue-actions{margin-top:6px}
+      #${ROOT_ID} .le-aw-publisher-panel,#${ROOT_ID} .le-aw-saved-panel{margin-top:14px;padding:15px;border:1px solid #a6b9ca36;border-radius:16px;background:linear-gradient(145deg,#172434db,#08121eeF);box-shadow:inset 1px 1px 1px #ffffff0c,0 10px 25px #0004;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+      #${ROOT_ID} .le-aw-panel-title{margin:0 0 7px;color:#f0f3f6;font-size:14px;font-weight:780}
+      #${ROOT_ID} .le-aw-panel-copy{margin:0 0 12px;color:#a9bac8;font-size:10px;line-height:1.55}
+      #${ROOT_ID} .le-aw-brief{display:block;width:100%;min-height:104px;resize:vertical;padding:11px;border:1px solid #8fa2b44a;border-radius:11px;background:#050c15;color:#e4edf4;font:11px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+      #${ROOT_ID} .le-aw-panel-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+      #${ROOT_ID} .le-aw-footnote{margin:11px 0 0;color:#75899b;font-size:9px;line-height:1.55}
+      #${ROOT_ID} .le-aw-saved-list{display:grid;gap:8px;margin-top:10px}
+      #${ROOT_ID} .le-aw-saved-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid #a8b8c722}
+      #${ROOT_ID} .le-aw-saved-copy{min-width:0;display:flex;flex-direction:column;gap:4px}
+      #${ROOT_ID} .le-aw-saved-title{color:#e9edf1;font-size:11px;font-weight:750;line-height:1.35;overflow-wrap:anywhere}
+      #${ROOT_ID} .le-aw-saved-meta{color:#91a3b2;font-size:9px}
+      #${ROOT_ID} .le-aw-empty{margin:0;padding:15px;border:1px dashed #91a5b433;border-radius:12px;color:#94a6b5;font-size:11px;line-height:1.5}
+      @media(min-width:680px){#${ROOT_ID} .le-aw-story{display:grid;grid-template-columns:minmax(220px,38%) 1fr}#${ROOT_ID} .le-aw-story-media{display:flex;flex-direction:column;justify-content:center}#${ROOT_ID} .le-aw-story-image{height:100%;max-height:none;min-height:190px}#${ROOT_ID} .le-aw-story-copy{align-self:center;padding:20px}#${ROOT_ID} .le-aw-issue{grid-template-columns:minmax(150px,28%) 1fr}#${ROOT_ID} .le-aw-cover{min-height:178px}}
+      @media(orientation:landscape){#${ROOT_ID} .le-aw-scroll{padding-left:max(24px,env(safe-area-inset-left));padding-right:max(24px,env(safe-area-inset-right))}}
+      @media(prefers-reduced-motion:reduce){#${ROOT_ID} *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+    `;
+    document.head.appendChild(style);
   }
 
-  function setStatus(node, message, kind = 'info') {
-    if (!node) return;
-    node.textContent = message;
-    node.dataset.state = kind;
-    node.hidden = !message;
-  }
-
-  function formatDate(value) {
-    const date = new Date(value);
-    if (!Number.isFinite(date.getTime())) return 'Recently published';
-    return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(date);
-  }
-
-  function buildStoryCard(story) {
-    const article = create('article', 'le-aw-story');
-    article.dataset.storyId = story.id;
+  function storyCard(story, index) {
+    const card = element('article', 'le-aw-story');
+    card.dataset.storyId = story.id || `story-${index + 1}`;
     if (story.imageUrl && story.imageCredit) {
-      const figure = create('figure', 'le-aw-story-media');
-      const image = create('img');
-      image.src = story.imageUrl;
-      image.alt = story.title;
-      image.loading = 'lazy';
-      image.referrerPolicy = 'no-referrer';
-      image.decoding = 'async';
-      image.addEventListener('error', () => figure.remove(), { once: true });
-      figure.appendChild(image);
-      const credit = create('figcaption', 'le-aw-image-credit', story.imageCredit);
-      figure.appendChild(credit);
-      if (story.imageRightsNote) {
-        figure.appendChild(create('small', 'le-aw-image-rights', story.imageRightsNote));
+      const media = element('figure', 'le-aw-story-media');
+      const imageUrl = safeHttpsUrl(story.imageUrl);
+      if (imageUrl) {
+        const image = element('img', 'le-aw-story-image');
+        image.src = imageUrl;
+        image.alt = story.imageCaption || story.title || 'NASA source image';
+        image.loading = 'lazy';
+        image.decoding = 'async';
+        image.referrerPolicy = 'no-referrer';
+        image.addEventListener('error', () => media.remove(), { once: true });
+        media.appendChild(image);
+        media.appendChild(element('figcaption', 'le-aw-image-credit', story.imageCredit));
+        if (story.imageRightsNote) media.appendChild(element('small', 'le-aw-image-rights', story.imageRightsNote));
+        card.appendChild(media);
       }
-      article.appendChild(figure);
     }
-    const body = create('div', 'le-aw-story-copy');
-    const meta = create('div', 'le-aw-story-meta', `${story.sourceName || 'SPACE REPORT'}  ·  ${formatDate(story.publishedAt)}`);
-    const title = create('h2', 'le-aw-story-title', story.title);
-    const summary = create('p', 'le-aw-story-summary', story.summary || 'Open the original report for the full details and context.');
-    const footer = create('div', 'le-aw-story-footer');
-    const source = create('span', 'le-aw-story-source', story.sourceName || 'Original source');
-    const link = create('a', 'le-aw-story-link', 'Read source ↗');
-    link.href = story.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
-    footer.append(source, link);
-    body.append(meta, title, summary, footer);
-    article.appendChild(body);
-    return article;
+
+    const copy = element('div', 'le-aw-story-copy');
+    copy.appendChild(element('div', 'le-aw-story-meta', `${story.sourceName || 'SPACE REPORT'} · ${dateLabel(story.publishedAt)}`));
+    copy.appendChild(element('h2', 'le-aw-story-title', story.title || 'Space science report'));
+    copy.appendChild(element('p', 'le-aw-story-summary', story.summary || 'Open the original report for the complete details.'));
+    const footer = element('div', 'le-aw-story-footer');
+    footer.appendChild(element('span', 'le-aw-story-source', story.sourceName || 'Original source'));
+    const sourceUrl = safeHttpsUrl(story.url);
+    if (sourceUrl) {
+      const link = element('a', 'le-aw-source-link', 'Read original ↗');
+      link.href = sourceUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      footer.appendChild(link);
+    }
+    copy.appendChild(footer);
+    card.appendChild(copy);
+    return card;
   }
 
-  async function refreshLiveFeed() {
-    if (!active || currentTab !== 'live' || !liveBody) return;
-    setStatus(liveStatus, 'Connecting to the Alien World Publisher…');
-    try {
-      await ensureServices();
-      const feed = await window.LiveEarthAlienWorldPublisher.loadLiveFeed();
-      if (!active || currentTab !== 'live') return;
-      liveBody.replaceChildren();
-      if (!feed.stories.length) {
-        setStatus(liveStatus, 'No eligible reports have been published in the current window yet.', 'empty');
-      } else {
-        for (const story of feed.stories) liveBody.appendChild(buildStoryCard(story));
-        setStatus(liveStatus, `Updated ${formatDate(feed.generatedAt)}  ·  Rolling ${feed.windowHours}-hour feed`, 'success');
-      }
-      if (liveCount) liveCount.textContent = `${feed.storyCount} REPORTS`;
-    } catch (error) {
-      liveBody.replaceChildren();
-      setStatus(liveStatus, navigator.onLine === false
-        ? 'Alien World feeds are online publications. Reconnect to load the latest reports.'
-        : `${error.message || 'The live feed is not available yet.'} The previous published edition remains on the repository.`, 'warning');
-      if (liveCount) liveCount.textContent = 'LIVE FEEDS';
+  function issueCard(issue) {
+    const card = element('article', 'le-aw-issue');
+    const cover = element('div', 'le-aw-cover');
+    cover.append(
+      element('span', 'le-aw-cover-kicker', 'LIVE // EARTH · JOURNAL'),
+      element('strong', 'le-aw-cover-title', issue.title || 'The Space Journal'),
+      element('span', 'le-aw-cover-meta', 'THE 48-HOUR EDITION')
+    );
+    const info = element('div', 'le-aw-issue-info');
+    info.appendChild(element('h3', 'le-aw-issue-title', issue.title || 'The Space Journal'));
+    info.appendChild(element('p', 'le-aw-issue-meta', `${dateLabel(issue.publishedAt)} · ${issue.pages || '—'} pages · ${issue.storyCount || 0} reports`));
+    info.appendChild(element('p', 'le-aw-issue-meta', 'Coverage window: previous 48 hours'));
+    if (issue.customRequest || issue.customRequestReceipt) {
+      const receipt = issue.customRequestReceipt || {};
+      const panel = element('div', 'le-aw-issue-brief');
+      panel.appendChild(element('strong', '', 'EDITORIAL BRIEF RECEIPT'));
+      if (issue.customRequest) panel.appendChild(element('div', '', `Brief: ${issue.customRequest}`));
+      if (Array.isArray(receipt.applied) && receipt.applied.length) panel.appendChild(element('div', '', `Applied: ${receipt.applied.join(' · ')}`));
+      if (Array.isArray(receipt.unmapped) && receipt.unmapped.length) panel.appendChild(element('div', '', `Not applied: ${receipt.unmapped.join(' · ')}`));
+      if (receipt.engineLimitation) panel.appendChild(element('div', '', receipt.engineLimitation));
+      info.appendChild(panel);
     }
-  }
-
-  function buildIssueCard(issue) {
-    const card = create('article', 'le-aw-issue');
-    const cover = create('div', 'le-aw-issue-cover');
-    const coverKicker = create('span', 'le-aw-issue-kicker', 'THE SPACE JOURNAL');
-    const coverTitle = create('strong', 'le-aw-issue-cover-title', issue.title || 'The Space Journal');
-    const coverMeta = create('span', 'le-aw-issue-cover-meta', 'THE 48-HOUR EDITION');
-    cover.append(coverKicker, coverTitle, coverMeta);
-    const info = create('div', 'le-aw-issue-info');
-    const title = create('h3', 'le-aw-issue-title', issue.title || 'The Space Journal');
-    const date = create('p', 'le-aw-issue-date', `${formatDate(issue.publishedAt)}  ·  ${issue.pages || '—'} pages  ·  ${issue.storyCount || 0} reports`);
-    const coverage = create('p', 'le-aw-issue-coverage', 'Coverage: previous 48 hours');
-    const actions = create('div', 'le-aw-issue-actions');
-    const receipt = issue.customRequestReceipt;
-    let briefPanel = null;
-    if (issue.customRequest || receipt) {
-      briefPanel = create('div', 'le-aw-issue-brief');
-      briefPanel.appendChild(create('strong', '', 'EDITORIAL ENGINE — CUSTOM REQUEST RECEIPT'));
-      if (issue.customRequest) {
-        const brief = create('p', '', `Brief: ${issue.customRequest}`);
-        briefPanel.appendChild(brief);
+    const actions = element('div', 'le-aw-issue-actions');
+    const open = element('button', 'le-aw-button le-aw-button-primary', 'Read Space Journal');
+    open.type = 'button';
+    open.addEventListener('click', async () => {
+      try {
+        await ensureServices();
+        await window.LiveEarthAlienWorldPublisher.openMagazine(issue);
+      } catch (error) {
+        setStatus(journalStatus, error?.message || 'The Space Journal could not be opened.', 'warning');
       }
-      if (receipt && Array.isArray(receipt.applied) && receipt.applied.length) {
-        briefPanel.appendChild(create('p', 'le-aw-issue-applied', `Applied: ${receipt.applied.join(' · ')}`));
-      }
-      if (receipt && Array.isArray(receipt.unmapped) && receipt.unmapped.length) {
-        briefPanel.appendChild(create('p', 'le-aw-issue-unmapped', `Not applied: ${receipt.unmapped.join(' · ')}`));
-      }
-      if (receipt && receipt.engineLimitation) {
-        briefPanel.appendChild(create('p', 'le-aw-issue-limitation', receipt.engineLimitation));
-      }
-    }
-    const read = create('button', 'le-aw-button le-aw-button-primary', 'Read Magazine');
-    read.type = 'button';
-    read.addEventListener('click', async () => {
-      try { await ensureServices(); await window.LiveEarthAlienWorldPublisher.openMagazine(issue); }
-      catch (error) { setStatus(weeklyStatus, error.message || 'Could not open this magazine.', 'warning'); }
     });
-    actions.append(read);
-    info.append(title, date, coverage);
-    if (briefPanel) info.appendChild(briefPanel);
+    actions.appendChild(open);
     info.appendChild(actions);
     card.append(cover, info);
     return card;
   }
 
-  async function refreshCatalog() {
-    if (!active || currentTab !== 'weekly' || !issueList) return;
-    setStatus(weeklyStatus, 'Checking the published magazine library…');
+  async function refreshLiveFeed() {
+    if (!active || activeTab !== 'live' || !liveList) return;
+    setStatus(liveStatus, 'Contacting the Alien World publication feed…');
+    try {
+      await ensureServices();
+      const feed = await window.LiveEarthAlienWorldPublisher.loadLiveFeed();
+      if (!active || activeTab !== 'live') return;
+      liveList.replaceChildren();
+      if (!feed.stories.length) {
+        setStatus(liveStatus, 'No eligible NASA reports have been published in the current 48-hour window.', 'empty');
+      } else {
+        feed.stories.forEach((story, index) => liveList.appendChild(storyCard(story, index)));
+        setStatus(liveStatus, `Updated ${dateLabel(feed.generatedAt)} · Rolling ${feed.windowHours || 48}-hour window`, 'success');
+      }
+      if (liveCount) liveCount.textContent = `${feed.storyCount || feed.stories.length} REPORTS`;
+    } catch (error) {
+      liveList.replaceChildren();
+      const message = navigator.onLine === false
+        ? 'Live space reports are online-only. Reconnect to load the latest verified feed.'
+        : `${error?.message || 'The live feed is not available yet.'} The last successful publication remains preserved.`;
+      setStatus(liveStatus, message, 'warning');
+      if (liveCount) liveCount.textContent = 'LIVE FEED';
+    }
+  }
+
+  async function refreshJournal() {
+    if (!active || activeTab !== 'journal' || !issueList) return;
+    setStatus(journalStatus, 'Checking the published Space Journal catalogue…');
     try {
       await ensureServices();
       const catalog = await window.LiveEarthAlienWorldPublisher.loadCatalog();
-      if (!active || currentTab !== 'weekly') return;
-      latestCatalog = catalog;
+      if (!active || activeTab !== 'journal') return;
       issueList.replaceChildren();
       if (!catalog.issues.length) {
-        setStatus(weeklyStatus, 'The first Space Journal has not been published yet. Open the Publisher to run a test edition.', 'empty');
+        issueList.appendChild(element('p', 'le-aw-empty', 'The first Space Journal has not been published yet. Use the Publisher controls below when you are ready to create an edition.'));
+        setStatus(journalStatus, 'No completed journal edition is published yet.', 'empty');
       } else {
-        for (const issue of catalog.issues) issueList.appendChild(buildIssueCard(issue));
-        setStatus(weeklyStatus, `Latest publication: ${formatDate(catalog.generatedAt)}  ·  ${catalog.issues.length} saved editions`, 'success');
+        catalog.issues.forEach(issue => issueList.appendChild(issueCard(issue)));
+        setStatus(journalStatus, `${catalog.issues.length} completed edition${catalog.issues.length === 1 ? '' : 's'} in the public catalogue.`, 'success');
       }
     } catch (error) {
       issueList.replaceChildren();
-      setStatus(weeklyStatus, navigator.onLine === false
-        ? 'The magazine library requires a connection. PDFs opened and saved earlier remain available in the shared PDF Viewer.'
-        : `${error.message || 'The magazine catalog is not available yet.'}`, 'warning');
+      setStatus(journalStatus, navigator.onLine === false
+        ? 'The public catalogue needs an internet connection. Previously saved PDFs remain available below.'
+        : `${error?.message || 'The catalogue is not available yet.'} The last successful publication is preserved.`, 'warning');
+    }
+    await refreshSavedLibrary();
+  }
+
+  async function refreshSavedLibrary() {
+    if (!savedList || !window.LiveEarthAlienWorldPublisher?.listSavedMagazines) return;
+    savedList.replaceChildren();
+    try {
+      const saved = await window.LiveEarthAlienWorldPublisher.listSavedMagazines();
+      if (!saved.length) {
+        savedList.appendChild(element('p', 'le-aw-empty', 'No Space Journal has been saved on this device yet. Open an edition in the Global PDF Reader and use its Save option to keep a local copy.'));
+        return;
+      }
+      for (const item of saved) {
+        const row = element('div', 'le-aw-saved-row');
+        const copy = element('div', 'le-aw-saved-copy');
+        copy.appendChild(element('strong', 'le-aw-saved-title', item.title || 'The Space Journal'));
+        copy.appendChild(element('span', 'le-aw-saved-meta', `${item.pages || 'PDF'} pages · ${item.savedAt ? `Saved ${dateLabel(Number(item.savedAt))}` : 'Saved on this device'}`));
+        const open = element('button', 'le-aw-button', 'Open');
+        open.type = 'button';
+        open.addEventListener('click', async () => {
+          try { await window.LiveEarthAlienWorldPublisher.openSaved(item); }
+          catch (error) { setStatus(journalStatus, error?.message || 'The saved PDF could not be opened.', 'warning'); }
+        });
+        row.append(copy, open);
+        savedList.appendChild(row);
+      }
+    } catch (_) {
+      savedList.appendChild(element('p', 'le-aw-empty', 'The Global PDF Reader library is unavailable in this session. Existing saved files have not been changed.'));
     }
   }
 
   function setTab(tab) {
-    currentTab = tab === 'weekly' ? 'weekly' : 'live';
-    const liveButton = root.querySelector('[data-tab="live"]');
-    const weeklyButton = root.querySelector('[data-tab="weekly"]');
-    liveButton.setAttribute('aria-pressed', String(currentTab === 'live'));
-    weeklyButton.setAttribute('aria-pressed', String(currentTab === 'weekly'));
-    liveBody.hidden = currentTab !== 'live';
-    weeklyBody.hidden = currentTab !== 'weekly';
-    liveStatus.hidden = currentTab !== 'live';
-    weeklyStatus.hidden = currentTab !== 'weekly';
-    if (currentTab === 'live') refreshLiveFeed(); else refreshCatalog();
+    activeTab = tab === 'journal' ? 'journal' : 'live';
+    if (!root) return;
+    root.querySelectorAll('[data-aw-tab]').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.awTab === activeTab));
+    });
+    if (livePanel) livePanel.hidden = activeTab !== 'live';
+    if (journalPanel) journalPanel.hidden = activeTab !== 'journal';
+    if (active) {
+      if (activeTab === 'live') refreshLiveFeed();
+      else refreshJournal();
+    }
   }
 
   function buildRoot() {
-    const style = create('style');
-    style.id = 'le-alien-world-publisher-style';
-    style.textContent = `
-      #le-alien-world-view{position:fixed;inset:0;z-index:6;display:block;width:100%;height:100%;height:100dvh;overflow:hidden;isolation:isolate;color:#edf5ff;background:radial-gradient(ellipse at 50% 9%,rgba(45,75,111,.28),transparent 45%),radial-gradient(ellipse at 85% 54%,rgba(116,82,52,.12),transparent 42%),linear-gradient(180deg,#040811 0%,#07111d 52%,#02060d 100%);pointer-events:auto;}
-      #le-alien-world-view[hidden]{display:none!important}
-      #le-alien-world-view:before{content:"";position:absolute;inset:0;opacity:.28;pointer-events:none;background-image:radial-gradient(1px 1px at 12% 18%,#d8e8ff 98%,transparent),radial-gradient(1px 1px at 27% 72%,#b9c9ff 98%,transparent),radial-gradient(1px 1px at 44% 28%,#fff 98%,transparent),radial-gradient(1px 1px at 68% 16%,#c5d5ff 98%,transparent),radial-gradient(1px 1px at 83% 61%,#fff 98%,transparent),radial-gradient(1px 1px at 91% 34%,#c8d8ff 98%,transparent);}
-      #le-alien-world-view .le-aw-scroll{position:absolute;inset:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top) + 22px) 17px calc(env(safe-area-inset-bottom) + 126px);scrollbar-width:none;}
-      #le-alien-world-view .le-aw-scroll::-webkit-scrollbar{display:none}
-      #le-alien-world-view .le-aw-masthead{max-width:900px;margin:0 auto 17px;text-align:center;}
-      #le-alien-world-view .le-aw-eyebrow{font:700 9px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.34em;color:#d1b184;text-transform:uppercase;}
-      #le-alien-world-view .le-aw-title{margin:8px 0 5px;font:760 clamp(25px,6.8vw,36px)/1.02 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.13em;color:#f2f4f7;text-shadow:0 4px 28px #5e8bb333;}
-      #le-alien-world-view .le-aw-subtitle{margin:0;color:#96a9bb;font-size:11px;letter-spacing:.11em;text-transform:uppercase;}
-      #le-alien-world-view .le-aw-tabs{display:flex;justify-content:center;gap:8px;max-width:510px;margin:18px auto 20px;padding:5px;border:1px solid #4350648a;border-radius:14px;background:#0c1725ba;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);}
-      #le-alien-world-view .le-aw-tab{flex:1;min-height:42px;border:1px solid transparent;border-radius:10px;background:transparent;color:#aebdca;font:700 10px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.12em;text-transform:uppercase;}
-      #le-alien-world-view .le-aw-tab[aria-pressed="true"]{border-color:#bd9c6d66;background:linear-gradient(135deg,#ab85552e,#ffffff08);color:#f0d3a6;box-shadow:inset 0 1px #ffffff1a,0 4px 22px #0006;}
-      #le-alien-world-view .le-aw-content{width:min(100%,900px);margin:0 auto;}
-      #le-alien-world-view .le-aw-content[hidden]{display:none!important}
-      #le-alien-world-view .le-aw-section-head{display:flex;justify-content:space-between;align-items:end;gap:10px;margin:0 0 15px;padding:0 2px;}
-      #le-alien-world-view .le-aw-section-title{margin:0;color:#e9edf3;font:680 19px/1.1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:-.02em;}
-      #le-alien-world-view .le-aw-count{color:#bd9d70;font-size:8px;font-weight:750;letter-spacing:.16em;}
-      #le-alien-world-view .le-aw-status{margin:0 0 14px;padding:11px 13px;border:1px solid #3a4b5e;border-radius:11px;background:#091421c7;color:#b9cad8;font-size:11px;line-height:1.5;}
-      #le-alien-world-view .le-aw-status[data-state="success"]{border-color:#47766088;color:#b9d9ca;}
-      #le-alien-world-view .le-aw-status[data-state="warning"]{border-color:#9c795388;color:#e2c79f;}
-      #le-alien-world-view .le-aw-status[data-state="empty"]{border-color:#596577;color:#bdc7d1;}
-      #le-alien-world-view .le-aw-story{overflow:hidden;margin:0 0 16px;border:1px solid #71849a3c;border-radius:16px;background:linear-gradient(145deg,#142131e8,#08111deF 72%);box-shadow:0 14px 35px #0005;}
-      #le-alien-world-view .le-aw-story-media{margin:0;background:#09121d;}
-      #le-alien-world-view .le-aw-story-media img{display:block;width:100%;max-height:clamp(190px,56vw,340px);object-fit:cover;}
-      #le-alien-world-view .le-aw-image-credit{padding:6px 12px 0;color:#899dad;font-size:8px;line-height:1.4;}
-      #le-alien-world-view .le-aw-image-rights{display:block;padding:3px 12px 9px;color:#74899a;font-size:7px;line-height:1.4;}
-      #le-alien-world-view .le-aw-story-copy{padding:14px 15px 15px;}
-      #le-alien-world-view .le-aw-story-meta{margin-bottom:8px;color:#c0a178;font-size:8px;font-weight:750;letter-spacing:.14em;text-transform:uppercase;}
-      #le-alien-world-view .le-aw-story-title{margin:0 0 9px;color:#f0f3f6;font:680 clamp(17px,4.7vw,22px)/1.17 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:-.02em;}
-      #le-alien-world-view .le-aw-story-summary{margin:0;color:#bdcbd7;font-size:12px;line-height:1.62;}
-      #le-alien-world-view .le-aw-story-footer{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:13px;padding-top:10px;border-top:1px solid #8fa4b21c;}
-      #le-alien-world-view .le-aw-story-source{color:#8fa1b2;font-size:9px;}
-      #le-alien-world-view .le-aw-story-link{color:#d7b27d;text-decoration:none;font-size:10px;font-weight:700;white-space:nowrap;}
-      #le-alien-world-view .le-aw-issue{overflow:hidden;margin:0 0 17px;border:1px solid #9d80534f;border-radius:16px;background:#0b1622e8;box-shadow:0 16px 34px #0006;}
-      #le-alien-world-view .le-aw-issue-cover{min-height:170px;display:flex;flex-direction:column;justify-content:flex-end;padding:20px;background:radial-gradient(ellipse at 75% 22%,#44627c78,transparent 42%),radial-gradient(ellipse at 21% 70%,#8c674957,transparent 38%),linear-gradient(135deg,#101e30,#050a13 82%);}
-      #le-alien-world-view .le-aw-issue-kicker{color:#d6b27e;font-size:8px;font-weight:800;letter-spacing:.22em;}
-      #le-alien-world-view .le-aw-issue-cover-title{max-width:470px;margin-top:12px;color:#f4f2ee;font:760 clamp(25px,7vw,38px)/.98 Georgia,serif;letter-spacing:-.035em;}
-      #le-alien-world-view .le-aw-issue-cover-meta{margin-top:13px;color:#9eabb8;font-size:8px;letter-spacing:.2em;}
-      #le-alien-world-view .le-aw-issue-info{padding:15px;}
-      #le-alien-world-view .le-aw-issue-title{margin:0 0 7px;color:#edf2f6;font-size:16px;}
-      #le-alien-world-view .le-aw-issue-brief{margin:10px 0 0;padding:10px 11px;border:1px solid #9b835333;border-radius:10px;background:#070f19;color:#b7c4cf;font-size:9px;line-height:1.5;}
-      #le-alien-world-view .le-aw-issue-brief strong{display:block;margin-bottom:5px;color:#d8b681;font-size:8px;letter-spacing:.13em;}
-      #le-alien-world-view .le-aw-issue-applied{margin:0;color:#bacdc4;}
-      #le-alien-world-view .le-aw-issue-unmapped{margin:6px 0 0;color:#dfba8b;}
-      #le-alien-world-view .le-aw-issue-limitation{margin:6px 0 0;color:#8496a6;font-size:8px;}
-      #le-alien-world-view .le-aw-issue-date,#le-alien-world-view .le-aw-issue-coverage{margin:0 0 5px;color:#aab9c7;font-size:10px;line-height:1.5;}
-      #le-alien-world-view .le-aw-issue-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
-      #le-alien-world-view .le-aw-button{display:inline-flex;min-height:39px;align-items:center;justify-content:center;padding:9px 13px;border:1px solid #71869a70;border-radius:10px;text-decoration:none;font:700 10px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.06em;}
-      #le-alien-world-view .le-aw-button-primary{background:linear-gradient(135deg,#ad86565a,#ffffff08);border-color:#d3b17d88;color:#f1d8b0;}
-      #le-alien-world-view .le-aw-button-secondary{background:#17283a;color:#c4d1dc;}
-      #le-alien-world-view .le-aw-publisher-panel{margin:18px 0 0;padding:15px;border:1px solid #7b8fa344;border-radius:14px;background:linear-gradient(145deg,#142231b8,#07111cdb);}
-      #le-alien-world-view .le-aw-publisher-title{margin:0 0 7px;color:#e7edf2;font-size:14px;}
-      #le-alien-world-view .le-aw-publisher-copy{margin:0 0 12px;color:#aabac8;font-size:10px;line-height:1.55;}
-      #le-alien-world-view .le-aw-request{display:block;width:100%;min-height:112px;resize:vertical;border:1px solid #536678;border-radius:10px;background:#050c15;color:#dbe5ed;padding:10px;font:11px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
-      #le-alien-world-view .le-aw-publisher-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
-      #le-alien-world-view .le-aw-footnote{margin:12px 0 0;color:#7e91a1;font-size:9px;line-height:1.5;}
-      #le-alien-world-view .le-aw-bottom-fade{position:fixed;left:0;right:0;bottom:0;height:calc(env(safe-area-inset-bottom) + 112px);z-index:1;pointer-events:none;background:linear-gradient(180deg,transparent 0%,#03081145 38%,#030811d9 100%);}
-      #le-alien-world-view .le-aw-scroll{z-index:0;}
-      #le-alien-world-view .le-aw-bottom-fade{z-index:1;}
-      #le-alien-world-view .le-aw-scroll{padding-bottom:calc(env(safe-area-inset-bottom) + 145px);}
-      @media(min-width:700px){#le-alien-world-view .le-aw-story{display:grid;grid-template-columns:minmax(250px,42%) 1fr;}#le-alien-world-view .le-aw-story-media img{height:100%;max-height:none;min-height:220px;}#le-alien-world-view .le-aw-story-copy{align-self:center;padding:24px;}#le-alien-world-view .le-aw-issue{display:grid;grid-template-columns: minmax(250px,42%) 1fr;}#le-alien-world-view .le-aw-issue-cover{min-height:245px;}}
-      @media(orientation:landscape){#le-alien-world-view .le-aw-scroll{padding-left:max(24px,env(safe-area-inset-left));padding-right:max(24px,env(safe-area-inset-right));}#le-alien-world-view .le-aw-title{font-size:27px;}#le-alien-world-view .le-aw-tabs{margin-top:12px;margin-bottom:15px;}}
-      @media(prefers-reduced-motion:reduce){#le-alien-world-view *{scroll-behavior:auto!important;transition:none!important;animation:none!important;}}
-    `;
-    document.head.appendChild(style);
-    root = create('section'); root.id = 'le-alien-world-view'; root.hidden = true;
-    root.setAttribute('role', 'region'); root.setAttribute('aria-label', 'Alien World Main Page'); root.setAttribute('aria-hidden', 'true');
-    const scroll = create('div', 'le-aw-scroll');
-    const masthead = create('header', 'le-aw-masthead');
-    const eyebrow = create('div', 'le-aw-eyebrow', 'A LIVE // EARTH VIEW');
-    const title = create('h1', 'le-aw-title', 'ALIEN WORLD');
-    const subtitle = create('p', 'le-aw-subtitle', 'Space science · Missions · Discoveries');
-    masthead.append(eyebrow, title, subtitle);
-    const tabs = create('nav', 'le-aw-tabs'); tabs.setAttribute('aria-label', 'Alien World publications');
-    const liveTab = create('button', 'le-aw-tab', 'Live Feeds'); liveTab.type = 'button'; liveTab.dataset.tab = 'live'; liveTab.setAttribute('aria-pressed', 'true');
-    const weeklyTab = create('button', 'le-aw-tab', 'Weekly Publish'); weeklyTab.type = 'button'; weeklyTab.dataset.tab = 'weekly'; weeklyTab.setAttribute('aria-pressed', 'false');
-    tabs.append(liveTab, weeklyTab);
-    const content = create('div', 'le-aw-content');
-    liveBody = create('div', 'le-aw-live-list');
-    const liveHead = create('div', 'le-aw-section-head');
-    const liveTitle = create('h2', 'le-aw-section-title', 'Live Feeds');
-    liveCount = create('span', 'le-aw-count', 'LIVE FEEDS'); liveHead.append(liveTitle, liveCount);
-    liveStatus = create('p', 'le-aw-status', 'Connect to load the latest reports.'); liveStatus.hidden = false;
-    liveBody.prepend(liveHead, liveStatus);
-    weeklyBody = create('div', 'le-aw-weekly'); weeklyBody.hidden = true;
-    const weeklyHead = create('div', 'le-aw-section-head');
-    const weeklyTitle = create('h2', 'le-aw-section-title', 'Weekly Publish');
-    const weeklyCount = create('span', 'le-aw-count', 'LAST 48 HOURS'); weeklyHead.append(weeklyTitle, weeklyCount);
-    weeklyStatus = create('p', 'le-aw-status', 'The magazine library will appear here after the first publication.'); weeklyBody.append(weeklyHead, weeklyStatus);
-    issueList = create('div', 'le-aw-issue-list'); weeklyBody.appendChild(issueList);
-    const panel = create('section', 'le-aw-publisher-panel');
-    const pTitle = create('h3', 'le-aw-publisher-title', 'Editorial request');
-    const pCopy = create('p', 'le-aw-publisher-copy', 'Adjust the creative brief, then copy it into the Publisher run. The Publisher sends it to the shared Universal Editorial Engine.');
-    requestBox = create('textarea', 'le-aw-request'); requestBox.value = DEFAULT_REQUEST; requestBox.maxLength = 1200; requestBox.setAttribute('aria-label', 'Custom editorial request');
-    const panelActions = create('div', 'le-aw-publisher-actions');
-    const copy = create('button', 'le-aw-button le-aw-button-secondary', 'Copy custom request'); copy.type = 'button';
-    const openPublisher = create('a', 'le-aw-button le-aw-button-primary', 'Open Publisher'); openPublisher.href = ACTIONS_URL; openPublisher.target = '_blank'; openPublisher.rel = 'noopener noreferrer';
-    panelActions.append(copy, openPublisher);
-    const note = create('p', 'le-aw-footnote', 'The app does not store a GitHub token. Open Publisher securely in GitHub Actions, choose “magazine”, paste your request and run the test edition. The scheduled edition covers the previous 48 hours.');
-    panel.append(pTitle, pCopy, requestBox, panelActions, note);
-    weeklyBody.appendChild(panel);
-    content.append(liveBody, weeklyBody);
-    scroll.append(masthead, tabs, content);
-    const fade = create('div', 'le-aw-bottom-fade'); fade.setAttribute('aria-hidden', 'true');
-    root.append(scroll, fade);
+    if (root) return;
+    addStyles();
+    root = element('section');
+    root.id = ROOT_ID;
+    root.hidden = true;
+    root.setAttribute('role', 'region');
+    root.setAttribute('aria-label', 'Alien World space science view');
+    root.setAttribute('aria-hidden', 'true');
+
+    const scroll = element('div', 'le-aw-scroll');
+    const wrap = element('div', 'le-aw-wrap');
+    const masthead = element('header', 'le-aw-masthead');
+    masthead.appendChild(element('div', 'le-aw-orbit-mark'));
+    masthead.append(
+      element('p', 'le-aw-kicker', 'LIVE // EARTH · DEEP SPACE REPORT'),
+      element('h1', 'le-aw-title', 'ALIEN WORLD'),
+      element('p', 'le-aw-subtitle', 'Space science, missions and discoveries — gathered from official NASA sources.')
+    );
+
+    const tabs = element('nav', 'le-aw-tabs');
+    tabs.setAttribute('aria-label', 'Alien World sections');
+    const liveTab = element('button', 'le-aw-tab', 'Live Reports');
+    liveTab.type = 'button'; liveTab.dataset.awTab = 'live'; liveTab.setAttribute('aria-pressed', 'true');
+    const journalTab = element('button', 'le-aw-tab', 'Space Journal');
+    journalTab.type = 'button'; journalTab.dataset.awTab = 'journal'; journalTab.setAttribute('aria-pressed', 'false');
+    tabs.append(liveTab, journalTab);
+
+    livePanel = element('section', 'le-aw-panel');
+    const liveHead = element('div', 'le-aw-section-head');
+    liveHead.appendChild(element('h2', 'le-aw-section-title', 'Latest from space'));
+    liveCount = element('span', 'le-aw-count', 'LIVE FEED');
+    liveHead.appendChild(liveCount);
+    liveStatus = element('p', 'le-aw-status', 'Connect to load the latest published reports.');
+    livePanel.append(liveHead, liveStatus);
+    liveList = element('div', 'le-aw-story-list');
+    livePanel.appendChild(liveList);
+
+    journalPanel = element('section', 'le-aw-panel');
+    journalPanel.hidden = true;
+    const journalHead = element('div', 'le-aw-section-head');
+    journalHead.appendChild(element('h2', 'le-aw-section-title', 'The Space Journal'));
+    journalHead.appendChild(element('span', 'le-aw-count', '48-HOUR EDITION'));
+    journalStatus = element('p', 'le-aw-status', 'The catalogue appears here when an edition has been published.');
+    issueList = element('div', 'le-aw-issue-list');
+    journalPanel.append(journalHead, journalStatus, issueList);
+
+    const publisher = element('section', 'le-aw-publisher-panel');
+    publisher.append(
+      element('h3', 'le-aw-panel-title', 'Create a Space Journal'),
+      element('p', 'le-aw-panel-copy', 'Shape the editorial brief, then open the secure GitHub Actions Publisher. The Collector gathers source material; the Publisher reads its database and commands the shared Editorial Engine.')
+    );
+    briefInput = element('textarea', 'le-aw-brief');
+    briefInput.value = DEFAULT_BRIEF;
+    briefInput.maxLength = 1400;
+    briefInput.setAttribute('aria-label', 'Custom Space Journal editorial brief');
+    const actions = element('div', 'le-aw-panel-actions');
+    const copyButton = element('button', 'le-aw-button', 'Copy editorial brief');
+    copyButton.type = 'button';
+    const openPublisher = element('a', 'le-aw-button le-aw-button-primary', 'Open Publisher');
+    openPublisher.href = ACTIONS_URL;
+    openPublisher.target = '_blank';
+    openPublisher.rel = 'noopener noreferrer';
+    actions.append(copyButton, openPublisher);
+    publisher.append(actions, element('p', 'le-aw-footnote', 'The app never stores a GitHub token. In GitHub Actions, choose live, magazine or all; paste the brief into the custom request field when creating a journal. Live reports and the public catalogue require a connection.'));
+
+    const saved = element('section', 'le-aw-saved-panel');
+    saved.append(
+      element('h3', 'le-aw-panel-title', 'Saved on this device'),
+      element('p', 'le-aw-panel-copy', 'Only PDFs you explicitly save in the Global PDF Reader appear here. Live reports are not stored offline.')
+    );
+    savedList = element('div', 'le-aw-saved-list');
+    saved.appendChild(savedList);
+    journalPanel.append(publisher, saved);
+
+    wrap.append(masthead, tabs, livePanel, journalPanel);
+    scroll.appendChild(wrap);
+    root.appendChild(scroll);
     document.body.appendChild(root);
 
     liveTab.addEventListener('click', () => setTab('live'));
-    weeklyTab.addEventListener('click', () => setTab('weekly'));
-    copy.addEventListener('click', async () => {
+    journalTab.addEventListener('click', () => setTab('journal'));
+    copyButton.addEventListener('click', async () => {
       try {
-        await navigator.clipboard.writeText(requestBox.value);
-        setStatus(weeklyStatus, 'Custom editorial request copied. Paste it into the Publisher workflow input.', 'success');
+        await navigator.clipboard.writeText(briefInput.value);
+        setStatus(journalStatus, 'Editorial brief copied. Paste it into the custom request field in GitHub Actions.', 'success');
       } catch (_) {
-        requestBox.focus(); requestBox.select();
-        setStatus(weeklyStatus, 'Select and copy the request text, then paste it into the Publisher workflow input.', 'info');
+        briefInput.focus();
+        briefInput.select();
+        setStatus(journalStatus, 'Select and copy the highlighted brief, then paste it into GitHub Actions.', 'info');
       }
     });
   }
@@ -349,7 +459,7 @@
   function activate() {
     const genericStage = document.getElementById('le-feature-stage');
     if (genericStage) genericStage.hidden = true;
-    if (!root) buildRoot();
+    buildRoot();
     active = true;
     root.hidden = false;
     root.setAttribute('aria-hidden', 'false');
@@ -357,33 +467,55 @@
     window.dispatchEvent(new CustomEvent('live-earth-alien-world-view-change', { detail: { active: true } }));
     ensureServices().then(() => {
       if (!active) return;
-      if (currentTab === 'live') refreshLiveFeed(); else refreshCatalog();
+      if (activeTab === 'live') refreshLiveFeed();
+      else refreshJournal();
       window.clearInterval(refreshTimer);
-      refreshTimer = window.setInterval(() => { if (active && currentTab === 'live') refreshLiveFeed(); }, 5 * 60 * 1000);
+      refreshTimer = window.setInterval(() => {
+        if (active && activeTab === 'live') refreshLiveFeed();
+      }, REFRESH_MS);
+      refreshSavedLibrary();
     }).catch(error => {
-      if (currentTab === 'live') setStatus(liveStatus, `${error.message} Connect to load the online publication services.`, 'warning');
-      else setStatus(weeklyStatus, `${error.message} Connect to load the online publication services.`, 'warning');
+      const target = activeTab === 'live' ? liveStatus : journalStatus;
+      setStatus(target, `${error?.message || 'The Alien World services are not available.'} Connect to load public output.`, 'warning');
     });
   }
 
   function deactivate() {
     active = false;
-    window.clearInterval(refreshTimer); refreshTimer = 0;
+    window.clearInterval(refreshTimer);
+    refreshTimer = 0;
     if (window.LiveEarthUniversalPDFViewer?.isOpen?.()) window.LiveEarthUniversalPDFViewer.close();
-    if (root) { root.hidden = true; root.setAttribute('aria-hidden', 'true'); }
+    if (root) {
+      root.hidden = true;
+      root.setAttribute('aria-hidden', 'true');
+    }
     document.body.classList.remove('le-alien-world-open');
     window.dispatchEvent(new CustomEvent('live-earth-alien-world-view-change', { detail: { active: false } }));
+  }
+
+  function onOffline() {
+    if (!active || !liveList) return;
+    liveList.replaceChildren();
+    setStatus(liveStatus, 'Live space reports are online-only. Reconnect to load the latest verified feed.', 'warning');
+    if (liveCount) liveCount.textContent = 'LIVE FEED';
+    refreshSavedLibrary();
+  }
+
+  function onOnline() {
+    if (!active) return;
+    if (activeTab === 'live') refreshLiveFeed();
+    else refreshJournal();
   }
 
   function install() {
     if (window.__liveEarthAlienWorldViewInstalled) return;
     const api = window.LiveEarthFeatureViews;
     if (!api || typeof api.register !== 'function') return;
-    api.register('alien-world', {
+    api.register(VIEW_ID, {
       title: 'Alien World',
       shortLabel: 'Alien World',
       symbol: '🛸',
-      description: 'Alien World Main Page — live space feeds and the Space Journal.',
+      description: 'Space science, missions, discoveries and the Space Journal.',
       connected: true,
       activate,
       deactivate
@@ -391,10 +523,12 @@
     window.__liveEarthAlienWorldViewInstalled = true;
     window.__liveEarthAlienWorldViewWaiting = false;
     window.LiveEarthAlienWorldView = Object.freeze({
-      open: () => api.open('alien-world', 'api'),
+      open: () => api.open(VIEW_ID, 'api'),
       close: () => api.close('api'),
-      isOpen: () => api.isActive('alien-world')
+      isOpen: () => api.isActive(VIEW_ID)
     });
+    window.addEventListener('offline', onOffline);
+    window.addEventListener('online', onOnline);
   }
 
   if (window.LiveEarthFeatureViews?.register) install();

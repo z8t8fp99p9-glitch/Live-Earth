@@ -23,9 +23,9 @@ from PIL import Image
 from pypdf import PdfReader
 
 ROOT = Path(__file__).resolve().parents[2]
-COLLECTOR_PATH = ROOT / "data-collection" / "alien-world" / "collector.py"
-PUBLISHER_PATH = ROOT / "publishers" / "alien-world" / "publisher.py"
-PROFILE_PATH = ROOT / "publishers" / "alien-world" / "profile.json"
+COLLECTOR_PATH = ROOT / "alien-world" / "collector" / "collector.py"
+PUBLISHER_PATH = ROOT / "alien-world" / "publisher" / "publisher.py"
+PROFILE_PATH = ROOT / "alien-world" / "publisher" / "profile.json"
 ENGINE_PATH = ROOT / "editorial-engine" / "universal_editorial_engine.py"
 
 
@@ -44,6 +44,38 @@ PUBLISHER = load_module("alien_world_publisher_tests", PUBLISHER_PATH)
 PROFILE = json.loads(PROFILE_PATH.read_text(encoding="utf-8"))
 
 
+class CanonicalLayoutTests(unittest.TestCase):
+    def test_alien_world_owns_its_complete_feature_tree(self):
+        expected = [
+            ROOT / "alien-world" / "collector" / "collector.py",
+            ROOT / "alien-world" / "publisher" / "publisher.py",
+            ROOT / "alien-world" / "publisher" / "profile.json",
+            ROOT / "alien-world" / "published" / "live-feed.json",
+            ROOT / "alien-world" / "published" / "catalog.json",
+            ROOT / "alien-world" / "view" / "alien-world-view-controller.js",
+            ROOT / "alien-world" / "view" / "alien-world-publisher-client.js",
+            ROOT / "alien-world" / "tests" / "test_alien_world_pipeline.py",
+        ]
+        self.assertTrue(all(path.is_file() for path in expected))
+
+    def test_legacy_active_paths_are_retired(self):
+        legacy = [
+            ROOT / "data-collection" / "alien-world" / "collector.py",
+            ROOT / "publishers" / "alien-world" / "publisher.py",
+            ROOT / "published" / "alien-world" / "live-feed.json",
+        ]
+        self.assertFalse(any(path.exists() for path in legacy))
+
+    def test_browser_view_does_not_collect_or_open_the_database(self):
+        controller = (ROOT / "alien-world" / "view" / "alien-world-view-controller.js").read_text(encoding="utf-8")
+        client = (ROOT / "alien-world" / "view" / "alien-world-publisher-client.js").read_text(encoding="utf-8")
+        for forbidden in ("sqlite3", "urllib.request", "collect_sources", "DB_PATH"):
+            self.assertNotIn(forbidden, controller)
+            self.assertNotIn(forbidden, client)
+        self.assertIn("alien-world/view/alien-world-publisher-client.js", controller)
+        self.assertIn("/alien-world/published/", client)
+
+
 class CollectorTests(unittest.TestCase):
     def test_rss_parser_keeps_original_article_image_candidates(self):
         payload = b'''<?xml version="1.0"?>
@@ -53,7 +85,7 @@ class CollectorTests(unittest.TestCase):
             <title>NASA announces a new science mission</title>
             <link>https://www.nasa.gov/news/example-mission/</link>
             <description><![CDATA[<p>A substantial report with context.</p>]]></description>
-            <content:encoded><![CDATA[<p>Report</p><img src="https://www.nasa.gov/wp-content/uploads/mission-photo.jpg" alt="Mission spacecraft"/></content:encoded>
+            <content:encoded><![CDATA[<p>Report</p><img src="https://www.nasa.gov/wp-content/uploads/mission-photo.jpg" alt="Mission spacecraft"/>]]></content:encoded>
             <media:content url="https://www.nasa.gov/wp-content/uploads/mission-hero.jpg" type="image/jpeg" medium="image"/>
             <pubDate>Sat, 31 Oct 2026 00:00:00 GMT</pubDate>
           </item></channel>
@@ -446,14 +478,14 @@ class ArchitectureBoundaryTests(unittest.TestCase):
         self.assertFalse(PROFILE["output"]["publisherNetworkAccess"])
         self.assertFalse(PROFILE["output"]["publisherDatabaseWriteAccess"])
 
-    @unittest.skipUnless((ROOT / "alien-world-publisher-client.js").is_file(),
+    @unittest.skipUnless((ROOT / "alien-world" / "view" / "alien-world-publisher-client.js").is_file(),
                          "Main Page client is part of the complete repository only")
-    def test_main_page_client_clears_online_stories_and_lists_saved_pdfs(self):
-        client_path = ROOT / "alien-world-publisher-client.js"
+    def test_publication_client_reads_output_and_uses_shared_pdf_reader(self):
+        client_path = ROOT / "alien-world" / "view" / "alien-world-publisher-client.js"
         source = client_path.read_text(encoding="utf-8")
-        self.assertIn("window.addEventListener('offline', clearOnlineStories)", source)
-        self.assertIn("window.addEventListener('online', refreshVisibleTab)", source)
-        self.assertIn("listSaved()", source)
+        self.assertIn("OUTPUT_ROOT", source)
+        self.assertIn("listSavedMagazines", source)
+        self.assertIn("openSaved", source)
         self.assertIn("allowSavedFallback: true", source)
         self.assertNotIn("localStorage", source)
         self.assertNotIn("indexedDB", source)

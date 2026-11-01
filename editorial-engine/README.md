@@ -55,13 +55,13 @@ The Engine is deterministic and does not call an AI service. It arranges Publish
 
 Alien World is the first production consumer of the shared system:
 
-- `data-collection/alien-world/collector.py` collects approved NASA sources and writes only the Alien World database.
-- `publishers/alien-world/publisher.py` reads that database read-only, invokes `run_engine(...)`, and routes the completed output.
-- `publishers/alien-world/profile.json` defines Alien World's view-specific source policy, editorial profile and publication settings.
-- `published/alien-world/` stores the completed Alien World feed, catalogue and magazine PDFs.
-- `alien-world-view-controller.js` loads the browser companion on demand from this directory. Its public global remains `window.LiveEarthUniversalEditorialEngine`.
+- `alien-world/collector/collector.py` collects approved NASA sources and writes only the Alien World database.
+- `alien-world/publisher/publisher.py` reads that database read-only, invokes `run_engine(...)`, and routes the completed output.
+- `alien-world/publisher/profile.json` defines Alien World source policy, editorial rules and publication settings.
+- `alien-world/published/` stores the completed Alien World feed, catalogue and magazine PDFs.
+- `alien-world/view/alien-world-view-controller.js` loads `alien-world/view/alien-world-publisher-client.js` on demand. Its public Engine global remains `window.LiveEarthUniversalEditorialEngine`.
 
-The active workflow `.github/workflows/alien-world-publisher.yml` continues to install dependencies from `editorial-engine/requirements.txt` and invoke the existing Collector and Publisher paths. No Publisher, Collector, database, browser companion, service-worker or PDF Reader change is required for Engine 1.1.0.
+The active workflow `.github/workflows/alien-world-publisher.yml` stays at GitHub's required location and installs dependencies from `editorial-engine/requirements.txt`. Its replacement calls the canonical `alien-world/collector/collector.py` and `alien-world/publisher/publisher.py` paths and commits only `alien-world/published/`. Because the ZIP importer blocks `.github/`, the copy-ready workflow replacement is stored at `alien-world/publisher/ALIEN_WORLD_PUBLISHER_WORKFLOW_UPDATE.yml` and must be applied separately. The Alien World database cache remains `.publisher-data/alien-world/`. The shared Engine API and Nature/Magazine integrations are unchanged.
 
 ## Global architecture rule
 

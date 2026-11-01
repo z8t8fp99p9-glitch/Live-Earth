@@ -24,8 +24,8 @@ ROOT = Path(__file__).resolve().parents[2]
 PROFILE_PATH = Path(__file__).with_name("profile.json")
 ENGINE_DIR = ROOT / "editorial-engine"
 DB_PATH = ROOT / ".publisher-data" / "alien-world" / "alien-world.sqlite3"
-OUTPUT_DIR = ROOT / "published" / "alien-world"
-TEST_FILE = ROOT / "tests" / "test_alien_world_pipeline.py"
+OUTPUT_DIR = ROOT / "alien-world" / "published"
+TEST_FILE = ROOT / "alien-world" / "tests" / "test_alien_world_pipeline.py"
 
 
 def load_profile() -> dict[str, Any]:
@@ -88,7 +88,7 @@ def route_engine_outputs(result: dict[str, Any], mode: str) -> None:
         "coverageStart": result["coverageStart"],
         "coverageEnd": result["coverageEnd"],
         "windowHours": result["windowHours"],
-        "pdfUrl": "https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/published/alien-world/"
+        "pdfUrl": "https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/alien-world/published/"
                   + magazine["relativePath"],
         "pages": magazine["pages"],
         "bytes": magazine["bytes"],

@@ -1,4 +1,4 @@
-# Alien World automated tests
+# Alien World regression tests
 
 Run from the repository root:
 
@@ -6,6 +6,10 @@ Run from the repository root:
 python -m unittest discover -s alien-world/tests -p 'test_*.py' -v
 ```
 
-Install the shared Python dependencies first with `python -m pip install -r editorial-engine/requirements.txt`.
+Install shared Python dependencies with:
 
-The suite uses temporary SQLite databases, synthetic feed/page data and temporary publication folders. It does not access the internet or the production Publisher database. The active Alien World workflow keeps its own Publisher contract checks; this directory holds the view-owned regression suite.
+```bash
+python -m pip install -r editorial-engine/requirements.txt
+```
+
+The suite uses synthetic feeds/pages, temporary SQLite databases and temporary PDF/output paths. It does not access the internet or the production `.publisher-data/alien-world/` database. The Publisher runs this suite before publishing.

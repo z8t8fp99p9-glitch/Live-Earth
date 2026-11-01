@@ -64,7 +64,7 @@ The 1 November 2026 repository cleanup is recorded in [`CLEANUP-ADDENDUM-2026-11
 | `moon-lunar-interface.js` | Moon-only lunar Arc/time-scroller overlay and its lifecycle; locked with Moon View |
 | `sun-view-renderer.js` | Sun-specific procedural renderer, registered through the shared view-module system |
 | `stacks-feature-views.js` | Clouds, Weather, Elevation, Earthquakes and Traffic feature views using the existing shared Earth/layer interface; no second Earth |
-| `alien-world-view-controller.js` | Alien World Main Page and view lifecycle; consumes shared publishing services |
+| `alien-world/view/alien-world-view-controller.js` | Alien World feature view and lifecycle; consumes shared publishing services |
 | `location.html` / `earth-orb-globe.js` | Separate Location globe screen and its renderer |
 | `location-scanner.js` | Location Scanner interactions for the existing Earth Explorer flow |
 
@@ -96,13 +96,13 @@ The JavaScript and Python files are complementary layers of one Universal Editor
 
 Alien World is an online-only cinematic astronomy and space-discovery magazine/browser, not a game.
 
-1. `data-collection/alien-world/collector.py` is the only Alien World component that fetches external sources and writes source records/media into the Alien World database.
-2. `publishers/alien-world/publisher.py` reads that database in read-only mode and supplies Publisher instructions to the shared Python Engine. Publisher network access and database write access remain disabled.
-3. `published/alien-world/` contains completed feed, catalogue and magazine outputs.
-4. `alien-world-publisher-client.js` reads completed outputs and opens the actual PDF with the shared reader. It does not collect news, open the source database or generate magazines.
-5. `alien-world-view-controller.js` owns the Alien World view interface, not collection, database writes, magazine composition or global PDF reader implementation.
+1. `alien-world/collector/collector.py` is the only Alien World component that fetches approved NASA sources, screens source-post imagery and writes the Alien World database.
+2. `alien-world/publisher/publisher.py` reads that database read-only and supplies the publication command to the shared Python Engine. Publisher network access and database write access remain disabled.
+3. `alien-world/publisher/profile.json` defines Alien World source policy, image handling, editorial settings and output paths.
+4. `alien-world/published/` contains the completed feed, catalogue, latest-publication pointer and magazine PDFs.
+5. `alien-world/view/alien-world-publisher-client.js` reads completed output and opens PDFs through the shared Global PDF Reader. `alien-world/view/alien-world-view-controller.js` owns only the feature interface/lifecycle. Neither browser file collects sources, opens the database or composes magazines.
 
-The workflow `.github/workflows/alien-world-publisher.yml` runs the collection and publication pipeline. It supports manual publication modes and its configured scheduled runs. Its existing Python paths and dependency path remain unchanged by the folder consolidation.
+The active workflow remains `.github/workflows/alien-world-publisher.yml`, as GitHub requires. Its replacement invokes the canonical `alien-world/collector/collector.py` and `alien-world/publisher/publisher.py` paths and commits only `alien-world/published/`. The ZIP importer blocks `.github/`, so its complete replacement is supplied inside `alien-world/publisher/ALIEN_WORLD_PUBLISHER_WORKFLOW_UPDATE.yml` for a separate manual file replacement. The database cache remains `.publisher-data/alien-world/`.
 
 ### Nature publishing integration
 
@@ -126,7 +126,7 @@ Preserve the existing PDF.js engine version/cache and IndexedDB database `live-e
 - `data-store.js` owns the current local data-store helpers.
 - `data-recovery.js` owns local backup/recovery support.
 - The `recovery/` directory contains deliberate rollback and dated baseline records. It is not disposable clutter.
-- `published/alien-world/` contains current published outputs and magazine PDFs. Do not remove publications as a repository-size shortcut without a separate retention decision.
+- `alien-world/published/` contains current Alien World published outputs and magazine PDFs. Do not remove publications as a repository-size shortcut without a separate retention decision.
 - `nature/published/` contains Nature's independently validated output and current edition. Preserve its last-good files.
 
 ## Repository automation and upload workflow
