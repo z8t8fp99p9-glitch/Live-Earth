@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "viewId": "nature",
   "publisherId": "nature-publisher",
-  "generatedAt": "2026-11-01T22:48:05Z",
-  "windowHours": 48,
+  "generatedAt": "2026-11-01T23:44:30Z",
+  "windowHours": 96,
   "storyCount": 10,
   "stories": [
     {
       "id": "40e5f5d2031618ad9eef96719a730617",
       "title": "Climate change is killing the plants of Uluṟu‑Kata Tjuṯa: Aṉangu traditional owners are concerned",
-      "summary": "When we hear that climate change is damaging natural environments, it conjures images of rising seas eroding coastlines, or heat waves bleaching the Great Barrier Reef. But what about deserts?",
+      "summary": "",
       "url": "https://phys.org/news/2026-10-climate-ulurukata-tjua-anangu-traditional.html",
       "sourceName": "Phys.org — Environment",
       "sourceUrl": "https://phys.org/rss-feed/earth-news/environment/",
@@ -18,12 +18,22 @@
       "imageCredit": null,
       "imageSourceUrl": null,
       "imageRightsNote": null,
-      "imageCaption": null
+      "imageCaption": null,
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "AMBER",
+        "policyId": "physorg-rss-headline-link-limited-v1",
+        "policyVersion": "1",
+        "decisionId": "d47cd49896de571b581b9e32",
+        "checkedAt": "2026-11-01T23:44:30Z",
+        "allowedUse": "headline-link-only",
+        "attribution": "Phys.org"
+      }
     },
     {
       "id": "275ec8070001990b87a016b82f159719",
       "title": "New restrictions kick in as Delhi battles pollution",
-      "summary": "Authorities in New Delhi stepped up anti-pollution measures on Sunday, including higher parking fees and work-from-home orders, seeking to curb toxic smog in one of the world's most polluted capitals.",
+      "summary": "",
       "url": "https://phys.org/news/2026-11-restrictions-delhi-pollution.html",
       "sourceName": "Phys.org — Environment",
       "sourceUrl": "https://phys.org/rss-feed/earth-news/environment/",
@@ -32,12 +42,22 @@
       "imageCredit": null,
       "imageSourceUrl": null,
       "imageRightsNote": null,
-      "imageCaption": null
+      "imageCaption": null,
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "AMBER",
+        "policyId": "physorg-rss-headline-link-limited-v1",
+        "policyVersion": "1",
+        "decisionId": "de3d901f7c2931a568355b60",
+        "checkedAt": "2026-11-01T23:44:30Z",
+        "allowedUse": "headline-link-only",
+        "attribution": "Phys.org"
+      }
     },
     {
       "id": "7af5d36f346aee56e2301fb42ee6c271",
       "title": "Warmer seas and shifting pressure systems: The signs that suggest the Mediterranean's climate is 'tropicalizing'",
-      "summary": "Nowhere in the Iberian Peninsula or the Balearic Islands has a tropical climate—for this to be the case, the average temperature in the coldest month would have to be 18°C (64 degrees Fahrenheit) or higher. The contrast between Spain's winters and summers, and the low temperatures reached in winter, do not resemble those of any tropical climate.",
+      "summary": "",
       "url": "https://phys.org/news/2026-10-warmer-seas-shifting-pressure-mediterranean.html",
       "sourceName": "Phys.org — Environment",
       "sourceUrl": "https://phys.org/rss-feed/earth-news/environment/",
@@ -46,12 +66,22 @@
       "imageCredit": null,
       "imageSourceUrl": null,
       "imageRightsNote": null,
-      "imageCaption": null
+      "imageCaption": null,
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "AMBER",
+        "policyId": "physorg-rss-headline-link-limited-v1",
+        "policyVersion": "1",
+        "decisionId": "c2c80bce63665c503fa1d9bd",
+        "checkedAt": "2026-11-01T23:44:30Z",
+        "allowedUse": "headline-link-only",
+        "attribution": "Phys.org"
+      }
     },
     {
       "id": "236f1cffd6c0e9be90fc202c16609e31",
       "title": "Why some trees thrive far from home—and what that means for carbon sinks",
-      "summary": "In a study spanning 192 sites and four continents, researchers have discovered that conifers planted in the Southern Hemisphere grow up to four times faster and are more drought-resistant than those growing in their native ranges.",
+      "summary": "",
       "url": "https://phys.org/news/2026-10-trees-home-carbon.html",
       "sourceName": "Phys.org — Environment",
       "sourceUrl": "https://phys.org/rss-feed/earth-news/environment/",
@@ -60,54 +90,22 @@
       "imageCredit": null,
       "imageSourceUrl": null,
       "imageRightsNote": null,
-      "imageCaption": null
-    },
-    {
-      "id": "a36cdcf3494ff3027e1e375d99b9f4d5",
-      "title": "The Great Barrier Reef's most notorious coral killer may actually be helping it",
-      "summary": "Crown-of-thorns starfish are notorious for devouring coral reefs, but surprising new research reveals these spiny predators may actually help reefs thrive when their populations are kept in check. Scientists studying Australia's Great Barrier Reef discovered that nearly 75% of observed starfish feeding events left behind living coral tissue, rather than destroying entire colonies. By feeding on fast-growing, dominant corals, the starfish create opportunities for slower-growing species to survive, potentially increasing coral biodiversity.",
-      "url": "https://www.sciencedaily.com/releases/2026/10/261030002957.htm",
-      "sourceName": "ScienceDaily — Environment",
-      "sourceUrl": "https://www.sciencedaily.com/rss/top/environment.xml",
-      "publishedAt": "2026-11-01T11:45:10Z",
-      "imageUrl": null,
-      "imageCredit": null,
-      "imageSourceUrl": null,
-      "imageRightsNote": null,
-      "imageCaption": null
-    },
-    {
-      "id": "bd167004b89c953e7a8ad125c729b6d2",
-      "title": "Scientists discover the hidden “muscles” trees use to straighten themselves",
-      "summary": "Scientists have discovered that trees can sense their own shape and straighten their trunks using specialized wood that acts like opposing muscles. This remarkable ability helps trees maintain their posture and could lead to stronger forests, better timber, and more resilient crops.",
-      "url": "https://www.sciencedaily.com/releases/2026/10/261030003006.htm",
-      "sourceName": "ScienceDaily — Environment",
-      "sourceUrl": "https://www.sciencedaily.com/rss/top/environment.xml",
-      "publishedAt": "2026-11-01T02:44:28Z",
-      "imageUrl": null,
-      "imageCredit": null,
-      "imageSourceUrl": null,
-      "imageRightsNote": null,
-      "imageCaption": null
-    },
-    {
-      "id": "525f271f1c2f28b1008f34ac",
-      "title": "Environmental defenders testify about attacks in Latin America linked to Canadian mining companies",
-      "summary": "The Inter-American Commission on Human Rights heard testimony Oct. 27 from representatives of six countries alleging harm linked to Canadian mining companies&#8217; operations, including four alleged attacks on environmental defenders. The regional agency gathered in Panama to examine Canada’s obligations with respect to its extractive companies and their impact overseas on human rights and the [&#8230;]",
-      "url": "https://news.mongabay.com/2026/10/environmental-defenders-testify-about-attacks-in-latin-america-linked-to-canadian-mining-companies/",
-      "sourceName": "Mongabay",
-      "sourceUrl": "https://news.mongabay.com/feed/",
-      "publishedAt": "2026-10-31T18:16:46Z",
-      "imageUrl": null,
-      "imageCredit": null,
-      "imageSourceUrl": null,
-      "imageRightsNote": null,
-      "imageCaption": null
+      "imageCaption": null,
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "AMBER",
+        "policyId": "physorg-rss-headline-link-limited-v1",
+        "policyVersion": "1",
+        "decisionId": "4fcb71f34e94332fc605d985",
+        "checkedAt": "2026-11-01T23:44:30Z",
+        "allowedUse": "headline-link-only",
+        "attribution": "Phys.org"
+      }
     },
     {
       "id": "7e999bc6b03f9f5f71ee49c6",
       "title": "Young Canadians focus on mental health at key climate trial",
-      "summary": "At a landmark Canadian trial focused on the government's obligations to fight climate change, the young plaintiffs suing Ottawa over alleged policy failures have sought to focus attention on their mental health.",
+      "summary": "",
       "url": "https://phys.org/news/2026-10-young-canadians-focus-mental-health.html",
       "sourceName": "Phys.org — Environment",
       "sourceUrl": "https://phys.org/rss-feed/earth-news/environment/",
@@ -116,12 +114,22 @@
       "imageCredit": null,
       "imageSourceUrl": null,
       "imageRightsNote": null,
-      "imageCaption": null
+      "imageCaption": null,
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "AMBER",
+        "policyId": "physorg-rss-headline-link-limited-v1",
+        "policyVersion": "1",
+        "decisionId": "dc5fe24ed12995a58690c2f3",
+        "checkedAt": "2026-11-01T23:44:30Z",
+        "allowedUse": "headline-link-only",
+        "attribution": "Phys.org"
+      }
     },
     {
       "id": "1dbe9a83ad078c269b8d6179",
       "title": "Nations commit to get nature goals back on track",
-      "summary": "Nearly 200 nations struck hard-fought agreements Friday at a U.N. biodiversity summit, but the outcome was accompanied by disappointment over missed opportunities to address humanity's destructive toll on nature.",
+      "summary": "",
       "url": "https://phys.org/news/2026-10-nations-commit-nature-goals-track.html",
       "sourceName": "Phys.org — Environment",
       "sourceUrl": "https://phys.org/rss-feed/earth-news/environment/",
@@ -130,22 +138,123 @@
       "imageCredit": null,
       "imageSourceUrl": null,
       "imageRightsNote": null,
-      "imageCaption": null
+      "imageCaption": null,
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "AMBER",
+        "policyId": "physorg-rss-headline-link-limited-v1",
+        "policyVersion": "1",
+        "decisionId": "f9a10395841d0832a6c50080",
+        "checkedAt": "2026-11-01T23:44:30Z",
+        "allowedUse": "headline-link-only",
+        "attribution": "Phys.org"
+      }
     },
     {
-      "id": "12472243aa592d3517cca2cf",
-      "title": "Leaders grapple with finance and harmful subsidies at UN’s COP17 biodiversity conference",
-      "summary": "YEREVAN, Armenia — Visitors entering the main hallway of the 2026 U.N. biodiversity conference (COP17) encounter a mural of a herd of elephants. The installation, led by the NGO Friends of the Earth International, doesn’t celebrate the gains that some elephant populations have made in recent decades. Instead, it uses the &#8220;elephants in the room&#8221; [&#8230;]",
-      "url": "https://news.mongabay.com/2026/10/leaders-grapple-with-finance-and-harmful-subsidies-at-uns-cop17-biodiversity-conference/",
-      "sourceName": "Mongabay",
-      "sourceUrl": "https://news.mongabay.com/feed/",
-      "publishedAt": "2026-10-31T07:07:34Z",
+      "id": "040b5bdaed4d2c4fbe04b0b4",
+      "title": "Hidden erosion: Study reveals soft mountain rock erodes three times faster than hard rock—with climate implications",
+      "summary": "",
+      "url": "https://phys.org/news/2026-10-hidden-erosion-reveals-soft-mountain.html",
+      "sourceName": "Phys.org — Environment",
+      "sourceUrl": "https://phys.org/rss-feed/earth-news/environment/",
+      "publishedAt": "2026-10-30T20:40:01Z",
       "imageUrl": null,
       "imageCredit": null,
       "imageSourceUrl": null,
       "imageRightsNote": null,
-      "imageCaption": null
+      "imageCaption": null,
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "AMBER",
+        "policyId": "physorg-rss-headline-link-limited-v1",
+        "policyVersion": "1",
+        "decisionId": "b5b26e025f58f6db10363692",
+        "checkedAt": "2026-11-01T23:44:30Z",
+        "allowedUse": "headline-link-only",
+        "attribution": "Phys.org"
+      }
+    },
+    {
+      "id": "456b646c62fbdee9971abe1e4411b180",
+      "title": "Q&A: Deep learning–enhanced air quality monitoring achieved using satellite data",
+      "summary": "",
+      "url": "https://phys.org/news/2026-10-qa-deep-learningenhanced-air-quality.html",
+      "sourceName": "Phys.org — Environment",
+      "sourceUrl": "https://phys.org/rss-feed/earth-news/environment/",
+      "publishedAt": "2026-10-30T18:00:09Z",
+      "imageUrl": null,
+      "imageCredit": null,
+      "imageSourceUrl": null,
+      "imageRightsNote": null,
+      "imageCaption": null,
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "AMBER",
+        "policyId": "physorg-rss-headline-link-limited-v1",
+        "policyVersion": "1",
+        "decisionId": "47677996f9f1a068f5b674ae",
+        "checkedAt": "2026-11-01T23:44:30Z",
+        "allowedUse": "headline-link-only",
+        "attribution": "Phys.org"
+      }
+    },
+    {
+      "id": "fe5e9126fcc645a0086a36fb60ee4cf3",
+      "title": "Discovery of bromochloropyrene reveals unexpected biological properties",
+      "summary": "",
+      "url": "https://phys.org/news/2026-10-discovery-bromochloropyrene-reveals-unexpected-biological.html",
+      "sourceName": "Phys.org — Environment",
+      "sourceUrl": "https://phys.org/rss-feed/earth-news/environment/",
+      "publishedAt": "2026-10-30T16:00:04Z",
+      "imageUrl": null,
+      "imageCredit": null,
+      "imageSourceUrl": null,
+      "imageRightsNote": null,
+      "imageCaption": null,
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "AMBER",
+        "policyId": "physorg-rss-headline-link-limited-v1",
+        "policyVersion": "1",
+        "decisionId": "ac3a04dd3bfe8ceef8d4d800",
+        "checkedAt": "2026-11-01T23:44:30Z",
+        "allowedUse": "headline-link-only",
+        "attribution": "Phys.org"
+      }
+    },
+    {
+      "id": "055f6194ad7afbd1e23104a2",
+      "title": "Snowfall and clouds may slow East Antarctic ice loss in a warmer world",
+      "summary": "",
+      "url": "https://phys.org/news/2026-10-snowfall-clouds-east-antarctic-ice.html",
+      "sourceName": "Phys.org — Environment",
+      "sourceUrl": "https://phys.org/rss-feed/earth-news/environment/",
+      "publishedAt": "2026-10-30T14:40:08Z",
+      "imageUrl": null,
+      "imageCredit": null,
+      "imageSourceUrl": null,
+      "imageRightsNote": null,
+      "imageCaption": null,
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "AMBER",
+        "policyId": "physorg-rss-headline-link-limited-v1",
+        "policyVersion": "1",
+        "decisionId": "6a426f6c44b3b95e6a4c5afb",
+        "checkedAt": "2026-11-01T23:44:30Z",
+        "allowedUse": "headline-link-only",
+        "attribution": "Phys.org"
+      }
     }
   ],
-  "documentaryImageCount": 0
+  "documentaryImageCount": 0,
+  "globalChecker": {
+    "name": "LIVE // EARTH Global Content Rights & Provenance Checker",
+    "version": "1.0.3",
+    "registryVersion": "2026-11-02.3",
+    "checkedAt": "2026-11-01T23:44:31Z",
+    "textRejected": 0,
+    "imagesStripped": 0,
+    "policy": "fail-closed"
+  }
 }
