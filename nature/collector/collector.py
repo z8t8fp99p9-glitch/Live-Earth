@@ -323,12 +323,18 @@ def collect() -> int:
                 print(f"SOURCE UNAVAILABLE {source['name']}: {exc}",file=sys.stderr)
         photo_stats = attach_verified_images(con,profile,now)
         con.commit()
+        retention_days = int(profile.get("database", {}).get("retentionDays", 32))
+        if not 1 <= retention_days <= 365:
+            raise RuntimeError("Nature database retention must be between 1 and 365 days.")
+        cutoff = (now-timedelta(days=retention_days)).timestamp()
+        con.execute("DELETE FROM stories WHERE view_id='nature' AND published_at < ?",(cutoff,))
+        con.execute("DELETE FROM nature_image_rights WHERE story_id NOT IN (SELECT story_id FROM stories WHERE view_id='nature')")
+        con.commit()
+        # Prune prepared media only after expired stories have been removed.
         active_media = {Path(str(row[0])).name for row in con.execute("SELECT image_local_path FROM stories WHERE view_id='nature' AND image_local_path IS NOT NULL").fetchall()}
         if MEDIA_DIR.exists():
             for cached in MEDIA_DIR.glob("*.jpg"):
                 if cached.name not in active_media: cached.unlink(missing_ok=True)
-        cutoff = (now-timedelta(days=240)).timestamp()
-        con.execute("DELETE FROM stories WHERE published_at < ?",(cutoff,)); con.commit()
         count = con.execute("SELECT COUNT(*) FROM stories WHERE view_id='nature'").fetchone()[0]
         result = {"status":"collected" if count else "no-eligible-stories","storiesUpserted":total,"databaseStories":count,"photos":photo_stats,"databasePath":".publisher-data/nature/nature.sqlite3","sourceErrors":errors}
         print(json.dumps(result,ensure_ascii=False,indent=2))

@@ -45,7 +45,7 @@
   "collection": {
     "owner": "Alien World Data Collection",
     "entrypoint": "alien-world/collector/collector.py",
-    "refreshHours": 3,
+    "refreshHours": 1,
     "maximumFeedBytes": 4194304,
     "maximumImageBytes": 7340032,
     "networkAccessOwner": "AlienWorldDataCollector",
@@ -55,8 +55,8 @@
   "database": {
     "engine": "SQLite",
     "scope": "one independent database for Alien World only",
-    "retentionDays": 30,
-    "maximumRecords": 500,
+    "retentionDays": 32,
+    "maximumRecords": 2000,
     "persistence": "Data Collection-owned GitHub Actions cache; rebuildable from allowed public feeds if cache is evicted",
     "containsPersonalData": false
   },
@@ -64,7 +64,7 @@
     "windowMode": "rolling-hours",
     "issueWindowHours": 48,
     "minimumStories": 2,
-    "maximumStories": 8
+    "maximumStories": 10
   },
   "editorialProfile": {
     "maximumDocumentaryImages": 5

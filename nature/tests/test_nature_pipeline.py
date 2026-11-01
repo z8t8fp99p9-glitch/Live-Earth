@@ -48,11 +48,21 @@ class CollectorContractTests(unittest.TestCase):
         self.assertIn('window_start = now - timedelta(hours=window_hours)',source)
         self.assertNotIn('month_start.timestamp()',source)
 
+    def test_database_retention_is_profile_driven_and_32_days(self):
+        profile=json.loads((ROOT/"nature/publisher/profile.json").read_text(encoding="utf-8"))
+        source=(ROOT/"nature/collector/collector.py").read_text(encoding="utf-8")
+        self.assertEqual(profile["database"]["retentionDays"],32)
+        self.assertIn('profile.get("database", {}).get("retentionDays", 32)',source)
+        self.assertNotIn('timedelta(days=240)',source)
+
 class PublisherContractTests(unittest.TestCase):
     def test_profile_is_rolling_48_hour_live_only(self):
         profile=json.loads((ROOT/"nature/publisher/profile.json").read_text(encoding="utf-8"))
         self.assertEqual(profile["publication"]["windowMode"],"rolling-hours")
         self.assertEqual(profile["publication"]["issueWindowHours"],48)
+        self.assertEqual(profile["publication"]["maximumStories"],10)
+        self.assertEqual(profile["publication"]["maximumSourceAgeDays"],32)
+        self.assertEqual(profile["database"]["retentionDays"],32)
         self.assertNotIn("minimumDocumentaryImages",profile["publication"])
         self.assertEqual(profile["viewId"],"nature")
 
@@ -70,8 +80,8 @@ class PublisherContractTests(unittest.TestCase):
                         verified[story_id]=record
                         row.update({"image_rights_status":publisher.IMAGE_STATUS,"image_local_path":record["local_path"],"image_url":record["image_url"],"image_credit":record["credit"],"image_source_url":record["source_page"],"image_rights_note":"CC BY 4.0 documented use"})
                     rows.append(row)
-                selected=publisher.select_engine_story_rows(rows,verified,8)
-                self.assertEqual(len(selected),8)
+                selected=publisher.select_engine_story_rows(rows,verified,10)
+                self.assertEqual(len(selected),10)
                 self.assertEqual(sum(1 for row in selected if row["story_id"] in verified),6)
                 self.assertEqual([row["published_at"] for row in selected],sorted((row["published_at"] for row in selected),reverse=True))
             finally: publisher.ROOT=old_root
@@ -117,6 +127,10 @@ class BrowserContractTests(unittest.TestCase):
         self.assertIn("LIVE FEEDS",view)
         self.assertIn("./nature/view/nature-publisher-client.js",view)
         self.assertIn("REFRESH_MS",view)
+        self.assertIn("if(feedArea)feedArea.replaceChildren();",view)
+        for forbidden_storage in ("localStorage", "sessionStorage", "indexedDB"):
+            self.assertNotIn(forbidden_storage,client)
+            self.assertNotIn(forbidden_storage,view)
 
     def test_actual_controller_is_folder_owned_and_loaded_directly(self):
         view=(ROOT/"nature/view/nature-view-controller.js").read_text(encoding="utf-8")

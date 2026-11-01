@@ -246,6 +246,7 @@
     active = false;
     window.clearInterval(refreshTimer);
     refreshTimer = 0;
+    if (liveList) liveList.replaceChildren();
     if (root) {
       root.hidden = true;
       root.setAttribute('aria-hidden', 'true');

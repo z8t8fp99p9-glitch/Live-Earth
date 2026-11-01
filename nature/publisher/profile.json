@@ -5,8 +5,8 @@
   "publication": {
     "windowMode": "rolling-hours",
     "issueWindowHours": 48,
-    "maximumStories": 8,
-    "maximumSourceAgeDays": 180
+    "maximumStories": 10,
+    "maximumSourceAgeDays": 32
   },
   "sources": [
     {
@@ -97,5 +97,12 @@
       "contextCaption": "A desert camp in the Rub' al Khali region of Abu Dhabi.",
       "usageNote": "Context photograph; not an image from the geoarchaeological survey transect described in the linked paper."
     }
-  ]
+  ],
+  "database": {
+    "engine": "SQLite",
+    "scope": "one independent database for Nature only",
+    "retentionDays": 32,
+    "persistence": "Nature Collector-owned GitHub Actions cache; not committed to the repository",
+    "containsPersonalData": false
+  }
 }

@@ -3,7 +3,7 @@ name: Alien World Live Feed Publisher
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */3 * * *'
+    - cron: '45 * * * *'
 
 permissions:
   contents: write

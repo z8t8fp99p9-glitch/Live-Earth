@@ -18,7 +18,7 @@ Alien World is a NASA-sourced, online Live Feed. It no longer publishes Space Jo
 - **Collector:** source network access, source policy screening and database writes.
 - **Publisher:** publication command, validation and atomic replacement of the one live-feed file.
 - **Universal Editorial Engine:** shared feed generation service; no source fetching, database ownership or publication schedule.
-- **GitHub Actions:** every-three-hour collection and Live Feed publication schedule.
+- **GitHub Actions:** hourly collection and Live Feed publication schedule.
 - **Alien World View:** displays the current public feed; it does not keep an Alien World publication archive or saved-PDF list.
 
-The Collector database cache at `.publisher-data/alien-world/` is retained. The shared PDF Reader, saved files belonging to other views, Home composition, Moon View and all unrelated services are outside this change.
+The copy-ready hourly workflow replacement is `publisher/ALIEN_WORLD_PUBLISHER_WORKFLOW_UPDATE.yml`; paste it manually into `.github/workflows/alien-world-publisher.yml` because `.github/` files cannot be included in the ZIP importer. The independent Alien World database at `.publisher-data/alien-world/` retains up to 32 days of source records (with a 2,000-record safety ceiling). The Live Feed shows up to 10 stories from the rolling 48-hour window. Feed content is held only in the active app view memory and cleared when the view closes; no feed history is saved on the device. The shared PDF Reader, saved files belonging to other views, Home composition, Moon View and all unrelated services are outside this change.

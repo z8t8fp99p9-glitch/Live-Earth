@@ -64,6 +64,10 @@ class CanonicalLayoutTests(unittest.TestCase):
         self.assertTrue(output["liveFeedOnly"])
         self.assertEqual(output["liveFeed"], "live-feed.json")
         self.assertEqual(publication["issueWindowHours"], 48)
+        self.assertEqual(publication["maximumStories"], 10)
+        self.assertEqual(PROFILE["database"]["retentionDays"], 32)
+        self.assertEqual(PROFILE["database"]["maximumRecords"], 2000)
+        self.assertEqual(PROFILE["collection"]["refreshHours"], 1)
         self.assertNotIn("catalog", output)
         self.assertNotIn("latestPublication", output)
         self.assertNotIn("magazineCadence", publication)
@@ -80,6 +84,10 @@ class CanonicalLayoutTests(unittest.TestCase):
         self.assertNotIn("LiveEarthUniversalPDFViewer", view)
         self.assertNotIn("Space Journal", view)
         self.assertNotIn("Saved on this device", view)
+        self.assertIn("if (liveList) liveList.replaceChildren();", view)
+        for forbidden_storage in ("localStorage", "sessionStorage", "indexedDB"):
+            self.assertNotIn(forbidden_storage, client)
+            self.assertNotIn(forbidden_storage, view)
 
 
 class CollectorTests(unittest.TestCase):
@@ -114,6 +122,8 @@ class CollectorTests(unittest.TestCase):
 
     def test_collector_profile_keeps_story_images_and_no_publication_write(self):
         self.assertTrue(PROFILE["imageUsePolicy"]["storyImagesAllowed"])
+        self.assertEqual(PROFILE["collection"]["refreshHours"], 1)
+        self.assertEqual(PROFILE["database"]["retentionDays"], 32)
         self.assertTrue(PROFILE["collection"]["writesDatabase"])
         self.assertFalse(PROFILE["collection"]["writesPublicationOutputs"])
         self.assertEqual(PROFILE["collection"]["networkAccessOwner"], "AlienWorldDataCollector")
@@ -222,7 +232,7 @@ class EngineIntegrationTests(unittest.TestCase):
             source_name TEXT NOT NULL,source_url TEXT NOT NULL,published_at REAL NOT NULL,retrieved_at REAL NOT NULL,
             image_url TEXT,image_local_path TEXT,image_caption TEXT,image_credit TEXT,image_source_url TEXT,
             image_rights_status TEXT,image_rights_note TEXT,view_id TEXT NOT NULL)""")
-        for index in range(6):
+        for index in range(12):
             published = now - timedelta(hours=index + 1)
             database.execute("""INSERT INTO stories VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", (
                 f"story-{index}", f"NASA science report {index}", f"https://www.nasa.gov/news/report-{index}/",
@@ -238,7 +248,7 @@ class EngineIntegrationTests(unittest.TestCase):
             result = engine.run_engine(database, PROFILE, command, Path(temp), now)
             self.assertIn("feed", result)
             self.assertNotIn("magazine", result)
-            self.assertEqual(result["feed"]["storyCount"], 6)
+            self.assertEqual(result["feed"]["storyCount"], 10)
             self.assertFalse(list(Path(temp).rglob("*.pdf")))
         with self.assertRaises(sqlite3.OperationalError):
             database.execute("DELETE FROM stories")

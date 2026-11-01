@@ -152,6 +152,7 @@
   }
   function deactivate(){
     active=false;clearInterval(refreshTimer);refreshTimer=0;
+    if(feedArea)feedArea.replaceChildren();
     if(root){root.hidden=true;root.setAttribute('aria-hidden','true');}
     document.body.classList.remove('le-nature-view-open');
     window.dispatchEvent(new CustomEvent('live-earth-nature-view-change',{detail:{active:false}}));

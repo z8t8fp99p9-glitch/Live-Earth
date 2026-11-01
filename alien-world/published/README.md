@@ -1,14 +1,7 @@
 # Alien World published outputs
 
-This is the sole public output directory owned by Alien World:
+This folder contains only the current Alien World Live Feed:
 
-- `live-feed.json` — validated rolling live feed.
-- `catalog.json` — retained completed Space Journal editions.
-- `latest-publication.json` — latest completed-issue pointer.
-- `magazines/` — actual generated PDF files.
+- `live-feed.json` — validated rolling 48-hour feed containing up to 10 stories.
 
-The last-good feed, catalogue, pointer and PDFs are preserved if collection or publication fails. The Publisher stages and validates a new output before replacing the current public files.
-
-Public base URL: `https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/alien-world/published/`
-
-Nature and Magazine have separate publication owners and output folders.
+The source database is separate and private under `.publisher-data/alien-world/`. It retains up to 32 days of source records (subject to the configured 2,000-record safety ceiling). No magazine, catalogue, PDF or publication archive is generated.
