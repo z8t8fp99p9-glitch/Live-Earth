@@ -3,18 +3,21 @@
 **Repository:** `z8t8fp99p9-glitch/Live-Earth`  
 **Branch:** `main`  
 **Live site:** https://z8t8fp99p9-glitch.github.io/Live-Earth/  
-**Guide updated:** 31 October 2026
+**Guide updated:** 1 November 2026
 
 ## Current project status
 
 - The current service-worker build is `v109-alien-view-reset`; `sw.js` and `update-manager.js` use the matching build identifier.
 - The Global PDF Reader source is v4.0.0. The owner has confirmed that the reader and magazine opening are working well on the iPhone. Its real-device acceptance is therefore owner-confirmed for the tested current use; do not reopen the design unless an observed regression requires it.
 - Alien World is connected to its Collector → database → Publisher → Universal Editorial Engine → published output pipeline. The browser view reads completed outputs; it does not collect news.
+- Nature has its own Collector → database → Publisher → published output pipeline, with an active independent GitHub Actions workflow.
 - Moon View was user-verified in Portrait and Landscape on 28 October 2026 and remains locked.
 - Cleanup 01 was applied successfully on 31 October 2026. The four obsolete setup/patch notes and temporary upload ZIP were removed. No application code was changed by that cleanup.
 - The Universal Editorial System consolidation is prepared as a coordinated upload package: the browser companion joins the Python Engine under `editorial-engine/`, and the obsolete duplicate Config feed file is removed. This remains a candidate until the owner uploads it and the iPhone test passes.
 
 For the detailed dated source audit and current Views Separation notes, see [`LIVE-EARTH-CONTINUITY-ADDENDUM-VIEWS-SEPARATION-2026-10-31.md`](./LIVE-EARTH-CONTINUITY-ADDENDUM-VIEWS-SEPARATION-2026-10-31.md). The older [`LIVE-EARTH-CONTINUITY.md`](./LIVE-EARTH-CONTINUITY.md) remains the historical engineering register; its earlier V96/V97/V109 entries are retained as history, not current deployment instructions.
+
+The 1 November 2026 repository cleanup is recorded in [`CLEANUP-ADDENDUM-2026-11-01.md`](./CLEANUP-ADDENDUM-2026-11-01.md).
 
 ## Working rules
 
@@ -101,6 +104,10 @@ Alien World is an online-only cinematic astronomy and space-discovery magazine/b
 
 The workflow `.github/workflows/alien-world-publisher.yml` runs the collection and publication pipeline. It supports manual publication modes and its configured scheduled runs. Its existing Python paths and dependency path remain unchanged by the folder consolidation.
 
+### Nature publishing integration
+
+Nature is an independent view with its own Collector, Publisher, rights records and publication outputs under `nature/`. The active workflow is `.github/workflows/nature-publisher.yml`; its operating instructions are in `nature/docs/WORKFLOW.md`. The Nature Collector alone accesses Commons/source metadata and writes the Nature database. The Nature Publisher reads that database read-only and routes validated output to `nature/published/`.
+
 ### Global PDF Reader
 
 `universal-pdf-viewer.js` is a shared, view-independent reader. Its public API remains:
@@ -120,6 +127,7 @@ Preserve the existing PDF.js engine version/cache and IndexedDB database `live-e
 - `data-recovery.js` owns local backup/recovery support.
 - The `recovery/` directory contains deliberate rollback and dated baseline records. It is not disposable clutter.
 - `published/alien-world/` contains current published outputs and magazine PDFs. Do not remove publications as a repository-size shortcut without a separate retention decision.
+- `nature/published/` contains Nature's independently validated output and current edition. Preserve its last-good files.
 
 ## Repository automation and upload workflow
 
@@ -132,9 +140,11 @@ Preserve the existing PDF.js engine version/cache and IndexedDB database `live-e
 - Cleanup 01 removed `README-FIRST.txt`, `PIPELINE_WORKFLOW_INSTALL.md`, `SW-VERSION-PATCH.md` and `UPDATE-MANAGER-PATCH.md`; all four were obsolete or completed instructions. The upload ZIP was removed by the existing workflow after application.
 - Keep `LIVE-EARTH-LAYOUT-EDITOR.html` as a development/preview utility unless the owner explicitly retires it.
 - Keep `basic-map.html` and `basic-map.js` until the intended Basic Map/Location route is resolved; the project continuity register explicitly leaves this decision open.
-- Keep `recovery/`, `tests/`, published magazines, current Home Orb artwork and Moon/Sun backgrounds.
+- Keep `recovery/`, published magazines, current Home Orb artwork and Moon/Sun backgrounds.
+- Keep regression suites beside their owning views: `alien-world/tests/`, `nature/tests/` and `magazine/tests/`. The temporary root `/tests` sandbox has been retired; its Alien World regression suite now lives under `alien-world/tests/`.
+- Tracked Python `__pycache__` and `.pyc` files are generated artifacts and must not be committed.
 - Treat dated source snapshots as historical recovery records. Do not delete them merely because a newer live implementation exists.
 
 ## Next development phase — Views Separation
 
-The current task is a read-only architecture audit. Map each view's activation, deactivation, DOM ownership, data ownership, shared-service dependencies and return path before changing code. Keep the existing global primary-view manager and shared feature-module registry as the baseline. The first code change must target one confirmed boundary issue only, include a regression check, and leave Home composition, all five primary Orbs, Sun View, locked Moon View, Location privacy, offline startup, local data and the Alien World Publisher/Engine architecture untouched.
+Continue the read-only architecture audit. Map each view's activation, deactivation, DOM ownership, data ownership, shared-service dependencies and return path before changing code. Keep the existing global primary-view manager and shared feature-module registry as the baseline. The first code change must target one confirmed boundary issue only, include a regression check, and leave Home composition, all five primary Orbs, Sun View, locked Moon View, Location privacy, offline startup, local data and the existing Publisher/Engine boundaries untouched.

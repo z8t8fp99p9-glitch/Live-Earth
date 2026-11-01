@@ -22,7 +22,7 @@ from unittest import mock
 from PIL import Image
 from pypdf import PdfReader
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 COLLECTOR_PATH = ROOT / "data-collection" / "alien-world" / "collector.py"
 PUBLISHER_PATH = ROOT / "publishers" / "alien-world" / "publisher.py"
 PROFILE_PATH = ROOT / "publishers" / "alien-world" / "profile.json"
@@ -53,7 +53,7 @@ class CollectorTests(unittest.TestCase):
             <title>NASA announces a new science mission</title>
             <link>https://www.nasa.gov/news/example-mission/</link>
             <description><![CDATA[<p>A substantial report with context.</p>]]></description>
-            <content:encoded><![CDATA[<p>Report</p><img src="https://www.nasa.gov/wp-content/uploads/mission-photo.jpg" alt="Mission spacecraft"/>]]></content:encoded>
+            <content:encoded><![CDATA[<p>Report</p><img src="https://www.nasa.gov/wp-content/uploads/mission-photo.jpg" alt="Mission spacecraft"/></content:encoded>
             <media:content url="https://www.nasa.gov/wp-content/uploads/mission-hero.jpg" type="image/jpeg" medium="image"/>
             <pubDate>Sat, 31 Oct 2026 00:00:00 GMT</pubDate>
           </item></channel>

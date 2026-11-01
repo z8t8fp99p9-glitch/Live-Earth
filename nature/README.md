@@ -10,12 +10,12 @@ Nature is an independent editorial view inside Stacks.
 - `assets/` contains rights-policy and allowlist records, not a second copy of the shared Engine.
 - The runtime SQLite store and prepared source media live in `.publisher-data/nature/` and are not committed.
 
-The first November 2026 run imports the eight source-linked October summaries already curated in the project fixture exactly once. It does not import the old fixture PDF. Later monthly issues use the continuing feed collection path.
+The first November 2026 run imports the eight source-linked October summaries from `nature/collector/initial-october-seed.json` exactly once. The seed is production Collector input, not a test-folder fixture. The old fixture PDF is not imported. Later monthly runs use the continuing feed collection path.
 
 ## Publication
-The Publisher generates the previous complete UTC calendar month. Public output contains one current PDF (`published/current.pdf`), one catalogue record and the current live feed. A new issue is staged and validated before the current files are replaced. If any gate fails, existing public files are left unchanged.
+The Publisher generates the previous complete UTC calendar month. Public output contains one current PDF (`nature/published/current.pdf`), one catalogue record and the current live feed. A new issue is staged and validated before the current files are replaced. If any gate fails, existing public files are left unchanged.
 
-The 20–40 page goal is an editorial aspiration, not a minimum. No filler is added to reach a page target. At least five source-linked stories and a configurable minimum of four fully verified documentary photographs are the initial release gates. These are engineering settings and can be adjusted in `publisher/profile.json`; they do not override licence checks.
+The 20–40 page goal is an editorial aspiration, not a minimum. No filler is added to reach a page target. At least five source-linked stories and a configurable minimum of four fully verified documentary photographs are the initial release gates. These are engineering settings in `publisher/profile.json`; they do not override licence checks.
 
-## Current workflow status
-The application code and workflow template are included in the upload package. The active GitHub Actions workflow must be created separately at `.github/workflows/nature-publisher.yml`; the existing ZIP importer explicitly blocks `.github/` paths. See `NATURE_WORKFLOW_SETUP.md` at repository root. Until that separate workflow file is created and run successfully, automated collection/publication is not active.
+## Workflow
+The active GitHub Actions workflow is `.github/workflows/nature-publisher.yml`. It supports manual `collect`, `publish` and `all` modes plus scheduled collection/publication. It caches only `.publisher-data/nature/`, never commits the database, and commits only validated files under `nature/published/`. See [`docs/WORKFLOW.md`](docs/WORKFLOW.md) for the current operating instructions.
