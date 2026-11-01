@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "viewId": "nature",
+  "publisherId": "nature-publisher",
+  "generatedAt": "2026-11-01T04:13:03Z",
+  "coverageStart": "2026-10-01T00:00:00Z",
+  "coverageEnd": "2026-11-01T00:00:00Z",
+  "windowMode": "calendar-month",
+  "latest": {
+    "issueId": "nature-202610",
+    "title": "The Living World",
+    "publishedAt": "2026-11-01T04:13:03Z",
+    "coverageStart": "2026-10-01T00:00:00Z",
+    "coverageEnd": "2026-11-01T00:00:00Z",
+    "windowHours": 744,
+    "pdfUrl": "https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/nature/published/current.pdf",
+    "pages": 16,
+    "bytes": 2158265,
+    "sha256": "e7c26c2b2ca6b155d9d5ffbd7846a824d7a79535325ba24e4b5d7cdb0ddb5309",
+    "storyCount": 8,
+    "documentaryImageCount": 6,
+    "coverImageUrl": "https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/nature/published/assets/4d268f359eb7694aab7c873139a8a6a4c81f4914098da693482c2c55ec92f0ac.jpg",
+    "coverImageCredit": "Arup Ruidas · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:INDIAN_PITTA.jpg",
+    "coverImageCaption": "An Indian pitta photographed in Bankura, West Bengal. Representative Indian bird photograph; it is not claimed to depict a specific bird assessed by the national Red List project."
+  },
+  "issues": [
+    {
+      "issueId": "nature-202610",
+      "title": "The Living World",
+      "publishedAt": "2026-11-01T04:13:03Z",
+      "coverageStart": "2026-10-01T00:00:00Z",
+      "coverageEnd": "2026-11-01T00:00:00Z",
+      "windowHours": 744,
+      "pdfUrl": "https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/nature/published/current.pdf",
+      "pages": 16,
+      "bytes": 2158265,
+      "sha256": "e7c26c2b2ca6b155d9d5ffbd7846a824d7a79535325ba24e4b5d7cdb0ddb5309",
+      "storyCount": 8,
+      "documentaryImageCount": 6,
+      "coverImageUrl": "https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/nature/published/assets/4d268f359eb7694aab7c873139a8a6a4c81f4914098da693482c2c55ec92f0ac.jpg",
+      "coverImageCredit": "Arup Ruidas · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:INDIAN_PITTA.jpg",
+      "coverImageCaption": "An Indian pitta photographed in Bankura, West Bengal. Representative Indian bird photograph; it is not claimed to depict a specific bird assessed by the national Red List project."
+    }
+  ]
+}

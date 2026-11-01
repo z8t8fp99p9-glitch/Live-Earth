@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "viewId": "nature",
+  "issueId": "nature-202610",
+  "generatedAt": "2026-11-01T04:13:03Z",
+  "images": [
+    {
+      "storyId": "93f14f0e41ae964ff4d96923",
+      "fileTitle": "File:INDIAN PITTA.jpg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:INDIAN_PITTA.jpg",
+      "creator": "Arup Ruidas",
+      "credit": "Arup Ruidas · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:INDIAN_PITTA.jpg",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "caption": "An Indian pitta photographed in Bankura, West Bengal. Representative Indian bird photograph; it is not claimed to depict a specific bird assessed by the national Red List project.",
+      "usageNote": "Representative Indian bird photograph; it is not claimed to depict a specific bird assessed by the national Red List project.",
+      "modificationNote": "Wikimedia thumbnail/display copy resized to max 1600px and JPEG quality 80; factual content unchanged. Attribution retained.",
+      "file": "assets/4d268f359eb7694aab7c873139a8a6a4c81f4914098da693482c2c55ec92f0ac.jpg"
+    },
+    {
+      "storyId": "0d50139802a14e4f80999f14",
+      "fileTitle": "File:Tiger, India.jpg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Tiger,_India.jpg",
+      "creator": "Ayush Baheti",
+      "credit": "Ayush Baheti · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Tiger,_India.jpg",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "caption": "A tiger photographed in India. Context photograph for the wider conservation-recovery discussion; it is not the tiger shown in the linked report. Context photograph; not a photograph supplied by the linked Guardian/WWF report.",
+      "usageNote": "Context photograph; not a photograph supplied by the linked Guardian/WWF report.",
+      "modificationNote": "Wikimedia thumbnail/display copy resized to max 1600px and JPEG quality 80; factual content unchanged. Attribution retained.",
+      "file": "assets/49ad649ac81d1cb68a4889ab06d3466041ede4bc7bb29e4f938d0b7ffa010c9b.jpg"
+    },
+    {
+      "storyId": "6b3ade28a017a420c2ab681e",
+      "fileTitle": "File:Landscape of Nameri National Park.jpg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Landscape_of_Nameri_National_Park.jpg",
+      "creator": "Debuapriyo",
+      "credit": "Debuapriyo · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Landscape_of_Nameri_National_Park.jpg",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "caption": "River and forest landscape in Nameri National Park, Assam, India. Context landscape photograph; not an image from the global conservation-area research dataset.",
+      "usageNote": "Context landscape photograph; not an image from the global conservation-area research dataset.",
+      "modificationNote": "Wikimedia thumbnail/display copy resized to max 1600px and JPEG quality 80; factual content unchanged. Attribution retained.",
+      "file": "assets/ea09e68bbf639534fbbf66efee11a70e0f4f379e44dbf4e744235cc44b2b8991.jpg"
+    },
+    {
+      "storyId": "ab0dbc25a36d955b6b0b18ed",
+      "fileTitle": "File:Deep sea hydrothermal sea vent cucumber Chiridota heheva.jpg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Deep_sea_hydrothermal_sea_vent_cucumber_Chiridota_heheva.jpg",
+      "creator": "Yujin Pu, Yang Zhou, Jun Liu, Haibin Zhang",
+      "credit": "Yujin Pu, Yang Zhou, Jun Liu, Haibin Zhang · CC BY 4.0 · https://commons.wikimedia.org/wiki/File:Deep_sea_hydrothermal_sea_vent_cucumber_Chiridota_heheva.jpg",
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "caption": "A deep-sea sea cucumber photographed at the Kairei hydrothermal-vent field in the Indian Ocean. Context photograph from the Indian Ocean; not a photograph from the Argentine Mar del Plata Canyon expedition.",
+      "usageNote": "Context photograph from the Indian Ocean; not a photograph from the Argentine Mar del Plata Canyon expedition.",
+      "modificationNote": "Wikimedia thumbnail/display copy resized to max 1600px and JPEG quality 80; factual content unchanged. Attribution retained.",
+      "file": "assets/496009b107fa485e46ba1467b82faf95eb9fc6f06e96d45cfb38411291871ed3.jpg"
+    },
+    {
+      "storyId": "ba0f139352f89fd548565be0",
+      "fileTitle": "File:Rub' Al Khali Desert.jpg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Rub%27_Al_Khali_Desert.jpg",
+      "creator": "Cheezgraterz",
+      "credit": "Cheezgraterz · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Rub%27_Al_Khali_Desert.jpg",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "caption": "A desert camp in the Rub' al Khali region of Abu Dhabi. Context photograph; not an image from the geoarchaeological survey transect described in the linked paper.",
+      "usageNote": "Context photograph; not an image from the geoarchaeological survey transect described in the linked paper.",
+      "modificationNote": "Wikimedia thumbnail/display copy resized to max 1600px and JPEG quality 80; factual content unchanged. Attribution retained.",
+      "file": "assets/eae73aae6e69531bbff2986352c3816ad0cf58280044d64794fcdc2771665982.jpg"
+    },
+    {
+      "storyId": "3dbc3fb5cbf791c3c1fa060f",
+      "fileTitle": "File:An Indian Sloth Bear.jpg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:An_Indian_Sloth_Bear.jpg",
+      "creator": "Vishalsh521",
+      "credit": "Vishalsh521 · CC BY 4.0 · https://commons.wikimedia.org/wiki/File:An_Indian_Sloth_Bear.jpg",
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "caption": "An Indian sloth bear photographed in the wild. Context photograph; it is not claimed to depict one of the individual bears sampled in the Central Terai study.",
+      "usageNote": "Context photograph; it is not claimed to depict one of the individual bears sampled in the Central Terai study.",
+      "modificationNote": "Wikimedia thumbnail/display copy resized to max 1600px and JPEG quality 80; factual content unchanged. Attribution retained.",
+      "file": "assets/e7a642435e035631aecc236c6d9273e75117d391f51169870b20916eb8cf917e.jpg"
+    }
+  ]
+}
