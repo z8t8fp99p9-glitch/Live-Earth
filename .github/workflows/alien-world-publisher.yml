@@ -1,3 +1,4 @@
+
 name: Alien World Publisher
 
 on:
@@ -83,7 +84,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python data-collection/alien-world/collector.py \
+          python alien-world/collector/collector.py \
             | tee "$RUNNER_TEMP/alien-world-collection-result.json"
 
       - name: Command the Universal Editorial Engine and route its output
@@ -92,7 +93,7 @@ jobs:
           CUSTOM_REQUEST: ${{ inputs.custom_request }}
         run: |
           set -euo pipefail
-          python publishers/alien-world/publisher.py \
+          python alien-world/publisher/publisher.py \
             --mode "$PUBLISH_MODE" \
             --custom-request "$CUSTOM_REQUEST" \
             | tee "$RUNNER_TEMP/alien-world-publisher-result.json"
@@ -102,13 +103,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ ! -d published/alien-world ]]; then
+          if [[ ! -d alien-world/published ]]; then
             echo "Publisher produced no public output directory." >&2
             exit 3
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- published/alien-world
+          git add -- alien-world/published
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No publication files changed; the existing last-good outputs remain in place."
