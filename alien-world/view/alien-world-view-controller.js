@@ -54,7 +54,7 @@
     if (servicesPromise) return servicesPromise;
     servicesPromise = loadScript('./editorial-engine/universal-editorial-engine.js')
       .then(() => loadScript('./universal-pdf-viewer.js'))
-      .then(() => loadScript('./alien-world-publisher-client.js'))
+      .then(() => loadScript('./alien-world/view/alien-world-publisher-client.js'))
       .then(() => {
         if (!window.LiveEarthUniversalEditorialEngine || !window.LiveEarthUniversalPDFViewer || !window.LiveEarthAlienWorldPublisher) {
           throw new Error('A shared publication service did not register correctly.');
