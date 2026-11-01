@@ -1,52 +1,24 @@
-# LIVE // EARTH — Alien World
+# Alien World — Live Feeds
 
-Alien World is an independent feature view inside Stacks. All view-owned source code, policy, tests and public publication outputs live in this folder, following the same ownership pattern as Nature.
+Alien World is a NASA-sourced, online Live Feed. It no longer publishes Space Journal editions, magazine PDFs, catalogues or publication archives.
 
-## Folder map
+## Structure
 
-```text
-alien-world/
-├── README.md
-├── assets/
-├── collector/
-│   ├── collector.py
-│   └── README.md
-├── docs/
-│   └── WORKFLOW.md
-├── publisher/
-│   ├── publisher.py
-│   ├── profile.json
-│   ├── ALIEN_WORLD_PUBLISHER_WORKFLOW_UPDATE.yml
-│   └── README.md
-├── published/
-│   ├── live-feed.json
-│   ├── catalog.json
-│   ├── latest-publication.json
-│   └── magazines/
-├── tests/
-│   ├── test_alien_world_pipeline.py
-│   └── README.md
-└── view/
-    ├── alien-world-view-controller.js
-    ├── alien-world-publisher-client.js
-    └── README.md
-```
+- `collector/collector.py` — retrieves allowed NASA source records and screens original source images; writes the Alien World runtime database only.
+- `publisher/publisher.py` — read-only publication controller; accepts Live mode only.
+- `publisher/profile.json` — source rules, feed window, image handling and Live Feed output contract.
+- `publisher/ALIEN_WORLD_PUBLISHER_WORKFLOW_UPDATE.yml` — copy-ready replacement for the active GitHub Actions workflow.
+- `published/live-feed.json` — the single public output.
+- `view/alien-world-view-controller.js` — Live Reports view and refresh lifecycle.
+- `view/alien-world-publisher-client.js` — retrieves and validates the current Live Feed.
+- `tests/test_alien_world_pipeline.py` — deterministic live-feed contract and regression tests.
 
-## Ownership and boundaries
+## Ownership
 
-- **Collector:** `collector/collector.py` is the only Alien World component permitted to access the approved NASA source feeds/pages, discover source-post images, screen rights/provenance and write the Alien World SQLite database.
-- **Database:** `.publisher-data/alien-world/` is the Collector-owned runtime store. GitHub Actions restores and saves this exact cache path. It is not committed or reset by this view migration.
-- **Publisher:** `publisher/publisher.py` opens the database read-only and passes its connection plus the publication brief to the shared Universal Editorial Engine. It has no source-network access and cannot write the source database.
-- **Profile:** `publisher/profile.json` contains the source policy, image rules, editorial profile and output contract.
-- **Published output:** `published/` contains the public live feed, catalogue, latest issue pointer and actual PDF editions. Keep last-good outputs if a run fails.
-- **Browser view:** `view/alien-world-view-controller.js` owns only the feature lifecycle and interface. `view/alien-world-publisher-client.js` reads validated published JSON and opens issues through the shared Global PDF Reader.
-- **Tests:** `tests/` contains deterministic regression/contract tests. The Publisher runs them before changing public output.
+- **Collector:** source network access, source policy screening and database writes.
+- **Publisher:** publication command, validation and atomic replacement of the one live-feed file.
+- **Universal Editorial Engine:** shared feed generation service; no source fetching, database ownership or publication schedule.
+- **GitHub Actions:** every-three-hour collection and Live Feed publication schedule.
+- **Alien World View:** displays the current public feed; it does not keep an Alien World publication archive or saved-PDF list.
 
-## Shared infrastructure (not duplicated here)
-
-- `editorial-engine/` — the single Universal Editorial Engine.
-- `universal-pdf-viewer.js` — the single Global PDF Reader.
-- `index.html`, `sw.js`, `update-manager.js` — shared application shell and offline/update protection.
-- `.github/workflows/alien-world-publisher.yml` — GitHub-required workflow location. The copy-ready replacement is inside `publisher/`; the ZIP importer intentionally does not edit `.github/`.
-
-Nature and Magazine remain independent peer folders. Earth, Sun, Moon, Sky, Location, all Home Orbs, shared storage and local recovery are outside Alien World's ownership.
+The Collector database cache at `.publisher-data/alien-world/` is retained. The shared PDF Reader, saved files belonging to other views, Home composition, Moon View and all unrelated services are outside this change.

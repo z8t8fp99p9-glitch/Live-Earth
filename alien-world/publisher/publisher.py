@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-"""Alien World Publisher — instruct the shared Engine and route its outputs.
+"""Alien World Live Publisher.
 
-Responsibilities are intentionally narrow: read the Alien World database in
-read-only mode, issue a publication command to the Universal Editorial Engine,
-and route only the Engine's completed outputs to the Alien World view.
-The Collector is the only component with external-source/database-write access.
+This Publisher has one job: read the Collector-owned database in read-only mode,
+ask the shared Universal Editorial Engine for a live feed, and atomically publish
+only alien-world/published/live-feed.json. It cannot publish magazines, catalogues,
+publication-history metadata, or source records.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
-import os
 import sqlite3
 import subprocess
 import sys
@@ -34,17 +33,22 @@ def load_profile() -> dict[str, Any]:
         raise RuntimeError("Publisher profile failed its schema/view identity check.")
     if profile.get("publisherId") != "alien-world-publisher":
         raise RuntimeError("Publisher profile identity is not the registered Alien World Publisher.")
-    if profile.get("output", {}).get("publisherNetworkAccess") is not False:
+    output = profile.get("output", {})
+    if output.get("publisherNetworkAccess") is not False:
         raise RuntimeError("Publisher network access must remain disabled.")
-    if profile.get("output", {}).get("publisherDatabaseWriteAccess") is not False:
+    if output.get("publisherDatabaseWriteAccess") is not False:
         raise RuntimeError("Publisher database write access must remain disabled.")
+    if output.get("liveFeedOnly") is not True or output.get("liveFeed") != "live-feed.json":
+        raise RuntimeError("Alien World Publisher must be configured for live-feed-only output.")
+    if any(key in output for key in ("catalog", "latestPublication", "magazine", "pdf")):
+        raise RuntimeError("Magazine and publication-history outputs are not allowed for Alien World.")
     return profile
 
 
 def run_contract_tests() -> None:
-    """Run deterministic local contract checks before any publication is produced."""
+    """Run deterministic local contract checks before changing the public feed."""
     if not TEST_FILE.is_file():
-        raise RuntimeError("Pipeline contract tests are missing; publication is blocked.")
+        raise RuntimeError("Live-feed contract tests are missing; publication is blocked.")
     result = subprocess.run(
         [sys.executable, "-m", "unittest", "discover", "-s", str(TEST_FILE.parent),
          "-p", TEST_FILE.name, "-v"],
@@ -52,94 +56,58 @@ def run_contract_tests() -> None:
         check=False,
     )
     if result.returncode != 0:
-        raise RuntimeError("Alien World pipeline contract tests failed; no publication was changed.")
+        raise RuntimeError("Alien World live-feed contract tests failed; no publication was changed.")
 
 
 def read_only_connection() -> sqlite3.Connection:
     if not DB_PATH.is_file():
         raise RuntimeError("The Collector database is missing. Run the Data Collection step first.")
     uri = "file:" + quote(DB_PATH.as_posix(), safe="/:") + "?mode=ro"
-    con = sqlite3.connect(uri, uri=True)
-    con.row_factory = sqlite3.Row
-    con.execute("PRAGMA query_only=ON")
-    return con
+    connection = sqlite3.connect(uri, uri=True)
+    connection.row_factory = sqlite3.Row
+    connection.execute("PRAGMA query_only=ON")
+    return connection
 
 
 def atomic_json(path: Path, payload: dict[str, Any]) -> None:
+    """Replace one public JSON file atomically; never leave a partial feed."""
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_suffix(path.suffix + ".pending")
     temp.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     temp.replace(path)
 
 
-def route_engine_outputs(result: dict[str, Any], mode: str) -> None:
-    """Publish only completed Engine outputs; Publisher does not edit their content."""
+def route_engine_outputs(result: dict[str, Any]) -> None:
+    """Accept and route a live feed only. Refuse every magazine-shaped result."""
+    if not isinstance(result, dict) or "feed" not in result:
+        raise RuntimeError("The Editorial Engine did not return a live feed; existing feed is preserved.")
+    if "magazine" in result:
+        raise RuntimeError("Magazine output is forbidden for the Alien World Live Publisher.")
+    feed = result["feed"]
+    if not isinstance(feed, dict):
+        raise RuntimeError("The Editorial Engine returned an invalid feed payload.")
+    if feed.get("schemaVersion") != 1 or feed.get("viewId") != "alien-world":
+        raise RuntimeError("The live-feed payload failed its schema/view identity check.")
+    if feed.get("publisherId") != "alien-world-publisher":
+        raise RuntimeError("The live-feed payload has an unexpected Publisher identity.")
+    stories = feed.get("stories")
+    if not isinstance(stories, list) or feed.get("storyCount") != len(stories):
+        raise RuntimeError("The live-feed payload has an invalid story count.")
+    if not isinstance(feed.get("generatedAt"), str) or not feed["generatedAt"].strip():
+        raise RuntimeError("The live-feed payload is missing its publication timestamp.")
+    if not isinstance(feed.get("windowHours"), int) or feed["windowHours"] < 1:
+        raise RuntimeError("The live-feed payload has an invalid rolling window.")
+
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    if "feed" in result:
-        atomic_json(OUTPUT_DIR / "live-feed.json", result["feed"])
-    if "magazine" not in result:
-        return
-
-    magazine = result["magazine"]
-    issue_record = {
-        "issueId": magazine["issueId"],
-        "title": magazine["title"],
-        "publishedAt": result["generatedAt"],
-        "coverageStart": result["coverageStart"],
-        "coverageEnd": result["coverageEnd"],
-        "windowHours": result["windowHours"],
-        "pdfUrl": "https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/alien-world/published/"
-                  + magazine["relativePath"],
-        "pages": magazine["pages"],
-        "bytes": magazine["bytes"],
-        "sha256": magazine["sha256"],
-        "customRequest": magazine["customRequest"],
-        "customRequestReceipt": magazine["customRequestReceipt"],
-        "storyCount": result["eligibleStoryCount"],
-    }
-    publication = {
-        "schemaVersion": 1,
-        "viewId": "alien-world",
-        "publisherId": "alien-world-publisher",
-        "engine": result["engine"],
-        "engineVersion": result["engineVersion"],
-        **issue_record,
-    }
-    atomic_json(OUTPUT_DIR / "latest-publication.json", publication)
-
-    catalog_path = OUTPUT_DIR / "catalog.json"
-    if catalog_path.exists():
-        try:
-            catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
-        except Exception:
-            catalog = {"schemaVersion": 1, "viewId": "alien-world", "issues": []}
-    else:
-        catalog = {"schemaVersion": 1, "viewId": "alien-world", "issues": []}
-    issues = [item for item in catalog.get("issues", []) if item.get("issueId") != magazine["issueId"]]
-    issues.insert(0, issue_record)
-    keep_count = max(1, min(10, int(load_profile().get("publication", {}).get("maximumRetainedIssues", 3))))
-    issues = issues[:keep_count]
-    catalog = {
-        "schemaVersion": 1,
-        "viewId": "alien-world",
-        "generatedAt": result["generatedAt"],
-        "latest": issue_record,
-        "issues": issues,
-    }
-    atomic_json(catalog_path, catalog)
-    magazine_dir = OUTPUT_DIR / "magazines"
-    keep = {item["issueId"] + ".pdf" for item in issues}
-    if magazine_dir.exists():
-        for old_pdf in magazine_dir.glob("alien-world-*.pdf"):
-            if old_pdf.name not in keep:
-                old_pdf.unlink(missing_ok=True)
+    atomic_json(OUTPUT_DIR / "live-feed.json", feed)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=("live", "magazine", "all"),
-                        default=os.getenv("PUBLISH_MODE", "live"))
-    parser.add_argument("--custom-request", default=os.getenv("CUSTOM_REQUEST", ""))
+    parser.add_argument(
+        "--mode", choices=("live",), default="live",
+        help="Alien World supports live-feed publication only.",
+    )
     args = parser.parse_args()
     now = datetime.now(timezone.utc)
     connection: sqlite3.Connection | None = None
@@ -149,37 +117,37 @@ def main() -> int:
         connection = read_only_connection()
         command = {
             "commandId": hashlib.sha256(
-                f"alien-world:{now.isoformat()}:{args.mode}".encode("utf-8")
+                f"alien-world:{now.isoformat()}:live".encode("utf-8")
             ).hexdigest()[:24],
             "viewId": profile["viewId"],
             "publisherId": profile["publisherId"],
             "issuedAt": now.isoformat(),
-            "mode": args.mode,
-            "customRequest": args.custom_request or profile.get("editorialProfile", {}).get("defaultCustomRequest", ""),
+            "mode": "live",
+            "customRequest": "",
         }
         sys.path.insert(0, str(ENGINE_DIR))
         from universal_editorial_engine import run_engine
 
-        # Engine receives only a read-only connection, the view profile and this command.
+        # The shared Engine receives only the Collector database in read-only mode.
         result = run_engine(connection, profile, command, OUTPUT_DIR, now)
         connection.close()
         connection = None
-        route_engine_outputs(result, args.mode)
+        route_engine_outputs(result)
         print(json.dumps({
             "status": "published",
-            "mode": args.mode,
+            "mode": "live",
             "viewId": profile["viewId"],
             "engine": result["engine"],
             "stories": result["eligibleStoryCount"],
             "generatedAt": result["generatedAt"],
-            "magazine": result.get("magazine"),
+            "output": "alien-world/published/live-feed.json",
         }, indent=2))
         return 0
     except Exception as exc:
         print(json.dumps({
             "status": "skipped",
             "error": str(exc),
-            "preservedLastGood": True,
+            "preservedLastGoodLiveFeed": True,
         }, indent=2), file=sys.stderr)
         return 2
     finally:

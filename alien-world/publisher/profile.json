@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "viewId": "alien-world",
   "publisherId": "alien-world-publisher",
-  "displayName": "Alien World Publisher",
+  "displayName": "Alien World Live Publisher",
   "subjectScope": [
     "space science",
     "astronomy",
@@ -12,7 +12,7 @@
     "NASA discoveries and research"
   ],
   "sourcePolicy": {
-    "policy": "Official NASA source feeds only for the first release",
+    "policy": "Official NASA source feeds only",
     "allowedArticleDomains": [
       "nasa.gov"
     ],
@@ -61,32 +61,18 @@
     "containsPersonalData": false
   },
   "publication": {
-    "liveFeedWindowHours": 48,
+    "windowMode": "rolling-hours",
     "issueWindowHours": 48,
-    "magazineCadence": "weekly; manual workflow dispatch is also available for testing",
-    "minimumStories": 5,
-    "maximumStories": 8,
-    "maximumRetainedIssues": 3
+    "minimumStories": 2,
+    "maximumStories": 8
   },
   "editorialProfile": {
-    "publicationTitle": "The Space Journal",
-    "tone": "cinematic science journalism",
-    "defaultCustomRequest": "Create a cinematic, image-led space journal with a dramatic editorial cover, clear story hierarchy, an explainer page, a timeline, source notes and a strong closing page. Use automatically screened NASA source-post imagery beside its originating factual stories and retain visible credits and usage notes.",
-    "maximumDocumentaryImages": 5,
-    "visualProfile": {
-      "palette": "cinematic-dark",
-      "photoLed": true,
-      "includeTimeline": true,
-      "includeExplainer": true,
-      "pageTarget": 9,
-      "tone": "cinematic science journalism"
-    }
+    "maximumDocumentaryImages": 5
   },
   "output": {
     "directory": "alien-world/published",
     "liveFeed": "live-feed.json",
-    "catalog": "catalog.json",
-    "latestPublication": "latest-publication.json",
+    "liveFeedOnly": true,
     "publisherNetworkAccess": false,
     "publisherDatabaseWriteAccess": false
   },
@@ -99,9 +85,7 @@
     "creditRequirement": "Use image-specific credit when exposed by the source. If no separate image credit is published in extracted metadata, acknowledge NASA as the source under NASA Media Usage Guidelines. Never substitute the article author/byline.",
     "copyrightRequirement": "Automatically hold back images with explicit copyright/licence restrictions, known stock-agency markers, or a clearly identified third-party rights restriction. A normal joint institutional credit (for example NASA/ESA/CSA) is not itself treated as a copyright restriction unless the source identifies it as protected.",
     "contextRestriction": "Display only alongside the corresponding factual story, original source link and credit. Do not use NASA imagery as advertising, product branding, promotional creative or an implied NASA endorsement.",
-    "magazineImagesAllowed": true,
     "storyImagesAllowed": true,
-    "coverImagesAllowed": true,
     "promotionalUseAllowed": false,
     "missingCreditBehavior": "Use NASA source-level attribution; never use the article byline as image credit.",
     "unknownRightsBehavior": "Hold back the image and retry at the next bounded Collector run; keep the story text available.",

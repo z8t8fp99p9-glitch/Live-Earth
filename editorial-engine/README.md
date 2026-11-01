@@ -32,13 +32,13 @@ A new view integrates by adding its own Collector (only if it needs external col
 2. its own validated view profile and publication command;
 3. its bounded output destination and publication time.
 
-The Engine returns completed view output data. The Publisher routes those outputs and updates that view's catalogue atomically. The Publisher must preserve its previous last-good public output if generation fails.
+The Engine returns completed view output data. The Publisher routes only its configured output types and preserves its previous last-good public output if generation fails. Catalogue and archive handling, when required, belong to the relevant view Publisher, not to the shared Engine.
 
-A browser view that reads a published feed or catalogue loads the shared JavaScript companion and validates the payload against its expected `viewId`. It then passes a selected PDF to the existing Global PDF Reader when needed.
+A browser view that reads a published feed loads the shared JavaScript companion and validates the payload against its expected `viewId`. A view that publishes documents may pass a selected PDF to the existing Global PDF Reader when needed.
 
-## Production PDF design standard (Engine 1.1.0)
+## Production PDF design standard (shared Engine)
 
-The Python Engine now composes a single, fixed-layout, phone-first portrait PDF. It is a designed magazine, not a website export or an interactive reader UI.
+The Python Engine retains its optional shared PDF-generation capability for views that require publications. This capability is not enabled for every view.
 
 - **Page geometry:** 420 × 912 PDF points, a tall portrait canvas tuned for fit-to-width reading on contemporary phones.
 - **Reading composition:** one column, one page at a time, generous margins, serif editorial headlines, calm sans-serif body text, readable line spacing and printed folios.
@@ -46,22 +46,22 @@ The Python Engine now composes a single, fixed-layout, phone-first portrait PDF.
 - **Image handling:** use only eligible local assets supplied by the Publisher; preserve aspect ratio; never stretch or crop a subject merely to fill a frame. The Engine prepares a cached, downsampled PDF copy (maximum 1,800 px on the longest edge) for mobile-sized delivery without modifying the Publisher's source asset. If no eligible local asset exists, use deliberate typography and vector ornament rather than substituting unrelated imagery.
 - **Content integrity:** complete Publisher-supplied story bodies are preserved (the Collector's current source-summary bound is 9,000 characters). The magazine-only text normaliser removes known APOD page-navigation boilerplate while retaining the source story and photographer credit; the live-feed summary remains unchanged. Paragraph overflow continues on additional pages; the Engine does not shorten copy to fit a fixed box.
 - **Offline and book-like:** source names, URLs, captions and credits are printed as ordinary text. Contents and page numbers are printed, not clickable. No PDF links, annotations, bookmarks, remote assets or reader preferences are added.
-- **Quality gate:** validate page geometry/count, extracted text, file size, and absence of PDF annotations/bookmarks before atomically replacing the output. Failed generation leaves the last-good issue untouched.
+- **Quality gate:** validate page geometry/count, extracted text, file size, and absence of PDF annotations/bookmarks before atomically replacing a document output. Failed generation leaves the last-good document untouched.
 - **Page target:** a Publisher profile's page target is a guide. Complete stories, legibility and editorial pacing take priority. A 48-page safety ceiling prevents runaway output.
 
 The Engine is deterministic and does not call an AI service. It arranges Publisher-supplied copy and screened local imagery. It does not rewrite stories, invent missing reporting or independently corroborate factual claims.
 
 ## Current Alien World implementation
 
-Alien World is the first production consumer of the shared system:
+Alien World is the first production consumer of the shared system and is configured for Live Feeds only:
 
 - `alien-world/collector/collector.py` collects approved NASA sources and writes only the Alien World database.
-- `alien-world/publisher/publisher.py` reads that database read-only, invokes `run_engine(...)`, and routes the completed output.
-- `alien-world/publisher/profile.json` defines Alien World source policy, editorial rules and publication settings.
-- `alien-world/published/` stores the completed Alien World feed, catalogue and magazine PDFs.
-- `alien-world/view/alien-world-view-controller.js` loads `alien-world/view/alien-world-publisher-client.js` on demand. Its public Engine global remains `window.LiveEarthUniversalEditorialEngine`.
+- `alien-world/publisher/publisher.py` reads that database read-only, calls `run_engine(...)` with `mode: live`, and accepts only a feed result.
+- `alien-world/publisher/profile.json` defines Alien World source policy, the rolling feed window and the live-only output contract.
+- `alien-world/published/live-feed.json` is the only public Alien World output. Alien World does not publish a catalogue, magazine PDFs, issue records or an archive.
+- `alien-world/view/alien-world-view-controller.js` loads the Live Feed on demand. Its browser client validates the JSON with `window.LiveEarthUniversalEditorialEngine`.
 
-The active workflow `.github/workflows/alien-world-publisher.yml` stays at GitHub's required location and installs dependencies from `editorial-engine/requirements.txt`. Its replacement calls the canonical `alien-world/collector/collector.py` and `alien-world/publisher/publisher.py` paths and commits only `alien-world/published/`. Because the ZIP importer blocks `.github/`, the copy-ready workflow replacement is stored at `alien-world/publisher/ALIEN_WORLD_PUBLISHER_WORKFLOW_UPDATE.yml` and must be applied separately. The Alien World database cache remains `.publisher-data/alien-world/`. The shared Engine API and Nature/Magazine integrations are unchanged.
+The active workflow `.github/workflows/alien-world-publisher.yml` runs the Collector and Live Publisher every three hours, and supports manual runs. The copy-ready workflow replacement is stored at `alien-world/publisher/ALIEN_WORLD_PUBLISHER_WORKFLOW_UPDATE.yml` because the repository ZIP importer blocks `.github/`; it must be copied to the active path separately. The Alien World database cache remains `.publisher-data/alien-world/` and is not reset by this change. The shared Engine API and Nature/Magazine integrations remain unchanged.
 
 ## Global architecture rule
 
