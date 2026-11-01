@@ -1,0 +1,1 @@
+import live_earth_global_checker_bootstrap; live_earth_global_checker_bootstrap.bootstrap()

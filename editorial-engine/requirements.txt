@@ -1,3 +1,8 @@
 reportlab==4.4.9
 Pillow==12.3.0
 pypdf==5.9.0
+
+# Local bootstrap installed by the same dependency step used by both existing
+# feed workflows. It dispatches the existing Collector/Publisher entrypoints
+# through the shared Global Checker; no workflow YAML changes are required.
+./global-checker
