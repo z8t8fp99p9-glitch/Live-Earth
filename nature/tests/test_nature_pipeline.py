@@ -62,6 +62,20 @@ class CollectorContractTests(unittest.TestCase):
         self.assertIn("marine biodiversity", stories[0]["summary"])
         self.assertEqual(stories[0]["published"], "2026-10-15T12:00:00Z")
 
+    def test_commons_media_urls_are_canonicalized_only_for_exact_upload_host(self):
+        self.assertEqual(
+            collector.normalize_commons_media_url("//upload.wikimedia.org/test.jpg"),
+            "https://upload.wikimedia.org/test.jpg",
+        )
+        self.assertEqual(
+            collector.normalize_commons_media_url("http://upload.wikimedia.org/test.jpg"),
+            "https://upload.wikimedia.org/test.jpg",
+        )
+        with self.assertRaises(ValueError):
+            collector.normalize_commons_media_url("https://upload.wikimedia.org.evil.example/test.jpg")
+        with self.assertRaises(ValueError):
+            collector.normalize_commons_media_url("https://evil.example/test.jpg")
+
     def test_ambiguous_commons_license_fails_closed(self):
         fake = {
           "query":{"pages":[{"title":"File:Test.jpg","imageinfo":[{
@@ -87,7 +101,7 @@ class CollectorContractTests(unittest.TestCase):
                 "title": "File:Test.jpg",
                 "imageinfo": [{
                     "descriptionurl": "https://commons.wikimedia.org/wiki/File:Test.jpg",
-                    "thumburl": "https://upload.wikimedia.org/test.jpg",
+                    "thumburl": "//upload.wikimedia.org/test.jpg",
                     "mime": "image/jpeg", "width": 1200, "height": 800,
                     "extmetadata": {
                         "Artist": {"value": "Test Photographer"},
@@ -104,6 +118,7 @@ class CollectorContractTests(unittest.TestCase):
             result = collector.commons_metadata("File:Test.jpg")
         self.assertEqual(result["licenseName"], "CC BY 4.0")
         self.assertEqual(result["creator"], "Test Photographer")
+        self.assertEqual(result["imageUrl"], "https://upload.wikimedia.org/test.jpg")
 
     def test_commons_creator_is_required(self):
         fake = {

@@ -84,6 +84,34 @@ def safe_https(url: str, allowed_hosts: set[str]) -> bool:
     except Exception:
         return False
 
+
+def normalize_commons_media_url(value: str) -> str:
+    """Normalize Wikimedia's API media URL without widening its host boundary.
+
+    Commons may return an absolute URL, a protocol-relative URL, or an HTTP URL
+    for the same upload host. Accept only that exact host and always fetch over
+    HTTPS. Other hosts, credentials and non-default ports remain rejected.
+    """
+    raw = html.unescape(str(value or "")).strip()
+    if raw.startswith("//"):
+        raw = "https:" + raw
+    try:
+        parsed = urllib.parse.urlparse(raw)
+        host = (parsed.hostname or "").lower().rstrip(".")
+        port = parsed.port
+    except Exception as exc:
+        raise ValueError("Commons returned an invalid media URL.") from exc
+    if (
+        parsed.scheme.lower() not in {"https", "http"} or
+        host not in ALLOWED_MEDIA_HOSTS or
+        parsed.username or parsed.password or
+        port not in {None, 80, 443}
+    ):
+        raise ValueError(
+            f"Commons media URL rejected (scheme={parsed.scheme!r}, host={host!r})."
+        )
+    return urllib.parse.urlunparse(parsed._replace(scheme="https", netloc=host))
+
 def bounded_get(url: str, allowed_hosts: set[str], limit: int, timeout: int = 20) -> tuple[bytes, str, str]:
     if not safe_https(url, allowed_hosts):
         raise ValueError(f"URL host is not permitted: {url}")
@@ -246,7 +274,16 @@ def commons_metadata(file_title: str) -> dict[str, Any]:
         field = ext.get(key) or {}
         return clean(field.get("value", "") if isinstance(field, dict) else field, 1200)
     description_url = str(info.get("descriptionurl") or "")
-    image_url = str(info.get("thumburl") or info.get("url") or "")
+    image_url = ""
+    media_errors = []
+    for media_candidate in (info.get("thumburl"), info.get("url")):
+        if not media_candidate:
+            continue
+        try:
+            image_url = normalize_commons_media_url(str(media_candidate))
+            break
+        except ValueError as exc:
+            media_errors.append(str(exc))
     creator_raw = meta("Artist") or meta("Credit")
     creator = clean(creator_raw, 240)
     license_name = meta("LicenseShortName")
@@ -257,8 +294,9 @@ def commons_metadata(file_title: str) -> dict[str, Any]:
     copyright = meta("Copyrighted").lower()
     if not safe_https(description_url, ALLOWED_API_HOSTS):
         raise ValueError("Commons description URL is not an HTTPS Commons file page.")
-    if not safe_https(image_url, ALLOWED_MEDIA_HOSTS):
-        raise ValueError("Commons image URL is outside upload.wikimedia.org.")
+    if not image_url:
+        detail = media_errors[-1] if media_errors else "no media URL was supplied"
+        raise ValueError(f"Commons did not provide an approved upload.wikimedia.org URL: {detail}")
     if license_url not in ACCEPTED_LICENSES:
         raise ValueError(f"Licence is not on the approved list: {license_name or 'not supplied'}")
     if copyright not in {"true", "false", ""}:
