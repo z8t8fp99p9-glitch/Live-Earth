@@ -10,10 +10,10 @@ The browser companion and production Engine intentionally live together in this 
 |---|---|
 | `universal-editorial-engine.js` | Browser-side shared output-contract validators and safe helpers. Exposes `window.LiveEarthUniversalEditorialEngine`. |
 | `universal_editorial_engine.py` | Python production Engine. Exposes `run_engine(...)` to view Publishers. |
-| `requirements.txt` | Pinned dependencies for the Python production Engine and its PDF/image output. |
+| `requirements.txt` | Pinned dependencies for the Python production Engine and its optional PDF/image output. |
 | `README.md` | This shared architecture and integration contract. |
 
-The JavaScript companion does not duplicate the Python implementation. JavaScript validates and safely exposes published outputs to browser views; Python creates the feed/PDF artifacts. The two layers remain view-independent.
+The JavaScript companion does not duplicate the Python implementation. JavaScript validates and safely exposes published outputs to browser views; Python creates feed/PDF artifacts. The two layers remain view-independent.
 
 ## Ownership boundaries
 
@@ -32,13 +32,13 @@ A new view integrates by adding its own Collector (only if it needs external col
 2. its own validated view profile and publication command;
 3. its bounded output destination and publication time.
 
-The Engine returns completed view output data. The Publisher routes only its configured output types and preserves its previous last-good public output if generation fails. Catalogue and archive handling, when required, belong to the relevant view Publisher, not to the shared Engine.
+The Engine returns completed view output data. The Publisher routes only its configured output types and preserves its previous last-good public output if generation fails. Catalogue and archive handling, when required for a different view, belong to that view's Publisher, not to the shared Engine.
 
 A browser view that reads a published feed loads the shared JavaScript companion and validates the payload against its expected `viewId`. A view that publishes documents may pass a selected PDF to the existing Global PDF Reader when needed.
 
 ## Production PDF design standard (shared Engine)
 
-The Python Engine retains its optional shared PDF-generation capability for views that require publications. This capability is not enabled for every view.
+The Python Engine retains optional shared PDF-generation capability for views that require publications. This capability is not enabled for every view.
 
 - **Page geometry:** 420 × 912 PDF points, a tall portrait canvas tuned for fit-to-width reading on contemporary phones.
 - **Reading composition:** one column, one page at a time, generous margins, serif editorial headlines, calm sans-serif body text, readable line spacing and printed folios.
@@ -51,17 +51,28 @@ The Python Engine retains its optional shared PDF-generation capability for view
 
 The Engine is deterministic and does not call an AI service. It arranges Publisher-supplied copy and screened local imagery. It does not rewrite stories, invent missing reporting or independently corroborate factual claims.
 
-## Current Alien World implementation
+## Current production consumers
 
-Alien World is the first production consumer of the shared system and is configured for Live Feeds only:
+### Nature Live Feeds
 
-- `alien-world/collector/collector.py` collects approved NASA sources and writes only the Alien World database.
-- `alien-world/publisher/publisher.py` reads that database read-only, calls `run_engine(...)` with `mode: live`, and accepts only a feed result.
-- `alien-world/publisher/profile.json` defines Alien World source policy, the rolling feed window and the live-only output contract.
-- `alien-world/published/live-feed.json` is the only public Alien World output. Alien World does not publish a catalogue, magazine PDFs, issue records or an archive.
-- `alien-world/view/alien-world-view-controller.js` loads the Live Feed on demand. Its browser client validates the JSON with `window.LiveEarthUniversalEditorialEngine`.
+- Collector: `nature/collector/collector.py`; owns RSS/Atom collection, Commons rights screening and writes only `.publisher-data/nature/nature.sqlite3`.
+- Publisher: `nature/publisher/publisher.py`; opens the Nature database read-only, invokes the shared Engine in `live` mode, validates the feed, and publishes only Nature's configured feed/assets/rights metadata.
+- Profile: `nature/publisher/profile.json`; database retention is 32 days, the rolling feed window is 48 hours and the maximum story count is 10.
+- Workflow: `.github/workflows/nature-publisher.yml`; hourly at minute 15 UTC and manually dispatchable. Its cache directory and `nature-db-v1-...` key family remain unchanged.
+- Browser view: `nature/view/`; requests are `no-store`, the view refreshes every five minutes while open, and the displayed feed is cleared when the view closes. It has no localStorage, sessionStorage or IndexedDB feed persistence.
 
-The active workflow `.github/workflows/alien-world-publisher.yml` runs the Collector and Live Publisher every three hours, and supports manual runs. The copy-ready workflow replacement is stored at `alien-world/publisher/ALIEN_WORLD_PUBLISHER_WORKFLOW_UPDATE.yml` because the repository ZIP importer blocks `.github/`; it must be copied to the active path separately. The Alien World database cache remains `.publisher-data/alien-world/` and is not reset by this change. The shared Engine API and Nature/Magazine integrations remain unchanged.
+### Alien World Live Feeds
+
+Alien World is configured for Live Feeds only:
+
+- Collector: `alien-world/collector/collector.py`; it collects official NASA source material, screens source-post imagery and writes only `.publisher-data/alien-world/alien-world.sqlite3`.
+- Publisher: `alien-world/publisher/publisher.py`; reads that database read-only, calls `run_engine(...)` with `mode: live`, runs its deterministic contract suite before publication, and accepts only a feed result.
+- Profile: `alien-world/publisher/profile.json`; source database retention is 32 days with a 2,000-record safety ceiling; collection refresh target is one hour; the feed window is 48 hours and the maximum story count is 10.
+- Public output: `alien-world/published/live-feed.json` only. Alien World does not generate a magazine PDF, catalogue, issue record, latest-publication pointer or archive.
+- Workflow: `.github/workflows/alien-world-publisher.yml`; hourly at minute 45 UTC and manually dispatchable. Its cache directory and `alien-world-db-v1-...` key family remain unchanged.
+- Browser view: `alien-world/view/`; it reads the completed JSON only, uses `cache: no-store`, refreshes every five minutes while open and clears the displayed feed when closed. It has no localStorage, sessionStorage or IndexedDB feed persistence.
+
+**Automation verification caveat (1 November 2026):** the last observed scheduled Alien World run completed its Collector step (43 entries collected; 45 database records; 5 cached images reused) but the Publisher's contract-test gate failed. One test expects `publishedAt` although the Collector parser returns the raw source date under `published`; this remains the open test correction. The other failure counted `alien-world/published/README.md` as an extra public output. This package moves that documentation to `alien-world/docs/PUBLISHED-OUTPUT.md` and deletes the README from the public-output folder. The Publisher skipped replacement and reported `preservedLastGoodLiveFeed: true`. The hourly workflow is configured, but do not mark end-to-end publication successful until the remaining date-key test is corrected and a later run passes. See the dated project addendum for the run ID and precise status.
 
 ## Global architecture rule
 

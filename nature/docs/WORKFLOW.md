@@ -1,16 +1,19 @@
 # Nature Live Feed workflow
 
-**Active workflow path:** `.github/workflows/nature-publisher.yml`
+**Active workflow path:** `.github/workflows/nature-publisher.yml`  
+**Schedule:** every hour at minute 15 UTC  
+**Manual run:** GitHub Actions → Nature Live Feed Publisher → Run workflow.
 
-The copy-ready hourly replacement is `nature/publisher/NATURE_PUBLISHER_WORKFLOW_UPDATE.yml`. Because the ZIP importer blocks `.github/`, manually replace the full contents of `.github/workflows/nature-publisher.yml` with that file.
+The workflow runs the Nature Collector followed by the Live-Feed-only Nature Publisher hourly. The Collector gathers approved RSS/Atom reporting, re-screens approved Wikimedia Commons photo records and writes only to `.publisher-data/nature/`. The Publisher opens the Nature SQLite database read-only and invokes the shared Universal Editorial Engine in `live` mode.
 
-The workflow runs the Nature Collector followed by the Live-Feed-only Nature Publisher hourly. Manual **Run workflow** does the same complete refresh.
+- Database: `.publisher-data/nature/nature.sqlite3`.
+- Database retention: 32 days.
+- Maximum accepted source age: 32 days.
+- Visible feed: rolling 48-hour window, up to 10 stories.
+- Public output: `nature/published/live-feed.json` plus validated contextual image assets and rights metadata.
+- Browser refresh: every five minutes while the view is open.
+- Online-only: requests use `cache: no-store`; the view clears its displayed content when closed and does not persist feed data in localStorage, sessionStorage or IndexedDB.
 
-- Collector: approved RSS/Atom collection, Commons file-page rights screening, and writes `.publisher-data/nature/`.
-- Publisher: read-only SQLite access, shared Editorial Engine live mode, and validation/publication of `nature/published/live-feed.json` plus current image assets/rights metadata.
-- GitHub Actions: schedule, cache the existing Nature database key family, and commit only validated public output.
+The GitHub Actions cache path and existing `nature-db-v1-...` key family are preserved. The workflow commits only Nature's validated public output, never the source database. There is no monthly trigger, magazine mode, PDF output, catalogue or issue archive. Failed publication validation leaves the previous last-good feed in place. Saved PDFs in the Global PDF Reader are separate and are not modified by this workflow.
 
-There is no monthly trigger, magazine mode, PDF output, catalogue or issue archive. Failed publication validation leaves the previous last-good feed in place. Saved PDFs in the Global PDF Reader remain outside this publication workflow and are not modified.
-
-
-The Nature database has a 32-day retention limit. The public Live Feed continues to show only the rolling 48-hour window, with up to 10 stories.
+GitHub's ZIP Extractor blocks `.github/`. If the workflow itself needs a future change, replace `.github/workflows/nature-publisher.yml` manually using `nature/publisher/NATURE_PUBLISHER_WORKFLOW_UPDATE.yml`.

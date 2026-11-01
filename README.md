@@ -3,21 +3,25 @@
 **Repository:** `z8t8fp99p9-glitch/Live-Earth`  
 **Branch:** `main`  
 **Live site:** https://z8t8fp99p9-glitch.github.io/Live-Earth/  
-**Guide updated:** 1 November 2026
+**Guide updated:** 1 November 2026  
+**Source inspected:** `caffc644ba7a111e3e0f95ec227c7366d500d7f9`
 
 ## Current project status
 
-- The current service-worker build is `v109-alien-view-reset`; `sw.js` and `update-manager.js` use the matching build identifier.
-- The Global PDF Reader source is v4.0.0. The owner has confirmed that the reader and magazine opening are working well on the iPhone. Its real-device acceptance is therefore owner-confirmed for the tested current use; do not reopen the design unless an observed regression requires it.
-- Alien World is connected to its Collector → database → Publisher → Universal Editorial Engine → published output pipeline. The browser view reads completed outputs; it does not collect news.
-- Nature has its own Collector → database → Publisher → published output pipeline, with an active independent GitHub Actions workflow.
-- Moon View was user-verified in Portrait and Landscape on 28 October 2026 and remains locked.
-- Cleanup 01 was applied successfully on 31 October 2026. The four obsolete setup/patch notes and temporary upload ZIP were removed. No application code was changed by that cleanup.
-- The Universal Editorial System consolidation is prepared as a coordinated upload package: the browser companion joins the Python Engine under `editorial-engine/`, and the obsolete duplicate Config feed file is removed. This remains a candidate until the owner uploads it and the iPhone test passes.
+- Nature and Alien World now publish independent, online-only Live Feeds. Each view has its own Collector, SQLite database, Publisher profile and published feed.
+- Both feeds use a rolling **48-hour** publication window and show up to **10 stories**.
+- Both source databases retain up to **32 days** of records. The existing view-specific GitHub Actions cache paths and cache-key families are preserved; the databases are not committed to the repository and were not reset.
+- The scheduled workflows are hourly and staggered: Nature at minute **15 UTC** and Alien World at minute **45 UTC**. Both support manual dispatch.
+- While open, each browser view refreshes its online feed every five minutes. It uses `cache: no-store`, presents no current feed while offline, and clears its displayed feed when the view closes. Feed data is not stored in browser localStorage, sessionStorage or IndexedDB.
+- Alien World is now **Live Feeds only**. It does not publish a magazine, catalogue, issue archive or PDF. The separate Magazine Feature Orb remains a distinct view and is not part of the Alien World feed pipeline.
+- The shared Universal Editorial System is installed under `editorial-engine/`. It has a browser companion and a Python production Engine. Each view retains independent data ownership and its own Publisher.
+- The Global PDF Reader remains shared and view-independent. Its v4.0.0 design and saved-PDF data are protected.
+- The owner has confirmed that the current app views are working well on the iPhone. Moon View was verified in Portrait and Landscape on 28 October 2026 and remains locked.
+- The current service-worker build remains `v109-alien-view-reset`; `sw.js` and `update-manager.js` must continue to use matching build identifiers.
 
-For the detailed dated source audit and current Views Separation notes, see [`LIVE-EARTH-CONTINUITY-ADDENDUM-VIEWS-SEPARATION-2026-10-31.md`](./LIVE-EARTH-CONTINUITY-ADDENDUM-VIEWS-SEPARATION-2026-10-31.md). The older [`LIVE-EARTH-CONTINUITY.md`](./LIVE-EARTH-CONTINUITY.md) remains the historical engineering register; its earlier V96/V97/V109 entries are retained as history, not current deployment instructions.
+**Automation verification note:** GitHub's last observed Alien World scheduled run (`41320821525`, source commit `97b6c3e995`) completed collection but the Publisher's contract-test gate failed, so it preserved the last-good feed and did not publish a replacement. The two test issues from that run are documented in [`LIVE-EARTH-LIVE-FEEDS-ADDENDUM-2026-11-01.md`](./LIVE-EARTH-LIVE-FEEDS-ADDENDUM-2026-11-01.md). This documentation package also moves the explanatory output README out of `alien-world/published/`; the parser-date assertion remains an open test correction. The hourly schedule is present on `main`; do not describe the current end-to-end publisher cycle as verified until the remaining test is corrected and a later run succeeds.
 
-The 1 November 2026 repository cleanup is recorded in [`CLEANUP-ADDENDUM-2026-11-01.md`](./CLEANUP-ADDENDUM-2026-11-01.md).
+For the complete current feed architecture, ownership, operating rules and verification record, see [`LIVE-EARTH-LIVE-FEEDS-ADDENDUM-2026-11-01.md`](./LIVE-EARTH-LIVE-FEEDS-ADDENDUM-2026-11-01.md). The 31 October Views Separation addendum and earlier continuity records remain historical audit evidence. The 1 November cleanup record remains an immutable record of Cleanup 01.
 
 ## Working rules
 
@@ -25,7 +29,7 @@ The 1 November 2026 repository cleanup is recorded in [`CLEANUP-ADDENDUM-2026-11
 2. The owner uses the iPhone and does not edit source code manually. Supply complete, ready-to-upload ZIP packages and simple instructions.
 3. The owner manually uploads and commits to GitHub. Never write, commit, push or deploy on the owner's behalf.
 4. Make the smallest coherent, reversible change. Do not introduce features or redesign approved architecture without a clear request.
-5. Distinguish static checks, mock/browser tests, deployed behaviour and actual iPhone testing. Never claim a test was performed when it was not.
+5. Distinguish static checks, mock/browser tests, deployed behaviour, workflow runs and actual iPhone testing. Never claim a test was performed when it was not.
 6. Include one clear GitHub commit title with every code or repository package.
 7. Preserve working features, history, recovery material and local user data.
 
@@ -42,7 +46,7 @@ The 1 November 2026 repository cleanup is recorded in [`CLEANUP-ADDENDUM-2026-11
 
 ## Current runtime architecture
 
-### Home and primary view navigation
+### Home and primary-view navigation
 
 | File | Responsibility |
 |---|---|
@@ -64,87 +68,75 @@ The 1 November 2026 repository cleanup is recorded in [`CLEANUP-ADDENDUM-2026-11
 | `moon-lunar-interface.js` | Moon-only lunar Arc/time-scroller overlay and its lifecycle; locked with Moon View |
 | `sun-view-renderer.js` | Sun-specific procedural renderer, registered through the shared view-module system |
 | `stacks-feature-views.js` | Clouds, Weather, Elevation, Earthquakes and Traffic feature views using the existing shared Earth/layer interface; no second Earth |
-| `alien-world/view/alien-world-view-controller.js` | Alien World feature view and lifecycle; consumes shared publishing services |
+| `alien-world/view/alien-world-view-controller.js` | Alien World Live Feeds feature view and lifecycle |
+| `nature/view/nature-view-controller.js` | Nature Live Feeds feature view and lifecycle |
 | `location.html` / `earth-orb-globe.js` | Separate Location globe screen and its renderer |
 | `location-scanner.js` | Location Scanner interactions for the existing Earth Explorer flow |
 
 The primary-view manager and the view-module registry have distinct responsibilities. Some controllers retain compatibility/fallback event handling for load-order or older-cache resilience. Do not remove those handlers merely because they appear duplicative; trace the exact startup and iPhone paths first.
 
-### LIVE // EARTH Universal Editorial System
+### Universal Editorial System
 
-The Universal Editorial System is shared infrastructure for the whole app, not an Alien World-only feature. Its browser and production implementations live together in `editorial-engine/`:
+The Universal Editorial System is shared infrastructure for the whole app, not an Alien World-only subsystem:
 
 | File | Environment | Responsibility |
 |---|---|---|
 | `editorial-engine/universal-editorial-engine.js` | Browser | Shared output-contract validation and safe helpers exposed as `window.LiveEarthUniversalEditorialEngine` |
-| `editorial-engine/universal_editorial_engine.py` | Python production | Shared view-independent feed and PDF generation through `run_engine(...)` |
-| `editorial-engine/requirements.txt` | Python workflow | Pinned runtime dependencies for the production Engine |
-| `editorial-engine/README.md` | Documentation | Architecture, responsibilities and integration contract for every view |
+| `editorial-engine/universal_editorial_engine.py` | Python production | Shared view-independent feed and optional PDF generation through `run_engine(...)` |
+| `editorial-engine/requirements.txt` | Python workflow | Pinned runtime dependencies |
+| `editorial-engine/README.md` | Documentation | Architecture, responsibilities and integration contract |
 
-The JavaScript and Python files are complementary layers of one Universal Editorial System, not duplicate Engines. The browser layer validates and safely exposes published view outputs. The Python layer generates those outputs. Neither layer collects external sources, owns a view database, or contains an Alien World-specific feed list.
+The JavaScript and Python files are complementary layers of one system, not duplicate Engines. Neither layer collects external sources, owns a view database, or contains a view-specific feed list.
 
-**Shared-system rules:**
+**Ownership rules:** each content-producing view owns an independent logical database and Publisher. Its Collector, when needed, is the only component allowed to fetch that view's external sources and write to its database. The Publisher reads only its own database in read-only mode, then supplies the profile, command and bounded output destination to the shared Python Engine. The Engine does not fetch the internet, open databases, own schedules or write view records. All views reuse the one browser companion and the one Global PDF Reader.
 
-1. Each content-producing view owns its own logical database and its own Publisher.
-2. Each view's Collector, when needed, is the only component allowed to fetch that view's external sources and write to that view's database.
-3. A Publisher reads only its own view database in read-only mode, then supplies its profile, command and bounded output destination to the shared Python Engine.
-4. The Universal Editorial Engine is view-independent. It does not fetch the internet, open databases, own schedules or write view database records.
-5. The browser companion is loaded on demand from `./editorial-engine/universal-editorial-engine.js` and keeps the shared `window.LiveEarthUniversalEditorialEngine` API. Future views reuse this same file and contract instead of creating their own browser validator.
-6. All views use the one global PDF Reader for completed PDF publications. Publishers do not create separate PDF readers.
+### Nature Live Feeds
 
-### Alien World publishing integration
+- Collector: `nature/collector/collector.py`.
+- Database: `.publisher-data/nature/nature.sqlite3`.
+- Publisher/profile: `nature/publisher/`.
+- Public output: `nature/published/live-feed.json` and verified contextual image assets/rights metadata.
+- Workflow: `.github/workflows/nature-publisher.yml`, hourly at minute 15 UTC, plus manual dispatch.
+- Source data is screened RSS/Atom reporting; optional documentary photos are individually re-screened against approved Wikimedia Commons file-page metadata and allowed licences.
 
-Alien World is an online-only cinematic astronomy and space-discovery magazine/browser, not a game.
+### Alien World Live Feeds
 
-1. `alien-world/collector/collector.py` is the only Alien World component that fetches approved NASA sources, screens source-post imagery and writes the Alien World database.
-2. `alien-world/publisher/publisher.py` reads that database read-only and supplies the publication command to the shared Python Engine. Publisher network access and database write access remain disabled.
-3. `alien-world/publisher/profile.json` defines Alien World source policy, image handling, editorial settings and output paths.
-4. `alien-world/published/` contains the completed feed, catalogue, latest-publication pointer and magazine PDFs.
-5. `alien-world/view/alien-world-publisher-client.js` reads completed output and opens PDFs through the shared Global PDF Reader. `alien-world/view/alien-world-view-controller.js` owns only the feature interface/lifecycle. Neither browser file collects sources, opens the database or composes magazines.
-
-The active workflow remains `.github/workflows/alien-world-publisher.yml`, as GitHub requires. Its replacement invokes the canonical `alien-world/collector/collector.py` and `alien-world/publisher/publisher.py` paths and commits only `alien-world/published/`. The ZIP importer blocks `.github/`, so its complete replacement is supplied inside `alien-world/publisher/ALIEN_WORLD_PUBLISHER_WORKFLOW_UPDATE.yml` for a separate manual file replacement. The database cache remains `.publisher-data/alien-world/`.
-
-### Nature publishing integration
-
-Nature is an independent view with its own Collector, Publisher, rights records and publication outputs under `nature/`. The active workflow is `.github/workflows/nature-publisher.yml`; its operating instructions are in `nature/docs/WORKFLOW.md`. The Nature Collector alone accesses Commons/source metadata and writes the Nature database. The Nature Publisher reads that database read-only and routes validated output to `nature/published/`.
+- Collector: `alien-world/collector/collector.py`; official NASA source domains only.
+- Database: `.publisher-data/alien-world/alien-world.sqlite3`.
+- Publisher/profile: `alien-world/publisher/`.
+- Public output: `alien-world/published/live-feed.json` only.
+- Workflow: `.github/workflows/alien-world-publisher.yml`, hourly at minute 45 UTC, plus manual dispatch.
+- Publisher runs its deterministic contract tests before publication, opens its source database read-only and rejects magazine-shaped output. The browser view reads only the completed feed; it does not collect sources or generate publications.
 
 ### Global PDF Reader
 
-`universal-pdf-viewer.js` is a shared, view-independent reader. Its public API remains:
-
-- `window.LiveEarthUniversalPDFViewer.open(options)`
-- `close()`
-- `isOpen()`
-- `listSaved()`
-
-It opens the actual PDF supplied by the calling view, renders one page at a time, supports navigation/zoom/pan, downloads the original PDF, and closes back to its caller. It does not own feeds, issue catalogues, Publisher listings or magazine generation.
+`universal-pdf-viewer.js` is a shared, view-independent reader. Its public API remains `window.LiveEarthUniversalPDFViewer.open(options)`, `close()`, `isOpen()` and `listSaved()`. It opens the actual PDF supplied by the calling view, renders one page at a time, supports navigation/zoom/pan, downloads the original PDF, and closes back to its caller.
 
 Preserve the existing PDF.js engine version/cache and IndexedDB database `live-earth-pdf-library` (version 1, store `issues`) and all saved publications. Do not reset them to troubleshoot a reader problem.
 
 ### Local data and recovery
 
-- `data-store.js` owns the current local data-store helpers.
-- `data-recovery.js` owns local backup/recovery support.
-- The `recovery/` directory contains deliberate rollback and dated baseline records. It is not disposable clutter.
-- `alien-world/published/` contains current Alien World published outputs and magazine PDFs. Do not remove publications as a repository-size shortcut without a separate retention decision.
-- `nature/published/` contains Nature's independently validated output and current edition. Preserve its last-good files.
+- `data-store.js` owns the current local data-store helpers; `data-recovery.js` owns local backup/recovery support.
+- `recovery/` contains deliberate rollback and dated baseline records. It is not disposable clutter.
+- Preserve Nature and Alien World database cache families; neither source database belongs in the public repository.
+- Preserve saved PDFs, browser recovery data and user preferences.
 
 ## Repository automation and upload workflow
 
-- `.github/workflows/zip-extract-auto-upload.yml` is the existing root-ZIP importer. Upload `LIVE_EARTH_MAIN_UPLOAD.zip` to the repository root on `main`; it validates the manifest and SHA-256 values, applies only listed writes/deletions, then removes the temporary ZIP after successful application.
-- The importer deliberately rejects changes under `.github/`. Workflow changes must be handled separately and explicitly.
+- `.github/workflows/zip-extract-auto-upload.yml` is the existing root-ZIP importer. Upload `LIVE_EARTH_MAIN_UPLOAD.zip` to the repository root on `main`; it validates `UPLOAD_MANIFEST.json` and SHA-256 values, applies only listed writes/deletions, then removes the temporary ZIP after successful application.
+- The importer deliberately rejects changes under `.github/`. Workflow changes must be handled separately and explicitly. The current Nature and Alien World hourly workflow files are already present on `main`.
 - The owner checks GitHub Actions and Pages, then tests on the iPhone. Do not claim deployment until there is evidence or the owner confirms the live behaviour.
 
 ## Current cleanup decisions
 
 - Cleanup 01 removed `README-FIRST.txt`, `PIPELINE_WORKFLOW_INSTALL.md`, `SW-VERSION-PATCH.md` and `UPDATE-MANAGER-PATCH.md`; all four were obsolete or completed instructions. The upload ZIP was removed by the existing workflow after application.
 - Keep `LIVE-EARTH-LAYOUT-EDITOR.html` as a development/preview utility unless the owner explicitly retires it.
-- Keep `basic-map.html` and `basic-map.js` until the intended Basic Map/Location route is resolved; the project continuity register explicitly leaves this decision open.
-- Keep `recovery/`, published magazines, current Home Orb artwork and Moon/Sun backgrounds.
-- Keep regression suites beside their owning views: `alien-world/tests/`, `nature/tests/` and `magazine/tests/`. The temporary root `/tests` sandbox has been retired; its Alien World regression suite now lives under `alien-world/tests/`.
+- Keep `basic-map.html` and `basic-map.js` until the intended Basic Map/Location route is resolved.
+- Keep `recovery/`, current Home Orb artwork and Moon/Sun backgrounds.
+- Keep regression suites beside their owning views: `alien-world/tests/`, `nature/tests/` and `magazine/tests/`. The temporary root `/tests` sandbox has been retired.
 - Tracked Python `__pycache__` and `.pyc` files are generated artifacts and must not be committed.
 - Treat dated source snapshots as historical recovery records. Do not delete them merely because a newer live implementation exists.
 
 ## Next development phase — Views Separation
 
-Continue the read-only architecture audit. Map each view's activation, deactivation, DOM ownership, data ownership, shared-service dependencies and return path before changing code. Keep the existing global primary-view manager and shared feature-module registry as the baseline. The first code change must target one confirmed boundary issue only, include a regression check, and leave Home composition, all five primary Orbs, Sun View, locked Moon View, Location privacy, offline startup, local data and the existing Publisher/Engine boundaries untouched.
+Continue the read-only architecture audit. Map each view's activation, deactivation, DOM ownership, data ownership, shared-service dependencies and return path before changing code. Keep the existing global primary-view manager and shared feature-module registry as the baseline. Any first code change must target one confirmed boundary issue only, include a regression check, and leave Home composition, all five primary Orbs, Sun View, locked Moon View, Location privacy, offline startup, local data and the existing Publisher/Engine boundaries untouched.

@@ -1,23 +1,34 @@
-# Alien World workflow operations
+# Alien World Live Feed workflow
 
-Active GitHub Actions workflow: `.github/workflows/alien-world-publisher.yml`.
+**Active workflow:** `.github/workflows/alien-world-publisher.yml`  
+**Schedule:** every hour at minute 45 UTC  
+**Manual run:** GitHub Actions → Alien World Live Feed Publisher → Run workflow.
 
-## Manual modes
+Alien World has one publishing responsibility: refresh the independent NASA-source database and publish the rolling Live Feed. There are no `magazine`, `all`, weekly magazine or archive modes.
 
-- `live` — refresh the Collector database and publish the rolling live feed.
-- `magazine` — refresh the Collector database and publish a Space Journal for the previous 48-hour coverage window.
-- `all` — refresh the database and publish both outputs.
+## Pipeline ownership
 
-The scheduled workflow runs collection/live publication every three hours and the magazine mode weekly. The Collector is run before the Publisher in each workflow execution.
+1. `alien-world/collector/collector.py` fetches only approved official NASA sources, screens images attached to the original NASA story and writes to `.publisher-data/alien-world/`.
+2. The Collector cache remains `.publisher-data/alien-world/` with the existing `alien-world-db-v1-...` cache-key family. The database is SQLite, independent of Nature, and is not committed to the repository.
+3. `alien-world/publisher/publisher.py` runs the deterministic regression suite, opens the Alien World database read-only/query-only and invokes the shared Universal Editorial Engine in `live` mode.
+4. The Publisher accepts only a valid `live-feed.json` payload and writes only `alien-world/published/live-feed.json`. It rejects magazine-shaped output and preserves the last-good feed when validation or generation fails.
+5. The browser view reads the completed feed. It does not collect sources, open the database or generate publications.
 
-## Persistence and failure behaviour
+## Feed and retention policy
 
-- The Collector database is cached at `.publisher-data/alien-world/`.
-- The cache key family remains `alien-world-db-v1-...`; the folder reorganisation does not create a new database or discard prior cache entries.
-- The workflow commits only files under `alien-world/published/`.
-- The Publisher runs the Alien World regression tests before publication, opens the database read-only, and preserves last-good outputs on failure.
-- The workflow installs dependencies from the shared `editorial-engine/requirements.txt`.
+- Database retention: 32 days; maximum database record count: 2,000.
+- Collector refresh target: one hour.
+- Visible publication window: rolling 48 hours.
+- Maximum visible stories: 10.
+- Browser refresh: every five minutes while the view is open.
+- Online-only: feed requests use `cache: no-store`; offline state does not present an old feed as current; closing the view clears its displayed feed. No browser localStorage, sessionStorage or IndexedDB copy is used.
 
-## Custom editorial brief
+## Workflow permissions and outputs
 
-The view provides a copyable brief. Open the Publisher workflow in GitHub Actions, choose the desired mode, paste the brief into `custom_request`, then run it. The app does not store a GitHub token.
+The active workflow checks out `main`, restores the existing view-specific cache, installs `editorial-engine/requirements.txt`, runs the Collector and then the Publisher. It commits only `alien-world/published/live-feed.json` when the output changes, then requests a GitHub Pages rebuild. It does not commit the source database.
+
+GitHub's ZIP Extractor blocks `.github/`. If the workflow itself needs a future change, replace `.github/workflows/alien-world-publisher.yml` manually using the complete copy-ready file at `alien-world/publisher/ALIEN_WORLD_PUBLISHER_WORKFLOW_UPDATE.yml`.
+
+## Current verification note — 1 November 2026
+
+The observed scheduled run `41320821525` completed the Collector step but the Publisher's contract-test gate failed on two test expectations. This package moves the explanatory README out of `alien-world/published/`, which resolves the extra-output path mismatch once uploaded. The RSS parser test still expects `publishedAt` although the current parser returns the original source date in `published`; correct that test, run the full suite, and require a successful later workflow before marking automated publication verified. The Publisher correctly preserved the last-good feed.
