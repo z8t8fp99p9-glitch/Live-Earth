@@ -76,7 +76,31 @@
     });
   }
 
-  // The procedural Sun and Nature remain optional; failure never blocks Home or Moon.
+  // Magazine is a deliberately blank full-screen Feature Orb view for now.
+  // Its shell is independent of the dormant publication adapter and never blocks startup.
+  async function loadMagazineView() {
+    if (window.__liveEarthMagazineViewInstalled) return true;
+    if (!window.LiveEarthFeatureViews?.register) throw new Error("The Stacks feature registry is not ready yet.");
+    if (window.__liveEarthMagazineViewLoadPromise) return window.__liveEarthMagazineViewLoadPromise;
+    const loading = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = new URL("./magazine/view/magazine-view-controller.js", document.baseURI).href;
+      script.async = true;
+      script.onload = () => {
+        if (window.__liveEarthMagazineViewInstalled) resolve(true);
+        else reject(new Error("The Magazine controller loaded but did not register its view."));
+      };
+      script.onerror = () => reject(new Error("The Magazine view file could not be loaded."));
+      document.head.appendChild(script);
+    });
+    window.__liveEarthMagazineViewLoadPromise = loading;
+    return loading.catch(error => {
+      window.__liveEarthMagazineViewLoadPromise = null;
+      throw error;
+    });
+  }
+
+  // The procedural Sun, Nature and Magazine remain optional; failure never blocks Home or Moon.
   loadProceduralSun().then(() => {
     window.__liveEarthSunRendererReady = true;
     signalVerifiedStartup();
@@ -86,6 +110,9 @@
   });
   loadNatureView().catch(error => {
     console.warn("[LIVE // EARTH] Nature view is not available yet; Home, Moon and the existing Stacks views remain available.", error?.message || error);
+  });
+  loadMagazineView().catch(error => {
+    console.warn("[LIVE // EARTH] Magazine view is not available yet; Home, Moon and the other Stacks views remain available.", error?.message || error);
   });
 
   window.addEventListener("live-earth-scene-ready", signalVerifiedStartup);
