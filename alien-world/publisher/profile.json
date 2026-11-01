@@ -3,44 +3,20 @@
   "viewId": "alien-world",
   "publisherId": "alien-world-publisher",
   "displayName": "Alien World Live Publisher",
-  "subjectScope": [
-    "space science",
-    "astronomy",
-    "planetary science",
-    "spaceflight missions",
-    "human space exploration",
-    "NASA discoveries and research"
-  ],
+  "subjectScope": ["space science", "astronomy", "planetary science", "spaceflight missions", "human space exploration", "NASA discoveries and research"],
   "sourcePolicy": {
     "policy": "Official NASA source feeds only",
-    "allowedArticleDomains": [
-      "nasa.gov"
-    ],
+    "allowedArticleDomains": ["nasa.gov"],
     "requireHttps": true,
     "keepOriginalSourceUrl": true,
     "rejectMissingPublicationDate": true
   },
   "sources": [
-    {
-      "name": "NASA News",
-      "feedUrl": "https://www.nasa.gov/news-release/feed/"
-    },
-    {
-      "name": "NASA Science",
-      "feedUrl": "https://science.nasa.gov/feed/"
-    },
-    {
-      "name": "NASA Image of the Day",
-      "feedUrl": "https://www.nasa.gov/feeds/iotd-feed/"
-    },
-    {
-      "name": "NASA Artemis",
-      "feedUrl": "https://www.nasa.gov/blogs/artemis/feed/"
-    },
-    {
-      "name": "NASA Space Station",
-      "feedUrl": "https://www.nasa.gov/blogs/spacestation/feed/"
-    }
+    {"name": "NASA News", "feedUrl": "https://www.nasa.gov/news-release/feed/"},
+    {"name": "NASA Science", "feedUrl": "https://science.nasa.gov/feed/"},
+    {"name": "NASA Image of the Day", "feedUrl": "https://www.nasa.gov/feeds/iotd-feed/"},
+    {"name": "NASA Artemis", "feedUrl": "https://www.nasa.gov/blogs/artemis/feed/"},
+    {"name": "NASA Space Station", "feedUrl": "https://www.nasa.gov/blogs/spacestation/feed/"}
   ],
   "collection": {
     "owner": "Alien World Data Collection",
@@ -64,11 +40,14 @@
     "windowMode": "rolling-hours",
     "issueWindowHours": 48,
     "minimumStories": 2,
-    "maximumStories": 10
+    "maximumStories": 10,
+    "adaptiveLookback": {
+      "enabled": true,
+      "targetStories": 10,
+      "expansionHours": [48, 96, 168, 336, 504, 768]
+    }
   },
-  "editorialProfile": {
-    "maximumDocumentaryImages": 5
-  },
+  "editorialProfile": {"maximumDocumentaryImages": 5},
   "output": {
     "directory": "alien-world/published",
     "liveFeed": "live-feed.json",

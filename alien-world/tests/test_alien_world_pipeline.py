@@ -1,9 +1,4 @@
-"""Deterministic contract tests for the Alien World Live Feed pipeline.
-
-These tests do not use the network or the production Collector database. They
-verify that Alien World can publish only live-feed.json while preserving the
-Collector/Publisher/Universal Engine ownership boundaries.
-"""
+"""Deterministic contract tests for the Alien World Live Feed pipeline."""
 from __future__ import annotations
 
 import ast
@@ -45,26 +40,23 @@ PROFILE = json.loads(PROFILE_PATH.read_text(encoding="utf-8"))
 
 class CanonicalLayoutTests(unittest.TestCase):
     def test_alien_world_publication_is_live_feed_only(self):
-        expected = [
-            COLLECTOR_PATH,
-            PUBLISHER_PATH,
-            PROFILE_PATH,
-            ROOT / "alien-world" / "published" / "live-feed.json",
-            CLIENT_PATH,
-            VIEW_PATH,
-            WORKFLOW_UPDATE_PATH,
-        ]
+        expected = [COLLECTOR_PATH, PUBLISHER_PATH, PROFILE_PATH,
+                    ROOT / "alien-world" / "published" / "live-feed.json",
+                    CLIENT_PATH, VIEW_PATH, WORKFLOW_UPDATE_PATH]
         self.assertTrue(all(path.is_file() for path in expected))
         output_files = {path.name for path in (ROOT / "alien-world" / "published").glob("*") if path.is_file()}
         self.assertEqual(output_files, {"live-feed.json"})
 
-    def test_profile_exposes_no_magazine_or_archive_outputs(self):
+    def test_profile_exposes_adaptive_live_feed_and_retains_bounds(self):
         publication = PROFILE["publication"]
         output = PROFILE["output"]
+        adaptive = publication["adaptiveLookback"]
         self.assertTrue(output["liveFeedOnly"])
         self.assertEqual(output["liveFeed"], "live-feed.json")
         self.assertEqual(publication["issueWindowHours"], 48)
         self.assertEqual(publication["maximumStories"], 10)
+        self.assertEqual(adaptive["targetStories"], 10)
+        self.assertEqual(adaptive["expansionHours"], [48, 96, 168, 336, 504, 768])
         self.assertEqual(PROFILE["database"]["retentionDays"], 32)
         self.assertEqual(PROFILE["database"]["maximumRecords"], 2000)
         self.assertEqual(PROFILE["collection"]["refreshHours"], 1)
@@ -103,22 +95,17 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(len(records), 1)
         self.assertEqual(records[0]["sourceName"], "NASA News")
         self.assertIn("useful context", records[0]["summary"])
-        self.assertTrue(records[0]["publishedAt"])
+        self.assertIsNotNone(COLLECTOR.parse_date(records[0]["published"]))
 
     def test_source_image_screening_rejects_non_nasa_and_restricted_images(self):
-        safe = {
-            "url": "https://www.nasa.gov/wp-content/uploads/mission.jpg",
-            "caption": "NASA mission image",
-            "credit": "NASA",
-        }
+        safe = {"url": "https://www.nasa.gov/wp-content/uploads/mission.jpg",
+                "caption": "NASA mission image", "credit": "NASA"}
         self.assertTrue(COLLECTOR.image_is_eligible(safe, "NASA science report"))
         self.assertFalse(COLLECTOR.image_is_eligible(
-            {**safe, "url": "https://example.com/mission.jpg"}, "NASA science report"
-        ))
+            {**safe, "url": "https://example.com/mission.jpg"}, "NASA science report"))
         self.assertFalse(COLLECTOR.image_is_eligible(
             {**safe, "rightsNotice": "Copyright © Example Rights Holder; all rights reserved"},
-            "NASA science report",
-        ))
+            "NASA science report"))
 
     def test_collector_profile_keeps_story_images_and_no_publication_write(self):
         self.assertTrue(PROFILE["imageUsePolicy"]["storyImagesAllowed"])
@@ -131,15 +118,10 @@ class CollectorTests(unittest.TestCase):
 
 class PublisherTests(unittest.TestCase):
     def feed_payload(self):
-        return {
-            "schemaVersion": 1,
-            "viewId": "alien-world",
-            "publisherId": "alien-world-publisher",
-            "generatedAt": "2026-11-01T12:00:00Z",
-            "windowHours": 48,
-            "storyCount": 1,
-            "stories": [{"id": "story-1", "title": "NASA report"}],
-        }
+        return {"schemaVersion": 1, "viewId": "alien-world", "publisherId": "alien-world-publisher",
+                "generatedAt": "2026-11-01T12:00:00Z", "windowHours": 48,
+                "storyCount": 1, "stories": [{"id": "story-1", "title": "NASA report",
+                                                    "url": "https://www.nasa.gov/news/report/"}]}
 
     def test_publisher_profile_and_boundaries_are_live_only(self):
         profile = PUBLISHER.load_profile()
@@ -161,6 +143,26 @@ class PublisherTests(unittest.TestCase):
         self.assertNotIn("open_writer_db", calls)
         self.assertIn("read_only_connection", calls)
         self.assertIn("run_engine", calls)
+
+    def test_adaptive_database_adapter_deduplicates_same_story_across_urls(self):
+        database = sqlite3.connect(":memory:")
+        database.row_factory = sqlite3.Row
+        database.execute("CREATE TABLE stories(story_id TEXT,title TEXT,url TEXT,published_at REAL)")
+        now = datetime(2026, 11, 2, 0, 0, tzinfo=timezone.utc)
+        published = now - timedelta(hours=36)
+        database.executemany("INSERT INTO stories VALUES(?,?,?,?)", [
+            ("a", "NASA’s Webb Telescope Reveals New Nebula", "https://www.nasa.gov/image-article/example/", published.timestamp()),
+            ("b", "NASA's Webb Telescope Reveals New Nebula", "https://www.nasa.gov/image-detail/example/", (published + timedelta(seconds=30)).timestamp()),
+            ("c", "NASA Announces Another Science Mission", "https://www.nasa.gov/news/mission/", published.timestamp()),
+        ])
+        adapter = PUBLISHER.AdaptiveReadOnlyConnection(database, now, 48)
+        rows = adapter.execute(
+            "SELECT story_id,title,url,published_at FROM stories WHERE published_at >= ? AND published_at < ? ORDER BY published_at DESC LIMIT 500",
+            (now.timestamp(), (now + timedelta(hours=2)).timestamp()),
+        ).fetchall()
+        self.assertEqual(len(rows), 2)
+        self.assertEqual({row["story_id"] for row in rows}, {"b", "c"})
+        database.close()
 
     def test_route_writes_only_the_live_feed(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -194,10 +196,8 @@ class PublisherTests(unittest.TestCase):
             self.assertEqual(last_good.read_bytes(), before)
 
     def test_non_live_cli_mode_is_not_accepted(self):
-        result = subprocess.run(
-            [sys.executable, str(PUBLISHER_PATH), "--mode", "magazine"],
-            cwd=ROOT, text=True, capture_output=True, check=False,
-        )
+        result = subprocess.run([sys.executable, str(PUBLISHER_PATH), "--mode", "magazine"],
+                                cwd=ROOT, text=True, capture_output=True, check=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("invalid choice", result.stderr)
 
@@ -221,7 +221,6 @@ class EngineIntegrationTests(unittest.TestCase):
     def test_shared_engine_generates_only_a_live_feed_when_commanded_live(self):
         sys.path.insert(0, str(ENGINE_PATH.parent))
         import universal_editorial_engine as engine
-
         now = datetime.now(timezone.utc).replace(microsecond=0)
         database = sqlite3.connect(":memory:")
         database.row_factory = sqlite3.Row
@@ -239,11 +238,9 @@ class EngineIntegrationTests(unittest.TestCase):
                 f"A substantial source-linked summary with useful context for integration test {index}.",
                 "NASA News", "https://www.nasa.gov/news-release/feed/", published.timestamp(), now.timestamp(),
                 None, None, None, None, None, None, None, "alien-world"))
-        command = {
-            "commandId": "live-test-command", "viewId": "alien-world",
-            "publisherId": "alien-world-publisher", "issuedAt": now.isoformat(),
-            "mode": "live", "customRequest": "",
-        }
+        command = {"commandId": "live-test-command", "viewId": "alien-world",
+                   "publisherId": "alien-world-publisher", "issuedAt": now.isoformat(),
+                   "mode": "live", "customRequest": ""}
         with tempfile.TemporaryDirectory() as temp:
             result = engine.run_engine(database, PROFILE, command, Path(temp), now)
             self.assertIn("feed", result)
