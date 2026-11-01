@@ -1,0 +1,213 @@
+{
+  "schemaVersion": 1,
+  "registryVersion": "2026-11-02.3",
+  "registryName": "LIVE // EARTH Global Source & Rights Registry",
+  "policyPrinciples": [
+    "Free-to-read is not automatically free-to-store, transform, publish or redistribute.",
+    "Text and image rights are evaluated independently for each story.",
+    "The most restrictive applicable item or source condition controls.",
+    "Unknown, missing or conflicting evidence fails closed.",
+    "No permission requests are assumed; use only published reuse rights or clearly applicable public-domain rules."
+  ],
+  "policies": [
+    {
+      "policyId": "nasa-official-federal-source-text-v1",
+      "policyVersion": "2",
+      "displayName": "Official NASA source material — conditional federal-work use",
+      "views": [
+        "alien-world"
+      ],
+      "status": "GREEN_CONDITIONAL",
+      "articleDomains": [
+        "nasa.gov"
+      ],
+      "feedDomains": [
+        "nasa.gov"
+      ],
+      "sourceNameContains": [
+        "nasa"
+      ],
+      "termsUrl": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "reviewedAt": "2026-11-02",
+      "text": {
+        "mode": "conditional-us-government-work",
+        "allowStorage": true,
+        "allowSummary": true,
+        "allowTransform": false,
+        "allowDisplay": true,
+        "attribution": "NASA",
+        "reason": "Only official NASA feed items and NASA.gov articles with no visible third-party/copyright restriction signals. This is not a blanket permission for all nasa.gov material."
+      },
+      "notes": [
+        "NASA says its own U.S. government-created material generally is not subject to U.S. copyright, but third-party copyrighted material may appear on NASA sites and is not cleared by NASA's own use.",
+        "NASA insignia, logotypes, identifiers, endorsement, promotional uses and employee/individual likeness concerns remain separate restrictions.",
+        "If authorship, rights notices or item provenance are unclear, the checker returns RED or UNKNOWN rather than presuming public domain."
+      ],
+      "allowedFeedUrls": [
+        "https://www.nasa.gov/news-release/feed/",
+        "https://science.nasa.gov/feed/",
+        "https://www.nasa.gov/feeds/iotd-feed/",
+        "https://www.nasa.gov/blogs/artemis/feed/",
+        "https://www.nasa.gov/blogs/spacestation/feed/"
+      ]
+    },
+    {
+      "policyId": "physorg-rss-headline-link-limited-v1",
+      "policyVersion": "1",
+      "displayName": "Phys.org RSS — limited headline and link use",
+      "views": [
+        "nature"
+      ],
+      "status": "AMBER_LIMITED",
+      "articleDomains": [
+        "phys.org"
+      ],
+      "feedDomains": [
+        "phys.org"
+      ],
+      "sourceNameContains": [
+        "phys.org"
+      ],
+      "termsUrl": "https://phys.org/feeds/",
+      "reviewedAt": "2026-11-02",
+      "text": {
+        "mode": "headline-link-only",
+        "allowStorage": true,
+        "allowSummary": false,
+        "allowTransform": false,
+        "allowDisplay": true,
+        "attribution": "Phys.org",
+        "reason": "Phys.org RSS terms allow feed use with attribution and prohibit changing headlines/links. This initial route deliberately retains only headline, date and source link; it does not retain the feed summary."
+      },
+      "allowedFeedUrls": [
+        "https://phys.org/rss-feed/earth-news/environment/"
+      ]
+    },
+    {
+      "policyId": "mongabay-per-item-open-license-required-v1",
+      "policyVersion": "1",
+      "displayName": "Mongabay — individual article licence required",
+      "views": [
+        "nature"
+      ],
+      "status": "AMBER_ITEM_LICENSE_REQUIRED",
+      "articleDomains": [
+        "mongabay.com",
+        "news.mongabay.com"
+      ],
+      "feedDomains": [
+        "mongabay.com",
+        "news.mongabay.com"
+      ],
+      "termsUrl": "https://mongabay.com/terms/",
+      "reviewedAt": "2026-11-02",
+      "text": {
+        "mode": "explicit-open-license",
+        "allowStorage": true,
+        "allowSummary": true,
+        "allowTransform": true,
+        "allowDisplay": true,
+        "acceptedLicenses": [
+          "https://creativecommons.org/publicdomain/zero/1.0/",
+          "https://creativecommons.org/licenses/by/4.0/",
+          "https://creativecommons.org/licenses/by-sa/4.0/"
+        ],
+        "reason": "Mongabay content is reusable only where the individual item is expressly published under a suitable open licence; third-party images remain separately cleared."
+      },
+      "allowedFeedUrls": [
+        "https://news.mongabay.com/feed/"
+      ]
+    },
+    {
+      "policyId": "sciencedaily-no-persistent-database-v1",
+      "policyVersion": "1",
+      "displayName": "ScienceDaily — no persistent database storage",
+      "views": [
+        "nature"
+      ],
+      "status": "RED",
+      "articleDomains": [
+        "sciencedaily.com"
+      ],
+      "feedDomains": [
+        "sciencedaily.com"
+      ],
+      "termsUrl": "https://www.sciencedaily.com/terms.htm",
+      "reviewedAt": "2026-11-02",
+      "text": {
+        "mode": "blocked",
+        "allowStorage": false,
+        "allowSummary": false,
+        "allowTransform": false,
+        "allowDisplay": false,
+        "reason": "ScienceDaily RSS terms prohibit placing retrieved or derived content in a database without prior written consent. Our Collector uses a persistent SQLite database, so this route is disabled."
+      },
+      "allowedFeedUrls": [
+        "https://www.sciencedaily.com/rss/top/environment.xml"
+      ]
+    },
+    {
+      "policyId": "nature-portfolio-database-storage-prohibited-v1",
+      "policyVersion": "1",
+      "displayName": "Nature Portfolio — database population prohibited by site terms",
+      "views": [
+        "nature"
+      ],
+      "status": "RED",
+      "articleDomains": [
+        "nature.com"
+      ],
+      "feedDomains": [
+        "nature.com"
+      ],
+      "termsUrl": "https://www.nature.com/info/terms-and-conditions",
+      "reviewedAt": "2026-11-02",
+      "text": {
+        "mode": "blocked",
+        "allowStorage": false,
+        "allowSummary": false,
+        "allowTransform": false,
+        "allowDisplay": false,
+        "reason": "Nature Portfolio website terms prohibit copying/downloading/storing site content, feeds or data to populate a database or publication except as specifically permitted; our persistent Collector database is outside the permitted personal, non-systematic use."
+      },
+      "notes": [
+        "Nature Portfolio website terms prohibit copying, downloading or storing content, files, feeds or data to make or populate a database or publication unless specifically permitted by applicable terms. The current persistent automated Collector route is therefore disabled.",
+        "An article published under an explicit open-access licence may need a separate item-level policy route in a future release; this initial source-feed route does not attempt to infer one."
+      ],
+      "allowedFeedUrls": [
+        "https://www.nature.com/subjects/ecology.rss"
+      ]
+    }
+  ],
+  "imagePolicies": {
+    "nasa": {
+      "termsUrl": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+      "reviewedAt": "2026-11-02",
+      "allowNASAEditorialUse": true,
+      "requireOriginalStoryAssociation": true,
+      "requireNASAHostForArticleAndImage": true,
+      "requireVisibleCredit": true,
+      "requireContextCaption": true,
+      "rejectThirdPartyAndCopyrightSignals": true,
+      "rejectConceptArtForDocumentaryPhotoSlot": true,
+      "noEndorsementOrPromotionalUse": true,
+      "rejectNASAInsigniaAndLogos": true,
+      "policyVersion": "2"
+    },
+    "wikimediaCommons": {
+      "termsUrl": "https://commons.wikimedia.org/wiki/Commons:Reusing_content_outside_Wikimedia/en",
+      "reviewedAt": "2026-11-02",
+      "acceptedLicenses": [
+        "https://creativecommons.org/publicdomain/zero/1.0/",
+        "https://creativecommons.org/licenses/by/4.0/",
+        "https://creativecommons.org/licenses/by-sa/4.0/"
+      ],
+      "requireExactFilePage": true,
+      "requireCreator": true,
+      "requireLicenseLink": true,
+      "requireAttribution": true,
+      "requireModificationNote": true,
+      "rejectNoDerivativesWhenModified": true
+    }
+  }
+}
