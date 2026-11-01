@@ -1,4 +1,4 @@
-/* LIVE // EARTH — Alien World Live Reports view.
+/* LIVE // EARTH — Alien World Live Feeds view.
    Displays the finished Live Feed only. Collector, Publisher and shared Engine
    own data preparation; this browser view is a read-only presentation layer. */
 (() => {
@@ -8,7 +8,6 @@
 
   const VIEW_ID = 'alien-world';
   const ROOT_ID = 'le-alien-world-view';
-  const ACTIONS_URL = 'https://github.com/z8t8fp99p9-glitch/Live-Earth/actions/workflows/alien-world-publisher.yml';
   const REFRESH_MS = 5 * 60 * 1000;
 
   let active = false;
@@ -16,9 +15,6 @@
   let servicesPromise = null;
   let root = null;
   let liveList = null;
-  let liveStatus = null;
-  let liveCount = null;
-  let refreshButton = null;
 
   const element = (tag, className, text) => {
     const node = document.createElement(tag);
@@ -26,13 +22,6 @@
     if (text !== undefined && text !== null) node.textContent = String(text);
     return node;
   };
-
-  function setStatus(message, state = 'info') {
-    if (!liveStatus) return;
-    liveStatus.textContent = message || '';
-    liveStatus.dataset.state = state;
-    liveStatus.hidden = !message;
-  }
 
   function dateLabel(value) {
     const date = new Date(value);
@@ -123,14 +112,8 @@
       #${ROOT_ID} .le-aw-kicker{margin:0 0 9px;color:#d5a875;font-size:10px;font-weight:800;letter-spacing:.24em;text-transform:uppercase}
       #${ROOT_ID} .le-aw-title{margin:0;color:#f4f6fa;font-size:clamp(29px,8vw,43px);line-height:1;letter-spacing:.10em;font-weight:850;text-shadow:0 5px 26px #0008}
       #${ROOT_ID} .le-aw-subtitle{margin:11px 0 0;color:#a9bacb;font-size:13px;line-height:1.5;letter-spacing:.025em;max-width:440px}
-      #${ROOT_ID} .le-aw-section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:20px 1px 10px}
-      #${ROOT_ID} .le-aw-section-title{margin:0;color:#f0f3f7;font-size:17px;font-weight:760;letter-spacing:.015em}
-      #${ROOT_ID} .le-aw-count{flex:0 0 auto;color:#d9a976;font-size:9px;font-weight:800;letter-spacing:.13em}
-      #${ROOT_ID} .le-aw-status{margin:10px 0 14px;padding:12px 13px;border:1px solid #8296ab30;border-radius:12px;background:#0d1824b8;color:#aebfd0;font-size:11px;line-height:1.5}
-      #${ROOT_ID} .le-aw-status[hidden]{display:none}
-      #${ROOT_ID} .le-aw-status[data-state="success"]{border-color:#7ebc9b55;color:#bfe0ce}
-      #${ROOT_ID} .le-aw-status[data-state="warning"]{border-color:#d19c5b66;color:#e4c49c}
-      #${ROOT_ID} .le-aw-status[data-state="empty"]{color:#9aabba}
+      #${ROOT_ID} .le-aw-section-head{display:flex;align-items:center;margin:22px 1px 14px}
+      #${ROOT_ID} .le-aw-section-title{margin:0;color:#f0f3f7;font-size:18px;font-weight:780;letter-spacing:.09em;text-transform:uppercase}
       #${ROOT_ID} .le-aw-story-list{display:grid;gap:12px}
       #${ROOT_ID} .le-aw-story{overflow:hidden;border:1px solid #a6b9ca2c;border-radius:16px;background:linear-gradient(145deg,#172434e8,#09121ceF 72%);box-shadow:inset 1px 1px 1px #ffffff10,0 12px 28px #0005;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
       #${ROOT_ID} .le-aw-story-media{margin:0;background:#050b12}
@@ -144,10 +127,6 @@
       #${ROOT_ID} .le-aw-story-footer{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:13px;padding-top:10px;border-top:1px solid #9eb5ca20}
       #${ROOT_ID} .le-aw-story-source{color:#8295a7;font-size:9px;letter-spacing:.07em;text-transform:uppercase}
       #${ROOT_ID} .le-aw-source-link{color:#e2b988;font-size:10px;font-weight:750;text-decoration:none;white-space:nowrap}
-      #${ROOT_ID} .le-aw-button{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:9px 13px;border:1px solid #b7c5d244;border-radius:10px;background:#152333;color:#dce6ee;text-decoration:none;font:750 9px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.08em;text-transform:uppercase;touch-action:manipulation}
-      #${ROOT_ID} .le-aw-button-primary{border-color:#d7a56d99;background:linear-gradient(140deg,#a9764a66,#ffffff09);color:#f0d3ad}
-      #${ROOT_ID} .le-aw-button:focus-visible{outline:2px solid #e8be91;outline-offset:3px}
-      #${ROOT_ID} .le-aw-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 18px}
       #${ROOT_ID} .le-aw-empty{margin:0;padding:15px;border:1px dashed #91a5b433;border-radius:12px;color:#94a6b5;font-size:11px;line-height:1.5}
       @media(min-width:680px){#${ROOT_ID} .le-aw-story{display:grid;grid-template-columns:minmax(220px,38%) 1fr}#${ROOT_ID} .le-aw-story-media{display:flex;flex-direction:column;justify-content:center}#${ROOT_ID} .le-aw-story-image{height:100%;max-height:none;min-height:190px}#${ROOT_ID} .le-aw-story-copy{align-self:center;padding:20px}}
       @media(orientation:landscape){#${ROOT_ID} .le-aw-scroll{padding-left:max(24px,env(safe-area-inset-left));padding-right:max(24px,env(safe-area-inset-right))}}
@@ -196,31 +175,24 @@
 
   async function refreshLiveFeed() {
     if (!active || !liveList) return;
-    if (refreshButton) refreshButton.disabled = true;
-    setStatus('Contacting the Alien World Live Feed…');
+    liveList.replaceChildren(element('p', 'le-aw-empty', 'Loading Live Feeds…'));
     try {
       await ensureServices();
       const feed = await window.LiveEarthAlienWorldPublisher.loadLiveFeed();
       if (!active) return;
       liveList.replaceChildren();
       if (!feed.stories.length) {
-        liveList.appendChild(element('p', 'le-aw-empty', 'No eligible NASA reports have been published in the current rolling window yet.'));
-        setStatus(`Checked ${dateLabel(feed.generatedAt)} · No eligible reports in the latest ${feed.windowHours || 48} hours.`, 'empty');
+        liveList.appendChild(element('p', 'le-aw-empty', 'No eligible NASA reports are available in the current rolling feed yet.'));
       } else {
         feed.stories.forEach((story, index) => liveList.appendChild(storyCard(story, index)));
-        setStatus(`Updated ${dateLabel(feed.generatedAt)} · Rolling ${feed.windowHours || 48}-hour feed.`, 'success');
       }
-      if (liveCount) liveCount.textContent = `${feed.storyCount || feed.stories.length} REPORTS`;
     } catch (error) {
       if (!active) return;
       liveList.replaceChildren();
       const message = navigator.onLine === false
-        ? 'Live space reports are online-only. Reconnect to load the current feed.'
-        : `${error?.message || 'The Live Feed is not available yet.'} The last successfully published feed remains on the server.`;
-      setStatus(message, 'warning');
-      if (liveCount) liveCount.textContent = 'LIVE FEED';
-    } finally {
-      if (refreshButton) refreshButton.disabled = false;
+        ? 'Live Feeds need an internet connection. Reconnect to load the current reports.'
+        : `${error?.message || 'Live Feeds are temporarily unavailable.'} Please try again shortly.`;
+      liveList.appendChild(element('p', 'le-aw-empty', message));
     }
   }
 
@@ -245,23 +217,10 @@
     );
 
     const sectionHead = element('div', 'le-aw-section-head');
-    sectionHead.appendChild(element('h2', 'le-aw-section-title', 'Latest from space'));
-    liveCount = element('span', 'le-aw-count', 'LIVE FEED');
-    sectionHead.appendChild(liveCount);
-    liveStatus = element('p', 'le-aw-status', 'Connect to load the latest published reports.');
+    sectionHead.appendChild(element('h2', 'le-aw-section-title', 'LIVE FEEDS'));
     liveList = element('div', 'le-aw-story-list');
 
-    const actions = element('div', 'le-aw-actions');
-    refreshButton = element('button', 'le-aw-button', 'Refresh feed');
-    refreshButton.type = 'button';
-    refreshButton.addEventListener('click', refreshLiveFeed);
-    const openPublisher = element('a', 'le-aw-button le-aw-button-primary', 'Open Live Publisher');
-    openPublisher.href = ACTIONS_URL;
-    openPublisher.target = '_blank';
-    openPublisher.rel = 'noopener noreferrer';
-    actions.append(refreshButton, openPublisher);
-
-    wrap.append(masthead, sectionHead, liveStatus, actions, liveList);
+    wrap.append(masthead, sectionHead, liveList);
     scroll.appendChild(wrap);
     root.appendChild(scroll);
     document.body.appendChild(root);
@@ -297,9 +256,7 @@
 
   function onOffline() {
     if (!active || !liveList) return;
-    liveList.replaceChildren();
-    setStatus('Live space reports are online-only. Reconnect to load the current feed.', 'warning');
-    if (liveCount) liveCount.textContent = 'LIVE FEED';
+    liveList.replaceChildren(element('p', 'le-aw-empty', 'Live Feeds need an internet connection. Reconnect to load the current reports.'));
   }
 
   function onOnline() {
