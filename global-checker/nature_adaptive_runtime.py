@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Nature feed adapter: discovery parsing, eligible-story selection and 50 cap.
+"""Nature feed adapter: discovery parsing and uncapped 32-day eligible-story selection.
 
 This module contains no source-rights policy. Every text/image decision is made
 by the shared Global Checker policy engine using source-registry.json.
 """
 from __future__ import annotations
 
-import builtins
 import importlib.util
 import json
 import subprocess
@@ -14,7 +13,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-EXTRA_HOSTS = {"noaa.gov", "nasa.gov", "usgs.gov", "phys.org", "news.mongabay.com", "mongabay.com"}
+EXTRA_HOSTS = {"noaa.gov", "nasa.gov", "usgs.gov", "news.mongabay.com", "mongabay.com"}
 PROFILE_RELATIVE = Path("nature/publisher/profile.json")
 EXPECTED_POLICY_IDS = {
     "nasa-official-federal-source-text-v1",
@@ -30,16 +29,18 @@ EXPECTED_POLICY_IDS = {
 def _validate_configuration(root: Path, checker) -> None:
     profile = json.loads((root / PROFILE_RELATIVE).read_text(encoding="utf-8"))
     publication = profile["publication"]
-    if publication.get("maximumStories") != 50 or publication.get("adaptiveLookback", {}).get("targetStories") != 50:
-        raise RuntimeError("Nature's live publication target must be 50 stories.")
-    if publication.get("issueWindowHours") != 48:
-        raise RuntimeError("Nature must retain its 48-hour initial lookback.")
-    if publication.get("adaptiveLookback", {}).get("expansionHours") != [48, 96, 168, 336, 504, 768]:
-        raise RuntimeError("Nature adaptive lookback stages changed unexpectedly.")
+    if publication.get("maximumStories") != 0 or publication.get("adaptiveLookback", {}).get("targetStories") != 0:
+        raise RuntimeError("Nature must not impose a published story-count limit.")
+    if publication.get("issueWindowHours") != 768:
+        raise RuntimeError("Nature must publish the complete rolling 32-day window.")
+    if publication.get("adaptiveLookback", {}).get("expansionHours") != [768]:
+        raise RuntimeError("Nature must use one complete 32-day publication window.")
     if profile.get("database", {}).get("retentionDays") != 32:
         raise RuntimeError("Nature's independent database retention must remain 32 days.")
-    if len(profile.get("sources", [])) != 7:
-        raise RuntimeError("Nature source profile must contain the seven verified feeds.")
+    if len(profile.get("sources", [])) != 6:
+        raise RuntimeError("Nature must use the six active feeds; Phys.org has been removed.")
+    if any("phys.org" in str(source.get("url", "")).lower() for source in profile.get("sources", [])):
+        raise RuntimeError("Phys.org must remain absent from Nature's active source list.")
     registry = checker.load_registry()
     ids = {item.get("policyId") for item in registry.get("policies", [])}
     missing = EXPECTED_POLICY_IDS - ids
@@ -128,17 +129,10 @@ def _install_runner_adapters(run_pipeline, root: Path) -> None:
             original_tests = module.run_tests
 
             def compatible_tests():
-                # Contract tests must read the real live profile (50-story cap).
-                # Shrinking the profile here makes the profile contract test fail.
+                # Contract tests read the real uncapped 32-day profile.
                 return original_tests()
 
-            def nature_min(*values):
-                if len(values) == 2 and values[0] == 12 and values[1] == 50:
-                    return 50
-                return builtins.min(*values)
-
             module.run_tests = compatible_tests
-            module.min = nature_min
         return module
 
     run_pipeline._load_module = loader
@@ -166,27 +160,32 @@ def _install_checker_eligible_adaptive_selection(pipeline, checker) -> None:
                     params = parameters
                 rows = self._connection.execute(sql, params).fetchall()
                 rows = publisher_module.deduplicate_story_rows(rows)
-                registry_version = checker.load_registry().get("registryVersion")
-                eligibility = checker.load_registry().get("publicationEligibility", {})
+                registry = checker.load_registry()
+                registry_version = registry.get("registryVersion")
+                policies_by_id = {str(policy.get("policyId")): policy for policy in registry.get("policies", [])}
                 eligible = []
                 for row in rows:
                     story_id = str(row["story_id"])
                     text_decision = checker.get_decision(self._connection, "nature", story_id, "text")
+                    text_evidence = (text_decision or {}).get("evidence", {})
+                    text_policy = policies_by_id.get(str((text_decision or {}).get("policyId")), {})
+                    # Storage approval is the entry gate. Summary restrictions are
+                    # already enforced before persistence by CheckedConnection;
+                    # a permitted headline/link may still use approved original artwork.
                     text_ok = bool(
                         text_decision
                         and text_decision.get("allowed")
                         and text_decision.get("registryVersion") == registry_version
-                        and text_decision.get("summaryAllowed")
-                        and checker._meaningful_text(row["summary"], eligibility)
+                        and text_policy.get("status") in {"GREEN_CONDITIONAL", "AMBER_LIMITED", "AMBER_ITEM_LICENSE_REQUIRED"}
+                        and text_evidence.get("articleUrl") == str(row["url"])
+                        and text_evidence.get("title") == str(row["title"])
+                        and text_evidence.get("sourceUrl") == str(row["source_url"])
+                        and text_evidence.get("sourceName") == str(row["source_name"])
                     )
-                    image_decision = checker.get_decision(self._connection, "nature", story_id, "image")
-                    image_record = self._verified_images.get(story_id)
-                    image_ok = bool(
-                        image_decision and image_decision.get("allowed")
-                        and image_decision.get("registryVersion") == registry_version
-                        and pipeline._technical_image_record(row, image_record, publisher_module.ROOT)
-                    )
-                    if text_ok or image_ok:
+                    # A source denied for storage is rejected even if an image
+                    # exists. Stored and permitted text routes (including limited
+                    # headline/link use) can proceed to the image fallback.
+                    if text_ok:
                         eligible.append(row)
 
                 preferred = [
@@ -195,15 +194,20 @@ def _install_checker_eligible_adaptive_selection(pipeline, checker) -> None:
                         row, self._verified_images.get(str(row["story_id"])), publisher_module.ROOT
                     )
                 ]
-                selected = preferred[:self._maximum_stories]
-                selected_ids = {str(row["story_id"]) for row in selected}
-                for row in eligible:
-                    if len(selected) >= self._maximum_stories:
-                        break
-                    story_id = str(row["story_id"])
-                    if story_id not in selected_ids:
-                        selected.append(row)
-                        selected_ids.add(story_id)
+                # All eligible records in the 32-day window are published.
+                # Documentary photos retain ordering priority only when a cap exists.
+                if self._maximum_stories > 0:
+                    selected = preferred[:self._maximum_stories]
+                    selected_ids = {str(row["story_id"]) for row in selected}
+                    for row in eligible:
+                        if len(selected) >= self._maximum_stories:
+                            break
+                        story_id = str(row["story_id"])
+                        if story_id not in selected_ids:
+                            selected.append(row)
+                            selected_ids.add(story_id)
+                else:
+                    selected = list(eligible)
                 selected.sort(key=lambda row: float(row["published_at"] or 0), reverse=True)
                 self.story_selection_applied = True
                 self.selected_documentary_images = sum(
@@ -253,7 +257,7 @@ def run_nature(root: Path, runner: Path, phase: str) -> None:
         collector_module.db_connect = open_checked_db
 
     def compatible_contract_tests():
-        # Keep the actual Nature profile intact while checking its 50-story contract.
+        # Keep the actual Nature profile intact while checking the uncapped 32-day contract.
         original_contract_tests()
         shared_test = root / "global-checker" / "tests" / "test_shared_policy_engine.py"
         result = subprocess.run(
@@ -262,7 +266,7 @@ def run_nature(root: Path, runner: Path, phase: str) -> None:
         if result.returncode:
             raise RuntimeError("Shared Global Checker policy-engine tests failed.")
 
-    def install_50_story_engine(engine):
+    def install_unlimited_story_engine(engine):
         original_engine_handoff(engine)
         original_build_brief = engine.build_brief
 
@@ -270,14 +274,14 @@ def run_nature(root: Path, runner: Path, phase: str) -> None:
             brief = original_build_brief(profile, command, now)
             if brief.view_id == "nature":
                 from dataclasses import replace
-                return replace(brief, maximum_stories=50)
+                return replace(brief, maximum_stories=0)
             return brief
 
         engine.build_brief = build_brief
 
     module._run_contract_tests = compatible_contract_tests
     module._install_collector_checker = install_collector_with_registry_backfill
-    module._install_engine_handoff = install_50_story_engine
+    module._install_engine_handoff = install_unlimited_story_engine
     _install_checker_eligible_adaptive_selection(module, checker)
     sys.argv = [str(runner), phase, "--view", "nature"]
     result = module.main()

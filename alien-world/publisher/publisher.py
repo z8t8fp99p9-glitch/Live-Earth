@@ -40,17 +40,16 @@ def load_profile() -> dict[str, Any]:
     if any(key in output for key in ("catalog", "latestPublication", "magazine", "pdf")):
         raise RuntimeError("Magazine and publication-history outputs are not allowed for Alien World.")
     publication = profile.get("publication", {})
-    if publication.get("windowMode") != "rolling-hours" or int(publication.get("issueWindowHours", 0)) != 48:
-        raise RuntimeError("Alien World must begin its rolling Live Feed search at 48 hours.")
+    if publication.get("windowMode") != "rolling-hours" or int(publication.get("issueWindowHours", 0)) != 768:
+        raise RuntimeError("Alien World must publish the complete rolling 32-day window.")
     adaptive = publication.get("adaptiveLookback", {})
-    retention_hours = int(profile.get("database", {}).get("retentionDays", 32)) * 24
-    stages = adaptive.get("expansionHours", [])
-    if not adaptive.get("enabled") or not stages or stages[0] != 48:
-        raise RuntimeError("Alien World adaptive lookback configuration is missing or invalid.")
-    if stages != sorted(set(stages)) or stages[-1] > retention_hours:
-        raise RuntimeError("Alien World adaptive lookback must be ordered and remain within database retention.")
-    if int(adaptive.get("targetStories", 0)) != int(publication.get("maximumStories", 10)):
-        raise RuntimeError("Alien World adaptive target must match the configured maximum story count.")
+    stages = [int(value) for value in adaptive.get("expansionHours", [])]
+    if int(profile.get("database", {}).get("retentionDays", 32)) != 32 or stages != [768]:
+        raise RuntimeError("Alien World must retain and publish all records in one 32-day window.")
+    if int(publication.get("maximumStories", -1)) != 0 or int(adaptive.get("targetStories", -1)) != 0:
+        raise RuntimeError("Alien World story-count caps and targets must be disabled.")
+    if int(profile.get("database", {}).get("maximumRecords", -1)) != 0:
+        raise RuntimeError("Alien World database record cap must be disabled.")
     return profile
 
 
@@ -147,7 +146,7 @@ def _apply_actual_window(result: dict[str, Any], now: datetime, hours: int) -> N
 
 
 def adaptive_publish(connection: sqlite3.Connection, profile: dict[str, Any], command: dict[str, Any], now: datetime):
-    """Try progressively wider windows and stop at 10 unique stories or 32 days."""
+    """Publish every eligible unique story in the configured 32-day window."""
     adaptive = profile["publication"]["adaptiveLookback"]
     target = int(adaptive["targetStories"])
     stages = adaptive["expansionHours"]
@@ -156,11 +155,10 @@ def adaptive_publish(connection: sqlite3.Connection, profile: dict[str, Any], co
 
     last_result = None
     for hours in stages:
-        # The shared Engine's compatibility guard is 168 hours. The read-only
-        # adapter supplies the wider bounded database interval; the Publisher
-        # then stamps the true interval into the returned feed contract.
+        # The shared Engine accepts the full rolling 32-day window. The
+        # read-only adapter still enforces this view's own database boundary.
         stage_profile = copy.deepcopy(profile)
-        stage_profile["publication"]["issueWindowHours"] = min(int(hours), 168)
+        stage_profile["publication"]["issueWindowHours"] = int(hours)
         query_connection = AdaptiveReadOnlyConnection(connection, now, int(hours))
         try:
             result = run_engine(query_connection, stage_profile, command, OUTPUT_DIR, now)
@@ -172,7 +170,7 @@ def adaptive_publish(connection: sqlite3.Connection, profile: dict[str, Any], co
             raise
         _apply_actual_window(result, now, int(hours))
         last_result = result
-        if len(result["feed"]["stories"]) >= target:
+        if target > 0 and len(result["feed"]["stories"]) >= target:
             break
     if last_result is None:
         raise RuntimeError("Adaptive lookback did not run any publication window.")

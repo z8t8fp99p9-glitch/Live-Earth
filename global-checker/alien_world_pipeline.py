@@ -123,6 +123,9 @@ def _install_engine_handoff(engine) -> None:
     technical usability of a local asset, passes the evidence fields through,
     and leaves all rights decisions to the final Global Checker gate.
     """
+    # Filled before run_engine() by the pre-layout Image Engine phase below.
+    engine._live_earth_prepared_illustrations = {}
+
     def read_alien_records(readonly_db: Any, brief: Any, now):
         try:
             readonly_db.execute("PRAGMA query_only = ON")
@@ -145,7 +148,7 @@ def _install_engine_handoff(engine) -> None:
                           image_caption, image_credit, image_source_url,
                           image_rights_status, image_rights_note
                    FROM stories WHERE published_at >= ? AND published_at < ?
-                   ORDER BY published_at DESC LIMIT 500""",
+                   ORDER BY published_at DESC""",
                 (start_ts, end_ts),
             ).fetchall()
         except engine.EditorialEngineError:
@@ -191,7 +194,7 @@ def _install_engine_handoff(engine) -> None:
                 ):
                     item[key] = None
             records.append(item)
-        return records[:brief.maximum_stories]
+        return records if brief.maximum_stories <= 0 else records[:brief.maximum_stories]
 
     def build_alien_feed(brief, stories, now):
         feed = {
@@ -216,7 +219,7 @@ def _install_engine_handoff(engine) -> None:
             feed["stories"].append({
                 "id": story["id"],
                 "title": story["title"],
-                "summary": story.get("summary", ""),
+                "summary": story.get("summary", ""),  # Preserve the exact Checker-approved source summary digest.
                 "url": story["url"],
                 "sourceName": story.get("source_name", "Original source"),
                 "sourceUrl": story.get("source_url", ""),
@@ -226,9 +229,22 @@ def _install_engine_handoff(engine) -> None:
                 "imageSourceUrl": story.get("image_source_url") if media_ok else None,
                 "imageCaption": story.get("image_caption") if media_ok else None,
                 "imageRightsNote": story.get("image_rights_note") if media_ok else None,
+                "imageLicense": story.get("image_license") if media_ok else None,
+                "imageLicenseUrl": story.get("image_license_url") if media_ok else None,
+                "imageOriginType": story.get("image_origin_type") if media_ok else None,
+                "imageEngine": story.get("image_engine") if media_ok else None,
+                "imageEngineVersion": story.get("image_engine_version") if media_ok else None,
             })
         return feed
 
+    original_build_brief = getattr(engine, "build_brief", None)
+    if callable(original_build_brief):
+        def unlimited_build_brief(profile, command, now=None):
+            brief = original_build_brief(profile, command, now)
+            from dataclasses import replace
+            return replace(brief, maximum_stories=0)
+
+        engine.build_brief = unlimited_build_brief
     engine.read_view_records = read_alien_records
     engine.build_live_feed = build_alien_feed
 
@@ -281,6 +297,28 @@ def run_publisher() -> int:
     _install_engine_handoff(engine)
 
     module = _load_module("live_earth_alien_publisher_single_checker", ALIEN_PUBLISHER)
+
+    # Complete the Image Checker -> Image Engine -> Image Checker path for the
+    # full rolling 32-day candidate set BEFORE the Editorial Engine lays out feeds.
+    image_engine_dir = ROOT / "image-engine"
+    if str(image_engine_dir) not in sys.path:
+        sys.path.insert(0, str(image_engine_dir))
+    from image_engine_integration import prepare_database_illustrations
+    prepared_illustrations = prepare_database_illustrations(
+        "alien-world",
+        database_path=module.DB_PATH,
+        output_dir=module.OUTPUT_DIR / "assets",
+        raw_asset_base_url=(
+            "https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/"
+            "alien-world/published/assets/"
+        ),
+        checker=checker,
+        lookback_hours=768,
+    )
+    engine._live_earth_prepared_illustrations.update({
+        record["storyId"]: record for record in prepared_illustrations
+    })
+
     original_route = module.route_engine_outputs
 
     def checked_route(result):
@@ -289,21 +327,8 @@ def run_publisher() -> int:
             raise checker.GlobalCheckerError(
                 "Alien World Engine did not return a live feed to check."
             )
-        image_engine_dir = ROOT / "image-engine"
-        if str(image_engine_dir) not in sys.path:
-            sys.path.insert(0, str(image_engine_dir))
-        from image_engine_integration import attach_original_illustrations
-        attach_original_illustrations(
-            feed,
-            "alien-world",
-            database_path=module.DB_PATH,
-            output_dir=module.OUTPUT_DIR / "assets",
-            raw_asset_base_url=(
-                "https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/"
-                "alien-world/published/assets/"
-            ),
-            checker=checker,
-        )
+        # Artwork was already prepared and approved before Editorial Engine layout.
+        # This boundary performs only the final feed gate; no post-layout artwork is created.
         connection = module.read_only_connection()
         try:
             result["feed"] = checker.gate_feed(

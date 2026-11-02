@@ -197,11 +197,11 @@ def _run_contract_tests() -> None:
 
 
 def _collector_profile(profile: dict[str, Any]) -> dict[str, Any]:
-    """Make allowlisted photo matching cover every configured adaptive stage.
+    """Make allowlisted photo matching cover the complete rolling 32-day window.
 
-    This changes only the temporary Collector profile used for image matching;
-    the saved 48-hour starting window, Publisher expansion stages and 32-day
-    retention settings remain unchanged.
+    The temporary Collector profile expands only Nature's image matching pass;
+    the saved 32-day Publisher window and independent database retention remain
+    unchanged.
     """
     staged = copy.deepcopy(profile)
     publication = staged.get("publication", {})
@@ -297,6 +297,10 @@ def _technical_image_record(row, record, root: Path) -> bool:
 
 def _install_engine_handoff(engine) -> None:
     """Make the Engine a deterministic formatter/pass-through, not a rights gate."""
+    # Populated by run_publisher after the Image Engine has generated and
+    # received Checker approval for artwork across the full 32-day candidate set.
+    engine._live_earth_prepared_illustrations = {}
+
     def read_nature_records(readonly_db: Any, brief: Any, now):
         try:
             readonly_db.execute("PRAGMA query_only = ON")
@@ -318,7 +322,7 @@ def _install_engine_handoff(engine) -> None:
                           published_at,retrieved_at,image_url,image_local_path,image_caption,
                           image_credit,image_source_url,image_rights_status,image_rights_note
                    FROM stories WHERE published_at>=? AND published_at<?
-                   ORDER BY published_at DESC LIMIT 500""",
+                   ORDER BY published_at DESC""",
                 (start_ts, end_ts),
             ).fetchall()
         except engine.EditorialEngineError:
@@ -345,7 +349,25 @@ def _install_engine_handoff(engine) -> None:
             item["editorialImageCredit"] = engine.text(item.get("image_credit"), 500)
             item["id"] = engine.text(item.get("story_id"), 64)
 
-            # No local licence, creator, credit, caption or status decision here.
+            # An Image Engine illustration is attached only after its own GREEN
+            # Global Checker decision has been recorded, and before editorial layout.
+            prepared = engine._live_earth_prepared_illustrations.get(item["id"])
+            if prepared and not item.get("image_url"):
+                item.update({
+                    "image_url": prepared["imageUrl"],
+                    "image_local_path": prepared["localPath"],
+                    "image_caption": prepared["imageCaption"],
+                    "image_credit": prepared["imageCredit"],
+                    "image_source_url": prepared["imageSourceUrl"],
+                    "image_rights_note": prepared["imageRightsNote"],
+                    "image_origin_type": prepared["imageOriginType"],
+                    "image_engine": prepared["imageEngine"],
+                    "image_engine_version": prepared["imageEngineVersion"],
+                    "image_license": prepared["imageLicense"],
+                    "image_license_url": prepared["imageLicenseUrl"],
+                })
+
+            # No local licence, creator, caption or status decision is made here.
             # The final Checker sees those fields unchanged in the feed. Only the
             # technical existence and HTTPS format of the prepared asset are tested.
             image_ok = bool(
@@ -360,7 +382,7 @@ def _install_engine_handoff(engine) -> None:
                 ):
                     item[key] = None
             records.append(item)
-        return records[:brief.maximum_stories]
+        return records if brief.maximum_stories <= 0 else records[:brief.maximum_stories]
 
     def build_nature_feed(brief, stories, now):
         feed = {
@@ -385,7 +407,7 @@ def _install_engine_handoff(engine) -> None:
                 "title": story["title"],
                 # Keep the source-approved text byte-for-byte equivalent after
                 # Checker normalization; no second summary or rights decision.
-                "summary": story.get("summary", ""),
+                "summary": story.get("summary", ""),  # Preserve the exact Checker-approved source summary digest.
                 "url": story["url"],
                 "sourceName": story.get("source_name", "Original source"),
                 "sourceUrl": story.get("source_url", ""),
@@ -395,6 +417,11 @@ def _install_engine_handoff(engine) -> None:
                 "imageSourceUrl": story.get("image_source_url") if media_ok else None,
                 "imageCaption": story.get("image_caption") if media_ok else None,
                 "imageRightsNote": story.get("image_rights_note") if media_ok else None,
+                "imageLicense": story.get("image_license") if media_ok else None,
+                "imageLicenseUrl": story.get("image_license_url") if media_ok else None,
+                "imageOriginType": story.get("image_origin_type") if media_ok else None,
+                "imageEngine": story.get("image_engine") if media_ok else None,
+                "imageEngineVersion": story.get("image_engine_version") if media_ok else None,
             })
         return feed
 
@@ -441,15 +468,18 @@ def _install_readonly_publisher(module) -> None:
                     row, self._verified_images.get(str(row["story_id"])), module.ROOT
                 )
             ]
-            selected = preferred[:self._maximum_stories]
-            selected_ids = {str(row["story_id"]) for row in selected}
-            for row in rows:
-                if len(selected) >= self._maximum_stories:
-                    break
-                story_id = str(row["story_id"])
-                if story_id not in selected_ids:
-                    selected.append(row)
-                    selected_ids.add(story_id)
+            if self._maximum_stories > 0:
+                selected = preferred[:self._maximum_stories]
+                selected_ids = {str(row["story_id"]) for row in selected}
+                for row in rows:
+                    if len(selected) >= self._maximum_stories:
+                        break
+                    story_id = str(row["story_id"])
+                    if story_id not in selected_ids:
+                        selected.append(row)
+                        selected_ids.add(story_id)
+            else:
+                selected = list(rows)
             selected.sort(key=lambda row: float(row["published_at"] or 0), reverse=True)
             self.story_selection_applied = True
             self.selected_documentary_images = sum(
@@ -485,6 +515,25 @@ def run_publisher() -> int:
 
     module = _load_module("live_earth_nature_publisher_single_checker", NATURE_PUBLISHER)
     _install_readonly_publisher(module)
+
+    image_engine_dir = ROOT / "image-engine"
+    if str(image_engine_dir) not in sys.path:
+        sys.path.insert(0, str(image_engine_dir))
+    from image_engine_integration import prepare_database_illustrations
+    prepared_illustrations = prepare_database_illustrations(
+        "nature",
+        database_path=module.DB_PATH,
+        output_dir=module.OUTPUT_DIR / "assets",
+        raw_asset_base_url=(
+            "https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/"
+            "nature/published/assets/"
+        ),
+        checker=checker,
+        lookback_hours=768,
+    )
+    engine._live_earth_prepared_illustrations.update({
+        record["storyId"]: record for record in prepared_illustrations
+    })
     original_atomic_json = module.atomic_json
     pending_manifest: dict[str, Any] | None = None
 
@@ -495,21 +544,9 @@ def run_publisher() -> int:
             pending_manifest = dict(payload)
             return None
         if target.name == "live-feed.json":
-            image_engine_dir = ROOT / "image-engine"
-            if str(image_engine_dir) not in sys.path:
-                sys.path.insert(0, str(image_engine_dir))
-            from image_engine_integration import attach_original_illustrations
-            generated_illustrations = attach_original_illustrations(
-                payload,
-                "nature",
-                database_path=module.DB_PATH,
-                output_dir=module.OUTPUT_DIR / "assets",
-                raw_asset_base_url=(
-                    "https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/"
-                    "nature/published/assets/"
-                ),
-                checker=checker,
-            )
+            # Original illustrations were already generated and approved before
+            # the Editorial Engine ran. Do not create fallback art after layout.
+            generated_illustrations = []
             database = module.open_readonly()
             try:
                 approved = checker.gate_feed(payload, database, "nature", minimum_stories=2)
@@ -523,7 +560,14 @@ def run_publisher() -> int:
                 "schemaVersion": 1, "viewId": "nature",
                 "generatedAt": approved.get("generatedAt", ""), "images": [],
             }
-            manifest.setdefault("images", []).extend(generated_illustrations)
+            approved_image_ids = {
+                str(story.get("id")) for story in approved.get("stories", [])
+                if story.get("imageOriginType") == "local-original-illustration"
+            }
+            manifest.setdefault("images", []).extend(
+                record for record in prepared_illustrations
+                if str(record.get("storyId")) in approved_image_ids
+            )
             _clean_nature_assets(approved, module.OUTPUT_DIR, manifest, prune_files=False)
             manifest_path = module.OUTPUT_DIR / "assets" / "image-rights.json"
             _atomic_nature_feed_and_manifest(manifest_path, manifest, target, approved)
@@ -542,6 +586,8 @@ def run_publisher() -> int:
         return original_atomic_json(output_path, payload)
 
     module.atomic_json = checked_atomic_json
+    # All candidate stories are now read only after Checker-approved artwork has
+    # been prepared; the Editorial Engine performs the summary/layout phase next.
     module.publish()
     return 0
 

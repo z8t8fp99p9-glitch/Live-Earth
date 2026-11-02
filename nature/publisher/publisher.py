@@ -37,17 +37,14 @@ def load_profile():
     if publication.get("windowMode") != "rolling-hours":
         raise RuntimeError("Nature Publisher accepts rolling Live Feeds only.")
     hours = int(publication.get("issueWindowHours", 0))
-    if not 1 <= hours <= 168:
-        raise RuntimeError("Nature Live Feed initial window must be between 1 and 168 hours.")
+    if hours != 768 or int(profile.get("database", {}).get("retentionDays", 32)) != 32:
+        raise RuntimeError("Nature Live Feed must use the complete rolling 32-day window.")
     adaptive = publication.get("adaptiveLookback", {})
-    retention_hours = int(profile.get("database", {}).get("retentionDays", 32)) * 24
-    stages = adaptive.get("expansionHours", [])
-    if not adaptive.get("enabled") or not stages or stages[0] != hours:
-        raise RuntimeError("Nature adaptive lookback configuration is missing or invalid.")
-    if stages != sorted(set(stages)) or stages[-1] > retention_hours:
-        raise RuntimeError("Nature adaptive lookback must remain ordered and within 32-day retention.")
-    if int(adaptive.get("targetStories", 0)) != int(publication.get("maximumStories", 10)):
-        raise RuntimeError("Nature adaptive target must match its maximum story count.")
+    stages = [int(value) for value in adaptive.get("expansionHours", [])]
+    if stages != [768] or int(publication.get("maximumStories", -1)) != 0:
+        raise RuntimeError("Nature publication must have one 32-day window and no story-count cap.")
+    if int(adaptive.get("targetStories", -1)) != 0:
+        raise RuntimeError("Nature adaptive story-count target must be disabled.")
     return profile
 
 
@@ -121,8 +118,11 @@ def deduplicate_story_rows(rows):
 
 
 def select_engine_story_rows(rows, verified_images, maximum_stories: int):
-    """Prefer currently eligible verified Nature photos, then fill by recency."""
+    """Return every deduplicated story; zero means unlimited publication."""
     rows = list(rows)
+    if maximum_stories <= 0:
+        rows.sort(key=lambda row: float(row["published_at"] or 0), reverse=True)
+        return rows
     preferred = []
     for row in rows:
         record = verified_images.get(str(row["story_id"]))
@@ -228,7 +228,7 @@ def publish(now: datetime | None = None):
         publication = profile["publication"]
         adaptive = publication["adaptiveLookback"]
         stages = [int(value) for value in adaptive["expansionHours"]]
-        maximum_stories = max(2, min(12, int(publication.get("maximumStories", 10))))
+        maximum_stories = int(publication.get("maximumStories", 0) or 0)
 
         # Make all existing verified rights records available to each bounded
         # stage. This changes no image discovery, licence or approval rule.
@@ -257,9 +257,7 @@ def publish(now: datetime | None = None):
         result = None
         for hours in stages:
             stage_profile = copy.deepcopy(profile)
-            # Keep the shared Engine's existing <=168h validation; the adapter
-            # supplies the requested wider interval from Nature's own database.
-            stage_profile["publication"]["issueWindowHours"] = min(hours, 168)
+            stage_profile["publication"]["issueWindowHours"] = hours
             engine_db = NatureEngineReadOnlyConnection(
                 con, rights_by_story, maximum_stories, now=now, lookback_hours=hours
             )
@@ -274,14 +272,15 @@ def publish(now: datetime | None = None):
             if (candidate.get("viewId") != "nature" or candidate.get("publisherId") != "nature-publisher"
                 or candidate.get("windowMode") != "rolling-hours"):
                 raise RuntimeError("Shared Engine returned the wrong Nature Live Feed contract.")
-            if candidate.get("windowHours") != min(hours, 168):
-                raise RuntimeError("Shared Engine returned an unexpected internal lookback interval.")
+            if candidate.get("windowHours") != hours:
+                raise RuntimeError("Shared Engine returned an unexpected 32-day lookback interval.")
             feed = candidate.get("feed")
             if not isinstance(feed, dict) or not isinstance(feed.get("stories"), list) or not feed["stories"]:
                 raise RuntimeError("Shared Engine did not return a non-empty Nature Live Feed.")
             _apply_actual_window(candidate, now, hours)
             result = candidate
-            if len(feed["stories"]) >= int(adaptive["targetStories"]):
+            target_stories = int(adaptive.get("targetStories", 0) or 0)
+            if target_stories > 0 and len(feed["stories"]) >= target_stories:
                 break
 
         if result is None:
@@ -323,13 +322,20 @@ def publish(now: datetime | None = None):
                     "usageNote": record["usage_note"], "modificationNote": record["modification_note"],
                     "file": "assets/" + target.name,
                 })
+            elif story.get("imageOriginType") == "local-original-illustration":
+                # The Image Engine asset has already been generated and approved
+                # by Global Checker before Editorial Engine layout. Preserve it.
+                pass
             else:
                 story["imageUrl"] = None
                 story["imageCredit"] = None
                 story["imageCaption"] = None
                 story["imageSourceUrl"] = None
                 story["imageRightsNote"] = None
-        feed["documentaryImageCount"] = sum(1 for story in feed["stories"] if story.get("imageUrl"))
+        feed["documentaryImageCount"] = sum(
+            1 for story in feed["stories"]
+            if story.get("imageUrl") and story.get("imageOriginType") != "local-original-illustration"
+        )
         rights_manifest = {"schemaVersion": 1, "viewId": "nature", "generatedAt": result["generatedAt"],
                            "images": used_assets}
         output_assets = OUTPUT_DIR / "assets"
@@ -345,6 +351,11 @@ def publish(now: datetime | None = None):
         atomic_json(output_assets / "image-rights.json", rights_manifest)
         atomic_json(OUTPUT_DIR / "live-feed.json", feed)
         used_names = {Path(item["file"]).name for item in used_assets}
+        used_names.update(
+            Path(str(story.get("imageUrl", "")).split("?", 1)[0]).name
+            for story in feed["stories"]
+            if story.get("imageOriginType") == "local-original-illustration" and story.get("imageUrl")
+        )
         for old in output_assets.glob("*.jpg"):
             if old.name not in used_names:
                 old.unlink(missing_ok=True)

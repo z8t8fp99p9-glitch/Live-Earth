@@ -11,6 +11,7 @@ import hashlib
 import sqlite3
 import shutil
 import uuid
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -140,6 +141,19 @@ def attach_original_illustrations(
                 "file": "assets/" + published_path.name,
                 "sha256": digest,
                 "checkerDecisionId": decision["decisionId"],
+                # Full hand-off fields let each view's read-only Publisher pass
+                # the already-approved illustration into the Editorial Engine.
+                "imageUrl": candidate["imageUrl"],
+                "localPath": str(published_path.resolve()),
+                "imageCredit": candidate["credit"],
+                "imageSourceUrl": candidate["sourcePage"],
+                "imageCaption": candidate["caption"],
+                "imageRightsNote": candidate["rightsNotice"],
+                "imageLicense": candidate["licenseName"],
+                "imageLicenseUrl": "",
+                "imageOriginType": candidate["originType"],
+                "imageEngine": candidate["engine"],
+                "imageEngineVersion": candidate["engineVersion"],
             })
         connection.commit()
     finally:
@@ -147,3 +161,81 @@ def attach_original_illustrations(
         shutil.rmtree(staging_path, ignore_errors=True)
 
     return approved_records
+
+
+
+def prepare_database_illustrations(
+    view_id: str,
+    *,
+    database_path: str | Path,
+    output_dir: str | Path,
+    raw_asset_base_url: str,
+    checker: Any,
+    lookback_hours: int = 768,
+) -> list[dict[str, Any]]:
+    """Generate Checker-approved fallback artwork for every eligible record in a view's 32-day window.
+
+    Source text/storage approval is still mandatory. Records denied by the text
+    Checker never enter this hand-off; summary-restricted records have already
+    had their summary removed before storage and are illustrated from permitted
+    metadata only. Documentary images already present in the DB keep precedence.
+    """
+    if view_id not in {"nature", "alien-world"}:
+        raise ValueError("Image Engine view is not registered.")
+    db_path = Path(database_path).resolve()
+    if not db_path.is_file():
+        raise RuntimeError("The view's Collector database is missing; Image Engine preparation is held.")
+    now = datetime.now(timezone.utc)
+    cutoff = (now - timedelta(hours=max(1, int(lookback_hours)))).timestamp()
+    connection = sqlite3.connect(f"file:{db_path.as_posix()}?mode=ro", uri=True)
+    connection.row_factory = sqlite3.Row
+    try:
+        connection.execute("PRAGMA query_only=ON")
+        rows = connection.execute(
+            """SELECT story_id,title,url,summary,source_name,source_url,published_at,
+                      image_url,image_local_path,image_caption,image_credit,image_source_url,image_rights_note
+               FROM stories WHERE view_id=? AND published_at>=? AND published_at<=?
+               ORDER BY published_at DESC""",
+            (view_id, cutoff, now.timestamp()),
+        ).fetchall()
+    finally:
+        connection.close()
+
+    candidate_feed = {
+        "schemaVersion": 1,
+        "viewId": view_id,
+        "stories": [
+            {
+                "id": str(row["story_id"]),
+                "title": str(row["title"] or ""),
+                "url": str(row["url"] or ""),
+                "summary": str(row["summary"] or ""),
+                "sourceName": str(row["source_name"] or ""),
+                "sourceUrl": str(row["source_url"] or ""),
+                "publishedAt": datetime.fromtimestamp(float(row["published_at"]), timezone.utc)
+                    .replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+                # An already-attached documentary photo is retained; the
+                # Image Engine only handles missing or Checker-rejected images.
+                "imageUrl": row["image_url"],
+                "imageCredit": row["image_credit"],
+                "imageSourceUrl": row["image_source_url"],
+                "imageCaption": row["image_caption"],
+                "imageRightsNote": row["image_rights_note"],
+            }
+            for row in rows
+        ],
+    }
+    records = attach_original_illustrations(
+        candidate_feed,
+        view_id,
+        database_path=db_path,
+        output_dir=output_dir,
+        raw_asset_base_url=raw_asset_base_url,
+        checker=checker,
+    )
+    print(
+        f"IMAGE ENGINE PRE-LAYOUT [{view_id}]: {len(records)} original illustrations "
+        f"generated and passed Global Checker out of {len(candidate_feed['stories'])} stored candidates",
+        flush=True,
+    )
+    return records

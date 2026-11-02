@@ -4,6 +4,7 @@ import sqlite3
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -12,7 +13,7 @@ sys.path.insert(0, str(ROOT / "image-engine"))
 
 import global_checker as checker
 import global_checker_policy_engine
-from image_engine_integration import attach_original_illustrations
+from image_engine_integration import attach_original_illustrations, prepare_database_illustrations
 
 # Match the production bootstrap: the shared registry policy engine is installed
 # before any Collector/Publisher decision is exercised.
@@ -92,6 +93,72 @@ class ImageEnginePublisherIntegrationTests(unittest.TestCase):
                 self.assertEqual(approved["stories"][0]["imageRights"]["verdict"], "GREEN")
                 self.assertEqual(approved["stories"][0]["imageRights"]["allowedUse"], "illustrative-artwork-only")
                 self.assertEqual(approved["stories"][0]["imageRights"]["engineVersion"], "0.2.0")
+
+
+    def test_pre_layout_preparation_approves_headline_only_fallback_and_skips_storage_denied_text(self):
+        for view_id in ("nature", "alien-world"):
+            with self.subTest(view=view_id), tempfile.TemporaryDirectory() as temp:
+                base = Path(temp)
+                db_path = base / "view.sqlite3"
+                connection = sqlite3.connect(db_path)
+                connection.row_factory = sqlite3.Row
+                connection.execute("CREATE TABLE publisher_meta(key TEXT PRIMARY KEY,value TEXT NOT NULL)")
+                connection.execute("INSERT INTO publisher_meta VALUES('view_id',?)", (view_id,))
+                connection.execute("""CREATE TABLE stories(
+                    story_id TEXT PRIMARY KEY,title TEXT NOT NULL,url TEXT NOT NULL,summary TEXT NOT NULL,
+                    source_name TEXT NOT NULL,source_url TEXT NOT NULL,published_at REAL NOT NULL,
+                    image_url TEXT,image_local_path TEXT,image_caption TEXT,image_credit TEXT,
+                    image_source_url TEXT,image_rights_note TEXT,view_id TEXT NOT NULL)""")
+                checker.ensure_decision_table(connection)
+                allowed = {
+                    "id": f"{view_id}-headline-only",
+                    "title": "NASA reports a new planetary science observation",
+                    "summary": "",
+                    "url": "https://www.nasa.gov/news/example-observation/",
+                    "sourceName": "NASA News" if view_id == "alien-world" else "NASA — Image of the Day",
+                    "sourceUrl": "https://www.nasa.gov/news-release/feed/" if view_id == "alien-world" else "https://www.nasa.gov/feeds/iotd-feed/",
+                }
+                allowed_decision = checker.evaluate_text(view_id, allowed)
+                self.assertTrue(allowed_decision["allowed"], allowed_decision["reasons"])
+                self.assertFalse(allowed_decision["summaryAllowed"])
+                checker.record_decision(connection, allowed_decision)
+
+                denied = {
+                    "id": f"{view_id}-denied",
+                    "title": "Unregistered third-party research report",
+                    "summary": "",
+                    "url": "https://example.com/restricted-report/",
+                    "sourceName": "Unregistered source",
+                    "sourceUrl": "https://example.com/feed/",
+                }
+                denied_decision = checker.evaluate_text(view_id, denied)
+                self.assertFalse(denied_decision["allowed"])
+                checker.record_decision(connection, denied_decision)
+
+                now = datetime.now(timezone.utc)
+                for item in (allowed, denied):
+                    connection.execute(
+                        """INSERT INTO stories(story_id,title,url,summary,source_name,source_url,published_at,
+                           image_url,image_local_path,image_caption,image_credit,image_source_url,image_rights_note,view_id)
+                           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                        (item["id"], item["title"], item["url"], item["summary"], item["sourceName"],
+                         item["sourceUrl"], now.timestamp(), None, None, None, None, None, None, view_id),
+                    )
+                connection.commit()
+                connection.close()
+
+                output_dir = base / "published" / "assets"
+                raw_base = (
+                    "https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/"
+                    f"{view_id}/published/assets/"
+                )
+                records = prepare_database_illustrations(
+                    view_id, database_path=db_path, output_dir=output_dir,
+                    raw_asset_base_url=raw_base, checker=checker, lookback_hours=768,
+                )
+                self.assertEqual([record["storyId"] for record in records], [allowed["id"]])
+                self.assertTrue((output_dir / Path(records[0]["file"]).name).is_file())
+                self.assertEqual(records[0]["originType"], "local-original-illustration")
 
     def test_wrong_engine_version_is_held(self):
         from image_engine import ImageEngine

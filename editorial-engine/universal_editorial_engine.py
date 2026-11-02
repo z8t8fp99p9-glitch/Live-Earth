@@ -263,8 +263,8 @@ def build_brief(profile: dict[str, Any], command: dict[str, Any], now: datetime 
         window_label = coverage_start.strftime("%B %Y")
     elif window_mode == "rolling-hours":
         window_hours = int(publication.get("issueWindowHours", 48))
-        if not 1 <= window_hours <= 168:
-            raise EditorialEngineError("Rolling Publisher issue window must be between 1 and 168 hours.")
+        if not 1 <= window_hours <= 768:
+            raise EditorialEngineError("Rolling Publisher issue window must be between 1 and 768 hours (32 days).")
         coverage_end = now
         coverage_start = now - timedelta(hours=window_hours)
         window_label = f"the previous {window_hours} hours"
@@ -277,8 +277,11 @@ def build_brief(profile: dict[str, Any], command: dict[str, Any], now: datetime 
         title=text(editorial.get("publicationTitle", "The Journal"), 160),
         issue_window_hours=window_hours, window_mode=window_mode,
         coverage_start=coverage_start, coverage_end=coverage_end, window_label=window_label,
-        minimum_stories=max(2, int(publication.get("minimumStories", 5))),
-        maximum_stories=max(2, min(12, int(publication.get("maximumStories", 8)))),
+        minimum_stories=max(0, int(publication.get("minimumStories", 5))),
+        maximum_stories=(
+            0 if int(publication.get("maximumStories", 8) or 0) == 0
+            else max(2, min(12, int(publication.get("maximumStories", 8))))
+        ),
         custom_request=custom, visual_profile=dict(editorial.get("visualProfile", {})),
     )
 
@@ -298,7 +301,7 @@ def read_view_records(readonly_db: Any, brief: EditorialBrief, now: datetime) ->
                       image_caption, image_credit, image_source_url, image_rights_status,
                       image_rights_note
                FROM stories WHERE published_at >= ? AND published_at < ?
-               ORDER BY published_at DESC LIMIT 500""",
+               ORDER BY published_at DESC""",
             (start_ts, end_ts),
         ).fetchall()
     except EditorialEngineError:
@@ -336,7 +339,7 @@ def read_view_records(readonly_db: Any, brief: EditorialBrief, now: datetime) ->
                         "image_source_url", "image_rights_status", "image_rights_note"):
                 item[key] = None
         records.append(item)
-    return records[:brief.maximum_stories]
+    return records if brief.maximum_stories <= 0 else records[:brief.maximum_stories]
 
 
 def _paragraph(value: Any, font: str, size: float, leading: float, colour,

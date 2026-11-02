@@ -16,10 +16,10 @@ Alien World has one publishing responsibility: refresh the independent NASA-sour
 
 ## Feed and retention policy
 
-- Database retention: 32 days; maximum database record count: 2,000.
+- Database retention: 32 days; no database record-count ceiling.
 - Collector refresh target: one hour.
-- Visible publication window: rolling 48 hours.
-- Maximum visible stories: 10.
+- Visible publication window: the complete rolling 32 days.
+- Maximum visible stories: unlimited; every eligible item in the retained window is considered.
 - Browser refresh: every five minutes while the view is open.
 - Online-only: feed requests use `cache: no-store`; offline state does not present an old feed as current; closing the view clears its displayed feed. No browser localStorage, sessionStorage or IndexedDB copy is used.
 

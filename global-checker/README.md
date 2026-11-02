@@ -31,10 +31,11 @@ The hook replaces the starting interpreter with the shared runner before the unc
 
 If the bootstrap package or shared runner is missing, the pipeline does not silently fall back to an unchecked Collector or Publisher.
 
-## The two gates
+## The three publication checks
 
-1. **Pre-storage:** the Collector checks source and item provenance before a story is persisted. It independently checks images before download and again before accepting image metadata into the existing database. Restricted routes such as Phys.org are reduced to headline/link/date; the summary is discarded before storage.
-2. **Pre-publication:** after the Universal Editorial Engine creates a candidate feed, the Publisher's final output boundary calls `gate_feed()`. Text and images need separate matching GREEN/AMBER decisions. Image denial leaves an otherwise-approved story text-only.
+1. **Pre-storage text gate:** the Collector checks source and item provenance before a story is persisted. A source that does not permit storage is rejected. Where only headline/link/date use is allowed, the source summary is discarded before storage and cannot be reconstructed by the Editorial Engine.
+2. **Pre-layout image gate and fallback:** documentary images are assessed independently. If an original image is unavailable or rejected, the Image Engine may create original illustrative artwork using only permitted story metadata. The artwork is recorded and must receive a GREEN Global Checker decision before the Universal Editorial Engine receives it for layout.
+3. **Final publication gate:** after the Universal Editorial Engine creates the candidate Live Feed, the Publisher calls `gate_feed()`. The Checker revalidates the source/text evidence and exact image evidence. Meaningful permitted text can publish without an image; a headline/link-only item needs the independently approved image route.
 
 ## Verdicts
 
@@ -49,7 +50,11 @@ The Checker fails closed. Credit is not permission, and an approved article does
 
 ## Data ownership and last-good output
 
-The Checker adds `global_checker_decisions` to each existing view-owned database. It does not merge or reset Nature and Alien World databases. Decision evidence is pruned to a 32-day horizon; story retention remains controlled by each view's existing Collector.
+The Checker adds `global_checker_decisions` to each existing view-owned database. It does not merge or reset Nature and Alien World databases. Decision evidence is pruned to a 32-day horizon; each view independently retains source records for 32 days and publishes every eligible item in that rolling window without a story-count or record-count cap.
+
+## 32-day uncapped publication sequence
+
+Both publishers now collect and retain the permitted records in their own rolling 32-day database. The Global Checker makes the source/text storage decision before any record is persisted. A source that does not permit storage is rejected. When storage is permitted but summary use is restricted, the summary is removed and only the permitted headline/link/date metadata can continue; no derivative summary is fabricated from restricted text. Documentary images are screened independently. When an approved documentary image is unavailable, the Image Engine creates original non-documentary artwork from permitted story metadata, and the Global Checker must return GREEN before that artwork is passed to the Universal Editorial Engine. The Editorial Engine then formats all eligible content, and the final Checker gate validates the complete candidate feed before publication.
 
 A feed is not replaced unless the final gate succeeds. A missing registry, invalid decision, failed gate or insufficient eligible story count preserves the previous last-good output. Nature's image-rights manifest is released with its matching feed only after the gate passes.
 

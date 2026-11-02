@@ -9,7 +9,7 @@ The workflow runs the Nature Collector followed by the Live-Feed-only Nature Pub
 - Database: `.publisher-data/nature/nature.sqlite3`.
 - Database retention: 32 days.
 - Maximum accepted source age: 32 days.
-- Visible feed: rolling 48-hour window, up to 10 stories.
+- Visible feed: complete rolling 32-day window, with no story-count cap; all eligible items exposed by the configured feeds are considered.
 - Public output: `nature/published/live-feed.json` plus validated contextual image assets and rights metadata.
 - Browser refresh: every five minutes while the view is open.
 - Online-only: requests use `cache: no-store`; the view clears its displayed content when closed and does not persist feed data in localStorage, sessionStorage or IndexedDB.

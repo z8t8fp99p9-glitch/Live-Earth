@@ -4,21 +4,17 @@
   "publisherId": "nature-publisher",
   "publication": {
     "windowMode": "rolling-hours",
-    "issueWindowHours": 48,
-    "maximumStories": 50,
+    "issueWindowHours": 768,
+    "maximumStories": 0,
     "maximumSourceAgeDays": 32,
     "adaptiveLookback": {
       "enabled": true,
-      "targetStories": 50,
+      "targetStories": 0,
       "expansionHours": [
-        48,
-        96,
-        168,
-        336,
-        504,
         768
       ]
-    }
+    },
+    "minimumStories": 0
   },
   "sources": [
     {
@@ -45,11 +41,6 @@
       "name": "USGS — National News Releases",
       "url": "https://www.usgs.gov/news/national-news-release/feed",
       "domain": "www.usgs.gov"
-    },
-    {
-      "name": "Phys.org — Environment",
-      "url": "https://phys.org/rss-feed/earth-news/environment/",
-      "domain": "phys.org"
     },
     {
       "name": "Mongabay",

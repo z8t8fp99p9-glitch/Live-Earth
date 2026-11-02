@@ -49,7 +49,7 @@ The Python Engine retains optional shared PDF-generation capability for views th
 - **Quality gate:** validate page geometry/count, extracted text, file size, and absence of PDF annotations/bookmarks before atomically replacing a document output. Failed generation leaves the last-good document untouched.
 - **Page target:** a Publisher profile's page target is a guide. Complete stories, legibility and editorial pacing take priority. A 48-page safety ceiling prevents runaway output.
 
-The Engine is deterministic and does not call an AI service. It arranges Publisher-supplied copy and screened local imagery. It does not rewrite stories, invent missing reporting or independently corroborate factual claims.
+The Engine is deterministic and does not call an AI service. For Live Feeds it receives only the source text permitted by the Global Checker and preserves that approved summary in the feed; it does not fabricate or paraphrase text when a source has restricted summary use. A headline/link-only item can proceed only through an independently approved image route. The Image Engine prepares any fallback illustration before editorial layout, and the Global Checker approves it before the Editorial Engine receives it. The Editorial Engine arranges approved copy and imagery; it does not invent missing reporting or independently corroborate factual claims.
 
 ## Current production consumers
 
@@ -57,7 +57,7 @@ The Engine is deterministic and does not call an AI service. It arranges Publish
 
 - Collector: `nature/collector/collector.py`; owns RSS/Atom collection, Commons rights screening and writes only `.publisher-data/nature/nature.sqlite3`.
 - Publisher: `nature/publisher/publisher.py`; opens the Nature database read-only, invokes the shared Engine in `live` mode, validates the feed, and publishes only Nature's configured feed/assets/rights metadata.
-- Profile: `nature/publisher/profile.json`; database retention is 32 days, the rolling feed window is 48 hours and the maximum story count is 10.
+- Profile: `nature/publisher/profile.json`; database retention and the uncapped rolling Live Feed window are both 32 days.
 - Workflow: `.github/workflows/nature-publisher.yml`; hourly at minute 15 UTC and manually dispatchable. Its cache directory and `nature-db-v1-...` key family remain unchanged.
 - Browser view: `nature/view/`; requests are `no-store`, the view refreshes every five minutes while open, and the displayed feed is cleared when the view closes. It has no localStorage, sessionStorage or IndexedDB feed persistence.
 
@@ -67,7 +67,7 @@ Alien World is configured for Live Feeds only:
 
 - Collector: `alien-world/collector/collector.py`; it collects official NASA source material, screens source-post imagery and writes only `.publisher-data/alien-world/alien-world.sqlite3`.
 - Publisher: `alien-world/publisher/publisher.py`; reads that database read-only, calls `run_engine(...)` with `mode: live`, runs its deterministic contract suite before publication, and accepts only a feed result.
-- Profile: `alien-world/publisher/profile.json`; source database retention is 32 days with a 2,000-record safety ceiling; collection refresh target is one hour; the feed window is 48 hours and the maximum story count is 10.
+- Profile: `alien-world/publisher/profile.json`; source database retention and the uncapped rolling Live Feed window are both 32 days, with no record-count ceiling; collection refresh target is one hour.
 - Public output: `alien-world/published/live-feed.json` only. Alien World does not generate a magazine PDF, catalogue, issue record, latest-publication pointer or archive.
 - Workflow: `.github/workflows/alien-world-publisher.yml`; hourly at minute 45 UTC and manually dispatchable. Its cache directory and `alien-world-db-v1-...` key family remain unchanged.
 - Browser view: `alien-world/view/`; it reads the completed JSON only, uses `cache: no-store`, refreshes every five minutes while open and clears the displayed feed when closed. It has no localStorage, sessionStorage or IndexedDB feed persistence.

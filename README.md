@@ -3,25 +3,26 @@
 **Repository:** `z8t8fp99p9-glitch/Live-Earth`  
 **Branch:** `main`  
 **Live site:** https://z8t8fp99p9-glitch.github.io/Live-Earth/  
-**Guide updated:** 1 November 2026  
-**Source inspected:** `caffc644ba7a111e3e0f95ec227c7366d500d7f9`
+**Guide updated:** 2 November 2026  
+**Source baseline inspected:** `0effb93b8ba48152eafaa371a760195c58617a2b`
 
 ## Current project status
 
 - Nature and Alien World now publish independent, online-only Live Feeds. Each view has its own Collector, SQLite database, Publisher profile and published feed.
-- Both feeds use a rolling **48-hour** publication window and show up to **10 stories**.
-- Both source databases retain up to **32 days** of records. The existing view-specific GitHub Actions cache paths and cache-key families are preserved; the databases are not committed to the repository and were not reset.
+- Both feeds now use the complete rolling **32-day** publication window, with **no story-count cap**. All eligible items present in the configured approved source feeds are considered; a feed provider's own history depth still determines which items it exposes.
+- Both independent source databases retain **32 days** of records, with no configured record-count ceiling. The existing view-specific GitHub Actions cache paths and cache-key families are preserved; the databases are not committed to the repository and are not reset.
 - The scheduled workflows are hourly and staggered: Nature at minute **15 UTC** and Alien World at minute **45 UTC**. Both support manual dispatch.
 - While open, each browser view refreshes its online feed every five minutes. It uses `cache: no-store`, presents no current feed while offline, and clears its displayed feed when the view closes. Feed data is not stored in browser localStorage, sessionStorage or IndexedDB.
 - Alien World is now **Live Feeds only**. It does not publish a magazine, catalogue, issue archive or PDF. The separate Magazine Feature Orb remains a distinct view and is not part of the Alien World feed pipeline.
 - The shared Universal Editorial System is installed under `editorial-engine/`. It has a browser companion and a Python production Engine. Each view retains independent data ownership and its own Publisher.
+- The shared publication order is Collector → Global Checker text/storage gate → independent image rights check → Image Engine fallback when needed → second Checker approval → Universal Editorial Engine layout → final Checker gate → Live Feed. The Image Engine's original artwork cannot override a source's refusal of persistent storage or summary reuse.
 - The Global PDF Reader remains shared and view-independent. Its v4.0.0 design and saved-PDF data are protected.
 - The owner has confirmed that the current app views are working well on the iPhone. Moon View was verified in Portrait and Landscape on 28 October 2026 and remains locked.
 - The current service-worker build remains `v109-alien-view-reset`; `sw.js` and `update-manager.js` must continue to use matching build identifiers.
 
-**Automation verification note:** GitHub's last observed Alien World scheduled run (`41320821525`, source commit `97b6c3e995`) completed collection but the Publisher's contract-test gate failed, so it preserved the last-good feed and did not publish a replacement. The two test issues from that run are documented in [`LIVE-EARTH-LIVE-FEEDS-ADDENDUM-2026-11-01.md`](./LIVE-EARTH-LIVE-FEEDS-ADDENDUM-2026-11-01.md). This documentation package also moves the explanatory output README out of `alien-world/published/`; the parser-date assertion remains an open test correction. The hourly schedule is present on `main`; do not describe the current end-to-end publisher cycle as verified until the remaining test is corrected and a later run succeeds.
+**Automation verification note:** Before this uncapped 32-day patch, the latest observed baseline Nature run (`41455958805`) and Alien World run (`41456049771`) both completed successfully, publishing 5 and 10 stories respectively. The new no-cap and pre-layout Image Engine changes in this package have passed local regression tests but have **not yet been exercised by a GitHub Actions run**. Treat end-to-end production behavior as pending until the owner uploads this package and both updated workflows complete successfully.
 
-For the complete current feed architecture, ownership, operating rules and verification record, see [`LIVE-EARTH-LIVE-FEEDS-ADDENDUM-2026-11-01.md`](./LIVE-EARTH-LIVE-FEEDS-ADDENDUM-2026-11-01.md). The 31 October Views Separation addendum and earlier continuity records remain historical audit evidence. The 1 November cleanup record remains an immutable record of Cleanup 01.
+For the new uncapped 32-day publication design and test record, see [`LIVE-EARTH-32-DAY-UNCAPPED-PUBLISHING-ADDENDUM-2026-11-02.md`](./LIVE-EARTH-32-DAY-UNCAPPED-PUBLISHING-ADDENDUM-2026-11-02.md). Earlier addenda remain historical audit evidence. The 31 October Views Separation addendum and earlier continuity records remain historical audit evidence. The 1 November cleanup record remains an immutable record of Cleanup 01.
 
 ## Working rules
 

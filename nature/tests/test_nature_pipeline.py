@@ -23,6 +23,7 @@ class CollectorContractTests(unittest.TestCase):
     def test_source_host_allowlist(self):
         self.assertTrue(collector.safe_https("https://www.nature.com/articles/example",collector.ALLOWED_FEED_HOSTS))
         self.assertTrue(collector.safe_https("https://news.mongabay.com/feed/",collector.ALLOWED_FEED_HOSTS))
+        self.assertFalse(collector.safe_https("https://phys.org/rss-feed/earth-news/environment/",collector.ALLOWED_FEED_HOSTS))
         self.assertFalse(collector.safe_https("https://nature.com.evil.example/story",collector.ALLOWED_FEED_HOSTS))
         self.assertFalse(collector.safe_https("http://www.nature.com/story",collector.ALLOWED_FEED_HOSTS))
 
@@ -56,11 +57,15 @@ class CollectorContractTests(unittest.TestCase):
         self.assertNotIn('timedelta(days=240)',source)
 
 class PublisherContractTests(unittest.TestCase):
-    def test_profile_is_rolling_48_hour_live_only(self):
+    def test_profile_is_uncapped_32_day_live_only(self):
         profile=json.loads((ROOT/"nature/publisher/profile.json").read_text(encoding="utf-8"))
         self.assertEqual(profile["publication"]["windowMode"],"rolling-hours")
-        self.assertEqual(profile["publication"]["issueWindowHours"],48)
-        self.assertEqual(profile["publication"]["maximumStories"],50)
+        self.assertEqual(profile["publication"]["issueWindowHours"],768)
+        self.assertEqual(profile["publication"]["maximumStories"],0)
+        self.assertEqual(profile["publication"]["minimumStories"],0)
+        self.assertEqual(profile["publication"]["adaptiveLookback"]["targetStories"],0)
+        self.assertEqual(profile["publication"]["adaptiveLookback"]["expansionHours"],[768])
+        self.assertFalse(any("phys.org" in source.get("url", "").lower() for source in profile["sources"]))
         self.assertEqual(profile["publication"]["maximumSourceAgeDays"],32)
         self.assertEqual(profile["database"]["retentionDays"],32)
         self.assertNotIn("minimumDocumentaryImages",profile["publication"])

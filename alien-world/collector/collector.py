@@ -618,7 +618,9 @@ def collect(profile: dict[str, Any], now: datetime, logs: list[str]) -> dict[str
                     continue
                 summary = clean_html(item.get("summary", ""), 9000)
                 if len(summary) < 35:
-                    summary = "The source feed provides no substantial summary. Consult the original report for full detail and limitations."
+                    # Never invent source text. A Checker-approved story may
+                    # still receive an original Image Engine illustration.
+                    summary = ""
                 story_id = hashlib.sha256(url.encode("utf-8")).hexdigest()[:24]
                 pending = pending_media.setdefault(story_id, [])
                 known_urls = {entry.get("url") for entry in pending}
@@ -641,12 +643,14 @@ def collect(profile: dict[str, Any], now: datetime, logs: list[str]) -> dict[str
         # Automatically screen the most recent bounded set of source articles.
         # Scan more stories than the target image count so one text-only article
         # does not prevent later eligible source images from being collected.
-        max_images = max(0, min(12, int(profile.get("editorialProfile", {}).get("maximumDocumentaryImages", 5))))
-        scan_limit = min(40, max(8, max_images * 3)) if max_images else 0
-        rows = con.execute("""SELECT story_id,title,url,image_url,image_local_path,image_caption,image_credit,
-                                      image_source_url,image_rights_status,image_rights_note,image_checked_at
-                            FROM stories WHERE view_id=? ORDER BY published_at DESC LIMIT ?""",
-                           (profile["viewId"], scan_limit)).fetchall()
+        configured_image_cap = int(profile.get("editorialProfile", {}).get("maximumDocumentaryImages", 0) or 0)
+        max_images = max(0, min(12, configured_image_cap)) if configured_image_cap > 0 else 0
+        # No documentary-image cap: evaluate every retained story. Zero is the
+        # explicit unlimited setting; the database's 32-day retention is the bound.
+        image_query = """SELECT story_id,title,url,image_url,image_local_path,image_caption,image_credit,
+                               image_source_url,image_rights_status,image_rights_note,image_checked_at
+                        FROM stories WHERE view_id=? ORDER BY published_at DESC"""
+        rows = con.execute(image_query, (profile["viewId"],)).fetchall()
         prepared = 0
         reused = 0
         held_back = 0
@@ -663,7 +667,7 @@ def collect(profile: dict[str, Any], now: datetime, logs: list[str]) -> dict[str
                 and clean_html(row["image_credit"], 180)
                 and "automated screening policy v3" in clean_html(row["image_rights_note"], 600).lower()
             )
-            if cache_is_current and usable_count < max_images:
+            if cache_is_current and (max_images <= 0 or usable_count < max_images):
                 usable_count += 1
                 reused += 1
                 continue
@@ -682,7 +686,7 @@ def collect(profile: dict[str, Any], now: datetime, logs: list[str]) -> dict[str
             # Image quota is already filled. The story remains in the database
             # as text, and the next scheduled run can reconsider it if capacity
             # becomes available.
-            if usable_count >= max_images:
+            if max_images > 0 and usable_count >= max_images:
                 continue
 
             story_logs: list[str] = []
@@ -720,11 +724,13 @@ def collect(profile: dict[str, Any], now: datetime, logs: list[str]) -> dict[str
         retention_seconds = int(profile.get("database", {}).get("retentionDays", 30)) * 86400
         con.execute("DELETE FROM stories WHERE view_id=? AND published_at < ?",
                     (profile["viewId"], now.timestamp() - retention_seconds))
-        cap = max(20, min(2000, int(profile.get("database", {}).get("maximumRecords", 500))))
-        con.execute("""DELETE FROM stories WHERE view_id=? AND story_id NOT IN
-            (SELECT story_id FROM stories WHERE view_id=? ORDER BY published_at DESC LIMIT ?)""",
-            (profile["viewId"], profile["viewId"], cap))
-        con.commit()
+        cap = int(profile.get("database", {}).get("maximumRecords", 0) or 0)
+        if cap > 0:
+            cap = max(20, min(2000, cap))
+            con.execute("""DELETE FROM stories WHERE view_id=? AND story_id NOT IN
+                (SELECT story_id FROM stories WHERE view_id=? ORDER BY published_at DESC LIMIT ?)""",
+                (profile["viewId"], profile["viewId"], cap))
+            con.commit()
 
         retained = {str(row[0]) for row in con.execute(
             "SELECT image_local_path FROM stories WHERE view_id=? AND image_local_path IS NOT NULL",
