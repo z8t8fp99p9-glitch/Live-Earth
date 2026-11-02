@@ -5,27 +5,70 @@
   "publication": {
     "windowMode": "rolling-hours",
     "issueWindowHours": 48,
-    "maximumStories": 10,
+    "maximumStories": 50,
     "maximumSourceAgeDays": 32,
     "adaptiveLookback": {
       "enabled": true,
-      "targetStories": 10,
-      "expansionHours": [48, 96, 168, 336, 504, 768]
+      "targetStories": 50,
+      "expansionHours": [
+        48,
+        96,
+        168,
+        336,
+        504,
+        768
+      ]
     }
   },
   "sources": [
-    {"name": "Nature Portfolio — Ecology", "url": "https://www.nature.com/subjects/ecology.rss", "domain": "nature.com"},
-    {"name": "ScienceDaily — Environment", "url": "https://www.sciencedaily.com/rss/top/environment.xml", "domain": "sciencedaily.com"},
-    {"name": "Phys.org — Environment", "url": "https://phys.org/rss-feed/earth-news/environment/", "domain": "phys.org"},
-    {"name": "Mongabay", "url": "https://news.mongabay.com/feed/", "domain": "news.mongabay.com"}
+    {
+      "name": "NOAA — Ocean Facts",
+      "url": "https://oceanservice.noaa.gov/rss/oceanfacts.xml",
+      "domain": "oceanservice.noaa.gov"
+    },
+    {
+      "name": "NOAA — National Ocean Service News",
+      "url": "https://oceanservice.noaa.gov/rss/nosnews.xml",
+      "domain": "oceanservice.noaa.gov"
+    },
+    {
+      "name": "NASA Earth Observatory — Image of the Day",
+      "url": "https://science.nasa.gov/feed/earth-observatory/image-of-the-day",
+      "domain": "science.nasa.gov"
+    },
+    {
+      "name": "NASA Earth Observatory — Natural Events",
+      "url": "https://science.nasa.gov/feed/earth-observatory/natural-events",
+      "domain": "science.nasa.gov"
+    },
+    {
+      "name": "USGS — National News Releases",
+      "url": "https://www.usgs.gov/news/national-news-release/feed",
+      "domain": "www.usgs.gov"
+    },
+    {
+      "name": "Phys.org — Environment",
+      "url": "https://phys.org/rss-feed/earth-news/environment/",
+      "domain": "phys.org"
+    },
+    {
+      "name": "Mongabay",
+      "url": "https://news.mongabay.com/feed/",
+      "domain": "news.mongabay.com"
+    }
   ],
   "editorialProfile": {
     "publicationTitle": "Nature Live Feeds",
     "tone": "curious, grounded nature and conservation reporting",
-    "defaultCustomRequest": "Prepare a balanced, source-linked rolling live feed about wildlife, ecology, oceans, biodiversity, climate and conservation. Preserve the original reporting context. Use documentary photographs only when their exact source page, creator, licence and contextual caption have been independently verified by the Nature Collector. Never invent photography, misidentify a species, or present a contextual photograph as the image from a research paper or source article. A report without an approved photograph remains eligible as a text report. Prioritize the newest eligible reporting while retaining useful topic variety."
+    "defaultCustomRequest": "Prepare a balanced, source-linked educational live feed about wildlife, ecology, oceans, biodiversity, climate, conservation and environmental research. Respect each source's permitted use exactly; educational/non-commercial purpose does not override item-level or third-party restrictions. Preserve original headlines and links where required. Do not store or display restricted summaries. Use independently verified documentary photographs only when exact source page, creator, credit, licence and contextual caption are confirmed. A headline/link without meaningful approved text or an independently approved relevant image is not publishable. Never invent or duplicate stories."
   },
   "imagePolicy": {
-    "allowedLicenses": ["Public domain", "CC0", "CC BY", "CC BY-SA"],
+    "allowedLicenses": [
+      "Public domain",
+      "CC0",
+      "CC BY",
+      "CC BY-SA"
+    ],
     "rejectNoDerivativesWhenModified": true,
     "minimumDocumentaryImages": 0,
     "maximumImageBytes": 7000000,

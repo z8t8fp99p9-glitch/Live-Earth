@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "registryVersion": "2026-11-02.5",
+  "registryVersion": "2026-11-02.6",
   "registryName": "LIVE // EARTH Global Source & Rights Registry",
   "policyPrinciples": [
     "Free-to-read is not automatically free-to-store, transform, publish or redistribute.",
@@ -8,15 +8,24 @@
     "A story is publishable only with meaningful approved text, an independently verified relevant image, or both.",
     "The most restrictive applicable item or source condition controls.",
     "Unknown, missing or conflicting evidence fails closed.",
-    "No permission requests are assumed; use only published reuse rights or clearly applicable public-domain rules."
+    "Use approved educational/non-commercial permissions where the source actually grants them; educational purpose never overrides item-level or third-party restrictions.",
+    "All source permissions and restrictions live in this one central registry and are evaluated by the shared Global Checker for both views."
   ],
+  "useContext": {
+    "purpose": "educational and non-commercial",
+    "appliesToViews": [
+      "nature",
+      "alien-world"
+    ],
+    "limitation": "This purpose is context for applying source permissions, not an independent copyright licence or an override of source terms."
+  },
   "publicationEligibility": {
     "rule": "text-or-image",
     "minimumTextChars": 120,
     "minimumTextWords": 18,
     "requireImageCaptionAndAttribution": true,
     "headlineOnlyWithoutImage": "hold",
-    "description": "A story requires a meaningful, rights-approved text body or an independently rights-approved relevant image with caption and attribution. A headline and link alone are never sufficient.",
+    "description": "A story requires meaningful rights-approved text or an independently rights-approved relevant image with caption and attribution. Headline and link alone are never sufficient.",
     "minimumPublishableStories": 0,
     "emptyFeedAction": "publish-empty-feed-after-successful-check-to-clear-ineligible-last-good-content"
   },
@@ -24,13 +33,15 @@
     {
       "policyId": "nasa-official-federal-source-text-v1",
       "policyVersion": "2",
-      "displayName": "Official NASA source material — conditional federal-work use",
+      "displayName": "Official NASA source material — conditional educational/informational use",
       "views": [
+        "nature",
         "alien-world"
       ],
       "status": "GREEN_CONDITIONAL",
       "articleDomains": [
-        "nasa.gov"
+        "nasa.gov",
+        "earthobservatory.nasa.gov"
       ],
       "feedDomains": [
         "nasa.gov"
@@ -41,25 +52,118 @@
       "termsUrl": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
       "reviewedAt": "2026-11-02",
       "text": {
-        "mode": "conditional-us-government-work",
+        "mode": "educational-government-work",
+        "agency": "NASA",
+        "acceptedAuthorMarkers": [
+          "nasa",
+          "national aeronautics and space administration"
+        ],
+        "allowMissingAuthor": true,
         "allowStorage": true,
         "allowSummary": true,
-        "allowTransform": false,
+        "allowTransform": true,
         "allowDisplay": true,
         "attribution": "NASA",
-        "reason": "Only official NASA feed items and NASA.gov articles with no visible third-party/copyright restriction signals. This is not a blanket permission for all nasa.gov material."
+        "reason": "Official NASA-created U.S. government material may generally be used for educational/informational purposes with source acknowledgement. Third-party works, restrictive notices, NASA branding and endorsement remain excluded."
       },
       "notes": [
-        "NASA says its own U.S. government-created material generally is not subject to U.S. copyright, but third-party copyrighted material may appear on NASA sites and is not cleared by NASA's own use.",
-        "NASA insignia, logotypes, identifiers, endorsement, promotional uses and employee/individual likeness concerns remain separate restrictions.",
-        "If authorship, rights notices or item provenance are unclear, the checker returns RED or UNKNOWN rather than presuming public domain."
+        "NASA-created U.S. government content is generally not subject to U.S. copyright, but third-party copyrighted material may appear on NASA sites and is not cleared by NASA's own use.",
+        "NASA insignia, logotypes, identifiers, endorsement, promotional uses and individual likeness concerns remain separate restrictions.",
+        "If an item identifies a non-NASA author or exposes a restrictive rights signal, the Checker holds it rather than presuming public-domain status.",
+        "This single policy covers NASA sources in both Nature and Alien World; view-specific feed subscriptions remain in their respective profiles."
       ],
       "allowedFeedUrls": [
         "https://www.nasa.gov/news-release/feed/",
         "https://science.nasa.gov/feed/",
         "https://www.nasa.gov/feeds/iotd-feed/",
         "https://www.nasa.gov/blogs/artemis/feed/",
-        "https://www.nasa.gov/blogs/spacestation/feed/"
+        "https://www.nasa.gov/blogs/spacestation/feed/",
+        "https://science.nasa.gov/feed/earth-observatory/image-of-the-day",
+        "https://science.nasa.gov/feed/earth-observatory/natural-events"
+      ]
+    },
+    {
+      "policyId": "noaa-ocean-service-educational-government-v1",
+      "policyVersion": "1",
+      "displayName": "NOAA National Ocean Service — agency-created educational material",
+      "views": [
+        "nature",
+        "alien-world"
+      ],
+      "status": "GREEN_CONDITIONAL",
+      "articleDomains": [
+        "noaa.gov"
+      ],
+      "feedDomains": [
+        "oceanservice.noaa.gov"
+      ],
+      "sourceNameContains": [
+        "NOAA"
+      ],
+      "termsUrl": "https://oceanservice.noaa.gov/about/faq.html",
+      "reviewedAt": "2026-11-02",
+      "text": {
+        "mode": "educational-government-work",
+        "allowStorage": true,
+        "allowSummary": true,
+        "allowTransform": true,
+        "allowDisplay": true,
+        "attribution": "NOAA",
+        "reason": "Official NOAA-created educational and informational material may be reused with credit. Third-party or restrictive item-level material is excluded.",
+        "agency": "NOAA",
+        "acceptedAuthorMarkers": [
+          "noaa",
+          "national oceanic and atmospheric administration"
+        ],
+        "allowMissingAuthor": true
+      },
+      "allowedFeedUrls": [
+        "https://oceanservice.noaa.gov/rss/oceanfacts.xml",
+        "https://oceanservice.noaa.gov/rss/nosnews.xml"
+      ],
+      "notes": [
+        "NOAA Ocean Service states that most information is public domain unless the credit or caption says otherwise; credit NOAA and follow any item-specific instructions.",
+        "Do not imply NOAA endorsement, claim NOAA material as original app content, or alter content and present the altered version as official NOAA material."
+      ]
+    },
+    {
+      "policyId": "usgs-national-news-educational-government-v1",
+      "policyVersion": "1",
+      "displayName": "USGS National News Releases — agency-created educational material",
+      "views": [
+        "nature",
+        "alien-world"
+      ],
+      "status": "GREEN_CONDITIONAL",
+      "articleDomains": [
+        "usgs.gov"
+      ],
+      "feedDomains": [
+        "usgs.gov"
+      ],
+      "sourceNameContains": [
+        "USGS"
+      ],
+      "termsUrl": "https://www.usgs.gov/faqs/are-usgs-reportspublications-copyrighted",
+      "reviewedAt": "2026-11-02",
+      "text": {
+        "mode": "educational-government-work",
+        "allowStorage": true,
+        "allowSummary": true,
+        "allowTransform": true,
+        "allowDisplay": true,
+        "attribution": "U.S. Geological Survey (USGS)",
+        "reason": "USGS-authored and produced informational material is generally public domain with credit. Third-party works and item-level copyright notices remain excluded.",
+        "agency": "USGS",
+        "acceptedAuthorMarkers": [
+          "usgs",
+          "u.s. geological survey",
+          "united states geological survey"
+        ],
+        "allowMissingAuthor": true
+      },
+      "allowedFeedUrls": [
+        "https://www.usgs.gov/news/national-news-release/feed"
       ]
     },
     {
@@ -88,7 +192,7 @@
         "allowTransform": false,
         "allowDisplay": true,
         "attribution": "Phys.org",
-        "reason": "Phys.org RSS terms allow feed use with attribution and prohibit changing headlines/links. The source summary is not cleared for storage or display. A story is eligible only if an independent approved image supplies the meaningful visual route."
+        "reason": "Phys.org permits attributed RSS feed use with the supplied headline/link; source summaries are not retained or displayed. Under the app's content rule, headline-only items require a separately approved relevant image to publish."
       },
       "allowedFeedUrls": [
         "https://phys.org/rss-feed/earth-news/environment/"
@@ -127,15 +231,13 @@
           "https://creativecommons.org/licenses/by-nd/4.0/",
           "https://creativecommons.org/licenses/by-nc-nd/4.0/"
         ],
-        "reason": "Mongabay story text is reusable only when the exact article publishes an accepted editable licence, the named author is identified, and Mongabay and author attribution plus the original article and licence links are preserved. No-derivatives routes remain held until all republication conditions can be guaranteed.",
+        "reason": "Mongabay story text is reusable only when the exact article publishes an accepted editable licence, a named author is identified, and all required attributions and links are preserved.",
         "attribution": "Mongabay"
       },
       "notes": [
         "Do not infer a Creative Commons licence from the Mongabay domain or RSS feed. The exact article page must disclose its licence and named author.",
-        "Mongabay's common CC BY-ND 4.0 republication route requires the material to remain unmodified, author and Mongabay attribution, a link to the original article, preservation of embedded links, and an online view counter. The current feed pipeline does not yet guarantee all of those conditions, so this route is held.",
-        "Mongabay says headlines should be rewritten when republishing. The current feed does not implement an independently authored headline, so no-derivatives articles remain held.",
-        "CC BY-NC-ND material is held until the app's non-commercial status and all item-specific conditions are verified.",
-        "Mongabay-owned or author-owned photographs may be reusable only under the source's stated conditions and unchanged. Third-party photographs require separate permission. The current Nature image route uses independently verified Wikimedia Commons files only; it does not inherit Mongabay image rights."
+        "The common CC BY-ND republication route is held until all no-derivatives conditions, including unchanged text, attribution, embedded links and view-counter requirements, can be guaranteed.",
+        "Mongabay-labelled own photographs may be reusable for eligible educational/non-commercial websites only unchanged with label retained. Third-party photographs require separate permission; this pipeline does not automatically download Mongabay photos."
       ],
       "allowedFeedUrls": [
         "https://news.mongabay.com/feed/"
@@ -163,7 +265,7 @@
         "allowSummary": false,
         "allowTransform": false,
         "allowDisplay": false,
-        "reason": "ScienceDaily RSS terms prohibit placing retrieved or derived content in a database without prior written consent. Our Collector uses a persistent SQLite database, so this route is disabled."
+        "reason": "ScienceDaily RSS terms prohibit placing retrieved or derived content in a database without prior written consent. The Collector uses persistent SQLite storage."
       },
       "allowedFeedUrls": [
         "https://www.sciencedaily.com/rss/top/environment.xml"
@@ -191,12 +293,8 @@
         "allowSummary": false,
         "allowTransform": false,
         "allowDisplay": false,
-        "reason": "Nature Portfolio website terms prohibit copying/downloading/storing site content, feeds or data to populate a database or publication except as specifically permitted; our persistent automated Collector is outside the permitted personal, non-systematic use."
+        "reason": "Nature Portfolio site terms prohibit copying/downloading/storing site content, feeds or data to populate a database or publication unless specifically permitted by applicable terms."
       },
-      "notes": [
-        "Nature Portfolio website terms prohibit copying, downloading or storing content, files, feeds or data to make or populate a database or publication unless specifically permitted by applicable terms.",
-        "An article published under a different open-access licence may need a separate item-level route; this general site-feed route does not assume that permission."
-      ],
       "allowedFeedUrls": [
         "https://www.nature.com/subjects/ecology.rss"
       ]
@@ -230,7 +328,15 @@
       "requireLicenseLink": true,
       "requireAttribution": true,
       "requireModificationNote": true,
-      "rejectNoDerivativesWhenModified": true
+      "rejectNoDerivativesWhenModified": true,
+      "policyVersion": "1"
     }
-  }
+  },
+  "registryNotes": [
+    "All active and restricted source policies are maintained in this one source-registry.json and evaluated by the shared Global Checker.",
+    "NOAA, NASA and USGS official feed routes are approved for eligible educational/informational reuse with agency credit, subject to item-level and third-party restrictions.",
+    "Phys.org RSS headlines/links may be retained with attribution; its summary is not stored. A headline-only item still needs an independently approved image to meet publication eligibility.",
+    "ScienceDaily and Nature Portfolio remain blocked for persistent database storage absent written permission or an item-specific permission route.",
+    "USDA ARS and EEA remain pending because direct official XML feed endpoints were not verified in this source review."
+  ]
 }
