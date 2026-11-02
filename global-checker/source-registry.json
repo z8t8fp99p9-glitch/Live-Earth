@@ -1,14 +1,25 @@
 {
   "schemaVersion": 1,
-  "registryVersion": "2026-11-02.3",
+  "registryVersion": "2026-11-02.5",
   "registryName": "LIVE // EARTH Global Source & Rights Registry",
   "policyPrinciples": [
     "Free-to-read is not automatically free-to-store, transform, publish or redistribute.",
     "Text and image rights are evaluated independently for each story.",
+    "A story is publishable only with meaningful approved text, an independently verified relevant image, or both.",
     "The most restrictive applicable item or source condition controls.",
     "Unknown, missing or conflicting evidence fails closed.",
     "No permission requests are assumed; use only published reuse rights or clearly applicable public-domain rules."
   ],
+  "publicationEligibility": {
+    "rule": "text-or-image",
+    "minimumTextChars": 120,
+    "minimumTextWords": 18,
+    "requireImageCaptionAndAttribution": true,
+    "headlineOnlyWithoutImage": "hold",
+    "description": "A story requires a meaningful, rights-approved text body or an independently rights-approved relevant image with caption and attribution. A headline and link alone are never sufficient.",
+    "minimumPublishableStories": 0,
+    "emptyFeedAction": "publish-empty-feed-after-successful-check-to-clear-ineligible-last-good-content"
+  },
   "policies": [
     {
       "policyId": "nasa-official-federal-source-text-v1",
@@ -77,16 +88,16 @@
         "allowTransform": false,
         "allowDisplay": true,
         "attribution": "Phys.org",
-        "reason": "Phys.org RSS terms allow feed use with attribution and prohibit changing headlines/links. This initial route deliberately retains only headline, date and source link; it does not retain the feed summary."
+        "reason": "Phys.org RSS terms allow feed use with attribution and prohibit changing headlines/links. The source summary is not cleared for storage or display. A story is eligible only if an independent approved image supplies the meaningful visual route."
       },
       "allowedFeedUrls": [
         "https://phys.org/rss-feed/earth-news/environment/"
       ]
     },
     {
-      "policyId": "mongabay-per-item-open-license-required-v1",
-      "policyVersion": "1",
-      "displayName": "Mongabay — individual article licence required",
+      "policyId": "mongabay-per-item-open-license-required-v2",
+      "policyVersion": "2",
+      "displayName": "Mongabay — exact article licence and author required",
       "views": [
         "nature"
       ],
@@ -99,7 +110,7 @@
         "mongabay.com",
         "news.mongabay.com"
       ],
-      "termsUrl": "https://mongabay.com/terms/",
+      "termsUrl": "https://news.mongabay.com/copyright/creative-commons/",
       "reviewedAt": "2026-11-02",
       "text": {
         "mode": "explicit-open-license",
@@ -112,8 +123,20 @@
           "https://creativecommons.org/licenses/by/4.0/",
           "https://creativecommons.org/licenses/by-sa/4.0/"
         ],
-        "reason": "Mongabay content is reusable only where the individual item is expressly published under a suitable open licence; third-party images remain separately cleared."
+        "heldLicenses": [
+          "https://creativecommons.org/licenses/by-nd/4.0/",
+          "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+        ],
+        "reason": "Mongabay story text is reusable only when the exact article publishes an accepted editable licence, the named author is identified, and Mongabay and author attribution plus the original article and licence links are preserved. No-derivatives routes remain held until all republication conditions can be guaranteed.",
+        "attribution": "Mongabay"
       },
+      "notes": [
+        "Do not infer a Creative Commons licence from the Mongabay domain or RSS feed. The exact article page must disclose its licence and named author.",
+        "Mongabay's common CC BY-ND 4.0 republication route requires the material to remain unmodified, author and Mongabay attribution, a link to the original article, preservation of embedded links, and an online view counter. The current feed pipeline does not yet guarantee all of those conditions, so this route is held.",
+        "Mongabay says headlines should be rewritten when republishing. The current feed does not implement an independently authored headline, so no-derivatives articles remain held.",
+        "CC BY-NC-ND material is held until the app's non-commercial status and all item-specific conditions are verified.",
+        "Mongabay-owned or author-owned photographs may be reusable only under the source's stated conditions and unchanged. Third-party photographs require separate permission. The current Nature image route uses independently verified Wikimedia Commons files only; it does not inherit Mongabay image rights."
+      ],
       "allowedFeedUrls": [
         "https://news.mongabay.com/feed/"
       ]
@@ -168,11 +191,11 @@
         "allowSummary": false,
         "allowTransform": false,
         "allowDisplay": false,
-        "reason": "Nature Portfolio website terms prohibit copying/downloading/storing site content, feeds or data to populate a database or publication except as specifically permitted; our persistent Collector database is outside the permitted personal, non-systematic use."
+        "reason": "Nature Portfolio website terms prohibit copying/downloading/storing site content, feeds or data to populate a database or publication except as specifically permitted; our persistent automated Collector is outside the permitted personal, non-systematic use."
       },
       "notes": [
-        "Nature Portfolio website terms prohibit copying, downloading or storing content, files, feeds or data to make or populate a database or publication unless specifically permitted by applicable terms. The current persistent automated Collector route is therefore disabled.",
-        "An article published under an explicit open-access licence may need a separate item-level policy route in a future release; this initial source-feed route does not attempt to infer one."
+        "Nature Portfolio website terms prohibit copying, downloading or storing content, files, feeds or data to make or populate a database or publication unless specifically permitted by applicable terms.",
+        "An article published under a different open-access licence may need a separate item-level route; this general site-feed route does not assume that permission."
       ],
       "allowedFeedUrls": [
         "https://www.nature.com/subjects/ecology.rss"

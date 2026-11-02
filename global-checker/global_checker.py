@@ -20,7 +20,7 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = Path(__file__).with_name("source-registry.json")
 CHECKER_NAME = "LIVE // EARTH Global Content Rights & Provenance Checker"
-CHECKER_VERSION = "1.0.3"
+CHECKER_VERSION = "1.1.0"
 DECISION_TABLE = "global_checker_decisions"
 ALLOWED_VERDICTS = {"GREEN", "AMBER", "RED", "UNKNOWN"}
 PUBLISHABLE_VERDICTS = {"GREEN", "AMBER"}
@@ -190,12 +190,16 @@ def evaluate_text(view_id: str, story: dict[str, Any]) -> dict[str, Any]:
     policy_version = str(policy.get("policyVersion", "1"))
     source_status = policy.get("status", "UNKNOWN")
     text_policy = policy.get("text", {})
+    normalized_summary = _clean(summary, 12000)
     evidence = {
         "articleUrl": article_url, "articleHost": _domain(article_url),
+        "title": title,
         "sourceUrl": source_url, "feedHost": _domain(source_url),
         "sourceName": _clean(story.get("sourceName"), 160),
         "author": _clean(story.get("author") or story.get("creator"), 240),
         "rightsNotice": _clean(story.get("rightsNotice") or story.get("rights") or story.get("license"), 500),
+        "summarySha256": hashlib.sha256(normalized_summary.encode("utf-8")).hexdigest(),
+        "summaryLength": len(normalized_summary),
         "termsUrl": _clean(policy.get("termsUrl"), 1000),
     }
     if source_status == "RED":
@@ -224,11 +228,9 @@ def evaluate_text(view_id: str, story: dict[str, Any]) -> dict[str, Any]:
                          reasons=["An explicit copyright, third-party, or reuse restriction signal was found."])
 
     mode = text_policy.get("mode", "")
-    summary_allowed = bool(text_policy.get("allowSummary", False))
     attribution = _clean(text_policy.get("attribution", ""), 240)
     if mode == "headline-link-only":
         # Limited feed use: retain only the headline, source identity, date and link.
-        summary_allowed = False
         return _decision(view_id=view_id, story_id=story_id, content_kind="text", verdict="AMBER",
                          policy_id=policy_id, policy_version=policy_version, allowed=True,
                          allowed_use="headline-link-only", evidence=evidence,
@@ -237,6 +239,13 @@ def evaluate_text(view_id: str, story: dict[str, Any]) -> dict[str, Any]:
 
     if mode == "explicit-open-license":
         license_url = _clean(story.get("licenseUrl") or story.get("license_url") or story.get("license"), 500)
+        held_licenses = set(text_policy.get("heldLicenses", []))
+        if license_url in held_licenses:
+            return _decision(view_id=view_id, story_id=story_id, content_kind="text", verdict="UNKNOWN",
+                             policy_id=policy_id, policy_version=policy_version, allowed=False,
+                             allowed_use="none", evidence={**evidence, "licenseUrl": license_url},
+                             reasons=["This Mongabay item licence has conditions the current feed renderer cannot guarantee (including no-derivatives, headline, attribution, embedded-link, view-counter, or non-commercial requirements). The story is held until those conditions can be met exactly."],
+                             attribution=attribution or "Mongabay", summary_allowed=False)
         accepted = set(text_policy.get("acceptedLicenses", []))
         if license_url not in accepted:
             return _decision(view_id=view_id, story_id=story_id, content_kind="text", verdict="UNKNOWN",
@@ -253,7 +262,7 @@ def evaluate_text(view_id: str, story: dict[str, Any]) -> dict[str, Any]:
                          policy_id=policy_id, policy_version=policy_version, allowed=True,
                          allowed_use="open-license-text", evidence={**evidence, "licenseUrl": license_url},
                          reasons=["The individual article supplies an accepted open licence and author evidence."],
-                         attribution=attribution or author, summary_allowed=True)
+                         attribution=attribution or f"Mongabay · {author}", summary_allowed=bool(summary and text_policy.get("allowTransform", False)))
 
     if mode == "conditional-us-government-work":
         # This is not a domain-wide public-domain assumption. The exact feed and
@@ -367,7 +376,7 @@ def evaluate_image(view_id: str, story_id: str, image: dict[str, Any], *,
         elif source_policy.get("requireOriginalStoryAssociation", True) and _clean(source_page) != _clean(article_url):
             reason = "The image source page is not the exact originating story; a similar NASA-hosted image is not a substitute."
         elif source_policy.get("rejectNASAInsigniaAndLogos", True) and any(marker in descriptor for marker in NASA_BRAND_MARKERS):
-            reason = "NASA insignia, seal and logotypes are excluded from the documentary image feed."
+            reason = "NASA insignia, seal and logotypes are excluded from the documentary-photo feed."
         elif source_policy.get("rejectConceptArtForDocumentaryPhotoSlot", True) and any(marker in descriptor for marker in NON_PHOTOGRAPHIC_MARKERS):
             reason = "Artist concepts, illustrations, simulations, renderings, diagrams and infographics are excluded from documentary-photo use."
         elif source_policy.get("rejectThirdPartyAndCopyrightSignals", True) and any(marker in descriptor for marker in RESTRICTIVE_IMAGE_MARKERS):
@@ -459,22 +468,45 @@ def _clear_image(story: dict[str, Any]) -> None:
             story[key] = None
 
 
+def _meaningful_text(value: Any, eligibility: dict[str, Any]) -> bool:
+    """A text route must contain real body copy, not a title or a tiny teaser."""
+    raw = _clean(value, 12000)
+    minimum_chars = max(80, int(eligibility.get("minimumTextChars", 120)))
+    minimum_words = max(12, int(eligibility.get("minimumTextWords", 18)))
+    return len(raw) >= minimum_chars and len(raw.split()) >= minimum_words
+
+
 def gate_feed(feed: dict[str, Any], connection: sqlite3.Connection, view_id: str,
               *, minimum_stories: int = 2) -> dict[str, Any]:
-    """Final pre-publication gate. Text failures are removed; unapproved images are stripped.
+    """Final Checker gate: publish only meaningful approved text OR a verified image.
 
-    Raises on missing/invalid evidence or too few remaining stories. Callers must
-    publish atomically only after this function returns successfully.
+    A text decision remains mandatory to establish the exact article/source metadata
+    route. Headline-link-only sources can proceed only with a separately approved
+    image. A story with neither meaningful text nor a verified image is held.
     """
     if not isinstance(feed, dict) or feed.get("schemaVersion") != 1 or feed.get("viewId") != view_id:
         raise GlobalCheckerError("Published feed schema/view identity failed Global Checker gate.")
     stories = feed.get("stories")
     if not isinstance(stories, list):
         raise GlobalCheckerError("Published feed has no stories array.")
+    registry = load_registry()
+    registry_version = registry["registryVersion"]
+    eligibility = registry.get("publicationEligibility", {})
+    # A successful run must not leave a previously published headline-only feed
+    # visible just because fewer stories passed the new eligibility rule. The
+    # registry owns the allowed output floor; legacy caller thresholds cannot
+    # override the Checker or preserve now-ineligible content.
+    minimum_stories = max(0, int(eligibility.get("minimumPublishableStories", 0)))
+    policies_by_id = {str(policy.get("policyId")): policy for policy in registry["policies"]}
     accepted: list[dict[str, Any]] = []
     rejected_text: list[str] = []
+    content_held: list[str] = []
     stripped_images = 0
+    text_routes = 0
+    image_routes = 0
+    combined_routes = 0
     seen_urls: set[str] = set()
+
     for raw in stories:
         if not isinstance(raw, dict):
             continue
@@ -490,28 +522,47 @@ def gate_feed(feed: dict[str, Any], connection: sqlite3.Connection, view_id: str
             rejected_text.append(story_id)
             continue
         evidence = text_decision.get("evidence", {})
-        if evidence.get("articleUrl") != story_url:
+        current_policy = policies_by_id.get(str(text_decision.get("policyId")))
+        if (text_decision.get("registryVersion") != registry_version or not current_policy
+                or str(current_policy.get("policyVersion", "1")) != str(text_decision.get("policyVersion", ""))
+                or current_policy.get("status") not in {"GREEN_CONDITIONAL", "AMBER_LIMITED", "AMBER_ITEM_LICENSE_REQUIRED"}):
+            rejected_text.append(story_id)
+            continue
+        if evidence.get("articleUrl") != story_url or evidence.get("title") != _clean(story.get("title"), 300):
             rejected_text.append(story_id)
             continue
         feed_source_url = _clean(story.get("sourceUrl"), 1200)
-        if not feed_source_url or evidence.get("sourceUrl") != feed_source_url:
+        if (not feed_source_url or evidence.get("sourceUrl") != feed_source_url
+                or evidence.get("sourceName") != _clean(story.get("sourceName"), 160)):
             rejected_text.append(story_id)
             continue
-        # The Publisher may not accidentally reintroduce a summary for a
-        # restricted headline-only RSS policy.
-        if not text_decision.get("summaryAllowed", False):
-            story["summary"] = ""
-        story["rights"] = {
-            "checker": CHECKER_NAME, "verdict": text_decision["verdict"],
-            "policyId": text_decision["policyId"], "policyVersion": text_decision["policyVersion"],
-            "decisionId": text_decision["decisionId"], "checkedAt": text_decision["checkedAt"],
-            "allowedUse": text_decision["allowedUse"], "attribution": text_decision.get("attribution", ""),
-        }
 
+        summary = _clean(story.get("summary"), 12000)
+        summary_allowed = bool(text_decision.get("summaryAllowed", False))
+        if summary_allowed:
+            digest = hashlib.sha256(summary.encode("utf-8")).hexdigest()
+            if digest != evidence.get("summarySha256"):
+                rejected_text.append(story_id)
+                continue
+        else:
+            # Restricted/no-derivatives routes may not be enriched with a summary.
+            story["summary"] = ""
+            summary = ""
+        meaningful_text = summary_allowed and _meaningful_text(summary, eligibility)
+
+        # Verify the image independently, even when the source-text route is
+        # headline-only or otherwise too short to qualify as meaningful text.
+        image_approved = False
         if story.get("imageUrl"):
             image_decision = get_decision(connection, view_id, story_id, "image")
+            image_policy_key = "wikimediaCommons" if view_id == "nature" else "nasa"
+            current_image_policy = registry.get("imagePolicies", {}).get(image_policy_key, {})
+            image_policy_version = str(current_image_policy.get("policyVersion", "1"))
             if (not image_decision or not image_decision.get("allowed")
-                    or image_decision.get("verdict") not in PUBLISHABLE_VERDICTS):
+                    or image_decision.get("verdict") not in PUBLISHABLE_VERDICTS
+                    or image_decision.get("registryVersion") != registry_version
+                    or not current_image_policy
+                    or str(image_decision.get("policyVersion", "")) != image_policy_version):
                 _clear_image(story)
                 stripped_images += 1
             else:
@@ -521,8 +572,10 @@ def gate_feed(feed: dict[str, Any], connection: sqlite3.Connection, view_id: str
                     and _clean(image_evidence.get("imageUrl"), 1200) == _clean(story.get("imageUrl"), 1200)
                     and _clean(image_evidence.get("credit"), 500) == _clean(story.get("imageCredit"), 500)
                     and _clean(image_evidence.get("sourcePage"), 1200) == _clean(story.get("imageSourceUrl"), 1200)
-                    and (not story.get("imageCaption") or _clean(image_evidence.get("caption"), 800) == _clean(story.get("imageCaption"), 800))
-                    and (not story.get("imageRightsNote") or _clean(image_evidence.get("rightsNotice"), 800) == _clean(story.get("imageRightsNote"), 800))
+                    and bool(_clean(story.get("imageCaption"), 800))
+                    and _clean(image_evidence.get("caption"), 800) == _clean(story.get("imageCaption"), 800)
+                    and bool(_clean(story.get("imageRightsNote"), 800))
+                    and _clean(image_evidence.get("rightsNotice"), 800) == _clean(story.get("imageRightsNote"), 800)
                     and (not story.get("imageLicenseUrl") or _clean(image_evidence.get("licenseUrl"), 500) == _clean(story.get("imageLicenseUrl"), 500))
                     and (not story.get("imageLicense") or _clean(image_evidence.get("licenseName"), 160) == _clean(story.get("imageLicense"), 160))
                 )
@@ -530,6 +583,7 @@ def gate_feed(feed: dict[str, Any], connection: sqlite3.Connection, view_id: str
                     _clear_image(story)
                     stripped_images += 1
                 else:
+                    image_approved = True
                     story["imageRights"] = {
                         "checker": CHECKER_NAME, "verdict": image_decision["verdict"],
                         "policyId": image_decision["policyId"], "policyVersion": image_decision["policyVersion"],
@@ -540,20 +594,47 @@ def gate_feed(feed: dict[str, Any], connection: sqlite3.Connection, view_id: str
                         "sourcePage": image_evidence.get("sourcePage", ""),
                         "modificationNote": image_evidence.get("modificationNote", ""),
                     }
+        else:
+            _clear_image(story)
+
+        if not meaningful_text and not image_approved:
+            content_held.append(story_id)
+            continue
+
+        if meaningful_text and image_approved:
+            route = "text+image"
+            combined_routes += 1
+        elif meaningful_text:
+            route = "text"
+            text_routes += 1
+        else:
+            route = "image"
+            image_routes += 1
+        story["publicationRoute"] = route
+        story["rights"] = {
+            "checker": CHECKER_NAME, "verdict": text_decision["verdict"],
+            "policyId": text_decision["policyId"], "policyVersion": text_decision["policyVersion"],
+            "decisionId": text_decision["decisionId"], "checkedAt": text_decision["checkedAt"],
+            "allowedUse": text_decision["allowedUse"], "attribution": text_decision.get("attribution", ""),
+            "licenseUrl": evidence.get("licenseUrl", ""),
+            "author": evidence.get("author", ""),
+        }
         accepted.append(story)
 
     if len(accepted) < minimum_stories:
         raise GlobalCheckerError(
-            f"Global Checker left {len(accepted)} eligible stories; minimum is {minimum_stories}. "
-            "Last-good feed must be preserved."
+            f"Global Checker left {len(accepted)} stories that meet the Text OR Image rule; "
+            f"minimum is {minimum_stories}. Headline-only stories were held and the last-good feed must be preserved."
         )
     feed["stories"] = accepted
     feed["storyCount"] = len(accepted)
     feed["globalChecker"] = {
         "name": CHECKER_NAME, "version": CHECKER_VERSION,
-        "registryVersion": load_registry()["registryVersion"],
+        "registryVersion": registry_version,
         "checkedAt": _utc_now(), "textRejected": len(rejected_text),
-        "imagesStripped": stripped_images, "policy": "fail-closed",
+        "contentHeld": len(content_held), "textRoutes": text_routes,
+        "imageRoutes": image_routes, "combinedRoutes": combined_routes,
+        "imagesStripped": stripped_images, "policy": "fail-closed-text-or-image",
     }
     return feed
 
