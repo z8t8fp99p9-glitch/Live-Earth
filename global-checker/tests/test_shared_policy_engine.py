@@ -30,7 +30,7 @@ class SharedGlobalPolicyEngineTests(unittest.TestCase):
             "NASA": {
                 "title": "NASA Earth Observatory documents changing coastal wetlands",
                 "url": "https://science.nasa.gov/earth-observatory/example-wetlands/",
-                "sourceUrl": "https://science.nasa.gov/feed/earth-observatory/natural-events",
+                "sourceUrl": "https://science.nasa.gov/feed/?science_org=19791%2C22453",
                 "sourceName": "NASA Earth Observatory — Natural Events",
                 "author": "NASA",
             },

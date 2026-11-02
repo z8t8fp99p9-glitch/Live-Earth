@@ -71,11 +71,22 @@ def _validate_configuration(root: Path, checker) -> None:
 
 
 def _expanded_nature_feed_parser(module):
-    """Parse RSS 2.0/Atom feeds with Nature-relevant terms, without rights decisions."""
-    import xml.etree.ElementTree as ET
+    """Parse RSS/Atom robustly, including publisher feeds with imperfect XML.
+
+    Feedparser recovers entries from common RSS/Atom markup defects (unescaped
+    ampersands, malformed embedded HTML and namespace quirks) that make strict
+    ElementTree parsing reject an entire feed. It performs no rights decisions.
+    """
+    import feedparser
 
     def parse_feed(payload: bytes, source_name: str, source_url: str) -> list[dict[str, str]]:
-        root = ET.fromstring(payload)
+        parsed = feedparser.parse(payload)
+        entries = list(parsed.get("entries", []))
+        if not entries:
+            detail = parsed.get("bozo_exception")
+            if detail:
+                raise ValueError(f"RSS/Atom parser recovered no entries: {detail}")
+            return []
         items = []
         terms = (
             "nature", "wildlife", "species", "forest", "ocean", "marine", "ecology",
@@ -92,30 +103,18 @@ def _expanded_nature_feed_parser(module):
             "ocean service", "wetlands", "coral bleaching", "marine heatwave", "landslide",
             "disease ecology", "habitat restoration", "national park", "geology", "volcanic",
         )
-        for entry in root.iter():
-            tag = entry.tag.rsplit("}", 1)[-1].lower()
-            if tag not in {"item", "entry"}:
-                continue
-            fields: dict[str, str] = {}
-            for child in list(entry):
-                key = child.tag.rsplit("}", 1)[-1].lower()
-                if key == "link":
-                    rel = str(child.attrib.get("rel", "alternate")).lower()
-                    href = child.attrib.get("href")
-                    if href and rel in {"alternate", ""}:
-                        fields.setdefault("link", href)
-                    elif child.text and not fields.get("link"):
-                        fields["link"] = module.clean(child.text, 1200)
-                elif key in {"title", "description", "summary", "content", "encoded", "pubdate", "published", "updated", "date"}:
-                    content = module.clean(" ".join(child.itertext()), 6000)
-                    if key in {"content", "encoded"}:
-                        fields.setdefault("content", content)
-                    else:
-                        fields[key] = content
-            title = fields.get("title", "")
-            url = fields.get("link", "")
-            summary = fields.get("description") or fields.get("summary") or fields.get("content") or ""
-            published = fields.get("pubdate") or fields.get("published") or fields.get("updated") or fields.get("date") or ""
+        for entry in entries:
+            title = module.clean(entry.get("title", ""), 240)
+            url = module.clean(entry.get("link", ""), 1200)
+            raw_summary = entry.get("summary", "")
+            if not raw_summary:
+                content_blocks = entry.get("content") or []
+                if content_blocks:
+                    raw_summary = content_blocks[0].get("value", "")
+            summary = module.clean(raw_summary, 6000)
+            published = module.clean(
+                entry.get("published") or entry.get("updated") or entry.get("created") or "", 240
+            )
             if not title or not module.safe_https(url, module.ALLOWED_FEED_HOSTS):
                 continue
             haystack = (title + " " + summary).casefold()

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Automatic shared Global Checker dispatch for Nature and Alien World.
+"""Safe Python-startup dispatcher for LIVE // EARTH feed pipelines.
 
-The central policy engine is installed once before either pipeline starts.
-Both view adapters then use the same source-registry.json and checker module.
+The .pth hook never runs a pipeline or raises SystemExit during interpreter
+initialisation. It replaces the original process with live_earth_dispatch.py.
+Child Python processes inherit the project-root marker and install the same
+registry-driven policy engine before tests or pipeline modules are imported.
 """
 from __future__ import annotations
 
-import importlib.util
 import os
 import sys
 from pathlib import Path
@@ -18,6 +19,23 @@ ENTRYPOINTS = {
     "alien-world/publisher/publisher.py": ("publish", "alien-world", "alien_world_pipeline.py"),
 }
 ACTIVE_ENV = "LIVE_EARTH_GLOBAL_CHECKER_ROUTED"
+ROOT_ENV = "LIVE_EARTH_PROJECT_ROOT"
+
+
+def _install_shared_policy_engine() -> None:
+    """Install central policies in the current process and all child processes."""
+    root_value = os.environ.get(ROOT_ENV, "")
+    if not root_value:
+        return
+    checker_dir = Path(root_value).resolve() / "global-checker"
+    if not checker_dir.is_dir():
+        raise RuntimeError("LIVE // EARTH Global Checker directory is unavailable.")
+    checker_path = str(checker_dir)
+    if checker_path not in sys.path:
+        sys.path.insert(0, checker_path)
+    import global_checker as checker
+    import global_checker_policy_engine
+    global_checker_policy_engine.install(checker)
 
 
 def _match_entrypoint(script_path: Path):
@@ -31,18 +49,13 @@ def _match_entrypoint(script_path: Path):
     return None
 
 
-def _load_runner(path: Path, module_name: str):
-    spec = importlib.util.spec_from_file_location(module_name, path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"Global Checker runner could not be loaded: {path.name}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
 def bootstrap() -> None:
-    if os.environ.get(ACTIVE_ENV) == "1" or not sys.argv:
+    # A dispatched process and its children only install the policy engine;
+    # they do not dispatch a second time.
+    if os.environ.get(ACTIVE_ENV) == "1":
+        _install_shared_policy_engine()
+        return
+    if not sys.argv:
         return
     try:
         script_path = Path(sys.argv[0]).resolve()
@@ -52,39 +65,27 @@ def bootstrap() -> None:
     if matched is None:
         return
 
-    root, _relative, (phase, view_id, runner_name) = matched
+    root, _relative, (phase, view_id, _runner_name) = matched
     checker_dir = root / "global-checker"
-    runner = checker_dir / runner_name
-    if not runner.is_file():
+    dispatcher = checker_dir / "live_earth_dispatch.py"
+    if not dispatcher.is_file():
         raise RuntimeError(
-            f"Global Checker runner is missing ({runner_name}); refusing to run an unchecked pipeline."
+            "Global Checker dispatcher is missing; refusing to run an unchecked pipeline."
         )
 
     os.environ[ACTIVE_ENV] = "1"
-    if str(checker_dir) not in sys.path:
-        sys.path.insert(0, str(checker_dir))
-
-    # One shared evaluator is installed for BOTH views before collection or
-    # publication. Its source rules are read only from source-registry.json.
-    import global_checker as checker
-    import global_checker_policy_engine
-    global_checker_policy_engine.install(checker)
-
+    os.environ[ROOT_ENV] = str(root)
     print(
-        f"GLOBAL CHECKER AUTO-ROUTE: {view_id} {phase} via {runner_name} "
-        "(shared central source registry)",
+        f"GLOBAL CHECKER AUTO-ROUTE: {view_id} {phase} via shared dispatcher "
+        "(central source registry)",
         file=sys.stderr,
     )
-
-    sys.argv = [str(runner), phase, "--view", view_id]
-    if view_id == "nature":
-        import nature_adaptive_runtime
-        nature_adaptive_runtime.run_nature(root, runner, phase)
-        raise SystemExit(0)
-
-    module = _load_runner(runner, "live_earth_alien_world_pipeline_shared_checker")
-    result = module.main()
-    raise SystemExit(result if isinstance(result, int) else 0)
+    # execv replaces the bootstrapping process. No SystemExit is raised from
+    # inside site.py / .pth initialisation, avoiding fatal init_import_site errors.
+    os.execv(
+        sys.executable,
+        [sys.executable, str(dispatcher), phase, "--view", view_id],
+    )
 
 
 bootstrap()

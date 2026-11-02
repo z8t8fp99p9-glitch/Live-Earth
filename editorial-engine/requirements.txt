@@ -1,6 +1,7 @@
 reportlab==4.4.9
 Pillow==12.3.0
 pypdf==5.9.0
+feedparser>=6.0.11,<7
 
 # Local bootstrap installed by the same dependency step used by both existing
 # feed workflows. It dispatches the existing Collector/Publisher entrypoints

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "registryVersion": "2026-11-02.6",
+  "registryVersion": "2026-11-02.7",
   "registryName": "LIVE // EARTH Global Source & Rights Registry",
   "policyPrinciples": [
     "Free-to-read is not automatically free-to-store, transform, publish or redistribute.",
@@ -40,8 +40,9 @@
       ],
       "status": "GREEN_CONDITIONAL",
       "articleDomains": [
+        "earthobservatory.nasa.gov",
         "nasa.gov",
-        "earthobservatory.nasa.gov"
+        "science.nasa.gov"
       ],
       "feedDomains": [
         "nasa.gov"
@@ -73,13 +74,12 @@
         "This single policy covers NASA sources in both Nature and Alien World; view-specific feed subscriptions remain in their respective profiles."
       ],
       "allowedFeedUrls": [
-        "https://www.nasa.gov/news-release/feed/",
         "https://science.nasa.gov/feed/",
-        "https://www.nasa.gov/feeds/iotd-feed/",
+        "https://science.nasa.gov/feed/?science_org=19791%2C22453",
         "https://www.nasa.gov/blogs/artemis/feed/",
         "https://www.nasa.gov/blogs/spacestation/feed/",
-        "https://science.nasa.gov/feed/earth-observatory/image-of-the-day",
-        "https://science.nasa.gov/feed/earth-observatory/natural-events"
+        "https://www.nasa.gov/feeds/iotd-feed/",
+        "https://www.nasa.gov/news-release/feed/"
       ]
     },
     {
@@ -337,6 +337,7 @@
     "NOAA, NASA and USGS official feed routes are approved for eligible educational/informational reuse with agency credit, subject to item-level and third-party restrictions.",
     "Phys.org RSS headlines/links may be retained with attribution; its summary is not stored. A headline-only item still needs an independently approved image to meet publication eligibility.",
     "ScienceDaily and Nature Portfolio remain blocked for persistent database storage absent written permission or an item-specific permission route.",
-    "USDA ARS and EEA remain pending because direct official XML feed endpoints were not verified in this source review."
+    "USDA ARS and EEA remain pending because direct official XML feed endpoints were not verified in this source review.",
+    "NASA Earth Observatory feed routes use the current consolidated NASA Science Earth feed; NASA Image of the Day uses the official nasa.gov RSS endpoint. Strict XML-only parsing is replaced by a tolerant RSS/Atom parser."
   ]
 }

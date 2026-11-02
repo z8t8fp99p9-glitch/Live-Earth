@@ -32,13 +32,13 @@
       "domain": "oceanservice.noaa.gov"
     },
     {
-      "name": "NASA Earth Observatory — Image of the Day",
-      "url": "https://science.nasa.gov/feed/earth-observatory/image-of-the-day",
-      "domain": "science.nasa.gov"
+      "name": "NASA — Image of the Day",
+      "url": "https://www.nasa.gov/feeds/iotd-feed/",
+      "domain": "www.nasa.gov"
     },
     {
-      "name": "NASA Earth Observatory — Natural Events",
-      "url": "https://science.nasa.gov/feed/earth-observatory/natural-events",
+      "name": "NASA Earth Observatory — Earth Science",
+      "url": "https://science.nasa.gov/feed/?science_org=19791%2C22453",
       "domain": "science.nasa.gov"
     },
     {

@@ -12,6 +12,8 @@ PROJECT_ROOT = CHECKER_DIR.parent
 sys.path.insert(0, str(CHECKER_DIR))
 
 import global_checker as checker
+import global_checker_policy_engine
+global_checker_policy_engine.install(checker)
 from alien_world_pipeline import (
     _candidate_decision, _install_collector_checker, _install_engine_handoff,
 )
@@ -143,7 +145,7 @@ class AlienWorldSingleCheckerTests(unittest.TestCase):
         feed = {
             "schemaVersion": 1, "viewId": "alien-world", "storyCount": 1,
             "stories": [{**story, "imageUrl": image["url"], "imageCredit": "NASA",
-                         "imageSourceUrl": article, "imageCaption": "Different caption",
+                         "imageSourceUrl": image["sourcePage"], "imageCaption": "Different caption",
                          "imageRightsNote": image["rightsNotice"]}],
         }
         approved = checker.gate_feed(feed, self.db, "alien-world", minimum_stories=1)
@@ -180,8 +182,6 @@ class AlienWorldSingleCheckerTests(unittest.TestCase):
             "image_source_url": "https://www.nasa.gov/news/example-mission/",
             "image_rights_note": "Source note retained unchanged",
         }
-        # Only local-file existence is needed for the Engine's technical media
-        # pass-through test; the test does not fetch or alter an image.
         from unittest import mock
         with mock.patch("pathlib.Path.is_file", return_value=True):
             payload = engine.build_live_feed(brief, [story], datetime(2026, 11, 2, tzinfo=timezone.utc))
@@ -192,8 +192,6 @@ class AlienWorldSingleCheckerTests(unittest.TestCase):
         self.assertEqual(rendered["imageRightsNote"], story["image_rights_note"])
 
     def test_collector_image_eligibility_is_a_direct_checker_call(self):
-        from types import SimpleNamespace
-
         module = SimpleNamespace(
             open_writer_db=lambda _profile: self.db,
             clean_html=lambda value, limit=300: " ".join(str(value or "").split())[:limit],
@@ -215,10 +213,9 @@ class AlienWorldSingleCheckerTests(unittest.TestCase):
         }
         self.assertTrue(module.image_is_eligible(safe, article))
         self.assertFalse(module.image_is_eligible(concept, article))
-        # The Collector's former local copyright predicate is no longer active.
         self.assertFalse(module.has_restrictive_rights_notice({"rightsNotice": "ignored here"}))
 
-    def test_bootstrap_routes_alien_world_to_single_owner_and_keeps_nature_route(self):
+    def test_bootstrap_routes_both_views_to_the_shared_global_checker_dispatcher(self):
         self.assertEqual(
             ENTRYPOINTS["alien-world/collector/collector.py"],
             ("collect", "alien-world", "alien_world_pipeline.py"),
@@ -229,7 +226,11 @@ class AlienWorldSingleCheckerTests(unittest.TestCase):
         )
         self.assertEqual(
             ENTRYPOINTS["nature/collector/collector.py"],
-            ("collect", "nature", "run_pipeline.py"),
+            ("collect", "nature", "nature_pipeline.py"),
+        )
+        self.assertEqual(
+            ENTRYPOINTS["nature/publisher/publisher.py"],
+            ("publish", "nature", "nature_pipeline.py"),
         )
 
 
