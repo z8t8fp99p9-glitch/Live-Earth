@@ -2,36 +2,10 @@
   "schemaVersion": 1,
   "viewId": "alien-world",
   "publisherId": "alien-world-publisher",
-  "generatedAt": "2026-11-01T23:12:24Z",
+  "generatedAt": "2026-11-02T00:09:03Z",
   "windowHours": 96,
   "storyCount": 10,
   "stories": [
-    {
-      "id": "0ca18ebd381f9f00feefaed2",
-      "title": "APOD: 2026 November 1 – Colors of the Moon",
-      "summary": "APOD Science APOD APOD: 2026 November 1 –… Today’s APOD Archive Submissions Index Search Calendar RSS Education About Discuss APOD Astronomy Picture of the Day Discover the cosmos! Each day a different image or photograph of our fascinating universe is featured, along with a brief explanation written by a professional astronomer. Colors of the Moon Explanation: What color is the Moon? It depends on the night — and the time. Outside of the Earth’s atmosphere , the dark Moon , which shines by reflected sunlight, appears a magnificent ly brown-tinged gray. The featured image highlights a collection of apparent colors of the full moon on Earth, documented by one astrophotographer over 10 years from different locations across Italy . A red – or yellow -colored moon usually indicates a moon seen near the horizon . There, some of the blue light has been scattered away by a long path through the Earth’s atmosphere , sometimes laden with fine dust. A blue-colored moon is more rare and can indicate an atmosphere carrying larger dust particles . What created the purple moon is unclear — it may be a combination of several effects. The last image captures the total lunar eclipse of 2018 July — where the moon, in Earth’s shadow , appeared a faint red — due to light refracted through air around the Earth. Have you ever seen an unusually colorful Moon? Tomorrow’s picture: open space Date: November 1, 2026 Credit & Copyright: Marcella Giulia Pace Authors & editors: Robert Nemiroff, Jerry Bonnell, Cecilia Chirenti, Keighley Rockcliffe A service of: ASD at NASA / GSFC , NASA Science Activation & Michigan Tech. U. Random APOD Generator Yesterday’s Image APOD: 2026 October 31 – Night on a Spooky Planet Tomorrow’s Image",
-      "url": "https://science.nasa.gov/image-article/apod-2026-november-1-colors-of-the-moon/",
-      "sourceName": "NASA News",
-      "sourceUrl": "https://www.nasa.gov/news-release/feed/",
-      "publishedAt": "2026-11-01T04:05:00Z",
-      "imageUrl": "https://assets.science.nasa.gov/content/dam/science/cds/apod/apod/2026/november/MoonColors_Pace_960.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg",
-      "imageCredit": "NASA",
-      "imageSourceUrl": "https://science.nasa.gov/image-article/apod-2026-november-1-colors-of-the-moon/",
-      "imageRightsNote": "Automated screening policy v3. NASA-source image for factual editorial context. Credit: NASA (NASA source-level attribution; no separate image credit exposed). Displayed only beside its originating factual story and source link. No NASA endorsement is implied. Automated screening is not a licence, rights-holder permission, or legal clearance."
-    },
-    {
-      "id": "ebf9e7f0e97f4b65a13c3566",
-      "title": "APOD: 2026 October 31 – Night on a Spooky Planet",
-      "summary": "APOD Science APOD APOD: 2026 October 31 –… Today’s APOD Archive Submissions Index Search Calendar RSS Education About Discuss APOD Astronomy Picture of the Day Discover the cosmos! Each day a different image or photograph of our fascinating universe is featured, along with a brief explanation written by a professional astronomer. Night on a Spooky Planet Explanation: What spooky planet is this? Planet Earth on a dark and stormy night, of course. The ghostly scene was photographed at Hverir , a geothermally active area found along northeastern Iceland’s volcanic landscape . Triggered by solar activity , geomagnetic storms have unleashed energetic particles trapped in Earth’s magnetic field. Penetrating the planet’s upper atmosphere at high latitudes, the particles create auroral displays in the starry night sky. Ghostly towers of steam and gas are venting from local fumaroles to dance against the eerie, greenish northern lights. For now, auroral activity on planet Earth remains in a high state as the Sun is only in early phases of decline from the peak of its solar activity cycle . And soon, other ghostly apparitions may dance in your neighborhood. Happy Halloween ! Tomorrow’s picture: Sunday’s Childe Date: October 31, 2026 Credit & Copyright: Stéphane Vetter ( Nuits sacrées ) Authors & editors: Jerry Bonnell, Cecilia Chirenti, Robert Nemiroff, Keighley Rockcliffe A service of: ASD at NASA / GSFC , NASA Science Activation & Michigan Tech. U. Random APOD Generator Yesterday’s Image APOD: 2026 October 30 – Haunting the Cepheus Flare Tomorrow’s Image",
-      "url": "https://science.nasa.gov/image-article/apod-2026-october-31-night-on-a-spooky-planet/",
-      "sourceName": "NASA News",
-      "sourceUrl": "https://www.nasa.gov/news-release/feed/",
-      "publishedAt": "2026-10-31T04:05:00Z",
-      "imageUrl": "https://assets.science.nasa.gov/content/dam/science/cds/apod/apod/Hverir_Vetter_1300.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg",
-      "imageCredit": "NASA",
-      "imageSourceUrl": "https://science.nasa.gov/image-article/apod-2026-october-31-night-on-a-spooky-planet/",
-      "imageRightsNote": "Automated screening policy v3. NASA-source image for factual editorial context. Credit: NASA (NASA source-level attribution; no separate image credit exposed). Displayed only beside its originating factual story and source link. No NASA endorsement is implied. Automated screening is not a licence, rights-holder permission, or legal clearance."
-    },
     {
       "id": "41fa33a940a90fd4f50dce1c",
       "title": "NASA Releases MAX POWER Key Events for Media, Participants",
@@ -43,7 +17,30 @@
       "imageUrl": "https://www.nasa.gov/wp-content/uploads/2026/10/grc-2026-c-06389large.jpg",
       "imageCredit": "NASA",
       "imageSourceUrl": "https://www.nasa.gov/news-release/nasa-releases-max-power-key-events-for-media-participants/",
-      "imageRightsNote": "Automated screening policy v3. NASA-source image for factual editorial context. Credit: NASA (NASA source-level attribution; no separate image credit exposed). Displayed only beside its originating factual story and source link. No NASA endorsement is implied. Automated screening is not a licence, rights-holder permission, or legal clearance."
+      "imageRightsNote": "Automated screening policy v3. NASA-source image for factual editorial context. Credit: NASA (NASA source-level attribution; no separate image credit exposed). Displayed only beside its originating factual story and source link. No NASA endorsement is implied. Automated screening is not a licence, rights-holder permission, or legal clearance.",
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "GREEN",
+        "policyId": "nasa-official-federal-source-text-v1",
+        "policyVersion": "2",
+        "decisionId": "66a90d3c45d98b5881849d91",
+        "checkedAt": "2026-11-02T00:09:03Z",
+        "allowedUse": "factual-us-government-source-text",
+        "attribution": "NASA"
+      },
+      "imageRights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "GREEN",
+        "policyId": "nasa-media-guidelines-item-screen-v2",
+        "policyVersion": "2",
+        "decisionId": "f8cc329bc7254cb1228880e7",
+        "checkedAt": "2026-11-02T00:09:03Z",
+        "allowedUse": "factual-context-only",
+        "attribution": "NASA",
+        "licenseUrl": "",
+        "sourcePage": "https://www.nasa.gov/news-release/nasa-releases-max-power-key-events-for-media-participants/",
+        "modificationNote": ""
+      }
     },
     {
       "id": "bea3d4046373d5a64a70fac9",
@@ -56,7 +53,30 @@
       "imageUrl": "https://images-assets.nasa.gov/image/iss075e0227271/iss075e0227271~large.jpg",
       "imageCredit": "NASA",
       "imageSourceUrl": "https://www.nasa.gov/blogs/spacestation/2026/10/30/space-crops-and-advanced-tech-wrap-up-week-following-spacewalk/",
-      "imageRightsNote": "Automated screening policy v3. NASA-source image for factual editorial context. Credit: NASA (NASA source-level attribution; no separate image credit exposed). Displayed only beside its originating factual story and source link. No NASA endorsement is implied. Automated screening is not a licence, rights-holder permission, or legal clearance."
+      "imageRightsNote": "Automated screening policy v3. NASA-source image for factual editorial context. Credit: NASA (NASA source-level attribution; no separate image credit exposed). Displayed only beside its originating factual story and source link. No NASA endorsement is implied. Automated screening is not a licence, rights-holder permission, or legal clearance.",
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "GREEN",
+        "policyId": "nasa-official-federal-source-text-v1",
+        "policyVersion": "2",
+        "decisionId": "cfb5035cf0b4d3f59d7df58b",
+        "checkedAt": "2026-11-02T00:09:03Z",
+        "allowedUse": "factual-us-government-source-text",
+        "attribution": "NASA"
+      },
+      "imageRights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "GREEN",
+        "policyId": "nasa-media-guidelines-item-screen-v2",
+        "policyVersion": "2",
+        "decisionId": "4f3bf93cc5b091a7104a4809",
+        "checkedAt": "2026-11-02T00:09:03Z",
+        "allowedUse": "factual-context-only",
+        "attribution": "NASA",
+        "licenseUrl": "",
+        "sourcePage": "https://www.nasa.gov/blogs/spacestation/2026/10/30/space-crops-and-advanced-tech-wrap-up-week-following-spacewalk/",
+        "modificationNote": ""
+      }
     },
     {
       "id": "94dcca4ef3140fe3502441b5",
@@ -69,7 +89,30 @@
       "imageUrl": "https://www.nasa.gov/wp-content/uploads/2026/10/full-res-for-display.png",
       "imageCredit": "NASA",
       "imageSourceUrl": "https://www.nasa.gov/image-detail/full-res-for-display-6/",
-      "imageRightsNote": "Automated screening policy v3. NASA-source image for factual editorial context. Credit: NASA (NASA source-level attribution; no separate image credit exposed). Displayed only beside its originating factual story and source link. No NASA endorsement is implied. Automated screening is not a licence, rights-holder permission, or legal clearance."
+      "imageRightsNote": "Automated screening policy v3. NASA-source image for factual editorial context. Credit: NASA (NASA source-level attribution; no separate image credit exposed). Displayed only beside its originating factual story and source link. No NASA endorsement is implied. Automated screening is not a licence, rights-holder permission, or legal clearance.",
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "GREEN",
+        "policyId": "nasa-official-federal-source-text-v1",
+        "policyVersion": "2",
+        "decisionId": "8c868c99c205502ca687e3f0",
+        "checkedAt": "2026-11-02T00:09:03Z",
+        "allowedUse": "factual-us-government-source-text",
+        "attribution": "NASA"
+      },
+      "imageRights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "GREEN",
+        "policyId": "nasa-media-guidelines-item-screen-v2",
+        "policyVersion": "2",
+        "decisionId": "621b99d8073b31ac2ed55943",
+        "checkedAt": "2026-11-02T00:09:03Z",
+        "allowedUse": "factual-context-only",
+        "attribution": "NASA",
+        "licenseUrl": "",
+        "sourcePage": "https://www.nasa.gov/image-detail/full-res-for-display-6/",
+        "modificationNote": ""
+      }
     },
     {
       "id": "7aa6dab0376044f6c887c5ca",
@@ -82,7 +125,17 @@
       "imageUrl": null,
       "imageCredit": null,
       "imageSourceUrl": null,
-      "imageRightsNote": null
+      "imageRightsNote": null,
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "GREEN",
+        "policyId": "nasa-official-federal-source-text-v1",
+        "policyVersion": "2",
+        "decisionId": "8ddf72507d8fedccfad60588",
+        "checkedAt": "2026-11-02T00:09:03Z",
+        "allowedUse": "factual-us-government-source-text",
+        "attribution": "NASA"
+      }
     },
     {
       "id": "cf83ba876333ba2e913de39f",
@@ -95,20 +148,17 @@
       "imageUrl": null,
       "imageCredit": null,
       "imageSourceUrl": null,
-      "imageRightsNote": null
-    },
-    {
-      "id": "e51da67c2ef8263b3c33ce35",
-      "title": "APOD: 2026 October 30 – Haunting the Cepheus Flare",
-      "summary": "APOD Science APOD APOD: 2026 October 30 –… Today’s APOD Archive Submissions Index Search Calendar RSS Education About Discuss APOD Astronomy Picture of the Day Discover the cosmos! Each day a different image or photograph of our fascinating universe is featured, along with a brief explanation written by a professional astronomer. Haunting the Cepheus Flare Explanation: Spooky shapes seem to haunt this dusty expanse, drifting through the night in the royal constellation Cepheus . Of course, the shapes are cosmic dust clouds visible in dimly reflected starlight. Far from your own neighborhood , they lurk above the plane of the Milky Way at the edge of the Cepheus Flare molecular cloud complex some 1,200 light-years away. Over 2 light-years across and brighter than most of the other ghostly apparitions, vdB 141 or Sh2-136 is also known as the Ghost Nebula . It lies at lower right in the starry field of view. Inside the Ghost Nebula are reddish telltale signs of dense cores collapsing in the early stages of star formation . With the eerie hue of interstellar dust reflecting bluish light from hot young stars of NGC 7023, the Iris Nebula stands out against the dark just left of center. In the broad telescopic frame , these fertile interstellar dust fields stretch almost six full moons across the sky. Tomorrow’s picture: night on a spooky planet Date October 30, 2026 Credit & Copyright: Mirko Tondinelli Authors & editors: Jerry Bonnell, Cecilia Chirenti, Robert Nemiroff, Keighley Rockcliffe A service of: ASD at NASA / GSFC , NASA Science Activation & Michigan Tech. U. Random APOD Generator Yesterday’s Image APOD: 29 October 2026 – The Horns of Venus Tomorrow’s Image",
-      "url": "https://science.nasa.gov/image-article/apod-2026-october-30-haunting-the-cepheus-flare/",
-      "sourceName": "NASA News",
-      "sourceUrl": "https://www.nasa.gov/news-release/feed/",
-      "publishedAt": "2026-10-30T04:05:00Z",
-      "imageUrl": null,
-      "imageCredit": null,
-      "imageSourceUrl": null,
-      "imageRightsNote": null
+      "imageRightsNote": null,
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "GREEN",
+        "policyId": "nasa-official-federal-source-text-v1",
+        "policyVersion": "2",
+        "decisionId": "93b3708e38d17bdfa89148a3",
+        "checkedAt": "2026-11-02T00:09:03Z",
+        "allowedUse": "factual-us-government-source-text",
+        "attribution": "NASA"
+      }
     },
     {
       "id": "9917aa7e49dd71d1691678ce",
@@ -121,7 +171,17 @@
       "imageUrl": null,
       "imageCredit": null,
       "imageSourceUrl": null,
-      "imageRightsNote": null
+      "imageRightsNote": null,
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "GREEN",
+        "policyId": "nasa-official-federal-source-text-v1",
+        "policyVersion": "2",
+        "decisionId": "d4a019f0d373e6a39ab63a92",
+        "checkedAt": "2026-11-02T00:09:03Z",
+        "allowedUse": "factual-us-government-source-text",
+        "attribution": "NASA"
+      }
     },
     {
       "id": "de440a44154745f5e3789dff",
@@ -134,7 +194,95 @@
       "imageUrl": null,
       "imageCredit": null,
       "imageSourceUrl": null,
-      "imageRightsNote": null
+      "imageRightsNote": null,
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "GREEN",
+        "policyId": "nasa-official-federal-source-text-v1",
+        "policyVersion": "2",
+        "decisionId": "2a8e4ec0c49d5eb36b8d5477",
+        "checkedAt": "2026-11-02T00:09:03Z",
+        "allowedUse": "factual-us-government-source-text",
+        "attribution": "NASA"
+      }
+    },
+    {
+      "id": "9bbd0b7e75642bb10626ecd1",
+      "title": "Slice of Martian Meteorite Teghaza 001",
+      "summary": "1 Min Read Slice of Martian Meteorite Teghaza 001 PIA26801 Credits: NASA/JPL-Caltech Photojournal Navigation Science Photojournal Slice of Martian Meteorite… Photojournal Home Photojournal Search Latest Content Galleries Feedback RSS About Downloads Slice of Martian Meteorite Teghaza 001 JPEG (2.50 MB) PIA26801 Figure A TIFF (26.10 MB) Description This slice of Teghaza 001, one of the most ancient Martian meteorites ever found on Earth, was used to determine the age of the rock. Reflected light images like these serve as a scientist’s road map, helping them find minerals of interest to analyze by different instruments. Figure A Figure A is the same image with annotations showing minerals like iron-titanium oxides (brighter grains) and pyroxene (medium gray), both of which tell a story about the formation of Mars’ crust and mantle. Shocked plagioclase (darker gray) is created by extreme pressures during impacts, including the one that sent Teghaza 001 flying through space to Earth. The alteration represents fine grain carbonate, sulfate and clay minerals formed on Earth. Keep Exploring Discover More Topics From Photojournal Photojournal Search Photojournal Photojournal’s Latest Content Feedback",
+      "url": "https://science.nasa.gov/photojournal/slice-of-martian-meteorite-teghaza-001/",
+      "sourceName": "NASA News",
+      "sourceUrl": "https://www.nasa.gov/news-release/feed/",
+      "publishedAt": "2026-10-29T23:32:35Z",
+      "imageUrl": null,
+      "imageCredit": null,
+      "imageSourceUrl": null,
+      "imageRightsNote": null,
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "GREEN",
+        "policyId": "nasa-official-federal-source-text-v1",
+        "policyVersion": "2",
+        "decisionId": "e92ccffe554e78ff44ad1474",
+        "checkedAt": "2026-11-02T00:09:03Z",
+        "allowedUse": "factual-us-government-source-text",
+        "attribution": "NASA"
+      }
+    },
+    {
+      "id": "ed6e3d4d78aea9350fe3c6ab",
+      "title": "Halloween Aboard the International Space Station",
+      "summary": "Although no ghouls, goblins, or trick-or-treaters come knocking at the International Space Station’s front hatch, crew members aboard the orbiting laboratory still like to get in the Halloween spirit. Whether individually or as an entire crew, they dress up in sometimes spooky, sometimes scary, but always creative costumes, often designed from materials available aboard the space station. Take a look at how the station crews have celebrated in years past. ESA (European Space Agency) astronaut Luca Parmitano finally gets his wish to fly like Superman aboard the International Space Station during Expedition 37. A trio of Expedition 73 astronauts dressed for Halloween in 2025. Expedition 70 astronauts Jasmin Moghbeli of NASA, left, Satoshi Furukawa of JAXA (Japan Aerospace Exploration Agency), NASA astronaut Loral O’Hara, and ESA astronaut Andreas Mogensen celebrate Halloween 2023. In 2022, Expedition 68 astronauts Koichi Wakata of JAXA, left, and NASA astronauts Francisco “Frank” Rubio, Nicole Mann, and Josh Cassada dressed as popular video game and cartoon characters, using stowage containers in their Halloween costumes and holding improvised trick-or-treat bags. Expedition 66 crewmembers NASA astronaut Shane Kimbrough, left, Thomas Pesquet of ESA, Akihiko Hoshide of JAXA, and NASA astronaut Mark Vande Hei show off their Halloween cards. Members of Expedition 61, NASA astronaut Christina Koch, top left, ESA astronaut Luca Parmitano, and NASA astronauts Andrew “Drew” Morgan, and Jessica Meir, show off their Halloween spirit in 2019. Flight Engineer Sergei Prokopyev of Roscosmos, dressed as Elvis Presley, Commander Alexander Gerst of ESA as Darth Vader, and Flight Engineer Serena Auñón-Chancellor of NASA as a mad scientist, pose for a Halloween photo inside the Kibo Japanese Experiment Module pressurized module aboard the space station during Expedition 57. NASA In 2017, Expedition 53 crew members show off their Halloween costumes. Expedition 21 NASA astronaut Nicole Stott shows off her Halloween costume. For Halloween 2009, the Expedition 21 crew shows off its costumes. Follow the astronauts aboard the space station to see how they celebrate holidays in space. The space station remains a vital scientific platform, providing the foundation needed to survive and thrive as humanity ventures into the unexplored territories of our universe. Explore stories, images, and research from more than 25 years of continuous human presence aboard the space station. https://www.nasa.gov/international-space-station/iss25 Explore More 6 min read NASA Provides Progress Update on Moon Base Rovers Article 2 weeks ago 3 min read I Am Artemis: Allison Mjoen Article 2 weeks ago 2 min read Power Up: Roll Out Solar Arrays Boost Space Station Power Supply Article 2 weeks ago",
+      "url": "https://www.nasa.gov/centers-and-facilities/johnson/halloween-aboard-the-international-space-station/",
+      "sourceName": "NASA News",
+      "sourceUrl": "https://www.nasa.gov/news-release/feed/",
+      "publishedAt": "2026-10-29T21:44:23Z",
+      "imageUrl": null,
+      "imageCredit": null,
+      "imageSourceUrl": null,
+      "imageRightsNote": null,
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "GREEN",
+        "policyId": "nasa-official-federal-source-text-v1",
+        "policyVersion": "2",
+        "decisionId": "d0718fc684cea04f0eebcd78",
+        "checkedAt": "2026-11-02T00:09:03Z",
+        "allowedUse": "factual-us-government-source-text",
+        "attribution": "NASA"
+      }
+    },
+    {
+      "id": "35afa226d321ed83e833aa28",
+      "title": "Spacewalkers Install Roll-Out Solar Array for Power Generation",
+      "summary": "NASA astronaut Anil Menon rides the Canadarm2 robotic arm to begin the installation of a roll-out solar array on the International Space Station’s port-side truss structure while orbiting 260 miles above Earth. NASA+ NASA astronaut Anil Menon and CSA (Canadian Space Agency) astronaut Joshua Kutryk concluded their spacewalk outside the International Space Station at 3:08 p.m. EDT. During the 7-hour, 11-minute spacewalk, Menon and Kutryk installed and deployed an International Space Station Roll-Out Solar Array (IROSA) on the station’s 2A electrical power channel. The array is the seventh IROSA installed on the station and will provide additional power to support critical operations, including a safe and controlled deorbit. Menon and Kutryk also completed several get-ahead tasks to prepare for a planned Thursday, Nov. 5 spacewalk, when they will install the eighth and final IROSA on the 3B power channel. NASA will provide live coverage beginning at 6:45 a.m. Learn how to watch: https://www.nasa.gov/live/ Following the Nov. 5 spacewalk, the roll-out solar arrays will be fully installed, completing the space station’s power system augmentation. Together, the eight arrays will increase available power by up to 30%, boosting the station’s power generation capacity from 160 kilowatts to approximately 215 kilowatts. U.S. spacewalk 100 was Menon’s fourth and Kutryk’s first. It also was the 285th spacewalk in support of space station assembly, maintenance, and upgrades. Learn more about station activities by following the space station blog , @space_station on X, as well as the ISS Facebook and ISS Instagram accounts. Get the latest from NASA delivered every week. Subscribe here .",
+      "url": "https://www.nasa.gov/blogs/spacestation/2026/10/29/spacewalkers-install-roll-out-solar-arrays-for-power-generation/",
+      "sourceName": "NASA Space Station",
+      "sourceUrl": "https://www.nasa.gov/blogs/spacestation/feed/",
+      "publishedAt": "2026-10-29T19:17:00Z",
+      "imageUrl": null,
+      "imageCredit": null,
+      "imageSourceUrl": null,
+      "imageRightsNote": null,
+      "rights": {
+        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+        "verdict": "GREEN",
+        "policyId": "nasa-official-federal-source-text-v1",
+        "policyVersion": "2",
+        "decisionId": "71c99ada4ea0a817fb67088a",
+        "checkedAt": "2026-11-02T00:09:03Z",
+        "allowedUse": "factual-us-government-source-text",
+        "attribution": "NASA"
+      }
     }
-  ]
+  ],
+  "globalChecker": {
+    "name": "LIVE // EARTH Global Content Rights & Provenance Checker",
+    "version": "1.0.3",
+    "registryVersion": "2026-11-02.3",
+    "checkedAt": "2026-11-02T00:09:04Z",
+    "textRejected": 0,
+    "imagesStripped": 0,
+    "policy": "fail-closed"
+  }
 }
