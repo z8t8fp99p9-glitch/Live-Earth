@@ -2,9 +2,8 @@
 """Automatic LIVE // EARTH Global Checker dispatch for existing workflows.
 
 Installed by the existing shared Editorial Engine dependency step. The Python
-.pth hook calls bootstrap() before the original script starts. Nature continues
-through run_pipeline.py; Alien World uses its single-owner pipeline adapter.
-No workflow YAML changes are required.
+.pth hook dispatches both feed views into their single-owner adapters before
+the original Collector or Publisher starts. No workflow YAML changes required.
 """
 from __future__ import annotations
 
@@ -13,8 +12,8 @@ import sys
 from pathlib import Path
 
 ENTRYPOINTS = {
-    "nature/collector/collector.py": ("collect", "nature", "run_pipeline.py"),
-    "nature/publisher/publisher.py": ("publish", "nature", "run_pipeline.py"),
+    "nature/collector/collector.py": ("collect", "nature", "nature_pipeline.py"),
+    "nature/publisher/publisher.py": ("publish", "nature", "nature_pipeline.py"),
     "alien-world/collector/collector.py": ("collect", "alien-world", "alien_world_pipeline.py"),
     "alien-world/publisher/publisher.py": ("publish", "alien-world", "alien_world_pipeline.py"),
 }
