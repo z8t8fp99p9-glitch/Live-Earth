@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "profiles": [
+    {
+      "profileId": "nature-collection-profile",
+      "viewId": "nature",
+      "viewName": "Nature",
+      "enabled": true,
+      "topicsAndCategories": [
+        "wildlife",
+        "ecology",
+        "oceans",
+        "biodiversity",
+        "climate",
+        "conservation",
+        "environmental research"
+      ],
+      "keywords": [],
+      "exclusions": [],
+      "allowedSourceGroups": [
+        "nature-approved"
+      ],
+      "collectionFrequency": {
+        "type": "hourly",
+        "intervalMinutes": 60
+      },
+      "lookbackWindowHours": 768,
+      "retentionDays": 32,
+      "collectorEntrypoint": "nature/collector/collector.py",
+      "collectorWorkflow": ".github/workflows/nature-publisher.yml",
+      "destinationDatabaseId": "nature-sqlite",
+      "destinationDatabasePath": ".publisher-data/nature/nature.sqlite3",
+      "scheduleAnchorUtcMinute": 15
+    },
+    {
+      "profileId": "alien-world-collection-profile",
+      "viewId": "alien-world",
+      "viewName": "Alien World",
+      "enabled": true,
+      "topicsAndCategories": [
+        "space science",
+        "astronomy",
+        "planetary science",
+        "spaceflight missions",
+        "human space exploration",
+        "NASA discoveries and research"
+      ],
+      "keywords": [],
+      "exclusions": [],
+      "allowedSourceGroups": [
+        "alien-world-approved"
+      ],
+      "collectionFrequency": {
+        "type": "hourly",
+        "intervalMinutes": 60
+      },
+      "lookbackWindowHours": 768,
+      "retentionDays": 32,
+      "collectorEntrypoint": "alien-world/collector/collector.py",
+      "collectorWorkflow": ".github/workflows/alien-world-publisher.yml",
+      "destinationDatabaseId": "alien-world-sqlite",
+      "destinationDatabasePath": ".publisher-data/alien-world/alien-world.sqlite3",
+      "scheduleAnchorUtcMinute": 45
+    }
+  ]
+}

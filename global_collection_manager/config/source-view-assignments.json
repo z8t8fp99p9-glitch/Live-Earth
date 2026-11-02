@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "assignments": [
+    {
+      "assignmentId": "nature-noaa",
+      "sourceId": "source-noaa-ocean-service",
+      "viewId": "nature",
+      "feedUrls": [
+        "https://oceanservice.noaa.gov/rss/oceanfacts.xml",
+        "https://oceanservice.noaa.gov/rss/nosnews.xml"
+      ],
+      "topicFilters": [
+        "oceans",
+        "marine science",
+        "environment"
+      ],
+      "enabled": true,
+      "scheduleOverride": null,
+      "limits": {
+        "maxItemsPerRun": 0
+      }
+    },
+    {
+      "assignmentId": "nature-nasa",
+      "sourceId": "source-nasa",
+      "viewId": "nature",
+      "feedUrls": [
+        "https://www.nasa.gov/feeds/iotd-feed/",
+        "https://science.nasa.gov/feed/?science_org=19791%2C22453"
+      ],
+      "topicFilters": [
+        "Earth science",
+        "climate",
+        "environment"
+      ],
+      "enabled": true,
+      "scheduleOverride": null,
+      "limits": {
+        "maxItemsPerRun": 0
+      }
+    },
+    {
+      "assignmentId": "nature-usgs",
+      "sourceId": "source-usgs-national-news",
+      "viewId": "nature",
+      "feedUrls": [
+        "https://www.usgs.gov/news/national-news-release/feed"
+      ],
+      "topicFilters": [
+        "wildlife",
+        "ecology",
+        "conservation",
+        "environment"
+      ],
+      "enabled": true,
+      "scheduleOverride": null,
+      "limits": {
+        "maxItemsPerRun": 0
+      }
+    },
+    {
+      "assignmentId": "nature-mongabay",
+      "sourceId": "source-mongabay",
+      "viewId": "nature",
+      "feedUrls": [
+        "https://news.mongabay.com/feed/"
+      ],
+      "topicFilters": [
+        "wildlife",
+        "ecology",
+        "biodiversity",
+        "conservation"
+      ],
+      "enabled": true,
+      "scheduleOverride": null,
+      "limits": {
+        "maxItemsPerRun": 0
+      }
+    },
+    {
+      "assignmentId": "alien-world-nasa",
+      "sourceId": "source-nasa",
+      "viewId": "alien-world",
+      "feedUrls": [
+        "https://www.nasa.gov/news-release/feed/",
+        "https://science.nasa.gov/feed/",
+        "https://www.nasa.gov/feeds/iotd-feed/",
+        "https://www.nasa.gov/blogs/artemis/feed/",
+        "https://www.nasa.gov/blogs/spacestation/feed/"
+      ],
+      "topicFilters": [
+        "space science",
+        "astronomy",
+        "planetary science",
+        "spaceflight"
+      ],
+      "enabled": true,
+      "scheduleOverride": null,
+      "limits": {
+        "maxItemsPerRun": 0
+      }
+    }
+  ]
+}

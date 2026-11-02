@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "timezone": "UTC",
+  "mode": "view-profile-schedule",
+  "manualRefreshEnabled": true,
+  "manualRefreshRequiresAuthorization": true,
+  "maxRetries": 2,
+  "retryBackoffSeconds": [
+    60,
+    300
+  ],
+  "overlapPolicy": "skip-duplicate-active-view-job",
+  "views": {
+    "nature": {
+      "enabled": true,
+      "cadence": "hourly",
+      "anchorMinuteUtc": 15
+    },
+    "alien-world": {
+      "enabled": true,
+      "cadence": "hourly",
+      "anchorMinuteUtc": 45
+    }
+  },
+  "note": "These anchors preserve the existing workflow offsets. This first Manager slice records/plans dispatches only; it does not alter or trigger current workflows."
+}
