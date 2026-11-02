@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "viewId": "alien-world",
   "publisherId": "alien-world-publisher",
-  "generatedAt": "2026-11-02T00:09:03Z",
+  "generatedAt": "2026-11-02T00:40:51Z",
   "windowHours": 96,
   "storyCount": 10,
   "stories": [
@@ -14,32 +14,22 @@
       "sourceName": "NASA News",
       "sourceUrl": "https://www.nasa.gov/news-release/feed/",
       "publishedAt": "2026-10-30T19:31:02Z",
-      "imageUrl": "https://www.nasa.gov/wp-content/uploads/2026/10/grc-2026-c-06389large.jpg",
-      "imageCredit": "NASA",
-      "imageSourceUrl": "https://www.nasa.gov/news-release/nasa-releases-max-power-key-events-for-media-participants/",
-      "imageRightsNote": "Automated screening policy v3. NASA-source image for factual editorial context. Credit: NASA (NASA source-level attribution; no separate image credit exposed). Displayed only beside its originating factual story and source link. No NASA endorsement is implied. Automated screening is not a licence, rights-holder permission, or legal clearance.",
+      "imageUrl": null,
+      "imageCredit": null,
+      "imageSourceUrl": null,
+      "imageRightsNote": null,
+      "publicationRoute": "text",
       "rights": {
         "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
         "verdict": "GREEN",
         "policyId": "nasa-official-federal-source-text-v1",
         "policyVersion": "2",
-        "decisionId": "66a90d3c45d98b5881849d91",
-        "checkedAt": "2026-11-02T00:09:03Z",
+        "decisionId": "c867dc628b88163356f5e840",
+        "checkedAt": "2026-11-02T00:40:51Z",
         "allowedUse": "factual-us-government-source-text",
-        "attribution": "NASA"
-      },
-      "imageRights": {
-        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
-        "verdict": "GREEN",
-        "policyId": "nasa-media-guidelines-item-screen-v2",
-        "policyVersion": "2",
-        "decisionId": "f8cc329bc7254cb1228880e7",
-        "checkedAt": "2026-11-02T00:09:03Z",
-        "allowedUse": "factual-context-only",
         "attribution": "NASA",
         "licenseUrl": "",
-        "sourcePage": "https://www.nasa.gov/news-release/nasa-releases-max-power-key-events-for-media-participants/",
-        "modificationNote": ""
+        "author": ""
       }
     },
     {
@@ -50,32 +40,22 @@
       "sourceName": "NASA Space Station",
       "sourceUrl": "https://www.nasa.gov/blogs/spacestation/feed/",
       "publishedAt": "2026-10-30T17:50:49Z",
-      "imageUrl": "https://images-assets.nasa.gov/image/iss075e0227271/iss075e0227271~large.jpg",
-      "imageCredit": "NASA",
-      "imageSourceUrl": "https://www.nasa.gov/blogs/spacestation/2026/10/30/space-crops-and-advanced-tech-wrap-up-week-following-spacewalk/",
-      "imageRightsNote": "Automated screening policy v3. NASA-source image for factual editorial context. Credit: NASA (NASA source-level attribution; no separate image credit exposed). Displayed only beside its originating factual story and source link. No NASA endorsement is implied. Automated screening is not a licence, rights-holder permission, or legal clearance.",
+      "imageUrl": null,
+      "imageCredit": null,
+      "imageSourceUrl": null,
+      "imageRightsNote": null,
+      "publicationRoute": "text",
       "rights": {
         "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
         "verdict": "GREEN",
         "policyId": "nasa-official-federal-source-text-v1",
         "policyVersion": "2",
-        "decisionId": "cfb5035cf0b4d3f59d7df58b",
-        "checkedAt": "2026-11-02T00:09:03Z",
+        "decisionId": "942e468da72a7c5d35425f33",
+        "checkedAt": "2026-11-02T00:40:51Z",
         "allowedUse": "factual-us-government-source-text",
-        "attribution": "NASA"
-      },
-      "imageRights": {
-        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
-        "verdict": "GREEN",
-        "policyId": "nasa-media-guidelines-item-screen-v2",
-        "policyVersion": "2",
-        "decisionId": "4f3bf93cc5b091a7104a4809",
-        "checkedAt": "2026-11-02T00:09:03Z",
-        "allowedUse": "factual-context-only",
         "attribution": "NASA",
         "licenseUrl": "",
-        "sourcePage": "https://www.nasa.gov/blogs/spacestation/2026/10/30/space-crops-and-advanced-tech-wrap-up-week-following-spacewalk/",
-        "modificationNote": ""
+        "author": ""
       }
     },
     {
@@ -86,32 +66,22 @@
       "sourceName": "NASA Image of the Day",
       "sourceUrl": "https://www.nasa.gov/feeds/iotd-feed/",
       "publishedAt": "2026-10-30T15:57:00Z",
-      "imageUrl": "https://www.nasa.gov/wp-content/uploads/2026/10/full-res-for-display.png",
-      "imageCredit": "NASA",
-      "imageSourceUrl": "https://www.nasa.gov/image-detail/full-res-for-display-6/",
-      "imageRightsNote": "Automated screening policy v3. NASA-source image for factual editorial context. Credit: NASA (NASA source-level attribution; no separate image credit exposed). Displayed only beside its originating factual story and source link. No NASA endorsement is implied. Automated screening is not a licence, rights-holder permission, or legal clearance.",
+      "imageUrl": null,
+      "imageCredit": null,
+      "imageSourceUrl": null,
+      "imageRightsNote": null,
+      "publicationRoute": "text",
       "rights": {
         "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
         "verdict": "GREEN",
         "policyId": "nasa-official-federal-source-text-v1",
         "policyVersion": "2",
-        "decisionId": "8c868c99c205502ca687e3f0",
-        "checkedAt": "2026-11-02T00:09:03Z",
+        "decisionId": "362c2ab5bc42817bb680a09f",
+        "checkedAt": "2026-11-02T00:40:51Z",
         "allowedUse": "factual-us-government-source-text",
-        "attribution": "NASA"
-      },
-      "imageRights": {
-        "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
-        "verdict": "GREEN",
-        "policyId": "nasa-media-guidelines-item-screen-v2",
-        "policyVersion": "2",
-        "decisionId": "621b99d8073b31ac2ed55943",
-        "checkedAt": "2026-11-02T00:09:03Z",
-        "allowedUse": "factual-context-only",
         "attribution": "NASA",
         "licenseUrl": "",
-        "sourcePage": "https://www.nasa.gov/image-detail/full-res-for-display-6/",
-        "modificationNote": ""
+        "author": ""
       }
     },
     {
@@ -126,15 +96,18 @@
       "imageCredit": null,
       "imageSourceUrl": null,
       "imageRightsNote": null,
+      "publicationRoute": "text",
       "rights": {
         "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
         "verdict": "GREEN",
         "policyId": "nasa-official-federal-source-text-v1",
         "policyVersion": "2",
-        "decisionId": "8ddf72507d8fedccfad60588",
-        "checkedAt": "2026-11-02T00:09:03Z",
+        "decisionId": "790b9d4d6c4f62634ad7f757",
+        "checkedAt": "2026-11-02T00:40:51Z",
         "allowedUse": "factual-us-government-source-text",
-        "attribution": "NASA"
+        "attribution": "NASA",
+        "licenseUrl": "",
+        "author": ""
       }
     },
     {
@@ -149,15 +122,18 @@
       "imageCredit": null,
       "imageSourceUrl": null,
       "imageRightsNote": null,
+      "publicationRoute": "text",
       "rights": {
         "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
         "verdict": "GREEN",
         "policyId": "nasa-official-federal-source-text-v1",
         "policyVersion": "2",
-        "decisionId": "93b3708e38d17bdfa89148a3",
-        "checkedAt": "2026-11-02T00:09:03Z",
+        "decisionId": "80a63bc235f3874b1012cbf9",
+        "checkedAt": "2026-11-02T00:40:51Z",
         "allowedUse": "factual-us-government-source-text",
-        "attribution": "NASA"
+        "attribution": "NASA",
+        "licenseUrl": "",
+        "author": ""
       }
     },
     {
@@ -172,15 +148,18 @@
       "imageCredit": null,
       "imageSourceUrl": null,
       "imageRightsNote": null,
+      "publicationRoute": "text",
       "rights": {
         "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
         "verdict": "GREEN",
         "policyId": "nasa-official-federal-source-text-v1",
         "policyVersion": "2",
-        "decisionId": "d4a019f0d373e6a39ab63a92",
-        "checkedAt": "2026-11-02T00:09:03Z",
+        "decisionId": "47d28da0a835677d37035b44",
+        "checkedAt": "2026-11-02T00:40:51Z",
         "allowedUse": "factual-us-government-source-text",
-        "attribution": "NASA"
+        "attribution": "NASA",
+        "licenseUrl": "",
+        "author": ""
       }
     },
     {
@@ -195,15 +174,18 @@
       "imageCredit": null,
       "imageSourceUrl": null,
       "imageRightsNote": null,
+      "publicationRoute": "text",
       "rights": {
         "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
         "verdict": "GREEN",
         "policyId": "nasa-official-federal-source-text-v1",
         "policyVersion": "2",
-        "decisionId": "2a8e4ec0c49d5eb36b8d5477",
-        "checkedAt": "2026-11-02T00:09:03Z",
+        "decisionId": "2c19e54e7191fe1f7f92412e",
+        "checkedAt": "2026-11-02T00:40:51Z",
         "allowedUse": "factual-us-government-source-text",
-        "attribution": "NASA"
+        "attribution": "NASA",
+        "licenseUrl": "",
+        "author": ""
       }
     },
     {
@@ -218,15 +200,18 @@
       "imageCredit": null,
       "imageSourceUrl": null,
       "imageRightsNote": null,
+      "publicationRoute": "text",
       "rights": {
         "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
         "verdict": "GREEN",
         "policyId": "nasa-official-federal-source-text-v1",
         "policyVersion": "2",
-        "decisionId": "e92ccffe554e78ff44ad1474",
-        "checkedAt": "2026-11-02T00:09:03Z",
+        "decisionId": "39dfb9a693d81c6a4c98f95a",
+        "checkedAt": "2026-11-02T00:40:51Z",
         "allowedUse": "factual-us-government-source-text",
-        "attribution": "NASA"
+        "attribution": "NASA",
+        "licenseUrl": "",
+        "author": ""
       }
     },
     {
@@ -241,15 +226,18 @@
       "imageCredit": null,
       "imageSourceUrl": null,
       "imageRightsNote": null,
+      "publicationRoute": "text",
       "rights": {
         "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
         "verdict": "GREEN",
         "policyId": "nasa-official-federal-source-text-v1",
         "policyVersion": "2",
-        "decisionId": "d0718fc684cea04f0eebcd78",
-        "checkedAt": "2026-11-02T00:09:03Z",
+        "decisionId": "e7a12778c925e8d2d4074631",
+        "checkedAt": "2026-11-02T00:40:51Z",
         "allowedUse": "factual-us-government-source-text",
-        "attribution": "NASA"
+        "attribution": "NASA",
+        "licenseUrl": "",
+        "author": ""
       }
     },
     {
@@ -264,25 +252,32 @@
       "imageCredit": null,
       "imageSourceUrl": null,
       "imageRightsNote": null,
+      "publicationRoute": "text",
       "rights": {
         "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
         "verdict": "GREEN",
         "policyId": "nasa-official-federal-source-text-v1",
         "policyVersion": "2",
-        "decisionId": "71c99ada4ea0a817fb67088a",
-        "checkedAt": "2026-11-02T00:09:03Z",
+        "decisionId": "00a18d86d956f62f1703a87b",
+        "checkedAt": "2026-11-02T00:40:51Z",
         "allowedUse": "factual-us-government-source-text",
-        "attribution": "NASA"
+        "attribution": "NASA",
+        "licenseUrl": "",
+        "author": ""
       }
     }
   ],
   "globalChecker": {
     "name": "LIVE // EARTH Global Content Rights & Provenance Checker",
-    "version": "1.0.3",
-    "registryVersion": "2026-11-02.3",
-    "checkedAt": "2026-11-02T00:09:04Z",
+    "version": "1.1.0",
+    "registryVersion": "2026-11-02.5",
+    "checkedAt": "2026-11-02T00:40:52Z",
     "textRejected": 0,
-    "imagesStripped": 0,
-    "policy": "fail-closed"
+    "contentHeld": 0,
+    "textRoutes": 10,
+    "imageRoutes": 0,
+    "combinedRoutes": 0,
+    "imagesStripped": 4,
+    "policy": "fail-closed-text-or-image"
   }
 }
