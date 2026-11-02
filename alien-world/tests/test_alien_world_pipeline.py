@@ -39,13 +39,33 @@ PROFILE = json.loads(PROFILE_PATH.read_text(encoding="utf-8"))
 
 
 class CanonicalLayoutTests(unittest.TestCase):
-    def test_alien_world_publication_is_live_feed_only(self):
+    def test_alien_world_publication_is_live_feed_only_and_reset_safe(self):
+        # A clean reset intentionally removes the previous public JSON file.
+        # The publisher must be allowed to create the first replacement feed.
         expected = [COLLECTOR_PATH, PUBLISHER_PATH, PROFILE_PATH,
-                    ROOT / "alien-world" / "published" / "live-feed.json",
                     CLIENT_PATH, VIEW_PATH, WORKFLOW_UPDATE_PATH]
         self.assertTrue(all(path.is_file() for path in expected))
-        output_files = {path.name for path in (ROOT / "alien-world" / "published").glob("*") if path.is_file()}
-        self.assertEqual(output_files, {"live-feed.json"})
+
+        published_dir = ROOT / "alien-world" / "published"
+        output_files = (
+            {path.name for path in published_dir.iterdir() if path.is_file()}
+            if published_dir.is_dir() else set()
+        )
+        # The only permitted root-level publication files are the completed
+        # feed and its atomic-write staging file. The staging file is safe to
+        # replace on the next run if a previous runner was interrupted.
+        self.assertFalse(
+            output_files - {"live-feed.json", "live-feed.json.pending"},
+            f"Unexpected Alien World publication files: {sorted(output_files)}",
+        )
+
+        feed_path = published_dir / "live-feed.json"
+        if feed_path.is_file():
+            payload = json.loads(feed_path.read_text(encoding="utf-8"))
+            self.assertEqual(payload.get("schemaVersion"), 1)
+            self.assertEqual(payload.get("viewId"), "alien-world")
+            self.assertIsInstance(payload.get("stories"), list)
+            self.assertEqual(payload.get("storyCount"), len(payload["stories"]))
 
     def test_profile_exposes_adaptive_live_feed_and_retains_bounds(self):
         publication = PROFILE["publication"]
@@ -168,11 +188,16 @@ class PublisherTests(unittest.TestCase):
 
     def test_route_writes_only_the_live_feed(self):
         with tempfile.TemporaryDirectory() as temp:
-            with mock.patch.object(PUBLISHER, "OUTPUT_DIR", Path(temp)):
+            output = Path(temp)
+            feed_path = output / "live-feed.json"
+            self.assertFalse(feed_path.exists(), "This test must begin with no previous publication.")
+            with mock.patch.object(PUBLISHER, "OUTPUT_DIR", output):
                 PUBLISHER.route_engine_outputs({"feed": self.feed_payload()})
-                self.assertEqual({p.name for p in Path(temp).iterdir()}, {"live-feed.json"})
-                saved = json.loads((Path(temp) / "live-feed.json").read_text(encoding="utf-8"))
-                self.assertEqual(saved["storyCount"], 1)
+                self.assertEqual({p.name for p in output.iterdir() if p.is_file()}, {"live-feed.json"})
+                saved = json.loads(feed_path.read_text(encoding="utf-8"))
+                self.assertEqual(saved["schemaVersion"], 1)
+                self.assertEqual(saved["viewId"], "alien-world")
+                self.assertEqual(saved["storyCount"], len(saved["stories"]))
 
     def test_magazine_shaped_result_is_rejected_without_changing_last_good_feed(self):
         with tempfile.TemporaryDirectory() as temp:
