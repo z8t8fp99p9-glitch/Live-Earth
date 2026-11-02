@@ -11,7 +11,6 @@ import importlib.util
 import json
 import subprocess
 import sys
-from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -26,20 +25,6 @@ EXPECTED_POLICY_IDS = {
     "sciencedaily-no-persistent-database-v1",
     "nature-portfolio-database-storage-prohibited-v1",
 }
-
-
-@contextmanager
-def _legacy_test_profile(profile_path: Path):
-    """Run pre-existing 10-story fixtures without changing the live 50 target."""
-    original = profile_path.read_text(encoding="utf-8")
-    data = json.loads(original)
-    data["publication"]["maximumStories"] = 10
-    data["publication"]["adaptiveLookback"]["targetStories"] = 10
-    profile_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    try:
-        yield
-    finally:
-        profile_path.write_text(original, encoding="utf-8")
 
 
 def _validate_configuration(root: Path, checker) -> None:
@@ -143,8 +128,9 @@ def _install_runner_adapters(run_pipeline, root: Path) -> None:
             original_tests = module.run_tests
 
             def compatible_tests():
-                with _legacy_test_profile(profile_path):
-                    return original_tests()
+                # Contract tests must read the real live profile (50-story cap).
+                # Shrinking the profile here makes the profile contract test fail.
+                return original_tests()
 
             def nature_min(*values):
                 if len(values) == 2 and values[0] == 12 and values[1] == 50:
@@ -267,8 +253,8 @@ def run_nature(root: Path, runner: Path, phase: str) -> None:
         collector_module.db_connect = open_checked_db
 
     def compatible_contract_tests():
-        with _legacy_test_profile(root / PROFILE_RELATIVE):
-            original_contract_tests()
+        # Keep the actual Nature profile intact while checking its 50-story contract.
+        original_contract_tests()
         shared_test = root / "global-checker" / "tests" / "test_shared_policy_engine.py"
         result = subprocess.run(
             [sys.executable, str(shared_test)], cwd=root, check=False
