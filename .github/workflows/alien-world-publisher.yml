@@ -56,7 +56,7 @@ jobs:
           python alien-world/publisher/publisher.py --mode live \
             | tee "$RUNNER_TEMP/alien-world-live-publisher-result.json"
 
-      - name: Commit only the completed Live Feed
+      - name: Commit the completed Live Feed and approved assets
         id: publish_commit
         shell: bash
         run: |
@@ -67,7 +67,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- alien-world/published/live-feed.json
+          git add -A -- alien-world/published/
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No live-feed changes; the last-good feed remains in place."
