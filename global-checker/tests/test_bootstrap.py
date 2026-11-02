@@ -16,7 +16,7 @@ class BootstrapDispatchTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
         (self.root / "global-checker").mkdir()
-        (self.root / "global-checker" / "run_pipeline.py").write_text("# runner stub\n", encoding="utf-8")
+        (self.root / "global-checker" / "live_earth_dispatch.py").write_text("# dispatcher stub\n", encoding="utf-8")
         (self.root / "editorial-engine").mkdir()
         (self.root / "editorial-engine" / "requirements.txt").write_text("# marker\n", encoding="utf-8")
         for relative in bootstrap.ENTRYPOINTS:
@@ -28,14 +28,14 @@ class BootstrapDispatchTests(unittest.TestCase):
         self.temp.cleanup()
 
     def test_all_existing_entrypoints_dispatch_to_the_shared_runner(self):
-        for relative, (phase, view_id) in bootstrap.ENTRYPOINTS.items():
+        for relative, (phase, view_id, _runner_name) in bootstrap.ENTRYPOINTS.items():
             with self.subTest(relative=relative), patch.object(sys, "argv", [str(self.root / relative), "--mode", "live"]), \
                     patch.dict(os.environ, {bootstrap.ACTIVE_ENV: ""}, clear=False), \
                     patch.object(bootstrap.os, "execv") as execv:
                 bootstrap.bootstrap()
                 execv.assert_called_once_with(
                     sys.executable,
-                    [sys.executable, str(self.root / "global-checker" / "run_pipeline.py"),
+                    [sys.executable, str(self.root / "global-checker" / "live_earth_dispatch.py"),
                      phase, "--view", view_id],
                 )
 
@@ -48,7 +48,7 @@ class BootstrapDispatchTests(unittest.TestCase):
 
     def test_missing_runner_fails_closed(self):
         target = self.root / "nature" / "collector" / "collector.py"
-        (self.root / "global-checker" / "run_pipeline.py").unlink()
+        (self.root / "global-checker" / "live_earth_dispatch.py").unlink()
         with patch.object(sys, "argv", [str(target)]), self.assertRaises(RuntimeError):
             bootstrap.bootstrap()
 

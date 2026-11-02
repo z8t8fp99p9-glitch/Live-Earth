@@ -284,18 +284,44 @@ def run_publisher() -> int:
     original_route = module.route_engine_outputs
 
     def checked_route(result):
+        feed = result.get("feed") if isinstance(result, dict) else None
+        if not isinstance(feed, dict):
+            raise checker.GlobalCheckerError(
+                "Alien World Engine did not return a live feed to check."
+            )
+        image_engine_dir = ROOT / "image-engine"
+        if str(image_engine_dir) not in sys.path:
+            sys.path.insert(0, str(image_engine_dir))
+        from image_engine_integration import attach_original_illustrations
+        attach_original_illustrations(
+            feed,
+            "alien-world",
+            database_path=module.DB_PATH,
+            output_dir=module.OUTPUT_DIR / "assets",
+            raw_asset_base_url=(
+                "https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/"
+                "alien-world/published/assets/"
+            ),
+            checker=checker,
+        )
         connection = module.read_only_connection()
         try:
-            feed = result.get("feed") if isinstance(result, dict) else None
-            if not isinstance(feed, dict):
-                raise checker.GlobalCheckerError(
-                    "Alien World Engine did not return a live feed to check."
-                )
             result["feed"] = checker.gate_feed(
                 feed, connection, "alien-world", minimum_stories=2
             )
         finally:
             connection.close()
+        # Delete illustrations held by the final Checker. Only this view's
+        # output folder is touched; the DB/cache and last-good feed remain intact.
+        approved_names = {
+            Path(str(story.get("imageUrl") or "").split("?", 1)[0]).name
+            for story in result["feed"].get("stories", []) if story.get("imageOriginType") == "local-original-illustration"
+        }
+        asset_dir = module.OUTPUT_DIR / "assets"
+        if asset_dir.is_dir():
+            for asset in asset_dir.glob("illustration-*.jpg"):
+                if asset.name not in approved_names:
+                    asset.unlink(missing_ok=True)
         # Publisher owns the final atomic write, but cannot override the
         # Checker-approved payload or make another content-rights decision.
         return original_route(result)

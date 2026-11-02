@@ -495,6 +495,21 @@ def run_publisher() -> int:
             pending_manifest = dict(payload)
             return None
         if target.name == "live-feed.json":
+            image_engine_dir = ROOT / "image-engine"
+            if str(image_engine_dir) not in sys.path:
+                sys.path.insert(0, str(image_engine_dir))
+            from image_engine_integration import attach_original_illustrations
+            generated_illustrations = attach_original_illustrations(
+                payload,
+                "nature",
+                database_path=module.DB_PATH,
+                output_dir=module.OUTPUT_DIR / "assets",
+                raw_asset_base_url=(
+                    "https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/"
+                    "nature/published/assets/"
+                ),
+                checker=checker,
+            )
             database = module.open_readonly()
             try:
                 approved = checker.gate_feed(payload, database, "nature", minimum_stories=2)
@@ -508,6 +523,7 @@ def run_publisher() -> int:
                 "schemaVersion": 1, "viewId": "nature",
                 "generatedAt": approved.get("generatedAt", ""), "images": [],
             }
+            manifest.setdefault("images", []).extend(generated_illustrations)
             _clean_nature_assets(approved, module.OUTPUT_DIR, manifest, prune_files=False)
             manifest_path = module.OUTPUT_DIR / "assets" / "image-rights.json"
             _atomic_nature_feed_and_manifest(manifest_path, manifest, target, approved)

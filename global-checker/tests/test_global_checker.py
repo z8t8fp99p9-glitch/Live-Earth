@@ -24,7 +24,9 @@ class GlobalCheckerTests(unittest.TestCase):
     def story(self, **overrides):
         base = {
             "id": "story-001", "title": "NASA announces a science mission",
-            "summary": "NASA describes a new mission and its scientific goals.",
+            "summary": ("NASA describes a new mission and its scientific goals in a detailed educational report. "
+                        "The item explains the objectives, scientific context, research methods and expected observations "
+                        "for readers seeking reliable space-science information."),
             "url": "https://www.nasa.gov/news/example-mission/",
             "sourceName": "NASA News",
             "sourceUrl": "https://www.nasa.gov/news-release/feed/",
@@ -117,7 +119,8 @@ class GlobalCheckerTests(unittest.TestCase):
         decision = checker.evaluate_text("alien-world", story)
         checker.record_decision(self.db, decision)
         feed = {"schemaVersion": 1, "viewId": "alien-world", "storyCount": 1,
-                "stories": [{"id": story["id"], "title": story["title"], "url": story["url"], "sourceUrl": story["sourceUrl"],
+                "stories": [{"id": story["id"], "title": story["title"], "url": story["url"],
+                             "sourceName": story["sourceName"], "sourceUrl": story["sourceUrl"],
                              "summary": story["summary"], "imageUrl": "https://www.nasa.gov/test.jpg",
                              "imageCredit": "NASA"}]}
         passed = checker.gate_feed(feed, self.db, "alien-world", minimum_stories=1)
@@ -125,14 +128,16 @@ class GlobalCheckerTests(unittest.TestCase):
         self.assertEqual(passed["stories"][0]["rights"]["verdict"], "GREEN")
         self.assertIsNone(passed["stories"][0]["imageUrl"])
         self.assertEqual(passed["globalChecker"]["imagesStripped"], 1)
-        self.assertEqual(passed["globalChecker"]["policy"], "fail-closed")
+        self.assertEqual(passed["globalChecker"]["policy"], "fail-closed-text-or-image")
 
     def test_mismatched_or_missing_evidence_is_rejected(self):
         feed = {"schemaVersion": 1, "viewId": "alien-world", "storyCount": 1,
                 "stories": [{"id": "missing", "title": "NASA report",
+                             "sourceName": "NASA News", "sourceUrl": "https://www.nasa.gov/news-release/feed/",
                              "url": "https://www.nasa.gov/news/missing/", "summary": "x"}]}
-        with self.assertRaises(checker.GlobalCheckerError):
-            checker.gate_feed(feed, self.db, "alien-world", minimum_stories=1)
+        result = checker.gate_feed(feed, self.db, "alien-world", minimum_stories=1)
+        self.assertEqual(result["storyCount"], 0)
+        self.assertEqual(result["globalChecker"]["textRejected"], 1)
 
     def test_decision_table_is_additive_and_prune_only_removes_orphans(self):
         story = self.story()
@@ -148,8 +153,8 @@ class GlobalCheckerTests(unittest.TestCase):
         self.assertEqual(checker.prune_decisions(self.db, "alien-world"), 1)
 
     def test_final_gate_requires_exact_source_feed_and_image_identity(self):
-        stories = [{"id": "story-001", "title": "NASA report", "url": "https://www.nasa.gov/news/example-mission/",
-                    "sourceUrl": "https://www.nasa.gov/news-release/feed/", "summary": "NASA report.",
+        stories = [{"id": "story-001", "title": self.story()["title"], "url": "https://www.nasa.gov/news/example-mission/",
+                    "sourceName": "NASA News", "sourceUrl": "https://www.nasa.gov/news-release/feed/", "summary": self.story()["summary"],
                     "imageUrl": "https://www.nasa.gov/sites/default/files/image.jpg", "imageCredit": "NASA",
                     "imageSourceUrl": "https://www.nasa.gov/news/example-mission/"}]
         text_decision = checker.evaluate_text("alien-world", self.story())
@@ -168,8 +173,9 @@ class GlobalCheckerTests(unittest.TestCase):
         self.assertIsNone(result["stories"][0]["imageUrl"])
 
         result["stories"][0]["sourceUrl"] = ""
-        with self.assertRaises(checker.GlobalCheckerError):
-            checker.gate_feed(result, self.db, "alien-world", minimum_stories=1)
+        rejected = checker.gate_feed(result, self.db, "alien-world", minimum_stories=1)
+        self.assertEqual(rejected["storyCount"], 0)
+        self.assertEqual(rejected["globalChecker"]["textRejected"], 1)
 
     def test_nature_portfolio_is_red_for_persistent_database_route(self):
         item = self.story(
@@ -205,7 +211,7 @@ class GlobalCheckerTests(unittest.TestCase):
     def test_jpl_or_other_non_nasa_authorship_is_not_assumed_public_domain(self):
         result = checker.evaluate_text("alien-world", self.story(author="Jet Propulsion Laboratory / Caltech"))
         self.assertFalse(result["allowed"])
-        self.assertEqual(result["verdict"], "RED")
+        self.assertEqual(result["verdict"], "UNKNOWN")
 
     def test_storage_permission_without_display_permission_is_held(self):
         import unittest.mock as mock
@@ -241,8 +247,8 @@ class GlobalCheckerTests(unittest.TestCase):
         checker.record_decision(self.db, image_decision)
         feed = {"schemaVersion": 1, "viewId": "alien-world", "storyCount": 1,
                 "stories": [{"id": story["id"], "title": story["title"], "url": story["url"],
-                             "sourceUrl": story["sourceUrl"], "summary": story["summary"],
-                             "imageUrl": image["url"], "imageCredit": image["credit"],
+                             "sourceName": story["sourceName"], "sourceUrl": story["sourceUrl"],
+                             "summary": story["summary"], "imageUrl": image["url"], "imageCredit": image["credit"],
                              "imageSourceUrl": image["sourcePage"],
                              "imageRightsNote": "Changed after the Checker decision."}]}
         result = checker.gate_feed(feed, self.db, "alien-world", minimum_stories=1)

@@ -60,7 +60,7 @@ class PublisherContractTests(unittest.TestCase):
         profile=json.loads((ROOT/"nature/publisher/profile.json").read_text(encoding="utf-8"))
         self.assertEqual(profile["publication"]["windowMode"],"rolling-hours")
         self.assertEqual(profile["publication"]["issueWindowHours"],48)
-        self.assertEqual(profile["publication"]["maximumStories"],10)
+        self.assertEqual(profile["publication"]["maximumStories"],50)
         self.assertEqual(profile["publication"]["maximumSourceAgeDays"],32)
         self.assertEqual(profile["database"]["retentionDays"],32)
         self.assertNotIn("minimumDocumentaryImages",profile["publication"])

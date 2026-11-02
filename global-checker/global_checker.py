@@ -313,13 +313,17 @@ def evaluate_image(view_id: str, story_id: str, image: dict[str, Any], *,
     license_name = _clean(image.get("licenseName") or image.get("license_name"), 160)
     modification_note = _clean(image.get("modificationNote") or image.get("modification_note"), 800)
     rights_notice = _clean(image.get("rightsNotice") or image.get("rights_notice"), 800)
+    origin_type = _clean(image.get("originType") or image.get("imageOriginType"), 80)
+    engine_name = _clean(image.get("engine") or image.get("imageEngine"), 120)
+    engine_version = _clean(image.get("engineVersion") or image.get("imageEngineVersion"), 40)
     descriptor = " ".join((caption, credit, rights_notice, _clean(image.get("kind"), 160))).casefold()
     evidence = {"articleUrl": _clean(article_url, 1200), "imageUrl": image_url,
                 "sourcePage": source_page, "creator": creator, "credit": credit,
                 "caption": caption, "licenseName": license_name,
                 "licenseUrl": license_url, "modificationNote": modification_note,
-                "rightsNotice": rights_notice,
-                "termsUrl": "https://commons.wikimedia.org/wiki/Commons:Reusing_content_outside_Wikimedia/en" if view_id == "nature" else "https://www.nasa.gov/nasa-brand-center/images-and-media/"}
+                "rightsNotice": rights_notice, "originType": origin_type,
+                "engine": engine_name, "engineVersion": engine_version,
+                "termsUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/tree/main/image-engine" if origin_type == "local-original-illustration" else ("https://commons.wikimedia.org/wiki/Commons:Reusing_content_outside_Wikimedia/en" if view_id == "nature" else "https://www.nasa.gov/nasa-brand-center/images-and-media/")}
 
     policy_id = "unregistered-image-policy"
     policy_version = "1"
@@ -328,6 +332,57 @@ def evaluate_image(view_id: str, story_id: str, image: dict[str, Any], *,
                          policy_id=policy_id, policy_version=policy_version, allowed=False,
                          allowed_use="none", evidence=evidence,
                          reasons=["Image source, HTTPS URLs, visible credit, or contextual caption is missing."])
+
+    # Original Image Engine artwork has a separate route from documentary
+    # photographs. The Checker validates provenance and exact version, but the
+    # output remains explicitly labelled illustrative artwork in the feed.
+    if origin_type == "local-original-illustration":
+        policy = load_registry().get("imagePolicies", {}).get("imageEngineOriginalIllustration", {})
+        expected_policy_id = str(policy.get("policyId", ""))
+        expected_version = str(policy.get("policyVersion", ""))
+        accepted_versions = [str(value) for value in policy.get("acceptedEngineVersions", [])]
+        from urllib.parse import urlparse as _urlparse
+        parsed_image = _urlparse(image_url)
+        expected_path = f"/z8t8fp99p9-glitch/Live-Earth/main/{view_id}/published/assets/"
+        image_path_ok = (parsed_image.path.startswith(expected_path)
+                         and parsed_image.path.endswith(".jpg")
+                         and ".." not in parsed_image.path.split("/"))
+        if view_id not in {"nature", "alien-world"}:
+            reason = "Image Engine illustration route is not enabled for this view."
+        elif policy.get("status") != "GREEN" or not expected_policy_id or not expected_version:
+            reason = "The Image Engine illustration policy is not GREEN in the central registry."
+        elif engine_name != policy.get("engineName") or engine_version not in accepted_versions:
+            reason = "Image Engine name/version is not registered for original artwork."
+        elif not _host_matches(image_host, ["raw.githubusercontent.com"]) or not image_path_ok:
+            reason = "Original illustration URL is outside this view's exact published asset folder."
+        elif source_page != policy.get("generatorSourcePage"):
+            reason = "Original illustration generator provenance does not match the registered source page."
+        elif creator != policy.get("creator") or credit != policy.get("credit"):
+            reason = "Original illustration creator/credit does not match the registered Engine identity."
+        elif license_name != policy.get("rightsLabel") or license_url:
+            reason = "Original illustration rights label is missing or an external licence was asserted."
+        elif not policy.get("requiredCaptionText") or policy["requiredCaptionText"].casefold() not in caption.casefold():
+            reason = "Original illustration caption does not disclose its non-documentary nature."
+        elif not policy.get("requiredNonLiteralText") or policy["requiredNonLiteralText"].casefold() not in caption.casefold():
+            reason = "Original illustration caption does not state that it is not a literal depiction of the linked report."
+        elif not policy.get("requiredRightsText") or policy["requiredRightsText"].casefold() not in rights_notice.casefold():
+            reason = "Original illustration rights note does not disclose local original creation."
+        elif not modification_note or "procedural" not in modification_note.casefold():
+            reason = "Original illustration creation/modification record is missing."
+        elif any(marker in descriptor for marker in RESTRICTIVE_IMAGE_MARKERS):
+            reason = "A restrictive or third-party rights marker was found in the artwork metadata."
+        else:
+            reason = ""
+        if reason:
+            return _decision(view_id=view_id, story_id=story_id, content_kind="image", verdict="UNKNOWN",
+                             policy_id=expected_policy_id or "image-engine-original-illustration-v1",
+                             policy_version=expected_version or "1", allowed=False,
+                             allowed_use="none", evidence=evidence, reasons=[reason])
+        return _decision(view_id=view_id, story_id=story_id, content_kind="image", verdict="GREEN",
+                         policy_id=expected_policy_id, policy_version=expected_version, allowed=True,
+                         allowed_use="illustrative-artwork-only", evidence=evidence,
+                         reasons=["Registered local procedural artwork passed exact Engine-version, asset-path, provenance and non-documentary-label checks."],
+                         attribution=credit)
 
     # Nature contextual image policy: the actual original Commons file page and
     # one approved licence must be independently recorded for this exact image.
@@ -463,7 +518,8 @@ def prune_decisions(connection: sqlite3.Connection, view_id: str, retention_days
 
 def _clear_image(story: dict[str, Any]) -> None:
     for key in ("imageUrl", "imageCredit", "imageSourceUrl", "imageRightsNote",
-                "imageCaption", "imageLicense", "imageLicenseUrl"):
+                "imageCaption", "imageLicense", "imageLicenseUrl", "imageOriginType",
+                "imageEngine", "imageEngineVersion"):
         if key in story:
             story[key] = None
 
@@ -555,7 +611,10 @@ def gate_feed(feed: dict[str, Any], connection: sqlite3.Connection, view_id: str
         image_approved = False
         if story.get("imageUrl"):
             image_decision = get_decision(connection, view_id, story_id, "image")
-            image_policy_key = "wikimediaCommons" if view_id == "nature" else "nasa"
+            if story.get("imageOriginType") == "local-original-illustration":
+                image_policy_key = "imageEngineOriginalIllustration"
+            else:
+                image_policy_key = "wikimediaCommons" if view_id == "nature" else "nasa"
             current_image_policy = registry.get("imagePolicies", {}).get(image_policy_key, {})
             image_policy_version = str(current_image_policy.get("policyVersion", "1"))
             if (not image_decision or not image_decision.get("allowed")
@@ -578,6 +637,9 @@ def gate_feed(feed: dict[str, Any], connection: sqlite3.Connection, view_id: str
                     and _clean(image_evidence.get("rightsNotice"), 800) == _clean(story.get("imageRightsNote"), 800)
                     and (not story.get("imageLicenseUrl") or _clean(image_evidence.get("licenseUrl"), 500) == _clean(story.get("imageLicenseUrl"), 500))
                     and (not story.get("imageLicense") or _clean(image_evidence.get("licenseName"), 160) == _clean(story.get("imageLicense"), 160))
+                    and (not story.get("imageOriginType") or image_evidence.get("originType") == story.get("imageOriginType"))
+                    and (not story.get("imageEngine") or image_evidence.get("engine") == story.get("imageEngine"))
+                    and (not story.get("imageEngineVersion") or image_evidence.get("engineVersion") == story.get("imageEngineVersion"))
                 )
                 if not image_matches:
                     _clear_image(story)
@@ -593,6 +655,9 @@ def gate_feed(feed: dict[str, Any], connection: sqlite3.Connection, view_id: str
                         "licenseUrl": image_evidence.get("licenseUrl", ""),
                         "sourcePage": image_evidence.get("sourcePage", ""),
                         "modificationNote": image_evidence.get("modificationNote", ""),
+                        "originType": image_evidence.get("originType", ""),
+                        "engine": image_evidence.get("engine", ""),
+                        "engineVersion": image_evidence.get("engineVersion", ""),
                     }
         else:
             _clear_image(story)

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "registryVersion": "2026-11-02.7",
+  "registryVersion": "2026-11-02.8",
   "registryName": "LIVE // EARTH Global Source & Rights Registry",
   "policyPrinciples": [
     "Free-to-read is not automatically free-to-store, transform, publish or redistribute.",
@@ -330,6 +330,33 @@
       "requireModificationNote": true,
       "rejectNoDerivativesWhenModified": true,
       "policyVersion": "1"
+    },
+    "imageEngineOriginalIllustration": {
+      "policyId": "image-engine-original-illustration-v1",
+      "policyVersion": "1",
+      "status": "GREEN",
+      "engineName": "LIVE // EARTH Global Image Engine",
+      "acceptedEngineVersions": [
+        "0.2.0"
+      ],
+      "originType": "local-original-illustration",
+      "creator": "LIVE // EARTH Global Image Engine",
+      "credit": "LIVE // EARTH Global Image Engine (original illustration)",
+      "rightsLabel": "Original LIVE // EARTH artwork",
+      "generatorSourcePage": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
+      "publishedHost": "raw.githubusercontent.com",
+      "requiredCaptionText": "not a documentary photograph or data-accurate scientific visualization",
+      "requiredRightsText": "original procedural illustration generated locally",
+      "views": {
+        "nature": "nature/published/assets/",
+        "alien-world": "alien-world/published/assets/"
+      },
+      "notes": [
+        "Original local artwork is approved only as illustrative artwork, never as a documentary photograph, scientific measurement or data-accurate visualization.",
+        "Only the registered Image Engine version and exact per-view published asset folder are accepted.",
+        "This policy does not approve text or sources; a separate current GREEN/AMBER text decision remains mandatory."
+      ],
+      "requiredNonLiteralText": "not a literal depiction of the linked report"
     }
   },
   "registryNotes": [

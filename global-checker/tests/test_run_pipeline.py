@@ -12,6 +12,9 @@ from run_pipeline import (CheckedConnection, _atomic_nature_feed_and_manifest,
                           check_alien_image_candidate, check_nature_image_metadata,
                           extract_commons_metadata_for_checker, filter_sources_for_registry)
 import global_checker as checker
+import global_checker_policy_engine
+
+global_checker_policy_engine.install(checker)
 
 
 class RunnerPreStorageTests(unittest.TestCase):
@@ -236,7 +239,8 @@ class RunnerPreStorageTests(unittest.TestCase):
         checker.record_decision(raw, image_decision)
         feed = {"schemaVersion": 1, "viewId": "nature", "storyCount": 1, "stories": [{
             "id": story_id, "title": "Wildlife conservation study finds a change", "url": article_url,
-            "sourceUrl": feed_url, "summary": "This must be removed by headline-only policy.",
+            "sourceName": "Phys.org — Environment", "sourceUrl": feed_url,
+            "summary": "This must be removed by headline-only policy.",
             "imageUrl": image["url"], "imageCredit": image["credit"],
             "imageSourceUrl": image["sourcePage"], "imageCaption": image["caption"],
             "imageRightsNote": image["rightsNotice"], "imageLicense": image["licenseName"],
