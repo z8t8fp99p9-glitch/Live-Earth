@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install the LIVE // EARTH Python-startup dispatcher used by existing jobs."""
+"""Install the LIVE // EARTH startup dispatcher and Newsroom Publisher gate."""
 from pathlib import Path
 import sys
 import sysconfig
@@ -16,9 +16,12 @@ except ValueError as exc:
 
 setup(
     name="live-earth-global-checker-bootstrap",
-    version="1.0.0",
-    description="Automatic dispatcher for LIVE // EARTH Global Content Rights Checker",
-    py_modules=["live_earth_global_checker_bootstrap"],
+    version="1.1.0",
+    description="Automatic LIVE // EARTH dispatcher and Newsroom Publisher approval gate",
+    py_modules=[
+        "live_earth_global_checker_bootstrap",
+        "newsroom_publisher_gate",
+    ],
     data_files=[(
         PURELIB_RELATIVE,
         [str(ROOT / "live_earth_global_checker_bootstrap.pth")],
