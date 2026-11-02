@@ -1,6 +1,82 @@
 {
   "schemaVersion": 1,
   "viewId": "nature",
-  "generatedAt": "2026-11-02T13:23:55Z",
-  "images": []
+  "generatedAt": "2026-11-02T13:47:26Z",
+  "images": [
+    {
+      "storyId": "94dcca4ef3140fe3502441b50c2f5535",
+      "originType": "local-original-illustration",
+      "engine": "LIVE // EARTH Global Image Engine",
+      "engineVersion": "0.2.0",
+      "creator": "LIVE // EARTH Global Image Engine",
+      "credit": "LIVE // EARTH Global Image Engine (original illustration)",
+      "caption": "Original thematic digital illustration created locally for the nature view. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
+      "rightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
+      "sourcePage": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
+      "license": "Original LIVE // EARTH artwork",
+      "file": "assets/illustration-a233d34cb517307944182e7a8ddeb611a332a3a83f20dd58c8ef8a884b396a59.jpg",
+      "sha256": "99faf522051e5ac0b03e67e8ea2a264fd1207f0985130dff478561f0fbf5432a",
+      "checkerDecisionId": "602b92c47b47e5e13db79e59"
+    },
+    {
+      "storyId": "6f4a1fa6b15ab56d1baa81e376378862",
+      "originType": "local-original-illustration",
+      "engine": "LIVE // EARTH Global Image Engine",
+      "engineVersion": "0.2.0",
+      "creator": "LIVE // EARTH Global Image Engine",
+      "credit": "LIVE // EARTH Global Image Engine (original illustration)",
+      "caption": "Original thematic digital illustration created locally for the nature view. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
+      "rightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
+      "sourcePage": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
+      "license": "Original LIVE // EARTH artwork",
+      "file": "assets/illustration-969fcc2aa3fbc7defe0a7e86a2e50a8b6546c9c8cf29cccfeee084bb172fbe41.jpg",
+      "sha256": "772e463408b759ace12354e19d8d4a53e00b74809cb86ffc6dcf0e1dc190b2ea",
+      "checkerDecisionId": "27d16be3a94d2b240e356edd"
+    },
+    {
+      "storyId": "fbe3671f00699be7dcdf6464c41ce268",
+      "originType": "local-original-illustration",
+      "engine": "LIVE // EARTH Global Image Engine",
+      "engineVersion": "0.2.0",
+      "creator": "LIVE // EARTH Global Image Engine",
+      "credit": "LIVE // EARTH Global Image Engine (original illustration)",
+      "caption": "Original thematic digital illustration created locally for the nature view. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
+      "rightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
+      "sourcePage": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
+      "license": "Original LIVE // EARTH artwork",
+      "file": "assets/illustration-d152ad17fdb7d76c0e21645a062b0568fb625cf942d9c4c8ebfd5282787a4385.jpg",
+      "sha256": "1b2bdc2a1647be95d921fa3314f048d3e349fd9fac4cc230c0b3af377b4b392f",
+      "checkerDecisionId": "a8d5c47829edd9d43c193ea8"
+    },
+    {
+      "storyId": "4cf8b354f2993f2805cef34c62a98848",
+      "originType": "local-original-illustration",
+      "engine": "LIVE // EARTH Global Image Engine",
+      "engineVersion": "0.2.0",
+      "creator": "LIVE // EARTH Global Image Engine",
+      "credit": "LIVE // EARTH Global Image Engine (original illustration)",
+      "caption": "Original thematic digital illustration created locally for the nature view. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
+      "rightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
+      "sourcePage": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
+      "license": "Original LIVE // EARTH artwork",
+      "file": "assets/illustration-d949f6c835a609b70a63e704206f911714b032716d099045106925fa6882450c.jpg",
+      "sha256": "5bdfc85dbc507251260f3536e6e24c9021f90abab0092206fe34d4d86f150155",
+      "checkerDecisionId": "be78e6fad147d94aa300b911"
+    },
+    {
+      "storyId": "ab829a5776dd57b68f7641bb0ebddd60",
+      "originType": "local-original-illustration",
+      "engine": "LIVE // EARTH Global Image Engine",
+      "engineVersion": "0.2.0",
+      "creator": "LIVE // EARTH Global Image Engine",
+      "credit": "LIVE // EARTH Global Image Engine (original illustration)",
+      "caption": "Original thematic digital illustration created locally for the nature view. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
+      "rightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
+      "sourcePage": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
+      "license": "Original LIVE // EARTH artwork",
+      "file": "assets/illustration-52fa58f2890c185dc94b945e392051f6e7b7848c704f125f57b0350fd32fb080.jpg",
+      "sha256": "2049ed7c2c7c8c795bf58f21eb6eee5f26776320f19393a8c5bd47d91d3ae2bc",
+      "checkerDecisionId": "43da084c845e7f25759496c3"
+    }
+  ]
 }
