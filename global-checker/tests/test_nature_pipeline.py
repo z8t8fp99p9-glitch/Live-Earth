@@ -17,6 +17,7 @@ import global_checker as checker
 from live_earth_global_checker_bootstrap import ENTRYPOINTS
 from nature_pipeline import (
     _NatureReadOnlyProxy,
+    _adopt_checked_feed,
     _collector_profile,
     _install_engine_handoff,
     _install_readonly_publisher,
@@ -25,6 +26,20 @@ from nature_pipeline import (
 
 
 class NatureSingleCheckerPipelineTests(unittest.TestCase):
+    def test_checker_in_place_result_preserves_stories_array(self):
+        payload = {"schemaVersion": 1, "stories": [{"id": "approved-1"}], "storyCount": 1}
+        approved = payload  # gate_feed returns the same object it filtered
+        _adopt_checked_feed(payload, approved)
+        self.assertEqual(payload["stories"], [{"id": "approved-1"}])
+        self.assertEqual(payload["storyCount"], 1)
+
+    def test_checker_distinct_result_replaces_payload_safely(self):
+        payload = {"stories": [{"id": "unapproved-1"}], "staleField": True}
+        approved = {"stories": [{"id": "approved-1"}], "storyCount": 1}
+        _adopt_checked_feed(payload, approved)
+        self.assertEqual(payload["stories"], [{"id": "approved-1"}])
+        self.assertNotIn("staleField", payload)
+
     def test_bootstrap_routes_both_nature_entrypoints_to_single_owner(self):
         expected = ("collect", "nature", "nature_pipeline.py")
         self.assertEqual(ENTRYPOINTS["nature/collector/collector.py"], expected)

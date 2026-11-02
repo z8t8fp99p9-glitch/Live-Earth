@@ -463,6 +463,20 @@ def _install_readonly_publisher(module) -> None:
     module.NatureEngineReadOnlyConnection = NatureEngineReadOnlyConnection
 
 
+def _adopt_checked_feed(payload: dict[str, Any], approved: dict[str, Any]) -> None:
+    """Keep the approved feed when the Checker returns its input object.
+
+    Global checker's gate_feed mutates the supplied feed and returns that same
+    object. Clearing payload before copying approved would therefore clear both
+    references and silently delete the required stories array.
+    """
+    if approved is payload:
+        return
+    approved_snapshot = dict(approved)
+    payload.clear()
+    payload.update(approved_snapshot)
+
+
 def run_publisher() -> int:
     _run_contract_tests()
     sys.path.insert(0, str(ENGINE_DIR))
@@ -486,10 +500,10 @@ def run_publisher() -> int:
                 approved = checker.gate_feed(payload, database, "nature", minimum_stories=2)
             finally:
                 database.close()
-            # Mutate the Publisher's in-memory feed too, so its later cleanup
-            # uses only Checker-approved assets rather than pre-gate candidates.
-            payload.clear()
-            payload.update(approved)
+            # The Checker normally returns this same object after filtering it
+            # in place. Preserve that object; only copy when a future Checker
+            # implementation returns a distinct approved feed.
+            _adopt_checked_feed(payload, approved)
             manifest = pending_manifest or {
                 "schemaVersion": 1, "viewId": "nature",
                 "generatedAt": approved.get("generatedAt", ""), "images": [],

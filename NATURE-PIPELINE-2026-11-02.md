@@ -33,3 +33,8 @@ No workflow YAML, Nature view UI, profile, source registry, or database schema c
 - No changes to Nature visual design, browser storage, Home, Moon View, Sun View, or Alien World.
 
 An empty feed remains possible when the current candidates have neither meaningful text use approved by the Checker nor an independently approved, exact Commons image. The pipeline does not fill such gaps with unrelated material.
+
+
+## Publisher handoff regression fix
+
+The first production publish attempt exposed an object-aliasing bug after the final Global Checker gate: `gate_feed()` returns the same feed object it filters in place, while the adapter cleared that object before copying it back. This removed the `stories` array and caused Publisher failure. The adapter now preserves the in-place result and only replaces the payload when the Checker returns a distinct object. Two regression tests cover both return patterns.
