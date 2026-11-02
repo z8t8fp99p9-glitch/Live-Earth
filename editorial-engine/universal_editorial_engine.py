@@ -30,6 +30,7 @@ from pypdf import PdfReader
 
 ENGINE_NAME = "Universal Editorial Engine"
 ENGINE_VERSION = "1.3.0"
+NEWSROOM_PUBLISHER_ADAPTER_VERSION = "1.0.0"
 VALID_IMAGE_STATUS = "nasa-guideline-reviewed-exclusion-screened"
 
 # Phone-first portrait page: 420 × 912 pt. A PDF page viewed at fit-to-width
@@ -287,15 +288,29 @@ def build_brief(profile: dict[str, Any], command: dict[str, Any], now: datetime 
 
 
 def read_view_records(readonly_db: Any, brief: EditorialBrief, now: datetime) -> list[dict[str, Any]]:
-    """Read only from the Publisher-provided database handle."""
+    """Read Collector stories and GREEN-approved Newsroom stories through the Publisher handle.
+
+    The Publisher supplies the only database handle and has already opened it
+    read-only. This function never opens a database or creates/mutates tables.
+    """
     try:
         readonly_db.execute("PRAGMA query_only = ON")
         meta = readonly_db.execute("SELECT value FROM publisher_meta WHERE key='view_id'").fetchone()
         if not meta or text(meta[0]) != brief.view_id:
             raise EditorialEngineError("The database handle is not scoped to the requested view.")
+        collector_views = {
+            text(row[0]) for row in readonly_db.execute(
+                "SELECT DISTINCT view_id FROM stories"
+            ).fetchall()
+        }
+        if any(view_id != brief.view_id for view_id in collector_views):
+            raise EditorialEngineError(
+                "A View Publisher detected Collector records belonging to another View in its own database."
+            )
+
         start_ts = brief.coverage_start.timestamp()
         end_ts = brief.coverage_end.timestamp() if brief.window_mode == "calendar-month" else (now + timedelta(hours=2)).timestamp()
-        rows = readonly_db.execute(
+        collector_rows = readonly_db.execute(
             """SELECT story_id, title, url, summary, source_name, source_url,
                       published_at, retrieved_at, image_url, image_local_path,
                       image_caption, image_credit, image_source_url, image_rights_status,
@@ -304,15 +319,227 @@ def read_view_records(readonly_db: Any, brief: EditorialBrief, now: datetime) ->
                ORDER BY published_at DESC""",
             (start_ts, end_ts),
         ).fetchall()
+
+        # The Writer creates this table only after a GREEN final Checker review.
+        # Older databases without it continue to publish their ordinary records.
+        table = readonly_db.execute(
+            "SELECT type FROM sqlite_master WHERE name='newsroom_approved_stories'"
+        ).fetchone()
+        approved_rows = []
+        if table:
+            if text(table[0]) != "table":
+                raise EditorialEngineError("The Newsroom approved-story destination is not a table.")
+            newsroom_columns = {
+                row[1] for row in readonly_db.execute(
+                    "PRAGMA table_info(newsroom_approved_stories)"
+                ).fetchall()
+            }
+            required_columns = {
+                "view_id", "story_id", "url", "title", "summary", "source_name", "source_url",
+                "published_at", "retrieved_at", "image_url", "image_local_path", "image_caption",
+                "image_credit", "image_source_url", "image_rights_status", "image_rights_note",
+                "source_policy_ref", "global_checker_intake_decision_id", "checker_review_id",
+                "checker_registry_version", "checker_checked_at", "editorial_engine_version",
+                "editorial_adapter_version", "evidence_ledger_json", "topic_tags_json",
+                "image_rights_json", "approved_at",
+            }
+            missing_columns = sorted(required_columns - newsroom_columns)
+            if missing_columns:
+                raise EditorialEngineError(
+                    "The Newsroom approved-story table has an incompatible schema: "
+                    + ", ".join(missing_columns)
+                )
+
+            database_views = {
+                text(row[0]) for row in readonly_db.execute(
+                    "SELECT DISTINCT view_id FROM newsroom_approved_stories"
+                ).fetchall()
+            }
+            if any(view_id != brief.view_id for view_id in database_views):
+                raise EditorialEngineError(
+                    "A View Publisher detected records belonging to another View in its own database."
+                )
+
+            approved_rows = readonly_db.execute(
+                """SELECT view_id, story_id, url, title, summary, source_name, source_url,
+                          published_at, retrieved_at, image_url, image_local_path, image_caption,
+                          image_credit, image_source_url, image_rights_status, image_rights_note,
+                          source_policy_ref, global_checker_intake_decision_id, checker_review_id,
+                          checker_registry_version, checker_checked_at, editorial_engine_version,
+                          editorial_adapter_version, evidence_ledger_json, topic_tags_json,
+                          image_rights_json, approved_at
+                   FROM newsroom_approved_stories
+                   WHERE view_id=? AND published_at >= ? AND published_at < ?
+                   ORDER BY published_at DESC""",
+                (brief.view_id, start_ts, end_ts),
+            ).fetchall()
     except EditorialEngineError:
         raise
     except Exception as exc:
         raise EditorialEngineError(f"Could not read the Publisher database: {exc}") from exc
 
+    def canonical_url(value: Any) -> str:
+        if not isinstance(value, str):
+            return ""
+        try:
+            parsed = urlparse(value.strip())
+            if (parsed.scheme.lower() != "https" or not parsed.hostname
+                    or parsed.username or parsed.password
+                    or parsed.port not in (None, 443)):
+                return ""
+            host = parsed.hostname.lower().rstrip(".")
+            path = parsed.path or "/"
+            query = "&".join(
+                part for part in parsed.query.split("&")
+                if part and not part.split("=", 1)[0].lower().startswith("utm_")
+                and part.split("=", 1)[0].lower() not in {"fbclid", "gclid", "mc_cid", "mc_eid"}
+            )
+            return f"https://{host}{path}" + (f"?{query}" if query else "")
+        except (TypeError, ValueError):
+            return ""
+
+    def contains_forbidden_payload(value: Any) -> bool:
+        forbidden = {
+            "excerpt", "claim", "claimtext", "claim_text", "rawtext", "raw_text",
+            "sourcetext", "source_text", "rawhtml", "raw_html", "sourcebody",
+            "source_body", "fulltext", "full_text",
+        }
+        if isinstance(value, dict):
+            return any(
+                str(key).casefold() in forbidden or contains_forbidden_payload(child)
+                for key, child in value.items()
+            )
+        if isinstance(value, list):
+            return any(contains_forbidden_payload(child) for child in value)
+        return False
+
+    def title_key(value: Any) -> str:
+        normalized = text(value, 500).casefold()
+        normalized = re.sub(r"^(?:nature|alien world) brief\s*:\s*", "", normalized)
+        return " ".join(re.findall(r"[^\W_]+", normalized, flags=re.UNICODE))
+
+    # Approved Newsroom rows are validated before they are allowed to take
+    # precedence over an older Collector row for the same article.
+    approved_records: list[dict[str, Any]] = []
+    approved_ids: set[str] = set()
+    approved_urls: set[str] = set()
+    for row in approved_rows:
+        item = dict(row)
+        story_id = text(item.get("story_id"), 160)
+        url = canonical_url(item.get("url"))
+        source_url = canonical_url(item.get("source_url"))
+        title = text(item.get("title"), 200)
+        summary = text(item.get("summary"), 6000)
+        source_name = text(item.get("source_name"), 200)
+        policy_ref = text(item.get("source_policy_ref"), 160)
+        intake_decision_id = text(item.get("global_checker_intake_decision_id"), 200)
+        review_id = text(item.get("checker_review_id"), 120)
+        registry_version = text(item.get("checker_registry_version"), 100)
+
+        published = parse_timestamp(item.get("published_at"))
+        checked = parse_timestamp(item.get("checker_checked_at"))
+        approved_at = parse_timestamp(item.get("approved_at"))
+        retrieved = parse_timestamp(item.get("retrieved_at"))
+        if item.get("view_id") != brief.view_id:
+            raise EditorialEngineError("An approved Newsroom story has a mismatched View identity.")
+        if not story_id or story_id in approved_ids:
+            raise EditorialEngineError("The approved Newsroom table contains a missing or repeated story ID.")
+        if not url or url in approved_urls:
+            raise EditorialEngineError("The approved Newsroom table contains a missing or repeated canonical URL.")
+        if canonical_url(item.get("url")) != item.get("url"):
+            raise EditorialEngineError(f"Approved Newsroom story '{story_id}' does not use its canonical article URL.")
+        if not source_url or not title or not 12 <= len(title) <= 200:
+            raise EditorialEngineError(f"Approved Newsroom story '{story_id}' has invalid headline or source links.")
+        if len(summary) < 100 or len(summary.split()) < 16:
+            raise EditorialEngineError(f"Approved Newsroom story '{story_id}' has an invalid editorial summary.")
+        if not source_name or not policy_ref or not intake_decision_id or not review_id or not registry_version:
+            raise EditorialEngineError(f"Approved Newsroom story '{story_id}' is missing Checker/source provenance.")
+        if (item.get("editorial_engine_version") != ENGINE_VERSION
+                or item.get("editorial_adapter_version") != NEWSROOM_PUBLISHER_ADAPTER_VERSION):
+            raise EditorialEngineError(f"Approved Newsroom story '{story_id}' has an unregistered Editorial Engine version.")
+        if not published or not checked or not approved_at or not retrieved:
+            raise EditorialEngineError(f"Approved Newsroom story '{story_id}' has an invalid provenance timestamp.")
+        if not (start_ts <= published.timestamp() < end_ts):
+            raise EditorialEngineError(f"Approved Newsroom story '{story_id}' falls outside the requested Publisher window.")
+
+        try:
+            evidence = json.loads(item.get("evidence_ledger_json") or "null")
+            tags = json.loads(item.get("topic_tags_json") or "null")
+            image_rights = json.loads(item.get("image_rights_json") or "null")
+        except (TypeError, ValueError, json.JSONDecodeError) as exc:
+            raise EditorialEngineError(f"Approved Newsroom story '{story_id}' contains invalid provenance JSON.") from exc
+        if not isinstance(evidence, list) or not evidence or not isinstance(tags, list):
+            raise EditorialEngineError(f"Approved Newsroom story '{story_id}' has incomplete evidence/topic metadata.")
+        if any(not isinstance(tag, str) for tag in tags):
+            raise EditorialEngineError(f"Approved Newsroom story '{story_id}' has malformed topic tags.")
+        if not isinstance(image_rights, dict) or contains_forbidden_payload(image_rights) or contains_forbidden_payload(evidence):
+            raise EditorialEngineError(f"Approved Newsroom story '{story_id}' contains forbidden raw excerpt/claim data.")
+        for evidence_item in evidence:
+            if not isinstance(evidence_item, dict):
+                raise EditorialEngineError(f"Approved Newsroom story '{story_id}' has malformed evidence provenance.")
+            digest = text(evidence_item.get("excerptSha256"), 64)
+            if (not re.fullmatch(r"[a-f0-9]{64}", digest)
+                    or evidence_item.get("sourceRecordId") != story_id
+                    or evidence_item.get("sourcePolicyRef") != policy_ref
+                    or canonical_url(evidence_item.get("sourceUrl")) != url
+                    or any(key not in {
+                        "sourceRecordId", "sourceUrl", "sourcePolicyRef", "excerptSha256", "tokenCoverage"
+                    } for key in evidence_item)):
+                raise EditorialEngineError(f"Approved Newsroom story '{story_id}' has invalid evidence provenance.")
+
+        # The current Writer does not hand off a usable media asset. A rights
+        # decision alone must never cause the Publisher to invent image URLs.
+        image_columns = (
+            "image_url", "image_local_path", "image_caption", "image_credit",
+            "image_source_url", "image_rights_status", "image_rights_note",
+        )
+        if any(item.get(column) not in (None, "") for column in image_columns):
+            raise EditorialEngineError(
+                f"Approved Newsroom story '{story_id}' contains an image asset before the approved asset hand-off."
+            )
+
+        item["url"] = url
+        item["source_url"] = source_url
+        item["title"] = title
+        item["summary"] = summary
+        item["source_name"] = source_name
+        item["published_at"] = published.timestamp()
+        item["retrieved_at"] = retrieved.timestamp()
+        item["_newsroom_approved"] = True
+        approved_records.append(item)
+        approved_ids.add(story_id)
+        approved_urls.add(url)
+
+    # Merge approved records first so an updated editorial version supersedes
+    # its older Collector counterpart, without ever modifying the Collector row.
+    approved_records.sort(key=lambda item: float(item["published_at"]), reverse=True)
+    merged: list[dict[str, Any]] = []
+    seen_urls: set[str] = set()
+    seen_title_days: set[tuple[str, str]] = set()
+
+    def add_record(item: dict[str, Any]) -> None:
+        url = canonical_url(item.get("url"))
+        title = title_key(item.get("title"))
+        dt = parse_timestamp(item.get("published_at"))
+        if not title or not url or not dt:
+            return
+        signature = (title, dt.date().isoformat())
+        if url in seen_urls or signature in seen_title_days:
+            return
+        item["url"] = url
+        merged.append(item)
+        seen_urls.add(url)
+        seen_title_days.add(signature)
+
+    for item in approved_records:
+        add_record(item)
+    for row in collector_rows:
+        add_record(dict(row))
+    merged.sort(key=lambda item: float(item.get("published_at") or 0), reverse=True)
+
     records: list[dict[str, Any]] = []
     seen: set[str] = set()
-    for row in rows:
-        item = dict(row)
+    for item in merged:
         url = text(item.get("url"), 700)
         title = text(item.get("title"), 240)
         dt = parse_timestamp(item.get("published_at"))
@@ -326,7 +553,8 @@ def read_view_records(readonly_db: Any, brief: EditorialBrief, now: datetime) ->
         item["editorialImageCredit"] = _apod_image_credit(item) or text(item.get("image_credit"), 200)
         item["id"] = text(item.get("story_id"), 64)
         rights_ok = (
-            item.get("image_rights_status") == VALID_IMAGE_STATUS
+            item.get("_newsroom_approved") is not True
+            and item.get("image_rights_status") == VALID_IMAGE_STATUS
             and safe_https_url(item.get("image_url"))
             and safe_https_url(item.get("image_source_url"))
             and bool(text(item.get("image_credit"), 240))
@@ -338,9 +566,9 @@ def read_view_records(readonly_db: Any, brief: EditorialBrief, now: datetime) ->
             for key in ("image_url", "image_local_path", "image_caption", "image_credit",
                         "image_source_url", "image_rights_status", "image_rights_note"):
                 item[key] = None
+        item.pop("_newsroom_approved", None)
         records.append(item)
     return records if brief.maximum_stories <= 0 else records[:brief.maximum_stories]
-
 
 def _paragraph(value: Any, font: str, size: float, leading: float, colour,
                *, alignment=TA_LEFT, space_after: float = 0) -> Paragraph:
