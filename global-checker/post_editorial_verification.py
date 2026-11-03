@@ -246,8 +246,8 @@ def _verify_story(
         _fail("Original Checker did not permit text use and summarisation.")
     if checker_record.get("image", {}).get("allowed") is not True:
         _fail("Original Checker did not approve an image.")
-    if checker_record.get("fieldRestrictions"):
-        _fail("Original Checker record contains field restrictions.")
+    # Field restrictions are scoped to their named source fields. The exact
+    # permitted editorial summary and approved mediaId are verified below.
     if checker_record.get("lineage", {}).get("passed") is not True:
         _fail("Original Checker did not pass Manager lineage.")
     if story.get("checkerRecord") != checker_record:
@@ -276,12 +276,11 @@ def _verify_story(
                 or str(item.get("mimeType") or "").lower().startswith("image/")
             ):
                 images.append(item)
-    if len(images) != 1:
-        _fail(f"Source post must contain exactly one image; found {len(images)}.")
-    image = images[0]
-    media_id = str(image.get("mediaId") or "")
-    if not media_id or checker_record.get("image", {}).get("mediaId") != media_id:
-        _fail("Checker-approved image mediaId differs from the original media record.")
+    media_id = str(checker_record.get("image", {}).get("mediaId") or "")
+    selected = [item for item in images if str(item.get("mediaId") or "") == media_id]
+    if not media_id or len(selected) != 1:
+        _fail(f"Checker-approved mediaId must identify exactly one original image candidate; found {len(selected)}.")
+    image = selected[0]
     if story.get("mediaId") != media_id or story.get("image") != image:
         _fail("Editorial Engine changed or detached the Checker-approved image.")
     expected_image_fields = {

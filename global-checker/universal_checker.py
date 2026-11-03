@@ -280,9 +280,10 @@ def _image_candidates(post: dict[str, Any]) -> tuple[list[dict[str, Any]], list[
                 continue
             if _is_image_item(value):
                 candidates.append(value)
-    if len(candidates) > 1:
-        errors.append("One-post-one-image rule failed: more than one image is attached to this post.")
-    return candidates[:1], errors
+    # The Collector preserves every candidate. Candidate multiplicity is not a
+    # Manager-lineage failure; the final editorial story must select exactly one
+    # candidate after each candidate has been independently rights-checked.
+    return candidates, errors
 
 
 def _validate_image_lineage(job: dict[str, Any], post: dict[str, Any], image: dict[str, Any]) -> list[str]:
@@ -698,6 +699,12 @@ class UniversalGlobalChecker:
         if not isinstance(records, list):
             raise ValueError("Global Collector result has no records array.")
         view_id = str(job["viewId"])
+        purpose_context = _load_purpose_context()
+        if purpose_context.get("purpose") != "educational and non-commercial":
+            raise ValueError("Global Checker requires the registered educational and non-commercial project-use context.")
+        allowed_views = purpose_context.get("appliesToViews", [])
+        if "*" not in allowed_views and view_id not in allowed_views:
+            raise ValueError(f"Global Checker project-use context does not cover View '{view_id}'.")
         checks = []
         seen_post_ids: set[str] = set()
         for post in records:
@@ -735,27 +742,41 @@ class UniversalGlobalChecker:
                 _audit(self.audit_connection, job, post, "field_restriction", "HOLD", False,
                        restriction, media_id="")
 
-            if image_candidates:
-                image = image_candidates[0]
+            image_result = {"status": "NOT_PROVIDED", "allowed": False,
+                            "reasons": ["No image supplied for this post."],
+                            "candidatesChecked": 0}
+            approved_image = None
+            for image in image_candidates:
                 image_errors = _validate_image_lineage(job, post, image)
                 if image_errors:
                     image_decision = _decision(view_id, post_id, "image", "UNKNOWN", False,
-                                               "media-lineage-invalid", "1", {"mediaId": image.get("mediaId", "")}, image_errors)
+                                               "media-lineage-invalid", "1",
+                                               {"mediaId": image.get("mediaId", "")}, image_errors)
                 else:
                     try:
                         image_decision = _image_decision(view_id, post, image)
                     except Exception as exc:
                         image_decision = _decision(view_id, post_id, "image", "UNKNOWN", False,
-                                                   "checker-evaluation-error", "1", {"mediaId": image.get("mediaId", "")},
+                                                   "checker-evaluation-error", "1",
+                                                   {"mediaId": image.get("mediaId", "")},
                                                    [f"Image evaluation failed closed: {type(exc).__name__}."])
                 media_id = str(image.get("mediaId") or "")
                 _audit(self.audit_connection, job, post, "image", image_decision.get("verdict", "UNKNOWN"),
                        bool(image_decision.get("allowed")), {"mediaId": media_id}, image_decision, media_id)
-                image_result = {"mediaId": media_id, "verdict": image_decision.get("verdict", "UNKNOWN"),
-                                "allowed": bool(image_decision.get("allowed")),
-                                "decisionId": image_decision.get("decisionId", ""),
+                if image_decision.get("allowed") is True and approved_image is None:
+                    approved_image = (image, image_decision)
+            if approved_image:
+                image, image_decision = approved_image
+                image_result = {"mediaId": str(image.get("mediaId") or ""),
+                                "verdict": image_decision.get("verdict", "UNKNOWN"),
+                                "allowed": True, "decisionId": image_decision.get("decisionId", ""),
                                 "policyId": image_decision.get("policyId", ""),
-                                "reasons": list(image_decision.get("reasons", []))}
+                                "reasons": list(image_decision.get("reasons", [])),
+                                "candidatesChecked": len(image_candidates)}
+            elif image_candidates:
+                image_result = {"status": "NO_APPROVED_CANDIDATE", "allowed": False,
+                                "reasons": ["No collected image candidate passed the independent Global Checker image policy."],
+                                "candidatesChecked": len(image_candidates)}
             else:
                 image_result = {"status": "NOT_PROVIDED", "allowed": False, "reasons": ["No image supplied for this post."]}
                 _audit(self.audit_connection, job, post, "image", "NOT_PROVIDED", False,
@@ -766,9 +787,10 @@ class UniversalGlobalChecker:
             eligibility = core.load_registry().get("publicationEligibility", {})
             meaningful_text = summary_allowed and core._meaningful_text(summary, eligibility)
             image_allowed = bool(image_result.get("allowed"))
-            field_clearance = not field_restrictions
-            publish_eligible = bool((meaningful_text or image_allowed) and field_clearance)
-            overall_pass = lineage_pass and bool(text_decision.get("allowed")) and field_clearance and publish_eligible
+            # Restrictions apply to the named fields, not automatically to the
+            # entire post. Downstream stages must consume only cleared fields.
+            publish_eligible = bool(meaningful_text or image_allowed)
+            overall_pass = lineage_pass and bool(text_decision.get("allowed")) and publish_eligible
             reasons = []
             if structural_errors:
                 reasons.extend(structural_errors)
@@ -813,7 +835,7 @@ class UniversalGlobalChecker:
             "jobId": job["jobId"],
             "configVersion": job["configVersion"],
             "managerRegistryVersion": manager_registry_version,
-            "purposeContext": _load_purpose_context(),
+            "purposeContext": purpose_context,
             "checkedAt": _utc_now(),
             "statistics": {"postsChecked": len(checks), "passed": passed, "held": held,
                            "textPassed": sum(bool(x["text"]["allowed"]) for x in checks),

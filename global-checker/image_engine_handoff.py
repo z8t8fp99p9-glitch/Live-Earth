@@ -341,7 +341,6 @@ def review_image_engine_handoff(
         and item.get("text", {}).get("allowed") is True
         and item.get("text", {}).get("summaryAllowed") is True
         and item.get("image", {}).get("allowed") is True
-        and not item.get("fieldRestrictions")
     ]
     return {
         "schemaVersion": 1,

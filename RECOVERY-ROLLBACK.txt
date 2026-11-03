@@ -1,0 +1,1 @@
+Rollback: restore each matching recovery/* file to its original repository path, replacing the patched file. Do not restore or change workflow YAML.

@@ -76,15 +76,47 @@ class UniversalCheckerStructureTests(unittest.TestCase):
         errors = uc._validate_image_lineage(job(), value, image)
         self.assertTrue(any("idempotencyKey" in error for error in errors))
 
-    def test_multiple_images_fail_one_post_one_image_rule(self):
+    def test_multiple_image_candidates_are_preserved_for_checker_review(self):
         value = post()
-        value["media"] = [
-            {"mediaType": "image", "url": "https://images.example.org/a.jpg"},
-            {"mediaType": "image", "url": "https://images.example.org/b.jpg"},
-        ]
+        first = media_record(value)
+        second = media_record(value)
+        second["mediaId"] = "media-002"
+        second["url"] = "https://images.example.org/b.jpg"
+        value["media"] = [first, second]
         images, errors = uc._image_candidates(value)
-        self.assertEqual(len(images), 1)
-        self.assertTrue(any("One-post-one-image" in e for e in errors))
+        self.assertEqual([item["mediaId"] for item in images], ["media-001", "media-002"])
+        self.assertEqual(errors, [])
+
+    def test_checker_selects_an_approved_image_from_multiple_candidates(self):
+        value = post()
+        first = media_record(value)
+        second = media_record(value)
+        second["mediaId"] = "media-002"
+        second["url"] = "https://images.example.org/b.jpg"
+        value["media"] = [first, second]
+        payload = {"schemaVersion": 1, "recordSchema": uc.UNIVERSAL_RECORD_SCHEMA,
+                   "recordFields": list(uc.UNIVERSAL_POST_FIELDS),
+                   "managerRegistryVersion": "manager-reg-001", "job": job(), "records": [value]}
+        text_decision = {
+            "decisionId": "text-decision", "viewId": job()["viewId"], "storyId": value["postId"],
+            "contentKind": "text", "verdict": "GREEN", "allowed": True,
+            "allowedUse": "test", "summaryAllowed": True, "policyId": "test-policy",
+            "policyVersion": "1", "checkedAt": "2026-11-03T00:00:00Z",
+            "attribution": "Example", "evidence": {}, "reasons": [],
+        }
+        def image_decision(view_id, parent, image):
+            allowed = image["mediaId"] == "media-002"
+            return {"decisionId": "image-decision", "verdict": "GREEN" if allowed else "UNKNOWN",
+                    "allowed": allowed, "policyId": "test-image-policy", "reasons": []}
+        with (mock.patch.object(uc.core, "evaluate_text", return_value=text_decision),
+              mock.patch.object(uc.core, "load_registry", return_value={"policies": [], "publicationEligibility": {"minimumTextChars": 80, "minimumTextWords": 12}}),
+              mock.patch.object(uc, "_image_decision", side_effect=image_decision)):
+            report = uc.check_collection(payload)
+        result = report["posts"][0]
+        self.assertTrue(result["lineage"]["passed"])
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["image"]["mediaId"], "media-002")
+        self.assertEqual(result["image"]["candidatesChecked"], 2)
 
     def test_audit_rows_are_append_only_and_filterable(self):
         connection = sqlite3.connect(":memory:")

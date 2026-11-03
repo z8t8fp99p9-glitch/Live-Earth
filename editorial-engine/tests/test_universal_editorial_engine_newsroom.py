@@ -274,14 +274,15 @@ class EditorialNewsroomTests(unittest.TestCase):
         with self.assertRaises(editorial.UniversalEditorialNewsroomError):
             self.build(bad)
 
-    def test_two_images_are_rejected(self):
+    def test_multiple_collector_images_do_not_replace_checker_selection(self):
         bad = json.loads(json.dumps(self.handoff))
         post = bad["collectorResultWithCheckerReviewedImages"]["records"][0]
         second = json.loads(json.dumps(post["media"][0]))
         second["mediaId"] = "media-456"
         post["attachments"] = [second]
-        with self.assertRaises(editorial.UniversalEditorialNewsroomError):
-            self.build(bad)
+        story = self.build(bad)["stories"][0]
+        self.assertEqual(story["mediaId"], "media-123")
+        self.assertEqual(story["image"]["mediaId"], "media-123")
 
     def test_registry_change_after_checker_review_holds_editorial_input(self):
         bad = json.loads(json.dumps(self.handoff))

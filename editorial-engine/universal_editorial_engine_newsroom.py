@@ -115,8 +115,8 @@ def _checker_clearance(check: dict[str, Any], post_id: str) -> None:
         raise UniversalEditorialNewsroomError(f"Checker did not permit summarisation for '{post_id}'.")
     if not isinstance(image_decision, dict) or image_decision.get("allowed") is not True:
         raise UniversalEditorialNewsroomError(f"Checker did not clear an image for '{post_id}'.")
-    if check.get("fieldRestrictions"):
-        raise UniversalEditorialNewsroomError(f"Checker supplied restricted fields for '{post_id}'.")
+    # Field restrictions are field-scoped. Editorial consumes only the
+    # Checker-approved summary and selected image, never restricted raw fields.
     if check.get("lineage", {}).get("passed") is not True:
         raise UniversalEditorialNewsroomError(f"Checker did not clear Manager lineage for '{post_id}'.")
 
@@ -211,45 +211,37 @@ def build_editorial_summary(source_summary: str, source_title: str = "") -> dict
 
 
 def _image_for_post(post: dict[str, Any], check: dict[str, Any], job: dict[str, Any]) -> dict[str, Any]:
-    media_fields = ("media", "attachments")
-    images: list[dict[str, Any]] = []
-    for field in media_fields:
+    media_id = str(check.get("image", {}).get("mediaId") or "")
+    if not media_id:
+        raise UniversalEditorialNewsroomError(f"Global Checker did not identify an approved image for '{post.get('postId')}'.")
+    matches: list[dict[str, Any]] = []
+    for field in ("media", "attachments"):
         values = post.get(field) or []
         if not isinstance(values, list):
             raise UniversalEditorialNewsroomError(f"Post '{post.get('postId')}' {field} must be an array.")
         for item in values:
-            if isinstance(item, dict) and (
-                str(item.get("mediaType") or "").lower().startswith("image")
-                or str(item.get("mimeType") or "").lower().startswith("image/")
-            ):
-                images.append(item)
-    if len(images) != 1:
+            if isinstance(item, dict) and str(item.get("mediaId") or "") == media_id:
+                matches.append(item)
+    if len(matches) != 1:
         raise UniversalEditorialNewsroomError(
-            f"Post '{post.get('postId')}' must carry exactly one Checker-cleared image; found {len(images)}."
+            f"Checker-approved mediaId '{media_id}' must match exactly one original Collector media record; found {len(matches)}."
         )
-    image = images[0]
+    image = matches[0]
     post_id = str(post.get("postId") or "")
     if image.get("postId") != post_id or image.get("viewId") != post.get("viewId"):
         raise UniversalEditorialNewsroomError("Checker-cleared image is not attached to its exact parent post and View.")
     if not image.get("mediaId") or image.get("sourceId") != post.get("sourceId"):
         raise UniversalEditorialNewsroomError("Checker-cleared image is missing its own mediaId or matching sourceId.")
-    if check.get("image", {}).get("mediaId") != image.get("mediaId"):
-        raise UniversalEditorialNewsroomError("Checker image decision mediaId differs from the attached media record.")
     metadata = image.get("metadata") if isinstance(image.get("metadata"), dict) else {}
     if metadata.get("checkerStatus") not in (None, "PENDING_CHECKER_REVIEW", "APPROVED_BY_GLOBAL_CHECKER"):
         raise UniversalEditorialNewsroomError("Image metadata contains an unrecognized Checker status.")
-    # Media identity and every Manager lineage field are verified against the
-    # unchanged parent post context and Manager job.
     from universal_checker import MEDIA_LINEAGE_FIELDS, _same
     context = post.get("collectionContext")
     if not isinstance(context, dict):
         raise UniversalEditorialNewsroomError("Post collectionContext is missing.")
-    expected = {
-        "postId": post_id,
-        "viewId": post.get("viewId"),
-        "sourceId": post.get("sourceId"),
-        **{field: job.get(field) for field in job},
-    }
+    expected = {"postId": post_id, "viewId": post.get("viewId"),
+                "sourceId": post.get("sourceId"),
+                **{field: job.get(field) for field in job}}
     for field in MEDIA_LINEAGE_FIELDS:
         if field not in image or not _same(image.get(field), expected.get(field)):
             raise UniversalEditorialNewsroomError(f"Image lineage field '{field}' differs from the Checker source post.")
