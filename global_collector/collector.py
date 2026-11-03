@@ -120,17 +120,11 @@ class GlobalCollector:
             "schemaVersion": 1,
             "collector": "LIVE // EARTH Global Collector",
             "collectorVersion": "0.1.0",
-            "job": {
-                "jobId": job["jobId"],
-                "viewId": view_id,
-                "profileId": job["profileId"],
-                "assignmentIds": list(job["assignmentIds"]),
-                "sourceIds": list(job["sourceIds"]),
-                "scheduledAt": job["scheduledAt"],
-                "requestWindowHours": window_hours,
-                "configVersion": job["configVersion"],
-                "trigger": job["trigger"],
-            },
+            # Preserve the complete, already-validated Manager job envelope.
+            # Global Checker revalidates the profile, Collector entry point,
+            # workflow, View database identity/path, assignments and feed URLs
+            # against the current central registries before it accepts records.
+            "job": dict(job),
             "registries": {
                 "managerSourceRegistryVersion": validated["managerRegistryVersion"],
                 "globalCheckerRegistryVersion": validated["checkerRegistryVersion"],
