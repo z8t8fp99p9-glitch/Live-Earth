@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
-"""LIVE // EARTH View-owned Newsroom Database Writer.
+"""Persist only Checker-released v2 Editorial stories in the matching View DB.
 
-Consumes only the exact GREEN approvedStories returned by the registered
-Global Checker final-review adapter and writes them to a dedicated table in
-that View's existing Collector-owned SQLite database.
-
-The Writer never resets/replaces the database or modifies Collector-owned
-stories. Nature and Alien World remain physically and logically isolated.
-Raw source excerpts, claim text, raw article bodies and HTML are not stored.
+This is the v2 adapter for the existing View-owned newsroom_approved_stories
+ table. It leaves the Collector-owned stories table untouched, adds columns
+only when missing, and stores Image Engine files privately under the matching
+View cache. It never publishes assets or writes a public feed.
 """
 from __future__ import annotations
 
@@ -15,6 +12,7 @@ import argparse
 import hashlib
 import json
 import re
+import shutil
 import sqlite3
 import sys
 from datetime import datetime, timezone
@@ -22,38 +20,34 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 from urllib.parse import quote, urlsplit
 
-WRITER_NAME = "LIVE // EARTH Newsroom Database Writer"
-WRITER_VERSION = "1.0.0"
-ALLOWED_VIEWS = {"nature", "alien-world"}
-EXPECTED_WORKFLOW = "LIVE // EARTH Global Checker"
-EXPECTED_WORKFLOW_VERSION = "2.0.0"
-EXPECTED_FINAL_REVIEW_ADAPTER = "LIVE // EARTH Global Checker Final Review Adapter"
-EXPECTED_FINAL_REVIEW_ADAPTER_VERSION = "1.0.0"
-EXPECTED_EDITORIAL_ENGINE = "Universal Editorial Engine"
-EXPECTED_EDITORIAL_CORE_VERSION = "1.3.0"
-EXPECTED_EDITORIAL_ADAPTER_VERSION = "1.0.0"
-APPROVED_TABLE = "newsroom_approved_stories"
-REQUIRED_BASE_COLUMNS = {
-    "story_id", "title", "url", "summary", "source_name", "source_url",
-    "published_at", "retrieved_at", "image_url", "image_local_path",
-    "image_caption", "image_credit", "image_source_url",
-    "image_rights_status", "image_rights_note", "view_id",
-}
-RAW_FIELDS = {
-    "rawText", "raw_text", "rawArticleBody", "raw_article_body",
-    "sourceText", "source_text", "sourceBody", "source_body",
-    "fullText", "full_text", "fullArticleText", "full_article_text",
-    "rawHtml", "raw_html", "htmlBody", "originalArticleText",
-    "excerpt", "claimText", "claim_text",
-}
+WRITER = "LIVE // EARTH Newsroom Database Writer"
+WRITER_VERSION = "2.0.0"
+EXPECTED_CHECKER = "LIVE // EARTH Global Content Rights & Provenance Checker"
+EXPECTED_HANDOFF = "LIVE // EARTH Global Checker Image Engine Bridge"
+EXPECTED_GATE = "LIVE // EARTH Global Checker Post-Editorial Verification"
+TABLE = "newsroom_approved_stories"
+EDITORIAL_ENGINE = "Universal Editorial Engine"
+EDITORIAL_CORE_VERSION = "1.3.0"
+EDITORIAL_ADAPTER_VERSION = "2.0.0"
+GATE_VERSION = "1.0.0"
+MANAGER_FIELDS = (
+    "jobId", "idempotencyKey", "viewId", "profileId", "assignmentIds",
+    "sourceIds", "feedUrls", "collectorEntrypoint", "collectorWorkflow",
+    "destinationDatabaseId", "destinationDatabasePath", "scheduledAt",
+    "requestWindowHours", "configVersion", "trigger",
+)
 
 
 class NewsroomDatabaseWriterError(RuntimeError):
-    """A final-review hand-off or database write failed a required guard."""
+    """The Checker release or View database did not match the Writer contract."""
 
 
-def _clean(value: Any, limit: int = 4000) -> str:
-    return re.sub(r"\s+", " ", str(value or "")).strip()[:limit]
+def _json(value: Any) -> str:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
+
+
+def _sha256(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
 def _utc_now() -> str:
@@ -69,12 +63,12 @@ def _parse_time(value: Any, label: str) -> datetime:
     if not isinstance(value, str) or not value.strip():
         raise NewsroomDatabaseWriterError(f"{label} is missing.")
     try:
-        parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+        result = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
     except ValueError as exc:
         raise NewsroomDatabaseWriterError(f"{label} is not a valid ISO-8601 timestamp.") from exc
-    if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
-    return parsed.astimezone(timezone.utc)
+    if result.tzinfo is None:
+        result = result.replace(tzinfo=timezone.utc)
+    return result.astimezone(timezone.utc)
 
 
 def _canonical_https(value: Any) -> str:
@@ -82,311 +76,62 @@ def _canonical_https(value: Any) -> str:
         return ""
     try:
         parsed = urlsplit(value.strip())
-        if (parsed.scheme.lower() != "https" or not parsed.hostname
-                or parsed.username or parsed.password
-                or parsed.port not in (None, 443)):
+        if parsed.scheme.lower() != "https" or not parsed.hostname or parsed.username or parsed.password or parsed.port not in (None, 443):
             return ""
         host = parsed.hostname.lower().rstrip(".")
         path = parsed.path or "/"
-        query = "&".join(
-            part for part in parsed.query.split("&")
-            if part and not part.split("=", 1)[0].lower().startswith("utm_")
-            and part.split("=", 1)[0].lower() not in {"fbclid", "gclid", "mc_cid", "mc_eid"}
-        )
+        query = "&".join(part for part in parsed.query.split("&") if part and not part.split("=", 1)[0].lower().startswith("utm_") and part.split("=", 1)[0].lower() not in {"fbclid", "gclid", "mc_cid", "mc_eid"})
         return f"https://{host}{path}" + (f"?{query}" if query else "")
     except (TypeError, ValueError):
         return ""
 
 
-def _find_raw_field(value: Any, where: str = "story") -> str | None:
-    if isinstance(value, dict):
-        for key, child in value.items():
-            if str(key) in RAW_FIELDS:
-                return f"{where}.{key}"
-            found = _find_raw_field(child, f"{where}.{key}")
-            if found:
-                return found
-    elif isinstance(value, list):
-        for index, child in enumerate(value):
-            found = _find_raw_field(child, f"{where}[{index}]")
-            if found:
-                return found
-    return None
-
-
-def _load_policy_context(repository_root: Path):
-    checker_dir = repository_root / "global-checker"
-    if not checker_dir.is_dir():
-        raise NewsroomDatabaseWriterError("The Global Checker directory is missing.")
-    folder = str(checker_dir.resolve())
-    if folder not in sys.path:
-        sys.path.insert(0, folder)
+def _read_json(path: Path, label: str) -> dict[str, Any]:
     try:
-        import global_checker_workflow
-        context = global_checker_workflow.RepositoryPolicies(repository_root)
+        value = json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:
-        raise NewsroomDatabaseWriterError(
-            f"Current Manager/Checker registries could not be loaded: {type(exc).__name__}: {exc}"
-        ) from exc
-    return context
+        raise NewsroomDatabaseWriterError(f"{label} cannot be read: {type(exc).__name__}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise NewsroomDatabaseWriterError(f"{label} must be a JSON object.")
+    return value
 
 
-def _validate_result(result: dict[str, Any], repository_root: Path, context: Any):
-    if not isinstance(result, dict) or result.get("schemaVersion") != 1:
-        raise NewsroomDatabaseWriterError("Final-review result schema is invalid.")
-    if result.get("phase") != "final-editorial-review":
-        raise NewsroomDatabaseWriterError("Writer requires a completed Global Checker final editorial review.")
-    view_id = _clean(result.get("viewId"), 80)
-    if view_id not in ALLOWED_VIEWS:
-        raise NewsroomDatabaseWriterError("Final-review result has an unregistered View ID.")
-
-    if result.get("workflow") != EXPECTED_WORKFLOW or result.get("workflowVersion") != EXPECTED_WORKFLOW_VERSION:
-        raise NewsroomDatabaseWriterError("Final review does not identify the registered Global Checker workflow version.")
-    if (result.get("finalReviewAdapter") != EXPECTED_FINAL_REVIEW_ADAPTER
-            or result.get("finalReviewAdapterVersion") != EXPECTED_FINAL_REVIEW_ADAPTER_VERSION):
-        raise NewsroomDatabaseWriterError("Final review was not produced by the registered final-review adapter.")
-    editorial = result.get("editorialEngine")
-    if not isinstance(editorial, dict) or editorial != {
-        "name": EXPECTED_EDITORIAL_ENGINE,
-        "coreVersion": EXPECTED_EDITORIAL_CORE_VERSION,
-        "newsroomAdapterVersion": EXPECTED_EDITORIAL_ADAPTER_VERSION,
-    }:
-        raise NewsroomDatabaseWriterError("Final review does not match the registered Universal Editorial Engine versions.")
-
-    profile = context.profiles.get(view_id)
-    if not profile or profile.get("enabled") is not True:
-        raise NewsroomDatabaseWriterError("The matching View Collection Profile is missing or disabled.")
-    if result.get("profileId") != profile.get("profileId"):
-        raise NewsroomDatabaseWriterError("Final-review profile ID does not match the active View profile.")
-
-    registry_versions = result.get("inputRegistryVersions")
-    if not isinstance(registry_versions, dict):
-        raise NewsroomDatabaseWriterError("Final review is missing registry-version provenance.")
-    if registry_versions.get("managerSourceRegistryVersion") != context.sources_doc.get("registryVersion"):
-        raise NewsroomDatabaseWriterError("Manager Source Registry changed after final review; writing is held.")
-    if registry_versions.get("globalCheckerRegistryVersion") != context.checker_registry.get("registryVersion"):
-        raise NewsroomDatabaseWriterError("Global Checker Registry changed after final review; writing is held.")
-
-    privacy = result.get("privacy")
-    required_false = (
-        "rawSourceTextPersisted", "evidenceExcerptsPersisted",
-        "databaseOpenedOrWrittenByAdapter", "auditDatabaseWritten",
-        "feedOrPdfWritten", "publisherOutputWritten",
-        "imageOnlyItemsPromotedToEditorial",
-    )
-    if not isinstance(privacy, dict) or any(privacy.get(key) is not False for key in required_false):
-        raise NewsroomDatabaseWriterError("Final-review privacy/ownership assertions are missing or unsafe.")
-
-    approved = result.get("approvedStories")
-    reviews = result.get("reviews")
-    if not isinstance(approved, list) or not isinstance(reviews, list):
-        raise NewsroomDatabaseWriterError("Final review must contain approvedStories and reviews arrays.")
-    stats = result.get("statistics") or {}
-    if stats.get("storiesApproved") != len(approved):
-        raise NewsroomDatabaseWriterError("Final-review approved-story count does not match its payload.")
-
-    review_by_story: dict[str, dict[str, Any]] = {}
-    for review in reviews:
-        if not isinstance(review, dict):
-            raise NewsroomDatabaseWriterError("Final review contains a malformed decision record.")
-        story_id = _clean(review.get("storyId"), 160)
-        if not story_id or story_id in review_by_story:
-            raise NewsroomDatabaseWriterError("Final-review decision identities are missing or duplicated.")
-        review_by_story[story_id] = review
-
-    expected_destinations = {
+def _repository_contract(root: Path, view_id: str, job: dict[str, Any], package: dict[str, Any]) -> tuple[dict[str, Any], Path]:
+    profiles_doc = _read_json(root / "global_collection_manager/config/view-collection-profiles.json", "Manager View profiles")
+    manager_registry = _read_json(root / "global_collection_manager/config/source-registry.json", "Manager Source Registry")
+    checker_registry = _read_json(root / "global-checker/source-registry.json", "Global Checker registry")
+    profiles = [x for x in profiles_doc.get("profiles", []) if isinstance(x, dict) and x.get("viewId") == view_id]
+    if len(profiles) != 1 or profiles[0].get("enabled") is not True:
+        raise NewsroomDatabaseWriterError("View does not resolve to exactly one enabled Manager profile.")
+    profile = profiles[0]
+    for field, expected in (
+        ("profileId", profile.get("profileId")),
+        ("destinationDatabaseId", profile.get("destinationDatabaseId")),
+        ("destinationDatabasePath", profile.get("destinationDatabasePath")),
+    ):
+        if job.get(field) != expected:
+            raise NewsroomDatabaseWriterError(f"Manager job {field} differs from the active View profile.")
+    if package.get("managerRegistryVersion") != manager_registry.get("registryVersion"):
+        raise NewsroomDatabaseWriterError("Manager Source Registry changed after Editorial production.")
+    if package.get("checkerRegistryVersion") != checker_registry.get("registryVersion"):
+        raise NewsroomDatabaseWriterError("Global Checker registry changed after image review.")
+    expected = {
         "nature": ("nature-sqlite", ".publisher-data/nature/nature.sqlite3"),
         "alien-world": ("alien-world-sqlite", ".publisher-data/alien-world/alien-world.sqlite3"),
     }
-    database_id = _clean(profile.get("destinationDatabaseId"), 120)
-    relative_db = _clean(profile.get("destinationDatabasePath"), 300)
-    if (database_id, relative_db) != expected_destinations[view_id]:
-        raise NewsroomDatabaseWriterError("The active View profile database ID/path does not match its registered isolated destination.")
-    parts = PurePosixPath(relative_db).parts
-    if ("\\" in relative_db or PurePosixPath(relative_db).is_absolute()
-            or any(part in ("", ".", "..") for part in parts)):
-        raise NewsroomDatabaseWriterError("The active View profile has an unsafe database destination.")
-
-    db_path = (repository_root / Path(*parts)).resolve()
-    if repository_root.resolve() not in db_path.parents:
-        raise NewsroomDatabaseWriterError("Resolved database path escapes the repository root.")
-
-    return view_id, profile, db_path, approved, review_by_story
+    if view_id not in expected or (profile.get("destinationDatabaseId"), profile.get("destinationDatabasePath")) != expected[view_id]:
+        raise NewsroomDatabaseWriterError("View database destination is not its registered isolated database.")
+    rel = PurePosixPath(profile["destinationDatabasePath"])
+    if rel.is_absolute() or ".." in rel.parts or "\\" in str(rel):
+        raise NewsroomDatabaseWriterError("View database destination is not a safe repository-relative path.")
+    db_path = (root / Path(*rel.parts)).resolve()
+    if root.resolve() not in db_path.parents:
+        raise NewsroomDatabaseWriterError("View database path escapes the repository root.")
+    return profile, db_path
 
 
-def _validate_approved_story(story: Any, view_id: str,
-                             review_by_story: dict[str, dict[str, Any]],
-                             registry_version: str, context: Any) -> dict[str, Any]:
-    if not isinstance(story, dict):
-        raise NewsroomDatabaseWriterError("An approvedStories entry is not an object.")
-    raw_field = _find_raw_field(story)
-    if raw_field:
-        raise NewsroomDatabaseWriterError(f"Raw source/evidence text must not be persisted: {raw_field}.")
-
-    story_id = _clean(story.get("id"), 160)
-    if not story_id:
-        raise NewsroomDatabaseWriterError("An approved story is missing its stable story ID.")
-    review = review_by_story.get(story_id)
-    if not review:
-        raise NewsroomDatabaseWriterError(f"Story '{story_id}' has no matching final-review decision.")
-    if (review.get("verdict") != "GREEN"
-            or review.get("approvedForStorage") is not True
-            or review.get("approvedForPublisher") is not True):
-        raise NewsroomDatabaseWriterError(f"Story '{story_id}' does not have an exact GREEN storage and Publisher approval.")
-
-    checker = story.get("globalChecker")
-    if not isinstance(checker, dict):
-        raise NewsroomDatabaseWriterError(f"Story '{story_id}' is missing its attached Checker decision.")
-    if (checker.get("verdict") != "GREEN"
-            or checker.get("reviewId") != review.get("reviewId")
-            or checker.get("registryVersion") != registry_version
-            or review.get("registryVersion") != registry_version):
-        raise NewsroomDatabaseWriterError(f"Story '{story_id}' Checker decision does not match its exact GREEN review.")
-    if story.get("viewId") != view_id or review.get("viewId") != view_id:
-        raise NewsroomDatabaseWriterError(f"Story '{story_id}' crosses a View boundary.")
-    if _clean(story.get("sourceRecordId"), 160) != story_id:
-        raise NewsroomDatabaseWriterError(f"Story '{story_id}' has a mismatched source-record identity.")
-    checks = review.get("checks")
-    if not isinstance(checks, dict):
-        raise NewsroomDatabaseWriterError(f"Story '{story_id}' final review is missing its structured checks.")
-    if (checks.get("sourceIdentity", {}).get("status") != "GREEN"
-            or checks.get("viewAlignment", {}).get("status") != "GREEN"
-            or checks.get("risk", {}).get("status") != "GREEN"
-            or checks.get("textPermissions", {}).get("editorialPermissionStatus") != "allowed"):
-        raise NewsroomDatabaseWriterError(f"Story '{story_id}' does not have GREEN source, View, risk and text-permission checks.")
-    claim_traceability = checks.get("claimTraceability")
-    if (not isinstance(claim_traceability, list) or not claim_traceability
-            or any(item.get("supportStatus") != "TRACEABLE" for item in claim_traceability if isinstance(item, dict))
-            or any(not isinstance(item, dict) for item in claim_traceability)):
-        raise NewsroomDatabaseWriterError(f"Story '{story_id}' material-claim traceability is incomplete.")
-
-    title = _clean(story.get("title"), 200)
-    summary = _clean(story.get("summary"), 6000)
-    url = _canonical_https(story.get("url"))
-    source_name = _clean(story.get("sourceName"), 200)
-    source_url = _canonical_https(story.get("sourceUrl"))
-    policy_ref = _clean(story.get("sourcePolicyRef"), 160)
-    intake_decision_id = _clean(story.get("globalCheckerIntakeDecisionId"), 200)
-    if not (12 <= len(title) <= 200):
-        raise NewsroomDatabaseWriterError(f"Story '{story_id}' has an invalid approved headline.")
-    if len(summary) < 100 or len(summary.split()) < 16:
-        raise NewsroomDatabaseWriterError(f"Story '{story_id}' has an invalid approved editorial summary.")
-    if not url or not source_url or not source_name or not policy_ref or not intake_decision_id:
-        raise NewsroomDatabaseWriterError(f"Story '{story_id}' is missing required source provenance.")
-    policy = context.policies.get(policy_ref)
-    if not policy or view_id not in policy.get("views", []):
-        raise NewsroomDatabaseWriterError(f"Story '{story_id}' source policy is not registered for this View.")
-    registered_source = next((
-        source for source in context.sources.values()
-        if source.get("sourceStatus") == "enabled"
-        and _clean(source.get("sourceName"), 200) == source_name
-        and source.get("checkerPolicyRef") == policy_ref
-        and source_url in {_canonical_https(item) for item in source.get("feedUrls", [])}
-    ), None)
-    if not registered_source:
-        raise NewsroomDatabaseWriterError(f"Story '{story_id}' source name/feed URL does not match the current Manager Source Registry.")
-    published = _parse_time(story.get("publishedAt"), f"Story '{story_id}' publication date")
-    checked = _parse_time(review.get("checkedAt"), f"Story '{story_id}' Checker review date")
-    if checker.get("checkedAt") != review.get("checkedAt"):
-        raise NewsroomDatabaseWriterError(f"Story '{story_id}' Checker timestamp does not match its review.")
-
-    # Only metadata/hashes are retained. Claim text and transient evidence
-    # excerpts are deliberately omitted from the database record.
-    evidence_ledger = story.get("evidenceLedger", [])
-    if not isinstance(evidence_ledger, list):
-        raise NewsroomDatabaseWriterError(f"Story '{story_id}' evidence ledger is malformed.")
-    safe_evidence = []
-    for item in evidence_ledger:
-        if not isinstance(item, dict):
-            raise NewsroomDatabaseWriterError(f"Story '{story_id}' has malformed evidence provenance.")
-        excerpt_hash = _clean(item.get("excerptSha256"), 64)
-        if not re.fullmatch(r"[a-f0-9]{64}", excerpt_hash):
-            raise NewsroomDatabaseWriterError(f"Story '{story_id}' contains an invalid evidence hash.")
-        evidence_url = _canonical_https(item.get("sourceUrl"))
-        evidence_story_id = _clean(item.get("sourceRecordId"), 160)
-        if (not evidence_url or evidence_url != url or item.get("sourcePolicyRef") != policy_ref
-                or evidence_story_id != story_id):
-            raise NewsroomDatabaseWriterError(f"Story '{story_id}' evidence provenance does not match its source record and policy.")
-        safe_evidence.append({
-            "sourceRecordId": evidence_story_id,
-            "sourceUrl": evidence_url,
-            "sourcePolicyRef": policy_ref,
-            "excerptSha256": excerpt_hash,
-            "tokenCoverage": item.get("tokenCoverage"),
-        })
-
-    tags = story.get("topicTags", [])
-    if not isinstance(tags, list) or any(not isinstance(tag, str) for tag in tags):
-        raise NewsroomDatabaseWriterError(f"Story '{story_id}' topic tags are malformed.")
-    image_rights = story.get("imageRights")
-    if image_rights is not None and not isinstance(image_rights, dict):
-        raise NewsroomDatabaseWriterError(f"Story '{story_id}' image-rights metadata is malformed.")
-
-    return {
-        "story_id": story_id,
-        "title": title,
-        "url": url,
-        "summary": summary,
-        "source_name": source_name,
-        "source_url": source_url,
-        "published_at": published.timestamp(),
-        "retrieved_at": checked.timestamp(),
-        # The Checker approval object is a rights decision, not a local media
-        # asset. Until an approved asset is explicitly handed off, publish text-only.
-        "image_url": None,
-        "image_local_path": None,
-        "image_caption": None,
-        "image_credit": None,
-        "image_source_url": None,
-        "image_rights_status": None,
-        "image_rights_note": None,
-        "view_id": view_id,
-        "source_policy_ref": policy_ref,
-        "global_checker_intake_decision_id": intake_decision_id,
-        "checker_review_id": _clean(review.get("reviewId"), 120),
-        "checker_registry_version": registry_version,
-        "checker_checked_at": checked.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
-        "editorial_engine_version": EXPECTED_EDITORIAL_CORE_VERSION,
-        "editorial_adapter_version": EXPECTED_EDITORIAL_ADAPTER_VERSION,
-        "evidence_ledger_json": json.dumps(safe_evidence, ensure_ascii=False, sort_keys=True),
-        "topic_tags_json": json.dumps(tags, ensure_ascii=False),
-        "image_rights_json": json.dumps(image_rights or {}, ensure_ascii=False, sort_keys=True),
-        "approved_at": _utc_now(),
-    }
-
-
-def _verify_database(connection: sqlite3.Connection, view_id: str, profile: dict[str, Any]) -> None:
-    tables = {row[0] for row in connection.execute(
-        "SELECT name FROM sqlite_master WHERE type='table'"
-    ).fetchall()}
-    if "publisher_meta" not in tables or "stories" not in tables:
-        raise NewsroomDatabaseWriterError("The Collector-owned View database schema is missing; run its Collector first.")
-    meta = {str(row[0]): str(row[1]) for row in connection.execute(
-        "SELECT key,value FROM publisher_meta"
-    ).fetchall()}
-    if meta.get("view_id") != view_id:
-        raise NewsroomDatabaseWriterError("Refusing to write: SQLite metadata does not identify the requested View.")
-    expected_publisher = "nature-publisher" if view_id == "nature" else "alien-world-publisher"
-    if meta.get("publisher_id") and meta.get("publisher_id") != expected_publisher:
-        raise NewsroomDatabaseWriterError("Refusing to write: database Publisher identity belongs to a different View.")
-
-    story_columns = {row[1] for row in connection.execute("PRAGMA table_info(stories)").fetchall()}
-    missing = sorted(REQUIRED_BASE_COLUMNS - story_columns)
-    if missing:
-        raise NewsroomDatabaseWriterError(
-            "Collector-owned stories table is not compatible with the registered View schema: " + ", ".join(missing)
-        )
-    if profile.get("viewId") != view_id:
-        raise NewsroomDatabaseWriterError("Active profile View identity mismatch.")
-
-
-def _ensure_approved_table(connection: sqlite3.Connection) -> None:
-    existing = connection.execute(
-        "SELECT type FROM sqlite_master WHERE name=?", (APPROVED_TABLE,)
-    ).fetchone()
-    if existing and existing[0] != "table":
-        raise NewsroomDatabaseWriterError("The approved Newsroom destination exists but is not a table.")
-    connection.execute(f"""CREATE TABLE IF NOT EXISTS {APPROVED_TABLE} (
+def _ensure_table(connection: sqlite3.Connection) -> None:
+    connection.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE} (
         view_id TEXT NOT NULL,
         story_id TEXT NOT NULL,
         url TEXT NOT NULL,
@@ -418,156 +163,344 @@ def _ensure_approved_table(connection: sqlite3.Connection) -> None:
         UNIQUE(view_id, url),
         CHECK(view_id IN ('nature','alien-world'))
     )""")
-    columns = {row[1] for row in connection.execute(f"PRAGMA table_info({APPROVED_TABLE})").fetchall()}
-    expected = {
-        "view_id", "story_id", "url", "title", "summary", "source_name", "source_url",
-        "published_at", "retrieved_at", "image_url", "image_local_path", "image_caption",
-        "image_credit", "image_source_url", "image_rights_status", "image_rights_note",
-        "source_policy_ref", "global_checker_intake_decision_id", "checker_review_id",
-        "checker_registry_version", "checker_checked_at", "editorial_engine_version",
-        "editorial_adapter_version", "evidence_ledger_json", "topic_tags_json",
-        "image_rights_json", "approved_at",
+    # Additive migration only. Existing rows/tables are never dropped or reset.
+    additions = {
+        "post_id": "TEXT", "source_id": "TEXT", "media_id": "TEXT",
+        "image_stage_path": "TEXT", "image_sha256": "TEXT", "image_mime_type": "TEXT",
+        "image_origin_type": "TEXT", "media_metadata_json": "TEXT",
+        "manager_lineage_json": "TEXT", "checker_decisions_json": "TEXT",
+        "editorial_package_sha256": "TEXT", "verification_gate_version": "TEXT",
     }
-    if not expected.issubset(columns):
-        raise NewsroomDatabaseWriterError("Existing approved Newsroom table has an incompatible schema; no automatic reset is allowed.")
-    connection.execute(
-        f"CREATE INDEX IF NOT EXISTS idx_{APPROVED_TABLE}_published "
-        f"ON {APPROVED_TABLE}(view_id, published_at DESC)"
-    )
+    columns = {row[1] for row in connection.execute(f"PRAGMA table_info({TABLE})").fetchall()}
+    for column, declaration in additions.items():
+        if column not in columns:
+            connection.execute(f"ALTER TABLE {TABLE} ADD COLUMN {column} {declaration}")
+    connection.execute(f"CREATE INDEX IF NOT EXISTS idx_{TABLE}_published ON {TABLE}(view_id,published_at DESC)")
+
+
+def _verify_db(connection: sqlite3.Connection, view_id: str, profile: dict[str, Any]) -> None:
+    tables = {row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
+    if "publisher_meta" not in tables or "stories" not in tables:
+        raise NewsroomDatabaseWriterError("The matching View Collector database is not initialized.")
+    meta = {str(row[0]): str(row[1]) for row in connection.execute("SELECT key,value FROM publisher_meta").fetchall()}
+    if meta.get("view_id") != view_id:
+        raise NewsroomDatabaseWriterError("Database metadata belongs to a different View.")
+    expected_publisher = "nature-publisher" if view_id == "nature" else "alien-world-publisher"
+    if meta.get("publisher_id") and meta.get("publisher_id") != expected_publisher:
+        raise NewsroomDatabaseWriterError("Database Publisher identity belongs to a different View.")
+    if profile.get("viewId") != view_id:
+        raise NewsroomDatabaseWriterError("Manager profile View identity mismatch.")
+
+
+def _safe_private_image(root: Path, view_id: str, story: dict[str, Any]) -> tuple[str, str, str, dict[str, Any]]:
+    image = story.get("image")
+    if not isinstance(image, dict) or story.get("mediaId") != image.get("mediaId"):
+        raise NewsroomDatabaseWriterError("Checker-approved image or mediaId is missing from the Editorial story.")
+    if image.get("postId") != story.get("postId") or image.get("viewId") != view_id or image.get("sourceId") != story.get("sourceId"):
+        raise NewsroomDatabaseWriterError("Image post/source/View identity differs from its Editorial story.")
+    metadata = image.get("metadata") if isinstance(image.get("metadata"), dict) else {}
+    if metadata.get("assetPublished") is not False:
+        raise NewsroomDatabaseWriterError("Image Engine candidate must remain private until the Publisher copies it.")
+    staged = Path(str(metadata.get("stagedPath") or "")).resolve()
+    allowed_stage_root = (root / ".image-engine-staging" / view_id).resolve()
+    try:
+        staged.relative_to(allowed_stage_root)
+    except ValueError as exc:
+        raise NewsroomDatabaseWriterError("Approved image is outside the private Image Engine staging directory.") from exc
+    if not staged.is_file():
+        raise NewsroomDatabaseWriterError("Checker-approved staged image is missing.")
+    digest = hashlib.sha256(staged.read_bytes()).hexdigest()
+    expected = str(metadata.get("sha256") or "")
+    if not re.fullmatch(r"[a-f0-9]{64}", expected) or digest != expected:
+        raise NewsroomDatabaseWriterError("Checker-approved image SHA-256 does not match the staged file.")
+    mime = str(image.get("mimeType") or "").lower()
+    if mime != "image/jpeg":
+        raise NewsroomDatabaseWriterError("Only the Image Engine's normalized JPEG hand-off is supported by the View Publisher.")
+    media_id = str(image.get("mediaId") or "")
+    if not re.fullmatch(r"media-[a-f0-9]{24}", media_id):
+        raise NewsroomDatabaseWriterError("Image mediaId does not match the registered Media ID format.")
+    filename = f"{media_id}-{digest[:16]}.jpg"
+    relative = Path(".publisher-data") / view_id / "newsroom-assets" / filename
+    destination = (root / relative).resolve()
+    if root.resolve() not in destination.parents:
+        raise NewsroomDatabaseWriterError("Private image cache path escapes the repository root.")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    pending = destination.with_suffix(destination.suffix + ".pending")
+    shutil.copy2(staged, pending)
+    if hashlib.sha256(pending.read_bytes()).hexdigest() != digest:
+        pending.unlink(missing_ok=True)
+        raise NewsroomDatabaseWriterError("Private image cache copy failed its SHA-256 check.")
+    pending.replace(destination)
+    public_metadata = {
+        "mediaId": media_id,
+        "originType": metadata.get("originType", ""),
+        "creator": image.get("creator", ""),
+        "credit": image.get("credit", ""),
+        "caption": image.get("caption", ""),
+        "sourcePage": image.get("sourcePage", ""),
+        "licenseName": image.get("licenseName", ""),
+        "licenseUrl": image.get("licenseUrl", ""),
+        "rightsNotice": image.get("rightsNotice", ""),
+        "modificationNote": metadata.get("modificationNote", ""),
+        "mimeType": mime,
+        "width": image.get("width"),
+        "height": image.get("height"),
+        "sha256": digest,
+    }
+    return media_id, relative.as_posix(), digest, public_metadata
+
+
+def _story_record(root: Path, view_id: str, job: dict[str, Any], story: dict[str, Any],
+                  checker_record: dict[str, Any], evidence: dict[str, Any],
+                  registry_version: str, package_digest: str, checked_at: str) -> dict[str, Any]:
+    post_id = str(story.get("postId") or "")
+    if not post_id or story.get("id") != post_id or story.get("viewId") != view_id:
+        raise NewsroomDatabaseWriterError("Editorial story postId/ID/View identity is invalid.")
+    if story.get("sourceRecord", {}).get("postId") != post_id or story.get("sourceId") != story.get("sourceRecord", {}).get("sourceId"):
+        raise NewsroomDatabaseWriterError("Editorial story no longer matches its preserved source record.")
+    for field in MANAGER_FIELDS:
+        if field not in story or story.get(field) != job.get(field):
+            raise NewsroomDatabaseWriterError(f"Editorial story lost Manager lineage field '{field}'.")
+    article_url = _canonical_https(story.get("sourceUrl") or story.get("sourceRecord", {}).get("canonicalUrl") or story.get("sourceRecord", {}).get("originalUrl"))
+    feed_url = _canonical_https(story.get("sourceFeedUrl"))
+    title = re.sub(r"\s+", " ", str(story.get("title") or "")).strip()
+    summary = re.sub(r"\s+", " ", str(story.get("summary") or "")).strip()
+    source_name = re.sub(r"\s+", " ", str(story.get("sourceName") or "")).strip()
+    if not article_url or not feed_url or not source_name or not title or len(summary) < 100 or len(summary.split()) < 16:
+        raise NewsroomDatabaseWriterError(f"Story '{post_id}' does not meet the existing Live Feed record contract.")
+    text_decision = checker_record.get("text") if isinstance(checker_record.get("text"), dict) else {}
+    policy_id = str(text_decision.get("policyId") or "")
+    decision_id = str(text_decision.get("decisionId") or "")
+    if not policy_id or not decision_id:
+        raise NewsroomDatabaseWriterError(f"Story '{post_id}' has no original Checker text decision reference.")
+    if evidence.get("postId") != post_id or evidence.get("mediaId") != story.get("mediaId"):
+        raise NewsroomDatabaseWriterError(f"Story '{post_id}' has mismatched source evidence identity.")
+    source_url = _canonical_https(evidence.get("sourceUrl"))
+    source_hash = str(evidence.get("summaryExcerptSha256") or "")
+    if source_url != article_url or not re.fullmatch(r"[a-f0-9]{64}", source_hash):
+        raise NewsroomDatabaseWriterError(f"Story '{post_id}' has invalid summary evidence provenance.")
+    media_id, stage_path, image_digest, media_meta = _safe_private_image(root, view_id, story)
+    published = _parse_time(story.get("publishedAt"), f"Story '{post_id}' publication date")
+    checked = _parse_time(checked_at, f"Story '{post_id}' Checker timestamp")
+    lineage = story.get("managerLineage")
+    checker_decisions = story.get("checkerDecisions")
+    if not isinstance(lineage, dict) or not isinstance(checker_decisions, dict):
+        raise NewsroomDatabaseWriterError(f"Story '{post_id}' is missing preserved internal lineage/Checker decisions.")
+    tags = []
+    for key in ("topics", "categories", "tags"):
+        values = story.get(key) or []
+        if isinstance(values, list):
+            tags.extend(str(value) for value in values if isinstance(value, str) and str(value).strip())
+    tags = list(dict.fromkeys(tags))
+    evidence_ledger = [{
+        "sourceRecordId": post_id,
+        "sourceUrl": article_url,
+        "sourcePolicyRef": policy_id,
+        "excerptSha256": source_hash,
+    }]
+    rights = {
+        key: media_meta[key] for key in (
+            "mediaId", "originType", "creator", "credit", "caption", "sourcePage",
+            "licenseName", "licenseUrl", "rightsNotice", "modificationNote", "mimeType", "width", "height", "sha256"
+        )
+    }
+    checker_digest = _sha256(_json(checker_record) + "|" + package_digest + "|" + GATE_VERSION)
+    return {
+        "view_id": view_id,
+        "story_id": post_id,
+        "url": article_url,
+        "title": title,
+        "summary": summary,
+        "source_name": source_name,
+        "source_url": feed_url,
+        "published_at": published.timestamp(),
+        "retrieved_at": checked.timestamp(),
+        # The shared Engine's legacy row contract expects the image fields to be
+        # blank here. The v2 Publisher asset bridge consumes the dedicated v2
+        # columns below, so the Collector and core Engine data stay compatible.
+        "image_url": None,
+        "image_local_path": None,
+        "image_caption": None,
+        "image_credit": None,
+        "image_source_url": None,
+        "image_rights_status": None,
+        "image_rights_note": None,
+        "source_policy_ref": policy_id,
+        "global_checker_intake_decision_id": decision_id,
+        "checker_review_id": checker_digest,
+        "checker_registry_version": registry_version,
+        "checker_checked_at": checked.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "editorial_engine_version": EDITORIAL_CORE_VERSION,
+        "editorial_adapter_version": EDITORIAL_ADAPTER_VERSION,
+        "evidence_ledger_json": _json(evidence_ledger),
+        "topic_tags_json": _json(tags),
+        "image_rights_json": _json(rights),
+        "approved_at": _utc_now(),
+        "post_id": post_id,
+        "source_id": str(story.get("sourceId") or ""),
+        "media_id": media_id,
+        "image_stage_path": stage_path,
+        "image_sha256": image_digest,
+        "image_mime_type": media_meta["mimeType"],
+        "image_origin_type": media_meta["originType"],
+        "media_metadata_json": _json(media_meta),
+        "manager_lineage_json": _json(lineage),
+        "checker_decisions_json": _json(checker_decisions),
+        "editorial_package_sha256": package_digest,
+        "verification_gate_version": GATE_VERSION,
+    }
 
 
 def _persist_one(connection: sqlite3.Connection, record: dict[str, Any]) -> str:
-    by_story = connection.execute(
-        f"SELECT url,checker_review_id,checker_checked_at FROM {APPROVED_TABLE} WHERE view_id=? AND story_id=?",
-        (record["view_id"], record["story_id"]),
-    ).fetchone()
-    by_url = connection.execute(
-        f"SELECT story_id FROM {APPROVED_TABLE} WHERE view_id=? AND url=?",
-        (record["view_id"], record["url"]),
-    ).fetchone()
+    by_story = connection.execute(f"SELECT url,checker_review_id,checker_checked_at FROM {TABLE} WHERE view_id=? AND story_id=?", (record["view_id"], record["story_id"])).fetchone()
+    by_url = connection.execute(f"SELECT story_id FROM {TABLE} WHERE view_id=? AND url=?", (record["view_id"], record["url"])).fetchone()
     if by_url and by_url[0] != record["story_id"]:
-        raise NewsroomDatabaseWriterError("Canonical URL is already assigned to a different approved story identity.")
+        raise NewsroomDatabaseWriterError("Canonical article URL is already assigned to a different postId.")
     if by_story:
         if by_story[0] != record["url"]:
-            raise NewsroomDatabaseWriterError("Story ID is already assigned to a different source URL.")
+            raise NewsroomDatabaseWriterError("postId is already assigned to a different canonical article URL.")
         if by_story[1] == record["checker_review_id"]:
             return "unchanged"
-        if str(record["checker_checked_at"]) <= str(by_story[2]):
+        if str(record["checker_checked_at"]) < str(by_story[2]):
             return "older_review_ignored"
-        assignments = [
-            "title", "summary", "source_name", "source_url", "published_at", "retrieved_at",
-            "image_url", "image_local_path", "image_caption", "image_credit", "image_source_url",
-            "image_rights_status", "image_rights_note", "source_policy_ref",
-            "global_checker_intake_decision_id", "checker_review_id", "checker_registry_version",
-            "checker_checked_at", "editorial_engine_version", "editorial_adapter_version",
-            "evidence_ledger_json", "topic_tags_json", "image_rights_json", "approved_at",
-        ]
-        connection.execute(
-            f"UPDATE {APPROVED_TABLE} SET " + ",".join(f"{column}=?" for column in assignments)
-            + " WHERE view_id=? AND story_id=?",
-            tuple(record[column] for column in assignments) + (record["view_id"], record["story_id"]),
-        )
+        columns = [key for key in record if key not in {"view_id", "story_id"}]
+        connection.execute(f"UPDATE {TABLE} SET " + ",".join(f"{key}=?" for key in columns) + " WHERE view_id=? AND story_id=?", tuple(record[key] for key in columns) + (record["view_id"], record["story_id"]))
         return "updated"
-
-    columns = list(record.keys())
-    connection.execute(
-        f"INSERT INTO {APPROVED_TABLE} (" + ",".join(columns) + ") VALUES ("
-        + ",".join("?" for _ in columns) + ")",
-        tuple(record[column] for column in columns),
-    )
+    columns = list(record)
+    connection.execute(f"INSERT INTO {TABLE} (" + ",".join(columns) + ") VALUES (" + ",".join("?" for _ in columns) + ")", tuple(record[key] for key in columns))
     return "inserted"
 
 
-def write_approved_stories(final_review: dict[str, Any], *, repository_root: str | Path) -> dict[str, Any]:
-    """Validate and write only exact GREEN approvals into the correct View table."""
+def write_verified_editorial_stories(checker_handoff: dict[str, Any], editorial_package: dict[str, Any], verification_result: dict[str, Any], *, repository_root: str | Path = ".") -> dict[str, Any]:
+    """Persist only postIds explicitly released by the new Checker gate."""
     root = Path(repository_root).resolve()
-    context = _load_policy_context(root)
-    view_id, profile, db_path, approved, review_by_story = _validate_result(final_review, root, context)
-    registry_version = context.checker_registry.get("registryVersion")
+    if (not isinstance(checker_handoff, dict)
+            or checker_handoff.get("schemaVersion") != 1
+            or checker_handoff.get("phase") != "checker-image-review-complete"
+            or checker_handoff.get("handoff") != EXPECTED_HANDOFF
+            or checker_handoff.get("handoffVersion") != "1.0.0"
+            or checker_handoff.get("checker") != EXPECTED_CHECKER
+            or checker_handoff.get("checkerVersion") != "2.0.0"):
+        raise NewsroomDatabaseWriterError("The registered completed Checker image-review hand-off is required.")
+    if not isinstance(editorial_package, dict) or editorial_package.get("schemaVersion") != 1 or editorial_package.get("phase") != "editorial-production":
+        raise NewsroomDatabaseWriterError("The v2 Universal Editorial Engine package is required.")
+    if editorial_package.get("engine") != EDITORIAL_ENGINE or editorial_package.get("coreEngineVersion") != EDITORIAL_CORE_VERSION or editorial_package.get("newsroomAdapterVersion") != EDITORIAL_ADAPTER_VERSION:
+        raise NewsroomDatabaseWriterError("Editorial Engine identity/version is not the registered v2 contract.")
+    if (not isinstance(verification_result, dict)
+            or verification_result.get("schemaVersion") != 1
+            or verification_result.get("checker") != EXPECTED_CHECKER
+            or verification_result.get("checkerVersion") != "2.0.0"
+            or verification_result.get("verificationGate") != EXPECTED_GATE
+            or verification_result.get("verificationGateVersion") != GATE_VERSION
+            or verification_result.get("phase") != "post-editorial-verification-complete"
+            or verification_result.get("reportVisibility") != "INTERNAL_ONLY_NOT_FOR_PUBLICATION"):
+        raise NewsroomDatabaseWriterError("The registered post-Editorial Checker verification report is required.")
+    if verification_result.get("verdict") not in ("PASS", "PARTIAL") or verification_result.get("releaseForPublisher") is not True:
+        raise NewsroomDatabaseWriterError("Checker final verification did not release any story for the Publisher.")
+    package_digest = _sha256(_json(editorial_package))
+    if verification_result.get("editorialPackageSha256") != package_digest:
+        raise NewsroomDatabaseWriterError("Checker verification digest does not match the exact Editorial package.")
+    collector_result = checker_handoff.get("collectorResultWithCheckerReviewedImages")
+    checker_review = checker_handoff.get("checkerReview")
+    if not isinstance(collector_result, dict) or not isinstance(checker_review, dict):
+        raise NewsroomDatabaseWriterError("Checker hand-off is missing its original Collector result or Checker report.")
+    job = collector_result.get("job")
+    if not isinstance(job, dict) or any(job.get(field) in (None, "", []) for field in MANAGER_FIELDS):
+        raise NewsroomDatabaseWriterError("Original Manager job envelope is incomplete.")
+    view_id = str(job.get("viewId") or "")
+    if verification_result.get("viewId") != view_id or verification_result.get("jobId") != job.get("jobId") or editorial_package.get("viewId") != view_id or editorial_package.get("jobId") != job.get("jobId"):
+        raise NewsroomDatabaseWriterError("Checker, Editorial and Manager View/job identities do not match.")
+    if editorial_package.get("managerJob") != job:
+        raise NewsroomDatabaseWriterError("Editorial package did not preserve the exact Manager job.")
+    if checker_handoff.get("managerRegistryVersion") != editorial_package.get("managerRegistryVersion") or checker_handoff.get("checkerRegistryVersion") != editorial_package.get("checkerRegistryVersion"):
+        raise NewsroomDatabaseWriterError("Checker and Editorial registry versions do not match.")
+    profile, db_path = _repository_contract(root, view_id, job, editorial_package)
 
-    prepared: list[dict[str, Any]] = []
-    seen_ids: set[str] = set()
-    seen_urls: set[str] = set()
-    for story in approved:
-        record = _validate_approved_story(story, view_id, review_by_story, registry_version, context)
-        if record["story_id"] in seen_ids or record["url"] in seen_urls:
-            raise NewsroomDatabaseWriterError("ApprovedStories contains a duplicate story ID or canonical URL.")
-        seen_ids.add(record["story_id"])
-        seen_urls.add(record["url"])
-        prepared.append(record)
-
+    approved_ids = verification_result.get("approvedStoryIds")
+    posts = verification_result.get("posts")
+    stories = editorial_package.get("stories")
+    evidence = editorial_package.get("evidence")
+    checker_posts = checker_review.get("posts")
+    if not all(isinstance(value, list) for value in (approved_ids, posts, stories, evidence, checker_posts)):
+        raise NewsroomDatabaseWriterError("Checker approved IDs, reports, Editorial stories and evidence must be arrays.")
+    if not approved_ids or len(approved_ids) != len(set(map(str, approved_ids))):
+        raise NewsroomDatabaseWriterError("Checker approvedStoryIds must be a non-empty unique list.")
+    post_status = {str(item.get("postId")): item for item in posts if isinstance(item, dict)}
+    story_by_id = {str(item.get("postId")): item for item in stories if isinstance(item, dict)}
+    evidence_by_id = {str(item.get("postId")): item for item in evidence if isinstance(item, dict)}
+    checker_by_id = {str(item.get("postId")): item for item in checker_posts if isinstance(item, dict)}
+    if len(post_status) != len(posts) or len(story_by_id) != len(stories) or len(evidence_by_id) != len(evidence) or len(checker_by_id) != len(checker_posts):
+        raise NewsroomDatabaseWriterError("The incoming batch contains missing or duplicate post IDs.")
+    if set(map(str, approved_ids)) - set(story_by_id):
+        raise NewsroomDatabaseWriterError("Checker released a post ID that is absent from the Editorial package.")
+    expected_pass_ids = {str(item.get("postId")) for item in posts if isinstance(item, dict) and item.get("status") == "PASS"}
+    if set(map(str, approved_ids)) != expected_pass_ids:
+        raise NewsroomDatabaseWriterError("approvedStoryIds does not match the exact per-story PASS decisions.")
     if not db_path.is_file():
-        raise NewsroomDatabaseWriterError(
-            f"The {view_id} Collector database is not present at its registered path. Run the View Collector first."
-        )
+        raise NewsroomDatabaseWriterError(f"The {view_id} Collector database is missing; run its Collector first.")
+    prepared = []
+    for post_id in map(str, approved_ids):
+        decision = post_status.get(post_id)
+        if not isinstance(decision, dict) or decision.get("status") != "PASS":
+            raise NewsroomDatabaseWriterError(f"Checker did not individually PASS post '{post_id}'.")
+        story = story_by_id[post_id]
+        checker_record = checker_by_id.get(post_id)
+        evidence_record = evidence_by_id.get(post_id)
+        if (not isinstance(checker_record, dict) or checker_record.get("status") != "PASS"
+                or story.get("checkerRecord") != checker_record or not isinstance(evidence_record, dict)):
+            raise NewsroomDatabaseWriterError(f"Original Checker PASS record or evidence is missing or changed for '{post_id}'.")
+        prepared.append(_story_record(root, view_id, job, story, checker_record, evidence_record, str(editorial_package.get("checkerRegistryVersion") or ""), package_digest, str(checker_review.get("checkedAt") or editorial_package.get("generatedAt") or _utc_now())))
+
     uri = "file:" + quote(db_path.as_posix(), safe="/:") + "?mode=rw"
     connection = sqlite3.connect(uri, uri=True, timeout=10)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA busy_timeout=10000")
     try:
         connection.execute("BEGIN IMMEDIATE")
-        _verify_database(connection, view_id, profile)
-        _ensure_approved_table(connection)
+        _verify_db(connection, view_id, profile)
+        _ensure_table(connection)
         counts = {"inserted": 0, "updated": 0, "unchanged": 0, "older_review_ignored": 0}
         for record in prepared:
-            outcome = _persist_one(connection, record)
-            counts[outcome] += 1
+            counts[_persist_one(connection, record)] += 1
         connection.commit()
     except Exception:
         connection.rollback()
         raise
     finally:
         connection.close()
-
     return {
         "schemaVersion": 1,
-        "writer": WRITER_NAME,
+        "writer": WRITER,
         "writerVersion": WRITER_VERSION,
         "phase": "database-write-complete",
         "viewId": view_id,
         "databaseId": profile.get("destinationDatabaseId"),
         "databasePath": profile.get("destinationDatabasePath"),
-        "table": APPROVED_TABLE,
-        "statistics": {
-            "approvedStoriesReceived": len(approved),
-            **counts,
-            "rowsInsertedOrUpdatedThisRun": counts["inserted"] + counts["updated"],
-        },
-        "privacy": {
-            "rawSourceTextPersisted": False,
-            "evidenceExcerptsPersisted": False,
-            "claimTextPersisted": False,
-            "collectorStoriesTableModified": False,
-            "publisherOutputWritten": False,
-            "otherViewDatabaseOpened": False,
-        },
-        "nextSystem": "Matching View Publisher integration",
+        "table": TABLE,
+        "statistics": {"approvedStoryIdsReceived": len(approved_ids), **counts, "rowsInsertedOrUpdatedThisRun": counts["inserted"] + counts["updated"], "storyCountCap": None},
+        "privacy": {"collectorStoriesTableModified": False, "rawSourceTextPersisted": False, "summaryEvidenceTextPersisted": False, "otherViewDatabaseOpened": False, "publicAssetsWritten": False, "publisherOutputWritten": False},
+        "retention": {"days": 32, "automaticCountCap": None},
+        "nextSystem": "Matching View Publisher v2 adapter",
         "completedAt": _utc_now(),
     }
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--final-review", required=True,
-                        help="JSON output from global_checker_final_review.py")
-    parser.add_argument("--repository-root", default=".", help="LIVE // EARTH repository root")
+    parser.add_argument("--checker-handoff", required=True)
+    parser.add_argument("--editorial-package", required=True)
+    parser.add_argument("--verification-result", required=True)
+    parser.add_argument("--repository-root", default=".")
     args = parser.parse_args(argv)
     try:
-        payload = json.loads(Path(args.final_review).read_text(encoding="utf-8"))
-        result = write_approved_stories(payload, repository_root=args.repository_root)
-        json.dump(result, sys.stdout, ensure_ascii=False, indent=2)
-        sys.stdout.write("\n")
+        handoff = json.loads(Path(args.checker_handoff).read_text(encoding="utf-8"))
+        package = json.loads(Path(args.editorial_package).read_text(encoding="utf-8"))
+        verification = json.loads(Path(args.verification_result).read_text(encoding="utf-8"))
+        result = write_verified_editorial_stories(handoff, package, verification, repository_root=args.repository_root)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     except Exception as exc:
-        json.dump({
-            "writer": WRITER_NAME,
-            "writerVersion": WRITER_VERSION,
-            "phase": "database-write-blocked",
-            "databaseWritePerformed": False,
-            "errorType": type(exc).__name__,
-            "message": str(exc)[:600],
-        }, sys.stderr, ensure_ascii=False, indent=2)
-        sys.stderr.write("\n")
+        print(json.dumps({"writer": WRITER, "writerVersion": WRITER_VERSION, "phase": "database-write-blocked", "databaseWritePerformed": False, "errorType": type(exc).__name__, "message": str(exc)[:700]}, ensure_ascii=False, indent=2), file=sys.stderr)
         return 2
 
 

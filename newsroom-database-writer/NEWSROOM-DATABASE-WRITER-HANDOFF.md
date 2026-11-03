@@ -1,16 +1,16 @@
-# Newsroom Database Writer — Handoff
+# Newsroom Database Writer — v2 Handoff
 
 - System: LIVE // EARTH Newsroom Database Writer
-- Version: 1.0.0
-- Input: Global Checker Final Review Adapter v1.0.0 output
-- Output table: `newsroom_approved_stories`
-- Database owner/path: active View's exact Manager-registered Collector-owned SQLite database
-- Nature database: `.publisher-data/nature/nature.sqlite3`
-- Alien World database: `.publisher-data/alien-world/alien-world.sqlite3`
-- No database reset or replacement
-- No modification to Collector-owned `stories` records
-- No raw source bodies, HTML, evidence excerpts or claim text persisted
-- No Publisher, Collector, workflow YAML, app UI, Home Page or Moon View changes
-- No tests run; tests remain deferred until all Newsroom systems are assembled
+- Version: 2.0.0
+- Input: Checker image-review-complete hand-off, Editorial v2.0.0 package, and post-Editorial Checker v1.0.0 verification report
+- Output table: `newsroom_approved_stories` in the matching View's existing Collector-owned SQLite database
+- Nature DB: `.publisher-data/nature/nature.sqlite3`
+- Alien World DB: `.publisher-data/alien-world/alien-world.sqlite3`
+- Only `approvedStoryIds` with individual Checker `PASS` results are persisted; `HOLD` records are excluded
+- One Checker-approved Image Engine image is copied into the same View's private cache; it is not made public by the Writer
+- The Collector-owned `stories` table is never changed
+- Existing database tables are extended additively only; no reset, replacement, `DROP`, or database recreation
+- No raw source content or transient evidence excerpts are persisted
+- No numerical story-count cap is applied; existing 768-hour/32-day rolling feed window remains
 
-**Next required stage:** View Publisher integration. Each Publisher must read its own approved Newsroom table as well as the permitted existing View stories, without gaining database write access. The Publisher must continue to use its own database identity check and its existing Live Feed output contract.
+**Publisher adapters:** Nature and Alien World each have a ready `newsroom_publisher.py` entry point. The Global Pipeline Orchestrator must call the matching entry point only after the Writer has committed that View’s approved stories. The active workflow commands will be switched during Orchestrator integration. Scheduled Newsroom activation remains off until the full path is connected and tested end to end.

@@ -1,65 +1,67 @@
-# LIVE // EARTH — Newsroom Database Writer
+# LIVE // EARTH — Newsroom Database Writer v2
 
-**Version:** 1.0.0  
-**Owner:** View-owned Newsroom database stage  
-**Accepted input:** Exact output from `global_checker/global_checker_final_review.py`  
-**Output:** `newsroom_approved_stories` in the matching View-owned SQLite database
+**Version:** 2.0.0  
+**Input:** Checker-cleared Editorial v2 package plus the post-Editorial Checker verification report  
+**Database:** The existing Collector-owned SQLite database for the same View  
+**Table:** `newsroom_approved_stories`
 
-## Responsibility
+## What it does
 
-The Writer is the only Newsroom stage that stores final editorial stories. It accepts only the `approvedStories` array returned by the registered Global Checker Final Review Adapter. Every story must have a matching individual review with:
+The Writer accepts only the post IDs in the final Global Checker report's `approvedStoryIds`. Every accepted ID must also have an individual `PASS` result and the unchanged original Checker record. A `HOLD` story is never written. When the Checker returns `PARTIAL`, only individually passed stories are written.
 
-- `verdict: GREEN`
-- `approvedForStorage: true`
-- `approvedForPublisher: true`
-- the exact same Checker `reviewId`, registry version, View ID and story identity attached to the approved story
+It stores the public editorial fields and the required source/Checker provenance in the existing `newsroom_approved_stories` table. The existing table is extended using additive columns only. Existing rows and schema data are retained.
 
-The Writer also checks the current Manager Source Registry and Global Checker Registry versions, registered View profile, database identity, database path and Collector-owned database schema before it opens a write transaction.
+Image Engine's already Checker-approved JPEG is copied into the matching View's private cache:
 
-## Database ownership and isolation
+- Nature: `.publisher-data/nature/newsroom-assets/`
+- Alien World: `.publisher-data/alien-world/newsroom-assets/`
 
-The Writer uses the exact `destinationDatabasePath` registered in `global_collection_manager/config/view-collection-profiles.json`:
+The Writer does not make the staged image public. It stores its `mediaId`, hash, private path, and attribution metadata for the matching Publisher to consume.
 
-| View | Database ID | Database path |
-|---|---|---|
-| Nature | `nature-sqlite` | `.publisher-data/nature/nature.sqlite3` |
-| Alien World | `alien-world-sqlite` | `.publisher-data/alien-world/alien-world.sqlite3` |
+## Database boundaries
 
-The database must already exist and be initialized by its own Collector. The Writer does not create a replacement database, reset data, alter the Collector-owned `stories` table, or open the other View's database.
+- Nature uses `.publisher-data/nature/nature.sqlite3` only.
+- Alien World uses `.publisher-data/alien-world/alien-world.sqlite3` only.
+- The Writer does not open the other View's database.
+- The Collector-owned `stories` table is not modified.
+- No database is reset, replaced, dropped, or recreated.
+- Raw source records, raw article text, HTML, and source-summary evidence excerpts are not persisted.
 
-Approved records are written to a new, separate table named `newsroom_approved_stories`. Nature and Alien World each keep that table inside their own independent database. The two datasets are never combined.
+## Feed count and retention
 
-## Stored fields and privacy
+**There is no numerical post-count cap.** The Writer processes every `approvedStoryId` released by Checker. It does not truncate the batch or apply a `LIMIT`.
 
-The table contains the approved headline and editorial summary, canonical article URL, source identity/link, publication/retrieval times, View identity, source-policy reference, intake decision ID, final Checker review ID/version/timestamp, Editorial Engine versions, topic tags, approved image-rights metadata and evidence provenance hashes.
+The existing Publisher profiles remain unchanged: `maximumStories = 0`, `targetStories = 0`, and the configured minimum is zero. The feed still uses the existing 768-hour (32-day) rolling window. That is the established time-retention window, not a post-count ceiling.
 
-The Writer deliberately does **not** persist raw article bodies, HTML, transient evidence excerpts, claim text, or raw source text. Evidence provenance retains source references and SHA-256 excerpt hashes only. Image rights approval metadata is not treated as a usable media asset; until a separately approved asset is handed off, the stored story is text-only.
+## Python entry point
 
-## Idempotency and update rules
+```python
+from newsroom_database_writer import write_verified_editorial_stories
 
-- Re-running the same Checker review is idempotent and leaves the existing row unchanged.
-- A newer GREEN Checker review for the same story ID and canonical URL may update that approved Newsroom row.
-- An older review is ignored.
-- A canonical URL assigned to a different story ID, or a story ID assigned to a different URL, blocks the transaction instead of silently merging records.
-- Existing Collector `stories` rows are never overwritten by this Writer.
-- A failed write transaction is rolled back.
+result = write_verified_editorial_stories(
+    checker_handoff,
+    editorial_package,
+    verification_result,
+    repository_root=".",
+)
+```
 
-## Command-line use
-
-Run from the repository root after the View Collector has initialized its own database and after final review has completed:
+The future Global Pipeline Orchestrator will pass these in-memory objects directly. The standalone CLI is also available when the three exact JSON hand-offs have been exported:
 
 ```bash
 python newsroom-database-writer/newsroom_database_writer.py \
-  --final-review path/to/global-checker-final-review.json \
+  --checker-handoff checker-image-review-complete.json \
+  --editorial-package editorial-production.json \
+  --verification-result post-editorial-verification.json \
   --repository-root .
 ```
 
-The JSON path must point to the exact final-review result. The Writer resolves the target database itself from the active Manager View Collection Profile; a caller cannot supply an arbitrary database path.
+## Publisher hand-off
 
-## Handoff
+The matching View Publisher reads the same View database read-only, obtains every approved Newsroom row in the current rolling window, and copies approved image bytes from the private cache into that View's own `published/assets/` folder. The Publisher adds each image URL and attribution to its corresponding feed story. Nature and Alien World never share databases, assets, or feed output.
 
-Next system: integrate each View Publisher with its own `newsroom_approved_stories` table while keeping the Publisher read-only. That is a separate stage. This Writer does not modify either Publisher, Collector, GitHub workflow YAML, Home Page, Moon View, app cache or local user data.
+The Publisher continues to use the existing Universal Editorial Engine v1.3.0 and the existing View-specific publication rules. No database write is performed by a Publisher.
 
-## Verification status
+## Integration status
 
-This package was statically syntax-checked. Project pipeline tests and end-to-end tests were **not** run, in accordance with the project rule to defer tests until all Newsroom systems are built.
+The Writer and Publisher v2 adapters are built and unit-tested as stage boundaries. The legacy scheduled Newsroom runner still needs the Global Pipeline Orchestrator migration before these stages can be run automatically. Do not activate a scheduled Newsroom step until the Orchestrator passes the exact Checker hand-off, Editorial package, and verification result to this Writer, then invokes the matching Publisher.
