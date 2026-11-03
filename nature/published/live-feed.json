@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "viewId": "nature",
   "publisherId": "nature-publisher",
-  "generatedAt": "2026-11-03T17:05:47Z",
+  "generatedAt": "2026-11-03T17:58:13Z",
   "windowHours": 768,
   "storyCount": 24,
   "stories": [
@@ -19,7 +19,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-fa3e30ed09eecb44db6e3165",
+      "imageMediaId": "media-28075fc146c7222f8fc6400d",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -37,7 +37,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-dd0b5a94a4461726dffb72f1",
+      "imageMediaId": "media-7f97d68c3ea99d1d1376c9c7",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -55,7 +55,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-65464891cd5fc18e558f27a6",
+      "imageMediaId": "media-3bce511f4fbb485e4a6cd8c9",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -73,7 +73,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-7508bf4e765247854e137bd7",
+      "imageMediaId": "media-58181a8272bbca8a1b7f3c25",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -91,7 +91,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-289721329e25da9947e81aa7",
+      "imageMediaId": "media-d42c1aca0cb0bb0088603507",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -109,7 +109,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-5682d78878f3bceeaf003dac",
+      "imageMediaId": "media-53139a42fcec0708da555558",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -127,7 +127,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-680fad1dcf74fb3ea7cc724a",
+      "imageMediaId": "media-14f540ecec442ac7875ff50f",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -145,7 +145,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-90fa1c1bf2174a55244b6ed5",
+      "imageMediaId": "media-544ea1c5f01afbbd4f2a031c",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -163,7 +163,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-1706a8f2f58a9ad67aed8cc3",
+      "imageMediaId": "media-9f8619259b2c8adbb72c1f29",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -181,7 +181,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-0707e274cf65bc78f28556fd",
+      "imageMediaId": "media-4b1363a7abe636fdc020f075",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -199,7 +199,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-69d63dbd60937768abe2acf9",
+      "imageMediaId": "media-5d4d8172414e679089e5542f",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -217,7 +217,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-7734d563581f0b7c59e55732",
+      "imageMediaId": "media-9dfae6a43ad3af22faf79273",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -235,7 +235,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-bb4f45456d141bc23dd45368",
+      "imageMediaId": "media-c2661a8d970b37ce5b35b040",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -253,7 +253,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-c994da90cd0410bb308fbea8",
+      "imageMediaId": "media-9d734ed240a242bdb92437c5",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -271,7 +271,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-0cdb8066d5fb7f878d9c93b5",
+      "imageMediaId": "media-bb6e92ac624ba5ad44bebe07",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -289,7 +289,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-66fab1fd6a625c9178dc3079",
+      "imageMediaId": "media-c9bd09e67ddbda9d17112416",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -307,7 +307,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-976aefe8c32bc334f5d464ee",
+      "imageMediaId": "media-7510d9b6ed0c774555017cc4",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -325,7 +325,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-3d1bb70b2df215abf6e7e5ce",
+      "imageMediaId": "media-0a619c41290fadece2b7b3d3",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -343,7 +343,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-057a72d8a1596a0b826ceb1a",
+      "imageMediaId": "media-5ff5544132b409ed1afd0f51",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -361,7 +361,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-e32049f5aff86cdad06afe1a",
+      "imageMediaId": "media-99737d982e6a94a2b1c05295",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -379,7 +379,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-f92dec9a2917f182108443cb",
+      "imageMediaId": "media-4c090a8ce915c6098eab91f3",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -397,7 +397,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-bc7c83f414994aa72c34f5bf",
+      "imageMediaId": "media-4403854d5a0d9366650a6712",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -415,7 +415,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-829b64f12a47af4e27a795ef",
+      "imageMediaId": "media-f25e94d7465b5b4e4b41b608",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
@@ -433,7 +433,7 @@
       "imageSourceUrl": "https://github.com/z8t8fp99p9-glitch/Live-Earth/blob/main/image-engine/image_engine.py",
       "imageRightsNote": "Original procedural illustration generated locally; no third-party image asset was used.",
       "imageCaption": "Original thematic illustration created locally for the story. It is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization.",
-      "imageMediaId": "media-da638d1489227636559741e0",
+      "imageMediaId": "media-dbcd4f4287bb65bbb52b2ddf",
       "imageOriginType": "local-original-illustration",
       "imageLicense": "Original LIVE // EARTH artwork",
       "imageLicenseUrl": ""
