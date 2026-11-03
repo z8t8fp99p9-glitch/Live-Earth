@@ -30,7 +30,7 @@ jobs:
           cache: pip
           cache-dependency-path: editorial-engine/requirements.txt
 
-      - name: Restore Nature's existing Collector database and media cache
+      - name: Restore Nature's isolated Newsroom database and private media cache
         uses: actions/cache@v4
         with:
           path: .publisher-data/nature/
@@ -38,22 +38,30 @@ jobs:
           restore-keys: |
             nature-db-v1-${{ runner.os }}-
 
-      - name: Install shared Editorial Engine dependencies
+      - name: Install shared Global Newsroom dependencies
         run: python -m pip install --disable-pip-version-check -r editorial-engine/requirements.txt
 
-      - name: Nature Collector — collect RSS and re-screen approved photographs
-        run: python nature/collector/collector.py
+      - name: Global Newsroom — Manager, Global Collector, Checker, Image Engine, Editorial and Database Writer
+        run: python editorial-engine/newsroom_orchestrator.py --view nature --repository-root .
 
-      - name: Nature Publisher — publish Live Feed only
-        run: python nature/publisher/publisher.py --mode live
+      - name: Nature Publisher — publish validated Live Feed and Newsroom images
+        run: python nature/publisher/newsroom_publisher.py
 
-      - name: Commit only the validated Nature Live Feed and current media
+      - name: Commit validated Nature Live Feed and approved assets
         shell: bash
         run: |
           set -euo pipefail
+
+          if [[ ! -s nature/published/live-feed.json ]]; then
+            echo "Publisher produced no valid Nature live-feed.json." >&2
+            exit 3
+          fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add -A -- nature/published/
+
           if git diff --cached --quiet; then
             echo "No Nature Live Feed changes; last-good output remains."
           else

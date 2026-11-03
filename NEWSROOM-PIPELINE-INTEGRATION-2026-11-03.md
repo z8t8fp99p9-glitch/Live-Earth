@@ -1,48 +1,34 @@
-# LIVE // EARTH — Newsroom Pipeline Integration
+# LIVE // EARTH — Global-Only Newsroom Integration
 
-**Baseline:** `main` at `b3d57da075b49e9692d0768eeeaefeca81c67880`  
-**Patch:** Newsroom pipeline `1.0.0`  
-**Scope:** Nature and Alien World Newsroom hand-off only.
+**Supersedes:** the earlier 3 November integration note that required View-specific Collectors.  
+**Architecture:** one Manager, one Global Collector, one shared Newsroom pipeline.  
+**Data isolation:** each View keeps its own Manager destination, cache and public feed.
 
-## What this patch connects
+## Active pipeline
 
-For one View at a time, the workflow entry point is:
+`Global Collection Manager → Global Collector → Global Checker → Global Image Engine → Universal Editorial Engine → post-Editorial Global Checker → shared Newsroom Database Writer → matching View Publisher`.
 
-`Global Collection Manager → Global Collector → Global Checker intake → Image Engine's separate image-only route → Universal Editorial Engine → Global Checker final review → Newsroom Database Writer → existing View Publisher`
+There is no Nature Collector or Alien World Collector. The scheduled workflows must not invoke either removed path. The Manager creates a View-scoped job and directs the same Global Collector to the registered assignments. Collection output is transient; Global Collector does not write SQLite or grant rights. Global Checker remains the sole rights/provenance authority.
 
-The existing View Collector must still run first. It owns and prepares its own SQLite database. The new pipeline then creates a transient Global Collector batch and writes only GREEN-approved editorial rows to that View's `newsroom_approved_stories` table. It does not replace the View Collector, modify the Collector-owned `stories` table, write the Live Feed, or open the other View's database.
+The shared Newsroom Database Writer initializes the database selected by the Manager profile and enforces `view_id` ownership. It persists only individually approved editorial stories after the final Checker gate. The database path must remain beneath `.publisher-data/<viewId>/`; this is per-View data isolation, not per-View implementation. The Writer applies the Manager profile's retention days without affecting another View. Existing databases are migrated additively and are never reset, dropped or silently adopted when ownership metadata is missing.
 
-## Source material and summarisation ownership
+View Publishers are presentation adapters only. They read their own `newsroom_approved_stories` rows in read-only mode, generate the configured feed, and never fetch sources or read unapproved legacy Collector rows. Legacy database tables are not a production collection path.
 
-The current active Global Collector receives RSS/Atom feed summaries. These are passed as original text into the Editorial Engine hand-off. The Checker checks permissions and provenance; it does not summarize or compose editorial copy. The Universal Editorial Engine remains the only component that produces the new editorial story.
+## Scheduled workflows
 
-The hand-off accepts the typed `feed-summary` and `full-article` source-material kinds. However, full-article retrieval and processing are deliberately **not enabled** by this patch: all current source policies keep `fullArticleTemporaryProcessing` as `unknown`, and the collector still only reads feed entries. A future full-article route may only be enabled after a specific source/item policy review changes that permission to `allowed`, the Collector is updated to fetch under its existing bounded HTTPS and host allowlist controls, and the Editor/Checker privacy and evidence contract is upgraded together. Permission alone is not enough. This patch does not scrape article pages or assume that a feed permission grants article-body rights.
+- Nature: `.github/workflows/nature-publisher.yml`, hourly at minute 15 UTC.
+- Alien World: `.github/workflows/alien-world-publisher.yml`, hourly at minute 45 UTC.
+- Both restore their existing separate `.publisher-data/<viewId>/` cache paths, run `editorial-engine/newsroom_orchestrator.py --view <viewId> --repository-root .`, and invoke only the matching Publisher adapter.
+- ZIP Extractor refuses `.github/`; copy-ready complete workflow files are mirrored in the corresponding `nature/publisher/` and `alien-world/publisher/` directories.
 
-The existing Editor adapter's current deterministic sentence-based production remains in place for the first functioning pipeline. It is the Engine doing that work, not an upstream component. Improving the Editor's summarisation quality is a later phase after this pipeline reliably delivers material to it.
+## Protected guarantees
 
-## Publisher final-gate correction
+- 32-day retention and no story-count cap remain profile-driven.
+- Hourly collection and separate databases/caches remain.
+- No source material is shared between Views; each Manager job contains one View.
+- No workflow resets/deletes/replaces an existing database.
+- No app UI, Home, Moon, Sun, Orb, service-worker, IndexedDB, offline or local recovery files are changed.
 
-The existing final feed gate verifies unchanged Collector text against its original summary hash. That is correct for ordinary Collector stories but would reject a rewritten Newsroom story. The new `newsroom_publisher_gate.py` adds a separate path only for an exact row found in the same View's `newsroom_approved_stories` table. It verifies the row's exact title, URL, editorial summary, source identity, current registry, final Checker review identity, evidence hashes, topic metadata, and raw-text non-persistence. All ordinary Collector stories continue through the original gate unchanged. A broken Newsroom approval row is held, not downgraded to the ordinary route.
+## Local validation
 
-## Workflow integration still required
-
-The ZIP extractor intentionally rejects `.github` paths. After applying the ZIP, update the two workflow YAML files manually, one at a time, by adding the matching Newsroom step **after the existing View Collector step and before the existing View Publisher step**:
-
-- Nature: `python editorial-engine/newsroom_pipeline.py --view nature --repository-root .`
-- Alien World: `python editorial-engine/newsroom_pipeline.py --view alien-world --repository-root .`
-
-Do not change the existing cron schedules, cache paths, Publisher commands, commit logic, cleaner workflow, or ZIP extractor workflow. Confirm the Nature workflow file is saved before making the Alien World edit.
-
-## What is intentionally unchanged
-
-- Existing View Collectors retain sole ownership of their existing `stories` table.
-- Nature and Alien World SQLite databases/caches remain separate.
-- Publisher stays read-only.
-- Database Cleaner remains per-View and manual-only.
-- No database reset, cloud service, hosted model, paid API, API key, login, or new external dependency is introduced.
-- Raw source text, full article bodies, HTML and evidence excerpts are not persisted.
-- `.github/workflows/zip-extract-auto-upload.yml` is not changed.
-
-## Validation status
-
-This is an integration patch prepared against the inspected `main` HEAD above. Syntax and package-integrity checks are run locally on the new files. Full end-to-end validation must occur only after the workflow YAML steps are installed and GitHub Actions runs against the real per-View databases. Do not describe the Newsroom as live or end-to-end verified before those runs succeed.
+The current repair is tested with the View publisher tests, shared Writer tests (including future-View bootstrap and View-scoped retention), Global Collector tests, orchestrator tests, and Global Checker publisher-dispatch tests. GitHub Actions, scheduled feeds and iPhone behavior remain pending the owner's upload and workflow replacement.

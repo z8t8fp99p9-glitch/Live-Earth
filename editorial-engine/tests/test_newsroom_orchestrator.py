@@ -111,6 +111,7 @@ class NewsroomOrchestratorTests(unittest.TestCase):
             "review_image_engine_handoff": Mock(return_value=self.handoff),
             "produce_editorial_package": Mock(return_value=self.editorial),
             "review_editorial_package": Mock(return_value=self.verification),
+            "ensure_view_database": Mock(return_value={"viewId": "nature"}),
             "write_verified_editorial_stories": Mock(return_value=self.writer_result),
         }
         return components
@@ -122,6 +123,7 @@ class NewsroomOrchestratorTests(unittest.TestCase):
 
         self.assertEqual(result["phase"], "newsroom-database-write-complete")
         self.assertEqual(result["viewId"], "nature")
+        components["ensure_view_database"].assert_called_once_with(self.root.resolve(), "nature", self.job.to_dict())
         components["build_image_engine_intake"].assert_called_once_with(
             self.collection, self.initial, repository_root=self.root.resolve()
         )

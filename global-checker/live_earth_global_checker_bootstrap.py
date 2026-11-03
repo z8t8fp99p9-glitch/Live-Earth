@@ -13,10 +13,10 @@ import sys
 from pathlib import Path
 
 ENTRYPOINTS = {
-    "nature/collector/collector.py": ("collect", "nature", "nature_pipeline.py"),
-    "nature/publisher/publisher.py": ("publish", "nature", "nature_pipeline.py"),
-    "alien-world/collector/collector.py": ("collect", "alien-world", "alien_world_pipeline.py"),
-    "alien-world/publisher/publisher.py": ("publish", "alien-world", "alien_world_pipeline.py"),
+    # Compatibility routing for direct Publisher CLI calls only. Collection is
+    # always owned by the shared Manager → Global Collector → Newsroom path.
+    "nature/publisher/publisher.py": ("publish", "nature", "global_newsroom"),
+    "alien-world/publisher/publisher.py": ("publish", "alien-world", "global_newsroom"),
 }
 ACTIVE_ENV = "LIVE_EARTH_GLOBAL_CHECKER_ROUTED"
 ROOT_ENV = "LIVE_EARTH_PROJECT_ROOT"

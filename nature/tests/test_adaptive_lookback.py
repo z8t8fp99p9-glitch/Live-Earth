@@ -20,7 +20,10 @@ class AdaptiveNatureTests(unittest.TestCase):
         self.assertEqual(profile["publication"]["maximumStories"], 0)
         self.assertEqual(profile["publication"]["adaptiveLookback"]["targetStories"], 0)
         self.assertEqual(profile["publication"]["adaptiveLookback"]["expansionHours"], [768])
-        self.assertEqual(profile["database"]["retentionDays"] * 24, 768)
+        manager = json.loads((ROOT / "global_collection_manager/config/view-collection-profiles.json").read_text(encoding="utf-8"))
+        nature_profile = next(item for item in manager["profiles"] if item["viewId"] == "nature")
+        self.assertEqual(nature_profile["retentionDays"] * 24, nature_profile["lookbackWindowHours"])
+        self.assertEqual(nature_profile["retentionDays"], 32)
 
     def test_same_headline_and_date_from_different_urls_is_one_story(self):
         now = datetime(2026, 11, 2, tzinfo=timezone.utc)
@@ -41,16 +44,16 @@ class AdaptiveNatureTests(unittest.TestCase):
         now = datetime(2026, 11, 2, tzinfo=timezone.utc)
         db = sqlite3.connect(":memory:")
         db.row_factory = sqlite3.Row
-        db.execute("""CREATE TABLE stories(
+        db.execute("""CREATE TABLE newsroom_approved_stories(view_id TEXT,
             story_id TEXT,title TEXT,url TEXT,summary TEXT,source_name TEXT,source_url TEXT,
             published_at REAL,retrieved_at REAL,image_url TEXT,image_local_path TEXT,
             image_caption TEXT,image_credit TEXT,image_source_url TEXT,image_rights_status TEXT,
             image_rights_note TEXT)""")
         old_date = now - timedelta(days=6)
-        db.executemany("INSERT INTO stories VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
-            ("a", "Wildlife recovery report", "https://example.org/a", "", "Source", "https://example.org",
+        db.executemany("INSERT INTO newsroom_approved_stories VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
+            ("nature", "a", "Wildlife recovery report", "https://example.org/a", "", "Source", "https://example.org",
              old_date.timestamp(), now.timestamp(), None, None, None, None, None, None, None),
-            ("b", "Wildlife recovery report", "https://example.org/b", "", "Source", "https://example.org",
+            ("nature", "b", "Wildlife recovery report", "https://example.org/b", "", "Source", "https://example.org",
              (old_date + timedelta(seconds=20)).timestamp(), now.timestamp(), None, None, None, None, None, None, None),
         ])
         adapter = publisher.NatureEngineReadOnlyConnection(db, {}, 10, now=now, lookback_hours=768)
@@ -66,7 +69,7 @@ class AdaptiveNatureTests(unittest.TestCase):
         now = datetime(2026, 11, 2, tzinfo=timezone.utc)
         db = sqlite3.connect(":memory:")
         db.row_factory = sqlite3.Row
-        db.execute("""CREATE TABLE stories(
+        db.execute("""CREATE TABLE newsroom_approved_stories(view_id TEXT,
             story_id TEXT,title TEXT,url TEXT,summary TEXT,source_name TEXT,source_url TEXT,
             published_at REAL,retrieved_at REAL,image_url TEXT,image_local_path TEXT,
             image_caption TEXT,image_credit TEXT,image_source_url TEXT,image_rights_status TEXT,
@@ -76,7 +79,7 @@ class AdaptiveNatureTests(unittest.TestCase):
             published = now - timedelta(hours=i)
             rows.append((f"story-{i}", f"Wildlife report {i}", f"https://example.org/{i}", "", "Source", "https://example.org/feed",
                          published.timestamp(), now.timestamp(), None, None, None, None, None, None, None))
-        db.executemany("INSERT INTO stories VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
+        db.executemany("INSERT INTO newsroom_approved_stories VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [("nature", *row) for row in rows])
         adapter = publisher.NatureEngineReadOnlyConnection(db, {}, 0, now=now, lookback_hours=768)
         selected = adapter.execute(
             "SELECT story_id,title,url,summary,source_name,source_url,published_at,retrieved_at,image_url,image_local_path,image_caption,image_credit,image_source_url,image_rights_status,image_rights_note FROM stories WHERE published_at >= ? AND published_at < ? ORDER BY published_at DESC LIMIT 500",

@@ -4,16 +4,21 @@
 **Schedule:** every hour at minute 15 UTC  
 **Manual run:** GitHub Actions → Nature Live Feed Publisher → Run workflow.
 
-The workflow runs the Nature Collector followed by the Live-Feed-only Nature Publisher hourly. The Collector gathers approved RSS/Atom reporting, re-screens approved Wikimedia Commons photo records and writes only to `.publisher-data/nature/`. The Publisher opens the Nature SQLite database read-only and invokes the shared Universal Editorial Engine in `live` mode.
+## Shared collection and publication
 
-- Database: `.publisher-data/nature/nature.sqlite3`.
-- Database retention: 32 days.
-- Maximum accepted source age: 32 days.
-- Visible feed: complete rolling 32-day window, with no story-count cap; all eligible items exposed by the configured feeds are considered.
-- Public output: `nature/published/live-feed.json` plus validated contextual image assets and rights metadata.
+Nature does not have a Nature-specific Collector. Its scheduled workflow runs the same shared pipeline used by every content View:
+
+`Global Collection Manager → Global Collector → Global Checker → Global Image Engine → Universal Editorial Engine → post-Editorial Global Checker → Newsroom Database Writer → Nature Publisher`.
+
+The Manager assigns Nature's registered sources and isolated destination. The Global Collector returns transient candidates; it does not write a database or make rights decisions. The shared Writer initializes the Nature database when needed and persists only individually Checker-released editorial rows. The Nature Publisher is a read-only presentation adapter.
+
+- Database: `.publisher-data/nature/nature.sqlite3` (separate from every other View).
+- Retention: Manager-profile driven, currently 32 days; no count cap.
+- Collection cadence: hourly; 32-day configured lookback.
+- Public output: `nature/published/live-feed.json` and approved Newsroom image assets.
 - Browser refresh: every five minutes while the view is open.
-- Online-only: requests use `cache: no-store`; the view clears its displayed content when closed and does not persist feed data in localStorage, sessionStorage or IndexedDB.
+- Online-only: requests use `cache: no-store`; the view clears displayed content when closed and does not persist feed data in localStorage, sessionStorage or IndexedDB.
 
-The GitHub Actions cache path and existing `nature-db-v1-...` key family are preserved. The workflow commits only Nature's validated public output, never the source database. There is no monthly trigger, magazine mode, PDF output, catalogue or issue archive. Failed publication validation leaves the previous last-good feed in place. Saved PDFs in the Global PDF Reader are separate and are not modified by this workflow.
+The workflow retains the existing `.publisher-data/nature/` cache path and `nature-db-v1-...` key family. It commits only Nature's validated public output, never the source database. It has no magazine mode, PDF output, catalogue or issue archive. Failed publication validation preserves the last-good feed.
 
-GitHub's ZIP Extractor blocks `.github/`. If the workflow itself needs a future change, replace `.github/workflows/nature-publisher.yml` manually using `nature/publisher/NATURE_PUBLISHER_WORKFLOW_UPDATE.yml`.
+The ZIP Extractor blocks `.github/`. The complete copy-ready workflow is mirrored at `nature/publisher/NATURE_PUBLISHER_WORKFLOW_UPDATE.yml`; replace `.github/workflows/nature-publisher.yml` with that file after applying the main ZIP.

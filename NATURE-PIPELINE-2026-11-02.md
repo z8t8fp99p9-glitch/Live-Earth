@@ -1,5 +1,7 @@
 # LIVE // EARTH — Nature Single-Checker Pipeline
 
+**Historical implementation record — superseded on 3 November 2026.** `nature_pipeline.py` and `nature/collector/collector.py` are retired from the active route. Nature now uses the same Global Collection Manager → Global Collector → shared Newsroom pipeline as every other View. See `NEWSROOM-PIPELINE-INTEGRATION-2026-11-03.md`. Do not restore the old entry points described below.
+
 ## Runtime route
 
 Both existing Nature workflow entrypoints now dispatch to `global-checker/nature_pipeline.py`:

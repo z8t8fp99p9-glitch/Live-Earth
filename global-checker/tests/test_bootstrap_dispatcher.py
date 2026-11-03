@@ -20,7 +20,7 @@ class SafeBootstrapTests(unittest.TestCase):
     def test_pipeline_startup_execs_normal_dispatcher_instead_of_raising_system_exit(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            source = root / "nature" / "collector" / "collector.py"
+            source = root / "nature" / "publisher" / "publisher.py"
             source.parent.mkdir(parents=True)
             source.touch()
             (root / "editorial-engine").mkdir()
@@ -42,7 +42,7 @@ class SafeBootstrapTests(unittest.TestCase):
                 self.assertEqual(os.environ[bootstrap.ROOT_ENV], str(root))
                 self.assertEqual(execv.call_args.args[0], sys.executable)
                 self.assertEqual(execv.call_args.args[1][1], str(dispatcher))
-                self.assertEqual(execv.call_args.args[1][2:], ["collect", "--view", "nature"])
+                self.assertEqual(execv.call_args.args[1][2:], ["publish", "--view", "nature"])
 
 
 if __name__ == "__main__":

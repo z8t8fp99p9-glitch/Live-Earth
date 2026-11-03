@@ -1,8 +1,13 @@
-"""LIVE // EARTH Newsroom Database Writer package."""
+"""LIVE // EARTH shared Newsroom Database Writer package."""
 
 from .newsroom_database_writer import (
     NewsroomDatabaseWriterError,
-    write_approved_stories,
+    ensure_view_database,
+    write_verified_editorial_stories,
 )
 
-__all__ = ["NewsroomDatabaseWriterError", "write_approved_stories"]
+__all__ = [
+    "NewsroomDatabaseWriterError",
+    "ensure_view_database",
+    "write_verified_editorial_stories",
+]

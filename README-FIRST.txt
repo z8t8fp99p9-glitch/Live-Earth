@@ -1,33 +1,34 @@
-LIVE // EARTH — GLOBAL NEWSROOM REPAIR
-=======================================
+LIVE // EARTH — GLOBAL-ONLY COLLECTION REPAIR
+Prepared: 3 November 2026
+Repository: z8t8fp99p9-glitch/Live-Earth
+Branch: main
 
-This package changes the shared Global Newsroom downstream pipeline only.
+WHAT THIS FIX DOES
+- Removes the Nature-specific and Alien World-specific Collector implementations.
+- Makes Global Collection Manager + Global Collector the only collection route.
+- Makes the shared Newsroom Database Writer initialize each Manager-selected database without View-specific code branches.
+- Preserves separate Nature and Alien World databases, caches, feeds and hourly schedules.
+- Makes both Publishers read only their own Checker-approved Newsroom rows.
+- Applies Manager-profile retention (currently 32 days) without resetting existing data.
 
-Upload this ZIP as LIVE_EARTH_MAIN_UPLOAD.zip to the repository root on main.
-Do not unpack it. The existing ZIP Extractor workflow validates UPLOAD_MANIFEST.json,
-applies the listed files, and removes the upload ZIP.
+UPLOAD
+Upload this exact file, LIVE_EARTH_MAIN_UPLOAD.zip, to the ROOT of the repository on branch main. Do not unpack it. The ZIP Extractor validates UPLOAD_MANIFEST.json, applies files and delete paths, then removes the uploaded ZIP.
 
-Global Collector intake is intentionally unchanged.
-No workflow YAML, source registry permissions, view UI, publisher, database, or
-database-retention files are modified.
+MANUAL WORKFLOW FILES
+The extractor refuses .github/ paths. After the ZIP Extractor completes, replace these two workflow files using the matching complete templates in the repository:
+1. .github/workflows/nature-publisher.yml ← nature/publisher/NATURE_PUBLISHER_WORKFLOW_UPDATE.yml
+2. .github/workflows/alien-world-publisher.yml ← alien-world/publisher/ALIEN_WORLD_PUBLISHER_WORKFLOW_UPDATE.yml
 
-Changes:
-- Global Checker evaluates every collected image candidate independently and
-  identifies one approved mediaId; multiple candidates no longer fail lineage.
-- Field restrictions remain recorded but are applied to the restricted fields,
-  not used as an automatic whole-post veto.
-- The educational/non-commercial project-use context is required and remains
-  context only; it never overrides source, item, image, licence, attribution,
-  storage, or transformation restrictions.
-- Universal Editorial Engine selects only the exact Checker-approved mediaId.
-- Post-Editorial Verification checks that selected image among the preserved
-  original candidates, while retaining the complete sourceRecord.
-- Regression tests cover multi-candidate selection and downstream selection.
+The workflow templates keep the existing hourly schedules, separate cache paths, output commits and Alien World Pages rebuild.
 
-Rollback:
-Restore the corresponding pre-patch files from recovery/ in this package.
-No database reset or migration is required.
+AUTOMATIC ZIP EXTRACTOR COMMIT TITLE
+Apply LIVE // EARTH Main Upload
 
-Validation notes:
-See the accompanying test report in the conversation. This patch does not claim
-GitHub Actions or on-device verification.
+SAFETY
+No database is reset, dropped or replaced. Existing ownership metadata is checked. Only the current View's expired rows are pruned according to its Manager retention setting. No Home/Moon/Sun/Orb/UI, offline, service-worker, IndexedDB, saved-PDF or local recovery files are changed.
+
+VALIDATION
+- Python compile check passed for the shared Manager, Collector, Newsroom Writer, Orchestrator, both Publisher adapters, and Global Checker dispatch modules (local Python 3.13.5).
+- 134 targeted regression tests passed across Manager (9), Global Collector (11), shared Writer (6), Nature Publisher (12), Alien World Publisher (12), Orchestrator (4), Universal Editorial Engine (13), Global architecture contract (3), shared dispatch (2), bootstrap (7), Global Checker (universal 8, post-Editorial 19, shared policy 9), and Image Engine (19).
+- The two older direct-checker suites still have 4 failing/error cases each in the unchanged baseline; the same failures were reproduced on the unmodified repository snapshot. They are not regressions introduced by this global-only patch.
+- GitHub Actions, live source availability, published feeds and iPhone verification are NOT RUN and are not claimed.

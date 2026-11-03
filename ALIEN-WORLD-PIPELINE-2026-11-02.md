@@ -1,5 +1,7 @@
 # LIVE // EARTH — Alien World single-Checker pipeline
 
+**Historical implementation record — superseded on 3 November 2026.** `alien_world_pipeline.py` and `alien-world/collector/collector.py` are retired from the active route. Alien World now uses the same Global Collection Manager → Global Collector → shared Newsroom pipeline as every other View. See `NEWSROOM-PIPELINE-INTEGRATION-2026-11-03.md`. Do not restore the old entry points described below.
+
 **Scope:** Alien World only. Nature keeps its current pipeline. No workflow YAML, database reset, schema reset, browser storage, view redesign or new service is introduced.
 
 ## The agreed order

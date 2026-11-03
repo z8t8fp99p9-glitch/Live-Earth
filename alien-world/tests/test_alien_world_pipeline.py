@@ -14,7 +14,8 @@ from pathlib import Path
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
-COLLECTOR_PATH = ROOT / "alien-world" / "collector" / "collector.py"
+MANAGER_PROFILE_PATH = ROOT / "global_collection_manager" / "config" / "view-collection-profiles.json"
+GLOBAL_COLLECTOR_PATH = ROOT / "global_collector" / "collector.py"
 PUBLISHER_PATH = ROOT / "alien-world" / "publisher" / "publisher.py"
 PROFILE_PATH = ROOT / "alien-world" / "publisher" / "profile.json"
 ENGINE_PATH = ROOT / "editorial-engine" / "universal_editorial_engine.py"
@@ -33,27 +34,24 @@ def load_module(name: str, path: Path):
     return module
 
 
-COLLECTOR = load_module("alien_world_collector_live_tests", COLLECTOR_PATH)
 PUBLISHER = load_module("alien_world_publisher_live_tests", PUBLISHER_PATH)
 PROFILE = json.loads(PROFILE_PATH.read_text(encoding="utf-8"))
 
 
 class CanonicalLayoutTests(unittest.TestCase):
     def test_alien_world_publication_is_live_feed_only_and_reset_safe(self):
-        # A clean reset intentionally removes the previous public JSON file.
-        # The publisher must be allowed to create the first replacement feed.
-        expected = [COLLECTOR_PATH, PUBLISHER_PATH, PROFILE_PATH,
+        # The live-feed publisher must be able to create the first replacement feed.
+        expected = [GLOBAL_COLLECTOR_PATH, PUBLISHER_PATH, PROFILE_PATH,
                     CLIENT_PATH, VIEW_PATH, WORKFLOW_UPDATE_PATH]
         self.assertTrue(all(path.is_file() for path in expected))
+        self.assertFalse((ROOT / "alien-world" / "collector").exists())
 
         published_dir = ROOT / "alien-world" / "published"
         output_files = (
             {path.name for path in published_dir.iterdir() if path.is_file()}
             if published_dir.is_dir() else set()
         )
-        # The only permitted root-level publication files are the completed
-        # feed and its atomic-write staging file. The staging file is safe to
-        # replace on the next run if a previous runner was interrupted.
+        # The only permitted root-level publication file is the completed feed.
         self.assertFalse(
             output_files - {"live-feed.json", "live-feed.json.pending"},
             f"Unexpected Alien World publication files: {sorted(output_files)}",
@@ -78,10 +76,9 @@ class CanonicalLayoutTests(unittest.TestCase):
         self.assertEqual(publication["minimumStories"], 0)
         self.assertEqual(adaptive["targetStories"], 0)
         self.assertEqual(adaptive["expansionHours"], [768])
-        self.assertEqual(PROFILE["database"]["retentionDays"], 32)
-        self.assertEqual(PROFILE["database"]["maximumRecords"], 0)
+        self.assertNotIn("database", PROFILE)
         self.assertEqual(PROFILE["editorialProfile"]["maximumDocumentaryImages"], 0)
-        self.assertEqual(PROFILE["collection"]["refreshHours"], 1)
+        self.assertNotIn("collection", PROFILE)
         self.assertNotIn("catalog", output)
         self.assertNotIn("latestPublication", output)
         self.assertNotIn("magazineCadence", publication)
@@ -104,38 +101,21 @@ class CanonicalLayoutTests(unittest.TestCase):
             self.assertNotIn(forbidden_storage, view)
 
 
-class CollectorTests(unittest.TestCase):
-    def test_rss_parser_keeps_source_story_and_publication_date(self):
-        payload = b'''<?xml version="1.0"?>
-        <rss><channel><item>
-          <title>NASA announces a new science mission</title>
-          <link>https://www.nasa.gov/news/example-mission/</link>
-          <description><![CDATA[<p>A substantial report with useful context.</p>]]></description>
-          <pubDate>Sat, 31 Oct 2026 00:00:00 GMT</pubDate>
-        </item></channel></rss>'''
-        records = COLLECTOR.parse_feed(payload, "NASA News", "https://www.nasa.gov/feed.xml")
-        self.assertEqual(len(records), 1)
-        self.assertEqual(records[0]["sourceName"], "NASA News")
-        self.assertIn("useful context", records[0]["summary"])
-        self.assertIsNotNone(COLLECTOR.parse_date(records[0]["published"]))
-
-    def test_source_image_screening_rejects_non_nasa_and_restricted_images(self):
-        safe = {"url": "https://www.nasa.gov/wp-content/uploads/mission.jpg",
-                "caption": "NASA mission image", "credit": "NASA"}
-        self.assertTrue(COLLECTOR.image_is_eligible(safe, "NASA science report"))
-        self.assertFalse(COLLECTOR.image_is_eligible(
-            {**safe, "url": "https://example.com/mission.jpg"}, "NASA science report"))
-        self.assertFalse(COLLECTOR.image_is_eligible(
-            {**safe, "rightsNotice": "Copyright © Example Rights Holder; all rights reserved"},
-            "NASA science report"))
-
-    def test_collector_profile_keeps_story_images_and_no_publication_write(self):
-        self.assertTrue(PROFILE["imageUsePolicy"]["storyImagesAllowed"])
-        self.assertEqual(PROFILE["collection"]["refreshHours"], 1)
-        self.assertEqual(PROFILE["database"]["retentionDays"], 32)
-        self.assertTrue(PROFILE["collection"]["writesDatabase"])
-        self.assertFalse(PROFILE["collection"]["writesPublicationOutputs"])
-        self.assertEqual(PROFILE["collection"]["networkAccessOwner"], "AlienWorldDataCollector")
+class GlobalCollectionContractTests(unittest.TestCase):
+    def test_alien_world_is_assigned_to_the_single_global_collector(self):
+        self.assertTrue(GLOBAL_COLLECTOR_PATH.is_file())
+        manager = json.loads(MANAGER_PROFILE_PATH.read_text(encoding="utf-8"))
+        profile = next(item for item in manager["profiles"] if item["viewId"] == "alien-world")
+        self.assertEqual(profile["collectorEntrypoint"], "global_collector")
+        self.assertEqual(profile["retentionDays"], 32)
+        self.assertEqual(profile["lookbackWindowHours"], 768)
+        self.assertEqual(profile["collectionFrequency"], {"type": "hourly", "intervalMinutes": 60})
+        self.assertEqual(profile["publisherEntrypoint"], "alien-world/publisher/newsroom_publisher.py")
+        self.assertEqual(profile["retentionDays"], 32)
+        self.assertEqual(profile["collectionFrequency"], {"type": "hourly", "intervalMinutes": 60})
+        workflow = (ROOT / ".github/workflows/alien-world-publisher.yml").read_text(encoding="utf-8")
+        self.assertNotIn("alien-world/collector/collector.py", workflow)
+        self.assertIn("editorial-engine/newsroom_orchestrator.py", workflow)
 
 
 class PublisherTests(unittest.TestCase):
@@ -169,13 +149,13 @@ class PublisherTests(unittest.TestCase):
     def test_adaptive_database_adapter_deduplicates_same_story_across_urls(self):
         database = sqlite3.connect(":memory:")
         database.row_factory = sqlite3.Row
-        database.execute("CREATE TABLE stories(story_id TEXT,title TEXT,url TEXT,published_at REAL)")
+        database.execute("CREATE TABLE newsroom_approved_stories(view_id TEXT,story_id TEXT,title TEXT,url TEXT,published_at REAL)")
         now = datetime(2026, 11, 2, 0, 0, tzinfo=timezone.utc)
         published = now - timedelta(hours=36)
-        database.executemany("INSERT INTO stories VALUES(?,?,?,?)", [
-            ("a", "NASA’s Webb Telescope Reveals New Nebula", "https://www.nasa.gov/image-article/example/", published.timestamp()),
-            ("b", "NASA's Webb Telescope Reveals New Nebula", "https://www.nasa.gov/image-detail/example/", (published + timedelta(seconds=30)).timestamp()),
-            ("c", "NASA Announces Another Science Mission", "https://www.nasa.gov/news/mission/", published.timestamp()),
+        database.executemany("INSERT INTO newsroom_approved_stories VALUES(?,?,?,?,?)", [
+            ("alien-world", "a", "NASA’s Webb Telescope Reveals New Nebula", "https://www.nasa.gov/image-article/example/", published.timestamp()),
+            ("alien-world", "b", "NASA's Webb Telescope Reveals New Nebula", "https://www.nasa.gov/image-detail/example/", (published + timedelta(seconds=30)).timestamp()),
+            ("alien-world", "c", "NASA Announces Another Science Mission", "https://www.nasa.gov/news/mission/", published.timestamp()),
         ])
         adapter = PUBLISHER.AdaptiveReadOnlyConnection(database, now, 48)
         rows = adapter.execute(
@@ -253,29 +233,44 @@ class EngineIntegrationTests(unittest.TestCase):
         database.row_factory = sqlite3.Row
         database.execute("CREATE TABLE publisher_meta(key TEXT PRIMARY KEY,value TEXT NOT NULL)")
         database.execute("INSERT INTO publisher_meta VALUES('view_id','alien-world')")
-        database.execute("""CREATE TABLE stories(
-            story_id TEXT PRIMARY KEY,title TEXT NOT NULL,url TEXT NOT NULL,summary TEXT NOT NULL,
+        database.execute("""CREATE TABLE newsroom_approved_stories(
+            view_id TEXT NOT NULL,story_id TEXT NOT NULL,url TEXT NOT NULL,title TEXT NOT NULL,summary TEXT NOT NULL,
             source_name TEXT NOT NULL,source_url TEXT NOT NULL,published_at REAL NOT NULL,retrieved_at REAL NOT NULL,
             image_url TEXT,image_local_path TEXT,image_caption TEXT,image_credit TEXT,image_source_url TEXT,
-            image_rights_status TEXT,image_rights_note TEXT,view_id TEXT NOT NULL)""")
+            image_rights_status TEXT,image_rights_note TEXT,source_policy_ref TEXT NOT NULL,
+            global_checker_intake_decision_id TEXT NOT NULL,checker_review_id TEXT NOT NULL,
+            checker_registry_version TEXT NOT NULL,checker_checked_at TEXT NOT NULL,
+            editorial_engine_version TEXT NOT NULL,editorial_adapter_version TEXT NOT NULL,
+            evidence_ledger_json TEXT NOT NULL,topic_tags_json TEXT NOT NULL,image_rights_json TEXT NOT NULL,
+            approved_at TEXT NOT NULL,PRIMARY KEY(view_id,story_id))""")
+        evidence_hash = __import__("hashlib").sha256(b"source evidence excerpt").hexdigest()
+        engine.NEWSROOM_PUBLISHER_ADAPTER_VERSION = "2.0.0"
         for index in range(12):
             published = now - timedelta(hours=index + 1)
-            database.execute("""INSERT INTO stories VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", (
-                f"story-{index}", f"NASA science report {index}", f"https://www.nasa.gov/news/report-{index}/",
-                f"A substantial source-linked summary with useful context for integration test {index}.",
+            story_id = f"story-{index}"
+            article_url = f"https://www.nasa.gov/news/report-{index}/"
+            summary = (f"NASA has released a detailed science update for integration test {index}. "
+                       "The shared Newsroom editorial summary preserves the reviewed facts and context. "
+                       "This approved record demonstrates the global Publisher database contract.")
+            evidence = json.dumps([{"sourceRecordId": story_id, "sourceUrl": article_url,
+                                   "sourcePolicyRef": "nasa-policy", "excerptSha256": evidence_hash}])
+            database.execute("""INSERT INTO newsroom_approved_stories VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", (
+                "alien-world", story_id, article_url, f"NASA science report {index}", summary,
                 "NASA News", "https://www.nasa.gov/news-release/feed/", published.timestamp(), now.timestamp(),
-                None, None, None, None, None, None, None, "alien-world"))
+                None, None, None, None, None, None, None, "nasa-policy", f"decision-{index}",
+                f"review-{index}", "checker-registry-1", now.isoformat(), engine.ENGINE_VERSION,
+                "2.0.0", evidence, "[]", "{}", now.isoformat()))
         command = {"commandId": "live-test-command", "viewId": "alien-world",
                    "publisherId": "alien-world-publisher", "issuedAt": now.isoformat(),
                    "mode": "live", "customRequest": ""}
         with tempfile.TemporaryDirectory() as temp:
-            result = engine.run_engine(database, PROFILE, command, Path(temp), now)
+            result = engine.run_engine(PUBLISHER.AdaptiveReadOnlyConnection(database, now, 768), PROFILE, command, Path(temp), now)
             self.assertIn("feed", result)
             self.assertNotIn("magazine", result)
             self.assertEqual(result["feed"]["storyCount"], 12)
             self.assertFalse(list(Path(temp).rglob("*.pdf")))
         with self.assertRaises(sqlite3.OperationalError):
-            database.execute("DELETE FROM stories")
+            database.execute("DELETE FROM newsroom_approved_stories")
         database.close()
 
 

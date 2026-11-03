@@ -31,6 +31,7 @@ class WriterV2Tests(unittest.TestCase):
             "configVersion": "cfg-1", "trigger": "scheduled",
         }
         profile = {"profileId": "nature-profile", "viewId": self.view, "enabled": True,
+                   "collectorEntrypoint": "global_collector", "retentionDays": 32,
                    "destinationDatabaseId": "nature-sqlite", "destinationDatabasePath": ".publisher-data/nature/nature.sqlite3"}
         (self.root / "global_collection_manager/config/view-collection-profiles.json").write_text(
             json.dumps({"schemaVersion": 1, "profiles": [profile]}), encoding="utf-8")
@@ -168,6 +169,42 @@ class WriterV2Tests(unittest.TestCase):
         verification["editorialPackageSha256"] = hashlib.sha256(writer._json(package).encode()).hexdigest()
         with self.assertRaises(writer.NewsroomDatabaseWriterError):
             writer.write_verified_editorial_stories(handoff, package, verification, repository_root=self.root)
+
+    def test_shared_database_retention_is_profile_driven_and_view_scoped(self):
+        database = self.root / self.job["destinationDatabasePath"]
+        old = datetime(2026, 9, 1, tzinfo=timezone.utc).timestamp()
+        recent = datetime(2026, 10, 30, tzinfo=timezone.utc).timestamp()
+        con = sqlite3.connect(database)
+        con.execute("""CREATE TABLE newsroom_approved_stories(
+            view_id TEXT,story_id TEXT,published_at REAL,PRIMARY KEY(view_id,story_id))""")
+        con.executemany("INSERT INTO newsroom_approved_stories VALUES(?,?,?)", [
+            ("nature", "expired", old), ("nature", "recent", recent), ("other-view", "other", old)])
+        con.commit(); con.close()
+        writer.ensure_view_database(self.root, self.view, self.job)
+        con = sqlite3.connect(database)
+        saved = {(r[0], r[1]) for r in con.execute("SELECT view_id,story_id FROM newsroom_approved_stories")}
+        self.assertIn(("nature", "recent"), saved)
+        self.assertNotIn(("nature", "expired"), saved)
+        self.assertIn(("other-view", "other"), saved)
+        con.close()
+
+    def test_shared_writer_initializes_a_future_manager_view_without_code_branch(self):
+        future = "ocean-research"
+        profile = {"profileId": "ocean-profile", "viewId": future, "enabled": True,
+                   "collectorEntrypoint": "global_collector", "retentionDays": 32,
+                   "destinationDatabaseId": "ocean-sqlite",
+                   "destinationDatabasePath": ".publisher-data/ocean-research/ocean.sqlite3"}
+        (self.root / "global_collection_manager/config/view-collection-profiles.json").write_text(
+            json.dumps({"schemaVersion": 1, "profiles": [profile]}), encoding="utf-8")
+        job = {"viewId": future, "profileId": "ocean-profile", "destinationDatabaseId": "ocean-sqlite",
+               "destinationDatabasePath": ".publisher-data/ocean-research/ocean.sqlite3",
+               "collectorEntrypoint": "global_collector"}
+        result = writer.ensure_view_database(self.root, future, job)
+        self.assertEqual(result["viewId"], future)
+        db = sqlite3.connect(self.root / profile["destinationDatabasePath"])
+        self.assertEqual(db.execute("SELECT value FROM publisher_meta WHERE key='view_id'").fetchone()[0], future)
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM newsroom_approved_stories").fetchone()[0], 0)
+        db.close()
 
 
 if __name__ == "__main__":

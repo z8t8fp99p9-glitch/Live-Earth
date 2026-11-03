@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Run the v2 LIVE // EARTH Newsroom path for one View.
 
-The existing View Collector must be run first by its scheduled workflow. This
-orchestrator then runs the Manager, transient Global Collector, Global Checker,
+This orchestrator runs the Global Collection Manager and the single shared
+Global Collector, followed by Global Checker,
 Image Engine, Checker image review, Editorial Engine, post-Editorial Checker,
 and the matching View-owned Newsroom Database Writer. Public feed publication
 is deliberately left to the corresponding View Publisher wrapper.
@@ -19,8 +19,7 @@ from pathlib import Path
 from typing import Any
 
 PIPELINE_NAME = "LIVE // EARTH Global Newsroom Orchestrator"
-PIPELINE_VERSION = "2.0.0"
-ALLOWED_VIEWS = {"nature", "alien-world"}
+PIPELINE_VERSION = "2.1.0"
 
 
 class NewsroomOrchestratorError(RuntimeError):
@@ -61,7 +60,7 @@ def _load_components() -> dict[str, Any]:
         from image_engine_newsroom import process_checker_intake
         from universal_editorial_engine_newsroom import produce_editorial_package
         from post_editorial_verification import review_editorial_package
-        from newsroom_database_writer import write_verified_editorial_stories
+        from newsroom_database_writer import ensure_view_database, write_verified_editorial_stories
     except Exception as exc:
         raise NewsroomOrchestratorError(
             "A required v2 Newsroom component could not be imported: "
@@ -76,6 +75,7 @@ def _load_components() -> dict[str, Any]:
         "review_image_engine_handoff": review_image_engine_handoff,
         "produce_editorial_package": produce_editorial_package,
         "review_editorial_package": review_editorial_package,
+        "ensure_view_database": ensure_view_database,
         "write_verified_editorial_stories": write_verified_editorial_stories,
     }
 
@@ -127,10 +127,8 @@ def _result(
 
 def run(view_id: str, repository_root: str | Path = ".") -> dict[str, Any]:
     """Run the complete v2 Newsroom pipeline for exactly one registered View."""
-    if view_id not in ALLOWED_VIEWS:
-        raise NewsroomOrchestratorError(
-            "Only the registered Nature or Alien World View may run as a single-View job."
-        )
+    if not isinstance(view_id, str) or not view_id.strip():
+        raise NewsroomOrchestratorError("A registered Manager View ID is required.")
     root = Path(repository_root).resolve()
     _prepare_import_paths(root)
     modules = _load_components()
@@ -151,8 +149,9 @@ def run(view_id: str, repository_root: str | Path = ".") -> dict[str, Any]:
     if not isinstance(job_payload, dict) or job_payload.get("viewId") != view_id:
         raise NewsroomOrchestratorError("Manager job does not match the requested View.")
 
-    # The View-specific Collector has already run in the workflow and owns the
-    # existing SQLite database. Global Collector is a transient, shared intake.
+    # The shared Writer initializes only this Manager-assigned database path.
+    # Existing data is preserved; no View-specific Collector is involved.
+    modules["ensure_view_database"](root, view_id, job_payload)
     collection = modules["GlobalCollector"](root).collect(job_payload)
     if not isinstance(collection, dict) or collection.get("job") != job_payload:
         raise NewsroomOrchestratorError("Global Collector returned a malformed or mismatched Manager job.")
@@ -291,7 +290,7 @@ def run(view_id: str, repository_root: str | Path = ".") -> dict[str, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--view", required=True, choices=sorted(ALLOWED_VIEWS))
+    parser.add_argument("--view", required=True, help="A View ID registered in Global Collection Manager.")
     parser.add_argument("--repository-root", default=".")
     args = parser.parse_args(argv)
     try:

@@ -1,7 +1,7 @@
 # LIVE // EARTH — Global Collection Manager
 
 **Version:** 0.2.0  
-**Status:** Manager-only correction; local tests included. Not deployed or connected to a new workflow by this package.
+**Status:** Shared production assignment layer for every View.
 
 ## One global Manager, one Global Collector
 
@@ -19,7 +19,7 @@ There are no Nature/Alien World allowlists or View-specific code branches in thi
 4. Add its cadence under the exact same `viewId` in `config/scheduler.json`.
 5. Ensure Global Checker has an applicable policy for the View and source, because collection assignment never grants rights.
 
-The new profile must use the fixed shared Collector entry point `global_collector`. It must retain its own View ID, profile ID, assignments, source IDs, feed URLs and destination database identity/path. The destination path must remain inside `.publisher-data/<viewId>/`.
+The new profile must use the fixed shared Collector entry point `global_collector`. It must retain its own View ID, profile ID, assignments, source IDs, feed URLs and destination database identity/path. Its presentation adapter is registered separately in the same profile via `publisherEntrypoint`; the Global Dispatcher resolves that adapter from configuration rather than adding a collection code branch. The destination path must remain inside `.publisher-data/<viewId>/`.
 
 Adding a View does not require editing Python code, creating another Collector, adding a View name to a choices list, or changing another View's sources or destination. The Global Checker policy must explicitly include that View for each source it is allowed to use.
 
@@ -44,7 +44,7 @@ python -m global_collection_manager.manager assign --view <viewId> --manual --au
 
 The assignment command prints a JSON job envelope. Its `collectorEntrypoint` is always `global_collector`; the envelope carries the target View's IDs, allowed feeds and destination. `collectorWorkflow` is retained as the existing per-View workflow context for compatibility with the current Global Collector and Checker job contracts. This Manager package does not edit or trigger workflows.
 
-The envelope can be passed to the existing Global Collector CLI:
+The Global Newsroom Orchestrator creates the Manager job and invokes the Global Collector directly. For diagnostics, the envelope can also be passed to the Global Collector CLI:
 
 ```bash
 python -m global_collector --job-file manager-job.json
@@ -57,7 +57,7 @@ python -m global_collector --job-file manager-job.json
 - All assigned feed URLs must exist in the Manager Source Registry; the Global Collector and Global Checker revalidate policy and source boundaries.
 - Every job contains exactly one View. IDs and source subscriptions are not mixed between Views.
 - Every View keeps its own destination database identity and path. The Manager does not open or write databases.
-- The existing Nature and Alien World workflows, Collectors, Publishers, database schemas, feed outputs and other project files are not changed by this package.
+- All scheduled Views use the same Global Newsroom Orchestrator and Global Collector. The shared Writer initializes the isolated database selected by each Manager profile. View Publishers remain presentation adapters and read only Checker-released rows.
 - Runtime assignment audit events are written under `.manager-state/`; they are operational records, not story data.
 
 ## Files

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Persist only Checker-released v2 Editorial stories in the matching View DB.
 
-This is the v2 adapter for the existing View-owned newsroom_approved_stories
- table. It leaves the Collector-owned stories table untouched, adds columns
-only when missing, and stores Image Engine files privately under the matching
-View cache. It never publishes assets or writes a public feed.
+This shared writer initializes the Manager-selected isolated View database
+and persists only Checker-released editorial rows. It adds schema columns
+without resetting existing data and stores approved Image Engine files
+privately under that View cache. It never publishes assets or writes a feed.
 """
 from __future__ import annotations
 
@@ -96,7 +96,7 @@ def _read_json(path: Path, label: str) -> dict[str, Any]:
     return value
 
 
-def _repository_contract(root: Path, view_id: str, job: dict[str, Any], package: dict[str, Any]) -> tuple[dict[str, Any], Path]:
+def _repository_contract(root: Path, view_id: str, job: dict[str, Any], package: dict[str, Any] | None = None) -> tuple[dict[str, Any], Path]:
     profiles_doc = _read_json(root / "global_collection_manager/config/view-collection-profiles.json", "Manager View profiles")
     manager_registry = _read_json(root / "global_collection_manager/config/source-registry.json", "Manager Source Registry")
     checker_registry = _read_json(root / "global-checker/source-registry.json", "Global Checker registry")
@@ -111,17 +111,19 @@ def _repository_contract(root: Path, view_id: str, job: dict[str, Any], package:
     ):
         if job.get(field) != expected:
             raise NewsroomDatabaseWriterError(f"Manager job {field} differs from the active View profile.")
-    if package.get("managerRegistryVersion") != manager_registry.get("registryVersion"):
-        raise NewsroomDatabaseWriterError("Manager Source Registry changed after Editorial production.")
-    if package.get("checkerRegistryVersion") != checker_registry.get("registryVersion"):
-        raise NewsroomDatabaseWriterError("Global Checker registry changed after image review.")
-    expected = {
-        "nature": ("nature-sqlite", ".publisher-data/nature/nature.sqlite3"),
-        "alien-world": ("alien-world-sqlite", ".publisher-data/alien-world/alien-world.sqlite3"),
-    }
-    if view_id not in expected or (profile.get("destinationDatabaseId"), profile.get("destinationDatabasePath")) != expected[view_id]:
-        raise NewsroomDatabaseWriterError("View database destination is not its registered isolated database.")
+    if package is not None:
+        if package.get("managerRegistryVersion") != manager_registry.get("registryVersion"):
+            raise NewsroomDatabaseWriterError("Manager Source Registry changed after Editorial production.")
+        if package.get("checkerRegistryVersion") != checker_registry.get("registryVersion"):
+            raise NewsroomDatabaseWriterError("Global Checker registry changed after image review.")
+    if profile.get("collectorEntrypoint") != "global_collector":
+        raise NewsroomDatabaseWriterError("Every registered View must use the single Global Collector entry point.")
+    database_id = str(profile.get("destinationDatabaseId") or "").strip()
+    if not database_id:
+        raise NewsroomDatabaseWriterError("Manager profile has no isolated destination database identity.")
     rel = PurePosixPath(profile["destinationDatabasePath"])
+    if len(rel.parts) < 3 or rel.parts[0] != ".publisher-data" or rel.parts[1] != view_id:
+        raise NewsroomDatabaseWriterError("Each View database must remain isolated under .publisher-data/<viewId>/.")
     if rel.is_absolute() or ".." in rel.parts or "\\" in str(rel):
         raise NewsroomDatabaseWriterError("View database destination is not a safe repository-relative path.")
     db_path = (root / Path(*rel.parts)).resolve()
@@ -160,8 +162,7 @@ def _ensure_table(connection: sqlite3.Connection) -> None:
         image_rights_json TEXT NOT NULL,
         approved_at TEXT NOT NULL,
         PRIMARY KEY(view_id, story_id),
-        UNIQUE(view_id, url),
-        CHECK(view_id IN ('nature','alien-world'))
+        UNIQUE(view_id, url)
     )""")
     # Additive migration only. Existing rows/tables are never dropped or reset.
     additions = {
@@ -180,16 +181,68 @@ def _ensure_table(connection: sqlite3.Connection) -> None:
 
 def _verify_db(connection: sqlite3.Connection, view_id: str, profile: dict[str, Any]) -> None:
     tables = {row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
-    if "publisher_meta" not in tables or "stories" not in tables:
-        raise NewsroomDatabaseWriterError("The matching View Collector database is not initialized.")
+    if "publisher_meta" not in tables or TABLE not in tables:
+        raise NewsroomDatabaseWriterError("The shared Newsroom database schema is not initialized.")
     meta = {str(row[0]): str(row[1]) for row in connection.execute("SELECT key,value FROM publisher_meta").fetchall()}
     if meta.get("view_id") != view_id:
         raise NewsroomDatabaseWriterError("Database metadata belongs to a different View.")
-    expected_publisher = "nature-publisher" if view_id == "nature" else "alien-world-publisher"
-    if meta.get("publisher_id") and meta.get("publisher_id") != expected_publisher:
-        raise NewsroomDatabaseWriterError("Database Publisher identity belongs to a different View.")
     if profile.get("viewId") != view_id:
         raise NewsroomDatabaseWriterError("Manager profile View identity mismatch.")
+
+
+def _ensure_view_schema(connection: sqlite3.Connection, view_id: str, profile: dict[str, Any]) -> None:
+    """Create/migrate only the shared Newsroom schema; never reset existing View data."""
+    preexisting_tables = {row[0] for row in connection.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+    ).fetchall()}
+    connection.execute("CREATE TABLE IF NOT EXISTS publisher_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+    _ensure_table(connection)
+    current = connection.execute("SELECT value FROM publisher_meta WHERE key='view_id'").fetchone()
+    if current and str(current[0]) != view_id:
+        raise NewsroomDatabaseWriterError("Refusing to open a database owned by another View.")
+    if not current:
+        # Never silently adopt a pre-existing, unowned database. A truly new
+        # database has no tables before this shared schema is added.
+        if preexisting_tables:
+            raise NewsroomDatabaseWriterError("Refusing to assign a pre-existing database without View ownership metadata.")
+        connection.execute("INSERT INTO publisher_meta(key,value) VALUES('view_id',?)", (view_id,))
+    retention_days = int(profile.get("retentionDays", 32))
+    if not 1 <= retention_days <= 365:
+        raise NewsroomDatabaseWriterError("Manager profile retentionDays must be between 1 and 365.")
+    cutoff = datetime.now(timezone.utc).timestamp() - retention_days * 86400
+    tables = {row[0] for row in connection.execute(
+        "SELECT name FROM sqlite_master WHERE type='table'"
+    ).fetchall()}
+    # The generic Newsroom table is always retained to the Manager profile's
+    # configured age. Existing legacy story tables are pruned only when their
+    # schema exposes both ownership and publication timestamps; rows are never
+    # mixed across View IDs.
+    if TABLE in tables:
+        connection.execute(f"DELETE FROM {TABLE} WHERE view_id=? AND published_at < ?", (view_id, cutoff))
+    if "stories" in tables:
+        legacy_columns = {row[1] for row in connection.execute("PRAGMA table_info(stories)").fetchall()}
+        if {"view_id", "published_at"}.issubset(legacy_columns):
+            connection.execute("DELETE FROM stories WHERE view_id=? AND published_at < ?", (view_id, cutoff))
+
+
+
+def ensure_view_database(repository_root: str | Path, view_id: str, job: dict[str, Any]) -> dict[str, Any]:
+    """Prepare the Manager-selected isolated Newsroom database before collection/publishing."""
+    root = Path(repository_root).resolve()
+    profile, db_path = _repository_contract(root, view_id, job)
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    connection = sqlite3.connect(db_path, timeout=10)
+    try:
+        connection.execute("PRAGMA busy_timeout=10000")
+        _ensure_view_schema(connection, view_id, profile)
+        _verify_db(connection, view_id, profile)
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+    return {"databaseId": profile["destinationDatabaseId"], "databasePath": profile["destinationDatabasePath"], "viewId": view_id}
 
 
 def _safe_private_image(root: Path, view_id: str, story: dict[str, Any]) -> tuple[str, str, str, dict[str, Any]]:
@@ -436,8 +489,7 @@ def write_verified_editorial_stories(checker_handoff: dict[str, Any], editorial_
     expected_pass_ids = {str(item.get("postId")) for item in posts if isinstance(item, dict) and item.get("status") == "PASS"}
     if set(map(str, approved_ids)) != expected_pass_ids:
         raise NewsroomDatabaseWriterError("approvedStoryIds does not match the exact per-story PASS decisions.")
-    if not db_path.is_file():
-        raise NewsroomDatabaseWriterError(f"The {view_id} Collector database is missing; run its Collector first.")
+    ensure_view_database(root, view_id, job)
     prepared = []
     for post_id in map(str, approved_ids):
         decision = post_status.get(post_id)
@@ -457,11 +509,16 @@ def write_verified_editorial_stories(checker_handoff: dict[str, Any], editorial_
     connection.execute("PRAGMA busy_timeout=10000")
     try:
         connection.execute("BEGIN IMMEDIATE")
+        _ensure_view_schema(connection, view_id, profile)
         _verify_db(connection, view_id, profile)
-        _ensure_table(connection)
         counts = {"inserted": 0, "updated": 0, "unchanged": 0, "older_review_ignored": 0}
         for record in prepared:
             counts[_persist_one(connection, record)] += 1
+        retention_days = int(profile.get("retentionDays", 32))
+        if not 1 <= retention_days <= 365:
+            raise NewsroomDatabaseWriterError("Manager profile retentionDays must be between 1 and 365.")
+        cutoff = (datetime.now(timezone.utc).timestamp() - retention_days * 86400)
+        connection.execute(f"DELETE FROM {TABLE} WHERE view_id=? AND published_at < ?", (view_id, cutoff))
         connection.commit()
     except Exception:
         connection.rollback()
@@ -478,8 +535,8 @@ def write_verified_editorial_stories(checker_handoff: dict[str, Any], editorial_
         "databasePath": profile.get("destinationDatabasePath"),
         "table": TABLE,
         "statistics": {"approvedStoryIdsReceived": len(approved_ids), **counts, "rowsInsertedOrUpdatedThisRun": counts["inserted"] + counts["updated"], "storyCountCap": None},
-        "privacy": {"collectorStoriesTableModified": False, "rawSourceTextPersisted": False, "summaryEvidenceTextPersisted": False, "otherViewDatabaseOpened": False, "publicAssetsWritten": False, "publisherOutputWritten": False},
-        "retention": {"days": 32, "automaticCountCap": None},
+        "privacy": {"viewSpecificCollectorUsed": False, "rawSourceTextPersisted": False, "summaryEvidenceTextPersisted": False, "otherViewDatabaseOpened": False, "publicAssetsWritten": False, "publisherOutputWritten": False},
+        "retention": {"days": int(profile.get("retentionDays", 32)), "automaticCountCap": None},
         "nextSystem": "Matching View Publisher v2 adapter",
         "completedAt": _utc_now(),
     }

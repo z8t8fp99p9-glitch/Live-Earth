@@ -288,91 +288,65 @@ def build_brief(profile: dict[str, Any], command: dict[str, Any], now: datetime 
 
 
 def read_view_records(readonly_db: Any, brief: EditorialBrief, now: datetime) -> list[dict[str, Any]]:
-    """Read Collector stories and GREEN-approved Newsroom stories through the Publisher handle.
+    """Read only globally Checker-released Newsroom stories through a read-only Publisher handle.
 
-    The Publisher supplies the only database handle and has already opened it
-    read-only. This function never opens a database or creates/mutates tables.
+    Raw collector candidates are transient and are never a Publisher input.
+    This function never opens a database or creates/mutates tables.
     """
     try:
         readonly_db.execute("PRAGMA query_only = ON")
         meta = readonly_db.execute("SELECT value FROM publisher_meta WHERE key='view_id'").fetchone()
         if not meta or text(meta[0]) != brief.view_id:
             raise EditorialEngineError("The database handle is not scoped to the requested view.")
-        collector_views = {
-            text(row[0]) for row in readonly_db.execute(
-                "SELECT DISTINCT view_id FROM stories"
-            ).fetchall()
-        }
-        if any(view_id != brief.view_id for view_id in collector_views):
-            raise EditorialEngineError(
-                "A View Publisher detected Collector records belonging to another View in its own database."
-            )
-
         start_ts = brief.coverage_start.timestamp()
         end_ts = brief.coverage_end.timestamp() if brief.window_mode == "calendar-month" else (now + timedelta(hours=2)).timestamp()
-        collector_rows = readonly_db.execute(
-            """SELECT story_id, title, url, summary, source_name, source_url,
-                      published_at, retrieved_at, image_url, image_local_path,
-                      image_caption, image_credit, image_source_url, image_rights_status,
-                      image_rights_note
-               FROM stories WHERE published_at >= ? AND published_at < ?
-               ORDER BY published_at DESC""",
-            (start_ts, end_ts),
-        ).fetchall()
-
-        # The Writer creates this table only after a GREEN final Checker review.
-        # Older databases without it continue to publish their ordinary records.
         table = readonly_db.execute(
             "SELECT type FROM sqlite_master WHERE name='newsroom_approved_stories'"
         ).fetchone()
-        approved_rows = []
-        if table:
-            if text(table[0]) != "table":
-                raise EditorialEngineError("The Newsroom approved-story destination is not a table.")
-            newsroom_columns = {
-                row[1] for row in readonly_db.execute(
-                    "PRAGMA table_info(newsroom_approved_stories)"
-                ).fetchall()
-            }
-            required_columns = {
-                "view_id", "story_id", "url", "title", "summary", "source_name", "source_url",
-                "published_at", "retrieved_at", "image_url", "image_local_path", "image_caption",
-                "image_credit", "image_source_url", "image_rights_status", "image_rights_note",
-                "source_policy_ref", "global_checker_intake_decision_id", "checker_review_id",
-                "checker_registry_version", "checker_checked_at", "editorial_engine_version",
-                "editorial_adapter_version", "evidence_ledger_json", "topic_tags_json",
-                "image_rights_json", "approved_at",
-            }
-            missing_columns = sorted(required_columns - newsroom_columns)
-            if missing_columns:
-                raise EditorialEngineError(
-                    "The Newsroom approved-story table has an incompatible schema: "
-                    + ", ".join(missing_columns)
-                )
-
-            database_views = {
-                text(row[0]) for row in readonly_db.execute(
-                    "SELECT DISTINCT view_id FROM newsroom_approved_stories"
-                ).fetchall()
-            }
-            if any(view_id != brief.view_id for view_id in database_views):
-                raise EditorialEngineError(
-                    "A View Publisher detected records belonging to another View in its own database."
-                )
-
-            approved_rows = readonly_db.execute(
-                """SELECT view_id, story_id, url, title, summary, source_name, source_url,
-                          published_at, retrieved_at, image_url, image_local_path, image_caption,
-                          image_credit, image_source_url, image_rights_status, image_rights_note,
-                          source_policy_ref, global_checker_intake_decision_id, checker_review_id,
-                          checker_registry_version, checker_checked_at, editorial_engine_version,
-                          editorial_adapter_version, evidence_ledger_json, topic_tags_json,
-                          image_rights_json, approved_at
-                   FROM newsroom_approved_stories
-                   WHERE view_id=? AND published_at >= ? AND published_at < ?
-                   ORDER BY published_at DESC""",
-                (brief.view_id, start_ts, end_ts),
+        if not table or text(table[0]) != "table":
+            raise EditorialEngineError("The shared Newsroom approved-story table is missing or not a table.")
+        newsroom_columns = {
+            row[1] for row in readonly_db.execute(
+                "PRAGMA table_info(newsroom_approved_stories)"
             ).fetchall()
+        }
+        required_columns = {
+            "view_id", "story_id", "url", "title", "summary", "source_name", "source_url",
+            "published_at", "retrieved_at", "image_url", "image_local_path", "image_caption",
+            "image_credit", "image_source_url", "image_rights_status", "image_rights_note",
+            "source_policy_ref", "global_checker_intake_decision_id", "checker_review_id",
+            "checker_registry_version", "checker_checked_at", "editorial_engine_version",
+            "editorial_adapter_version", "evidence_ledger_json", "topic_tags_json",
+            "image_rights_json", "approved_at",
+        }
+        missing_columns = sorted(required_columns - newsroom_columns)
+        if missing_columns:
+            raise EditorialEngineError(
+                "The shared Newsroom approved-story table has an incompatible schema: "
+                + ", ".join(missing_columns)
+            )
+        database_views = {
+            text(row[0]) for row in readonly_db.execute(
+                "SELECT DISTINCT view_id FROM newsroom_approved_stories"
+            ).fetchall()
+        }
+        if any(view_id != brief.view_id for view_id in database_views):
+            raise EditorialEngineError(
+                "A View Publisher detected records belonging to another View in its own database."
+            )
+        approved_rows = readonly_db.execute(
+            """SELECT view_id, story_id, url, title, summary, source_name, source_url,
+                      published_at, retrieved_at, image_url, image_local_path, image_caption,
+                      image_credit, image_source_url, image_rights_status, image_rights_note,
+                      source_policy_ref, global_checker_intake_decision_id, checker_review_id,
+                      checker_registry_version, checker_checked_at, editorial_engine_version,
+                      editorial_adapter_version, evidence_ledger_json, topic_tags_json,
+                      image_rights_json, approved_at
+               FROM newsroom_approved_stories
+               WHERE view_id=? AND published_at >= ? AND published_at < ?
+               ORDER BY published_at DESC""",
+            (brief.view_id, start_ts, end_ts),
+        ).fetchall()
     except EditorialEngineError:
         raise
     except Exception as exc:
@@ -418,8 +392,7 @@ def read_view_records(readonly_db: Any, brief: EditorialBrief, now: datetime) ->
         normalized = re.sub(r"^(?:nature|alien world) brief\s*:\s*", "", normalized)
         return " ".join(re.findall(r"[^\W_]+", normalized, flags=re.UNICODE))
 
-    # Approved Newsroom rows are validated before they are allowed to take
-    # precedence over an older Collector row for the same article.
+    # Every publication record must be explicitly released by the final Checker.
     approved_records: list[dict[str, Any]] = []
     approved_ids: set[str] = set()
     approved_urls: set[str] = set()
@@ -487,8 +460,8 @@ def read_view_records(readonly_db: Any, brief: EditorialBrief, now: datetime) ->
                     } for key in evidence_item)):
                 raise EditorialEngineError(f"Approved Newsroom story '{story_id}' has invalid evidence provenance.")
 
-        # The current Writer does not hand off a usable media asset. A rights
-        # decision alone must never cause the Publisher to invent image URLs.
+        # Generic Writer image columns remain blank until the Publisher's
+        # dedicated, hash-verified Newsroom asset bridge attaches the approved file.
         image_columns = (
             "image_url", "image_local_path", "image_caption", "image_credit",
             "image_source_url", "image_rights_status", "image_rights_note",
@@ -510,8 +483,8 @@ def read_view_records(readonly_db: Any, brief: EditorialBrief, now: datetime) ->
         approved_ids.add(story_id)
         approved_urls.add(url)
 
-    # Merge approved records first so an updated editorial version supersedes
-    # its older Collector counterpart, without ever modifying the Collector row.
+    # The Writer table is the sole publication source. Raw collection records
+    # never reach a Publisher.
     approved_records.sort(key=lambda item: float(item["published_at"]), reverse=True)
     merged: list[dict[str, Any]] = []
     seen_urls: set[str] = set()
@@ -533,8 +506,6 @@ def read_view_records(readonly_db: Any, brief: EditorialBrief, now: datetime) ->
 
     for item in approved_records:
         add_record(item)
-    for row in collector_rows:
-        add_record(dict(row))
     merged.sort(key=lambda item: float(item.get("published_at") or 0), reverse=True)
 
     records: list[dict[str, Any]] = []

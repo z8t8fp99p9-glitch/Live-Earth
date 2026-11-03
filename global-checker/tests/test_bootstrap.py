@@ -81,13 +81,13 @@ class BootstrapDispatchTests(unittest.TestCase):
             execv.assert_not_called()
 
     def test_missing_runner_fails_closed(self):
-        target = self.root / "nature" / "collector" / "collector.py"
+        target = self.root / "nature" / "publisher" / "publisher.py"
         (self.root / "global-checker" / "live_earth_dispatch.py").unlink()
         with patch.object(sys, "argv", [str(target)]), self.assertRaises(RuntimeError):
             bootstrap.bootstrap()
 
     def test_recursion_guard_prevents_second_dispatch(self):
-        target = self.root / "nature" / "collector" / "collector.py"
+        target = self.root / "nature" / "publisher" / "publisher.py"
         with patch.object(sys, "argv", [str(target)]), patch.dict(
             os.environ, {bootstrap.ACTIVE_ENV: "1"}, clear=False
         ), patch.object(bootstrap.os, "execv") as execv:

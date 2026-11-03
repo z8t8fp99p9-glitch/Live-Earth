@@ -1,5 +1,7 @@
 # LIVE // EARTH — Live Feeds architecture and progress addendum
 
+**Historical architecture record — superseded on 3 November 2026.** The Collector ownership, database-writer and story-window details below describe the earlier per-View implementation only. The active architecture is documented in `NEWSROOM-PIPELINE-INTEGRATION-2026-11-03.md`: one Global Collection Manager, one Global Collector, one shared Checker/editorial/Writer pipeline, and separate Manager-selected View databases. This record is retained for history and is not an instruction to restore either removed View Collector.
+
 **Date:** 1 November 2026 (Asia/Kolkata)  
 **Repository:** `z8t8fp99p9-glitch/Live-Earth`  
 **Branch:** `main`  

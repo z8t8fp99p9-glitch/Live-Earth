@@ -20,7 +20,7 @@ Each Publisher continues to use its own database:
 | Nature | `.publisher-data/nature/nature.sqlite3` |
 | Alien World | `.publisher-data/alien-world/alien-world.sqlite3` |
 
-Before reading, the Engine verifies the database `publisher_meta.view_id` and checks that the Collector-owned `stories` table and the Newsroom table do not contain another View's records. A View mismatch blocks publication rather than mixing data.
+Before reading, the Engine verifies the database `publisher_meta.view_id` and checks that the legacy `stories` table and the Newsroom table do not contain another View's records. A View mismatch blocks publication rather than mixing data.
 
 ## Newsroom table contract
 
@@ -68,7 +68,7 @@ No additional database fields are exposed in the public feed. The Publisher does
 
 This stage changes only `editorial-engine/universal_editorial_engine.py` and adds this integration documentation. It does not change:
 - either View Publisher script;
-- either View Collector;
+- either View's retired Collector;
 - the Newsroom Database Writer;
 - Global Checker or its policy registries;
 - GitHub workflow YAML;

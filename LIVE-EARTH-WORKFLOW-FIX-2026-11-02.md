@@ -1,5 +1,7 @@
 # LIVE // EARTH — Workflow Failure Fix
 
+**Historical workflow repair record — superseded on 3 November 2026.** The old Nature-specific dispatcher/runtime and collection steps described below have been retired. Current scheduled workflows call the shared Newsroom Orchestrator, which uses the Global Collection Manager and the one Global Collector. See `NEWSROOM-PIPELINE-INTEGRATION-2026-11-03.md`. Preserve this file as history; do not reintroduce the old routes.
+
 Date: 2 November 2026
 Target: `z8t8fp99p9-glitch/Live-Earth`, branch `main`
 

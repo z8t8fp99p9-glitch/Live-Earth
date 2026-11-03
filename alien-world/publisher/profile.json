@@ -3,63 +3,6 @@
   "viewId": "alien-world",
   "publisherId": "alien-world-publisher",
   "displayName": "Alien World Live Publisher",
-  "subjectScope": [
-    "space science",
-    "astronomy",
-    "planetary science",
-    "spaceflight missions",
-    "human space exploration",
-    "NASA discoveries and research"
-  ],
-  "sourcePolicy": {
-    "policy": "Official NASA source feeds only",
-    "allowedArticleDomains": [
-      "nasa.gov"
-    ],
-    "requireHttps": true,
-    "keepOriginalSourceUrl": true,
-    "rejectMissingPublicationDate": true
-  },
-  "sources": [
-    {
-      "name": "NASA News",
-      "feedUrl": "https://www.nasa.gov/news-release/feed/"
-    },
-    {
-      "name": "NASA Science",
-      "feedUrl": "https://science.nasa.gov/feed/"
-    },
-    {
-      "name": "NASA Image of the Day",
-      "feedUrl": "https://www.nasa.gov/feeds/iotd-feed/"
-    },
-    {
-      "name": "NASA Artemis",
-      "feedUrl": "https://www.nasa.gov/blogs/artemis/feed/"
-    },
-    {
-      "name": "NASA Space Station",
-      "feedUrl": "https://www.nasa.gov/blogs/spacestation/feed/"
-    }
-  ],
-  "collection": {
-    "owner": "Alien World Data Collection",
-    "entrypoint": "alien-world/collector/collector.py",
-    "refreshHours": 1,
-    "maximumFeedBytes": 4194304,
-    "maximumImageBytes": 7340032,
-    "networkAccessOwner": "AlienWorldDataCollector",
-    "writesDatabase": true,
-    "writesPublicationOutputs": false
-  },
-  "database": {
-    "engine": "SQLite",
-    "scope": "one independent database for Alien World only",
-    "retentionDays": 32,
-    "maximumRecords": 0,
-    "persistence": "Data Collection-owned GitHub Actions cache; rebuildable from allowed public feeds if cache is evicted",
-    "containsPersonalData": false
-  },
   "publication": {
     "windowMode": "rolling-hours",
     "issueWindowHours": 768,
@@ -82,20 +25,5 @@
     "liveFeedOnly": true,
     "publisherNetworkAccess": false,
     "publisherDatabaseWriteAccess": false
-  },
-  "imageUsePolicy": {
-    "policyVersion": 3,
-    "mode": "automatic-source-asset-screening",
-    "automaticImageDiscovery": true,
-    "sourceAssetPreference": "Use the actual image attached to the originating NASA feed/article (metadata, JSON-LD, RSS/Atom media fields, or article image elements). Never substitute a merely similar image.",
-    "sourceRequirement": "Require the original story and image to be served from HTTPS NASA.gov host family; redirects must remain in that host family.",
-    "creditRequirement": "Use image-specific credit when exposed by the source. If no separate image credit is published in extracted metadata, acknowledge NASA as the source under NASA Media Usage Guidelines. Never substitute the article author/byline.",
-    "copyrightRequirement": "Automatically hold back images with explicit copyright/licence restrictions, known stock-agency markers, or a clearly identified third-party rights restriction. A normal joint institutional credit (for example NASA/ESA/CSA) is not itself treated as a copyright restriction unless the source identifies it as protected.",
-    "contextRestriction": "Display only alongside the corresponding factual story, original source link and credit. Do not use NASA imagery as advertising, product branding, promotional creative or an implied NASA endorsement.",
-    "storyImagesAllowed": true,
-    "promotionalUseAllowed": false,
-    "missingCreditBehavior": "Use NASA source-level attribution; never use the article byline as image credit.",
-    "unknownRightsBehavior": "Hold back the image and retry at the next bounded Collector run; keep the story text available.",
-    "screeningDisclaimer": "The automated eligibility flag is an internal factual-editorial screening result. It is not a licence, rights-holder permission, or legal advice."
   }
 }

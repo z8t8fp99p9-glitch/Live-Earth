@@ -44,12 +44,10 @@ def load_profile() -> dict[str, Any]:
         raise RuntimeError("Alien World must publish the complete rolling 32-day window.")
     adaptive = publication.get("adaptiveLookback", {})
     stages = [int(value) for value in adaptive.get("expansionHours", [])]
-    if int(profile.get("database", {}).get("retentionDays", 32)) != 32 or stages != [768]:
-        raise RuntimeError("Alien World must retain and publish all records in one 32-day window.")
+    if stages != [768]:
+        raise RuntimeError("Alien World must publish the complete rolling 32-day window.")
     if int(publication.get("maximumStories", -1)) != 0 or int(adaptive.get("targetStories", -1)) != 0:
         raise RuntimeError("Alien World story-count caps and targets must be disabled.")
-    if int(profile.get("database", {}).get("maximumRecords", -1)) != 0:
-        raise RuntimeError("Alien World database record cap must be disabled.")
     return profile
 
 
@@ -67,7 +65,7 @@ def run_contract_tests() -> None:
 
 def read_only_connection() -> sqlite3.Connection:
     if not DB_PATH.is_file():
-        raise RuntimeError("The Collector database is missing. Run the Data Collection step first.")
+        raise RuntimeError("The Newsroom database is missing. Run the Global Newsroom workflow first.")
     uri = "file:" + quote(DB_PATH.as_posix(), safe="/:") + "?mode=ro"
     connection = sqlite3.connect(uri, uri=True)
     connection.row_factory = sqlite3.Row
@@ -124,12 +122,15 @@ class AdaptiveReadOnlyConnection:
 
     def execute(self, sql, parameters=()):
         normalized = " ".join(str(sql).lower().split())
-        if "from stories where published_at" not in normalized:
+        if not ("from newsroom_approved_stories" in normalized and "published_at" in normalized) and "from stories where published_at" not in normalized:
             return self._connection.execute(sql, parameters)
         start = (self._now - timedelta(hours=self._lookback_hours)).timestamp()
         end = (self._now + timedelta(hours=2)).timestamp()
-        rows = self._connection.execute(sql, (start, end)).fetchall()
-        return _BufferedRows(_deduplicate_rows(rows))
+        newsroom_sql = re.sub(r"\bFROM\s+stories\b", "FROM newsroom_approved_stories", sql, flags=re.IGNORECASE)
+        if "where view_id" not in normalized:
+            newsroom_sql = re.sub(r"\bWHERE\s+published_at\b", "WHERE view_id = 'alien-world' AND published_at", newsroom_sql, flags=re.IGNORECASE)
+        params = ("alien-world", start, end) if "where view_id=?" in normalized or "where view_id = ?" in normalized else (start, end)
+        return _BufferedRows(_deduplicate_rows(self._connection.execute(newsroom_sql, params).fetchall()))
 
 
 def _utc_iso(value: datetime) -> str:

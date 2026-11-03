@@ -9,52 +9,8 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 import sys
-sys.path.insert(0,str(ROOT/"nature"/"collector"))
 sys.path.insert(0,str(ROOT/"nature"/"publisher"))
-import collector
 import publisher
-
-class CollectorContractTests(unittest.TestCase):
-    def test_allowed_and_rejected_licences(self):
-        self.assertIn(collector.normalize_license("https://creativecommons.org/licenses/by-sa/4.0/"),collector.ACCEPTED_LICENSES)
-        self.assertNotIn(collector.normalize_license("https://creativecommons.org/licenses/by-nc/4.0/"),collector.ACCEPTED_LICENSES)
-        self.assertNotIn(collector.normalize_license("https://creativecommons.org/licenses/by-nd/4.0/"),collector.ACCEPTED_LICENSES)
-
-    def test_source_host_allowlist(self):
-        self.assertTrue(collector.safe_https("https://www.nature.com/articles/example",collector.ALLOWED_FEED_HOSTS))
-        self.assertTrue(collector.safe_https("https://news.mongabay.com/feed/",collector.ALLOWED_FEED_HOSTS))
-        self.assertFalse(collector.safe_https("https://phys.org/rss-feed/earth-news/environment/",collector.ALLOWED_FEED_HOSTS))
-        self.assertFalse(collector.safe_https("https://nature.com.evil.example/story",collector.ALLOWED_FEED_HOSTS))
-        self.assertFalse(collector.safe_https("http://www.nature.com/story",collector.ALLOWED_FEED_HOSTS))
-
-    def test_rss_parser_keeps_relevant_source_links(self):
-        payload=b'''<?xml version="1.0"?><rss version="2.0"><channel><item>
-        <title>New forest restoration study reports biodiversity recovery</title>
-        <link>https://www.nature.com/articles/test</link>
-        <description>Researchers report on forest habitat and species recovery.</description>
-        <pubDate>Mon, 12 Oct 2026 10:00:00 GMT</pubDate>
-        </item><item><title>Football results</title><link>https://www.nature.com/sport</link><description>Football match results.</description><pubDate>Mon, 12 Oct 2026 10:00:00 GMT</pubDate></item></channel></rss>'''
-        items=collector.parse_feed(payload,"Nature","https://www.nature.com/subjects/ecology.rss")
-        self.assertEqual(len(items),1)
-        self.assertEqual(items[0]["url"],"https://www.nature.com/articles/test")
-
-    def test_commons_media_url_exact_host(self):
-        self.assertEqual(collector.normalize_commons_media_url("//upload.wikimedia.org/test.jpg"),"https://upload.wikimedia.org/test.jpg")
-        with self.assertRaises(ValueError): collector.normalize_commons_media_url("https://upload.wikimedia.org.evil.example/test.jpg")
-        with self.assertRaises(ValueError): collector.normalize_commons_media_url("https://evil.example/test.jpg")
-
-    def test_photo_attachment_uses_rolling_window_not_calendar_month(self):
-        source=(ROOT/"nature/collector/collector.py").read_text(encoding="utf-8")
-        self.assertIn('window_hours = int(profile["publication"]["issueWindowHours"])',source)
-        self.assertIn('window_start = now - timedelta(hours=window_hours)',source)
-        self.assertNotIn('month_start.timestamp()',source)
-
-    def test_database_retention_is_profile_driven_and_32_days(self):
-        profile=json.loads((ROOT/"nature/publisher/profile.json").read_text(encoding="utf-8"))
-        source=(ROOT/"nature/collector/collector.py").read_text(encoding="utf-8")
-        self.assertEqual(profile["database"]["retentionDays"],32)
-        self.assertIn('profile.get("database", {}).get("retentionDays", 32)',source)
-        self.assertNotIn('timedelta(days=240)',source)
 
 class PublisherContractTests(unittest.TestCase):
     def test_profile_is_uncapped_32_day_live_only(self):
@@ -65,11 +21,20 @@ class PublisherContractTests(unittest.TestCase):
         self.assertEqual(profile["publication"]["minimumStories"],0)
         self.assertEqual(profile["publication"]["adaptiveLookback"]["targetStories"],0)
         self.assertEqual(profile["publication"]["adaptiveLookback"]["expansionHours"],[768])
-        self.assertFalse(any("phys.org" in source.get("url", "").lower() for source in profile["sources"]))
-        self.assertEqual(profile["publication"]["maximumSourceAgeDays"],32)
-        self.assertEqual(profile["database"]["retentionDays"],32)
+        self.assertNotIn("sources", profile)
+        self.assertNotIn("imageAllowlist", profile)
+        self.assertNotIn("database", profile)
+        self.assertNotIn("maximumSourceAgeDays", profile["publication"])
         self.assertNotIn("minimumDocumentaryImages",profile["publication"])
         self.assertEqual(profile["viewId"],"nature")
+
+    def test_database_retention_is_configured_for_32_days_in_global_manager(self):
+        manager = json.loads((ROOT/"global_collection_manager/config/view-collection-profiles.json").read_text(encoding="utf-8"))
+        profile = next(item for item in manager["profiles"] if item["viewId"] == "nature")
+        self.assertEqual(profile["retentionDays"], 32)
+        self.assertEqual(profile["lookbackWindowHours"], 768)
+        self.assertEqual(profile["collectorEntrypoint"], "global_collector")
+        self.assertEqual(profile["publisherEntrypoint"], "nature/publisher/newsroom_publisher.py")
 
     def test_image_selection_keeps_verified_photos_and_chronology(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -93,8 +58,8 @@ class PublisherContractTests(unittest.TestCase):
 
     def test_read_only_adapter_cannot_write(self):
         con=sqlite3.connect(":memory:"); con.row_factory=sqlite3.Row
-        con.execute("CREATE TABLE stories(story_id TEXT,published_at REAL,image_rights_status TEXT,image_local_path TEXT,image_url TEXT,image_credit TEXT,image_source_url TEXT,image_rights_note TEXT,title TEXT)")
-        for i in range(3): con.execute("INSERT INTO stories VALUES(?,?,?,?,?,?,?,?,?)",(f"s{i}",100-i,None,None,None,None,None,None,f"story {i}"))
+        con.execute("CREATE TABLE newsroom_approved_stories(view_id TEXT,story_id TEXT,published_at REAL,image_rights_status TEXT,image_local_path TEXT,image_url TEXT,image_credit TEXT,image_source_url TEXT,image_rights_note TEXT,title TEXT,url TEXT,summary TEXT,source_name TEXT,source_url TEXT,retrieved_at REAL)")
+        for i in range(3): con.execute("INSERT INTO newsroom_approved_stories VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",("nature",f"s{i}",100-i,None,None,None,None,None,None,f"story {i}",f"https://example.org/{i}","Approved summary", "Example", "https://example.org/feed", 101))
         con.execute("PRAGMA query_only=ON")
         adapter=publisher.NatureEngineReadOnlyConnection(con,{},8)
         rows=adapter.execute("SELECT story_id,title,published_at,image_rights_status,image_local_path,image_url,image_credit,image_source_url,image_rights_note FROM stories WHERE published_at >= ? AND published_at < ? ORDER BY published_at DESC LIMIT 500",(0,200)).fetchall()

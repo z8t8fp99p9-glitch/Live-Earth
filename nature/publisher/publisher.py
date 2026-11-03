@@ -37,7 +37,7 @@ def load_profile():
     if publication.get("windowMode") != "rolling-hours":
         raise RuntimeError("Nature Publisher accepts rolling Live Feeds only.")
     hours = int(publication.get("issueWindowHours", 0))
-    if hours != 768 or int(profile.get("database", {}).get("retentionDays", 32)) != 32:
+    if hours != 768:
         raise RuntimeError("Nature Live Feed must use the complete rolling 32-day window.")
     adaptive = publication.get("adaptiveLookback", {})
     stages = [int(value) for value in adaptive.get("expansionHours", [])]
@@ -50,7 +50,7 @@ def load_profile():
 
 def open_readonly():
     if not DB_PATH.is_file():
-        raise RuntimeError("Nature Collector database is missing. Run the Collector first.")
+        raise RuntimeError("Nature Newsroom database is missing. Run the Global Newsroom workflow first.")
     uri = "file:" + quote(DB_PATH.as_posix(), safe="/:") + "?mode=ro"
     con = sqlite3.connect(uri, uri=True)
     con.row_factory = sqlite3.Row
@@ -172,14 +172,18 @@ class NatureEngineReadOnlyConnection:
 
     def execute(self, sql, parameters=()):
         normalized = " ".join(str(sql).lower().split())
-        if "from stories where published_at" not in normalized:
+        if not ("from newsroom_approved_stories" in normalized and "published_at" in normalized) and "from stories where published_at" not in normalized:
             return self._connection.execute(sql, parameters)
+        newsroom_sql = re.sub(r"\bFROM\s+stories\b", "FROM newsroom_approved_stories", sql, flags=re.IGNORECASE)
+        if "where view_id" not in normalized:
+            newsroom_sql = re.sub(r"\bWHERE\s+published_at\b", "WHERE view_id = 'nature' AND published_at", newsroom_sql, flags=re.IGNORECASE)
         if self._now is not None and self._lookback_hours is not None:
-            params = ((self._now - timedelta(hours=self._lookback_hours)).timestamp(),
-                      (self._now + timedelta(hours=2)).timestamp())
+            start = (self._now - timedelta(hours=self._lookback_hours)).timestamp()
+            end = (self._now + timedelta(hours=2)).timestamp()
+            params = ("nature", start, end) if "where view_id=?" in normalized or "where view_id = ?" in normalized else (start, end)
         else:
             params = parameters
-        rows = self._connection.execute(sql, params).fetchall()
+        rows = self._connection.execute(newsroom_sql, params).fetchall()
         rows = deduplicate_story_rows(rows)
         selected = select_engine_story_rows(rows, self._verified_images, self._maximum_stories)
         self.story_selection_applied = True
@@ -233,16 +237,22 @@ def publish(now: datetime | None = None):
         # Make all existing verified rights records available to each bounded
         # stage. This changes no image discovery, licence or approval rule.
         maximum_start = now - timedelta(hours=stages[-1])
-        verified_rows = con.execute("""SELECT r.story_id,r.file_title,r.source_page,r.creator,r.credit,
-            r.license_name,r.license_url,r.caption,r.usage_note,r.modification_note,r.local_path,
-            r.public_path,r.image_url,r.rights_status
-            FROM nature_image_rights r JOIN stories s ON s.story_id=r.story_id
-            WHERE s.view_id='nature' AND s.published_at>=? AND s.published_at<?
-              AND r.rights_status=? AND r.creator<>'' AND r.credit<>'' AND r.license_url<>''
-              AND r.source_page LIKE 'https://commons.wikimedia.org/wiki/File:%'
-              AND r.local_path<>'' AND r.image_url LIKE 'https://raw.githubusercontent.com/%'""",
-            (maximum_start.timestamp(), now.timestamp(), IMAGE_STATUS)).fetchall()
-        verified = [dict(row) for row in verified_rows if (ROOT / row["local_path"]).is_file()]
+        tables = {row[0] for row in con.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
+        if "nature_image_rights" in tables:
+            verified_rows = con.execute("""SELECT r.story_id,r.file_title,r.source_page,r.creator,r.credit,
+                r.license_name,r.license_url,r.caption,r.usage_note,r.modification_note,r.local_path,
+                r.public_path,r.image_url,r.rights_status
+                FROM nature_image_rights r JOIN newsroom_approved_stories s ON s.story_id=r.story_id
+                WHERE s.view_id='nature' AND s.published_at>=? AND s.published_at<?
+                  AND r.rights_status=? AND r.creator<>'' AND r.credit<>'' AND r.license_url<>''
+                  AND r.source_page LIKE 'https://commons.wikimedia.org/wiki/File:%'
+                  AND r.local_path<>'' AND r.image_url LIKE 'https://raw.githubusercontent.com/%'""",
+                (maximum_start.timestamp(), now.timestamp(), IMAGE_STATUS)).fetchall()
+            verified = [dict(row) for row in verified_rows if (ROOT / row["local_path"]).is_file()]
+        else:
+            # Fresh Global Newsroom databases use only the generic Image Engine
+            # asset hand-off. The v2 publisher bridge attaches those approved images.
+            verified = []
         rights_by_story = {r["story_id"]: r for r in verified}
 
         sys.path.insert(0, str(ENGINE_DIR))

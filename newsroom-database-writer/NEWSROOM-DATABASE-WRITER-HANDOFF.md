@@ -1,16 +1,11 @@
-# Newsroom Database Writer — v2 Handoff
+# Shared Newsroom Database Writer — Handoff
 
-- System: LIVE // EARTH Newsroom Database Writer
-- Version: 2.0.0
-- Input: Checker image-review-complete hand-off, Editorial v2.0.0 package, and post-Editorial Checker v1.0.0 verification report
-- Output table: `newsroom_approved_stories` in the matching View's existing Collector-owned SQLite database
-- Nature DB: `.publisher-data/nature/nature.sqlite3`
-- Alien World DB: `.publisher-data/alien-world/alien-world.sqlite3`
-- Only `approvedStoryIds` with individual Checker `PASS` results are persisted; `HOLD` records are excluded
-- One Checker-approved Image Engine image is copied into the same View's private cache; it is not made public by the Writer
-- The Collector-owned `stories` table is never changed
-- Existing database tables are extended additively only; no reset, replacement, `DROP`, or database recreation
-- No raw source content or transient evidence excerpts are persisted
-- No numerical story-count cap is applied; existing 768-hour/32-day rolling feed window remains
+- Uses the Manager-selected destination database for the current View.
+- Initializes/migrates only generic shared Newsroom schema, additively and without reset.
+- Validates existing `publisher_meta.view_id`; refuses unowned or cross-View databases.
+- Persists only final Checker-approved stories with individual `PASS` decisions.
+- Enforces each View's Manager `retentionDays` setting without pruning another View.
+- Keeps private Image Engine assets under `.publisher-data/<viewId>/`.
+- Does not collect sources, approve rights, publish assets, or write public feeds.
 
-**Publisher adapters:** Nature and Alien World each have a ready `newsroom_publisher.py` entry point. The Global Pipeline Orchestrator must call the matching entry point only after the Writer has committed that View’s approved stories. The active workflow commands will be switched during Orchestrator integration. Scheduled Newsroom activation remains off until the full path is connected and tested end to end.
+Nature and Alien World currently retain separate 32-day databases and hourly schedules. Future Views use the same Writer implementation and register a destination in Manager configuration; no View-specific database bootstrap code is added.

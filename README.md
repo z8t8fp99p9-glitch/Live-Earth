@@ -3,24 +3,24 @@
 **Repository:** `z8t8fp99p9-glitch/Live-Earth`  
 **Branch:** `main`  
 **Live site:** https://z8t8fp99p9-glitch.github.io/Live-Earth/  
-**Guide updated:** 2 November 2026  
-**Source baseline inspected:** `0effb93b8ba48152eafaa371a760195c58617a2b`
+**Guide updated:** 3 November 2026  
+**Latest main inspected:** `62e62d0d50045e04628b0dd6a93394c13a26d076` (3 November 2026)
 
 ## Current project status
 
-- Nature and Alien World now publish independent, online-only Live Feeds. Each view has its own Collector, SQLite database, Publisher profile and published feed.
+- Nature and Alien World publish independent, online-only Live Feeds through one shared Global Collection Manager and one Global Collector. Each View retains its own Manager profile, isolated SQLite database/cache, Publisher adapter and published feed.
 - Both feeds now use the complete rolling **32-day** publication window, with **no story-count cap**. All eligible items present in the configured approved source feeds are considered; a feed provider's own history depth still determines which items it exposes.
-- Both independent source databases retain **32 days** of records, with no configured record-count ceiling. The existing view-specific GitHub Actions cache paths and cache-key families are preserved; the databases are not committed to the repository and are not reset.
+- Both isolated Newsroom databases retain **32 days** of Checker-released stories, with no configured record-count ceiling. The existing view-specific GitHub Actions cache paths and cache-key families are preserved; the databases are not committed to the repository and are not reset.
 - The scheduled workflows are hourly and staggered: Nature at minute **15 UTC** and Alien World at minute **45 UTC**. Both support manual dispatch.
 - While open, each browser view refreshes its online feed every five minutes. It uses `cache: no-store`, presents no current feed while offline, and clears its displayed feed when the view closes. Feed data is not stored in browser localStorage, sessionStorage or IndexedDB.
 - Alien World is now **Live Feeds only**. It does not publish a magazine, catalogue, issue archive or PDF. The separate Magazine Feature Orb remains a distinct view and is not part of the Alien World feed pipeline.
-- The shared Universal Editorial System is installed under `editorial-engine/`. It has a browser companion and a Python production Engine. Each view retains independent data ownership and its own Publisher.
-- The shared publication order is Collector → Global Checker text/storage gate → independent image rights check → Image Engine fallback when needed → second Checker approval → Universal Editorial Engine layout → final Checker gate → Live Feed. The Image Engine's original artwork cannot override a source's refusal of persistent storage or summary reuse.
+- The shared Global Newsroom and Universal Editorial System are installed under `global_collection_manager/`, `global_collector/`, `global-checker/`, `image-engine/`, `editorial-engine/` and `newsroom-database-writer/`. Each View retains isolated data and a presentation-only Publisher adapter.
+- The shared publication order is Global Collection Manager → Global Collector → Global Checker → Global Image Engine → Universal Editorial Engine → post-Editorial Global Checker → shared Newsroom Database Writer → matching View Publisher → Live Feed. The Image Engine's original artwork cannot override a source's refusal of persistent storage or summary reuse.
 - The Global PDF Reader remains shared and view-independent. Its v4.0.0 design and saved-PDF data are protected.
 - The owner has confirmed that the current app views are working well on the iPhone. Moon View was verified in Portrait and Landscape on 28 October 2026 and remains locked.
 - The current service-worker build remains `v109-alien-view-reset`; `sw.js` and `update-manager.js` must continue to use matching build identifiers.
 
-**Automation verification note:** Before this uncapped 32-day patch, the latest observed baseline Nature run (`41455958805`) and Alien World run (`41456049771`) both completed successfully, publishing 5 and 10 stories respectively. The new no-cap and pre-layout Image Engine changes in this package have passed local regression tests but have **not yet been exercised by a GitHub Actions run**. Treat end-to-end production behavior as pending until the owner uploads this package and both updated workflows complete successfully.
+**Global-only integration verification:** the current repair removes both per-View Collector implementations and the legacy per-View collection/image-ingestion routes. Local regression coverage for Manager, Global Collector, Global Checker, shared Writer, Editorial Engine, Nature and Alien World passes. GitHub Actions end-to-end runs and iPhone verification remain pending the ZIP upload and manual replacement of the two blocked `.github/workflows/` files.
 
 For the new uncapped 32-day publication design and test record, see [`LIVE-EARTH-32-DAY-UNCAPPED-PUBLISHING-ADDENDUM-2026-11-02.md`](./LIVE-EARTH-32-DAY-UNCAPPED-PUBLISHING-ADDENDUM-2026-11-02.md). Earlier addenda remain historical audit evidence. The 31 October Views Separation addendum and earlier continuity records remain historical audit evidence. The 1 November cleanup record remains an immutable record of Cleanup 01.
 
@@ -89,25 +89,25 @@ The Universal Editorial System is shared infrastructure for the whole app, not a
 
 The JavaScript and Python files are complementary layers of one system, not duplicate Engines. Neither layer collects external sources, owns a view database, or contains a view-specific feed list.
 
-**Ownership rules:** each content-producing view owns an independent logical database and Publisher. Its Collector, when needed, is the only component allowed to fetch that view's external sources and write to its database. The Publisher reads only its own database in read-only mode, then supplies the profile, command and bounded output destination to the shared Python Engine. The Engine does not fetch the internet, open databases, own schedules or write view records. All views reuse the one browser companion and the one Global PDF Reader.
+**Ownership rules:** every View uses the same Manager, Global Collector, Checker, Image Engine, Editorial Engine and Newsroom Database Writer. The Manager assigns a View-scoped job; the Global Collector returns transient candidates; the Writer initializes and writes only Checker-released rows to the destination registered in that View profile. Database paths, caches and publication outputs remain separate. View Publishers are read-only presentation adapters and never collect sources. New Views are added through Manager configuration and applicable Checker policy, not new Collector code.
 
 ### Nature Live Feeds
 
-- Collector: `nature/collector/collector.py`.
+- Shared collection: `global_collector/`; Manager profile: `global_collection_manager/config/view-collection-profiles.json`.
 - Database: `.publisher-data/nature/nature.sqlite3`.
-- Publisher/profile: `nature/publisher/`.
+- Publisher/profile: `nature/publisher/` (read-only output adapter).
 - Public output: `nature/published/live-feed.json` and verified contextual image assets/rights metadata.
 - Workflow: `.github/workflows/nature-publisher.yml`, hourly at minute 15 UTC, plus manual dispatch.
-- Source data is screened RSS/Atom reporting; optional documentary photos are individually re-screened against approved Wikimedia Commons file-page metadata and allowed licences.
+- Manager assignments select the registered RSS/Atom feeds. Global Checker independently assesses text and image provenance/permissions; the shared Image Engine handles image work.
 
 ### Alien World Live Feeds
 
-- Collector: `alien-world/collector/collector.py`; official NASA source domains only.
+- Shared collection: `global_collector/`; official NASA source assignments are registered in the Manager and checked downstream.
 - Database: `.publisher-data/alien-world/alien-world.sqlite3`.
-- Publisher/profile: `alien-world/publisher/`.
+- Publisher/profile: `alien-world/publisher/` (read-only output adapter).
 - Public output: `alien-world/published/live-feed.json` only.
 - Workflow: `.github/workflows/alien-world-publisher.yml`, hourly at minute 45 UTC, plus manual dispatch.
-- Publisher runs its deterministic contract tests before publication, opens its source database read-only and rejects magazine-shaped output. The browser view reads only the completed feed; it does not collect sources or generate publications.
+- Publisher reads only its own Checker-approved Newsroom rows and rejects magazine-shaped output. The browser view reads only the completed feed; it does not collect sources or generate publications.
 
 ### Global PDF Reader
 
@@ -119,7 +119,7 @@ Preserve the existing PDF.js engine version/cache and IndexedDB database `live-e
 
 - `data-store.js` owns the current local data-store helpers; `data-recovery.js` owns local backup/recovery support.
 - `recovery/` contains deliberate rollback and dated baseline records. It is not disposable clutter.
-- Preserve Nature and Alien World database cache families; neither source database belongs in the public repository.
+- Preserve the separate Nature and Alien World Newsroom database cache families; neither database belongs in the public repository.
 - Preserve saved PDFs, browser recovery data and user preferences.
 
 ## Repository automation and upload workflow

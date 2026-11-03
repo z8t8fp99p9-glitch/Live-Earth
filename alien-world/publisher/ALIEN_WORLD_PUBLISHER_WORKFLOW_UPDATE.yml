@@ -31,7 +31,7 @@ jobs:
           cache: pip
           cache-dependency-path: editorial-engine/requirements.txt
 
-      - name: Restore the Alien World source database
+      - name: Restore the Alien World's isolated Newsroom database and private media cache
         uses: actions/cache@v4
         with:
           path: .publisher-data/alien-world/
@@ -39,35 +39,35 @@ jobs:
           restore-keys: |
             alien-world-db-v1-${{ runner.os }}-
 
-      - name: Install Collector and shared Editorial Engine dependencies
+      - name: Install shared Global Newsroom dependencies
         run: python -m pip install --disable-pip-version-check -r editorial-engine/requirements.txt
 
-      - name: Collect approved NASA sources
-        shell: bash
-        run: |
-          set -euo pipefail
-          python alien-world/collector/collector.py \
-            | tee "$RUNNER_TEMP/alien-world-collection-result.json"
+      - name: Global Newsroom — Manager, Global Collector, Checker, Image Engine, Editorial and Database Writer
+        run: python editorial-engine/newsroom_orchestrator.py --view alien-world --repository-root .
 
-      - name: Publish the Live Feed only
+      - name: Alien World Publisher — publish validated Live Feed and Newsroom images
         shell: bash
         run: |
           set -euo pipefail
-          python alien-world/publisher/publisher.py --mode live \
+          python alien-world/publisher/newsroom_publisher.py \
             | tee "$RUNNER_TEMP/alien-world-live-publisher-result.json"
 
-      - name: Commit only the completed Live Feed
+      - name: Commit the completed Live Feed and approved assets
         id: publish_commit
         shell: bash
         run: |
           set -euo pipefail
+
           if [[ ! -s alien-world/published/live-feed.json ]]; then
             echo "Publisher produced no valid live-feed.json output." >&2
             exit 3
           fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- alien-world/published/live-feed.json
+
+          git add -A -- alien-world/published/
+
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No live-feed changes; the last-good feed remains in place."
@@ -88,4 +88,4 @@ jobs:
               'POST /repos/{owner}/{repo}/pages/builds',
               { owner: context.repo.owner, repo: context.repo.repo }
             );
-            core.info(`GitHub Pages rebuild requested (HTTP ${response.status}).`)
+            core.info(`GitHub Pages rebuild requested (HTTP ${response.status}).`);
