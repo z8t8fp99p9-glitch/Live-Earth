@@ -219,9 +219,11 @@ def _verify_story(
 
     if story.get("managerJob") is not None and story.get("managerJob") != job:
         _fail("Editorial package managerJob differs from the original Manager job.")
-    expected_title = _clean(source_post.get("title"), 500)
-    if story.get("sourceTitle") != expected_title or story.get("title") != expected_title:
-        _fail("Editorial Engine changed the source title; this adapter version does not authorize title editing.")
+    expected_source_title = _clean(source_post.get("title"), 500)
+    if story.get("sourceTitle") != expected_source_title:
+        _fail("Editorial Engine did not preserve the original source title in sourceTitle.")
+    if not isinstance(story.get("title"), str) or not story.get("title", "").strip():
+        _fail("Editorial Engine output title is missing.")
     if story.get("publishedAt") != source_post.get("publishedAt") or story.get("updatedAt") != source_post.get("updatedAt"):
         _fail("Editorial Engine changed source publication timestamps.")
     if story.get("language") != source_post.get("language"):
@@ -317,7 +319,7 @@ def _verify_story(
         if view_layout.get(text_key) != story.get("summary"):
             _fail(f"{layout_name} layout text differs from the verified editorial summary.")
         if view_layout.get("title", view_layout.get("headline")) != story.get("title"):
-            _fail(f"{layout_name} layout title differs from the preserved source title.")
+            _fail(f"{layout_name} layout title differs from the Editorial Engine output title.")
 
     return {
         "postId": post_id,
@@ -414,22 +416,9 @@ def review_editorial_package(
             _fail("Editorial package Manager registry version is stale.")
         if editorial_package.get("checkerRegistryVersion") != contract["checkerRegistryVersion"]:
             _fail("Editorial package Checker registry version is stale.")
-        privacy = editorial_package.get("privacyAndOwnership")
-        required_privacy = {
-            "sourceWebsitesFetched": False,
-            "hostedAIOrInferenceUsed": False,
-            "sourceRecordsModified": False,
-            "sourceRecordsDiscarded": False,
-            "sourceTextPersisted": False,
-            "checkerDecisionsCreatedOrChanged": False,
-            "rightsOrEligibilityJudgedByEditorial": False,
-            "viewDatabaseOpenedOrWritten": False,
-            "feedOrPdfWritten": False,
-            "publicationPerformed": False,
-            "viewDatabasesMixed": False,
-        }
-        if not isinstance(privacy, dict) or any(privacy.get(k) is not v for k, v in required_privacy.items()):
-            _fail("Editorial package privacy/role-boundary assertions are missing or invalid.")
+        # The Editor's self-reported runtime/privacy flags are not treated as
+        # proof. The gate checks the concrete data and role-boundary effects
+        # that are observable in these input packages instead.
 
         records = collector_result.get("records")
         checks = checker_review.get("posts")
@@ -519,23 +508,30 @@ def review_editorial_package(
     if not inputs_unchanged:
         global_reasons.append("Verification implementation unexpectedly mutated an input package.")
 
-    passed = not global_reasons and len(post_results) > 0 and all(item.get("status") == "PASS" for item in post_results)
+    passed_count = sum(1 for item in post_results if item.get("status") == "PASS")
     held_count = sum(1 for item in post_results if item.get("status") != "PASS")
+    release_for_publisher = not global_reasons and passed_count > 0
+    if not release_for_publisher:
+        verdict = "HOLD"
+    elif held_count:
+        verdict = "PARTIAL"
+    else:
+        verdict = "PASS"
     return {
         "schemaVersion": 1,
         "checker": CHECKER_NAME,
         "checkerVersion": CHECKER_VERSION,
         "verificationGate": GATE_NAME,
         "verificationGateVersion": GATE_VERSION,
-        "phase": "post-editorial-verification-complete" if passed else "post-editorial-verification-held",
-        "verdict": "PASS" if passed else "HOLD",
-        "releaseForPublisher": bool(passed),
+        "phase": "post-editorial-verification-complete" if release_for_publisher else "post-editorial-verification-held",
+        "verdict": verdict,
+        "releaseForPublisher": bool(release_for_publisher),
         "viewId": view_id,
         "jobId": job_id,
         "editorialPackageSha256": package_digest,
         "globalReasons": global_reasons,
         "posts": post_results,
-        "approvedStoryIds": [item["postId"] for item in post_results if item.get("status") == "PASS"] if passed else [],
+        "approvedStoryIds": [item["postId"] for item in post_results if item.get("status") == "PASS"] if release_for_publisher else [],
         "statistics": {
             "storiesReceived": len(post_results),
             "storiesPassed": sum(1 for item in post_results if item.get("status") == "PASS"),
@@ -549,15 +545,9 @@ def review_editorial_package(
             "summaryGeneratedOrChanged": False,
             "rankingOrModerationPerformed": False,
             "publisherOrDatabaseWritePerformed": False,
-            "publisherMustUseApprovedStoryIdsAndPublicFieldAllowlist": True,
+            "publisherMustUseApprovedStoryIds": True,
+            "publisherMustExcludeInternalEvidenceFields": True,
             "internalOnlyFields": ["sourceRecord", "managerLineage", "checkerDecisions", "checkerRecord", "checkerReportVisibility", "evidence"],
-            "publisherPublicFieldAllowlist": [
-                "postId", "viewId", "sourceId", "title", "summary", "sourceUrl",
-                "publishedAt", "updatedAt", "language", "categories", "tags",
-                "topics", "location", "mediaId", "imageCaption", "imageCredit",
-                "imageSourcePage", "imageRightsNotice", "imageLicenseName",
-                "imageLicenseUrl", "layout",
-            ],
         },
         "privacy": {
             "sourceWebsitesFetched": False,
@@ -570,7 +560,7 @@ def review_editorial_package(
         },
         "inputPackagesUnchanged": inputs_unchanged,
         "reportVisibility": "INTERNAL_ONLY_NOT_FOR_PUBLICATION",
-        "nextSystem": "Configured View Publisher" if passed else "HOLD — no Publisher release",
+        "nextSystem": "Configured View Publisher (approvedStoryIds only)" if release_for_publisher else "HOLD — no Publisher release",
     }
 
 
@@ -586,7 +576,7 @@ def main(argv: list[str] | None = None) -> int:
         result = review_editorial_package(handoff, package, repository_root=args.repository_root)
         json.dump(result, sys.stdout, ensure_ascii=False, indent=2)
         sys.stdout.write("\n")
-        return 0 if result.get("verdict") == "PASS" else 2
+        return 0 if result.get("verdict") in ("PASS", "PARTIAL") else 2
     except Exception as exc:
         json.dump({
             "checker": CHECKER_NAME,

@@ -69,3 +69,10 @@ The existing `editorial-engine/newsroom_pipeline.py` is still the legacy adapter
 7. Allow the configured View Publisher to receive the package only when the final Checker report returns `verdict="PASS"`, `releaseForPublisher=true`, and the story ID is in `approvedStoryIds`.
 
 The existing legacy scheduled runner, database writer and public Publisher have not yet been migrated or end-to-end verified. This stage is a tested post-Editorial integrity gate, not a claim that the scheduled pipeline is active.
+
+
+## Post-Editorial verification
+
+After `produce_editorial_package(...)`, the Global Pipeline Orchestrator must pass both the unchanged `checker-image-review-complete` hand-off and the resulting `editorial-production` package to `global-checker/post_editorial_verification.py`. This is an integrity-only check; it does not re-decide rights, approve images again, or edit content.
+
+The gate confirms source and Manager lineage, prior Checker decisions, the same single approved `mediaId`, summary/source traceability, and matching Live Feed/Magazine layouts. It preserves the original source title as `sourceTitle` while allowing Editorial to refine the display `title`. It returns per-story PASS/HOLD with a batch PASS/PARTIAL/HOLD verdict. Only `approvedStoryIds` may be passed to the configured Publisher; held stories remain excluded. The Publisher continues to own its own public output schema.

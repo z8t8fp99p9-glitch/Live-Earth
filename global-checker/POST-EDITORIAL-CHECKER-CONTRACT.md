@@ -30,14 +30,16 @@ For each Checker-released `postId`, the gate verifies:
 - Exactly one image remains attached. Its `mediaId`, parent `postId`, `sourceId`, View ID, media metadata, and Manager lineage match the image that the Checker approved.
 - The summary is derived from the exact Checker-cleared source summary. For source summaries up to 500 words, the source is preserved exactly. For longer sources, the summary must be 200–500 words and consist only of exact source sentences in source order, or the explicit unchanged-prefix boundary fallback emitted by the approved adapter.
 - The word count, summary status, method and SHA-256 digests agree with the actual source and generated summary.
-- Live Feed and Magazine layouts reference the same summary, title, and single approved `mediaId`.
+- Live Feed and Magazine layouts reference the same Editorial output title, summary, and single approved `mediaId`. The original source title remains preserved separately as `sourceTitle`; Editorial may refine the display title.
 - Transient summary evidence matches the source summary and output digests and remains marked Checker-only.
 
 A source summary under 200 words is not padded. It must be preserved exactly and marked `SOURCE_UNDER_200_WORDS`.
 
 ## Decision semantics
 
-The gate emits `PASS` only when the entire package passes. Any global or per-story failure emits `HOLD`, and `releaseForPublisher` is false. The `approvedStoryIds` list is empty on HOLD. There is no partial release from a mixed PASS/HOLD package.
+The gate makes a per-story integrity decision. A story that fails is marked `HOLD`; it does not automatically block unrelated stories that pass. The batch verdict is `PASS` when all stories pass, `PARTIAL` when at least one passes and at least one is held, and `HOLD` when a global contract failure occurs or no story passes.
+
+`releaseForPublisher` is true only when there is no global contract failure and at least one story passed. `approvedStoryIds` contains only individually verified stories. The Publisher must never publish a held story. A global mismatch (for example, wrong job/View, stale registry, invalid hand-off identity or ambiguous post mapping) holds the entire batch.
 
 The gate does **not** create or replace rights decisions. Existing Global Checker text, image, lineage and eligibility decisions remain the sole authority. This stage checks integrity and contract compliance after editorial production; it does not independently grant copyright, storage, transformation or display permissions.
 
@@ -47,7 +49,7 @@ The gate does not edit the story, rewrite the summary, replace an image, rank or
 
 The verification report is internal-only and must never be published. The Publisher may consume a story only when `verdict` is `PASS`, `releaseForPublisher` is true, and its `postId` is in `approvedStoryIds`.
 
-The Publisher must use the report's `decisionBoundary.publisherPublicFieldAllowlist`. It must never expose the gate's internal fields, including `sourceRecord`, `managerLineage`, `checkerDecisions`, `checkerRecord`, `checkerReportVisibility`, or transient `evidence`. The staged image is still private; only the Publisher may perform the approved asset-copy operation to the relevant View's own asset destination.
+The report identifies internal-only fields that must not be exposed, including `sourceRecord`, `managerLineage`, `checkerDecisions`, `checkerRecord`, `checkerReportVisibility`, and transient `evidence`. The Publisher owns its public output schema and presentation allowlist; this Checker gate does not prescribe or replace that Publisher contract. The staged image is still private; only the Publisher may perform the approved asset-copy operation to the relevant View's own asset destination.
 
 ## Python API
 
@@ -60,8 +62,9 @@ result = review_editorial_package(
     repository_root=".",
 )
 
-if result["verdict"] == "PASS" and result["releaseForPublisher"]:
+if result["releaseForPublisher"]:
     # Pass only approvedStoryIds plus the unchanged package to the matching View Publisher.
+    # If verdict is PARTIAL, held stories remain excluded.
     ...
 else:
     # HOLD: do not publish or write a View database.
@@ -77,7 +80,7 @@ python global-checker/post_editorial_verification.py \
   --repository-root .
 ```
 
-Exit code `0` means PASS. Exit code `2` means HOLD or a blocked verification. JSON output is an internal report, not publication content.
+Exit code `0` means PASS or PARTIAL with at least one releasable story. Exit code `2` means HOLD or a blocked verification. JSON output is an internal report, not publication content.
 
 ## Integration status
 

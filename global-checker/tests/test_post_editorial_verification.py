@@ -322,6 +322,59 @@ class PostEditorialVerificationTests(unittest.TestCase):
         self.assertFalse(result["decisionBoundary"]["newRightsOrCopyrightDecisionCreated"])
         self.assertTrue(result["decisionBoundary"]["priorCheckerRightsAndEligibilityDecisionsRemainAuthoritative"])
 
+    def test_editorial_title_edit_is_allowed_when_source_title_is_preserved(self):
+        package = copy.deepcopy(self.package)
+        story = package["stories"][0]
+        story["title"] = "Editorially refined headline"
+        story["layout"]["liveFeed"]["title"] = story["title"]
+        story["layout"]["magazine"]["headline"] = story["title"]
+        result = self.verify(package=package)
+        self.assertEqual(result["verdict"], "PASS")
+        self.assertEqual(story["sourceTitle"], story["sourceRecord"]["title"])
+
+    def test_one_held_post_does_not_block_an_independent_passing_post(self):
+        handoff = copy.deepcopy(self.handoff)
+        package = copy.deepcopy(self.package)
+        source2 = copy.deepcopy(handoff["collectorResultWithCheckerReviewedImages"]["records"][0])
+        source2["postId"] = "post-002"
+        source2["sourcePostId"] = "source-post-002"
+        image2 = copy.deepcopy(source2["media"][0])
+        image2["postId"] = "post-002"
+        image2["mediaId"] = "media-002"
+        source2["media"] = [image2]
+        handoff["collectorResultWithCheckerReviewedImages"]["records"].append(source2)
+
+        check2 = copy.deepcopy(handoff["checkerReview"]["posts"][0])
+        check2["postId"] = "post-002"
+        check2["image"]["mediaId"] = "media-002"
+        handoff["checkerReview"]["posts"].append(check2)
+        handoff["editorialEligiblePostIds"].append("post-002")
+
+        story2 = copy.deepcopy(package["stories"][0])
+        story2["id"] = story2["postId"] = "post-002"
+        story2["mediaId"] = "media-002"
+        story2["sourceRecord"] = copy.deepcopy(source2)
+        story2["image"] = copy.deepcopy(image2)
+        story2["checkerRecord"] = copy.deepcopy(check2)
+        story2["checkerDecisions"] = {k: copy.deepcopy(check2[k]) for k in ("text", "image", "lineage")}
+        story2["layout"]["imageMediaId"] = "media-002"
+        story2["layout"]["liveFeed"]["imageMediaId"] = "media-002"
+        story2["layout"]["magazine"]["imageMediaId"] = "media-002"
+        package["stories"].append(story2)
+        evidence2 = copy.deepcopy(package["evidence"][0])
+        evidence2["evidenceId"] = "post-002-source-summary-" + evidence2["summaryExcerptSha256"][:16]
+        evidence2["postId"] = "post-002"
+        evidence2["mediaId"] = "media-002"
+        package["evidence"].append(evidence2)
+
+        # The first post has a broken image reference; the second remains intact.
+        package["stories"][0]["mediaId"] = "wrong-media"
+        result = self.verify(handoff, package)
+        self.assertEqual(result["verdict"], "PARTIAL")
+        self.assertTrue(result["releaseForPublisher"])
+        self.assertEqual(result["approvedStoryIds"], ["post-002"])
+        self.assertEqual(result["statistics"]["storiesHeld"], 1)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
