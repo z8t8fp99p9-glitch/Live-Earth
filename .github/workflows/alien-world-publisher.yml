@@ -1,3 +1,4 @@
+
 name: Alien World Live Feed Publisher
 
 on:
@@ -31,7 +32,7 @@ jobs:
           cache: pip
           cache-dependency-path: editorial-engine/requirements.txt
 
-      - name: Restore the Alien World source database
+      - name: Restore the Alien World's isolated Newsroom database and private media cache
         uses: actions/cache@v4
         with:
           path: .publisher-data/alien-world/
@@ -39,17 +40,10 @@ jobs:
           restore-keys: |
             alien-world-db-v1-${{ runner.os }}-
 
-      - name: Install Collector and shared Editorial Engine dependencies
+      - name: Install shared Global Newsroom dependencies
         run: python -m pip install --disable-pip-version-check -r editorial-engine/requirements.txt
 
-      - name: Collect approved NASA sources
-        shell: bash
-        run: |
-          set -euo pipefail
-          python alien-world/collector/collector.py \
-            | tee "$RUNNER_TEMP/alien-world-collection-result.json"
-
-      - name: Alien World Global Newsroom v2 — Checker-approved orchestration
+      - name: Global Newsroom — Manager, Global Collector, Checker, Image Engine, Editorial and Database Writer
         run: python editorial-engine/newsroom_orchestrator.py --view alien-world --repository-root .
 
       - name: Alien World Publisher — publish validated Live Feed and Newsroom images
