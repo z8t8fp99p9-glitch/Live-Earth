@@ -1,5 +1,6 @@
-"""Shared data models and validation helpers for Global Collection Manager."""
+"""Shared data models and validation helpers for LIVE // EARTH Global Collection Manager."""
 from __future__ import annotations
+
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from typing import Any
@@ -7,22 +8,32 @@ import hashlib
 import json
 import re
 
-SAFE_ID = re.compile(r"^[a-z0-9][a-z0-9-]{1,79}$")
+# IDs are supplied by the app/Manager. Accept future stable IDs without tying
+# the Manager to a list of known View names or imposing a lowercase-only rule.
+SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+GLOBAL_COLLECTOR_ENTRYPOINT = "global_collector"
+
 
 class ManagerError(RuntimeError):
     """Invalid configuration or unsafe collection-management operation."""
 
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
+
 def require_id(value: Any, label: str) -> str:
     if not isinstance(value, str) or not SAFE_ID.fullmatch(value):
-        raise ManagerError(f"{label} must be a stable lowercase ID (letters, numbers and hyphens).")
+        raise ManagerError(
+            f"{label} must be a stable ID using letters, numbers, dots, underscores or hyphens."
+        )
     return value
+
 
 def canonical_hash(value: Any) -> str:
     raw = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
 
 @dataclass(frozen=True)
 class CollectionJob:
@@ -41,7 +52,7 @@ class CollectionJob:
     requestWindowHours: int
     configVersion: str
     trigger: str
-    status: str = "planned"
+    status: str = "assigned"
 
     def to_dict(self) -> dict[str, Any]:
         result = asdict(self)

@@ -1,14 +1,12 @@
-"""Append-only Manager health and audit event log.
-
-The log is runtime state, not source data and not a shared story database.
-No database reset or external telemetry is performed.
-"""
+"""Append-only Manager health and assignment audit log."""
 from __future__ import annotations
+
 from pathlib import Path
-from datetime import datetime, timezone
 from typing import Any
 import json
+
 from .models import ManagerError, utc_now
+
 
 class HealthAuditLog:
     def __init__(self, path: Path):
@@ -25,7 +23,7 @@ class HealthAuditLog:
             "sourceId": source_id,
             "jobId": job_id,
             "status": status,
-            "details": details or {}
+            "details": details or {},
         }
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.path.open("a", encoding="utf-8") as stream:

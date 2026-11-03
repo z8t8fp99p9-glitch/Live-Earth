@@ -6,27 +6,14 @@
       "viewId": "nature",
       "viewName": "Nature",
       "enabled": true,
-      "topicsAndCategories": [
-        "wildlife",
-        "ecology",
-        "oceans",
-        "biodiversity",
-        "climate",
-        "conservation",
-        "environmental research"
-      ],
+      "topicsAndCategories": ["wildlife", "ecology", "oceans", "biodiversity", "climate", "conservation", "environmental research"],
       "keywords": [],
       "exclusions": [],
-      "allowedSourceGroups": [
-        "nature-approved"
-      ],
-      "collectionFrequency": {
-        "type": "hourly",
-        "intervalMinutes": 60
-      },
+      "allowedSourceGroups": ["nature-approved"],
+      "collectionFrequency": {"type": "hourly", "intervalMinutes": 60},
       "lookbackWindowHours": 768,
       "retentionDays": 32,
-      "collectorEntrypoint": "nature/collector/collector.py",
+      "collectorEntrypoint": "global_collector",
       "collectorWorkflow": ".github/workflows/nature-publisher.yml",
       "destinationDatabaseId": "nature-sqlite",
       "destinationDatabasePath": ".publisher-data/nature/nature.sqlite3",
@@ -37,26 +24,14 @@
       "viewId": "alien-world",
       "viewName": "Alien World",
       "enabled": true,
-      "topicsAndCategories": [
-        "space science",
-        "astronomy",
-        "planetary science",
-        "spaceflight missions",
-        "human space exploration",
-        "NASA discoveries and research"
-      ],
+      "topicsAndCategories": ["space science", "astronomy", "planetary science", "spaceflight missions", "human space exploration", "NASA discoveries and research"],
       "keywords": [],
       "exclusions": [],
-      "allowedSourceGroups": [
-        "alien-world-approved"
-      ],
-      "collectionFrequency": {
-        "type": "hourly",
-        "intervalMinutes": 60
-      },
+      "allowedSourceGroups": ["alien-world-approved"],
+      "collectionFrequency": {"type": "hourly", "intervalMinutes": 60},
       "lookbackWindowHours": 768,
       "retentionDays": 32,
-      "collectorEntrypoint": "alien-world/collector/collector.py",
+      "collectorEntrypoint": "global_collector",
       "collectorWorkflow": ".github/workflows/alien-world-publisher.yml",
       "destinationDatabaseId": "alien-world-sqlite",
       "destinationDatabasePath": ".publisher-data/alien-world/alien-world.sqlite3",

@@ -39,9 +39,7 @@
       "sourceId": "source-usgs-national-news",
       "sourceName": "USGS — National News Releases",
       "websiteUrl": "https://www.usgs.gov/",
-      "feedUrls": [
-        "https://www.usgs.gov/news/national-news-release/feed"
-      ],
+      "feedUrls": ["https://www.usgs.gov/news/national-news-release/feed"],
       "connectorType": "rss",
       "sourceStatus": "enabled",
       "checkerPolicyRef": "usgs-national-news-educational-government-v1",
@@ -52,9 +50,7 @@
       "sourceId": "source-mongabay",
       "sourceName": "Mongabay",
       "websiteUrl": "https://news.mongabay.com/",
-      "feedUrls": [
-        "https://news.mongabay.com/feed/"
-      ],
+      "feedUrls": ["https://news.mongabay.com/feed/"],
       "connectorType": "rss",
       "sourceStatus": "enabled",
       "checkerPolicyRef": "mongabay-per-item-open-license-required-v2",

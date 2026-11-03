@@ -1,2 +1,2 @@
-"""LIVE // EARTH Global Collection Manager — isolated coordination layer."""
-__version__ = "0.1.0"
+"""LIVE // EARTH Global Collection Manager — global source/view job assignment."""
+__version__ = "0.2.0"

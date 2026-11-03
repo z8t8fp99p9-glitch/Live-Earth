@@ -1,75 +1,71 @@
 # LIVE // EARTH — Global Collection Manager
 
-**Version:** 0.1.0  
-**Status:** First isolated code slice — prepared, not deployed or integrated.
+**Version:** 0.2.0  
+**Status:** Manager-only correction; local tests included. Not deployed or connected to a new workflow by this package.
 
-## Purpose
+## One global Manager, one Global Collector
 
-The Global Collection Manager is the global coordination layer above the View-owned collection pipelines. It maintains:
+The Global Collection Manager is the global assignment layer for every collection-owning View. It stores the source catalogue, each View's collection profile, source-to-View subscriptions and UTC schedule. It creates an immutable job envelope for the **same shared Global Collector** for every View.
 
-1. Source Registry — the collection catalogue, separate from the Global Checker's source-policy registry.
-2. View Collection Profiles — independent collection settings for each collection-owning View.
-3. Source-View Assignments — many-to-many source subscriptions with View-specific feed URLs and filters.
-4. Scheduler — UTC cadence and manual-refresh authorization rules.
-5. Job Dispatcher — creates immutable, View-scoped handoff envelopes for the correct existing Collector.
-6. Health & Audit Log — append-only operational/configuration event records.
+The Manager does not fetch websites, parse feeds, download images, check rights, write story records, edit stories or publish feeds/PDFs. It assigns work. The Global Collector executes the source-intake job; Global Checker retains all rights and provenance decisions.
 
-## Non-negotiable ownership boundaries
+## Adding another View
 
-- Nature Collector remains the only writer to the Nature database.
-- Alien World Collector remains the only writer to the Alien World database.
-- This Manager does not fetch source websites, parse feeds, download images, write story records, check rights, edit stories or publish feeds/PDFs.
-- The `checkerPolicyRef` field is a reference only. The Global Checker remains the rights/provenance authority.
-- Nature and Alien World databases are never merged.
-- Magazine is a peer publication owner with a read-only adapter, not a third story Collector. It is deliberately not registered as a collection View in this first slice.
-- New collection-owning Views can be added through explicit profiles and assignments; there is no directory scan or automatic View discovery.
-- Existing feeds, workflows, schedules, caches and databases are not modified by this package.
+There are no Nature/Alien World allowlists or View-specific code branches in this Manager. A future View is registered through configuration only:
 
-## Existing baseline represented
+1. Add its stable `viewId` and unique `profileId` to `config/view-collection-profiles.json`.
+2. Add the View's source subscriptions and unique `assignmentId` values to `config/source-view-assignments.json`.
+3. Add any new source catalogue entries to `config/source-registry.json`.
+4. Add its cadence under the exact same `viewId` in `config/scheduler.json`.
+5. Ensure Global Checker has an applicable policy for the View and source, because collection assignment never grants rights.
 
-The configuration reflects the current repository profiles inspected on `main`:
-- Nature Collector: `nature/collector/collector.py`, Nature-only database, 32-day retention, 768-hour lookback.
-- Alien World Collector: `alien-world/collector/collector.py`, Alien World-only database, 32-day retention, 768-hour lookback.
-- Existing hourly workflow offsets are preserved as UTC anchor minutes: Nature `15`, Alien World `45`.
-- Nature's current source list is used as configured; Phys.org is not re-added.
-- Alien World remains NASA-source-only in its current profile.
+The new profile must use the fixed shared Collector entry point `global_collector`. It must retain its own View ID, profile ID, assignments, source IDs, feed URLs and destination database identity/path. The destination path must remain inside `.publisher-data/<viewId>/`.
 
-The Manager's Source Registry is not the Global Checker registry. `checkerPolicyRef` links are informational references only and do not grant permission.
+Adding a View does not require editing Python code, creating another Collector, adding a View name to a choices list, or changing another View's sources or destination. The Global Checker policy must explicitly include that View for each source it is allowed to use.
 
-## First-slice execution boundary
-
-This build is intentionally **planning-only**:
-- `overview` reads and displays configuration.
-- `plan --view nature` or `plan --view alien-world` creates a structured job envelope for the correct existing Collector.
-- `plan` does not run the Collector or invoke GitHub Actions.
-- No existing workflow is changed or triggered.
-- No database is opened, created, migrated, reset or written.
-- The next integration stage will connect these envelopes to the existing View-owned Collector entry points only after the remaining newsroom systems are built and the full system is ready for testing.
-
-## Files
-
-- `source_registry.py`
-- `profiles.py`
-- `assignments.py`
-- `scheduler.py`
-- `dispatcher.py`
-- `health_audit.py`
-- `models.py`
-- `manager.py`
-- `config/*.json`
-
-## Local usage
+## Manager commands
 
 From the repository root:
 
 ```bash
 python -m global_collection_manager.manager overview
-python -m global_collection_manager.manager plan --view nature
-python -m global_collection_manager.manager plan --view alien-world
+python -m global_collection_manager.manager assign --view nature
+python -m global_collection_manager.manager assign --view alien-world
+python -m global_collection_manager.manager assign-due
 ```
 
-Python module names cannot contain hyphens. For actual invocation, use the underscore package folder name `global_collection_manager`. The repository upload path for this package is `global_collection_manager/`.
+`plan --view <viewId>` remains as a backward-compatible alias for `assign --view <viewId>`.
 
-## Safety
+Manual assignment requires the configured authorization flag:
 
-The Manager fails closed on malformed configuration, unknown IDs, non-HTTPS feed URLs, mismatched assignment URLs, disabled profiles/sources, or unauthorised manual refresh. Runtime audit events are written under `.manager-state/`; they are not source-story records and must not be committed as an archive.
+```bash
+python -m global_collection_manager.manager assign --view <viewId> --manual --authorised
+```
+
+The assignment command prints a JSON job envelope. Its `collectorEntrypoint` is always `global_collector`; the envelope carries the target View's IDs, allowed feeds and destination. `collectorWorkflow` is retained as the existing per-View workflow context for compatibility with the current Global Collector and Checker job contracts. This Manager package does not edit or trigger workflows.
+
+The envelope can be passed to the existing Global Collector CLI:
+
+```bash
+python -m global_collector --job-file manager-job.json
+```
+
+## Safety and compatibility
+
+- The Manager's Source Registry is distinct from `global-checker/source-registry.json`.
+- The Manager never treats an educational/non-commercial purpose as a rights grant.
+- All assigned feed URLs must exist in the Manager Source Registry; the Global Collector and Global Checker revalidate policy and source boundaries.
+- Every job contains exactly one View. IDs and source subscriptions are not mixed between Views.
+- Every View keeps its own destination database identity and path. The Manager does not open or write databases.
+- The existing Nature and Alien World workflows, Collectors, Publishers, database schemas, feed outputs and other project files are not changed by this package.
+- Runtime assignment audit events are written under `.manager-state/`; they are operational records, not story data.
+
+## Files
+
+- `manager.py` — generic overview, assignment and due-job commands.
+- `dispatcher.py` — creates deterministic job envelopes routed to the shared Collector.
+- `source_registry.py`, `profiles.py`, `assignments.py`, `scheduler.py` — validated configuration readers.
+- `models.py` — shared identifiers, job schema and fixed global Collector target.
+- `health_audit.py` — append-only assignment audit log.
+- `config/*.json` — source catalogue, View profiles, assignments and schedules.
+- `tests/` — local Manager-only regression tests, including a future View not hard-coded in Python.
