@@ -1,35 +1,42 @@
-# LIVE // EARTH Global Image Engine — v0.2.0
+# LIVE // EARTH Global Image Engine — shared View-independent engine
 
-The Global Image Engine is a shared, local image-preparation component for the independent Nature and Alien World live-feed pipelines.
+## Responsibility
 
-## Live behaviour in this release
+The Global Image Engine receives a rights-limited job from the Universal Global Checker. It finds a relevant image candidate from a Checker-permitted source (currently Wikimedia Commons where the central registry permits it), or creates an original thematic illustration locally. It then returns exactly one candidate per post to the Checker.
 
-- Both Publishers call the shared hand-off immediately before the final Global Checker feed gate.
-- An existing approved image remains in place. The Engine does not replace it.
-- When a feed story has no image, the Engine may create a locally generated procedural illustration, but only after confirming that the exact story's text decision is already publishable under the current registry version.
-- Every illustration is submitted to the Global Checker. The Engine cannot approve its own output. A matching GREEN decision for the same view, story, image URL, source, caption, creator, licence label and rights notice is required before the asset is copied into that view's published asset folder.
-- The final feed gate independently validates the story and image evidence. Assets stripped by that gate are removed before publication completes.
-- Nature and Alien World use separate staging folders, databases and published asset folders.
+The Engine is global: it has no hard-coded Nature/Alien World View allowlist and no View-specific Python branches. Its allowed image sources, local-illustration eligibility and Publisher asset destination come from the Checker-issued configuration and the central image policy registry. A new View is enabled by registering its image policy and asset folder, not by adding a code branch.
 
-## How artwork is labelled
+## Pipeline
 
-The generated JPEG is visibly labelled `ILLUSTRATION / NOT A PHOTOGRAPH`. Its caption states that it is thematic artwork, is not a literal depiction of the linked report, and is not a documentary photograph or data-accurate scientific visualization. It must never be represented as field evidence, a source photograph, or a scientific rendering.
+1. Global Checker performs the initial text, provenance, permission and lineage review.
+2. Checker creates an `image-engine-intake` envelope with complete Manager IDs, post IDs, permitted search text and configured image routes.
+3. Global Image Engine prepares one candidate and returns it in `checkerHandoff`.
+4. Global Checker independently evaluates the candidate and rechecks the complete post.
+5. Only Checker-cleared text and image are eligible for the Universal Editorial Engine.
+6. Publisher later writes the approved staged asset to the assigned View destination.
 
-## External image candidates
+## IDs and lineage
 
-The Engine includes bounded Wikimedia Commons candidate discovery and image preparation. Those functions retain the exact Commons file page, creator, credit and licence evidence and do not approve or publish a candidate by themselves. This release does not activate new automatic Commons searches in the scheduled Publisher stage: Nature's existing Collector-side reviewed allowlist and Global Checker route remain the active documentary-photo route. This avoids adding outbound discovery requests to the Publisher and avoids weakening the current source-to-image matching rules.
+Every returned media record preserves the original `postId`, `viewId`, `sourceId`, `jobId`, `profileId`, `assignmentIds`, `idempotencyKey`, `configVersion`, `destinationDatabaseId` and `destinationDatabasePath`. The Manager job and `collectionContext` are validated before processing. Missing or mismatched values cause a hold; the Engine never invents replacements.
 
-## Asset destinations
+A new stable `mediaId` is assigned to the newly prepared image and is explicitly linked to its parent `postId`. The media record follows the strict Universal Media schema. At most one image may be attached to a post.
 
-- Nature: `nature/published/assets/`
-- Alien World: `alien-world/published/assets/`
+## Image routes
 
-The publisher workflow must commit the full view-specific `published/` folder so that the raw GitHub image URLs embedded in the live feed resolve after the Actions runner ends. Nature already commits that folder. Alien World's workflow therefore needs the separate one-line patch supplied with this build.
+- **Wikimedia Commons:** bounded HTTPS-only API and media requests; allowlisted redirects; exact Commons file page; explicit accepted licence; creator, credit and caption required; restrictive markers rejected; MIME, byte size, dimensions and image decoding validated; normalized locally to JPEG.
+- **Original illustration:** local Pillow-generated thematic artwork, derived from the allowed title/search terms rather than View identity. It is visibly labelled `ILLUSTRATION / NOT A PHOTOGRAPH` and explicitly says it is not a literal report depiction or data-accurate scientific visualization.
+- No hosted AI image API, API key or cloud generation service is used.
 
-## Safety boundaries
+## Approval and publication
 
-- No AI image service, API key, hosted image model, database reset or cloud storage is used.
-- Pillow performs local deterministic drawing and image encoding.
-- Staging files are temporary and are cleaned after each hand-off.
-- Image hashes are checked before and after publication.
-- The Global Checker remains the sole rights authority; the Image Engine is not a rights checker.
+Image Engine does not evaluate rights, approve images, make Checker decisions, write View databases, or publish assets. Candidate media includes source evidence, staged path, SHA-256 and Checker review metadata. It remains private in a run-scoped staging directory. The Checker bridge rechecks the image using the central registry. Publisher controls the eventual public asset write.
+
+See `IMAGE-ENGINE-CHECKER-CONTRACT.md` and `../global-checker/image_engine_handoff.py` for the precise input/output contract.
+
+## Version compatibility
+
+The source registry currently accepts Image Engine version `0.2.0` for its local-original-illustration policy. This build preserves that policy-facing version to avoid a mismatch. A future version bump must update the Checker registry's `acceptedEngineVersions` in the same coordinated release.
+
+## Integration boundary for this release
+
+This patch supplies the global Checker-to-Image-Engine contract and the Checker return-review adapter. It does not change the legacy `editorial-engine/newsroom_pipeline.py` runner in this Image Engine phase. That runner still emits the earlier `collection-intake` shape; the new adapter requires the Universal Checker `image-engine-intake` envelope created by `global-checker/image_engine_handoff.py`. The runner must be switched to `build_image_engine_intake → process_checker_intake → review_image_engine_handoff` during the subsequent Editorial/Orchestrator integration step. Until that wiring is complete, do not treat this patch alone as end-to-end Newsroom activation.
