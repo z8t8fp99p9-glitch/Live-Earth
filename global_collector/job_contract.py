@@ -1,4 +1,9 @@
-"""Validation of Global Collection Manager jobs against both central registries."""
+"""Validate the Manager envelope and registered source assignments only.
+
+This module deliberately does not load or evaluate Global Checker policies.
+It verifies routing, identity, assignments, URLs and Manager fingerprints so
+that collection is correctly attributed and delivered to the requested View.
+"""
 from __future__ import annotations
 
 from pathlib import Path, PurePosixPath
@@ -6,204 +11,173 @@ from typing import Any
 from urllib.parse import urlsplit
 import hashlib
 import json
+import re
 import uuid
 
 from .errors import GlobalCollectorError
-from .security import _host, host_matches
+
+SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+REQUIRED_JOB_FIELDS = (
+    "jobId", "idempotencyKey", "viewId", "profileId", "assignmentIds",
+    "sourceIds", "feedUrls", "collectorEntrypoint", "collectorWorkflow",
+    "destinationDatabaseId", "destinationDatabasePath", "scheduledAt",
+    "requestWindowHours", "configVersion", "trigger",
+)
+
+
+def canonical_hash(value: Any) -> str:
+    raw = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
 def _read_json(path: Path, label: str) -> dict[str, Any]:
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        value = json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:
         raise GlobalCollectorError(f"{label} cannot be read: {exc}") from exc
-    if not isinstance(data, dict):
+    if not isinstance(value, dict):
         raise GlobalCollectorError(f"{label} must contain a JSON object.")
-    return data
+    return value
 
 
-def _canonical_hash(value: Any) -> str:
-    raw = json.dumps(
-        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False
-    )
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+def _safe_id(value: Any, label: str) -> str:
+    if not isinstance(value, str) or not SAFE_ID.fullmatch(value):
+        raise GlobalCollectorError(f"{label} is not a valid stable ID.")
+    return value
 
 
-def _safe_database_path(value: str, expected: str) -> bool:
-    if value != expected or "\\" in value:
-        return False
+def _safe_https(value: Any, label: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise GlobalCollectorError(f"{label} must be a non-empty HTTPS URL.")
+    try:
+        p = urlsplit(value)
+        valid_port = p.port in (None, 443)
+    except ValueError:
+        valid_port = False
+        p = urlsplit("")
+    if p.scheme.lower() != "https" or not p.hostname or p.username or p.password or not valid_port:
+        raise GlobalCollectorError(f"{label} must be an absolute HTTPS URL without credentials or a custom port.")
+    return value
+
+
+def _safe_destination(value: Any, view_id: str, expected: Any) -> str:
+    if not isinstance(value, str) or value != expected or "\\" in value:
+        raise GlobalCollectorError("Manager destination path does not match the registered View destination.")
     path = PurePosixPath(value)
     if path.is_absolute() or any(part in ("", ".", "..") for part in path.parts):
-        return False
-    return len(path.parts) >= 3 and path.parts[0] == ".publisher-data"
+        raise GlobalCollectorError("Manager destination path is not a safe relative path.")
+    if len(path.parts) < 3 or path.parts[:2] != (".publisher-data", view_id):
+        raise GlobalCollectorError("Manager destination path must remain inside that View's own database folder.")
+    return value
 
 
 class JobContract:
-    """Loads live Manager/Checker config and validates a Manager job envelope."""
+    """Validates current Manager configuration without evaluating content."""
 
     def __init__(self, repository_root: Path):
         self.root = Path(repository_root).resolve()
-        self.manager_root = self.root / "global_collection_manager"
-        self.manager_sources = _read_json(
-            self.manager_root / "config" / "source-registry.json",
-            "Global Collection Manager Source Registry",
-        )
-        self.manager_profiles = _read_json(
-            self.manager_root / "config" / "view-collection-profiles.json",
-            "Global Collection Manager View Collection Profiles",
-        )
-        self.manager_assignments = _read_json(
-            self.manager_root / "config" / "source-view-assignments.json",
-            "Global Collection Manager Source-View Assignments",
-        )
-        self.checker_registry = _read_json(
-            self.root / "global-checker" / "source-registry.json",
-            "Global Checker Source Registry",
-        )
-        self._validate_registry_shapes()
+        self.manager_config = self.root / "global_collection_manager" / "config"
+        self.sources = _read_json(self.manager_config / "source-registry.json", "Manager Source Registry")
+        self.profiles = _read_json(self.manager_config / "view-collection-profiles.json", "Manager View Profiles")
+        self.assignments = _read_json(self.manager_config / "source-view-assignments.json", "Manager Source-View Assignments")
+        self._validate_shapes()
 
-    def _validate_registry_shapes(self) -> None:
-        if self.manager_sources.get("schemaVersion") != 1:
-            raise GlobalCollectorError("Manager Source Registry schema is unsupported.")
-        if self.manager_profiles.get("schemaVersion") != 1:
-            raise GlobalCollectorError("Manager View Collection Profiles schema is unsupported.")
-        if self.manager_assignments.get("schemaVersion") != 1:
-            raise GlobalCollectorError("Manager Source-View Assignments schema is unsupported.")
-        if self.checker_registry.get("schemaVersion") != 1:
-            raise GlobalCollectorError("Global Checker Source Registry schema is unsupported.")
-        for key, data in (
-            ("sources", self.manager_sources),
-            ("profiles", self.manager_profiles),
-            ("assignments", self.manager_assignments),
-            ("policies", self.checker_registry),
+    def _validate_shapes(self):
+        for label, data, key in (
+            ("Source Registry", self.sources, "sources"),
+            ("View Profiles", self.profiles, "profiles"),
+            ("Source-View Assignments", self.assignments, "assignments"),
         ):
-            if not isinstance(data.get(key), list):
-                raise GlobalCollectorError(f"Registry field '{key}' is missing or malformed.")
-        if not self.manager_sources.get("registryVersion"):
+            if data.get("schemaVersion") != 1 or not isinstance(data.get(key), list):
+                raise GlobalCollectorError(f"Manager {label} schema is invalid.")
+        if not self.sources.get("registryVersion"):
             raise GlobalCollectorError("Manager Source Registry version is missing.")
-        if not self.checker_registry.get("registryVersion"):
-            raise GlobalCollectorError("Global Checker registry version is missing.")
-
-    def _policy(self, source: dict[str, Any], view_id: str) -> dict[str, Any]:
-        policy_ref = source.get("checkerPolicyRef")
-        for policy in self.checker_registry["policies"]:
-            if policy.get("policyId") == policy_ref:
-                if view_id not in policy.get("views", []):
-                    raise GlobalCollectorError(
-                        f"Global Checker policy '{policy_ref}' is not enabled for View '{view_id}'."
-                    )
-                return policy
-        raise GlobalCollectorError(
-            f"Source '{source.get('sourceId')}' references a missing Global Checker policy."
-        )
 
     def validate(self, job: dict[str, Any]) -> dict[str, Any]:
-        required = (
-            "jobId", "idempotencyKey", "viewId", "profileId", "assignmentIds",
-            "sourceIds", "feedUrls", "collectorEntrypoint", "collectorWorkflow",
-            "destinationDatabaseId", "destinationDatabasePath", "scheduledAt",
-            "requestWindowHours", "configVersion", "trigger",
-        )
-        missing = [key for key in required if key not in job]
+        if not isinstance(job, dict):
+            raise GlobalCollectorError("Manager job must be a JSON object.")
+        missing = [key for key in REQUIRED_JOB_FIELDS if key not in job]
         if missing:
-            raise GlobalCollectorError(
-                "Manager job is incomplete; missing: " + ", ".join(missing)
-            )
-        view_id = job["viewId"]
-        if not isinstance(view_id, str) or not view_id:
-            raise GlobalCollectorError("Manager job has no valid View ID.")
+            raise GlobalCollectorError("Manager job is incomplete; missing: " + ", ".join(missing))
 
-        profiles = {
-            item.get("viewId"): item for item in self.manager_profiles["profiles"]
-        }
+        view_id = _safe_id(job["viewId"], "viewId")
+        _safe_id(job["profileId"], "profileId")
+        _safe_id(job["destinationDatabaseId"], "destinationDatabaseId")
+        _safe_id(job["jobId"], "jobId")
+        if job["collectorEntrypoint"] != "global_collector":
+            raise GlobalCollectorError("Manager job is not addressed to the single global_collector entrypoint.")
+        if job["trigger"] not in {"scheduled", "manual"}:
+            raise GlobalCollectorError("Manager job trigger must be scheduled or manual.")
+        if not isinstance(job["requestWindowHours"], int) or job["requestWindowHours"] <= 0:
+            raise GlobalCollectorError("Manager requestWindowHours must be a positive integer.")
+        if not isinstance(job["scheduledAt"], str) or not job["scheduledAt"].strip():
+            raise GlobalCollectorError("Manager scheduledAt is missing.")
+
+        profiles = {p.get("viewId"): p for p in self.profiles["profiles"]}
         profile = profiles.get(view_id)
         if not profile or not profile.get("enabled"):
-            raise GlobalCollectorError(f"No enabled Manager profile exists for '{view_id}'.")
+            raise GlobalCollectorError(f"No enabled Manager profile exists for View '{view_id}'.")
         if profile.get("profileId") != job["profileId"]:
-            raise GlobalCollectorError("Job profile ID does not match the registered View profile.")
-        if job["collectorEntrypoint"] != profile.get("collectorEntrypoint"):
-            raise GlobalCollectorError("Job Collector entry point does not match the View profile.")
-        if job["collectorWorkflow"] != profile.get("collectorWorkflow"):
-            raise GlobalCollectorError("Job workflow does not match the View profile.")
-        if job["destinationDatabaseId"] != profile.get("destinationDatabaseId"):
-            raise GlobalCollectorError("Job database identity does not match the View profile.")
-        if not _safe_database_path(
-            str(job["destinationDatabasePath"]),
-            str(profile.get("destinationDatabasePath", "")),
-        ):
-            raise GlobalCollectorError("Job database path is not the exact safe View-owned path.")
-        if int(job["requestWindowHours"]) != int(profile["lookbackWindowHours"]):
-            raise GlobalCollectorError("Job request window does not match the View profile.")
-        if job["trigger"] not in {"scheduled", "manual"}:
-            raise GlobalCollectorError("Job trigger is not supported.")
+            raise GlobalCollectorError("Manager profile ID does not match the registered View profile.")
+        if profile.get("collectorEntrypoint") != "global_collector":
+            raise GlobalCollectorError("Registered View profile does not target the global Collector.")
+        if profile.get("collectorWorkflow") != job["collectorWorkflow"]:
+            raise GlobalCollectorError("Manager workflow context does not match the registered View profile.")
+        if profile.get("destinationDatabaseId") != job["destinationDatabaseId"]:
+            raise GlobalCollectorError("Manager database ID does not match the registered View destination.")
+        _safe_destination(job["destinationDatabasePath"], view_id, profile.get("destinationDatabasePath"))
+        if int(profile.get("lookbackWindowHours", -1)) != job["requestWindowHours"]:
+            raise GlobalCollectorError("Manager request window does not match the View profile.")
 
-        assignment_map = {
-            item.get("assignmentId"): item
-            for item in self.manager_assignments["assignments"]
-            if item.get("viewId") == view_id and item.get("enabled") is True
+        assignments = {
+            a.get("assignmentId"): a for a in self.assignments["assignments"]
+            if a.get("viewId") == view_id and a.get("enabled") is True
         }
-        assignment_ids = sorted(set(job["assignmentIds"]))
-        if not assignment_ids or assignment_ids != sorted(assignment_map):
-            raise GlobalCollectorError(
-                "Job assignments do not exactly match this View's enabled assignments."
-            )
+        requested_assignment_ids = job["assignmentIds"]
+        if not isinstance(requested_assignment_ids, list) or not requested_assignment_ids:
+            raise GlobalCollectorError("Manager job must include enabled assignment IDs.")
+        assignment_ids = sorted(set(requested_assignment_ids))
+        if assignment_ids != sorted(assignments):
+            raise GlobalCollectorError("Manager assignment IDs do not match this View's enabled assignments.")
 
-        source_map = {
-            item.get("sourceId"): item for item in self.manager_sources["sources"]
-        }
-        policy_by_source = {}
-        url_to_source = {}
-        expected_sources = set()
-        expected_urls = set()
-
+        source_map = {s.get("sourceId"): s for s in self.sources["sources"]}
+        expected_source_ids: set[str] = set()
+        expected_feed_urls: set[str] = set()
+        source_by_feed: dict[str, dict[str, Any]] = {}
+        assignment_by_feed: dict[str, dict[str, Any]] = {}
+        source_by_id: dict[str, dict[str, Any]] = {}
         for assignment_id in assignment_ids:
-            assignment = assignment_map[assignment_id]
+            assignment = assignments[assignment_id]
             source_id = assignment.get("sourceId")
             source = source_map.get(source_id)
             if not source or source.get("sourceStatus") != "enabled":
-                raise GlobalCollectorError(
-                    f"Assignment '{assignment_id}' points to a missing or disabled source."
-                )
-            expected_sources.add(source_id)
-            policy = self._policy(source, view_id)
-            policy_by_source[source_id] = policy
-            catalogue_urls = set(source.get("feedUrls", []))
-            policy_urls = set(policy.get("allowedFeedUrls", []))
-            policy_domains = policy.get("feedDomains", [])
-            for url in assignment.get("feedUrls", []):
-                if url not in catalogue_urls:
-                    raise GlobalCollectorError(
-                        f"Assignment '{assignment_id}' references a feed not in the Manager Source Registry."
-                    )
-                if url not in policy_urls:
-                    raise GlobalCollectorError(
-                        f"Feed URL is not explicitly registered by Global Checker policy '{policy.get('policyId')}'."
-                    )
-                host = _host(url)
-                if not host_matches(host, policy_domains):
-                    raise GlobalCollectorError(
-                        "Feed URL host does not match the registered Global Checker feed-domain boundary."
-                    )
-                expected_urls.add(url)
-                existing = url_to_source.get(url)
-                if existing and existing != source_id:
-                    raise GlobalCollectorError(
-                        "The same feed URL is assigned to conflicting source identities."
-                    )
-                url_to_source[url] = source_id
+                raise GlobalCollectorError(f"Assignment '{assignment_id}' points to a missing or disabled source.")
+            expected_source_ids.add(source_id)
+            source_by_id[source_id] = source
+            registered_urls = set(source.get("feedUrls", []))
+            for feed_url in assignment.get("feedUrls", []):
+                _safe_https(feed_url, "Registered feed URL")
+                if feed_url not in registered_urls:
+                    raise GlobalCollectorError(f"Assignment '{assignment_id}' contains a URL not registered to its source.")
+                if feed_url in source_by_feed and source_by_feed[feed_url]["sourceId"] != source_id:
+                    raise GlobalCollectorError("A feed URL is assigned to conflicting source identities within one View.")
+                source_by_feed[feed_url] = source
+                assignment_by_feed[feed_url] = assignment
+                expected_feed_urls.add(feed_url)
 
-        if sorted(expected_sources) != sorted(set(job["sourceIds"])):
-            raise GlobalCollectorError("Job source IDs do not match enabled assignments.")
-        if sorted(expected_urls) != sorted(set(job["feedUrls"])):
-            raise GlobalCollectorError("Job feed URLs do not match enabled assignments.")
+        if sorted(expected_source_ids) != sorted(set(job["sourceIds"])):
+            raise GlobalCollectorError("Manager source IDs do not match this View's enabled assignments.")
+        if sorted(expected_feed_urls) != sorted(set(job["feedUrls"])):
+            raise GlobalCollectorError("Manager feed URLs do not match this View's enabled assignments.")
 
+        # Re-create the exact Manager fingerprint; do not add Collector-specific fields.
         snapshot = {
             "viewId": view_id,
             "profileId": profile["profileId"],
             "assignmentIds": assignment_ids,
-            "sourceIds": sorted(expected_sources),
-            "feedUrls": sorted(expected_urls),
-            "collectorEntrypoint": profile["collectorEntrypoint"],
+            "sourceIds": sorted(expected_source_ids),
+            "feedUrls": sorted(expected_feed_urls),
+            "collectorEntrypoint": "global_collector",
             "collectorWorkflow": profile["collectorWorkflow"],
             "destinationDatabaseId": profile["destinationDatabaseId"],
             "destinationDatabasePath": profile["destinationDatabasePath"],
@@ -211,28 +185,21 @@ class JobContract:
             "requestWindowHours": profile["lookbackWindowHours"],
             "trigger": job["trigger"],
         }
-        expected_config_version = _canonical_hash(snapshot)
-        if job["configVersion"] != expected_config_version:
-            raise GlobalCollectorError("Job configuration fingerprint does not match current registries.")
-        expected_idempotency = _canonical_hash({
-            "viewId": view_id,
-            "scheduledAt": job["scheduledAt"],
-            "configVersion": expected_config_version,
-        })
-        if job["idempotencyKey"] != expected_idempotency:
-            raise GlobalCollectorError("Job idempotency key is invalid.")
-        expected_job_id = "gcm-" + uuid.uuid5(
-            uuid.NAMESPACE_URL, expected_idempotency
-        ).hex[:20]
+        config_version = canonical_hash(snapshot)
+        expected_key = canonical_hash({"viewId": view_id, "scheduledAt": job["scheduledAt"], "configVersion": config_version})
+        expected_job_id = "gcm-" + uuid.uuid5(uuid.NAMESPACE_URL, expected_key).hex[:20]
+        if job["configVersion"] != config_version:
+            raise GlobalCollectorError("Manager configuration fingerprint does not match current Manager configuration.")
+        if job["idempotencyKey"] != expected_key:
+            raise GlobalCollectorError("Manager idempotency key is invalid.")
         if job["jobId"] != expected_job_id:
-            raise GlobalCollectorError("Job ID does not match its deterministic Manager identity.")
+            raise GlobalCollectorError("Manager job ID is invalid.")
 
         return {
-            "job": job,
-            "profile": profile,
-            "sourceByFeedUrl": url_to_source,
-            "sourceById": source_map,
-            "checkerPolicyBySource": policy_by_source,
-            "managerRegistryVersion": self.manager_sources["registryVersion"],
-            "checkerRegistryVersion": self.checker_registry["registryVersion"],
+            "job": dict(job),
+            "viewProfile": profile,
+            "sourceById": source_by_id,
+            "sourceByFeedUrl": source_by_feed,
+            "assignmentByFeedUrl": assignment_by_feed,
+            "managerRegistryVersion": self.sources["registryVersion"],
         }

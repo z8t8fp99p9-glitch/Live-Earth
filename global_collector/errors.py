@@ -1,10 +1,10 @@
 class GlobalCollectorError(RuntimeError):
-    """Raised when a collection job or its source boundaries are invalid."""
+    """Raised when a Manager job cannot be safely processed."""
 
 
-class FeedFetchError(GlobalCollectorError):
-    """Raised when an approved source feed cannot be fetched safely."""
+class FetchError(GlobalCollectorError):
+    """Raised when a source response cannot be retrieved safely."""
 
 
-class FeedParseError(GlobalCollectorError):
-    """Raised when an approved feed is malformed or unsupported."""
+class ParseError(GlobalCollectorError):
+    """Raised when a source response cannot be interpreted."""
