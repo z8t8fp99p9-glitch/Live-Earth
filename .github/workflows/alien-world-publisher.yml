@@ -1,4 +1,3 @@
-
 name: Alien World Live Feed Publisher
 
 on:
@@ -50,14 +49,14 @@ jobs:
           python alien-world/collector/collector.py \
             | tee "$RUNNER_TEMP/alien-world-collection-result.json"
 
-      - name: Alien World Global Newsroom — create and approve editorial stories
-        run: python editorial-engine/newsroom_workflow_runner.py --view alien-world --repository-root .
+      - name: Alien World Global Newsroom v2 — Checker-approved orchestration
+        run: python editorial-engine/newsroom_orchestrator.py --view alien-world --repository-root .
 
-      - name: Publish the Live Feed only
+      - name: Alien World Publisher — publish validated Live Feed and Newsroom images
         shell: bash
         run: |
           set -euo pipefail
-          python alien-world/publisher/publisher.py --mode live \
+          python alien-world/publisher/newsroom_publisher.py \
             | tee "$RUNNER_TEMP/alien-world-live-publisher-result.json"
 
       - name: Commit the completed Live Feed and approved assets
@@ -65,13 +64,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
           if [[ ! -s alien-world/published/live-feed.json ]]; then
             echo "Publisher produced no valid live-feed.json output." >&2
             exit 3
           fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add -A -- alien-world/published/
+
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No live-feed changes; the last-good feed remains in place."
@@ -89,7 +92,7 @@ jobs:
         with:
           script: |
             const response = await github.request(
-              'POST /repos/{owner}/{repo}/pages/builds',
+              'POST /repos/{owner}/pages/builds',
               { owner: context.repo.owner, repo: context.repo.repo }
             );
-            core.info(`GitHub Pages rebuild requested (HTTP ${response.status}).`)
+            core.info(`GitHub Pages rebuild requested (HTTP ${response.status}).`);
