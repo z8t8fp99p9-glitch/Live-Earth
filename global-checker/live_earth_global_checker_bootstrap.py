@@ -49,6 +49,18 @@ def _match_entrypoint(script_path: Path):
     return None
 
 
+def _publisher_cli_is_dispatchable(arguments: list[str]) -> bool:
+    """Route only supported Live Publisher commands through the shared runner.
+
+    An unsupported or malformed command must be left untouched so the original
+    Publisher's argparse contract can reject it. This rule is shared by every
+    registered View; it contains no View-specific behaviour.
+    """
+    if not arguments:
+        return True  # The original Publisher's default mode is live.
+    return arguments in (["--mode", "live"], ["--mode=live"])
+
+
 def bootstrap() -> None:
     # A dispatched process and its children only install the policy engine;
     # they do not dispatch a second time.
@@ -66,6 +78,11 @@ def bootstrap() -> None:
         return
 
     root, _relative, (phase, view_id, _runner_name) = matched
+    if phase == "publish" and not _publisher_cli_is_dispatchable(sys.argv[1:]):
+        # Preserve the original command line. The Publisher itself will display
+        # its normal argparse error/help instead of silently losing the args.
+        return
+
     checker_dir = root / "global-checker"
     dispatcher = checker_dir / "live_earth_dispatch.py"
     if not dispatcher.is_file():

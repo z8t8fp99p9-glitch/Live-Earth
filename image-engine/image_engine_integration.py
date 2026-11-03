@@ -53,7 +53,8 @@ def attach_original_illustrations(
     output_path.mkdir(parents=True, exist_ok=True)
     staging_root = db_path.parent / "image-engine-staging"
     run_id = uuid.uuid4().hex
-    staging_path = stage_directory(staging_root, run_id)
+    # Keep each View's temporary image files in its own staging subfolder.
+    staging_path = stage_directory(staging_root, run_id, view_id)
     engine = ImageEngine(staging_path)
     approved_records: list[dict[str, Any]] = []
 
@@ -161,7 +162,6 @@ def attach_original_illustrations(
         shutil.rmtree(staging_path, ignore_errors=True)
 
     return approved_records
-
 
 
 def prepare_database_illustrations(

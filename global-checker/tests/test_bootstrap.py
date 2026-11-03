@@ -29,15 +29,49 @@ class BootstrapDispatchTests(unittest.TestCase):
 
     def test_all_existing_entrypoints_dispatch_to_the_shared_runner(self):
         for relative, (phase, view_id, _runner_name) in bootstrap.ENTRYPOINTS.items():
-            with self.subTest(relative=relative), patch.object(sys, "argv", [str(self.root / relative), "--mode", "live"]), \
-                    patch.dict(os.environ, {bootstrap.ACTIVE_ENV: ""}, clear=False), \
-                    patch.object(bootstrap.os, "execv") as execv:
+            arguments = ["--mode", "live"] if phase == "publish" else []
+            with self.subTest(relative=relative), patch.object(
+                sys, "argv", [str(self.root / relative), *arguments]
+            ), patch.dict(os.environ, {bootstrap.ACTIVE_ENV: ""}, clear=False), patch.object(
+                bootstrap.os, "execv"
+            ) as execv:
                 bootstrap.bootstrap()
                 execv.assert_called_once_with(
                     sys.executable,
                     [sys.executable, str(self.root / "global-checker" / "live_earth_dispatch.py"),
                      phase, "--view", view_id],
                 )
+
+    def test_publisher_default_mode_dispatches_for_both_views(self):
+        for relative, (phase, _view_id, _runner_name) in bootstrap.ENTRYPOINTS.items():
+            if phase != "publish":
+                continue
+            with self.subTest(relative=relative), patch.object(
+                sys, "argv", [str(self.root / relative)]
+            ), patch.dict(os.environ, {bootstrap.ACTIVE_ENV: ""}, clear=False), patch.object(
+                bootstrap.os, "execv"
+            ) as execv:
+                bootstrap.bootstrap()
+                execv.assert_called_once()
+
+    def test_invalid_or_malformed_publisher_arguments_are_left_for_original_cli(self):
+        invalid_argument_sets = (
+            ["--mode", "magazine"],
+            ["--mode"],
+            ["--unknown-option"],
+            ["--help"],
+        )
+        for relative, (phase, _view_id, _runner_name) in bootstrap.ENTRYPOINTS.items():
+            if phase != "publish":
+                continue
+            for arguments in invalid_argument_sets:
+                with self.subTest(relative=relative, arguments=arguments), patch.object(
+                    sys, "argv", [str(self.root / relative), *arguments]
+                ), patch.dict(os.environ, {bootstrap.ACTIVE_ENV: ""}, clear=False), patch.object(
+                    bootstrap.os, "execv"
+                ) as execv:
+                    bootstrap.bootstrap()
+                    execv.assert_not_called()
 
     def test_unrelated_python_script_is_not_intercepted(self):
         other = self.root / "maintenance.py"
@@ -54,9 +88,9 @@ class BootstrapDispatchTests(unittest.TestCase):
 
     def test_recursion_guard_prevents_second_dispatch(self):
         target = self.root / "nature" / "collector" / "collector.py"
-        with patch.object(sys, "argv", [str(target)]), \
-                patch.dict(os.environ, {bootstrap.ACTIVE_ENV: "1"}, clear=False), \
-                patch.object(bootstrap.os, "execv") as execv:
+        with patch.object(sys, "argv", [str(target)]), patch.dict(
+            os.environ, {bootstrap.ACTIVE_ENV: "1"}, clear=False
+        ), patch.object(bootstrap.os, "execv") as execv:
             bootstrap.bootstrap()
             execv.assert_not_called()
 
