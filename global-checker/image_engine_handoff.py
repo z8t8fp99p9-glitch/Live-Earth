@@ -353,6 +353,7 @@ def review_image_engine_handoff(
         "jobId": review.get("jobId"),
         "viewId": review.get("viewId"),
         "managerRegistryVersion": review.get("managerRegistryVersion"),
+        "checkerRegistryVersion": _load_checker_registry().get("registryVersion"),
         "checkerReview": review,
         "collectorResultWithCheckerReviewedImages": original,
         "editorialEligiblePostIds": editorial_ids,
