@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "purpose": "educational and non-commercial",
+  "appliesToViews": ["*"],
+  "role": "context-only",
+  "independentAuthorization": false,
+  "sourceTermsOverride": false,
+  "notes": [
+    "The project purpose may be relevant where applicable law or a source licence expressly considers educational, research, nonprofit or non-commercial use.",
+    "This context does not itself grant copyright permission or override licence conditions, source terms, item-level notices, third-party rights, or jurisdiction-specific rules.",
+    "The Global Checker must still evaluate the exact source, item, storage, processing, transformation, display, attribution and image permissions."
+  ]
+}

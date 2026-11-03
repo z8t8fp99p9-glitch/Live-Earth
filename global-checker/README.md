@@ -1,81 +1,97 @@
 # LIVE // EARTH — Global Content Rights & Provenance Checker
 
-**Version:** 1.0.3  
-**Registry:** 2026-11-02.3  
-**Integration:** automatic through the existing Editorial Engine dependency-install step. No new GitHub Actions workflow and no YAML replacement are required.
+**Universal interface:** 2.0.0  
+**Central rights registry:** `source-registry.json`  
+**Project use context:** `universal-use-context.json`  
+**Role:** rights, permissions, provenance and compliance decisions only
 
-## Purpose
+## One Global Checker
 
-One shared, view-independent system decides whether story text and images may be stored and published. It records evidence in the existing view-owned SQLite database and checks every candidate feed immediately before public output is replaced.
+The universal interface accepts the one Global Collector handoff format:
 
-The Checker is not a Collector, Publisher or Editorial Engine. It does not fetch sources, own a schedule, own a database, generate reporting, write public feeds or change a view's appearance.
+- Manager job envelope and registry version
+- `LIVE_EARTH_UNIVERSAL_POST_V1` records
+- One universal post schema for every View and source
+- Complete post and image lineage IDs
 
-## Automatic integration — no workflow edits
+There is one Checker implementation. It receives the assigned `viewId` from the Manager job and resolves source/image permissions from the central registry. It has no hard-coded View list in its universal intake API. A policy applies to a View only when the registry explicitly lists that View or uses `views: ["*"]`.
 
-The existing Nature and Alien World workflows remain the only scheduled jobs:
+The older Nature and Alien World automatic bootstrap adapters remain for compatibility with their existing workflows. They are legacy entrypoints, not the architecture for adding future Views. New Views use the universal interface and registry configuration rather than another Checker or a new View-specific Checker code branch.
 
-- Nature continues to run its existing Collector and Publisher at minute 15 UTC.
-- Alien World continues to run its existing Collector and Publisher at minute 45 UTC.
-- Both continue to install `editorial-engine/requirements.txt` before invoking their existing Python entrypoints.
+## Strict role boundary — Checker, not Editor
 
-That shared requirements file now installs `./global-checker`. Its small installer places a Python `.pth` startup hook in the active Python 3.12 environment. The hook redirects only these exact four existing commands through `global-checker/run_pipeline.py`:
+The Global Checker does not collect, fetch, edit, rewrite, shorten, summarize, enrich, rank, moderate, curate, generate, publish or change a post. It does not change a post's title, summary, body, media or metadata.
 
-| Existing command | Shared Checker phase |
-|---|---|
-| `python nature/collector/collector.py` | Nature pre-storage and image checks |
-| `python nature/publisher/publisher.py --mode live` | Nature final feed gate |
-| `python alien-world/collector/collector.py` | Alien World pre-storage and image checks |
-| `python alien-world/publisher/publisher.py --mode live` | Alien World final feed gate |
+It returns decisions and reasons only: PASS/HOLD, GREEN/AMBER/RED/UNKNOWN, policy reference, allowed-use limits, and fields that must not be stored or displayed. The next pipeline gate enforces those restrictions. The Checker itself does not remove or rewrite those fields.
 
-The hook replaces the starting interpreter with the shared runner before the unchecked original script can execute. It leaves every unrelated Python command alone, and the runner's exit status becomes the existing Actions step status. No new schedule, workflow file, extra manual activation or workflow YAML edit is involved.
+It never writes to post/story tables or public feeds. An optional audit connection writes only to the additive internal `global_checker_audit_log` table.
 
-If the bootstrap package or shared runner is missing, the pipeline does not silently fall back to an unchecked Collector or Publisher.
+## Checks performed by the universal interface
 
-## The three publication checks
+1. **Manager lineage:** validates the complete required Manager envelope and confirms its identifiers are carried unchanged in each post's `collectionContext`.
+2. **Source assignment:** confirms each post's `sourceId`, `sourceFeedUrl` and `provenance.assignmentId` belong to the Manager job's source, feed and assignment lists.
+3. **Post identity:** requires `postId` and matching View/source identity.
+4. **Image identity:** checks the one attached image's `mediaId`, parent `postId`, View/source IDs and Manager lineage fields.
+5. **One-post-one-image rule:** more than one image attached to a post is a structural HOLD. A post may have no image; in that case the image result is marked `NOT_PROVIDED` and text rights still receive their own check.
+6. **Text/source rights:** uses the existing central policy evaluator for exact article/feed domain, feed URL, source identity, view applicability, author signals, licence and restrictive notices.
+7. **Use-specific permissions:** evaluates storage, temporary processing, transformation, summary/excerpt use and display as separate permissions.
+8. **Full-article restrictions:** a feed summary does not automatically authorize full-article retrieval or temporary processing. Raw full text and HTML are separately checked against the registry's full-article and raw-text permissions.
+9. **Image rights:** evaluates the exact image URL and source page, creator, licence, credit, caption, modification evidence, third-party signals and source association independently of text.
+10. **Special image routes:** the NASA, Wikimedia Commons and original Image Engine checks are reusable across Views. Additional source image routes can be defined in `imagePolicies.sourcePolicies` without adding View-specific Python branches.
+11. **Fail-closed behaviour:** missing, conflicting, malformed or unregistered evidence becomes UNKNOWN/HOLD. Credit alone is never treated as permission.
 
-1. **Pre-storage text gate:** the Collector checks source and item provenance before a story is persisted. A source that does not permit storage is rejected. Where only headline/link/date use is allowed, the source summary is discarded before storage and cannot be reconstructed by the Editorial Engine.
-2. **Pre-layout image gate and fallback:** documentary images are assessed independently. If an original image is unavailable or rejected, the Image Engine may create original illustrative artwork using only permitted story metadata. The artwork is recorded and must receive a GREEN Global Checker decision before the Universal Editorial Engine receives it for layout.
-3. **Final publication gate:** after the Universal Editorial Engine creates the candidate Live Feed, the Publisher calls `gate_feed()`. The Checker revalidates the source/text evidence and exact image evidence. Meaningful permitted text can publish without an image; a headline/link-only item needs the independently approved image route.
+The current registry includes the source-specific policies already reviewed for Nature and Alien World. A new View does not inherit a source permission merely by existing: each source policy must explicitly include that View or be marked global with `views: ["*"]` after the intended reuse has been reviewed.
 
-## Verdicts
+## Educational and non-commercial context
 
-| Verdict | Meaning | Behaviour |
-|---|---|---|
-| GREEN | Evidence supports the specific registered use | Proceed within that use |
-| AMBER | Evidence supports a limited route | Proceed only within the recorded limit |
-| RED | A prohibition or explicit restriction applies | Hold the item |
-| UNKNOWN | Evidence is missing, conflicting or unregistered | Hold the item |
+The project purpose is recorded for every Manager-registered View in `universal-use-context.json` as educational and non-commercial context. It can be relevant where a law or source licence expressly considers educational, research, nonprofit or non-commercial use. It is **not** a blanket copyright licence, automatic fair-use/fair-dealing approval, or override of source terms. The Checker only passes a source when its applicable policy and item-level evidence support the exact use. Unknown permissions stay on HOLD.
 
-The Checker fails closed. Credit is not permission, and an approved article does not automatically clear its image.
+This is an automated internal rights/provenance control, not a legal opinion or a guarantee that every source has disclosed every third-party right.
 
-## Data ownership and last-good output
+## Internal audit — never public
 
-The Checker adds `global_checker_decisions` to each existing view-owned database. It does not merge or reset Nature and Alien World databases. Decision evidence is pruned to a 32-day horizon; each view independently retains source records for 32 days and publishes every eligible item in that rolling window without a story-count or record-count cap.
+The optional audit log appends each decision. It retains:
 
-## 32-day uncapped publication sequence
+- `postId`, optional `mediaId`, `viewId` and `sourceId`
+- `jobId`, `profileId`, `assignmentIds`, `sourceIds`, `idempotencyKey`
+- `configVersion`, `destinationDatabaseId` and `destinationDatabasePath`
+- Stage, verdict, pass/hold, policy reference, decision ID, evidence references and reasons
 
-Both publishers now collect and retain the permitted records in their own rolling 32-day database. The Global Checker makes the source/text storage decision before any record is persisted. A source that does not permit storage is rejected. When storage is permitted but summary use is restricted, the summary is removed and only the permitted headline/link/date metadata can continue; no derivative summary is fabricated from restricted text. Documentary images are screened independently. When an approved documentary image is unavailable, the Image Engine creates original non-documentary artwork from permitted story metadata, and the Global Checker must return GREEN before that artwork is passed to the Universal Editorial Engine. The Editorial Engine then formats all eligible content, and the final Checker gate validates the complete candidate feed before publication.
+The audit log does not store raw article body text. Repeated checks append new rows; prior check rows are not overwritten. Each View's own existing database receives its own audit table. It is not merged across Views.
 
-A feed is not replaced unless the final gate succeeds. A missing registry, invalid decision, failed gate or insufficient eligible story count preserves the previous last-good output. Nature's image-rights manifest is released with its matching feed only after the gate passes.
+### Internal API
 
-## Source policy summary
+```python
+from universal_checker import check_collection
 
-- **NASA:** conditional, item-level route limited to the five exact registered NASA feed endpoints. Third-party/restrictive material, NASA branding and concept art/illustrations/simulations are not cleared for documentary-photo use.
-- **Phys.org:** AMBER headline/link/date only; summaries are removed before storage.
-- **ScienceDaily and Nature Portfolio:** blocked for the current persistent-database route.
-- **Mongabay:** UNKNOWN until the exact item provides accepted open-licence and author evidence.
-- **Wikimedia Commons:** exact file page, creator, accepted licence, credit, contextual caption and modification evidence are required.
-- New or unregistered sources are UNKNOWN by default.
+# collector_result is the JSON object returned by Global Collector.
+# audit_connection is an already-open connection to the assigned View DB.
+report = check_collection(collector_result, audit_connection=audit_connection)
+```
 
-## Files
+The returned report is marked `INTERNAL_ONLY_NOT_FOR_PUBLICATION`. It is a decision report, not an edited post collection.
 
-- `global_checker.py` — central text/image policy evaluator, decision store and final feed gate.
-- `run_pipeline.py` — shared adapter around the existing view-specific Collector and Publisher code.
-- `source-registry.json` — versioned exact source and image policy records.
-- `live_earth_global_checker_bootstrap.py`, `.pth`, `setup.py`, `pyproject.toml` — installation and automatic dispatch through the existing requirements step.
-- `tests/` — deterministic Checker and adapter tests.
-- `integrations/INTEGRATION-CONTRACT.md` — integration and future-view requirements.
+### Command line
 
-## Important boundary
+```bash
+python global-checker/universal_checker_cli.py \
+  --collector-result /path/to/internal-collector-result.json \
+  --audit-database /path/to/existing-view-database.sqlite3 \
+  --report-output /path/to/internal/global-checker-report.json
+```
 
-Automated screening is an internal rights/provenance control, not a legal opinion or a guarantee that a source has disclosed every relevant right. Uncertain material remains UNKNOWN and is held.
+To inspect the audit history read-only:
+
+```bash
+python global-checker/internal_audit_cli.py \
+  --database /path/to/existing-view-database.sqlite3 \
+  --post-id POST_ID
+```
+
+You can filter by `--job-id` or `--view-id`, and use `--format summary` for a grouped overview. Reports must stay internal and must never be placed in a public/published folder.
+
+## Integration status
+
+This package supplies the universal Checker API and internal audit viewer. The new Global Collector output must be passed to `check_collection()` by the next pipeline/orchestrator stage before any storage, editorial layout or publication. The older Nature/Alien World bootstrap remains separate until those legacy flows are deliberately migrated. Local unit tests do not establish live pipeline integration; the end-to-end handoff must be tested after upload.
+
+See `UNIVERSAL-CHECKER-CONTRACT.md` for the detailed interface and role contract.
