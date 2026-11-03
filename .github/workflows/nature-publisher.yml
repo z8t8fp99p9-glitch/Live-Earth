@@ -1,3 +1,4 @@
+
 name: Nature Live Feed Publisher
 
 on:
@@ -45,7 +46,7 @@ jobs:
         run: python nature/collector/collector.py
 
       - name: Nature Global Newsroom — create and approve editorial stories
-        run: python editorial-engine/newsroom_pipeline.py --view nature --repository-root .
+        run: python editorial-engine/newsroom_workflow_runner.py --view nature --repository-root .
 
       - name: Nature Publisher — publish validated Live Feed only
         run: python nature/publisher/publisher.py --mode live
