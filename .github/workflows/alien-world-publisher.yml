@@ -1,3 +1,4 @@
+
 name: Alien World Live Feed Publisher
 
 on:
@@ -48,6 +49,9 @@ jobs:
           set -euo pipefail
           python alien-world/collector/collector.py \
             | tee "$RUNNER_TEMP/alien-world-collection-result.json"
+
+      - name: Alien World Global Newsroom — create and approve editorial stories
+        run: python editorial-engine/newsroom_workflow_runner.py --view alien-world --repository-root .
 
       - name: Publish the Live Feed only
         shell: bash
