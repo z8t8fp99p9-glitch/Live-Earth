@@ -82,6 +82,51 @@ class CheckerV2Tests(unittest.TestCase):
         report = GlobalChecker().run(batch, text_policy=self.text_policy(), image_policies=policy)
         self.assertNotEqual(report["posts"][0]["section8"]["decision"], "YES")
 
+    def test_candidate_specific_central_image_policy_is_matched_by_exact_url(self):
+        batch = self.batch()
+        base = self.image_policy()["p1"]
+        candidate_policy = {
+            **base,
+            "modificationNotPerformedByPipeline": True,
+            "rightsEvidence": {
+                "creator": "NASA", "credit": "NASA", "caption": "Mars rover ancient river delta",
+                "rightsBasis": "nasa-media-guidelines-item-screen-v2",
+            },
+        }
+        report = GlobalChecker().run(
+            batch,
+            text_policy=self.text_policy(),
+            image_policies={"p1": {"candidatePolicies": [candidate_policy]}},
+        )
+        self.assertEqual(report["posts"][0]["section8"]["decision"], "YES")
+        checks = {item["checkId"]: item for item in report["posts"][0]["section8"]["checks"]}
+        self.assertEqual(checks["I07"]["result"], "PASS")
+        self.assertTrue(checks["I07"]["evidence"]["modificationNotPerformedByPipeline"])
+
+    def test_feed_summary_permission_is_separate_from_full_article_permission(self):
+        batch = self.batch()
+        batch["collectorSections"]["fullArticle"]["posts"][0]["fullArticle"].pop("fullText")
+        batch["collectorSections"]["fullArticle"]["posts"][0]["fullArticle"]["feedSummary"] = (
+            "A permitted feed summary reports that NASA scientists completed a new Mars survey."
+        )
+        policy = self.text_policy()
+        policy["fullArticlePermissions"] = {"temporaryProcessing": "unknown"}
+        policy["feedSummaryPermissions"] = {"temporaryProcessing": "allowed"}
+        report = GlobalChecker().run(batch, text_policy=policy, image_policies=self.image_policy())
+        checks = {item["checkId"]: item for item in report["posts"][0]["section7"]["checks"]}
+        self.assertEqual(checks["T09"]["result"], "PASS")
+        self.assertEqual(checks["T09"]["evidence"]["sourceTextBasis"], "PERMITTED_FEED_SUMMARY")
+        self.assertEqual(report["posts"][0]["section7"]["decision"], "YES")
+
+    def test_feed_summary_does_not_authorize_full_article_processing(self):
+        batch = self.batch()
+        policy = self.text_policy()
+        policy["fullArticlePermissions"] = {"temporaryProcessing": "unknown"}
+        policy["feedSummaryPermissions"] = {"temporaryProcessing": "allowed"}
+        report = GlobalChecker().run(batch, text_policy=policy, image_policies=self.image_policy())
+        checks = {item["checkId"]: item for item in report["posts"][0]["section7"]["checks"]}
+        self.assertNotEqual(checks["T09"]["result"], "PASS")
+
     def test_unverified_policies_fail_closed(self):
         report = GlobalChecker().run(self.batch())
         self.assertNotEqual(report["posts"][0]["section7"]["decision"], "YES")

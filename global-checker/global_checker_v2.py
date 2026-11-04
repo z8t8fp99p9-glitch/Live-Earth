@@ -654,14 +654,18 @@ class GlobalChecker:
             src = _d(section4.get(pid)) or _d(section4.get(_s(p.get("sourceId"))))
         identity = _d(src.get("sourceIdentity"))
         source_id = _s(src.get("sourceId") or identity.get("sourceId") or p.get("sourceId"))
-        perms=_d(policy.get("permissions")); full=_s(article.get("text") or article.get("fullText") or article.get("fullArticleText")); summary=_s(p.get("summary")); title=_s(p.get("title"))
+        perms=_d(policy.get("permissions")); full=_s(article.get("text") or article.get("fullText") or article.get("fullArticleText")); summary=_s(article.get("feedSummary") or p.get("summary")); title=_s(p.get("title"))
+        full_permission = _permission(_d(policy.get("fullArticlePermissions")), "temporaryProcessing")
+        summary_permission = _permission(_d(policy.get("feedSummaryPermissions")), "temporaryProcessing")
+        source_text_permission = full_permission if full else summary_permission if summary else None
+        source_text_basis = "FULL_ARTICLE" if full else "PERMITTED_FEED_SUMMARY" if summary and summary_permission is True else "NO_AUTHORISED_SOURCE_TEXT"
         checks=[_check("T01","Source identity is evidenced",bool(source_id),{"sourceId":source_id}),
           _check("T02","Article URL is valid HTTPS",bool(_host(p.get("canonicalUrl") or p.get("originalUrl"))),{"url":p.get("canonicalUrl") or p.get("originalUrl")}),
           _check("T03","Source/feed URL is valid HTTPS",bool(_host(p.get("sourceFeedUrl") or p.get("sourceUrl"))),{"url":p.get("sourceFeedUrl") or p.get("sourceUrl")}),
           _check("T04","Source policy explicitly matches this source",bool(policy.get("policyId") and policy.get("sourceMatch") is True),{"policyId":policy.get("policyId"),"sourceMatch":policy.get("sourceMatch")},"A named policy without explicit sourceMatch is not enough.")]
         for code,key,label in [("T05","temporaryProcessing","Temporary processing permission"),("T06","transformation","Transformation permission"),("T07","derivedOutputStorage","Derived-output storage permission"),("T08","derivedOutputDisplay","Derived-output display permission")]:checks.append(_check(code,label,_permission(perms,key),{"permission":perms.get(key)},"Each use permission must be explicitly allowed."))
-        checks += [_check("T09","Full-article use is separately authorized",None if not full else _permission(_d(policy.get("fullArticlePermissions")),"temporaryProcessing"),{"fullArticlePresent":bool(full),"permissions":policy.get("fullArticlePermissions",{})},"A feed-summary permission never implies full-article permission."),
-          _check("T10","Headline and summary are present",bool(title and summary),{"headlinePresent":bool(title),"summaryPresent":bool(summary)}),
+        checks += [_check("T09","Source-text route is explicitly authorized",source_text_permission,{"sourceTextBasis":source_text_basis,"fullArticlePresent":bool(full),"feedSummaryPresent":bool(summary and not full),"fullArticlePermissions":policy.get("fullArticlePermissions",{}),"feedSummaryPermissions":policy.get("feedSummaryPermissions",{})},"Full-article permission and feed-summary permission are separate; only the exact permitted route may pass."),
+          _check("T10","Headline and permitted source text are present",bool(title and summary),{"headlinePresent":bool(title),"permittedSourceTextPresent":bool(summary)}),
           _check("T11","No restrictive or third-party text-rights signal",not bool(src.get("restrictiveNotice") or src.get("thirdPartyRights")),{"restrictiveNotice":src.get("restrictiveNotice"),"thirdPartyRights":src.get("thirdPartyRights")})]
         result=_outcome(checks)
         return {"section":7,"title":"Text Approval Checks","postId":pid,"decision":result,"approved":result=="YES","checks":checks}
@@ -670,6 +674,10 @@ class GlobalChecker:
         c = _d(sec5.get("selectedCandidate"))
         url = _s(sec5.get("selectedImageUrl"))
         policy = _d(policies.get(pid))
+        candidate_policies = _l(policy.get("candidatePolicies"))
+        if candidate_policies:
+            policy = next((item for item in candidate_policies
+                           if isinstance(item, dict) and _s(item.get("candidateUrl")) == url), {})
         rights = _d(c.get("rightsEvidence"))
         # Collector Section 4 stores image evidence as imageRightsEvidence;
         # match it by the exact URL or stable mediaId, never by list position.
@@ -692,6 +700,10 @@ class GlobalChecker:
         merged.update({k: v for k, v in c.items() if v not in (None, "", [], {}) and merged.get(k) in (None, "", [], {})})
         merged.update({k: v for k, v in rights.items() if v not in (None, "", [], {}) and merged.get(k) in (None, "", [], {})})
         rights = merged
+        policy_rights = _d(policy.get("rightsEvidence"))
+        for key, value in policy_rights.items():
+            if value not in (None, "", [], {}) and rights.get(key) in (None, "", [], {}):
+                rights[key] = value
         perms = _d(policy.get("permissions"))
         exact_policy_url = _s(policy.get("candidateUrl") or policy.get("imageUrl") or policy.get("approvedUrl"))
         exact_policy_match = bool(policy.get("policyMatch") is True and policy.get("policyId") and exact_policy_url == url)
@@ -705,7 +717,14 @@ class GlobalChecker:
           _check("I02","Creator/source identity evidenced",bool(creator),{"creator":creator,"collectorSection4Matched":bool(matched)}),
           _check("I03","Licence or public-domain basis evidenced",bool(license_name or license_url),{"licenseName":license_name,"licenseUrl":license_url,"rightsBasis":policy.get("rightsBasis")}),
           _check("I04","Image policy explicitly matches exact candidate",exact_policy_match,{"policyId":policy.get("policyId"),"policyMatch":policy.get("policyMatch"),"policyCandidateUrl":exact_policy_url,"selectedUrl":url})]
-        for code,key,label in [("I05","editorialUse","Editorial-use permission"),("I06","attribution","Attribution permission"),("I07","modification","Modification permission"),("I08","storage","Image storage permission")]:checks.append(_check(code,label,_permission(perms,key),{"permission":perms.get(key)},"Permission must be explicit."))
+        for code,key,label in [("I05","editorialUse","Editorial-use permission"),("I06","attribution","Attribution permission")]:checks.append(_check(code,label,_permission(perms,key),{"permission":perms.get(key)},"Permission must be explicit."))
+        modification_not_required = policy.get("modificationNotPerformedByPipeline") is True
+        modification_permission = True if modification_not_required else _permission(perms, "modification")
+        checks.append(_check("I07", "Any image modification is permitted or not performed", modification_permission,
+                             {"permission": perms.get("modification"), "modificationNotPerformedByPipeline": modification_not_required},
+                             "The pipeline must preserve original bytes unless modification is explicitly authorised."))
+        checks.append(_check("I08", "Image storage permission", _permission(perms, "storage"),
+                             {"permission": perms.get("storage")}, "Permission must be explicit."))
         checks += [_check("I09","No third-party or restrictive image-rights signal",not restrictive,{"restrictiveNotice":rights.get("restrictiveNotice") or c.get("restrictiveNotice"),"thirdPartyRights":rights.get("thirdPartyRights") or c.get("thirdPartyRights"),"rightsNotice":rights.get("rightsNotice") or c.get("rightsNotice")}),
           _check("I10","Required credit is available",None if _permission(perms,"attribution") is None else (not _permission(perms,"attribution") or bool(_s(rights.get("credit") or c.get("credit") or creator))),{"credit":rights.get("credit") or c.get("credit"),"creator":creator})]
         result=_outcome(checks)

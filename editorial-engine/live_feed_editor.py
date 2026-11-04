@@ -282,14 +282,14 @@ def append_live_feed_output(checker_report: dict[str, Any]) -> dict[str, Any]:
 
         article = _full_article(section2, post_id)
         headline = _text(article.get("title") or article.get("headline"), 500)
-        article_text = _text(article.get("fullText") or article.get("fullArticleText") or article.get("text"))
+        article_text = _text(article.get("fullText") or article.get("fullArticleText") or article.get("text") or article.get("feedSummary"))
         article_url = _text(article.get("articleUrl") or article.get("canonicalUrl") or article.get("url"), 4000)
         if not article_text or not headline or not article_url:
             output_posts.append({
                 "section": SECTION_NUMBER,
                 "postId": post_id,
                 "status": "HOLD",
-                "reason": "Section 2 is missing the permitted full-article text, headline, or article URL.",
+                "reason": "Section 2 is missing permitted source text, headline, or article URL.",
                 "liveFeed": None,
             })
             held_count += 1

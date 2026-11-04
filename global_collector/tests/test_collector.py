@@ -12,7 +12,7 @@ from support import build_repo
 
 
 class CollectorTests(unittest.TestCase):
-    def test_generic_view_job_preserves_manager_card_and_collects_page_context(self):
+    def test_generic_view_without_registry_rights_does_not_fetch_article_body(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             job = build_repo(root, "future-climate-view")
@@ -35,10 +35,11 @@ class CollectorTests(unittest.TestCase):
                 requested_url="https://example.org/full-story", final_url="https://example.org/full-story",
                 status_code=200, content_type="text/html", payload=continuation_payload,
                 headers={"etag": "continuation-etag"}, attempts=1)
-            # Feed, linked article and explicitly labelled continuation are collected.
-            with patch("global_collector.collector.fetch", side_effect=[feed_response, page_response, continuation_response]) as fetch_mock:
+            # Without an exact central-registry permission, only the feed is
+            # fetched. Linked article/continuation bodies are not retrieved.
+            with patch("global_collector.collector.fetch", return_value=feed_response) as fetch_mock:
                 result = GlobalCollector(root).collect(job)
-            self.assertEqual(fetch_mock.call_count, 3)
+            self.assertEqual(fetch_mock.call_count, 1)
             self.assertEqual(result["status"], "succeeded")
             self.assertEqual(result["statistics"]["postsCollected"], 1)
             record = result["records"][0]
@@ -46,25 +47,21 @@ class CollectorTests(unittest.TestCase):
             self.assertEqual(result["recordFields"], list(UNIVERSAL_POST_FIELDS))
             self.assertEqual(tuple(record.keys()), UNIVERSAL_POST_FIELDS)
             self.assertEqual(record["viewId"], "future-climate-view")
-            self.assertIn("complete source page text", record["fullText"].lower())
-            self.assertIn("final details of the report", record["fullText"].lower())
-            self.assertEqual(result["statistics"]["articlePagesEnriched"], 1)
-            self.assertEqual(result["statistics"]["articlePagesAttempted"], 2)
+            self.assertEqual(record["fullText"], "")
+            self.assertEqual(record["summary"], "")
+            self.assertEqual(result["statistics"]["articlePagesEnriched"], 0)
+            self.assertEqual(result["statistics"]["articlePagesAttempted"], 0)
             self.assertEqual(result["statistics"]["articlePagesFailed"], 0)
-            self.assertEqual(result["statistics"]["articleContinuationLinksDiscovered"], 1)
-            self.assertEqual(result["statistics"]["continuationPagesFetched"], 1)
-            self.assertEqual(record["authorName"], "Reporter")
+            self.assertEqual(result["statistics"]["articleContinuationLinksDiscovered"], 0)
+            self.assertEqual(result["statistics"]["continuationPagesFetched"], 0)
+            self.assertEqual(record["authorName"], "")
             self.assertEqual(result["routing"]["destinationDatabasePath"], ".publisher-data/future-climate-view/future-climate-view.sqlite3")
             # The original Manager card is returned without changing any field/value.
             self.assertEqual(result["job"], job)
             context = record["collectionContext"]
             for key, value in job.items():
                 self.assertEqual(context[key], value, f"Manager field changed in collectionContext: {key}")
-            continuation = next(link for link in record["links"]
-                                if link.get("relation") == "article-continuation-candidate"
-                                or link.get("metadata", {}).get("relation") == "article-continuation-candidate")
-            continuation_metadata = continuation.get("metadata", continuation)
-            self.assertEqual(continuation_metadata["text"], "Read More")
+            self.assertFalse(any(link.get("relation") == "article-continuation-candidate" for link in record["links"]))
             self.assertFalse(result["handoff"]["collectorMakesRightsDecisions"])
             self.assertFalse(result["handoff"]["databaseWritesPerformed"])
             self.assertFalse((root / "global-checker").exists())
@@ -78,11 +75,11 @@ class CollectorTests(unittest.TestCase):
             ).hexdigest()
             self.assertEqual(sections["managerIdCard"]["sha256"], expected_manager_hash)
             section_post = sections["posts"][0]
-            self.assertIn("final details of the report", section_post["fullArticle"]["fullText"].lower())
-            self.assertEqual(len(section_post["fullArticle"]["pages"]), 2)
-            self.assertEqual(len(section_post["originalImageRecords"]), 1)
-            self.assertEqual(section_post["originalImageRecords"][0]["credit"], "NASA/JSC")
-            self.assertEqual(section_post["sourceRightsEvidence"]["feedRightsMetadata"]["copyrightNotice"], "NASA")
+            self.assertEqual(section_post["fullArticle"]["fullText"], "")
+            self.assertEqual(section_post["fullArticle"]["pages"], [])
+            self.assertEqual(section_post["fullArticle"]["feedSummaryPermission"], "not-authorized-or-unknown")
+            self.assertEqual(len(section_post["originalImageRecords"]), 0)
+            self.assertEqual(section_post["sourceRightsEvidence"]["feedRightsMetadata"].get("copyrightNotice"), "")
             self.assertNotIn("checks", section_post)
             self.assertEqual(tuple(record.keys()), UNIVERSAL_POST_FIELDS)
 

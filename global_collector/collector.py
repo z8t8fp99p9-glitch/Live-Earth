@@ -17,6 +17,80 @@ from .universal_post import UNIVERSAL_POST_FIELDS, normalize_post, utc_now
 MAX_ARTICLE_PAGE_FETCHES_PER_JOB = 100
 MAX_CONTINUATION_PAGES_PER_POST = 5
 
+RAW_ARTICLE_KEYS = {
+    "fulltext", "fulltexthtml", "fullarticletext", "rawarticlebody",
+    "articlebody", "bodytext", "content:encoded", "contenthtml", "content_html",
+    "contenttext", "content_text", "body", "bodytext", "text", "content",
+}
+SUMMARY_KEYS = {"summary", "excerpt", "description", "abstract", "teaser", "standfirst"}
+
+
+def _registry_text_route(repository_root: Path, view_id: str, item: dict[str, Any]) -> tuple[bool, bool]:
+    """Return explicit (full-article, feed-summary) temporary-use permissions.
+
+    A missing policy or any value other than explicit ``allowed`` fails closed.
+    This gate prevents the Collector from retrieving or forwarding bodies for
+    sources whose current central registry disables that route.
+    """
+    checker_dir = Path(repository_root).resolve() / "global-checker"
+    if not checker_dir.is_dir():
+        return False, False
+    import sys
+    value = str(checker_dir)
+    if value in sys.path:
+        sys.path.remove(value)
+    sys.path.insert(0, value)
+    try:
+        from global_checker import _policy_for_story
+        policy = _policy_for_story(view_id, {
+            "id": item.get("postId", ""), "title": item.get("title", ""),
+            "summary": item.get("summary", ""),
+            "url": item.get("canonicalUrl") or item.get("originalUrl") or item.get("url", ""),
+            "sourceUrl": item.get("sourceFeedUrl") or item.get("sourceUrl", ""),
+            "sourceName": item.get("sourceName", ""),
+        })
+    except Exception:
+        return False, False
+    if not isinstance(policy, dict):
+        return False, False
+    text = policy.get("text", {}) if isinstance(policy.get("text"), dict) else {}
+    material = text.get("sourceMaterialPermissions", {}) if isinstance(text.get("sourceMaterialPermissions"), dict) else {}
+    common = text.get("usePermissions", {}) if isinstance(text.get("usePermissions"), dict) else {}
+    temporary = common.get("temporaryProcessing") in (True, "allowed", "YES")
+    full = temporary and material.get("fullArticleTemporaryProcessing") in (True, "allowed", "YES") and material.get("fullArticleRetrieval") in (True, "allowed", "YES")
+    summary = temporary and material.get("feedSummaryTemporaryProcessing") in (True, "allowed", "YES")
+    return full, summary
+
+
+def _strip_unpermitted_text(item: dict[str, Any], *, allow_summary: bool) -> dict[str, Any]:
+    """Remove unapproved article-body and summary copies from a parsed feed item."""
+    result = dict(item)
+    for key in list(result):
+        folded = str(key).casefold().replace("_", "")
+        if folded in RAW_ARTICLE_KEYS:
+            result.pop(key, None)
+        elif not allow_summary and folded in SUMMARY_KEYS:
+            result.pop(key, None)
+    raw = result.get("sourceMetadata")
+    if isinstance(raw, dict):
+        def scrub(node: Any) -> Any:
+            if isinstance(node, dict):
+                cleaned = {}
+                for key, value in node.items():
+                    folded = str(key).casefold().replace("_", "")
+                    if folded in RAW_ARTICLE_KEYS or folded in {"content", "contenthtml", "articlecontent", "body"}:
+                        continue
+                    if not allow_summary and folded in SUMMARY_KEYS:
+                        continue
+                    cleaned[key] = scrub(value)
+                return cleaned
+            if isinstance(node, list):
+                return [scrub(child) for child in node]
+            return node
+        result["sourceMetadata"] = scrub(raw)
+    return result
+
+
 
 def _within_window(value: str, window_hours: int, now: datetime) -> bool:
     """Apply the Manager-requested time window; unknown dates are retained."""
@@ -375,11 +449,13 @@ def _build_source_rights_evidence(post: dict[str, Any], article_pages: list[dict
 
 
 def _build_collector_sections(job: dict[str, Any], records: list[dict[str, Any]],
-                              article_pages_by_post: dict[str, list[dict[str, Any]]]) -> dict[str, Any]:
+                              article_pages_by_post: dict[str, list[dict[str, Any]]],
+                              feed_summary_allowed_by_post: dict[str, bool] | None = None) -> dict[str, Any]:
     """Build the four source-owned sections; deliberately never create Checks."""
     manager_card = json.loads(json.dumps(job, ensure_ascii=False))
     manager_hash = _sha256(manager_card)
     posts = []
+    feed_summary_allowed_by_post = feed_summary_allowed_by_post or {}
     for post in records:
         post_id = str(post.get("postId", ""))
         article_pages = article_pages_by_post.get(post_id, [])
@@ -409,6 +485,8 @@ def _build_collector_sections(job: dict[str, Any], records: list[dict[str, Any]]
                 "retrievalStatus": full_status,
                 "fullText": full_text,
                 "fullTextHtml": full_html,
+                "feedSummary": str(post.get("summary") or "") if feed_summary_allowed_by_post.get(post_id) else "",
+                "feedSummaryPermission": "allowed" if feed_summary_allowed_by_post.get(post_id) else "not-authorized-or-unknown",
                 "characterCount": len(full_text),
                 "wordCount": len(full_text.split()),
                 "pages": article_pages,
@@ -446,6 +524,7 @@ class GlobalCollector:
         errors = []
         article_page_cache: dict[str, Any] = {}
         article_pages_by_post: dict[str, list[dict[str, Any]]] = {}
+        feed_summary_allowed_by_post: dict[str, bool] = {}
 
         for feed_url in sorted(job["feedUrls"]):
             source = validated["sourceByFeedUrl"][feed_url]
@@ -497,11 +576,15 @@ class GlobalCollector:
                         continue
                     if max_items > 0 and collected_for_feed >= max_items:
                         break
+                    policy_item = {**raw_item, "sourceName": source.get("sourceName", raw_item.get("sourceName", "")), "sourceFeedUrl": feed_url, "sourceId": source.get("sourceId", raw_item.get("sourceId", ""))}
+                    full_article_allowed, feed_summary_allowed = _registry_text_route(self.repository_root, view_id, policy_item)
+                    raw_item = _strip_unpermitted_text(raw_item, allow_summary=feed_summary_allowed)
                     raw_format = (raw_item.get("sourceMetadata") or {}).get("format") if isinstance(raw_item.get("sourceMetadata"), dict) else ""
                     article_pages = []
-                    raw_item, article_pages = _enrich_from_article_page(
-                        raw_item, cache=article_page_cache, already_parsed=(raw_format == "html")
-                    )
+                    if full_article_allowed:
+                        raw_item, article_pages = _enrich_from_article_page(
+                            raw_item, cache=article_page_cache, already_parsed=(raw_format == "html")
+                        )
                     result["articlePagesAttempted"] += sum(
                         1 for page in article_pages
                         if page.get("retrievalStatus") in {"collected", "unavailable", "limit-reached"}
@@ -540,6 +623,7 @@ class GlobalCollector:
                         format_name=detected_format,
                         fetch_evidence=fetch_evidence,
                     )
+                    feed_summary_allowed_by_post[post["postId"]] = feed_summary_allowed
                     post["provenance"]["assignmentId"] = assignment["assignmentId"]
                     if post["postId"] in records_by_id:
                         _merge_post(records_by_id[post["postId"]], post)
@@ -566,7 +650,7 @@ class GlobalCollector:
             source_results.append(result)
 
         records = list(records_by_id.values())
-        collector_sections = _build_collector_sections(job, records, article_pages_by_post)
+        collector_sections = _build_collector_sections(job, records, article_pages_by_post, feed_summary_allowed_by_post)
         succeeded = sum(1 for item in source_results if item["status"] == "succeeded")
         failed = len(source_results) - succeeded
         status = "succeeded" if succeeded == len(source_results) else "partial" if succeeded else "failed"
@@ -616,6 +700,9 @@ class GlobalCollector:
                 "collectorMakesRightsDecisions": False,
                 "collectorMakesEditorialDecisions": False,
                 "collectorFiltersContentByRights": False,
+                "collectorEnforcesRegistryRetrievalPermissions": True,
+                "fullArticleFetchedOnlyWhenExactRegistryRouteIsAllowed": True,
+                "feedSummaryForwardedOnlyWhenRegistryRouteIsAllowed": True,
                 "checkerMustEvaluateDownstream": True,
                 "databaseWritesPerformed": False,
                 "publicationPerformed": False,

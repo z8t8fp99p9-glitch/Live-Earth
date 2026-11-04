@@ -59,43 +59,119 @@ def _section_keys(report: dict[str, Any]) -> list[str]:
 
 
 def _redact_full_article(section2: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    """Remove article-body fields from Section 2 while retaining integrity receipts."""
+    """Recursively remove all raw source-body copies from Section 2.
+
+    Feed summaries are also raw source material: they may be processed only
+    transiently and must not be copied into a durable Checker archive. Every
+    removed string receives a SHA-256/word-count receipt with its nested path.
+    """
     safe = copy.deepcopy(section2)
     receipts: list[dict[str, Any]] = []
-    posts = safe.get("posts")
-    if isinstance(posts, list):
-        for index, item in enumerate(posts):
-            if not isinstance(item, dict):
-                continue
-            article = item.get("fullArticle") if isinstance(item.get("fullArticle"), dict) else item
-            post_id = str(item.get("postId") or item.get("id") or f"section2-record-{index + 1}")
-            for key in list(article.keys()):
-                if str(key).casefold() in RAW_TEXT_KEYS:
-                    raw = article.pop(key)
+    raw_keys = set(RAW_TEXT_KEYS) | {
+        "fulltexthtml", "feedsummary", "rawarticlebody", "raw_article_body",
+        "source_text", "sourcetext", "bodytext", "content:encoded",
+        "contenthtml", "content_html", "articlecontent", "article_content",
+    }
+
+    def walk(node: Any, path: str) -> None:
+        if isinstance(node, dict):
+            post_id = str(node.get("postId") or node.get("id") or "section2-record")
+            for key in list(node):
+                folded = str(key).casefold()
+                normalized = folded.replace("_", "")
+                # Plain "text" is treated as raw only in a Section-2 article
+                # object/page, not in unrelated metadata or decision evidence.
+                parent_label = path.rsplit("/", 1)[-1].casefold()
+                is_article_text = folded == "text" and (
+                    parent_label in {"fullarticle", "pages", "page"} or "fullarticle" in path.casefold()
+                )
+                if folded in raw_keys or normalized in {x.replace("_", "") for x in raw_keys} or is_article_text:
+                    raw = node.pop(key)
                     if isinstance(raw, str) and raw:
-                        receipts.append({"postId": post_id, "field": key, "sha256": _sha256_text(raw), "wordCount": len(raw.split())})
-    else:
-        # Some report versions key Section 2 records by post ID rather than posts[].
-        for post_id, item in list(safe.items()):
-            if not isinstance(item, dict):
-                continue
-            article = item.get("fullArticle") if isinstance(item.get("fullArticle"), dict) else item
-            for key in list(article.keys()):
-                if str(key).casefold() in RAW_TEXT_KEYS:
-                    raw = article.pop(key)
-                    if isinstance(raw, str) and raw:
-                        receipts.append({"postId": str(post_id), "field": key, "sha256": _sha256_text(raw), "wordCount": len(raw.split())})
+                        receipts.append({
+                            "postId": post_id,
+                            "field": f"{path}/{key}".strip("/"),
+                            "sha256": _sha256_text(raw),
+                            "wordCount": len(raw.split()),
+                        })
+                else:
+                    walk(node[key], f"{path}/{key}".strip("/"))
+        elif isinstance(node, list):
+            for index, child in enumerate(node):
+                walk(child, f"{path}[{index}]")
+
+    walk(safe, "sections.fullArticle")
     return safe, receipts
+
+
+def _redact_collector_source_material(node: Any, receipts: list[dict[str, Any]], path: str) -> Any:
+    """Remove transient source text duplicated outside Section 2.
+
+    Collector provenance can contain copies in ``collectorSections`` and in
+    Sections 3–4. Those records are useful for lineage, but raw article/feed
+    text must not survive in a durable archive. The public Section 12 derived
+    summary is deliberately outside the trees passed to this scrubber.
+    """
+    raw_keys = {
+        "text", "fulltext", "fulltexthtml", "fullarticletext", "feedsummary",
+        "articletext", "rawtext", "rawarticlebody", "articlebody", "bodytext",
+        "content", "contenttext", "contenthtml", "contentencoded",
+    }
+    summary_keys = {"summary", "excerpt", "description", "abstract", "teaser", "standfirst"}
+
+    def walk(value: Any, current_path: str) -> Any:
+        if isinstance(value, dict):
+            post_id = str(value.get("postId") or value.get("id") or "collector-record")
+            cleaned = {}
+            lowered_path = current_path.casefold()
+            is_source_text_container = any(token in lowered_path for token in ("fullarticle", "sourcemetadata", "articlepageevidence"))
+            for key, child in value.items():
+                folded = re.sub(r"[^a-z0-9]", "", str(key).casefold())
+                should_remove = folded in raw_keys or (is_source_text_container and folded in summary_keys)
+                # Do not remove descriptive image metadata such as caption,
+                # altText, or image descriptions from the image-record section.
+                if should_remove:
+                    if isinstance(child, str) and child:
+                        receipts.append({
+                            "postId": post_id,
+                            "field": f"{current_path}/{key}".strip("/"),
+                            "sha256": _sha256_text(child),
+                            "wordCount": len(child.split()),
+                        })
+                    continue
+                cleaned[key] = walk(child, f"{current_path}/{key}".strip("/"))
+            return cleaned
+        if isinstance(value, list):
+            return [walk(child, f"{current_path}[{index}]") for index, child in enumerate(value)]
+        return value
+
+    return walk(node, path)
 
 
 def _archive_safe_copy(report: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     safe = copy.deepcopy(report)
     sections = safe["sections"]
+    receipts: list[dict[str, Any]] = []
     section2_key = "fullArticle"
     if section2_key not in sections or not isinstance(sections[section2_key], dict):
         raise CheckerArchiveError("Section 2 fullArticle is missing or malformed.")
-    safe_section2, receipts = _redact_full_article(sections[section2_key])
+    safe_section2, section2_receipts = _redact_full_article(sections[section2_key])
     sections[section2_key] = safe_section2
+    receipts.extend(section2_receipts)
+
+    # Scrub raw Collector-origin text duplicates from Section 3/4 and the
+    # immutable collectorSections hand-off. Section 12's authorised derived
+    # Live Feed summary and Sections 5–13 decision evidence remain untouched.
+    for key in ("originalImageRecords", "sourceRightsEvidence"):
+        if isinstance(sections.get(key), (dict, list)):
+            sections[key] = _redact_collector_source_material(
+                sections[key], receipts, f"sections.{key}"
+            )
+    if isinstance(safe.get("collectorSections"), dict):
+        safe["collectorSections"] = _redact_collector_source_material(
+            safe["collectorSections"], receipts, "collectorSections"
+        )
+
     # Remove machine-local image staging paths from the durable archive. The
     # approved URL, SHA-256, source and rights evidence remain available.
     def scrub_staging(node: Any) -> None:

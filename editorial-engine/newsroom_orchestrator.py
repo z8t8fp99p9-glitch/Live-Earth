@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-"""Run the v2 LIVE // EARTH Newsroom path for one View.
+"""Run the global 13-section LIVE // EARTH Newsroom for one registered View.
 
-This orchestrator runs the Global Collection Manager and the single shared
-Global Collector, followed by Global Checker,
-Image Engine, Checker image review, Editorial Engine, post-Editorial Checker,
-and the matching View-owned Newsroom Database Writer. Public feed publication
-is deliberately left to the corresponding View Publisher wrapper.
+One Manager and one Global Collector feed the shared Global Checker v2.1.1,
+Section 9 Image Engine, Checker Sections 10–11, Section 12 Live Feed Editor,
+and Section 13 final verification. The completed report is archived after raw
+source material is redacted, then only Section 13-approved posts reach the
+matching View-owned database bridge. The View Publisher remains separate.
 
-All hand-offs remain in memory. The script never writes temporary source,
-Checker, Editorial, or verification JSON files to disk.
+No View databases are merged, and no public feed is written by this runner.
 """
 from __future__ import annotations
 
@@ -19,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 PIPELINE_NAME = "LIVE // EARTH Global Newsroom Orchestrator"
-PIPELINE_VERSION = "2.1.0"
+PIPELINE_VERSION = "3.0.0"
 
 
 class NewsroomOrchestratorError(RuntimeError):
@@ -52,32 +51,148 @@ def _load_components() -> dict[str, Any]:
     try:
         from global_collection_manager.manager import build_manager
         from global_collector.collector import GlobalCollector
-        from universal_checker import UniversalGlobalChecker
-        from image_engine_handoff import (
-            build_image_engine_intake,
-            review_image_engine_handoff,
-        )
-        from image_engine_newsroom import process_checker_intake
-        from universal_editorial_engine_newsroom import produce_editorial_package
-        from post_editorial_verification import review_editorial_package
-        from newsroom_database_writer import ensure_view_database, write_verified_editorial_stories
+        from newsroom_database_writer import ensure_view_database
+        from global_checker import load_registry, _policy_for_story, evaluate_image
+        from global_image_pipeline import run_global_image_pipeline
+        from live_feed_editor import append_live_feed_output
+        from section13_final_verification import finalize_post_editorial_review
+        from checker_report_archive import archive_report
+        from section13_database_bridge import write_section13_approved_posts
     except Exception as exc:
         raise NewsroomOrchestratorError(
-            "A required v2 Newsroom component could not be imported: "
+            "A required 13-section Newsroom component could not be imported: "
             f"{type(exc).__name__}: {exc}"
         ) from exc
     return {
         "build_manager": build_manager,
         "GlobalCollector": GlobalCollector,
-        "UniversalGlobalChecker": UniversalGlobalChecker,
-        "build_image_engine_intake": build_image_engine_intake,
-        "process_checker_intake": process_checker_intake,
-        "review_image_engine_handoff": review_image_engine_handoff,
-        "produce_editorial_package": produce_editorial_package,
-        "review_editorial_package": review_editorial_package,
         "ensure_view_database": ensure_view_database,
-        "write_verified_editorial_stories": write_verified_editorial_stories,
+        "load_registry": load_registry,
+        "policy_for_story": _policy_for_story,
+        "evaluate_image": evaluate_image,
+        "run_global_image_pipeline": run_global_image_pipeline,
+        "append_live_feed_output": append_live_feed_output,
+        "finalize_post_editorial_review": finalize_post_editorial_review,
+        "archive_report": archive_report,
+        "write_section13_approved_posts": write_section13_approved_posts,
     }
+
+
+def _policy_inputs(collection: dict[str, Any], view_id: str, modules: dict[str, Any]):
+    """Resolve central text and exact-image policies for every collected post.
+
+    Text permissions remain separated by source material type. Image rights
+    are evaluated against each exact collected image using the existing central
+    Global Checker policy engine; no domain-only image approval is inferred.
+    """
+    from urllib.parse import urlsplit
+
+    text_policies: dict[str, Any] = {}
+    image_policies: dict[str, Any] = {}
+    image_dispatch: dict[str, Any] = {}
+    for post in collection.get("records", []):
+        if not isinstance(post, dict):
+            continue
+        post_id = str(post.get("postId") or "")
+        story = {
+            "id": post_id,
+            "title": post.get("title", ""),
+            "summary": post.get("summary", ""),
+            "url": post.get("canonicalUrl") or post.get("originalUrl") or post.get("url", ""),
+            "sourceUrl": post.get("sourceFeedUrl") or post.get("sourceUrl", ""),
+            "sourceName": post.get("sourceName", ""),
+        }
+        policy = modules["policy_for_story"](view_id, story)
+        text = policy.get("text", {}) if isinstance(policy, dict) else {}
+        material = text.get("sourceMaterialPermissions", {}) if isinstance(text, dict) else {}
+        declared = text.get("usePermissions", {}) if isinstance(text, dict) else {}
+        if post_id:
+            text_policies[post_id] = {
+                "policyId": policy.get("policyId", "") if isinstance(policy, dict) else "",
+                "sourceMatch": bool(policy),
+                "permissions": dict(declared) if isinstance(declared, dict) else {},
+                "fullArticlePermissions": {
+                    "temporaryProcessing": material.get("fullArticleTemporaryProcessing", "unknown")
+                } if isinstance(material, dict) else {},
+                "feedSummaryPermissions": {
+                    "temporaryProcessing": material.get("feedSummaryTemporaryProcessing", "unknown")
+                } if isinstance(material, dict) else {},
+            }
+
+        # Run the central legacy image policy evaluator on each exact original
+        # image record. Its GREEN verdict becomes a candidate-specific contract
+        # for Checker v2.1.1; UNKNOWN/RED candidates never enter the allowlist.
+        candidates = []
+        for field in ("media", "attachments"):
+            values = post.get(field, [])
+            if isinstance(values, list):
+                candidates.extend(item for item in values if isinstance(item, dict))
+        candidate_policies = []
+        approved_hosts = set()
+        for candidate in candidates:
+            candidate_url = str(candidate.get("originalUrl") or candidate.get("url") or candidate.get("imageUrl") or "").strip()
+            if not candidate_url:
+                continue
+            is_image = (
+                str(candidate.get("mediaType") or candidate.get("type") or "").casefold().startswith("image")
+                or str(candidate.get("mimeType") or "").casefold().startswith("image/")
+                or any(candidate_url.casefold().split("?", 1)[0].endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif", ".tif", ".tiff"))
+            )
+            if not is_image:
+                continue
+            candidate_for_policy = {**candidate, "url": candidate_url}
+            decision = modules["evaluate_image"](
+                view_id,
+                post_id,
+                candidate_for_policy,
+                article_url=story["url"],
+                source_name=story["sourceName"],
+            )
+            allowed = decision.get("allowed") is True and decision.get("verdict") == "GREEN"
+            host = (urlsplit(candidate_url).hostname or "").lower().rstrip(".")
+            rights_evidence = dict(decision.get("evidence") or {})
+            rights_evidence["rightsBasis"] = (
+                rights_evidence.get("licenseName")
+                or rights_evidence.get("licenseUrl")
+                or f"Registered central image policy: {decision.get('policyId', 'unknown')} (not a separate licence)"
+            )
+            rights_evidence["policyDecisionId"] = decision.get("decisionId", "")
+            rights_evidence["policyVersion"] = decision.get("policyVersion", "")
+            candidate_policies.append({
+                "policyId": decision.get("policyId", ""),
+                "policyMatch": allowed,
+                "candidateUrl": candidate_url,
+                "allowedHosts": [host] if allowed and host else [],
+                "permissions": {
+                    "editorialUse": "allowed" if allowed else "unknown",
+                    "attribution": "allowed" if allowed else "unknown",
+                    "storage": "allowed" if allowed else "unknown",
+                },
+                # The Image Engine preserves approved originals byte-for-byte.
+                # Checker Section 8 treats modification as not applicable only
+                # for this exact no-modification route.
+                "modificationNotPerformedByPipeline": True,
+                "rightsEvidence": rights_evidence,
+                "centralDecision": {
+                    "verdict": decision.get("verdict"),
+                    "allowed": allowed,
+                    "allowedUse": decision.get("allowedUse"),
+                    "reasons": decision.get("reasons", []),
+                },
+            })
+            if allowed and host:
+                approved_hosts.add(host)
+
+        if post_id:
+            image_policies[post_id] = {"candidatePolicies": candidate_policies}
+            image_dispatch[post_id] = {
+                "viewId": view_id,
+                "managerJob": collection.get("job", {}),
+                "allowedHosts": sorted(approved_hosts),
+                "temporaryProcessingAllowed": bool(approved_hosts),
+                "discoveryRoutes": {},
+            }
+    return text_policies, image_policies, image_dispatch
 
 
 def _result(
@@ -91,9 +206,20 @@ def _result(
     editorial: dict[str, Any] | None = None,
     verification: dict[str, Any] | None = None,
     writer: dict[str, Any] | None = None,
+    section12: dict[str, Any] | None = None,
+    section13: dict[str, Any] | None = None,
+    archive: dict[str, Any] | None = None,
     no_op_reason: str | None = None,
 ) -> dict[str, Any]:
     """Return operational counts only; never expose transient story content."""
+    editor_posts = (section12 or {}).get("posts", [])
+    if not isinstance(editor_posts, list):
+        editor_posts = []
+    editor_counts = {
+        "postsProcessed": len(editor_posts),
+        "ready": sum(1 for item in editor_posts if isinstance(item, dict) and item.get("status") == "READY"),
+        "held": sum(1 for item in editor_posts if isinstance(item, dict) and item.get("status") == "HOLD"),
+    }
     return {
         "schemaVersion": 1,
         "pipeline": PIPELINE_NAME,
@@ -103,11 +229,14 @@ def _result(
         "jobId": job_id,
         "noOpReason": no_op_reason,
         "collection": (collection or {}).get("statistics", {}),
-        "initialChecker": (initial_checker or {}).get("statistics", {}),
-        "imageReview": (image_handoff or {}).get("statistics", {}),
-        "editorial": (editorial or {}).get("statistics", {}),
+        "initialChecker": (initial_checker or {}).get("summary", (initial_checker or {}).get("statistics", {})),
+        "imageReview": (image_handoff or {}).get("summary", (image_handoff or {}).get("statistics", {})),
+        "editorial": editor_counts,
         "postEditorialChecker": (verification or {}).get("statistics", {}),
         "databaseWriter": (writer or {}).get("statistics", {}),
+        "section12": editor_counts,
+        "section13": (section13 or {}).get("statistics", {}),
+        "archive": {"archived": bool((archive or {}).get("archived")), "reportId": (archive or {}).get("reportId", "")},
         "privacyAndOwnership": {
             "sourceMaterialHandedOffInMemory": True,
             "transientHandOffFilesWritten": False,
@@ -126,15 +255,13 @@ def _result(
 
 
 def run(view_id: str, repository_root: str | Path = ".") -> dict[str, Any]:
-    """Run the complete v2 Newsroom pipeline for exactly one registered View."""
+    """Run the connected 13-section Newsroom for exactly one registered View."""
     if not isinstance(view_id, str) or not view_id.strip():
         raise NewsroomOrchestratorError("A registered Manager View ID is required.")
     root = Path(repository_root).resolve()
     _prepare_import_paths(root)
     modules = _load_components()
 
-    # Use the active repository profiles/registries and keep Manager audit
-    # state inside the repository's existing local runtime area.
     manager_parts = modules["build_manager"](
         config_dir=root / "global_collection_manager" / "config",
         state_dir=root / ".manager-state",
@@ -149,142 +276,77 @@ def run(view_id: str, repository_root: str | Path = ".") -> dict[str, Any]:
     if not isinstance(job_payload, dict) or job_payload.get("viewId") != view_id:
         raise NewsroomOrchestratorError("Manager job does not match the requested View.")
 
-    # The shared Writer initializes only this Manager-assigned database path.
-    # Existing data is preserved; no View-specific Collector is involved.
+    # Re-create only a missing View database from its registered profile; never
+    # reset or open the other View's database.
     modules["ensure_view_database"](root, view_id, job_payload)
     collection = modules["GlobalCollector"](root).collect(job_payload)
     if not isinstance(collection, dict) or collection.get("job") != job_payload:
         raise NewsroomOrchestratorError("Global Collector returned a malformed or mismatched Manager job.")
     if collection.get("status") not in {"succeeded", "partial"}:
         raise NewsroomOrchestratorError("Global Collector failed; the Newsroom pipeline is stopped.")
-    records = collection.get("records")
-    if not isinstance(records, list):
+    if not isinstance(collection.get("records"), list):
         raise NewsroomOrchestratorError("Global Collector did not return a records array.")
 
-    initial_checker = modules["UniversalGlobalChecker"]().check_batch(collection)
-    if not isinstance(initial_checker, dict):
-        raise NewsroomOrchestratorError("Global Checker returned an invalid initial review.")
-    if (
-        initial_checker.get("checkerMode") != "universal-view-independent"
-        or initial_checker.get("checkerVersion") != "2.0.0"
-        or initial_checker.get("viewId") != view_id
-        or initial_checker.get("jobId") != job_payload.get("jobId")
-    ):
-        raise NewsroomOrchestratorError("Initial Global Checker identity or View/job contract failed.")
-
-    # Image Engine receives only the Checker-issued image-intake object. Its
-    # return is re-evaluated by Checker; the Image Engine never approves media.
-    image_intake = modules["build_image_engine_intake"](
-        collection, initial_checker, repository_root=root
-    )
-    image_result = modules["process_checker_intake"](
-        image_intake, repository_root=root
-    )
-    checker_handoff = modules["review_image_engine_handoff"](
-        collection, initial_checker, image_result
-    )
-    if not isinstance(checker_handoff, dict):
-        raise NewsroomOrchestratorError("Checker did not return the completed image-review hand-off.")
-    if (
-        checker_handoff.get("phase") != "checker-image-review-complete"
-        or checker_handoff.get("viewId") != view_id
-        or checker_handoff.get("jobId") != job_payload.get("jobId")
-    ):
-        raise NewsroomOrchestratorError("Completed Checker image-review hand-off failed its View/job contract.")
-
-    eligible_ids = checker_handoff.get("editorialEligiblePostIds")
-    if not isinstance(eligible_ids, list):
-        raise NewsroomOrchestratorError("Checker did not return editorialEligiblePostIds as an array.")
-    if not eligible_ids:
-        return _result(
-            view_id=view_id,
-            phase="newsroom-no-approved-stories",
-            job_id=str(job_payload.get("jobId")),
-            collection=collection,
-            initial_checker=initial_checker,
-            image_handoff=checker_handoff,
-            no_op_reason="Global Checker released no text-and-image eligible posts; no database write was attempted.",
-        )
-
-    editorial_package = modules["produce_editorial_package"](
-        checker_handoff, repository_root=root
+    text_policies, image_policies, image_dispatch = _policy_inputs(collection, view_id, modules)
+    staging_root = root / ".image-engine-staging" / view_id / str(job_payload.get("jobId"))
+    checker_report = modules["run_global_image_pipeline"](
+        collection,
+        staging_dir=staging_root,
+        text_policy=text_policies,
+        image_policies=image_policies,
+        image_engine_dispatch=image_dispatch,
+        final_image_policies={},
     )
     if (
-        not isinstance(editorial_package, dict)
-        or editorial_package.get("phase") != "editorial-production"
-        or editorial_package.get("viewId") != view_id
-        or editorial_package.get("jobId") != job_payload.get("jobId")
+        not isinstance(checker_report, dict)
+        or checker_report.get("checkerVersion") != "2.1.1"
+        or checker_report.get("viewId") != view_id
+        or checker_report.get("jobId") != job_payload.get("jobId")
+        or len(checker_report.get("sectionOrder", [])) != 11
     ):
-        raise NewsroomOrchestratorError("Universal Editorial Engine returned an invalid or mismatched package.")
+        raise NewsroomOrchestratorError("Global Checker/Image Engine did not complete Sections 1–11 for this Manager job.")
 
-    verification = modules["review_editorial_package"](
-        checker_handoff, editorial_package, repository_root=root
-    )
-    if (
-        not isinstance(verification, dict)
-        or verification.get("checker") != "LIVE // EARTH Global Content Rights & Provenance Checker"
-        or verification.get("verificationGate") != "LIVE // EARTH Global Checker Post-Editorial Verification"
-        or verification.get("viewId") != view_id
-        or verification.get("jobId") != job_payload.get("jobId")
-        or verification.get("reportVisibility") != "INTERNAL_ONLY_NOT_FOR_PUBLICATION"
-    ):
-        raise NewsroomOrchestratorError("Post-Editorial Checker returned an invalid verification report.")
+    section12_report = modules["append_live_feed_output"](checker_report)
+    if len(section12_report.get("sectionOrder", [])) != 12:
+        raise NewsroomOrchestratorError("Live Feed Editor did not append Section 12.")
+    final_report = modules["finalize_post_editorial_review"](section12_report)
+    if len(final_report.get("sectionOrder", [])) != 13:
+        raise NewsroomOrchestratorError("Final Global Checker did not append Section 13.")
 
-    verdict = verification.get("verdict")
-    release = verification.get("releaseForPublisher") is True
-    approved_ids = verification.get("approvedStoryIds")
-    global_reasons = verification.get("globalReasons")
-    if global_reasons:
-        raise NewsroomOrchestratorError(
-            "Post-Editorial Checker raised a global contract hold; publication is blocked: "
-            + "; ".join(str(reason) for reason in global_reasons[:4])
-        )
-    if verdict == "HOLD" and not release:
-        # A content-level all-held outcome is a safe no-op. The workflow may
-        # still republish existing previously-approved rows in the rolling feed.
-        return _result(
-            view_id=view_id,
-            phase="newsroom-all-stories-held",
-            job_id=str(job_payload.get("jobId")),
-            collection=collection,
-            initial_checker=initial_checker,
-            image_handoff=checker_handoff,
-            editorial=editorial_package,
-            verification=verification,
-            no_op_reason="Post-Editorial Checker released no stories; no database write was attempted.",
-        )
-    if verdict not in {"PASS", "PARTIAL"} or not release:
-        raise NewsroomOrchestratorError("Post-Editorial Checker did not release the package for publication.")
-    if not isinstance(approved_ids, list) or not approved_ids:
-        raise NewsroomOrchestratorError("Post-Editorial Checker release has no approvedStoryIds.")
-
-    # Give Writer the exact untouched original Checker hand-off, exact Editor
-    # package, and exact Checker verification report. The Writer independently
-    # verifies their hashes, identities, lineage, individual PASS decisions,
-    # and the selected View's pre-existing database before writing.
-    write_result = modules["write_verified_editorial_stories"](
-        checker_handoff,
-        editorial_package,
-        verification,
-        repository_root=root,
-    )
+    archive_root = root / ".checker-archive" / view_id
+    archive_result = modules["archive_report"](final_report, archive_root, view_id)
+    # Writer reads only the Section 13-approved set and uses the Manager card
+    # to select exactly one View DB. A zero-approval run is a safe no-op.
+    write_result = modules["write_section13_approved_posts"](final_report, repository_root=root)
     if (
         not isinstance(write_result, dict)
         or write_result.get("phase") != "database-write-complete"
         or write_result.get("viewId") != view_id
     ):
-        raise NewsroomOrchestratorError("Newsroom Database Writer did not complete the matching View write.")
+        raise NewsroomOrchestratorError("Section 13 Database Bridge did not complete the matching View hand-off.")
 
+    approved = int((write_result.get("statistics") or {}).get("approvedReceived", 0))
+    inserted = int((write_result.get("statistics") or {}).get("inserted", 0))
+    updated = int((write_result.get("statistics") or {}).get("updated", 0))
+    phase = "newsroom-database-write-complete" if approved else "newsroom-complete-no-approved-posts"
     return _result(
         view_id=view_id,
-        phase="newsroom-database-write-complete",
+        phase=phase,
         job_id=str(job_payload.get("jobId")),
         collection=collection,
-        initial_checker=initial_checker,
-        image_handoff=checker_handoff,
-        editorial=editorial_package,
-        verification=verification,
+        initial_checker=checker_report,
+        image_handoff=checker_report,
+        editorial=section12_report.get("sections", {}).get("liveFeedOutput", {}),
+        verification=final_report.get("sections", {}).get("postEditorialFinalVerification", {}),
         writer=write_result,
+        section12=section12_report.get("sections", {}).get("liveFeedOutput", {}),
+        section13=final_report.get("sections", {}).get("postEditorialFinalVerification", {}),
+        archive=archive_result,
+        no_op_reason=(
+            "All 13 sections completed and the report was archived, but Section 13 approved no posts for the database. "
+            "The Writer made no story-row changes. Check exact source permissions and image verification evidence."
+            if not approved else None
+        ),
     )
 
 

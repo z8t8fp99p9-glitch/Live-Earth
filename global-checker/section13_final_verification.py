@@ -270,7 +270,7 @@ def _verify_one(
     sec4_item = sec4_map.get(post_id, {})
     article = _article_for(_d(sections.get("fullArticle")), post_id)
     article_title = _editor._text(article.get("title") or article.get("headline"), 500)
-    article_text = _editor._text(article.get("fullText") or article.get("fullArticleText") or article.get("text"))
+    article_text = _editor._text(article.get("fullText") or article.get("fullArticleText") or article.get("text") or article.get("feedSummary"))
     article_url = _editor._text(article.get("articleUrl") or article.get("canonicalUrl") or article.get("url"), 4000)
 
     eligible = (
@@ -361,12 +361,12 @@ def _verify_one(
     ))
 
     checks.append(_check_bool(
-        "C13-03", "Section 2 permitted article and canonical source identity are present",
+        "C13-03", "Section 2 permitted source text and canonical source identity are present",
         bool(article_text and article_title and _url_key(article_url)),
-        {"fullArticleText": "present", "headline": "present", "canonicalHTTPSUrl": "present"},
-        {"fullArticleText": bool(article_text), "headline": article_title, "articleUrl": article_url},
+        {"permittedSourceText": "present", "headline": "present", "canonicalHTTPSUrl": "present"},
+        {"permittedSourceText": bool(article_text), "sourceTextBasis": "FULL_ARTICLE" if _editor._text(article.get("fullText") or article.get("fullArticleText") or article.get("text")) else "FEED_SUMMARY", "headline": article_title, "articleUrl": article_url},
         "sections.fullArticle.posts[postId]",
-        "Section 2 must provide the permitted article text, original headline and valid HTTPS article URL.",
+        "Section 2 must provide a registry-permitted source-text route, original headline and valid HTTPS article URL.",
     ))
 
     section7_checks = [x for x in _l(sec7.get("checks")) if isinstance(x, dict)]
@@ -380,12 +380,12 @@ def _verify_one(
         and all(x.get("executed") == "YES" and x.get("result") == "PASS" for x in section7_checks)
     )
     checks.append(_check_bool(
-        "C13-18", "Section 7 explicitly approved full-article use and all text-rights checks passed",
+        "C13-18", "Section 7 explicitly approved the exact source-text route and all text-rights checks passed",
         section7_article_permission_ok,
-        {"decision": "YES", "fullArticlePermissionCheck": "T09 PASS", "allTextChecks": "PASS"},
-        {"decision": sec7.get("decision"), "approved": sec7.get("approved"), "T09": section7_t09.get("result") if section7_t09 else "MISSING", "checksExecuted": len(section7_checks)},
+        {"decision": "YES", "sourceTextRouteCheck": "T09 PASS", "allTextChecks": "PASS"},
+        {"decision": sec7.get("decision"), "approved": sec7.get("approved"), "T09": section7_t09.get("result") if section7_t09 else "MISSING", "sourceTextBasis": _s(_d(section7_t09.get("evidence")).get("sourceTextBasis")) if section7_t09 else "UNKNOWN", "checksExecuted": len(section7_checks)},
         "sections.textApprovalChecks.posts[postId].checks[T09]",
-        "Summary/feed permission does not substitute for explicit full-article processing permission.",
+        "The exact full-article or separately permitted feed-summary route must pass T09; permissions never transfer between routes.",
     ))
 
     live_headline = _editor._text(section12.get("headline"), 500)
