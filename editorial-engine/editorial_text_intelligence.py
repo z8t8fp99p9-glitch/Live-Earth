@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
 """Local, deterministic text-intelligence helpers for LIVE // EARTH Editorial.
 
-No network access, external packages, hosted models, or third-party services.
-The module produces extractive summaries: selected source sentences are kept
-verbatim and returned in their original order.
+Phase 1 selects source sentences locally with TF-IDF/TextRank/MMR.
+Phase 2 structures long selections into readable paragraphs without changing
+sentence wording or source order.
+Phase 3 assembles a source-locked editorial draft: source headline retained,
+first selected sentence used as the lead, and remaining source sentences kept
+verbatim in the body. No free-form paraphrasing, external services, hosted
+models, network access, or third-party packages are used.
+
+The public build_editorial_summary() return contract remains unchanged so the
+existing Newsroom adapter and Checker hand-off continue to work.
 """
 from __future__ import annotations
 
@@ -20,33 +27,33 @@ SUMMARY_MAX_WORDS = 500
 _STOP_WORDS = {
     "a", "about", "after", "all", "also", "an", "and", "are", "as", "at",
     "be", "because", "been", "before", "being", "between", "both", "but",
-    "by", "did", "do", "does", "during", "each", "for",
-    "from", "had", "has", "have", "he", "her", "here", "hers", "him",
-    "his", "how", "i", "if", "in", "into", "is", "it", "its", "itself",
-    "just", "more", "most", "of",
-    "on", "once", "only", "or", "other", "our", "ours", "out", "over",
-    "said", "same", "she", "should", "since", "so", "some", "such", "than",
-    "that", "the", "their", "them", "then", "there", "these", "they",
-    "this", "those", "through", "to", "too", "under", "up", "was", "we",
-    "were", "what", "when", "where", "which", "while", "who",
-    "with", "you", "your",
+    "by", "did", "do", "does", "during", "each", "for", "from", "had",
+    "has", "have", "he", "her", "here", "hers", "him", "his", "how",
+    "i", "if", "in", "into", "is", "it", "its", "itself", "just", "more",
+    "most", "of", "on", "once", "only", "or", "other", "our", "ours",
+    "out", "over", "said", "same", "she", "should", "since", "so", "some",
+    "such", "than", "that", "the", "their", "them", "then", "there",
+    "these", "they", "this", "those", "through", "to", "too", "under",
+    "up", "was", "we", "were", "what", "when", "where", "which", "while",
+    "who", "with", "you", "your",
 }
 
 _ABBREVIATIONS = (
     "Mr.", "Mrs.", "Ms.", "Dr.", "Prof.", "Sr.", "Jr.", "St.", "vs.",
     "e.g.", "i.e.", "etc.", "No.", "Fig.", "Eq.", "U.S.", "U.K.",
 )
-
 _NUMBER_OR_MEASUREMENT = re.compile(
     r"(?<!\w)(?:\d{1,4}(?:,\d{3})*(?:\.\d+)?%?|\d{1,2}:\d{2}|"
     r"\d{4}-\d{2}-\d{2})(?!\w)|"
-    r"\b(?:km|kilomet(?:er|re)s?|miles?|meters?|metres?|cm|mm|"
-    r"kg|grams?|mg|°c|°f|kelvin|seconds?|minutes?|hours?|days?|years?|"
-    r"million|billion|trillion|percent|per cent)\b",
+    r"\b(?:km|kilomet(?:er|re)s?|miles?|meters?|metres?|cm|mm|kg|grams?|mg|"
+    r"°c|°f|kelvin|seconds?|minutes?|hours?|days?|years?|million|billion|"
+    r"trillion|percent|per cent)\b",
     re.IGNORECASE,
 )
 _QUOTED = re.compile(r"(?:\"[^\"]{8,}\"|“[^”]{8,}”|'[^']{12,}')")
 _WORDS = re.compile(r"[a-z0-9]+(?:['’-][a-z0-9]+)?", re.IGNORECASE)
+_NEGATION = re.compile(r"\b(?:not|no|never|neither|nor|cannot|can't|doesn't|didn't|won't|without)\b", re.IGNORECASE)
+_UNCERTAINTY = re.compile(r"\b(?:may|might|could|possibly|potentially|preliminary|suggests?|appears?|estimated|approximately|uncertain|not\s+clear)\b", re.IGNORECASE)
 
 
 def _clean(value: Any, limit: int = 30000) -> str:
@@ -70,8 +77,7 @@ def _split_sentences(value: str) -> list[str]:
     replacements: dict[str, str] = {}
     for index, abbreviation in enumerate(_ABBREVIATIONS):
         token = f"\u0001ABBR{index}\u0001"
-        pattern = re.compile(re.escape(abbreviation), re.IGNORECASE)
-        protected, count = pattern.subn(token, protected)
+        protected, count = re.subn(re.escape(abbreviation), token, protected, flags=re.IGNORECASE)
         if count:
             replacements[token] = abbreviation
     protected = re.sub(r"(?<=\d)\.(?=\d)", "\u0001DECIMAL\u0001", protected)
@@ -116,13 +122,11 @@ def _cosine(left: Counter[str], right: Counter[str], idf: dict[str, float]) -> f
     dot = sum(left[token] * right[token] * idf.get(token, 1.0) ** 2 for token in common)
     left_norm = sqrt(sum(count * count * idf.get(token, 1.0) ** 2 for token, count in left.items()))
     right_norm = sqrt(sum(count * count * idf.get(token, 1.0) ** 2 for token, count in right.items()))
-    if not left_norm or not right_norm:
-        return 0.0
-    return dot / (left_norm * right_norm)
+    return dot / (left_norm * right_norm) if left_norm and right_norm else 0.0
 
 
 def _textrank(sentences: list[str]) -> list[float]:
-    """Small weighted TextRank implementation using TF-IDF cosine edges."""
+    """Weighted TextRank using TF-IDF cosine sentence similarity."""
     count = len(sentences)
     if count == 0:
         return []
@@ -133,7 +137,6 @@ def _textrank(sentences: list[str]) -> list[float]:
     for left in range(count):
         for right in range(left + 1, count):
             weight = _cosine(vectors[left], vectors[right], idf)
-            # Ignore weak lexical overlap; it is usually noise for short feeds.
             if weight >= 0.08:
                 graph[left][right] = weight
                 graph[right][left] = weight
@@ -161,9 +164,7 @@ def _textrank(sentences: list[str]) -> list[float]:
 
 def _title_relevance(sentence: str, title_tokens: set[str]) -> float:
     tokens = set(_tokens(sentence))
-    if not tokens or not title_tokens:
-        return 0.0
-    return len(tokens & title_tokens) / max(1, len(title_tokens))
+    return len(tokens & title_tokens) / max(1, len(title_tokens)) if tokens and title_tokens else 0.0
 
 
 def _fact_density(sentence: str) -> float:
@@ -172,8 +173,7 @@ def _fact_density(sentence: str) -> float:
         return 0.0
     anchors = len(_NUMBER_OR_MEASUREMENT.findall(sentence))
     named_phrases = re.findall(r"\b[A-Z][a-zA-Z'’-]{2,}(?:\s+[A-Z][a-zA-Z'’-]{2,}){0,3}", sentence)
-    # Bounded contribution: this is a prioritisation hint, not fact verification.
-    return min(1.0, (anchors * 0.22 + min(2, len(named_phrases)) * 0.08))
+    return min(1.0, anchors * 0.22 + min(2, len(named_phrases)) * 0.08)
 
 
 def _sentence_scores(sentences: list[str], title: str) -> list[float]:
@@ -181,22 +181,14 @@ def _sentence_scores(sentences: list[str], title: str) -> list[float]:
         return []
     graph_scores = _textrank(sentences)
     title_tokens = set(_tokens(title))
-    total = len(sentences)
     scores = []
     for index, sentence in enumerate(sentences):
-        title_score = _title_relevance(sentence, title_tokens)
-        # Early sentences often contain the lead, but position never dominates.
-        position_score = 1.0 / (1.0 + index * 0.03)
-        fact_score = _fact_density(sentence)
-        quote_score = 0.12 if _QUOTED.search(sentence) else 0.0
-        # Mix network centrality, title relevance, factual density and a modest
-        # lead preference. All features are deterministic and local.
         score = (
             0.56 * graph_scores[index]
-            + 0.19 * title_score
-            + 0.13 * position_score
-            + 0.09 * fact_score
-            + 0.03 * quote_score
+            + 0.19 * _title_relevance(sentence, title_tokens)
+            + 0.13 * (1.0 / (1.0 + index * 0.03))
+            + 0.09 * _fact_density(sentence)
+            + 0.03 * (0.12 if _QUOTED.search(sentence) else 0.0)
         )
         scores.append(score)
     maximum = max(scores) or 1.0
@@ -204,10 +196,8 @@ def _sentence_scores(sentences: list[str], title: str) -> list[float]:
 
 
 def _select_mmr(
-    sentences: list[str],
-    scores: list[float],
-    target_min: int = SUMMARY_MIN_WORDS,
-    target_max: int = SUMMARY_MAX_WORDS,
+    sentences: list[str], scores: list[float],
+    target_min: int = SUMMARY_MIN_WORDS, target_max: int = SUMMARY_MAX_WORDS,
 ) -> list[int]:
     """Select relevant, less-redundant sentences, then restore source order."""
     if not sentences:
@@ -222,21 +212,12 @@ def _select_mmr(
         best_score = float("-inf")
         for index in remaining:
             size = word_counts[index]
-            if size > target_max:
+            if size > target_max or total_words + size > target_max:
                 continue
-            if total_words + size > target_max:
-                continue
-            similarity = max(
-                (_cosine(vectors[index], vectors[chosen], idf) for chosen in selected),
-                default=0.0,
-            )
-            # Do not re-add near-duplicate sentences just to meet a word target.
+            similarity = max((_cosine(vectors[index], vectors[chosen], idf) for chosen in selected), default=0.0)
             if similarity >= 0.88:
                 continue
-            # MMR: preserve relevance, penalise repeated content. A small
-            # novelty bonus helps cover facts not represented by selected text.
-            novelty = 1.0 - similarity
-            combined = 0.72 * scores[index] + 0.28 * novelty
+            combined = 0.72 * scores[index] + 0.28 * (1.0 - similarity)
             if combined > best_score:
                 best_score = combined
                 best_index = index
@@ -251,7 +232,7 @@ def _select_mmr(
 
 
 def _remove_near_duplicate_sentences(sentences: list[str]) -> list[str]:
-    """Remove repeated sentences without collapsing changed numbers or quotes."""
+    """Remove close duplicates only when numeric and quoted material is identical."""
     kept: list[str] = []
     kept_vectors: list[Counter[str]] = []
     for sentence in sentences:
@@ -270,9 +251,8 @@ def _remove_near_duplicate_sentences(sentences: list[str]) -> list[str]:
                 duplicate = True
                 break
             if len(vector) >= 6 and len(prior_vector) >= 6:
-                # Only collapse very close paraphrase-like duplicates. The
-                # original sentence is retained; no wording is generated.
-                if _cosine(vector, prior_vector, {token: 1.0 for token in set(vector) | set(prior_vector)}) >= 0.94:
+                common_idf = {token: 1.0 for token in set(vector) | set(prior_vector)}
+                if _cosine(vector, prior_vector, common_idf) >= 0.94:
                     duplicate = True
                     break
         if not duplicate:
@@ -281,12 +261,147 @@ def _remove_near_duplicate_sentences(sentences: list[str]) -> list[str]:
     return kept
 
 
-def build_editorial_summary(source_summary: str, source_title: str = "") -> dict[str, Any]:
-    """Create an extractive summary with graph ranking and redundancy control.
+# --------------------------- Phase 2: structure ---------------------------
 
-    Distinct text at or below 500 words is preserved after normalisation;
-    repeated sentences are removed. Longer sources are selected from complete
-    source sentences. The calling Editorial Engine preserves the original record.
+_CONTEXT_CUES = re.compile(r"\b(?:previous|earlier|historical|history|background|baseline|previously|in\s+\d{4})\b", re.I)
+_LIMITATION_CUES = re.compile(r"\b(?:preliminary|uncertain|unclear|cannot|can\s+not|does\s+not\s+establish|do\s+not\s+establish|not\s+confirm|may|might|could|further\s+study|caution(?:ed)?)\b", re.I)
+_NEXT_CUES = re.compile(r"\b(?:plan|plans|planned|will\s+continue|next\s+season|next\s+year|future|further\s+observations|expected\s+to|intend(?:s)?)\b", re.I)
+
+
+def _sentence_role(sentence: str) -> str:
+    """Assign a soft paragraph role; this is structure, never fact verification."""
+    if _LIMITATION_CUES.search(sentence):
+        return "limitations"
+    if _NEXT_CUES.search(sentence):
+        return "next-steps"
+    if _CONTEXT_CUES.search(sentence):
+        return "context"
+    if _NUMBER_OR_MEASUREMENT.search(sentence) or re.search(r"\b(?:measured|recorded|found|reported|observed|showed|identified)\b", sentence, re.I):
+        return "core-reporting"
+    return "core-reporting"
+
+
+def phase2_structure(sentences: list[str], *, max_sentences: int = 3, max_words: int = 85) -> dict[str, Any]:
+    """Group intact source sentences into readable paragraphs in source order.
+
+    A paragraph boundary is introduced when the soft role changes after at
+    least one sentence, or a conservative length limit is reached. The method
+    never changes sentence wording, adds headings, or reorders chronology.
+    """
+    if not sentences:
+        return {"paragraphs": [], "text": "", "method": "source-order-editorial-paragraph-structure-v1", "sentenceOrderPreserved": True}
+    paragraphs: list[list[str]] = []
+    current: list[str] = []
+    current_words = 0
+    current_role = _sentence_role(sentences[0])
+    for sentence in sentences:
+        role = _sentence_role(sentence)
+        count = len(sentence.split())
+        role_change = bool(current) and role != current_role and len(current) >= 2
+        size_limit = bool(current) and (len(current) >= max_sentences or current_words + count > max_words)
+        if role_change or size_limit:
+            paragraphs.append(current)
+            current = []
+            current_words = 0
+        current.append(sentence)
+        current_words += count
+        current_role = role
+    if current:
+        paragraphs.append(current)
+    text = "\n\n".join(" ".join(group) for group in paragraphs)
+    flattened = [sentence for group in paragraphs for sentence in group]
+    return {
+        "paragraphs": paragraphs,
+        "text": text,
+        "method": "source-order-editorial-paragraph-structure-v1",
+        "sentenceOrderPreserved": flattened == sentences,
+        "paragraphCount": len(paragraphs),
+    }
+
+
+# ------------------------- Phase 3: composition ---------------------------
+
+
+def phase3_compose(source_title: str, structure: dict[str, Any], source_sentences: list[str]) -> dict[str, Any]:
+    """Create a traceable, source-locked editorial draft without invented prose.
+
+    The original source headline is retained. The first selected source
+    sentence becomes the lead; all remaining sentences stay verbatim in the
+    body. This is deterministic editorial assembly, not AI paraphrasing or an
+    assertion that the underlying source claims have been independently proven.
+    """
+    paragraphs = structure.get("paragraphs", [])
+    selected = [sentence for paragraph in paragraphs for sentence in paragraph]
+    source_positions: dict[str, list[int]] = {}
+    for index, sentence in enumerate(source_sentences):
+        source_positions.setdefault(sentence, []).append(index)
+    ledger = []
+    used: dict[str, int] = {}
+    previous_source_index = -1
+    for sentence in selected:
+        seen = used.get(sentence, 0)
+        positions = source_positions.get(sentence, [])
+        if seen >= len(positions):
+            raise ValueError("Editorial composition contains a sentence not present in the source record.")
+        source_index = positions[seen]
+        if source_index < previous_source_index:
+            raise ValueError("Editorial composition changed the original source sentence order.")
+        previous_source_index = source_index
+        used[sentence] = seen + 1
+        ledger.append({
+            "sourceSentenceIndex": source_index,
+            "sentenceSha256": _sha256(sentence),
+            "numericAnchors": _NUMBER_OR_MEASUREMENT.findall(sentence),
+            "quotedText": _QUOTED.findall(sentence),
+            "negationMarkers": _NEGATION.findall(sentence),
+            "uncertaintyMarkers": _UNCERTAINTY.findall(sentence),
+        })
+    headline = _clean(source_title, 500)
+    lead = selected[0] if selected else ""
+    body = "\n\n".join(" ".join(paragraph) for paragraph in paragraphs)
+    if body != structure.get("text", ""):
+        raise ValueError("Editorial body differs from the exact Phase 2 sentence structure.")
+    return {
+        "headline": headline,
+        "headlineSource": "source-title-preserved" if headline else "no-source-title",
+        "lead": lead,
+        "body": body,
+        "text": body,
+        "method": "source-locked-editorial-assembly-v1",
+        "writingMode": "EXTRACTIVE_ASSEMBLY_NO_PARAPHRASE",
+        "traceability": {
+            "sourceSentenceCount": len(source_sentences),
+            "selectedSentenceCount": len(selected),
+            "claimLedger": ledger,
+            "allSelectedSentencesVerbatim": True,
+            "unsupportedClaimsAdded": 0,
+            "numbersQuotesNegationAndUncertaintyRecorded": True,
+            "independentFactVerificationPerformed": False,
+            "globalCheckerReviewRequired": True,
+        },
+    }
+
+
+def _compose_long_source(source: str, source_title: str, sentences: list[str]) -> str:
+    """Apply Phase 2 and 3 to long-source summaries; preserve the public API."""
+    structure = phase2_structure(sentences)
+    if not structure.get("sentenceOrderPreserved"):
+        raise ValueError("Phase 2 attempted to change source sentence order.")
+    draft = phase3_compose(source_title, structure, _split_sentences(source))
+    if not draft["traceability"]["allSelectedSentencesVerbatim"]:
+        raise ValueError("Phase 3 could not prove exact source-sentence lineage.")
+    if draft["traceability"]["unsupportedClaimsAdded"] != 0:
+        raise ValueError("Phase 3 produced unsupported editorial claims.")
+    return draft["text"]
+
+
+def build_editorial_summary(source_summary: str, source_title: str = "") -> dict[str, Any]:
+    """Create a locally selected summary, then structure long-source output.
+
+    Sources of 500 words or fewer retain the existing exact source-preservation
+    behavior (after safe HTML/whitespace normalization and duplicate removal).
+    Longer inputs use Phase 1 selection followed by Phase 2 paragraph structure
+    and Phase 3 source-locked composition. No text is padded to meet a target.
     """
     source = _clean(source_summary, 30000)
     words = source.split()
@@ -320,13 +435,13 @@ def build_editorial_summary(source_summary: str, source_title: str = "") -> dict
     scores = _sentence_scores(sentences, _clean(source_title, 500))
     selected = _select_mmr(sentences, scores)
     if not selected:
-        # Conservative fallback: take the source opening, without adding text.
         chosen = words[:SUMMARY_MAX_WORDS]
         summary = " ".join(chosen)
         method = "source-opening-fallback-v1"
         status = "EXTRACTED_BOUNDARY_FALLBACK"
     else:
-        summary = " ".join(sentences[index] for index in selected)
+        selected_sentences = [sentences[index] for index in selected]
+        summary = _compose_long_source(source, source_title, selected_sentences)
         count = len(summary.split())
         method = "textrank-mmr-extractive-v2"
         status = "WITHIN_TARGET" if count >= SUMMARY_MIN_WORDS else "SOURCE_UNDER_200_WORDS"
