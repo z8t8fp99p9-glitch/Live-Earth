@@ -7,7 +7,6 @@ from typing import Any
 import json
 
 from . import __version__
-from .errors import GlobalCollectorError
 from .job_contract import JobContract
 from .parsers import parse_payload
 from .security import fetch
@@ -17,7 +16,7 @@ MAX_ARTICLE_PAGE_FETCHES_PER_JOB = 100
 
 
 def _within_window(value: str, window_hours: int, now: datetime) -> bool:
-    """Apply the Manager-requested collection window; unknown dates are retained."""
+    """Apply the Manager-requested time window; unknown dates are retained."""
     if not value:
         return True
     try:
@@ -41,7 +40,6 @@ def _merge_post(existing: dict[str, Any], incoming: dict[str, Any]) -> None:
                 if marker not in seen:
                     left.append(value)
                     seen.add(marker)
-    # Fill missing scalar fields with available metadata; never overwrite populated values.
     for key in UNIVERSAL_POST_FIELDS:
         if key in {"media", "attachments", "links", "categories", "tags", "topics", "contributors", "sourceMetadata", "collectionContext"}:
             continue
@@ -54,7 +52,6 @@ def _merge_post(existing: dict[str, Any], incoming: dict[str, Any]) -> None:
         candidate = incoming_provenance.get("feedUrl")
         if candidate and candidate not in urls:
             urls.append(candidate)
-    # Keep every original discovery rather than dropping source-specific metadata.
     raw = existing.setdefault("sourceMetadata", {})
     if not isinstance(raw, dict):
         raw = {"primary": raw}
@@ -65,11 +62,24 @@ def _merge_post(existing: dict[str, Any], incoming: dict[str, Any]) -> None:
         discoveries.append(incoming_raw)
 
 
-def _enrich_from_article_page(item: dict[str, Any], *, cache: dict[str, Any]) -> dict[str, Any]:
-    """Collect additional page-level post information without making decisions.
+def _article_continuation_count(item: dict[str, Any]) -> int:
+    """Count clearly labelled continuation links; never fetch or authorize them."""
+    links = item.get("links", [])
+    if not isinstance(links, list):
+        return 0
+    return sum(
+        1 for link in links
+        if isinstance(link, dict) and link.get("relation") == "article-continuation-candidate"
+    )
 
-    Feed fields remain the original record. Missing detail is filled from the
-    linked public HTTPS page; available full text and media are retained.
+
+def _enrich_from_article_page(item: dict[str, Any], *, cache: dict[str, Any]) -> dict[str, Any]:
+    """Collect page-level metadata and text already exposed at the linked page.
+
+    The feed record remains authoritative when a field is populated. Page-level
+    information fills gaps and adds media/links. Any full text remains transient
+    for downstream Checker evaluation; continuation links are discovered but
+    not fetched here because that requires a separate Checker permission decision.
     """
     article_url = str(item.get("canonicalUrl") or item.get("url") or item.get("link") or "").strip()
     if not article_url.startswith("https://"):
@@ -86,17 +96,23 @@ def _enrich_from_article_page(item: dict[str, Any], *, cache: dict[str, Any]) ->
                 "contentType": response.content_type, "etag": response.headers.get("etag", ""),
                 "lastModified": response.headers.get("last-modified", ""),
                 "detectedFormat": page_format, "fetchedAt": utc_now(),
+                "continuationLinksFetched": False,
+                "continuationFetchPolicy": "requires-downstream-checker-review",
             })
         except Exception as exc:
             cache[article_url] = ({}, {"status": "unavailable", "errorType": type(exc).__name__, "message": str(exc)[:300]})
     page_item, evidence = cache[article_url]
     result = dict(item)
     if page_item:
-        for field in ("subtitle", "author", "authorName", "authorId", "authorUrl", "publishedAt", "updatedAt", "language", "location", "rightsMetadata"):
+        # Only fill absent feed fields; never overwrite a populated feed value.
+        for field in (
+            "title", "subtitle", "summary", "excerpt", "author", "authorName",
+            "authorId", "authorUrl", "publishedAt", "updatedAt", "language",
+            "location", "rightsMetadata",
+        ):
             if result.get(field) in (None, "", [], {}):
                 if page_item.get(field) not in (None, "", [], {}):
                     result[field] = page_item[field]
-        # Page text is a richer representation than an absent/short feed excerpt.
         if page_item.get("fullText"):
             result["fullText"] = page_item["fullText"]
         if page_item.get("fullTextHtml"):
@@ -104,8 +120,10 @@ def _enrich_from_article_page(item: dict[str, Any], *, cache: dict[str, Any]) ->
         for field in ("media", "attachments", "links", "categories", "tags", "topics"):
             left = result.setdefault(field, [])
             right = page_item.get(field, [])
-            if not isinstance(left, list): left = [left]
-            if not isinstance(right, list): right = [right]
+            if not isinstance(left, list):
+                left = [left]
+            if not isinstance(right, list):
+                right = [right]
             seen = {json.dumps(value, sort_keys=True, ensure_ascii=False, default=str) for value in left}
             for value in right:
                 marker = json.dumps(value, sort_keys=True, ensure_ascii=False, default=str)
@@ -120,6 +138,7 @@ def _enrich_from_article_page(item: dict[str, Any], *, cache: dict[str, Any]) ->
         "articlePageFetch": evidence,
     }
     result["articlePageFetch"] = evidence
+    result["articleContinuationLinksDiscovered"] = _article_continuation_count(result)
     return result
 
 
@@ -156,6 +175,7 @@ class GlobalCollector:
                 "postsDiscovered": 0,
                 "postsCollected": 0,
                 "articlePagesEnriched": 0,
+                "articleContinuationLinksDiscovered": 0,
             }
             try:
                 fetched = fetch(feed_url)
@@ -182,8 +202,6 @@ class GlobalCollector:
                 for raw_item in items:
                     if not isinstance(raw_item, dict):
                         continue
-                    # Apply only the Manager's explicit time window and item limit
-                    # before doing optional per-post page enrichment.
                     published = raw_item.get("publishedAt") or raw_item.get("published") or raw_item.get("pubDate") or raw_item.get("date_published") or ""
                     if not _within_window(str(published), int(job["requestWindowHours"]), now_dt):
                         continue
@@ -194,6 +212,7 @@ class GlobalCollector:
                         raw_item = _enrich_from_article_page(raw_item, cache=article_page_cache)
                         if raw_item.get("articlePageFetch", {}).get("status") == "collected":
                             result["articlePagesEnriched"] += 1
+                    result["articleContinuationLinksDiscovered"] += _article_continuation_count(raw_item)
                     post = normalize_post(
                         raw_item,
                         view_id=view_id,
@@ -228,19 +247,14 @@ class GlobalCollector:
         records = list(records_by_id.values())
         succeeded = sum(1 for item in source_results if item["status"] == "succeeded")
         failed = len(source_results) - succeeded
-        if succeeded == len(source_results):
-            status = "succeeded"
-        elif succeeded:
-            status = "partial"
-        else:
-            status = "failed"
-
+        status = "succeeded" if succeeded == len(source_results) else "partial" if succeeded else "failed"
         return {
             "schemaVersion": 1,
             "collector": "LIVE // EARTH Global Collector",
             "collectorVersion": __version__,
             "recordSchema": "LIVE_EARTH_UNIVERSAL_POST_V1",
             "recordFields": list(UNIVERSAL_POST_FIELDS),
+            # This is the exact Manager envelope: no IDs, routing fields or values are regenerated.
             "job": dict(job),
             "routing": {
                 "viewId": view_id,
@@ -261,6 +275,7 @@ class GlobalCollector:
                 "postsDiscovered": sum(item["postsDiscovered"] for item in source_results),
                 "postsCollected": len(records),
                 "articlePagesEnriched": sum(item["articlePagesEnriched"] for item in source_results),
+                "articleContinuationLinksDiscovered": sum(item["articleContinuationLinksDiscovered"] for item in source_results),
                 "mediaItemsCollected": sum(len(item["media"]) + len(item["attachments"]) for item in records),
                 "fieldsPerPost": len(UNIVERSAL_POST_FIELDS),
             },

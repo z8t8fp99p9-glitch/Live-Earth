@@ -22,14 +22,30 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(api_items[0]["headline"], "API item")
 
     def test_html_article_metadata_and_media(self):
-        html = b'''<!doctype html><html lang="en"><head><title>Example article</title><meta property="og:title" content="Example headline"><meta name="description" content="A long description"><meta name="author" content="A. Writer"><meta property="article:published_time" content="2026-11-02T10:00:00Z"><meta property="og:image" content="/images/story.jpg"><link rel="canonical" href="https://example.org/canonical"></head><body><article><h1>Example headline</h1><p>The full text of this article.</p></article></body></html>'''
-        items, fmt = parse_payload(html, "text/html", "https://example.org/article")
+        page = b'''<!doctype html><html lang="en"><head><title>Example article</title><meta property="og:title" content="Example headline"><meta name="description" content="A long description"><meta name="author" content="A. Writer"><meta property="article:published_time" content="2026-11-02T10:00:00Z"><meta property="og:image" content="/images/story.jpg"><link rel="canonical" href="https://example.org/canonical"></head><body><article><h1>Example headline</h1><p>The full text of this article.</p><a href="/full-story">Read More</a></article></body></html>'''
+        items, fmt = parse_payload(page, "text/html", "https://example.org/article")
         self.assertEqual(fmt, "html")
         self.assertEqual(items[0]["title"], "Example headline")
         self.assertIn("full text", items[0]["fullText"].lower())
         self.assertEqual(items[0]["author"], "A. Writer")
         self.assertTrue(items[0]["media"][0]["url"].endswith("/images/story.jpg"))
         self.assertEqual(items[0]["canonicalUrl"], "https://example.org/canonical")
+        continuation = next(link for link in items[0]["links"] if link["text"] == "Read More")
+        self.assertEqual(continuation["relation"], "article-continuation-candidate")
+        self.assertEqual(continuation["url"], "https://example.org/full-story")
+
+    def test_jsonld_article_body_is_fallback_when_visible_article_body_is_absent(self):
+        page = b'''<html><head><script type="application/ld+json">{"@type":"NewsArticle","headline":"Structured report","articleBody":"First structured paragraph. Second structured paragraph.","author":{"@type":"Person","name":"A. Reporter"},"datePublished":"2026-11-03T09:00:00Z"}</script></head><body><div>Navigation only</div></body></html>'''
+        items, _ = parse_payload(page, "text/html", "https://example.org/structured")
+        self.assertIn("First structured paragraph", items[0]["fullText"])
+        self.assertEqual(items[0]["author"], "A. Reporter")
+        self.assertEqual(items[0]["sourceMetadata"]["articleTextSource"], "jsonld-articleBody")
+
+    def test_unrelated_anchor_is_not_mislabelled_as_continuation(self):
+        page = b'''<html><body><article><p>Body</p><a href="/contact">Contact us</a></article></body></html>'''
+        items, _ = parse_payload(page, "text/html", "https://example.org/page")
+        link = next(link for link in items[0]["links"] if link["text"] == "Contact us")
+        self.assertEqual(link["relation"], "related-link")
 
 
 if __name__ == "__main__":

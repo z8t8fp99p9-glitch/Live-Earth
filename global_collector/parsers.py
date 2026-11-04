@@ -14,6 +14,14 @@ import xml.etree.ElementTree as ET
 from .errors import ParseError
 
 
+ARTICLE_CONTINUATION_RE = re.compile(
+    r"\b(?:read\s+more|read\s+the\s+full\s+(?:article|story|report)|"
+    r"read\s+full\s+(?:article|story|report)|continue\s+reading|"
+    r"continue\s+to\s+(?:the\s+)?article|view\s+(?:the\s+)?full\s+"
+    r"(?:article|story|report)|full\s+(?:article|story|report))\b", re.I
+)
+
+
 def _local(tag: str) -> str:
     return str(tag).rsplit("}", 1)[-1].split(":")[-1].lower()
 
@@ -61,8 +69,10 @@ def _xml_item(item: ET.Element, feed_url: str) -> dict[str, Any]:
             rel = child.attrib.get("rel", "alternate").lower()
             link_value = href or value
             if link_value:
+                link_title = child.attrib.get("title", "")
                 links.append({"url": urljoin(feed_url, link_value), "rel": rel,
-                              "title": child.attrib.get("title", ""), "type": child.attrib.get("type", "")})
+                              "title": link_title, "type": child.attrib.get("type", ""),
+                              "text": value, "relation": _link_relation(value, link_title, rel)})
                 if rel == "alternate" or not raw.get("url"):
                     raw["url"] = urljoin(feed_url, link_value)
         elif name in {"enclosure", "content", "thumbnail", "image"}:
@@ -154,7 +164,6 @@ def parse_xml(payload: bytes, feed_url: str) -> tuple[list[dict[str, Any]], str]
         raise ParseError(f"XML source response is malformed: {exc}") from exc
     items = [node for node in root.iter() if _local(node.tag) in {"item", "entry"}]
     if not items:
-        # RDF feeds sometimes use local-name item under another namespace.
         raise ParseError("XML response did not contain recognizable RSS/RDF/Atom entries.")
     return [_xml_item(item, feed_url) for item in items], "rss_atom"
 
@@ -164,15 +173,12 @@ def _find_items(value: Any) -> list[dict[str, Any]]:
         return [x for x in value if isinstance(x, dict)]
     if not isinstance(value, dict):
         return []
-    # JSON Feed 1.x
     if isinstance(value.get("items"), list):
         return [x for x in value["items"] if isinstance(x, dict)]
-    # Generic API response envelopes.
     for key in ("posts", "articles", "entries", "results", "data", "records", "news"):
         found = _find_items(value.get(key))
         if found:
             return found
-    # A single JSON object may itself be a post.
     if any(key in value for key in ("title", "headline", "content", "description", "url", "link")):
         return [value]
     return []
@@ -180,7 +186,6 @@ def _find_items(value: Any) -> list[dict[str, Any]]:
 
 def _json_item(item: dict[str, Any], feed_url: str) -> dict[str, Any]:
     result = dict(item)
-    # Resolve common relative links without losing the original source fields.
     for field in ("url", "link", "external_url", "canonicalUrl"):
         if isinstance(result.get(field), str) and result[field]:
             result[field] = urljoin(feed_url, result[field])
@@ -196,6 +201,12 @@ def _json_item(item: dict[str, Any], feed_url: str) -> dict[str, Any]:
     return result
 
 
+def _link_relation(text_value: str, title: str, rel: str) -> str:
+    """Describe a likely continuation link without deciding whether it may be fetched."""
+    descriptor = " ".join((text_value or "", title or "", rel or "")).strip()
+    return "article-continuation-candidate" if ARTICLE_CONTINUATION_RE.search(descriptor) else "related-link"
+
+
 class _HTMLRecordParser(HTMLParser):
     def __init__(self, base_url: str):
         super().__init__(convert_charrefs=True)
@@ -209,10 +220,12 @@ class _HTMLRecordParser(HTMLParser):
         self.images: list[dict[str, Any]] = []
         self.attachments: list[dict[str, Any]] = []
         self.links: list[dict[str, Any]] = []
+        self.active_anchor: dict[str, Any] | None = None
         self.language = ""
         self.jsonld: list[Any] = []
         self.in_jsonld = False
         self.jsonld_parts: list[str] = []
+        self.content_scope_stack: list[str] = []
 
     def handle_starttag(self, tag, attrs):
         a = {str(k).lower(): (v or "") for k, v in attrs}
@@ -221,15 +234,20 @@ class _HTMLRecordParser(HTMLParser):
             self.language = a["lang"]
         if tag == "title":
             self.in_title = True
-        if tag in {"article", "main"}:
+        is_content_scope = tag in {"article", "main"} or a.get("role", "").lower() == "main" or "articlebody" in a.get("itemprop", "").lower()
+        if is_content_scope:
             self.in_content += 1
+            self.content_scope_stack.append(tag)
         if tag == "meta":
             key = (a.get("property") or a.get("name") or a.get("itemprop") or "").lower()
             if key and a.get("content"):
                 self.meta[key] = a["content"]
         if tag == "link" and a.get("href"):
-            self.links.append({"url": urljoin(self.base_url, a["href"]), "rel": a.get("rel", ""), "title": a.get("title", ""), "type": a.get("type", "")})
-            if a.get("rel", "").lower() == "canonical":
+            rel = a.get("rel", "")
+            self.links.append({"url": urljoin(self.base_url, a["href"]), "rel": rel,
+                               "title": a.get("title", ""), "type": a.get("type", ""),
+                               "text": "", "relation": "head-link"})
+            if rel.lower() == "canonical":
                 self.meta["canonical"] = urljoin(self.base_url, a["href"])
         if tag in {"img", "video", "audio", "source", "iframe"}:
             url = a.get("src") or a.get("data-src") or a.get("poster")
@@ -241,7 +259,10 @@ class _HTMLRecordParser(HTMLParser):
                                     "metadata": {"element": tag, "attributes": a}})
         if tag == "a" and a.get("href"):
             href = urljoin(self.base_url, a["href"])
-            self.links.append({"url": href, "rel": a.get("rel", ""), "title": a.get("title", ""), "type": a.get("type", "")})
+            link = {"url": href, "rel": a.get("rel", ""), "title": a.get("title", ""),
+                    "type": a.get("type", ""), "text": "", "relation": "related-link"}
+            self.links.append(link)
+            self.active_anchor = link
             if re.search(r"\.(pdf|docx?|xlsx?|pptx?|zip)(?:[?#].*)?$", href, re.I):
                 self.attachments.append({"url": href, "mediaType": "document", "title": a.get("download", "") or a.get("title", "")})
         if tag == "script" and a.get("type", "").lower() == "application/ld+json":
@@ -254,8 +275,16 @@ class _HTMLRecordParser(HTMLParser):
         tag = tag.lower()
         if tag == "title":
             self.in_title = False
-        if tag in {"article", "main"} and self.in_content:
-            self.in_content -= 1
+        if tag == "a" and self.active_anchor is not None:
+            link = self.active_anchor
+            link["text"] = re.sub(r"\s+", " ", str(link.get("text", ""))).strip()
+            link["relation"] = _link_relation(link["text"], str(link.get("title", "")), str(link.get("rel", "")))
+            self.active_anchor = None
+        if tag in {"article", "main", "div", "section"} and self.content_scope_stack:
+            # Only close a scope if the closing element matches the most recent opener.
+            if self.content_scope_stack[-1] == tag:
+                self.content_scope_stack.pop()
+                self.in_content = max(0, self.in_content - 1)
         if tag in {"p", "h1", "h2", "h3", "li", "blockquote"} and self.content_html:
             self.content_html.append(f"</{tag}>")
         if tag == "script" and self.in_jsonld:
@@ -270,9 +299,11 @@ class _HTMLRecordParser(HTMLParser):
     def handle_data(self, data):
         if self.in_title:
             self.title += data
-        if self.in_content:
+        if self.in_content and not self.in_jsonld:
             self.content_parts.append(data)
             self.content_html.append(html.escape(data))
+        if self.active_anchor is not None:
+            self.active_anchor["text"] = str(self.active_anchor.get("text", "")) + data
         if self.in_jsonld:
             self.jsonld_parts.append(data)
 
@@ -281,16 +312,27 @@ def _jsonld_candidates(objects: list[Any]) -> list[dict[str, Any]]:
     found = []
     def visit(value):
         if isinstance(value, list):
-            for x in value: visit(x)
+            for x in value:
+                visit(x)
         elif isinstance(value, dict):
             typ = value.get("@type", "")
             types = typ if isinstance(typ, list) else [typ]
             if any(str(t).lower() in {"article", "newsarticle", "blogposting", "report", "socialmediaposting"} for t in types):
                 found.append(value)
             for key in ("@graph", "mainEntity", "mainEntityOfPage"):
-                if key in value: visit(value[key])
-    for obj in objects: visit(obj)
+                if key in value:
+                    visit(value[key])
+    for obj in objects:
+        visit(obj)
     return found
+
+
+def _structured_text(value: Any) -> str:
+    if isinstance(value, list):
+        return "\n\n".join(_structured_text(item) for item in value if item)
+    if isinstance(value, dict):
+        value = value.get("text") or value.get("name") or value.get("value") or ""
+    return _clean(value, 200000)
 
 
 def parse_html(payload: bytes, page_url: str) -> tuple[list[dict[str, Any]], str]:
@@ -316,23 +358,32 @@ def parse_html(payload: bytes, page_url: str) -> tuple[list[dict[str, Any]], str
     elif isinstance(author, list):
         author = [x.get("name", "") if isinstance(x, dict) else x for x in author]
     image = metas.get("og:image") or metas.get("twitter:image") or structured.get("image", "")
-    if isinstance(image, dict): image = image.get("url", "")
-    if isinstance(image, list): image = image[0].get("url", "") if image and isinstance(image[0], dict) else (image[0] if image else "")
+    if isinstance(image, dict):
+        image = image.get("url", "")
+    if isinstance(image, list):
+        image = image[0].get("url", "") if image and isinstance(image[0], dict) else (image[0] if image else "")
     media = list(parser.images)
     if image:
         media.insert(0, {"url": urljoin(page_url, str(image)), "mediaType": "image", "caption": metas.get("og:image:alt", "")})
+    visible_article_text = _clean(" ".join(parser.content_parts))
+    structured_article_text = _structured_text(structured.get("articleBody", ""))
+    full_text = visible_article_text or structured_article_text
+    keywords = structured.get("keywords", [])
+    if isinstance(keywords, str):
+        keywords = [x.strip() for x in re.split(r"[,;]", keywords) if x.strip()]
     item = {
         "title": title,
         "url": canonical,
         "canonicalUrl": canonical,
         "summary": description,
         "excerpt": description,
-        "fullText": _clean(" ".join(parser.content_parts)),
+        "fullText": full_text,
         "fullTextHtml": "".join(parser.content_html),
         "author": author,
         "publishedAt": metas.get("article:published_time") or metas.get("date") or structured.get("datePublished", ""),
         "updatedAt": metas.get("article:modified_time") or structured.get("dateModified", ""),
         "language": parser.language or metas.get("og:locale", ""),
+        "categories": keywords if isinstance(keywords, list) else [],
         "media": media,
         "links": parser.links,
         "rightsMetadata": {
@@ -344,6 +395,7 @@ def parse_html(payload: bytes, page_url: str) -> tuple[list[dict[str, Any]], str
         },
         "sourceMetadata": {"format": "html", "meta": metas, "jsonLd": parser.jsonld,
                            "documentTitle": parser.title, "httpPageUrl": page_url,
+                           "articleTextSource": "html-article-scope" if visible_article_text else ("jsonld-articleBody" if structured_article_text else "unavailable"),
                            "rawHtmlPreview": source_text[:250000],
                            "rawHtmlCharacterCount": len(source_text),
                            "rawHtmlTruncated": len(source_text) > 250000},
@@ -372,7 +424,6 @@ def parse_payload(payload: bytes, content_type: str, source_url: str) -> tuple[l
         return parse_xml(payload, source_url)
     if "html" in mime or stripped.startswith(b"<!doctype html") or b"<html" in stripped[:1000].lower():
         return parse_html(payload, source_url)
-    # Last chance: parse structured text as JSON, then XML, then HTML.
     try:
         decoded = json.loads(payload.decode("utf-8-sig"))
         items = _find_items(decoded)
