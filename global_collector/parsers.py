@@ -15,11 +15,13 @@ from .errors import ParseError
 
 
 ARTICLE_CONTINUATION_RE = re.compile(
-    r"\b(?:read\s+more|read\s+the\s+full\s+(?:article|story|report)|"
-    r"read\s+full\s+(?:article|story|report)|continue\s+reading|"
-    r"continue\s+to\s+(?:the\s+)?article|view\s+(?:the\s+)?full\s+"
-    r"(?:article|story|report)|full\s+(?:article|story|report))\b", re.I
+    r"\b(?:read\s+more|read\s+(?:the\s+)?(?:full\s+)?(?:article|story|report)|"
+    r"continue\s+reading|continue\s+to\s+(?:the\s+)?article|"
+    r"view\s+(?:the\s+)?(?:full\s+)?(?:article|story|report)|"
+    r"open\s+(?:the\s+)?(?:full\s+)?(?:article|story|report)|"
+    r"full\s+(?:article|story|report))\b", re.I
 )
+
 
 
 def _local(tag: str) -> str:
@@ -189,29 +191,116 @@ def _json_item(item: dict[str, Any], feed_url: str) -> dict[str, Any]:
     for field in ("url", "link", "external_url", "canonicalUrl"):
         if isinstance(result.get(field), str) and result[field]:
             result[field] = urljoin(feed_url, result[field])
-    for field in ("image", "banner_image"):
-        if isinstance(result.get(field), str) and result[field]:
-            result.setdefault("media", []).append({"url": urljoin(feed_url, result[field]), "mediaType": "image"})
+
+    raw_media = result.get("media")
+    raw_media_values = raw_media if isinstance(raw_media, list) else ([raw_media] if raw_media not in (None, "") else [])
+    media_values = []
+    for candidate in raw_media_values:
+        if isinstance(candidate, dict):
+            candidate = dict(candidate)
+            candidate_url = candidate.get("url") or candidate.get("contentUrl") or candidate.get("src") or candidate.get("href")
+            if candidate_url:
+                candidate["url"] = urljoin(feed_url, str(candidate_url))
+            media_values.append(candidate)
+        elif isinstance(candidate, str):
+            media_values.append({"url": urljoin(feed_url, candidate)})
+    for field in ("image", "banner_image", "thumbnailUrl", "thumbnail_url", "images", "thumbnails"):
+        value = result.get(field)
+        candidates = value if isinstance(value, list) else [value]
+        for candidate in candidates:
+            if isinstance(candidate, str) and candidate:
+                media_values.append({"url": urljoin(feed_url, candidate), "mediaType": "image"})
+            elif isinstance(candidate, dict):
+                url = candidate.get("url") or candidate.get("contentUrl") or candidate.get("src") or candidate.get("href")
+                if url:
+                    media_values.append({**candidate, "url": urljoin(feed_url, str(url)),
+                                         "mediaType": candidate.get("mediaType") or candidate.get("type") or "image"})
+    result["media"] = _dedupe_media(media_values)
+
     if isinstance(result.get("attachments"), list):
         result["attachments"] = [
             ({**x, "url": urljoin(feed_url, x.get("url", ""))} if isinstance(x, dict) else x)
             for x in result["attachments"]
         ]
+
+    raw_links = result.get("links") or result.get("relatedLinks") or []
+    if isinstance(raw_links, dict):
+        expanded = []
+        for rel_name, link_value in raw_links.items():
+            value = link_value if isinstance(link_value, dict) else {"href": link_value}
+            expanded.append({**value, "rel": value.get("rel") or rel_name})
+        raw_links = expanded
+    if not isinstance(raw_links, list):
+        raw_links = [raw_links]
+    raw_links = list(raw_links)
+    hal_links = result.get("_links")
+    if isinstance(hal_links, dict):
+        for rel_name, link_value in hal_links.items():
+            values = link_value if isinstance(link_value, list) else [link_value]
+            for value in values:
+                value = value if isinstance(value, dict) else {"href": value}
+                raw_links.append({**value, "rel": value.get("rel") or rel_name})
+    normalized_links = []
+    for link in raw_links:
+        if isinstance(link, str):
+            link = {"url": link}
+        if not isinstance(link, dict):
+            continue
+        href = link.get("url") or link.get("href") or link.get("uri")
+        if not href:
+            continue
+        link_url = urljoin(feed_url, str(href))
+        text_value = link.get("text") or link.get("label") or link.get("anchorText") or link.get("name") or ""
+        title_value = " ".join(str(link.get(key) or "") for key in ("title", "ariaLabel", "class", "className"))
+        rel_value = str(link.get("rel") or link.get("relationship") or "")
+        normalized_links.append({
+            **link,
+            "url": link_url,
+            "text": str(text_value),
+            "relation": _link_relation(str(text_value), title_value, rel_value),
+        })
+    result["links"] = _merge_json_links(normalized_links)
     result.setdefault("sourceMetadata", {"format": "json", "record": item})
     return result
 
 
+def _merge_json_links(values: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    unique: dict[str, dict[str, Any]] = {}
+    for link in values:
+        url = str(link.get("url") or "")
+        if not url:
+            continue
+        if url not in unique:
+            unique[url] = dict(link)
+            continue
+        prior = unique[url]
+        for key, value in link.items():
+            if prior.get(key) in (None, "", [], {}) and value not in (None, "", [], {}):
+                prior[key] = value
+    return list(unique.values())
+
+
 def _link_relation(text_value: str, title: str, rel: str) -> str:
-    """Describe a likely continuation link without deciding whether it may be fetched."""
-    descriptor = " ".join((text_value or "", title or "", rel or "")).strip()
-    return "article-continuation-candidate" if ARTICLE_CONTINUATION_RE.search(descriptor) else "related-link"
+    """Identify a likely continuation link from exposed source labels/relations."""
+    descriptor = " ".join((text_value or "", title or "", rel or "")).replace("-", " ").replace("_", " ").strip()
+    rel_tokens = {token.casefold() for token in re.split(r"\s+", str(rel or ""))}
+    if "next" in rel_tokens or ARTICLE_CONTINUATION_RE.search(descriptor):
+        return "article-continuation-candidate"
+    return "related-link"
 
 
 class _HTMLRecordParser(HTMLParser):
+    """Extract article content, all visible image candidates, links and source evidence."""
+    IMAGE_META_KEYS = {
+        "og:image", "og:image:url", "og:image:secure_url", "twitter:image",
+        "twitter:image:src", "image", "image_src", "thumbnailurl",
+    }
+
     def __init__(self, base_url: str):
         super().__init__(convert_charrefs=True)
         self.base_url = base_url
         self.meta: dict[str, str] = {}
+        self.meta_values: dict[str, list[str]] = {}
         self.title = ""
         self.in_title = False
         self.in_content = 0
@@ -227,6 +316,29 @@ class _HTMLRecordParser(HTMLParser):
         self.jsonld_parts: list[str] = []
         self.content_scope_stack: list[str] = []
 
+    def _add_image(self, url: str, *, attrs: dict[str, str] | None = None,
+                   discovered_from: str = "html-image-element", media_type: str = "image"):
+        url = str(url or "").strip()
+        if not url:
+            return
+        attrs = attrs or {}
+        self.images.append({
+            "url": urljoin(self.base_url, url),
+            "mediaType": media_type,
+            "altText": attrs.get("alt", "") or attrs.get("aria-label", ""),
+            "title": attrs.get("title", ""),
+            "caption": attrs.get("data-caption", ""),
+            "creator": attrs.get("data-creator", ""),
+            "credit": attrs.get("data-credit", "") or attrs.get("data-attribution", ""),
+            "rightsNotice": attrs.get("data-rights", "") or attrs.get("data-copyright", ""),
+            "licenseUrl": attrs.get("data-license", "") or attrs.get("data-license-url", ""),
+            "width": attrs.get("width"),
+            "height": attrs.get("height"),
+            "sourcePage": self.base_url,
+            "discoveredFrom": discovered_from,
+            "metadata": {"attributes": dict(attrs)},
+        })
+
     def handle_starttag(self, tag, attrs):
         a = {str(k).lower(): (v or "") for k, v in attrs}
         tag = tag.lower()
@@ -234,41 +346,82 @@ class _HTMLRecordParser(HTMLParser):
             self.language = a["lang"]
         if tag == "title":
             self.in_title = True
-        is_content_scope = tag in {"article", "main"} or a.get("role", "").lower() == "main" or "articlebody" in a.get("itemprop", "").lower()
+
+        scope_labels = (a.get("class", "") + " " + a.get("id", "")).casefold().replace("_", "-")
+        semantic_content_labels = (
+            "article-body", "article-content", "story-body", "story-content",
+            "entry-content", "post-content", "body-content", "main-content",
+        )
+        is_content_scope = (
+            tag in {"article", "main"}
+            or a.get("role", "").lower() == "main"
+            or "articlebody" in a.get("itemprop", "").lower()
+            or any(label in scope_labels for label in semantic_content_labels)
+        )
         if is_content_scope:
             self.in_content += 1
             self.content_scope_stack.append(tag)
+
         if tag == "meta":
-            key = (a.get("property") or a.get("name") or a.get("itemprop") or "").lower()
-            if key and a.get("content"):
-                self.meta[key] = a["content"]
+            key = (a.get("property") or a.get("name") or a.get("itemprop") or a.get("http-equiv") or "").lower()
+            content = a.get("content", "")
+            if key and content:
+                self.meta[key] = content
+                self.meta_values.setdefault(key, []).append(content)
+                if key in self.IMAGE_META_KEYS:
+                    self._add_image(content, attrs={"alt": self.meta.get("og:image:alt", "")},
+                                    discovered_from="html-image-meta")
+
         if tag == "link" and a.get("href"):
             rel = a.get("rel", "")
-            self.links.append({"url": urljoin(self.base_url, a["href"]), "rel": rel,
-                               "title": a.get("title", ""), "type": a.get("type", ""),
-                               "text": "", "relation": "head-link"})
-            if rel.lower() == "canonical":
-                self.meta["canonical"] = urljoin(self.base_url, a["href"])
+            href = urljoin(self.base_url, a["href"])
+            link = {"url": href, "rel": rel, "title": a.get("title", ""),
+                    "type": a.get("type", ""), "text": "", "relation": "head-link",
+                    "metadata": {"attributes": dict(a)}}
+            self.links.append(link)
+            if "canonical" in rel.lower().split():
+                self.meta["canonical"] = href
+            if "image_src" in rel.lower().split():
+                self._add_image(href, attrs={"title": a.get("title", "")},
+                                discovered_from="html-link-image")
+            if "next" in rel.lower().split():
+                link["relation"] = "article-continuation-candidate"
+
         if tag in {"img", "video", "audio", "source", "iframe"}:
-            url = a.get("src") or a.get("data-src") or a.get("poster")
-            if url:
-                media_type = "image" if tag == "img" else "video" if tag == "video" else "audio" if tag == "audio" else "embedded"
-                self.images.append({"url": urljoin(self.base_url, url), "mediaType": media_type,
-                                    "altText": a.get("alt", ""), "title": a.get("title", ""),
-                                    "width": a.get("width"), "height": a.get("height"),
-                                    "metadata": {"element": tag, "attributes": a}})
+            urls = []
+            for key in ("src", "data-src", "data-lazy-src", "data-original", "data-image", "data-image-url"):
+                if a.get(key):
+                    urls.append(a[key])
+            for key in ("srcset", "data-srcset", "data-lazy-srcset"):
+                for part in str(a.get(key, "")).split(","):
+                    bits = part.strip().split()
+                    if bits and bits[0]:
+                        urls.append(bits[0])
+            if tag == "video" and a.get("poster"):
+                self._add_image(a["poster"], attrs=a, discovered_from="html-video-poster")
+            for url in urls:
+                media_type = "image" if tag in {"img", "source"} else "video" if tag == "video" else "audio" if tag == "audio" else "embedded"
+                self._add_image(url, attrs=a, media_type=media_type)
+
         if tag == "a" and a.get("href"):
             href = urljoin(self.base_url, a["href"])
             link = {"url": href, "rel": a.get("rel", ""), "title": a.get("title", ""),
-                    "type": a.get("type", ""), "text": "", "relation": "related-link"}
+                    "type": a.get("type", ""), "text": "", "relation": "related-link",
+                    "metadata": {"attributes": dict(a)}}
+            if a.get("aria-label"):
+                link["ariaLabel"] = a["aria-label"]
+            if a.get("class"):
+                link["className"] = a["class"]
             self.links.append(link)
             self.active_anchor = link
             if re.search(r"\.(pdf|docx?|xlsx?|pptx?|zip)(?:[?#].*)?$", href, re.I):
-                self.attachments.append({"url": href, "mediaType": "document", "title": a.get("download", "") or a.get("title", "")})
+                self.attachments.append({"url": href, "mediaType": "document",
+                                         "title": a.get("download", "") or a.get("title", "")})
+
         if tag == "script" and a.get("type", "").lower() == "application/ld+json":
             self.in_jsonld = True
             self.jsonld_parts = []
-        if self.in_content and tag in {"p", "h1", "h2", "h3", "li", "blockquote"}:
+        if self.in_content and tag in {"p", "h1", "h2", "h3", "h4", "li", "blockquote"}:
             self.content_html.append(f"<{tag}>")
 
     def handle_endtag(self, tag):
@@ -278,14 +431,17 @@ class _HTMLRecordParser(HTMLParser):
         if tag == "a" and self.active_anchor is not None:
             link = self.active_anchor
             link["text"] = re.sub(r"\s+", " ", str(link.get("text", ""))).strip()
-            link["relation"] = _link_relation(link["text"], str(link.get("title", "")), str(link.get("rel", "")))
+            link["relation"] = _link_relation(
+                link["text"],
+                " ".join((str(link.get("title", "")), str(link.get("ariaLabel", "")), str(link.get("className", "")))),
+                str(link.get("rel", "")),
+            )
             self.active_anchor = None
         if tag in {"article", "main", "div", "section"} and self.content_scope_stack:
-            # Only close a scope if the closing element matches the most recent opener.
             if self.content_scope_stack[-1] == tag:
                 self.content_scope_stack.pop()
                 self.in_content = max(0, self.in_content - 1)
-        if tag in {"p", "h1", "h2", "h3", "li", "blockquote"} and self.content_html:
+        if tag in {"p", "h1", "h2", "h3", "h4", "li", "blockquote"} and self.content_html:
             self.content_html.append(f"</{tag}>")
         if tag == "script" and self.in_jsonld:
             raw = "".join(self.jsonld_parts).strip()
@@ -306,7 +462,6 @@ class _HTMLRecordParser(HTMLParser):
             self.active_anchor["text"] = str(self.active_anchor.get("text", "")) + data
         if self.in_jsonld:
             self.jsonld_parts.append(data)
-
 
 def _jsonld_candidates(objects: list[Any]) -> list[dict[str, Any]]:
     found = []
@@ -335,6 +490,63 @@ def _structured_text(value: Any) -> str:
     return _clean(value, 200000)
 
 
+def _structured_image_records(value: Any, page_url: str) -> list[dict[str, Any]]:
+    values = value if isinstance(value, list) else [value]
+    output = []
+    for item in values:
+        if isinstance(item, str):
+            url = item
+            details = {}
+        elif isinstance(item, dict):
+            url = item.get("contentUrl") or item.get("url") or item.get("thumbnailUrl") or ""
+            details = item
+        else:
+            continue
+        if not url:
+            continue
+        creator = details.get("creator") or details.get("author") or ""
+        if isinstance(creator, dict):
+            creator = creator.get("name", "")
+        license_value = details.get("license") or details.get("acquireLicensePage") or ""
+        output.append({
+            "url": urljoin(page_url, str(url)),
+            "mediaType": "image",
+            "title": details.get("name", ""),
+            "caption": details.get("caption") or details.get("description", ""),
+            "altText": details.get("alternateName", ""),
+            "creator": creator,
+            "credit": details.get("creditText") or details.get("copyrightHolder", ""),
+            "rightsNotice": details.get("copyrightNotice", ""),
+            "licenseUrl": license_value if isinstance(license_value, str) else "",
+            "width": details.get("width"),
+            "height": details.get("height"),
+            "sourcePage": page_url,
+            "discoveredFrom": "jsonld-image-object",
+            "metadata": details,
+        })
+    return output
+
+
+def _dedupe_media(values: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    unique: dict[str, dict[str, Any]] = {}
+    for raw in values:
+        if not isinstance(raw, dict) or not raw.get("url"):
+            continue
+        key = str(raw["url"]).strip()
+        if key not in unique:
+            unique[key] = dict(raw)
+            continue
+        prior = unique[key]
+        for field, value in raw.items():
+            if field == "metadata" and isinstance(value, dict):
+                if not isinstance(prior.get("metadata"), dict):
+                    prior["metadata"] = {}
+                prior["metadata"].update({k: v for k, v in value.items() if k not in prior["metadata"]})
+            elif prior.get(field) in (None, "", [], {}) and value not in (None, "", [], {}):
+                prior[field] = value
+    return list(unique.values())
+
+
 def parse_html(payload: bytes, page_url: str) -> tuple[list[dict[str, Any]], str]:
     try:
         source_text = payload.decode("utf-8", errors="replace")
@@ -352,25 +564,62 @@ def parse_html(payload: bytes, page_url: str) -> tuple[list[dict[str, Any]], str
     title = metas.get("og:title") or metas.get("twitter:title") or structured.get("headline") or parser.title
     description = metas.get("og:description") or metas.get("description") or metas.get("twitter:description") or structured.get("description", "")
     canonical = metas.get("canonical") or metas.get("og:url") or structured.get("url") or page_url
-    author = metas.get("author") or metas.get("article:author") or structured.get("author", "")
+    author = metas.get("author") or metas.get("article:author") or metas.get("dc.creator") or structured.get("author", "")
     if isinstance(author, dict):
         author = author.get("name", "")
     elif isinstance(author, list):
         author = [x.get("name", "") if isinstance(x, dict) else x for x in author]
-    image = metas.get("og:image") or metas.get("twitter:image") or structured.get("image", "")
-    if isinstance(image, dict):
-        image = image.get("url", "")
-    if isinstance(image, list):
-        image = image[0].get("url", "") if image and isinstance(image[0], dict) else (image[0] if image else "")
+
     media = list(parser.images)
-    if image:
-        media.insert(0, {"url": urljoin(page_url, str(image)), "mediaType": "image", "caption": metas.get("og:image:alt", "")})
+    for key in _HTMLRecordParser.IMAGE_META_KEYS:
+        for value in parser.meta_values.get(key, []):
+            if value:
+                media.append({"url": urljoin(page_url, value), "mediaType": "image",
+                              "caption": metas.get("og:image:alt", "") or metas.get("twitter:image:alt", ""),
+                              "sourcePage": page_url, "discoveredFrom": "html-image-meta",
+                              "metadata": {"metaKey": key}})
+    for article in jsonld:
+        media.extend(_structured_image_records(article.get("image") or article.get("thumbnailUrl"), page_url))
+    media = _dedupe_media(media)
+    page_credit = metas.get("image:credit") or metas.get("og:image:credit") or metas.get("twitter:image:credit") or ""
+    page_copyright = metas.get("image:copyright") or metas.get("copyright") or metas.get("copyrightnotice") or ""
+    page_license = metas.get("image:license") or metas.get("license") or metas.get("dcterms.license") or ""
+    for candidate in media:
+        candidate.setdefault("sourcePage", page_url)
+        if not candidate.get("credit") and page_credit:
+            candidate["credit"] = page_credit
+        if not candidate.get("rightsNotice") and page_copyright:
+            candidate["rightsNotice"] = page_copyright
+        if not candidate.get("licenseUrl") and str(page_license).startswith("https://"):
+            candidate["licenseUrl"] = page_license
+        if not candidate.get("licenseName") and page_license and not str(page_license).startswith("https://"):
+            candidate["licenseName"] = page_license
+
     visible_article_text = _clean(" ".join(parser.content_parts))
     structured_article_text = _structured_text(structured.get("articleBody", ""))
     full_text = visible_article_text or structured_article_text
     keywords = structured.get("keywords", [])
     if isinstance(keywords, str):
         keywords = [x.strip() for x in re.split(r"[,;]", keywords) if x.strip()]
+
+    copyright_notice = (metas.get("copyright") or metas.get("copyrightnotice")
+                        or metas.get("dc.rights") or metas.get("dcterms.rights") or "")
+    license_value = metas.get("license") or metas.get("dcterms.license") or metas.get("rights:license") or ""
+    credit = (metas.get("image:credit") or metas.get("og:image:credit")
+              or metas.get("twitter:image:credit") or metas.get("dc.creator") or "")
+    rights_notice = metas.get("rights") or metas.get("dcterms.rights") or ""
+    rights_metadata = {
+        "copyrightNotice": copyright_notice,
+        "licenseUrl": license_value if str(license_value).startswith("https://") else "",
+        "licenseName": license_value if license_value and not str(license_value).startswith("https://") else "",
+        "rightsNotice": rights_notice,
+        "termsUrl": metas.get("terms") or metas.get("termsurl") or "",
+        "creator": str(author) if isinstance(author, str) else "",
+        "attribution": credit,
+        "credit": credit,
+        "sourcePage": page_url,
+        "metadata": {key: values for key, values in parser.meta_values.items()},
+    }
     item = {
         "title": title,
         "url": canonical,
@@ -380,30 +629,27 @@ def parse_html(payload: bytes, page_url: str) -> tuple[list[dict[str, Any]], str
         "fullText": full_text,
         "fullTextHtml": "".join(parser.content_html),
         "author": author,
-        "publishedAt": metas.get("article:published_time") or metas.get("date") or structured.get("datePublished", ""),
-        "updatedAt": metas.get("article:modified_time") or structured.get("dateModified", ""),
+        "publishedAt": metas.get("article:published_time") or metas.get("datepublished") or metas.get("date") or structured.get("datePublished", ""),
+        "updatedAt": metas.get("article:modified_time") or metas.get("datemodified") or structured.get("dateModified", ""),
         "language": parser.language or metas.get("og:locale", ""),
         "categories": keywords if isinstance(keywords, list) else [],
         "media": media,
+        "attachments": parser.attachments,
         "links": parser.links,
-        "rightsMetadata": {
-            "copyrightNotice": metas.get("copyright", ""),
-            "licenseUrl": metas.get("license", ""),
-            "rightsNotice": metas.get("rights", ""),
-            "termsUrl": metas.get("terms", ""),
-            "credit": metas.get("image:credit", ""),
+        "rightsMetadata": rights_metadata,
+        "sourceMetadata": {
+            "format": "html", "meta": metas, "metaValues": parser.meta_values,
+            "jsonLd": parser.jsonld, "documentTitle": parser.title,
+            "httpPageUrl": page_url,
+            "articleTextSource": "html-article-scope" if visible_article_text else ("jsonld-articleBody" if structured_article_text else "unavailable"),
+            "rawHtmlPreview": source_text[:250000],
+            "rawHtmlCharacterCount": len(source_text),
+            "rawHtmlTruncated": len(source_text) > 250000,
         },
-        "sourceMetadata": {"format": "html", "meta": metas, "jsonLd": parser.jsonld,
-                           "documentTitle": parser.title, "httpPageUrl": page_url,
-                           "articleTextSource": "html-article-scope" if visible_article_text else ("jsonld-articleBody" if structured_article_text else "unavailable"),
-                           "rawHtmlPreview": source_text[:250000],
-                           "rawHtmlCharacterCount": len(source_text),
-                           "rawHtmlTruncated": len(source_text) > 250000},
     }
-    if not title and not description and not item["fullText"] and not media:
+    if not title and not description and not item["fullText"] and not media and not item["links"]:
         raise ParseError("HTML response contained no recognizable post/article information.")
     return [item], "html"
-
 
 def parse_payload(payload: bytes, content_type: str, source_url: str) -> tuple[list[dict[str, Any]], str]:
     """Autodetect RSS/Atom, JSON Feed/JSON API or a generic HTML post/page."""

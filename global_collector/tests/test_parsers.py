@@ -41,6 +41,44 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(items[0]["author"], "A. Reporter")
         self.assertEqual(items[0]["sourceMetadata"]["articleTextSource"], "jsonld-articleBody")
 
+    def test_json_feed_preserves_media_and_marks_explicit_next_page(self):
+        payload = b'''{"items":[{"id":"p1","title":"Multi-page report","url":"https://example.org/story","media":[{"url":"/photo.jpg","mediaType":"image/jpeg","credit":"Source Photo Desk"}],"images":[{"contentUrl":"/full-resolution.png","caption":"Original image"}],"links":[{"rel":"next","href":"/story/page-2"}]}]}'''
+        items, _ = parse_payload(payload, "application/json", "https://example.org/feed.json")
+        item = items[0]
+        self.assertEqual(len(item["media"]), 2)
+        self.assertIn("https://example.org/photo.jpg", {x["url"] for x in item["media"]})
+        continuation = next(link for link in item["links"] if link["url"].endswith("/story/page-2"))
+        self.assertEqual(continuation["relation"], "article-continuation-candidate")
+
+    def test_html_collects_all_original_image_candidates_and_rights_metadata(self):
+        page = b'''<!doctype html><html><head>
+        <meta property="og:image" content="https://images.example.org/original.jpg">
+        <meta property="og:image:alt" content="Crew in habitat">
+        <meta name="image:credit" content="Agency Photo Team">
+        <meta name="copyright" content="Agency copyright notice">
+        <meta name="license" content="https://example.org/terms/image-license">
+        <script type="application/ld+json">{"@type":"NewsArticle","headline":"Mission Report","articleBody":"Full report text.","image":{"@type":"ImageObject","contentUrl":"https://images.example.org/structured.png","creator":{"@type":"Organization","name":"Image Unit"},"creditText":"Image Unit","copyrightNotice":"Copyright Image Unit","license":"https://example.org/license"}}</script>
+        </head><body><article><h1>Mission Report</h1><p>Article body.</p>
+        <img data-src="https://images.example.org/lazy.webp" alt="Habitat scene" data-credit="Field Team" data-rights="Copyright Field Team">
+        <picture><source srcset="https://images.example.org/large.avif 2x"></picture>
+        </article></body></html>'''
+        items, _ = parse_payload(page, "text/html", "https://example.org/report")
+        item = items[0]
+        urls = {candidate["url"] for candidate in item["media"]}
+        self.assertEqual(urls, {
+            "https://images.example.org/original.jpg",
+            "https://images.example.org/structured.png",
+            "https://images.example.org/lazy.webp",
+            "https://images.example.org/large.avif",
+        })
+        by_url = {candidate["url"]: candidate for candidate in item["media"]}
+        self.assertEqual(by_url["https://images.example.org/original.jpg"]["credit"], "Agency Photo Team")
+        self.assertEqual(by_url["https://images.example.org/lazy.webp"]["credit"], "Field Team")
+        self.assertEqual(by_url["https://images.example.org/structured.png"]["creator"], "Image Unit")
+        self.assertEqual(item["rightsMetadata"]["copyrightNotice"], "Agency copyright notice")
+        self.assertEqual(item["rightsMetadata"]["licenseUrl"], "https://example.org/terms/image-license")
+        self.assertIn("image:credit", item["rightsMetadata"]["metadata"])
+
     def test_unrelated_anchor_is_not_mislabelled_as_continuation(self):
         page = b'''<html><body><article><p>Body</p><a href="/contact">Contact us</a></article></body></html>'''
         items, _ = parse_payload(page, "text/html", "https://example.org/page")

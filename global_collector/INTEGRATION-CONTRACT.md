@@ -1,41 +1,41 @@
-# Global Collector — integration contract
+# Global Collector — four-section handoff contract
 
-## Agreed production pipeline
+## Pipeline
 
 `Global Collection Manager → Global Collector → Global Checker → Global Image Engine → Universal Editorial Engine → Post-Editorial Global Checker → Global Newsroom Database Writer → View Publisher`
 
-There is exactly one collection engine for all Views. Nature, Alien World, and future Views are Manager profiles and source assignments—not separate Collector implementations.
+There is one View-independent Collector. Nature, Alien World and future Views are Manager profiles and source assignments, not separate Collector implementations.
 
-## Global Collector duties
+## Collector output
 
-- Accept one immutable job produced by Global Collection Manager.
-- Validate the job against the current Manager Source Registry, View profiles, Source-View Assignments, and Global Checker policy references.
-- Fetch bounded, allowlisted HTTPS feeds and parse supported feed formats.
-- Normalize source records and preserve complete Manager lineage and media candidates.
-- Apply the requested lookback window, deduplicate within the job, and report partial source failures without inventing content.
-- Return a transient in-memory collection batch.
+The batch contains:
 
-## Shared downstream ownership
+1. `collectorSections.managerIdCard` — exact Manager job payload plus SHA-256 fingerprint.
+2. Per-post `fullArticle` — collected source text/HTML, original article URL and page-by-page retrieval evidence.
+3. Per-post `originalImageRecords` — all discovered image URLs and source-provided image metadata; no image file download.
+4. Per-post `sourceRightsEvidence` — all available source, author, date, rights, copyright, licence, credit, attribution, link, provenance and provider metadata.
 
-- Global Checker is the sole rights, provenance, and use-permission authority. Text and each image candidate are checked independently.
-- Global Image Engine handles the media work assigned by the shared pipeline; it cannot approve its own output.
-- Universal Editorial Engine edits only the Checker-cleared inputs.
-- Post-Editorial Global Checker independently verifies the package before release.
-- Global Newsroom Database Writer initializes and writes only the registered View database selected by the Manager job. It persists released editorial stories, never raw source text or unapproved candidates.
-- Each View Publisher is a presentation adapter. It reads only Checker-released rows for its own View and writes only that View's publication output.
+Collector does not create a Checks section. Global Checker owns that fifth section and may append its own assessment without changing the previous four sections.
 
-## Database and isolation contract
+For compatibility, the batch also retains the exact existing `records` array and the 38-field `LIVE_EARTH_UNIVERSAL_POST_V1` record schema. This is a projection of the same collected information; individual Checker records receive no extra top-level keys. The current Checker strictly validates this record shape.
 
-Global collection does not mean mixing View data. The Manager selects a unique database identity and a repository-relative path under `.publisher-data/<viewId>/`. The shared Writer creates the generic schema when needed, verifies ownership, and performs additive changes only. Existing database files and rows are preserved; no reset, truncate, or replacement is permitted. Retention is read from the Manager profile (currently 32 days) and there is no story-count cap.
+## Retrieval
 
-## Explicit prohibitions
+- Parse RSS/RDF/Atom, JSON and HTML.
+- Retrieve the linked article page where available.
+- Follow only explicit continuation candidates (for example, “Read More” and `rel="next"`), not general related links.
+- Stay within the originating site's host family.
+- Maximum 5 continuation pages per post; maximum 100 unique article-page fetches per Manager job.
+- 2 MiB and 12 seconds per linked page, one attempt. Record fetch failures and limits as evidence.
+- Extract original image URLs from feed media, Open Graph/Twitter metadata, HTML image/lazy-load/srcset elements and JSON-LD ImageObjects.
+- Preserve exposed source rights metadata without interpreting it. Do not download image files.
 
-- No `nature/collector/` or `alien-world/collector/` production implementation.
-- No per-View Collector allowlists, source scrapers, source filters, image downloaders, or database bootstrap scripts.
-- No workflow step may invoke a View-specific Collector. Every scheduled workflow starts the same Global Newsroom Orchestrator after dependency installation.
-- No Global Collector database write; its output remains transient until Checker and editorial verification release it to the shared Writer.
-- No automatic source discovery, rights inference, similar-image substitution, unapproved media persistence, raw-source text persistence, or cross-View database access.
+## Ownership
 
-## Adding a View
+- Collector: collection, structure, Manager lineage, provenance and source-evidence preservation only.
+- Global Checker: all rights, licence, attribution, provenance and use-permission decisions; owns the Checks section.
+- Later stages: use only what the Checker explicitly clears.
 
-Register the View in Global Collection Manager configuration, add source assignments and matching Global Checker policies, provide a destination database identity/path, and configure its publication adapter. No new Collector or Global Collector code branch is created.
+## Isolation and persistence
+
+Collector returns an in-memory batch only. It does not write a database, change a View database, persist raw source text, invoke another engine or publish material. All Manager identity and destination fields are copied exactly. No View-specific Collector code or branch is permitted.

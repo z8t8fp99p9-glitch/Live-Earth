@@ -1,87 +1,50 @@
 # LIVE // EARTH — Global Collector
 
-**Version:** 1.0.0  
-**Architecture:** one View-agnostic collector, one universal post schema, shared by every present and future View.
+**Version:** 1.1.0  
+**Architecture:** one universal Collector for every present and future View.
 
-## Responsibility
+## Purpose
 
-Global Collector is an information-intake system. It receives a job from Global Collection Manager, retrieves the assigned sources, extracts the information those sources provide, and emits a consistently structured batch for the next system.
+Global Collector receives the immutable job from Global Collection Manager, retrieves the assigned public sources, and returns a transient, structured evidence package to Global Checker.
 
-**It does not judge content.** It does not approve or reject sources, posts, authors, images, text, licences, copyright notices or publication eligibility. It does not summarize, rewrite, moderate, rank, editorialize or make legal decisions. Any credit, licence, copyright, attribution or restriction information exposed by a source is collected as metadata and passed through as evidence. Global Checker remains separate and makes its own downstream decisions.
+It does **not** make rights, licence, copyright, attribution, factual, editorial, ranking or publication decisions. It does not discard material because of source permissions. It collects the available source evidence and leaves every permission decision to Global Checker.
 
-The only checks here are operational: validate the Manager job and its routing, use HTTPS, reject private-network destinations, bound response size/time/retries, and parse the returned data safely. These are transport and job-integrity safeguards, not content judgements.
+The Collector performs only operational safeguards: Manager-job validation, HTTPS/private-network protection, bounded response sizes/time, parsing and deduplication. It never writes a database, invokes another engine, or publishes content.
 
-## One universal post format
+## Four Collector-owned sections
 
-Every post, from every source and every View, has the exact same **38 top-level fields**. No source or View gets its own record structure. When a source does not provide a value, the field remains empty (`""`, `[]`, `{}` or `null` as appropriate). Original source-specific fields are also retained in `sourceMetadata` so the common format does not discard extra information.
+Every collection batch contains `collectorSections` with exactly four Collector-owned sections. The Manager card is shared by the batch because one Manager job addresses one View; each post references its SHA-256 fingerprint.
 
-| # | Universal field | Information collected |
-|---:|---|---|
-| 1 | `schemaVersion` | Record schema version |
-| 2 | `postId` | Stable Collector identity |
-| 3 | `sourcePostId` | Source's original item ID/GUID |
-| 4 | `viewId` | Manager-assigned destination View |
-| 5 | `sourceId` | Manager source identity |
-| 6 | `sourceName` | Source display name |
-| 7 | `sourcePlatform` | Platform/site when exposed |
-| 8 | `sourceType` | Registered connector hint |
-| 9 | `sourceFeedUrl` | Assigned source endpoint |
-| 10 | `sourceWebsiteUrl` | Source website |
-| 11 | `originalUrl` | Original post/article URL |
-| 12 | `canonicalUrl` | Canonical URL when exposed |
-| 13 | `title` | Headline/title |
-| 14 | `subtitle` | Subtitle/deck |
-| 15 | `summary` | Description/abstract/summary |
-| 16 | `excerpt` | Teaser/excerpt |
-| 17 | `fullText` | Available plain text |
-| 18 | `fullTextHtml` | Available HTML content |
-| 19 | `authorName` | Author/byline |
-| 20 | `authorId` | Author identity |
-| 21 | `authorUrl` | Author page |
-| 22 | `contributors` | Additional authors/contributors |
-| 23 | `publishedAt` | Original publication date/time |
-| 24 | `updatedAt` | Source update date/time |
-| 25 | `collectedAt` | Collector retrieval time |
-| 26 | `language` | Language/locale |
-| 27 | `categories` | Source categories |
-| 28 | `tags` | Source tags/keywords |
-| 29 | `topics` | Source topics/subjects |
-| 30 | `location` | Place/address/coordinates when supplied |
-| 31 | `media` | Images, video, audio and embedded media |
-| 32 | `attachments` | Documents and other files |
-| 33 | `links` | Related/canonical/source links |
-| 34 | `engagement` | Views, reactions, likes, shares, comments and exposed metrics |
-| 35 | `rightsMetadata` | Source-provided credit, author, licence, copyright and rights notices — no verdict |
-| 36 | `provenance` | Discovery and retrieval trail |
-| 37 | `sourceMetadata` | Original provider-specific fields/data |
-| 38 | `collectionContext` | Manager job, assignment and View context |
+| Section | Contents |
+|---|---|
+| `managerIdCard` | Exact Manager job payload plus SHA-256 integrity fingerprint. The Collector never regenerates or edits any field. |
+| `fullArticle` | Original article URL, title, byline, dates, complete text/HTML exposed by the feed/article, and each retrieved page with retrieval evidence. |
+| `originalImageRecords` | Every discovered image candidate URL and its source page, caption, alt text, creator, visible credit, licence and metadata. Original files are not downloaded. |
+| `sourceRightsEvidence` | Source identity, provenance, feed/page metadata, author details, dates, categories/tags/topics, links, copyright/licence/credit/attribution/rights notices, image-specific rights evidence and raw provider metadata. |
 
-Every `media` and `attachments` item uses one fixed structure containing the original 21 media-information fields plus 10 lineage fields (`postId`, `viewId`, `sourceId`, `jobId`, `profileId`, `assignmentIds`, `idempotencyKey`, `configVersion`, `destinationDatabaseId`, and `destinationDatabasePath`): `mediaId`, `mediaType`, `url`, `originalUrl`, `thumbnailUrl`, `title`, `caption`, `altText`, `creator`, `credit`, `licenseName`, `licenseUrl`, `rightsNotice`, `mimeType`, `width`, `height`, `durationSeconds`, `fileSizeBytes`, `sourcePage`, `position`, and `metadata`.
+The Collector does not create a fifth `Checks` section. Global Checker owns that section and must add its findings separately without editing or replacing any of the four Collector sections.
 
-## Supported public response formats
+## Checker compatibility
 
-The Collector detects and parses:
+The batch also contains the existing `records` array using the unchanged `LIVE_EARTH_UNIVERSAL_POST_V1` **38-field** post schema and the unchanged fixed media schema. This is the Checker-compatible projection of the same collected material; it preserves the current handoff while `collectorSections` gives the material its explicit four-section structure. No extra fields are added to individual 38-field records, because the current Checker validates that schema strictly.
 
-- RSS, RDF/RSS and Atom feeds, including feed summaries, full-content extensions, enclosures, categories, authors and media metadata.
-- JSON Feed and common public JSON/API response envelopes (`items`, `posts`, `articles`, `entries`, `results`, `data` and `records`).
-- HTML pages/posts, including title and description metadata, Open Graph/Twitter metadata, canonical links, article text, JSON-LD Article data, images, media and document links. When a feed/API item links to a public HTTPS post page, the Collector also attempts bounded page enrichment (up to 100 unique article pages per Manager job) and merges the extra information into the same universal record.
+The Collector returns both structures together in the same in-memory batch. It does not persist raw source text, page HTML, image candidates or section data. Global Checker receives the batch and independently decides what can proceed.
 
-These are shared format adapters, not View-specific collectors. All adapters output the same 38-field record. Authenticated/private APIs that require credentials are not enabled by this package; they need a secure source connector and credential handoff before use.
+## Article and image collection
 
-## Manager handoff
+Supported formats include RSS/RDF/Atom, JSON Feed/common JSON API envelopes, and HTML article pages. HTML extraction reads article/main content, JSON-LD `articleBody`, page metadata, canonical links, continuation links, Open Graph/Twitter image metadata, `<img>`/lazy-load/srcset sources, and JSON-LD ImageObject metadata.
 
-The Collector consumes all Manager fields: `jobId`, `idempotencyKey`, `viewId`, `profileId`, `assignmentIds`, `sourceIds`, `feedUrls`, `collectorEntrypoint`, `collectorWorkflow`, `destinationDatabaseId`, `destinationDatabasePath`, `scheduledAt`, `requestWindowHours`, `configVersion` and `trigger`.
+When a feed entry links to an article page, the Collector retrieves that page. It also follows only links identified as article continuations (for example, “Read More” or `rel="next"`), not unrelated links. Continuation traversal stays within the originating site's host family and is bounded to five continuation pages per post and 100 unique article-page fetches per job.
 
-It validates the job against the Manager's source catalogue, View profiles and source-View assignments only. It does **not** load Global Checker policy files. The full Manager job and routing destination are retained in the batch. The job's `viewId` is carried unchanged; every new View uses this same Collector without a View-specific Python branch.
+Feed responses are limited to 8 MiB. Each linked article-page response is limited to 2 MiB, 12 seconds and one attempt. These are transport limits, not source-rights filters. Any failure or limit is recorded in retrieval evidence rather than represented as successful collection.
 
-## Boundaries
+Images are collected as original URLs and metadata only. The Collector does not download image files, substitute similar images, infer documentary status, or approve an image.
 
-- One Manager job is for one View, as currently issued by Manager; the Collector implementation itself contains no Nature/Alien World branching or allowlist of View names.
-- Every current and future View uses this one Collector and the identical universal post format.
-- The Collector never opens or writes SQLite databases. It returns a collection batch with the View's destination attached; a later handoff/persistence component owns the write.
-- The Collector does not invoke workflows, Global Checker, Editorial Engine, Image Engine or Publishers.
-- No content is discarded because of rights, editorial quality, topic, source status or publication suitability. The Manager's explicitly configured request time window and per-assignment item limit are honoured.
-- Duplicate discoveries of the same source item are merged while source/feed provenance and additional source metadata are retained.
+## Manager identity and View isolation
+
+The Collector validates the Manager job against the Manager Source Registry, View Profiles and Source-View Assignments. It preserves the exact 15-field Manager ID card in the top-level `job` and in `collectorSections.managerIdCard.payload`; a canonical SHA-256 fingerprint makes accidental changes detectable.
+
+The implementation contains no Nature/Alien World branches, per-View scrapers, per-View image rules or View-specific Collector. The Manager assigns the View and database destination. Global Collector never opens or writes either View database.
 
 ## Run
 
@@ -91,17 +54,13 @@ From the repository root:
 python -m global_collector --job-file manager-job.json
 ```
 
-Use `--job-file -` to read the JSON job from standard input. Output is the universal collection batch on standard output. No database is modified and no GitHub workflow is triggered.
+Use `--job-file -` to read the JSON job from standard input. Output is a JSON collection batch on standard output.
 
-## Safety and limits
+## Boundaries
 
-Public HTTPS only; private-network and loopback destinations are rejected. Each source response is limited to 8 MiB by default (safe configurable code range 1 KiB–16 MiB), 20 seconds per feed request, with at most two retries. Linked article-page enrichment is capped at 2 MiB, 12 seconds, one attempt per page, and 100 unique pages per Manager job. Unsupported or malformed source responses are reported while other assigned sources continue. A transport failure does not create a made-up post.
-
-## Testing
-
-The included tests cover Manager-envelope fingerprint compatibility, arbitrary future View IDs, universal schema stability, RSS/Atom parsing, JSON responses, HTML metadata/article extraction, media normalization and the absence of any Global Checker dependency in Collector validation.
-
-
-### Persistent ID lineage
-
-Every post carries the complete Manager job identity and routing context in `collectionContext`: `jobId`, `idempotencyKey`, `viewId`, `profileId`, `assignmentIds`, `sourceIds`, `feedUrls`, `collectorEntrypoint`, `collectorWorkflow`, `destinationDatabaseId`, `destinationDatabasePath`, `scheduledAt`, `requestWindowHours`, `configVersion`, and `trigger`. Every media and attachment item carries its parent `postId` plus the relevant post/job/View/source/profile/assignment/configuration/destination IDs. These values are copied from the validated Manager job and are not regenerated by the Collector.
+- One shared Collector, one universal post schema, every View.
+- Manager IDs and values are preserved exactly; no identifiers or destinations are regenerated.
+- No Global Checker policy files are loaded by Collector.
+- No Checker, Image Engine, Editorial Engine, Writer, Publisher or database is invoked by Collector.
+- Four Collector sections remain source evidence; Global Checker owns its separate Checks section.
+- Raw article data is passed in memory for downstream review; it is not written to SQLite or publication output by Collector.
