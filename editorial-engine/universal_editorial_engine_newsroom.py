@@ -2,11 +2,12 @@
 """Global Newsroom adapter for the LIVE // EARTH Universal Editorial Engine.
 
 The only input is the completed hand-off issued by Global Checker after it has
-reviewed both text and image. The Engine edits and summarizes permitted text,
-prepares one-image layouts for Live Feeds and Magazines, and preserves the
+reviewed both text and image. The Engine prepares extractive text summaries
+and one-image layouts for Live Feeds and Magazines, while preserving the
 complete Checker-cleared source record and its Manager lineage.
 
-This module does not collect, fetch, authorize, judge, rank, moderate, or
+Text intelligence is implemented locally in editorial_text_intelligence.py.
+This adapter does not collect, fetch, authorize, judge, rank, moderate, or
 publish. It does not open or write a View database.
 """
 from __future__ import annotations
@@ -15,7 +16,6 @@ import argparse
 import copy
 import hashlib
 import json
-import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -38,11 +38,12 @@ class UniversalEditorialNewsroomError(RuntimeError):
 def _clean(value: Any, limit: int = 20000) -> str:
     if value is None:
         return ""
+    import html
+    import re
     raw = str(value).replace("\u00a0", " ")
     raw = re.sub(r"<\s*br\s*/?\s*>", " ", raw, flags=re.I)
     raw = re.sub(r"</\s*(p|div|li|h[1-6])\s*>", " ", raw, flags=re.I)
     raw = re.sub(r"<[^>]*>", " ", raw)
-    import html
     raw = html.unescape(raw)
     return re.sub(r"\s+", " ", raw).strip()[:limit]
 
@@ -121,93 +122,18 @@ def _checker_clearance(check: dict[str, Any], post_id: str) -> None:
         raise UniversalEditorialNewsroomError(f"Checker did not clear Manager lineage for '{post_id}'.")
 
 
-def _sentences(value: str) -> list[str]:
-    # Preserve every segment; short sentences and numerically dense sentences
-    # can carry essential facts and must not be silently discarded.
-    pieces = re.split(r"(?<=[.!?])\s+(?=[A-Z0-9\"'‘“(])", value)
-    return [piece.strip() for piece in pieces if piece.strip()]
-
-
-def _summary_score(sentence: str, title_terms: set[str], frequencies: dict[str, int], index: int) -> float:
-    tokens = [token for token in re.findall(r"[a-z0-9]+", sentence.casefold()) if len(token) > 2]
-    if not tokens:
-        return 0.0
-    title_hits = sum(1 for token in set(tokens) if token in title_terms)
-    frequency_score = sum(min(frequencies.get(token, 0), 5) for token in set(tokens)) / max(1, len(set(tokens)))
-    position_score = 1.0 / (1.0 + index * 0.035)
-    return title_hits * 3.0 + frequency_score + position_score
-
-
 def build_editorial_summary(source_summary: str, source_title: str = "") -> dict[str, Any]:
-    """Create a 200–500 word extractive summary without inventing or padding.
-
-    The full Checker-approved source summary remains untouched in sourceRecord
-    and in the transient evidence ledger. If the source itself contains fewer
-    than 200 words, the Engine returns it intact and labels the short-source
-    condition instead of adding unsupported filler.
-    """
-    source = _clean(source_summary, 30000)
-    words = source.split()
-    if not source:
-        raise UniversalEditorialNewsroomError("Checker-cleared post has no permitted summary text.")
-    if len(words) <= SUMMARY_MAX_WORDS:
-        status = "WITHIN_TARGET" if len(words) >= SUMMARY_MIN_WORDS else "SOURCE_UNDER_200_WORDS"
-        return {
-            "text": source,
-            "wordCount": len(words),
-            "status": status,
-            "method": "source-preserved-within-target" if status == "WITHIN_TARGET" else "source-preserved-no-padding",
-            "sourceSha256": _sha256(source),
-        }
-
-    sentences = _sentences(source)
-    if not sentences:
-        sentences = [source]
-    frequencies: dict[str, int] = {}
-    for token in re.findall(r"[a-z0-9]+", source.casefold()):
-        if len(token) > 2:
-            frequencies[token] = frequencies.get(token, 0) + 1
-    title_terms = {token for token in re.findall(r"[a-z0-9]+", _clean(source_title, 500).casefold()) if len(token) > 2}
-    ranked = sorted(
-        enumerate(sentences),
-        key=lambda pair: _summary_score(pair[1], title_terms, frequencies, pair[0]),
-        reverse=True,
-    )
-    selected: list[int] = []
-    selected_words = 0
-    for original_index, sentence in ranked:
-        count = len(sentence.split())
-        if selected and selected_words + count > SUMMARY_MAX_WORDS:
-            continue
-        if count > SUMMARY_MAX_WORDS:
-            continue
-        selected.append(original_index)
-        selected_words += count
-        if selected_words >= SUMMARY_MIN_WORDS:
-            break
-
-    # If sentence boundaries cannot provide 200–500 words, keep the source in
-    # order and clip only at a word boundary; the full source remains preserved.
-    if selected_words < SUMMARY_MIN_WORDS:
-        chosen = words[:SUMMARY_MAX_WORDS]
-        text = " ".join(chosen)
-        return {
-            "text": text,
-            "wordCount": len(chosen),
-            "status": "EXTRACTED_BOUNDARY_FALLBACK",
-            "method": "deterministic-extractive-v1",
-            "sourceSha256": _sha256(source),
-        }
-
-    text = " ".join(sentences[index] for index in sorted(selected))
-    count = len(text.split())
-    return {
-        "text": text,
-        "wordCount": count,
-        "status": "WITHIN_TARGET" if SUMMARY_MIN_WORDS <= count <= SUMMARY_MAX_WORDS else "SOURCE_UNDER_200_WORDS",
-        "method": "deterministic-extractive-v1",
-        "sourceSha256": _sha256(source),
-    }
+    """Delegate to the local Text Intelligence module; retain the adapter API."""
+    try:
+        from editorial_text_intelligence import build_editorial_summary as build_local_summary
+    except Exception as exc:
+        raise UniversalEditorialNewsroomError(
+            f"Local Editorial Text Intelligence module could not be loaded: {type(exc).__name__}: {exc}"
+        ) from exc
+    try:
+        return build_local_summary(source_summary, source_title)
+    except ValueError as exc:
+        raise UniversalEditorialNewsroomError(str(exc)) from exc
 
 
 def _image_for_post(post: dict[str, Any], check: dict[str, Any], job: dict[str, Any]) -> dict[str, Any]:
@@ -468,7 +394,10 @@ def produce_editorial_package(
             "sourceRecordsPreserved": len(stories),
             "imagesAttached": len(stories),
             "summariesWithin200To500Words": sum(1 for item in stories if SUMMARY_MIN_WORDS <= item["summaryWordCount"] <= SUMMARY_MAX_WORDS),
-            "sourceSummariesUnder200Words": sum(1 for item in stories if item["summaryStatus"] == "SOURCE_UNDER_200_WORDS"),
+            "sourceSummariesUnder200Words": sum(
+                1 for item in stories
+                if len(_clean(item["sourceRecord"].get("summary"), 30000).split()) < SUMMARY_MIN_WORDS
+            ),
         },
         "stories": stories,
         "evidence": evidence,
@@ -497,7 +426,7 @@ def produce_editorial_package(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="live-earth-universal-editorial-engine",
-        description="Prepare 200–500 word summaries and one-image layouts from a Global Checker hand-off.",
+        description="Prepare extractive summaries and one-image layouts from a Global Checker hand-off.",
     )
     parser.add_argument("--checker-handoff-file", required=True,
                         help="Completed checker-image-review-complete JSON from Global Checker.")

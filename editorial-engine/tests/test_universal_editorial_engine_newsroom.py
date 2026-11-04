@@ -211,30 +211,66 @@ class EditorialNewsroomTests(unittest.TestCase):
             self.build(bad)
 
     def test_summary_is_200_to_500_words_when_source_contains_enough_material(self):
-        result = self.build()
+        handoff = self.make_handoff(260)
+        distinct_sentences = [
+            "Scientists measured ocean temperatures at twelve stations across the North Atlantic during the 2025 expedition.",
+            "The northern stations recorded an average increase of 1.4 degrees Celsius compared with earlier seasonal readings.",
+            "Researchers compared the new measurements with observations collected by vessels over the previous twenty years.",
+            "The report describes how autonomous instruments transmitted readings while ships crossed the survey boundary.",
+            "Coastal waters showed a different temperature pattern from readings gathered in the deep open ocean.",
+            "The research team published station coordinates and calibration notes with the temperature observations.",
+            "Researchers said the measurements do not establish a single cause for the regional differences.",
+            "The study identifies wind conditions as one factor requiring additional scientific investigation.",
+            "Oceanographers compared the readings with satellite observations collected during the same measurement period.",
+            "The satellite comparison identified areas where surface conditions differed from deeper water readings.",
+            "Scientists noted that short observation periods can make long term patterns difficult to interpret.",
+            "The report includes separate tables for coastal stations, offshore instruments, and the northern survey route.",
+            "Researchers plan to repeat the measurements during the next two seasonal observation periods.",
+            "The expedition also carried sensors designed to record salinity, pressure, and water movement at each station.",
+            "Scientists reviewed the instrument readings for missing values before preparing the final comparisons.",
+            "Several monitoring stations were revisited so the team could compare measurements under different conditions.",
+        ]
+        handoff["collectorResultWithCheckerReviewedImages"]["records"][0]["summary"] = " ".join(distinct_sentences)
+        result = self.build(handoff)
         story = result["stories"][0]
         self.assertGreaterEqual(story["summaryWordCount"], 200)
         self.assertLessEqual(story["summaryWordCount"], 500)
         self.assertEqual(story["summaryStatus"], "WITHIN_TARGET")
+        self.assertEqual(story["summaryMethod"], "source-preserved-within-target")
 
-    def test_long_source_is_summarised_but_complete_source_record_is_preserved(self):
+    def test_long_repetitive_source_is_reduced_without_losing_original_record(self):
+        handoff = self.make_handoff(850)
+        result = self.build(handoff)
+        story = result["stories"][0]
+        self.assertLess(story["summaryWordCount"], 200)
+        self.assertEqual(story["summaryStatus"], "SOURCE_UNDER_200_WORDS")
+        original = handoff["collectorResultWithCheckerReviewedImages"]["records"][0]["summary"]
+        self.assertEqual(story["sourceRecord"]["summary"], original)
+
+    def test_short_source_is_preserved_without_padding_or_fabrication(self):
+        handoff = self.make_handoff(70)
+        original = (
+            "The research vessel left the harbour before dawn and reached the northern survey region on Tuesday. "
+            "Technicians deployed autonomous instruments at six stations and checked their calibration before collecting observations. "
+            "The team recorded water temperature, salinity, and depth during each measurement period. "
+            "Researchers will compare the readings with records from the previous expedition."
+        )
+        handoff["collectorResultWithCheckerReviewedImages"]["records"][0]["summary"] = original
+        result = self.build(handoff)
+        story = result["stories"][0]
+        self.assertEqual(story["summary"], original)
+        self.assertEqual(story["summaryStatus"], "SOURCE_UNDER_200_WORDS")
+        self.assertEqual(story["summaryWordCount"], len(original.split()))
+
+    def test_long_repetitive_source_keeps_distinct_content_without_padding(self):
         long_handoff = self.make_handoff(850)
         result = self.build(long_handoff)
         story = result["stories"][0]
-        self.assertGreaterEqual(story["summaryWordCount"], 200)
-        self.assertLessEqual(story["summaryWordCount"], 500)
+        self.assertLess(story["summaryWordCount"], 200)
+        self.assertEqual(story["summaryStatus"], "SOURCE_UNDER_200_WORDS")
         source_summary = long_handoff["collectorResultWithCheckerReviewedImages"]["records"][0]["summary"]
         self.assertEqual(story["sourceRecord"]["summary"], source_summary)
         self.assertEqual(result["evidence"][0]["summaryExcerpt"], source_summary)
-
-    def test_short_source_is_preserved_without_padding_or_fabrication(self):
-        short_handoff = self.make_handoff(70)
-        source_summary = short_handoff["collectorResultWithCheckerReviewedImages"]["records"][0]["summary"]
-        result = self.build(short_handoff)
-        story = result["stories"][0]
-        self.assertEqual(story["summary"], source_summary)
-        self.assertEqual(story["summaryStatus"], "SOURCE_UNDER_200_WORDS")
-        self.assertEqual(story["summaryWordCount"], len(source_summary.split()))
 
     def test_all_manager_and_media_ids_are_preserved(self):
         result = self.build()
@@ -289,6 +325,10 @@ class EditorialNewsroomTests(unittest.TestCase):
         bad["checkerRegistryVersion"] = "stale-registry"
         with self.assertRaises(editorial.UniversalEditorialNewsroomError):
             self.build(bad)
+
+    def test_summary_output_contract_keys_remain_unchanged(self):
+        summary = editorial.build_editorial_summary("A short approved source summary.", "Source headline")
+        self.assertEqual(set(summary), {"text", "wordCount", "status", "method", "sourceSha256"})
 
     def test_source_post_is_never_modified(self):
         before = json.dumps(self.handoff, sort_keys=True)
