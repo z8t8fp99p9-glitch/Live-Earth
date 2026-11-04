@@ -12,12 +12,13 @@ from support import build_repo
 
 
 class CollectorTests(unittest.TestCase):
-    def test_generic_view_without_registry_rights_does_not_fetch_article_body(self):
+    def test_generic_view_collects_article_material_without_running_checker_rules(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             job = build_repo(root, "future-climate-view")
             feed_payload = json.dumps({"items": [{"id": "one", "title": "A new post",
                                                       "content_text": "Short feed description",
+                                                      "summary": "Short feed description",
                                                       "url": "https://example.org/post/1",
                                                       "published": "2026-11-02T10:00:00Z",
                                                       "tags": ["climate"]}]}).encode()
@@ -35,11 +36,11 @@ class CollectorTests(unittest.TestCase):
                 requested_url="https://example.org/full-story", final_url="https://example.org/full-story",
                 status_code=200, content_type="text/html", payload=continuation_payload,
                 headers={"etag": "continuation-etag"}, attempts=1)
-            # Without an exact central-registry permission, only the feed is
-            # fetched. Linked article/continuation bodies are not retrieved.
-            with patch("global_collector.collector.fetch", return_value=feed_response) as fetch_mock:
+            # Collector collects the feed, linked article and explicitly
+            # labelled continuation. Permission decisions belong downstream.
+            with patch("global_collector.collector.fetch", side_effect=[feed_response, page_response, continuation_response]) as fetch_mock:
                 result = GlobalCollector(root).collect(job)
-            self.assertEqual(fetch_mock.call_count, 1)
+            self.assertEqual(fetch_mock.call_count, 3)
             self.assertEqual(result["status"], "succeeded")
             self.assertEqual(result["statistics"]["postsCollected"], 1)
             record = result["records"][0]
@@ -47,21 +48,25 @@ class CollectorTests(unittest.TestCase):
             self.assertEqual(result["recordFields"], list(UNIVERSAL_POST_FIELDS))
             self.assertEqual(tuple(record.keys()), UNIVERSAL_POST_FIELDS)
             self.assertEqual(record["viewId"], "future-climate-view")
-            self.assertEqual(record["fullText"], "")
-            self.assertEqual(record["summary"], "")
-            self.assertEqual(result["statistics"]["articlePagesEnriched"], 0)
-            self.assertEqual(result["statistics"]["articlePagesAttempted"], 0)
+            self.assertIn("complete source page text", record["fullText"].lower())
+            self.assertIn("final details of the report", record["fullText"].lower())
+            self.assertEqual(record["summary"], "Short feed description")
+            self.assertEqual(result["statistics"]["articlePagesEnriched"], 1)
+            self.assertEqual(result["statistics"]["articlePagesAttempted"], 2)
             self.assertEqual(result["statistics"]["articlePagesFailed"], 0)
-            self.assertEqual(result["statistics"]["articleContinuationLinksDiscovered"], 0)
-            self.assertEqual(result["statistics"]["continuationPagesFetched"], 0)
-            self.assertEqual(record["authorName"], "")
+            self.assertEqual(result["statistics"]["articleContinuationLinksDiscovered"], 1)
+            self.assertEqual(result["statistics"]["continuationPagesFetched"], 1)
+            self.assertEqual(record["authorName"], "Reporter")
             self.assertEqual(result["routing"]["destinationDatabasePath"], ".publisher-data/future-climate-view/future-climate-view.sqlite3")
             # The original Manager card is returned without changing any field/value.
             self.assertEqual(result["job"], job)
             context = record["collectionContext"]
             for key, value in job.items():
                 self.assertEqual(context[key], value, f"Manager field changed in collectionContext: {key}")
-            self.assertFalse(any(link.get("relation") == "article-continuation-candidate" for link in record["links"]))
+            continuation = next(link for link in record["links"]
+                                if link.get("relation") == "article-continuation-candidate"
+                                or link.get("metadata", {}).get("relation") == "article-continuation-candidate")
+            self.assertIn("full-story", continuation.get("url", ""))
             self.assertFalse(result["handoff"]["collectorMakesRightsDecisions"])
             self.assertFalse(result["handoff"]["databaseWritesPerformed"])
             self.assertFalse((root / "global-checker").exists())
@@ -75,11 +80,12 @@ class CollectorTests(unittest.TestCase):
             ).hexdigest()
             self.assertEqual(sections["managerIdCard"]["sha256"], expected_manager_hash)
             section_post = sections["posts"][0]
-            self.assertEqual(section_post["fullArticle"]["fullText"], "")
-            self.assertEqual(section_post["fullArticle"]["pages"], [])
-            self.assertEqual(section_post["fullArticle"]["feedSummaryPermission"], "not-authorized-or-unknown")
-            self.assertEqual(len(section_post["originalImageRecords"]), 0)
-            self.assertEqual(section_post["sourceRightsEvidence"]["feedRightsMetadata"].get("copyrightNotice"), "")
+            self.assertIn("final details of the report", section_post["fullArticle"]["fullText"].lower())
+            self.assertEqual(len(section_post["fullArticle"]["pages"]), 2)
+            self.assertEqual(len(section_post["originalImageRecords"]), 1)
+            self.assertEqual(section_post["originalImageRecords"][0]["credit"], "NASA/JSC")
+            self.assertEqual(section_post["sourceRightsEvidence"]["feedRightsMetadata"].get("copyrightNotice"), "NASA")
+            self.assertNotIn("feedSummaryPermission", section_post["fullArticle"])
             self.assertNotIn("checks", section_post)
             self.assertEqual(tuple(record.keys()), UNIVERSAL_POST_FIELDS)
 

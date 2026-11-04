@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -57,6 +58,7 @@ def _load_components() -> dict[str, Any]:
         from live_feed_editor import append_live_feed_output
         from section13_final_verification import finalize_post_editorial_review
         from checker_report_archive import archive_report
+        from checker_report_pdf import create_final_checker_pdf
         from section13_database_bridge import write_section13_approved_posts
     except Exception as exc:
         raise NewsroomOrchestratorError(
@@ -74,6 +76,7 @@ def _load_components() -> dict[str, Any]:
         "append_live_feed_output": append_live_feed_output,
         "finalize_post_editorial_review": finalize_post_editorial_review,
         "archive_report": archive_report,
+        "create_final_checker_pdf": create_final_checker_pdf,
         "write_section13_approved_posts": write_section13_approved_posts,
     }
 
@@ -236,7 +239,18 @@ def _result(
         "databaseWriter": (writer or {}).get("statistics", {}),
         "section12": editor_counts,
         "section13": (section13 or {}).get("statistics", {}),
-        "archive": {"archived": bool((archive or {}).get("archived")), "reportId": (archive or {}).get("reportId", "")},
+        "archive": {
+            "archived": bool((archive or {}).get("archived")),
+            "reportId": (archive or {}).get("reportId", ""),
+            "pdf": {
+                "created": bool((archive or {}).get("pdf", {}).get("created")),
+                "fileName": Path(str((archive or {}).get("pdf", {}).get("path", ""))).name,
+                "bytes": (archive or {}).get("pdf", {}).get("bytes", 0),
+                "sha256": (archive or {}).get("pdf", {}).get("sha256", ""),
+                "overallStatus": (archive or {}).get("pdf", {}).get("overallStatus", ""),
+                "checksRecorded": (archive or {}).get("pdf", {}).get("checksRecorded", 0),
+            },
+        },
         "privacyAndOwnership": {
             "sourceMaterialHandedOffInMemory": True,
             "transientHandOffFilesWritten": False,
@@ -247,7 +261,8 @@ def _result(
             "otherViewDatabaseOpened": False,
             "viewDatabasesMixed": False,
             "publicAssetsWrittenByOrchestrator": False,
-            "feedOrPdfWrittenByOrchestrator": False,
+            "publicFeedWrittenByOrchestrator": False,
+            "finalCheckerPdfCreatedByReportUtility": bool((archive or {}).get("pdf", {}).get("created")),
             "publicationPerformedByOrchestrator": False,
         },
         "nextSystem": "Matching View Newsroom Publisher",
@@ -313,8 +328,14 @@ def run(view_id: str, repository_root: str | Path = ".") -> dict[str, Any]:
     if len(final_report.get("sectionOrder", [])) != 13:
         raise NewsroomOrchestratorError("Final Global Checker did not append Section 13.")
 
+    # The full PDF is created only after Section 13 has completed. It records
+    # every per-post check and reason, including HOLD/FAIL outcomes. It is kept
+    # beside the redacted JSON archive and uploaded privately by each workflow.
     archive_root = root / ".checker-archive" / view_id
     archive_result = modules["archive_report"](final_report, archive_root, view_id)
+    pdf_path = Path(archive_result["path"]).with_suffix(".pdf")
+    pdf_result = modules["create_final_checker_pdf"](final_report, pdf_path, collection=collection)
+    archive_result = {**archive_result, "pdf": pdf_result}
     # Writer reads only the Section 13-approved set and uses the Manager card
     # to select exactly one View DB. A zero-approval run is a safe no-op.
     write_result = modules["write_section13_approved_posts"](final_report, repository_root=root)
@@ -361,6 +382,31 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.write("\n")
         return 0
     except Exception as exc:
+        failure_pdf = None
+        failure_pdf_error = None
+        try:
+            root = Path(args.repository_root).resolve()
+            checker_dir = root / "global-checker"
+            if checker_dir.is_dir():
+                checker_path = str(checker_dir)
+                if checker_path in sys.path:
+                    sys.path.remove(checker_path)
+                sys.path.insert(0, checker_path)
+                from checker_report_pdf import create_execution_failure_pdf
+
+                safe_view = args.view if args.view in {"nature", "alien-world"} else "unknown-view"
+                timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+                failure_path = root / ".checker-archive" / safe_view / f"execution-failure-{timestamp}.pdf"
+                failure_pdf = create_execution_failure_pdf(
+                    view_id=safe_view,
+                    output_path=failure_path,
+                    error_type=type(exc).__name__,
+                    message=str(exc)[:2500],
+                    stage="Newsroom orchestration / Final Checker hand-off",
+                )
+        except Exception as report_exc:
+            failure_pdf_error = f"{type(report_exc).__name__}: {str(report_exc)[:400]}"
+
         json.dump(
             {
                 "pipeline": PIPELINE_NAME,
@@ -371,6 +417,8 @@ def main(argv: list[str] | None = None) -> int:
                 "publicationPerformed": False,
                 "errorType": type(exc).__name__,
                 "message": str(exc)[:900],
+                "failureReportPdf": failure_pdf,
+                "failureReportPdfError": failure_pdf_error,
             },
             sys.stderr,
             ensure_ascii=False,
