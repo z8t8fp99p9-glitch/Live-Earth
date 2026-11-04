@@ -90,3 +90,12 @@ jobs:
               { owner: context.repo.owner, repo: context.repo.repo }
             );
             core.info(`GitHub Pages rebuild requested (HTTP ${response.status}).`);
+
+      - name: Upload Alien World Final Checker PDF
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alien-world-final-checker-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .checker-archive/alien-world/*.pdf
+          if-no-files-found: warn
+          retention-days: 32
