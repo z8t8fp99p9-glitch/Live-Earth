@@ -144,12 +144,49 @@
   }
 
   function classify(label, href) {
-    const haystack = `${label} ${href}`.toLowerCase();
-    if (/sitemap/.test(haystack)) return 'Other';
-    if (/(^|[\/_.-])(rss|atom|feed)([\/_.?&=-]|$)|\.rss(?:$|\?)|atom\.xml|rss\.xml/.test(haystack)) return 'RSS / Atom';
-    if (/research|publication|journal|science|paper|repository|dataset|study|report|investigation/.test(haystack)) return 'Research';
-    if (/image|photo|picture|video|media|gallery|multimedia|visuals|artwork|\.(png|jpe?g|gif|webp|svg|mp4|webm)(?:$|\?)/.test(haystack)) return 'Media';
-    if (/news|press|release|story|stories|article|mission|update|blog|latest/.test(haystack)) return 'News';
+    let url;
+    try { url = new URL(href); } catch { return 'Other'; }
+
+    let path = url.pathname.toLowerCase();
+    try { path = decodeURIComponent(path); } catch { /* Keep the encoded path if malformed. */ }
+    const text = safeText(label).toLowerCase();
+    const haystack = `${text} ${path}`;
+    const segments = path.split('/').filter(Boolean);
+
+    // Direct media files and clearly labelled image/video assets take priority.
+    // This prevents captions such as "Image 5: Ocean research platform" from
+    // being mislabelled as Research simply because the caption contains that word.
+    if (/\.(png|jpe?g|gif|webp|svg|avif|tif?f|mp4|m4v|mov|webm|mp3|wav|m3u8)$/i.test(path) ||
+        /\b(image|photo|photograph|picture|video|audio|gallery|multimedia|visuals|artwork|thumbnail)\b/.test(text) ||
+        /(^|\/)(images?|photos?|videos?|audio|galleries|multimedia)(\/|$)/.test(path)) {
+      return 'Media';
+    }
+
+    // Feed endpoints are distinct from ordinary pages and article links.
+    if (/(^|[\/_.-])(rss|atom|feed)([\/_.?&=-]|$)|\.(rss|atom)(?:$)|atom\.xml|rss\.xml/.test(haystack) ||
+        /(^|\/)feeds?(\/|$)/.test(path)) {
+      return 'RSS / Atom';
+    }
+
+    // A clear news/press route wins over research-related words in a headline.
+    const newsRoute = /^(news|press|press-releases?|releases?|stories|articles|blog|blogs|mission-updates?|latest)(-|$)/.test(segments[0] || '') ||
+      segments.some(segment => /^(news|press|press-releases?|releases?|stories|articles|blog|blogs|mission-updates?|latest)$/.test(segment));
+    if (newsRoute || /\b(news|press release|article|story|stories|mission update|blog post|latest updates)\b/.test(text)) {
+      return 'News';
+    }
+
+    // Research requires a meaningful research/publication signal in the route
+    // or description; broad words such as "science" or "report" alone are not enough.
+    const researchRoute = segments.some(segment =>
+      /^(research|science|publications?|journals?|papers?|repositories|repository|datasets?|studies|investigations|scientific-reports?|technical-reports?|arxiv|preprints?)$/.test(segment));
+    if (researchRoute || /\b(research|science|publication|journal|scientific paper|research paper|repository|dataset|study|investigation|technical report|preprint)\b/.test(text)) {
+      return 'Research';
+    }
+
+    if (/(^|\/)media(\/|$)/.test(path) || /\b(media|multimedia|image library|video library)\b/.test(text)) {
+      return 'Media';
+    }
+
     return 'Other';
   }
 
