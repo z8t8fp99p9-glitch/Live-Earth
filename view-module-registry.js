@@ -293,89 +293,81 @@
         width: Math.max(1, Number(item.offsetWidth) || fallbackWidth),
         height: Math.max(1, Number(item.offsetHeight) || fallbackOrb + (landscape ? 29 : 33))
       }));
+      if (!dimensions.length) return [];
+
+      const gap = clampNumber(shortSide * 0.025, 7, 12);
+      const inset = 7;
+      const gapLevels = [gap, gap * 0.65, gap * 0.3, 0];
       const largestHeight = Math.max(...dimensions.map(d => d.height), fallbackOrb + 18);
       const safeTop = Math.min(topBound, Math.max(8, bottomBound - largestHeight));
       const safeBottom = Math.max(safeTop + largestHeight, bottomBound);
-      const gap = clampNumber(shortSide * 0.025, 7, 12);
-      const inset = 7;
-      const placed = [];
+      let bestPartial = [];
 
-      // Fisher–Yates shuffle avoids the repeated row-by-row visual rhythm of a menu.
-      const order = [...dimensions];
-      for (let i = order.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [order[i], order[j]] = [order[j], order[i]];
-      }
+      // Continuous randomized sampling with a max-clearance choice avoids the visual
+      // rhythm of rows and columns while keeping each full touch target collision-free.
+      for (const targetGap of gapLevels) {
+        for (let pass = 0; pass < 8; pass++) {
+          const order = [...dimensions];
+          for (let i = order.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [order[i], order[j]] = [order[j], order[i]];
+          }
+          order.sort((a, b) => (b.width * b.height) - (a.width * a.height));
 
-      for (const dimension of order) {
-        let candidate = null;
-        for (let attempt = 0; attempt < 500; attempt++) {
-          const halfW = dimension.width / 2;
-          const halfH = dimension.height / 2;
-          const minX = Math.min(width / 2, halfW + inset);
-          const maxX = Math.max(minX, width - halfW - inset);
-          const minY = Math.min(safeBottom, safeTop + halfH);
-          const maxY = Math.max(minY, safeBottom - halfH);
-          const point = {
-            x: minX + Math.random() * (maxX - minX),
-            y: minY + Math.random() * (maxY - minY),
-            width: dimension.width,
-            height: dimension.height,
-            item: dimension.item
-          };
-          const overlaps = placed.some(other =>
-            Math.abs(point.x - other.x) < (point.width + other.width) / 2 + gap &&
-            Math.abs(point.y - other.y) < (point.height + other.height) / 2 + gap
-          );
-          if (!overlaps) { candidate = point; break; }
-        }
-        if (candidate) placed.push(candidate);
-      }
+          const placed = [];
+          let failed = false;
+          for (const dimension of order) {
+            const halfW = dimension.width / 2;
+            const halfH = dimension.height / 2;
+            let minX = halfW + inset;
+            let maxX = width - halfW - inset;
+            if (maxX < minX) minX = maxX = width / 2;
+            let minY = safeTop + halfH;
+            let maxY = safeBottom - halfH;
+            if (maxY < minY) {
+              const centerY = clampNumber((safeTop + safeBottom) / 2, halfH + inset, Math.max(halfH + inset, height - halfH - inset));
+              minY = maxY = centerY;
+            }
 
-      // Constrained fallback: jittered cells keep every button tappable, while
-      // spacing is calculated from the largest actual button footprint to prevent overlap.
-      if (placed.length !== dimensions.length) {
-        const areaTop = safeTop;
-        const areaBottom = safeBottom;
-        const areaHeight = Math.max(1, areaBottom - areaTop);
-        const largestWidth = Math.max(...dimensions.map(d => d.width));
-        let cols = landscape ? Math.min(3, dimensions.length) : Math.min(2, dimensions.length);
-        let rows = Math.ceil(dimensions.length / cols);
-        if (landscape && areaHeight < rows * largestHeight + (rows - 1) * gap) {
-          // A low landscape viewport can fit one loose horizontal sweep more safely than clipped rows.
-          cols = dimensions.length;
-          rows = 1;
-        } else if (areaHeight < rows * largestHeight + (rows - 1) * gap) {
-          cols = Math.min(dimensions.length, Math.max(cols, Math.floor(width / (largestWidth + gap))));
-          rows = Math.ceil(dimensions.length / cols);
+            let best = null;
+            let bestScore = -Infinity;
+            const samples = placed.length ? 420 : 1;
+            for (let attempt = 0; attempt < samples; attempt++) {
+              const point = {
+                item: dimension.item,
+                x: minX + Math.random() * (maxX - minX),
+                y: minY + Math.random() * (maxY - minY),
+                width: dimension.width,
+                height: dimension.height
+              };
+              let overlaps = false;
+              let nearestClearance = Infinity;
+              for (const other of placed) {
+                const dx = Math.abs(point.x - other.x);
+                const dy = Math.abs(point.y - other.y);
+                if (dx < (point.width + other.width) / 2 + targetGap &&
+                    dy < (point.height + other.height) / 2 + targetGap) {
+                  overlaps = true;
+                  break;
+                }
+                const edgeX = Math.max(0, dx - (point.width + other.width) / 2);
+                const edgeY = Math.max(0, dy - (point.height + other.height) / 2);
+                nearestClearance = Math.min(nearestClearance, Math.hypot(edgeX, edgeY));
+              }
+              if (!overlaps) {
+                const score = placed.length ? nearestClearance + Math.random() * 0.75 : Math.random();
+                if (score > bestScore) { best = point; bestScore = score; }
+              }
+            }
+            if (!best) { failed = true; break; }
+            placed.push(best);
+          }
+          if (placed.length > bestPartial.length) bestPartial = placed;
+          if (!failed && placed.length === dimensions.length) return placed;
         }
-        const cellW = width / cols;
-        const rowStep = Math.max(largestHeight + gap, areaHeight / rows);
-        const totalHeight = rows * largestHeight + (rows - 1) * gap;
-        const firstCenterY = areaTop + (areaHeight >= totalHeight ? (areaHeight - totalHeight) / 2 : 0) + largestHeight / 2;
-        const fallback = [];
-        const rowOrder = [...dimensions];
-        for (let i = rowOrder.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [rowOrder[i], rowOrder[j]] = [rowOrder[j], rowOrder[i]];
-        }
-        rowOrder.forEach((d, i) => {
-          const col = i % cols;
-          const row = Math.floor(i / cols);
-          const xCenter = (col + 0.5) * cellW;
-          const yCenter = firstCenterY + row * rowStep;
-          const maxJitterX = Math.max(0, Math.min(cellW * 0.22, 30, (cellW - largestWidth - gap) / 2));
-          const maxJitterY = Math.max(0, Math.min(12, (rowStep - largestHeight - gap) / 2));
-          fallback.push({
-            item: d.item,
-            x: clampNumber(xCenter + (Math.random() - 0.5) * 2 * maxJitterX, d.width / 2 + inset, width - d.width / 2 - inset),
-            y: clampNumber(yCenter + (Math.random() - 0.5) * 2 * maxJitterY, areaTop + d.height / 2, areaBottom - d.height / 2),
-            width: d.width, height: d.height
-          });
-        });
-        return fallback;
       }
-      return placed;
+      // Never fall back to grid cells; retain only verified non-overlapping placements.
+      return bestPartial;
     }
 
     function layoutLooseOrbs({ fromAnchor = false } = {}) {
