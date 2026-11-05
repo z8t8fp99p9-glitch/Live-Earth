@@ -205,15 +205,46 @@
     return root;
   }
 
+  function openSourceScoutFrame() {
+    let frame = document.getElementById('le-source-scout-frame');
+    if (!frame) {
+      frame = document.createElement('iframe');
+      frame.id = 'le-source-scout-frame';
+      frame.title = 'Source Scout';
+      frame.setAttribute('allow', 'clipboard-write');
+      frame.setAttribute('aria-label', 'Source Scout app');
+      frame.style.cssText = 'position:fixed;inset:0;z-index:100;width:100vw;height:100vh;height:100dvh;border:0;background:#f7f8fa;';
+      frame.src = new URL('./source-scout/source-scout.html', document.baseURI).href;
+      document.body.appendChild(frame);
+    }
+    frame.hidden = false;
+    frame.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeSourceScoutFrame() {
+    const frame = document.getElementById('le-source-scout-frame');
+    if (!frame) return;
+    frame.hidden = true;
+    frame.setAttribute('aria-hidden', 'true');
+  }
+
   function activate(view) {
     const stage = document.getElementById('le-feature-stage');
     if (stage) stage.hidden = true;
+    if (view.id === 'source-scout') {
+      openSourceScoutFrame();
+      return;
+    }
     const root = build(view);
     root.hidden = false;
     root.setAttribute('aria-hidden', 'false');
   }
 
   function deactivate(view) {
+    if (view.id === 'source-scout') {
+      closeSourceScoutFrame();
+      return;
+    }
     const root = roots.get(view.id);
     if (root) {
       root.hidden = true;
@@ -224,6 +255,15 @@
   function install() {
     const api = window.LiveEarthFeatureViews;
     if (!api || typeof api.register !== 'function') return false;
+    if (!window.__liveEarthSourceScoutCloseListener) {
+      window.__liveEarthSourceScoutCloseListener = true;
+      window.addEventListener('message', event => {
+        if (event.origin !== window.location.origin) return;
+        const frame = document.getElementById('le-source-scout-frame');
+        if (!frame || event.source !== frame.contentWindow) return;
+        if (event.data?.type === 'LIVE_EARTH_SOURCE_SCOUT_CLOSE') api.close('api');
+      });
+    }
     for (const view of views) {
       api.register(view.id, {
         title: view.title,
