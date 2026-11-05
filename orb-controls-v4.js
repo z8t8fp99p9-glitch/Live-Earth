@@ -6,6 +6,31 @@
   if (!buttons.length || window.__liveEarthControlsInstalled) return;
   window.__liveEarthControlsInstalled = true;
 
+  // Keep the Home five-Orb row and active Feature three-Orb dock closer to
+  // the bottom by halving their established safe-area offsets. Orb Hunt's
+  // floating positions remain dynamically calculated and are not changed.
+  const orbBottomSpacingStyle = document.createElement('style');
+  orbBottomSpacingStyle.id = 'le-orb-bottom-spacing';
+  orbBottomSpacingStyle.textContent = `
+    html body #navButtons {
+      bottom: calc(env(safe-area-inset-bottom) + clamp(16px, 4.5vmin, 24px)) !important;
+    }
+    @media (orientation: landscape) {
+      html body #navButtons {
+        bottom: calc(env(safe-area-inset-bottom) + clamp(7px, 2vmin, 10px)) !important;
+      }
+    }
+    html body #le-feature-dock {
+      bottom: calc(env(safe-area-inset-bottom) + clamp(12px, 4vmin, 19px)) !important;
+    }
+    @media (orientation: landscape) {
+      html body #le-feature-dock {
+        bottom: calc(env(safe-area-inset-bottom) + clamp(7px, 2vmin, 11px)) !important;
+      }
+    }
+  `;
+  (document.head || document.documentElement).appendChild(orbBottomSpacingStyle);
+
   const status = document.querySelector('#status');
   let selected = 'home';
   let locationEnabled = false;
