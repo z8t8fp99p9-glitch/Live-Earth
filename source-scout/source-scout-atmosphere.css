@@ -1,0 +1,155 @@
+/* Source Scout — soft aurora atmosphere.
+   Visual-only layer: keeps the existing layout, controls and scanner untouched. */
+:root {
+  color-scheme: dark;
+  --ink: #f2f6ff;
+  --muted: #c0ccdc;
+  --line: rgba(205, 224, 246, .25);
+  --soft: rgba(182, 207, 232, .13);
+  --accent: #76d9e6;
+  --accent-soft: rgba(135, 219, 225, .18);
+  --page: #46617b;
+}
+
+html, body {
+  background: #46617b !important;
+  color: var(--ink);
+}
+
+body {
+  position: relative;
+  background:
+    radial-gradient(ellipse at 16% 13%, rgba(166, 224, 224, .62), transparent 37%),
+    radial-gradient(ellipse at 83% 19%, rgba(190, 177, 232, .56), transparent 40%),
+    radial-gradient(ellipse at 76% 74%, rgba(118, 202, 203, .35), transparent 43%),
+    radial-gradient(ellipse at 12% 86%, rgba(224, 185, 207, .30), transparent 42%),
+    linear-gradient(148deg, #496b83 0%, #5b6886 43%, #3c6477 100%) !important;
+  background-attachment: fixed !important;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: -10%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: .42;
+  background:
+    radial-gradient(ellipse at 35% 42%, rgba(177, 227, 232, .22), transparent 34%),
+    radial-gradient(ellipse at 72% 57%, rgba(203, 184, 236, .20), transparent 38%);
+  filter: blur(30px);
+}
+
+.app-shell {
+  position: relative;
+  z-index: 1;
+}
+
+.topbar {
+  border-bottom-color: rgba(221, 236, 250, .27);
+}
+
+.brand { color: #f0f7ff; }
+.brand-mark {
+  color: #b9f4f5;
+  border-color: rgba(199, 244, 249, .62);
+  box-shadow: 0 0 15px rgba(131, 226, 235, .30);
+}
+
+.eyebrow { color: #d5e8f5; }
+h1, h2 { color: #fbfcff; }
+h1 { text-shadow: 0 3px 24px rgba(25, 48, 76, .20); }
+.intro-copy { color: #e0e8f2; }
+
+.scan-form,
+.source-card {
+  border-color: rgba(206, 225, 246, .28);
+  background: linear-gradient(145deg, rgba(54, 76, 108, .78), rgba(34, 56, 85, .80));
+  box-shadow:
+    inset 1px 1px 1px rgba(255,255,255,.10),
+    0 14px 34px rgba(19, 37, 61, .16);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.field-label { color: #edf4fc; }
+.input-row {
+  border-color: rgba(199, 222, 242, .34);
+  background: rgba(23, 43, 68, .66);
+}
+.globe { color: #c5e9f0; }
+#websiteInput { color: #ffffff; }
+#websiteInput::placeholder { color: #c1cfdf; }
+
+.scan-button {
+  border-color: rgba(203, 248, 250, .42);
+  background: linear-gradient(135deg, #358ca6, #477fa5 58%, #6c79b2);
+  box-shadow: 0 5px 16px rgba(29, 77, 111, .22);
+}
+
+.example-chip,
+.filter-chip {
+  border-color: rgba(211, 229, 247, .30);
+  background: rgba(42, 63, 93, .55);
+  color: #f0f5ff;
+}
+
+.count-pill {
+  border-color: rgba(164, 241, 232, .38);
+  background: rgba(98, 188, 180, .22);
+  color: #d4fffa;
+}
+
+.status {
+  border-color: rgba(208, 228, 247, .27);
+  background: rgba(37, 59, 89, .54);
+  color: #e0eaf6;
+}
+.status.is-error {
+  border-color: rgba(255, 181, 190, .46);
+  background: rgba(105, 48, 68, .58);
+  color: #ffe2e7;
+}
+.status.is-working { color: #d2f8ff; }
+
+.filter-chip { background: rgba(42, 63, 93, .58); }
+.filter-chip.is-active {
+  border-color: rgba(177, 246, 243, .72);
+  background: rgba(100, 190, 195, .30);
+  color: #f3ffff;
+  box-shadow: 0 0 16px rgba(113, 223, 227, .16);
+}
+
+.type-pill {
+  border-color: rgba(193, 219, 244, .22);
+  background: rgba(177, 205, 232, .17);
+  color: #e3efff;
+}
+.source-title { color: #fbfcff; }
+.source-url { color: #c5d8ed; }
+
+.source-buttons button,
+.secondary-button {
+  border-color: rgba(203, 226, 246, .32);
+  background: rgba(33, 54, 82, .70);
+  color: #edf6ff;
+}
+
+.empty-state {
+  border-color: rgba(211, 230, 248, .42);
+  background: linear-gradient(145deg, rgba(56, 78, 109, .66), rgba(37, 60, 91, .66));
+  color: #e1eaf5;
+}
+.empty-state strong { color: #ffffff; }
+.empty-symbol {
+  border-color: rgba(192, 239, 245, .32);
+  background: rgba(137, 192, 207, .24);
+  color: #dcfbff;
+}
+
+.footnote { color: #d1dfed; }
+.toast {
+  border-color: rgba(213, 237, 249, .26);
+  background: rgba(25, 43, 68, .96);
+  color: #ffffff;
+}
