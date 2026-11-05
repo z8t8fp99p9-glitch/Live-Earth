@@ -88,10 +88,12 @@ body{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset
 @media(orientation:landscape){#navButtons{bottom:calc(env(safe-area-inset-bottom) + clamp(14px,4vmin,20px))}}
 
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-/* Stacks Orb Hunt — a Scout-style, CSS-only sky atmosphere. Orbs and their hitboxes remain untouched. */
+/* Stacks Orb Hunt — translucent Scout-style blue sky and soft cloud atmosphere. */
+/* Keep the existing Home navigation above the Stacks background layer. */
+#navButtons{z-index:10!important}
 #le-feature-library{
   isolation:isolate;
-  background:linear-gradient(165deg,rgba(8,27,49,.74),rgba(13,39,65,.62) 48%,rgba(5,19,36,.78)) !important;
+  background:linear-gradient(165deg,rgba(8,27,49,.44),rgba(13,39,65,.34) 48%,rgba(5,19,36,.48)) !important;
 }
 #le-feature-library::before{
   content:"";
@@ -99,20 +101,23 @@ body{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset
   inset:-6%;
   z-index:0;
   pointer-events:none;
-  opacity:.96;
+  opacity:.68;
   background:
-    radial-gradient(ellipse 46% 19% at 14% 22%,rgba(202,222,241,.25) 0%,rgba(148,180,209,.14) 40%,transparent 76%),
-    radial-gradient(ellipse 48% 21% at 86% 32%,rgba(195,219,240,.22) 0%,rgba(126,164,197,.12) 43%,transparent 77%),
-    radial-gradient(ellipse 58% 24% at 28% 61%,rgba(183,208,231,.18) 0%,rgba(112,151,185,.10) 46%,transparent 79%),
-    radial-gradient(ellipse 52% 20% at 84% 79%,rgba(198,219,238,.19) 0%,rgba(124,160,190,.10) 44%,transparent 78%),
-    radial-gradient(ellipse 72% 33% at 50% 48%,rgba(35,83,122,.24) 0%,transparent 75%),
-    linear-gradient(180deg,rgba(8,28,49,.24),rgba(11,34,58,.12) 52%,rgba(4,17,32,.34));
-  filter:blur(22px);
+    radial-gradient(ellipse 58% 17% at 10% 24%,rgba(205,224,243,.29) 0%,rgba(162,191,217,.14) 48%,transparent 78%),
+    radial-gradient(ellipse 55% 16% at 84% 35%,rgba(203,224,241,.26) 0%,rgba(142,176,206,.13) 46%,transparent 78%),
+    radial-gradient(ellipse 62% 17% at 24% 65%,rgba(190,212,232,.23) 0%,rgba(124,162,193,.12) 46%,transparent 79%),
+    radial-gradient(ellipse 55% 16% at 88% 82%,rgba(198,219,238,.25) 0%,rgba(133,169,198,.12) 44%,transparent 78%),
+    radial-gradient(ellipse 32% 9% at 42% 43%,rgba(190,211,230,.14) 0%,transparent 80%),
+    radial-gradient(ellipse 28% 10% at 68% 55%,rgba(184,207,228,.12) 0%,transparent 80%),
+    linear-gradient(180deg,rgba(9,30,52,.10),rgba(11,34,58,.05) 50%,rgba(4,17,32,.14));
+  filter:blur(15px);
   transform:scale(1.06);
-  backdrop-filter:blur(6px);
-  -webkit-backdrop-filter:blur(6px);
+  backdrop-filter:blur(2px);
+  -webkit-backdrop-filter:blur(2px);
 }
 #le-feature-library .le-feature-library-panel{z-index:1}
+/* Closing Stacks is immediate; selecting a feature Orb keeps its existing collection motion. */
+#le-feature-library .le-feature-library-item.le-orb-collecting{transition:none!important;animation:none!important}
 </style>
 <!-- V75 EARLY BOOT CURTAIN: self-contained and available before the service worker controls this page. -->
 <style id="le-early-boot-style">
@@ -286,6 +291,26 @@ html.le-boot-pending body > :not(#le-boot-overlay):not(#le-startup-gate){visibil
   <button class="orbButton" data-view="location" aria-label="Location" aria-pressed="false"><span class="orbShell"><img class="orbImage" src="./location.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Location</span></button>
   <button class="orbButton" data-view="stacks" aria-label="Stacks" aria-pressed="false"><span class="orbShell"><img class="orbImage" src="./stacks.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Stacks</span></button>
 </nav>
+<script id="le-stacks-close-motion-fix">
+(() => {
+  'use strict';
+  const nativeSetTimeout = window.setTimeout.bind(window);
+  let closeStacksNow = false;
+  document.addEventListener('click', event => {
+    const target = event.target instanceof Element ? event.target : null;
+    const button = target?.closest('#navButtons .orbButton[data-view="stacks"], #le-feature-dock .orbButton[data-view="stacks"]');
+    const library = document.getElementById('le-feature-library');
+    closeStacksNow = !!button && !!library && !library.hidden;
+  }, true);
+  window.setTimeout = function(callback, delay, ...args) {
+    if (closeStacksNow && Number(delay) === 760) {
+      closeStacksNow = false;
+      return nativeSetTimeout(callback, 0, ...args);
+    }
+    return nativeSetTimeout(callback, delay, ...args);
+  };
+})();
+</script>
 <script type="module">
 if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator && navigator.serviceWorker.controller) {
 import('./data-store.js').then(m=>m.initializeLocalDatabase()).then(result=>console.info('[LIVE // EARTH] Local database ready; save/retrieve self-test passed.',result)).catch(error=>console.warn('[LIVE // EARTH] Local database unavailable; globe remains independent.',error));
