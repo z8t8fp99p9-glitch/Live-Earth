@@ -1,455 +1,501 @@
-/* LIVE // EARTH — self-contained procedural 3D Sun View.
-   Reuses the app's already-cached Three.js module. No new engine, texture, video,
-   external URL, API, or saved animation frames. The Sun sphere never spins or travels. */
+/* LIVE // EARTH — Sun View arc + solar-time interface.
+   Replaces the old procedural 3D Sun with the Moon View's curved arc and draggable time-scroller pattern.
+   Uses the existing local astronomy module and the app's existing Location ON/OFF permission state.
+   Moon, Home Earth, shared sky backgrounds, and Orb navigation are left untouched. */
 (() => {
   "use strict";
-  if (window.__liveEarthSunViewInstalled) return;
-  window.__liveEarthSunViewInstalled = true;
+  if (window.__liveEarthSunViewInstalled || window.__liveEarthSunViewBooting) return;
+  window.__liveEarthSunViewBooting = true;
 
-  const vertexShader = `
-    varying vec3 vObjectPosition;
-    varying vec3 vNormalView;
-    varying vec3 vViewPosition;
-    void main() {
-      vObjectPosition = normalize(position);
-      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-      vNormalView = normalize(normalMatrix * normal);
-      vViewPosition = -mvPosition.xyz;
-      gl_Position = projectionMatrix * mvPosition;
-    }
-  `;
-
-  const surfaceFragmentShader = `
-    precision highp float;
-    uniform float uTime;
-    varying vec3 vObjectPosition;
-    varying vec3 vNormalView;
-    varying vec3 vViewPosition;
-
-    float hash31(vec3 p) {
-      p = fract(p * 0.1031);
-      p += dot(p, p.yzx + 33.33);
-      return fract((p.x + p.y) * p.z);
-    }
-    float noise3(vec3 x) {
-      vec3 i = floor(x), f = fract(x);
-      f = f * f * (3.0 - 2.0 * f);
-      float n000 = hash31(i);
-      float n100 = hash31(i + vec3(1.0,0.0,0.0));
-      float n010 = hash31(i + vec3(0.0,1.0,0.0));
-      float n110 = hash31(i + vec3(1.0,1.0,0.0));
-      float n001 = hash31(i + vec3(0.0,0.0,1.0));
-      float n101 = hash31(i + vec3(1.0,0.0,1.0));
-      float n011 = hash31(i + vec3(0.0,1.0,1.0));
-      float n111 = hash31(i + vec3(1.0,1.0,1.0));
-      float a = mix(mix(n000,n100,f.x),mix(n010,n110,f.x),f.y);
-      float b = mix(mix(n001,n101,f.x),mix(n011,n111,f.x),f.y);
-      return mix(a,b,f.z);
-    }
-    float fbm(vec3 p) {
-      float value = 0.0;
-      float amplitude = 0.56;
-      for (int i=0; i<3; i++) {
-        value += amplitude * noise3(p);
-        p *= 2.02;
-        amplitude *= 0.48;
-      }
-      return value;
-    }
-    void main() {
-      vec3 p = normalize(vObjectPosition);
-      // This changes only the shader's plasma field. The sphere's world transform is fixed.
-      vec3 flow = p * 4.7 + vec3(uTime * 0.095, sin(uTime * 0.22) * 0.045, -uTime * 0.047);
-      float broad = fbm(flow * 1.12);
-      float fine = noise3(flow * 8.8 + vec3(7.1, 2.4, 5.8));
-      float medium = noise3(flow * 3.6 + vec3(2.0, 9.2, 4.1));
-      float granulation = clamp(broad * 0.58 + medium * 0.29 + fine * 0.13, 0.0, 1.0);
-      float filaments = 0.5 + 0.5 * sin((broad * 8.3 + medium * 2.8 + fine * 0.9) * 10.2);
-      float brightFilament = smoothstep(0.54, 0.95, filaments) * smoothstep(0.23, 0.70, fine);
-      float darkChannel = smoothstep(0.60, 0.77, fbm(flow * 1.72 + vec3(16.0, 3.0, 8.0)));
-      float activeRegion = smoothstep(0.49, 0.75, broad * 0.68 + medium * 0.32);
-
-      vec3 deepRed = vec3(0.20, 0.012, 0.001);
-      vec3 burntOrange = vec3(0.68, 0.045, 0.002);
-      vec3 solarOrange = vec3(1.00, 0.16, 0.006);
-      vec3 goldPlasma = vec3(1.00, 0.43, 0.030);
-      vec3 hotGold = vec3(1.00, 0.75, 0.19);
-      vec3 whiteHot = vec3(1.00, 0.94, 0.69);
-      vec3 color = mix(deepRed, burntOrange, smoothstep(0.02, 0.43, granulation));
-      color = mix(color, solarOrange, smoothstep(0.25, 0.63, granulation));
-      color = mix(color, goldPlasma, brightFilament * 0.70);
-      color = mix(color, hotGold, activeRegion * 0.48);
-      color = mix(color, whiteHot, pow(brightFilament * activeRegion, 2.0) * 0.72);
-      color *= 1.0 - darkChannel * 0.48;
-
-      vec3 n = normalize(vNormalView);
-      vec3 viewDir = normalize(vViewPosition);
-      float limb = pow(1.0 - max(dot(n, viewDir), 0.0), 1.45);
-      color += vec3(1.0, 0.24, 0.018) * limb * 0.24;
-      gl_FragColor = vec4(color, 1.0);
-      #include <tonemapping_fragment>
-      #include <colorspace_fragment>
-    }
-  `;
-
-  const coronaFragmentShader = `
-    precision highp float;
-    uniform float uTime;
-    varying vec3 vNormalView;
-    varying vec3 vViewPosition;
-    void main() {
-      vec3 n = normalize(vNormalView);
-      vec3 v = normalize(vViewPosition);
-      float edge = 1.0 - max(dot(n, v), 0.0);
-      float pulse = 0.88 + 0.12 * sin(uTime * 0.62 + n.x * 6.5 + n.y * 9.0);
-      float fringe = pow(edge, 2.45) * pulse;
-      float threads = smoothstep(0.68, 0.98, sin(atan(n.y, n.x) * 13.0 + uTime * 0.12));
-      vec3 amber = vec3(1.0, 0.26, 0.025);
-      vec3 gold = vec3(1.0, 0.69, 0.20);
-      vec3 color = mix(amber, gold, threads * 0.65);
-      gl_FragColor = vec4(color, clamp(fringe * 0.53 + threads * fringe * 0.17, 0.0, 0.68));
-      #include <tonemapping_fragment>
-      #include <colorspace_fragment>
-    }
-  `;
-
-  async function mount(canvas) {
-    if (!(canvas instanceof HTMLCanvasElement)) throw new TypeError("Sun renderer needs a canvas.");
-    // This is the same local Three.js module already verified and cached by sw.js.
-    const THREE = await import("./vendor/three.module.js");
-    const renderer = new THREE.WebGLRenderer({
-      canvas, alpha: true, antialias: true, powerPreference: "low-power", premultipliedAlpha: false
-    });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.35));
-    renderer.setClearColor(0x000000, 0);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 40);
-    camera.position.set(0, 0, 3.55);
-    camera.lookAt(0, 0, 0);
-
-    const sunGroup = new THREE.Group();
-    sunGroup.position.y = 0.13; // A fixed, slightly raised composition leaves room for the time cards.
-    scene.add(sunGroup);
-
-    const sunMaterial = new THREE.ShaderMaterial({
-      uniforms: { uTime: { value: 0 } },
-      vertexShader,
-      fragmentShader: surfaceFragmentShader,
-      toneMapped: true
-    });
-    const sun = new THREE.Mesh(new THREE.SphereGeometry(0.59, 72, 56), sunMaterial);
-    sun.name = "leProceduralSunSphere";
-    sunGroup.add(sun);
-
-    const coronaMaterial = new THREE.ShaderMaterial({
-      uniforms: { uTime: { value: 0 } },
-      vertexShader,
-      fragmentShader: coronaFragmentShader,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      side: THREE.BackSide,
-      toneMapped: true
-    });
-    const corona = new THREE.Mesh(new THREE.SphereGeometry(0.625, 64, 48), coronaMaterial);
-    corona.name = "leProceduralSunCorona";
-    sunGroup.add(corona);
-
-    const activeFlares = [];
-    const maxFlares = 3;
-    let randomState = ((Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0) || 1;
-    const random = () => ((randomState = (randomState * 1664525 + 1013904223) >>> 0) / 4294967296);
-    let elapsed = 0;
-    let nextFlareAt = 0.75 + random() * 1.2;
-    const flareColors = [0xff6b12, 0xffa52e, 0xffd071];
-
-    function spawnFlare(now) {
-      if (activeFlares.length >= maxFlares) return;
-      const startAngle = random() * Math.PI * 2;
-      const direction = random() < 0.5 ? -1 : 1;
-      const span = direction * (0.38 + random() * 0.82);
-      const lift = 0.075 + random() * 0.20;
-      const points = [];
-      const samples = 64;
-      for (let i = 0; i <= samples; i++) {
-        const t = i / samples;
-        const a = startAngle + span * t;
-        const radius = 0.596 + lift * Math.sin(Math.PI * t);
-        const z = 0.055 + 0.10 * Math.sin(Math.PI * t) + 0.018 * Math.sin(2 * Math.PI * t);
-        points.push(new THREE.Vector3(radius * Math.cos(a), radius * Math.sin(a), z));
-      }
-      const curve = new THREE.CatmullRomCurve3(points);
-      const geometry = new THREE.TubeGeometry(curve, samples, 0.0035 + random() * 0.0025, 4, false);
-      const material = new THREE.MeshBasicMaterial({
-        color: flareColors[Math.floor(random() * flareColors.length)],
-        transparent: true,
-        opacity: 0,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        toneMapped: false
-      });
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.renderOrder = 5;
-      sunGroup.add(mesh);
-      activeFlares.push({ mesh, start: now, duration: 2.0 + random() * 2.1, samples });
-    }
-
-    let active = false;
-    let stopped = false;
-    let raf = 0;
-    let lastFrame = 0;
-    let lastWidth = 0, lastHeight = 0;
-    let resizeObserver = null;
-    const reducedMotion = !!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-
-    function resize() {
-      const rect = canvas.getBoundingClientRect();
-      const width = Math.max(1, Math.round(rect.width));
-      const height = Math.max(1, Math.round(rect.height));
-      if (width === lastWidth && height === lastHeight) return;
-      lastWidth = width; lastHeight = height;
-      renderer.setSize(width, height, false);
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-    }
-    function cleanFlare(flare, index) {
-      sunGroup.remove(flare.mesh);
-      flare.mesh.geometry.dispose();
-      flare.mesh.material.dispose();
-      activeFlares.splice(index, 1);
-    }
-    function drawFrame(timestamp) {
-      raf = 0;
-      if (stopped || !active || document.hidden) return;
-      if (timestamp - lastFrame < 32) { requestDraw(); return; }
-      const delta = lastFrame ? Math.min(0.05, (timestamp - lastFrame) / 1000) : 0;
-      lastFrame = timestamp;
-      if (!reducedMotion) elapsed += delta;
-      resize();
-
-      sunMaterial.uniforms.uTime.value = reducedMotion ? 0 : elapsed;
-      coronaMaterial.uniforms.uTime.value = reducedMotion ? 0 : elapsed;
-      if (!reducedMotion && elapsed >= nextFlareAt) {
-        spawnFlare(elapsed);
-        nextFlareAt = elapsed + 1.65 + random() * 2.85;
-      }
-      for (let i = activeFlares.length - 1; i >= 0; i--) {
-        const flare = activeFlares[i];
-        const progress = (elapsed - flare.start) / flare.duration;
-        if (progress >= 1) { cleanFlare(flare, i); continue; }
-        const envelope = Math.sin(Math.PI * progress);
-        // Reveal the tube along its curve, then shorten it again so the flare appears
-        // to emerge from the limb and retract instead of just fading as a static line.
-        const reach = progress < 0.5 ? progress * 2 : (1 - progress) * 2;
-        const indexCount = flare.mesh.geometry.index?.count || 0;
-        flare.mesh.geometry.setDrawRange(0, Math.max(0, Math.floor(indexCount * reach)));
-        flare.mesh.material.opacity = Math.max(0, envelope * (0.42 + 0.48 * reach));
-        flare.mesh.visible = !reducedMotion && reach > 0.02;
-      }
-      renderer.render(scene, camera);
-      if (!reducedMotion) requestDraw();
-    }
-    function requestDraw() {
-      if (stopped || !active || document.hidden || raf) return;
-      raf = requestAnimationFrame(drawFrame);
-    }
-    const onResize = () => requestDraw();
-    const onVisibility = () => {
-      if (document.hidden) { if (raf) cancelAnimationFrame(raf); raf = 0; lastFrame = 0; }
-      else requestDraw();
-    };
-    window.addEventListener("resize", onResize, { passive: true });
-    window.visualViewport?.addEventListener("resize", onResize, { passive: true });
-    document.addEventListener("visibilitychange", onVisibility);
-    if (typeof ResizeObserver !== "undefined") {
-      resizeObserver = new ResizeObserver(onResize);
-      resizeObserver.observe(canvas);
-    }
-
-    function dispose() {
-      stopped = true; active = false;
-      if (raf) cancelAnimationFrame(raf);
-      window.removeEventListener("resize", onResize);
-      window.visualViewport?.removeEventListener("resize", onResize);
-      document.removeEventListener("visibilitychange", onVisibility);
-      resizeObserver?.disconnect();
-      activeFlares.forEach(flare => { sunGroup.remove(flare.mesh); flare.mesh.geometry.dispose(); flare.mesh.material.dispose(); });
-      sun.geometry.dispose(); corona.geometry.dispose();
-      sunMaterial.dispose(); coronaMaterial.dispose(); renderer.dispose();
-    }
-    resize();
-    renderer.render(scene, camera);
-    return {
-      setActive(nextActive) {
-        active = !!nextActive;
-        lastFrame = 0;
-        if (active) requestDraw();
-        else if (raf) { cancelAnimationFrame(raf); raf = 0; }
-      },
-      dispose
-    };
+  const root = document.getElementById("le-sky-view");
+  if (!root) {
+    window.__liveEarthSunViewBooting = false;
+    console.warn("[LIVE // EARTH] Sun arc interface skipped: Sky View root is absent.");
+    return;
   }
 
-  window.LiveEarthSun3D = Object.freeze({ mount });
-
-  /* Sun view layer: the existing shared sky container and Sun wallpaper remain intact. */
-  const root = document.getElementById("le-sky-view");
-  if (!root) return;
-
-  const style = document.createElement("style");
-  style.id = "le-sun-view-renderer-style";
-  style.textContent = `
-    #le-sky-view .le-sun-stage { position:absolute; inset:0; z-index:2; overflow:hidden; color:#fff0d6; pointer-events:none; }
-    #le-sky-view .le-sun-stage[hidden] { display:none !important; }
-    #le-sky-view .le-sun-canvas { position:absolute; inset:0; display:block; width:100%; height:100%; pointer-events:none; }
-    #le-sky-view .le-sun-brand { position:absolute; z-index:2; top:calc(env(safe-area-inset-top) + 20px); left:22px; right:22px; color:#f9e8d2; font-size:12px; font-weight:800; letter-spacing:.24em; text-shadow:0 2px 12px #000; }
+  const astronomyUrl = new URL("./astronomy.js", document.baseURI).href;
+  const css = `
+    #le-sky-view .le-sun-ui {
+      position:absolute; inset:0; z-index:4; overflow:hidden;
+      opacity:0; visibility:hidden; pointer-events:none;
+      transition:opacity .28s ease,visibility .28s ease;
+      color:#fff2db; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    #le-sky-view[data-view="sun"] .le-sun-ui { opacity:1; visibility:visible; }
+    #le-sky-view .le-sun-svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+    #le-sky-view .le-sun-arc { fill:none; stroke:url(#leSunArcGradient); stroke-width:1.9; stroke-linecap:round; filter:drop-shadow(0 0 3px #ffd08acc) drop-shadow(0 0 9px #ff9c3d55); }
+    #le-sky-view .le-sun-arc-halo { fill:none; stroke:#ffb45d; stroke-opacity:.18; stroke-width:6; }
+    #le-sky-view .le-sun-rail { fill:none; stroke:url(#leSunRailGradient); stroke-width:1.8; stroke-linecap:round; filter:drop-shadow(0 0 3px #ffd28aaa); }
+    #le-sky-view .le-sun-hit { fill:none; stroke:transparent; stroke-width:36; pointer-events:stroke; touch-action:none; cursor:grab; outline:none; }
+    #le-sky-view .le-sun-hit:active { cursor:grabbing; }
+    #le-sky-view .le-sun-hit:focus-visible { stroke:#ffe1ad66; stroke-width:28; }
+    #le-sky-view .le-sun-endpoint { fill:#ffe3ad; filter:drop-shadow(0 0 5px #ffc26b); }
+    #le-sky-view .le-sun-endpoint-halo { fill:#ffc36f; fill-opacity:.16; }
+    #le-sky-view .le-sun-label { fill:#ffe0ad; font-size:10px; letter-spacing:1.65px; paint-order:stroke; stroke:#1c1209b8; stroke-width:2.4px; stroke-linejoin:round; }
+    #le-sky-view .le-sun-event-time { fill:#fff4df; font-size:15px; font-weight:600; paint-order:stroke; stroke:#1b1109bd; stroke-width:2.7px; stroke-linejoin:round; }
+    #le-sky-view .le-sun-current-time { fill:#fff5e4; font-size:15px; font-weight:600; letter-spacing:.2px; text-anchor:middle; paint-order:stroke; stroke:#201207cf; stroke-width:3px; stroke-linejoin:round; }
+    #le-sky-view .le-sun-hint { fill:#e7c99e; opacity:.9; font-size:9px; letter-spacing:1.2px; text-anchor:middle; paint-order:stroke; stroke:#180f08cc; stroke-width:2px; }
+    #le-sky-view .le-sun-info { fill:#f2d4a7; opacity:.9; font-size:9px; letter-spacing:1.1px; text-anchor:middle; paint-order:stroke; stroke:#180f08cc; stroke-width:2px; }
+    #le-sky-view .le-sun-tick { stroke:#ffe1b7; stroke-width:1; stroke-opacity:.42; }
+    #le-sky-view .le-sun-dust { fill:#ffe6bf; filter:drop-shadow(0 0 2px #ffc36c); animation:le-sun-dust-pulse 2.4s ease-in-out infinite alternate; }
+    #le-sky-view .le-sun-ray { stroke:#ffd98e; stroke-width:2.1; stroke-linecap:round; opacity:.9; }
+    #le-sky-view .le-sun-disc { fill:url(#leSunDiscGradient); stroke:#fff0c6; stroke-opacity:.88; stroke-width:1.1; }
+    #le-sky-view .le-sun-disc-glint { fill:#fff4d9; opacity:.36; }
+    #le-sky-view .le-sun-brand { position:absolute; z-index:5; top:calc(env(safe-area-inset-top) + 20px); left:22px; right:22px; color:#f9e8d2; font-size:12px; font-weight:800; letter-spacing:.24em; text-shadow:0 2px 12px #000; pointer-events:none; }
     #le-sky-view .le-sun-brand span { color:#ffb548; }
     #le-sky-view .le-sun-subtitle { display:block; margin-top:7px; color:#d1a878; font-size:9px; font-weight:500; letter-spacing:.18em; }
-    #le-sky-view .le-sun-times { position:absolute; z-index:3; left:7%; right:7%; bottom:calc(env(safe-area-inset-bottom) + 44px); display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    #le-sky-view .le-sun-time-card { min-width:0; padding:11px 13px 10px; border:1px solid #f6c16c42; border-radius:14px; background:linear-gradient(145deg,#160e08d9,#050505c7); box-shadow:inset 0 1px #fff2d012,0 12px 30px #0005; text-align:left; }
-    #le-sky-view .le-sun-time-label { display:block; color:#dfb780; font-size:9px; letter-spacing:.16em; }
-    #le-sky-view .le-sun-time-value { display:block; min-height:26px; margin-top:6px; color:#fff0d6; font-size:clamp(18px,4.8vw,24px); line-height:1.2; font-weight:500; }
-    #le-sky-view .le-sun-time-note { display:block; margin-top:4px; color:#a38a70; font-size:7px; line-height:1.4; letter-spacing:.08em; }
-    #le-sky-view .le-sun-renderer-error { position:absolute; z-index:5; left:10%; right:10%; top:50%; transform:translateY(-50%); color:#ffe3b3; font-size:12px; text-align:center; text-shadow:0 2px 10px #000; }
-    #le-sky-view .le-sun-renderer-error[hidden] { display:none !important; }
-    @media (orientation:landscape) {
-      #le-sky-view .le-sun-brand { top:calc(env(safe-area-inset-top) + 14px); left:20px; }
-      #le-sky-view .le-sun-times { left:5%; right:auto; bottom:calc(env(safe-area-inset-bottom) + 20px); width:min(410px,52vw); gap:10px; }
-      #le-sky-view .le-sun-time-card { padding:8px 11px; }
-      #le-sky-view .le-sun-time-value { font-size:20px; }
+    #le-sky-view .le-sun-live {
+      position:absolute; z-index:5; min-width:70px; min-height:32px; padding:7px 12px;
+      border:1px solid #ffd28a75; border-radius:999px;
+      background:linear-gradient(135deg,#d8852b35,#251609a8);
+      color:#ffe9c5; font:700 9px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      letter-spacing:1.8px; text-align:center; box-shadow:0 4px 16px #0005,inset 0 1px #fff2;
+      pointer-events:auto; touch-action:manipulation; -webkit-tap-highlight-color:transparent;
     }
-    @media (prefers-reduced-motion:reduce) { #le-sky-view .le-sun-stage * { animation:none !important; transition:none !important; } }
+    #le-sky-view .le-sun-live[aria-pressed="true"] { border-color:#ffdc9baa; color:#fff3d9; box-shadow:0 0 12px #f8a94745,inset 0 1px #fff3; }
+    #le-sky-view .le-sun-live:before { content:""; display:inline-block; width:5px; height:5px; margin:0 6px 1px 0; border-radius:50%; background:#ffca70; box-shadow:0 0 7px #ffb84e; vertical-align:middle; }
+    #le-sky-view .le-sun-live:focus-visible { outline:2px solid #ffe1ad; outline-offset:4px; }
+    #le-sky-view .le-sun-live:active { transform:scale(.97); }
+    @keyframes le-sun-dust-pulse { from { opacity:.22; } to { opacity:.88; } }
+    @media (orientation:landscape) {
+      #le-sky-view .le-sun-label { font-size:9px; letter-spacing:1.2px; }
+      #le-sky-view .le-sun-event-time,#le-sky-view .le-sun-current-time { font-size:13px; }
+      #le-sky-view .le-sun-live { min-width:64px; min-height:29px; }
+    }
+    @media (prefers-reduced-motion:reduce) {
+      #le-sky-view .le-sun-ui,#le-sky-view .le-sun-dust { transition:none!important; animation:none!important; }
+    }
   `;
+  const style = document.createElement("style");
+  style.id = "le-sun-arc-interface-style";
+  style.textContent = css;
   document.head.appendChild(style);
 
-  const stage = document.createElement("div");
-  stage.className = "le-sun-stage";
-  stage.hidden = true;
-  stage.innerHTML = `
-    <canvas class="le-sun-canvas" aria-label="Stationary 3D Sun with flowing simulated plasma and occasional simulated flares"></canvas>
+  const ui = document.createElement("div");
+  ui.className = "le-sun-ui";
+  ui.setAttribute("aria-hidden", "true");
+  ui.innerHTML = `
+    <svg class="le-sun-svg" aria-label="Solar path and local sunrise-to-sunset time scroller" role="group">
+      <defs>
+        <linearGradient id="leSunArcGradient" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0%" stop-color="#ffb95f" stop-opacity=".38"/>
+          <stop offset="28%" stop-color="#ffcf87" stop-opacity=".92"/>
+          <stop offset="52%" stop-color="#fff0ca"/>
+          <stop offset="76%" stop-color="#ffd48d" stop-opacity=".94"/>
+          <stop offset="100%" stop-color="#f5a64d" stop-opacity=".42"/>
+        </linearGradient>
+        <linearGradient id="leSunRailGradient" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0%" stop-color="#f8c77f" stop-opacity=".58"/>
+          <stop offset="50%" stop-color="#ffe4b1"/>
+          <stop offset="100%" stop-color="#f2ad5b" stop-opacity=".62"/>
+        </linearGradient>
+        <radialGradient id="leSunDiscGradient" cx="32%" cy="25%" r="78%">
+          <stop offset="0%" stop-color="#fff9db"/>
+          <stop offset="42%" stop-color="#ffe29b"/>
+          <stop offset="76%" stop-color="#ffad42"/>
+          <stop offset="100%" stop-color="#e87522"/>
+        </radialGradient>
+        <radialGradient id="leSunGlowGradient">
+          <stop offset="0%" stop-color="#ffd98c" stop-opacity=".50"/>
+          <stop offset="62%" stop-color="#ffb653" stop-opacity=".18"/>
+          <stop offset="100%" stop-color="#ff9e36" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <path class="le-sun-arc-halo" id="le-sun-arc-halo"/>
+      <path class="le-sun-arc" id="le-sun-arc"/>
+      <path class="le-sun-hit" id="le-sun-arc-hit" tabindex="0" role="slider" aria-label="Select a time along the Sun's arc" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"/>
+      <g id="le-sun-arc-dust"></g>
+      <circle class="le-sun-endpoint-halo" id="le-sun-rise-halo" r="10"/>
+      <circle class="le-sun-endpoint" id="le-sun-rise-dot" r="2.5"/>
+      <circle class="le-sun-endpoint-halo" id="le-sun-set-halo" r="10"/>
+      <circle class="le-sun-endpoint" id="le-sun-set-dot" r="2.5"/>
+      <text class="le-sun-label" id="le-sun-rise-label"></text>
+      <text class="le-sun-event-time" id="le-sun-rise-time"></text>
+      <text class="le-sun-label" id="le-sun-set-label" text-anchor="end"></text>
+      <text class="le-sun-event-time" id="le-sun-set-time" text-anchor="end"></text>
+      <g id="le-sun-main">
+        <circle class="le-sun-glow" r="48" fill="url(#leSunGlowGradient)"/>
+        <g class="le-sun-rays">
+          <path class="le-sun-ray" d="M0 -27 V-34 M0 27 V34 M-27 0 H-34 M27 0 H34 M-19.1 -19.1 L-24.2 -24.2 M19.1 19.1 L24.2 24.2 M19.1 -19.1 L24.2 -24.2 M-19.1 19.1 L-24.2 24.2"/>
+        </g>
+        <circle class="le-sun-disc" r="21"/>
+        <ellipse class="le-sun-disc-glint" cx="-5.5" cy="-9" rx="7" ry="4" transform="rotate(-28 -5.5 -9)"/>
+      </g>
+      <path class="le-sun-rail" id="le-sun-rail"/>
+      <path class="le-sun-hit" id="le-sun-rail-hit" tabindex="0" role="slider" aria-label="Scrub solar time" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"/>
+      <g id="le-sun-rail-ticks"></g>
+      <g id="le-sun-rail-dust"></g>
+      <circle id="le-sun-rail-marker-halo" r="13" fill="url(#leSunGlowGradient)"/>
+      <circle id="le-sun-rail-marker" r="6.2" fill="url(#leSunDiscGradient)" stroke="#ffe3ae" stroke-width=".8"/>
+      <text class="le-sun-current-time" id="le-sun-current-time"></text>
+      <text class="le-sun-info" id="le-sun-info"></text>
+      <text class="le-sun-hint" id="le-sun-hint"></text>
+    </svg>
     <div class="le-sun-brand">LIVE <span>//</span> EARTH<span class="le-sun-subtitle">SUN VIEW</span></div>
-    <div class="le-sun-times" aria-label="Local sunrise and sunset">
-      <div class="le-sun-time-card"><span class="le-sun-time-label">☀ SUNRISE</span><strong class="le-sun-time-value" data-sunrise>--:--</strong><small class="le-sun-time-note" data-sunrise-note>LOCATION OFF · TIMES HIDDEN</small></div>
-      <div class="le-sun-time-card"><span class="le-sun-time-label">☼ SUNSET</span><strong class="le-sun-time-value" data-sunset>--:--</strong><small class="le-sun-time-note" data-sunset-note>LOCATION OFF · TIMES HIDDEN</small></div>
-    </div>
-    <div class="le-sun-renderer-error" hidden></div>`;
-  root.appendChild(stage);
+    <button class="le-sun-live" type="button" aria-pressed="true" aria-label="Solar time is live. Tap to pause.">LIVE</button>`;
+  root.appendChild(ui);
 
-  const canvas = stage.querySelector(".le-sun-canvas");
-  const sunriseValue = stage.querySelector("[data-sunrise]");
-  const sunsetValue = stage.querySelector("[data-sunset]");
-  const sunriseNote = stage.querySelector("[data-sunrise-note]");
-  const sunsetNote = stage.querySelector("[data-sunset-note]");
-  const errorNode = stage.querySelector(".le-sun-renderer-error");
-  const isLocationEnabled = () => window.liveEarthGetLocationState?.() === true;
-  let active = false, renderer = null, loading = null, observer = null, astronomy = null, timeTimer = 0;
+  const $ = selector => ui.querySelector(selector);
+  const svg = $(".le-sun-svg");
+  const arc = $("#le-sun-arc");
+  const arcHalo = $("#le-sun-arc-halo");
+  const rail = $("#le-sun-rail");
+  const arcHit = $("#le-sun-arc-hit");
+  const railHit = $("#le-sun-rail-hit");
+  const sun = $("#le-sun-main");
+  const railMarker = $("#le-sun-rail-marker-halo");
+  const currentTimeText = $("#le-sun-current-time");
+  const infoText = $("#le-sun-info");
+  const hint = $("#le-sun-hint");
+  const liveButton = $(".le-sun-live");
+  const riseLabel = $("#le-sun-rise-label");
+  const riseTime = $("#le-sun-rise-time");
+  const setLabel = $("#le-sun-set-label");
+  const setTime = $("#le-sun-set-time");
+
+  let astronomyModule = null;
+  let active = false;
+  let enabled = false;
+  let observer = null;
+  let interval = null;
+  let timer = 0;
+  let selectedTime = Date.now();
+  let progress = 0;
+  let live = true;
+  let dragging = null;
+  let dragFrame = 0;
+  let pendingDragPoint = null;
+  let width = 0, height = 0;
   let latestLocalDay = "";
   let locationAttempt = null;
+  let geometry = {};
+  const pathMetrics = new WeakMap();
+  const PATH_SAMPLE_STEPS = 240;
+  const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+  const fmt = timestamp => new Intl.DateTimeFormat(undefined, { hour:"numeric", minute:"2-digit" }).format(new Date(timestamp));
+  const isLocationEnabled = () => window.liveEarthGetLocationState?.() === true;
 
-  function setHiddenTimes(note) {
-    sunriseValue.textContent = "--:--";
-    sunsetValue.textContent = "--:--";
-    sunriseNote.textContent = note;
-    sunsetNote.textContent = note;
-  }
-  function formatLocalTime(iso) {
-    return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date(iso));
-  }
-  function updateTimesForObserver() {
-    if (!active || !observer || !isLocationEnabled() || !astronomy) return;
+  function cachePath(path) {
     try {
-      const result = astronomy.calculateAstronomy(observer.latitude, observer.longitude, new Date());
-      if (!result?.sun) throw new Error("Solar times unavailable");
-      const polar = result.sun.polar;
-      sunriseValue.textContent = result.sun.sunrise ? formatLocalTime(result.sun.sunrise) : (polar === "midnight sun" ? "24-hour sun" : "No sunrise");
-      sunsetValue.textContent = result.sun.sunset ? formatLocalTime(result.sun.sunset) : (polar === "midnight sun" ? "No sunset today" : "No sunset");
-      const status = polar ? String(polar).toUpperCase() : "LOCAL TIME · APPROXIMATE";
-      sunriseNote.textContent = status;
-      sunsetNote.textContent = status;
-      latestLocalDay = result.date || "";
-    } catch (_) { setHiddenTimes("LOCAL TIMES UNAVAILABLE"); }
+      const length = path.getTotalLength();
+      if (!Number.isFinite(length) || length <= 0) return;
+      const points = new Array(PATH_SAMPLE_STEPS + 1);
+      for (let i = 0; i <= PATH_SAMPLE_STEPS; i++) {
+        const point = path.getPointAtLength(length * i / PATH_SAMPLE_STEPS);
+        points[i] = { x:point.x, y:point.y };
+      }
+      pathMetrics.set(path, { length, steps:PATH_SAMPLE_STEPS, points });
+    } catch (_) { /* Preserve the time control if SVG path metrics are unavailable. */ }
   }
-  async function refreshObserverLocation() {
-    if (!active || !isLocationEnabled()) { observer = null; setHiddenTimes("LOCATION OFF · TIMES HIDDEN"); return; }
-    if (locationAttempt) return locationAttempt;
-    if (!navigator.geolocation) { observer = null; setHiddenTimes("LOCATION UNAVAILABLE"); return; }
-    locationAttempt = (async () => {
-      try {
-        astronomy = astronomy || await import("./astronomy.js");
-        const position = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: false, maximumAge: 120000, timeout: 10000
+
+  function pathPoint(path, amount) {
+    const metrics = pathMetrics.get(path);
+    if (!metrics) return { x:width * .5, y:height * .5 };
+    const scaled = clamp(amount,0,1) * metrics.steps;
+    const index = Math.min(metrics.steps - 1, Math.floor(scaled));
+    const fraction = scaled - index;
+    const a = metrics.points[index], b = metrics.points[Math.min(metrics.steps,index+1)];
+    return { x:a.x + (b.x-a.x)*fraction, y:a.y + (b.y-a.y)*fraction };
+  }
+
+  function writePoint(id, point) {
+    const element = $(id);
+    element.setAttribute("cx", point.x.toFixed(2));
+    element.setAttribute("cy", point.y.toFixed(2));
+  }
+
+  function addDust(group, path, count, phase) {
+    group.replaceChildren();
+    for (let i = 0; i < count; i++) {
+      const point = pathPoint(path, (i + .5) / count);
+      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      circle.setAttribute("cx", point.x.toFixed(2));
+      circle.setAttribute("cy", point.y.toFixed(2));
+      circle.setAttribute("r", (i % 7 === 0 ? 1.35 : i % 3 === 0 ? .95 : .58).toString());
+      circle.setAttribute("class", "le-sun-dust");
+      circle.style.animationDelay = `${((i * .37 + phase) % 4).toFixed(2)}s`;
+      group.appendChild(circle);
+    }
+  }
+
+  function buildGeometry() {
+    width = Math.max(1, root.clientWidth || window.innerWidth || 1);
+    height = Math.max(1, root.clientHeight || window.innerHeight || 1);
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    svg.setAttribute("width", width);
+    svg.setAttribute("height", height);
+    const landscape = width > height;
+    const x0 = width * (landscape ? .13 : .105);
+    const x1 = width * (landscape ? .87 : .895);
+    const arcY = height * (landscape ? .43 : .455);
+    const arcControlY = height * .015;
+    const railY = height * (landscape ? .665 : .715);
+    const railAmp = Math.min(height * (landscape ? .045 : .031), landscape ? 24 : 27);
+    const arcD = `M ${x0} ${arcY} Q ${width/2} ${arcControlY} ${x1} ${arcY}`;
+    const railD = `M ${x0} ${railY} C ${x0+(x1-x0)*.24} ${railY-railAmp}, ${x0+(x1-x0)*.29} ${railY-railAmp}, ${width/2} ${railY} C ${x0+(x1-x0)*.71} ${railY+railAmp}, ${x0+(x1-x0)*.76} ${railY+railAmp}, ${x1} ${railY}`;
+    arc.setAttribute("d",arcD); arcHalo.setAttribute("d",arcD); arcHit.setAttribute("d",arcD);
+    rail.setAttribute("d",railD); railHit.setAttribute("d",railD);
+    pathMetrics.delete(arc); pathMetrics.delete(rail);
+    cachePath(arc); cachePath(rail);
+    geometry = {x0,x1,arcY,railY,railAmp,landscape};
+    writePoint("#le-sun-rise-halo",{x:x0,y:arcY});
+    writePoint("#le-sun-rise-dot",{x:x0,y:arcY});
+    writePoint("#le-sun-set-halo",{x:x1,y:arcY});
+    writePoint("#le-sun-set-dot",{x:x1,y:arcY});
+    const labelInset = Math.min(48,width*.15);
+    riseLabel.setAttribute("x",x0+labelInset); riseLabel.setAttribute("y",arcY+23);
+    riseLabel.setAttribute("text-anchor","start"); riseLabel.textContent="SUNRISE";
+    riseTime.setAttribute("x",x0+labelInset); riseTime.setAttribute("y",arcY+42);
+    riseTime.setAttribute("text-anchor","start");
+    setLabel.setAttribute("x",x1-labelInset); setLabel.setAttribute("y",arcY+23);
+    setLabel.setAttribute("text-anchor","end"); setLabel.textContent="SUNSET";
+    setTime.setAttribute("x",x1-labelInset); setTime.setAttribute("y",arcY+42);
+    setTime.setAttribute("text-anchor","end");
+    hint.setAttribute("x",width/2); hint.setAttribute("y",Math.min(height-82,railY+railAmp+30));
+    infoText.setAttribute("x",width/2); infoText.setAttribute("y",Math.min(height-103,railY+railAmp+13));
+    addDust($("#le-sun-arc-dust"),arc,landscape?34:46,.5);
+    addDust($("#le-sun-rail-dust"),rail,landscape?22:30,1.3);
+    const ticks=$("#le-sun-rail-ticks"); ticks.replaceChildren();
+    for(let i=0;i<=24;i++){
+      const p=pathPoint(rail,i/24);
+      const line=document.createElementNS("http://www.w3.org/2000/svg","line");
+      line.setAttribute("x1",p.x); line.setAttribute("x2",p.x);
+      line.setAttribute("y1",p.y-(i%6===0?5:2.5)); line.setAttribute("y2",p.y+(i%6===0?5:2.5));
+      line.setAttribute("class","le-sun-tick"); ticks.appendChild(line);
+    }
+    const pillX=width*(landscape?.80:.82), pillY=railY-railAmp-29;
+    liveButton.style.left=`${clamp(pillX,8,width-82)}px`;
+    liveButton.style.top=`${clamp(pillY,12,height-46)}px`;
+    renderPosition();
+  }
+
+  function nearestProgress(path,clientX,clientY){
+    const matrix=svg.getScreenCTM(),metrics=pathMetrics.get(path);
+    if(!matrix||!metrics)return progress;
+    const point=svg.createSVGPoint(); point.x=clientX; point.y=clientY;
+    const local=point.matrixTransform(matrix.inverse());
+    let bestIndex=0,bestDistance=Infinity;
+    for(let i=0;i<metrics.points.length;i++){
+      const p=metrics.points[i],dx=p.x-local.x,dy=p.y-local.y,d=dx*dx+dy*dy;
+      if(d<bestDistance){bestDistance=d;bestIndex=i;}
+    }
+    return bestIndex/metrics.steps;
+  }
+
+  function updateLiveButton(){
+    liveButton.setAttribute("aria-pressed",String(live));
+    liveButton.setAttribute("aria-label",live?"Solar time is live. Tap to pause.":"Return solar time to live");
+  }
+
+  function setProgress(value){
+    if(!interval)return;
+    progress=clamp(value,0,1);
+    selectedTime=interval.rise.getTime()+progress*(interval.set.getTime()-interval.rise.getTime());
+    live=false; updateLiveButton(); renderPosition();
+  }
+
+  function renderPosition(){
+    if(!arc||!rail||!width||!height)return;
+    const mainPoint=pathPoint(arc,progress),railPoint=pathPoint(rail,progress);
+    sun.setAttribute("transform",`translate(${mainPoint.x.toFixed(2)} ${mainPoint.y.toFixed(2)})`);
+    writePoint("#le-sun-rail-marker-halo",railPoint);
+    writePoint("#le-sun-rail-marker",railPoint);
+    const anchor=progress>.70?"end":progress<.30?"start":"middle";
+    const labelX=progress>.70?railPoint.x-17:progress<.30?railPoint.x+17:railPoint.x;
+    currentTimeText.setAttribute("x",clamp(labelX,12,width-12));
+    currentTimeText.setAttribute("y",railPoint.y-26);
+    currentTimeText.setAttribute("text-anchor",anchor);
+    currentTimeText.textContent=fmt(selectedTime);
+    const value=String(Math.round(progress*100));
+    [arcHit,railHit].forEach(hit=>hit.setAttribute("aria-valuenow",value));
+    if(observer&&astronomyModule?.sunPosition){
+      try{
+        const position=astronomyModule.sunPosition(new Date(selectedTime),observer.latitude,observer.longitude);
+        infoText.textContent=`ALT ${position.altitude.toFixed(1)}°  ·  AZ ${Math.round(position.azimuth)}°`;
+      }catch(_){infoText.textContent="LOCAL SOLAR POSITION";}
+    }else infoText.textContent="LOCAL SOLAR POSITION";
+    updateLiveButton();
+  }
+
+  function showUnavailable(message){
+    interval=null; riseTime.textContent="—"; setTime.textContent="—";
+    hint.textContent=message; infoText.textContent="";
+    selectedTime=Date.now(); progress=0; renderPosition();
+  }
+
+  async function loadAstronomy(){
+    if(astronomyModule)return astronomyModule;
+    astronomyModule=await import(astronomyUrl);
+    if(typeof astronomyModule.calculateAstronomy!=="function"||typeof astronomyModule.sunPosition!=="function"){
+      throw new Error("Solar calculations are unavailable in astronomy.js");
+    }
+    return astronomyModule;
+  }
+
+  function setSolarDay(result,now=Date.now(),preserveSelection=false){
+    const sunrise=result?.sun?.sunrise, sunset=result?.sun?.sunset;
+    if(!sunrise||!sunset){
+      interval=null;
+      const polar=result?.sun?.polar;
+      showUnavailable(polar==="midnight sun"?"MIDNIGHT SUN · NO DAILY SUNRISE OR SUNSET":"POLAR NIGHT · SUN BELOW THE HORIZON");
+      return;
+    }
+    const rise=new Date(sunrise),set=new Date(sunset);
+    if(!Number.isFinite(rise.getTime())||!Number.isFinite(set.getTime())||set<=rise){
+      showUnavailable("LOCAL SUNRISE AND SUNSET UNAVAILABLE"); return;
+    }
+    interval={rise,set};
+    riseTime.textContent=fmt(rise.getTime()); setTime.textContent=fmt(set.getTime());
+    hint.textContent="DRAG THE SUN ARC TO EXPLORE LOCAL SOLAR TIME";
+    const target=preserveSelection&&!live?selectedTime:now;
+    selectedTime=clamp(target,rise.getTime(),set.getTime());
+    progress=(selectedTime-rise.getTime())/(set.getTime()-rise.getTime());
+    latestLocalDay=result.date||"";
+    renderPosition();
+  }
+
+  async function refreshSolarDay(now=Date.now(),preserveSelection=false){
+    if(!active||!observer||!isLocationEnabled())return;
+    try{
+      const astronomy=await loadAstronomy();
+      if(!active||!observer||!isLocationEnabled())return;
+      const result=astronomy.calculateAstronomy(observer.latitude,observer.longitude,new Date(now));
+      setSolarDay(result,now,preserveSelection);
+    }catch(error){showUnavailable("LOCAL SOLAR TIMES UNAVAILABLE");console.info("[LIVE // EARTH] Solar time calculation unavailable.",error?.message||error);}
+  }
+
+  async function refreshObserverLocation(){
+    enabled=isLocationEnabled();
+    if(!enabled){observer=null;interval=null;showUnavailable("LOCATION OFF · LOCAL SOLAR TIMES HIDDEN");return;}
+    if(!active)return;
+    if(locationAttempt)return locationAttempt;
+    if(!navigator.geolocation){observer=null;showUnavailable("LOCAL LOCATION UNAVAILABLE");return;}
+    locationAttempt=(async()=>{
+      try{
+        const astronomy=await loadAstronomy();
+        const position=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{
+          enableHighAccuracy:false,maximumAge:120000,timeout:10000
         }));
-        if (!active || !isLocationEnabled()) return;
-        observer = { latitude: position.coords.latitude, longitude: position.coords.longitude };
-        updateTimesForObserver();
-      } catch (error) {
-        observer = null;
-        if (!isLocationEnabled()) setHiddenTimes("LOCATION OFF · TIMES HIDDEN");
-        else setHiddenTimes("LOCAL TIMES UNAVAILABLE");
-        console.info("[LIVE // EARTH] Sun local-time calculation unavailable.", error?.message || error);
-      } finally { locationAttempt = null; }
+        if(!active||!isLocationEnabled())return;
+        observer={latitude:position.coords.latitude,longitude:position.coords.longitude};
+        const result=astronomy.calculateAstronomy(observer.latitude,observer.longitude,new Date());
+        setSolarDay(result,Date.now());
+      }catch(error){
+        observer=null;
+        if(!isLocationEnabled())showUnavailable("LOCATION OFF · LOCAL SOLAR TIMES HIDDEN");
+        else showUnavailable("COULD NOT CALCULATE LOCAL SOLAR TIMES · CHECK LOCATION PERMISSION");
+        console.info("[LIVE // EARTH] Solar local-time calculation unavailable.",error?.message||error);
+      }finally{locationAttempt=null;}
     })();
     return locationAttempt;
   }
-  async function initializeRenderer() {
-    if (renderer) return renderer;
-    if (loading) return loading;
-    loading = window.LiveEarthSun3D.mount(canvas).then(instance => {
-      renderer = instance;
-      return instance;
-    }).catch(error => {
-      errorNode.hidden = false;
-      errorNode.textContent = "The 3D Sun could not start on this device. Home and Moon remain available.";
-      console.error("[LIVE // EARTH] 3D Sun renderer could not initialize.", error);
-      throw error;
-    }).finally(() => { loading = null; });
-    return loading;
-  }
-  async function activate() {
-    active = true;
-    stage.hidden = false;
-    if (!isLocationEnabled()) setHiddenTimes("LOCATION OFF · TIMES HIDDEN");
-    try {
-      await initializeRenderer();
-      if (!active) return;
-      errorNode.hidden = true;
-      renderer.setActive(true);
-    } catch (_) { /* Preserve the rest of the app if this device cannot start WebGL. */ }
-    if (isLocationEnabled()) {
-      if (observer && astronomy) updateTimesForObserver();
-      else refreshObserverLocation();
+
+  function tick(){
+    if(!active||!enabled||!observer||!interval)return;
+    const now=Date.now();
+    const today=astronomyModule?.dayKey?astronomyModule.dayKey(new Date(now)):`${new Date(now).getFullYear()}-${new Date(now).getMonth()+1}-${new Date(now).getDate()}`;
+    if(today!==latestLocalDay){refreshSolarDay(now,true);return;}
+    if(live){
+      selectedTime=clamp(now,interval.rise.getTime(),interval.set.getTime());
+      progress=(selectedTime-interval.rise.getTime())/(interval.set.getTime()-interval.rise.getTime());
+      renderPosition();
     }
-    if (!timeTimer) timeTimer = window.setInterval(() => {
-      if (!active) return;
-      if (!isLocationEnabled()) { observer = null; setHiddenTimes("LOCATION OFF · TIMES HIDDEN"); return; }
-      if (observer && astronomy) {
-        const today = new Date();
-        const key = astronomy.dayKey ? astronomy.dayKey(today) : `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
-        if (key !== latestLocalDay) updateTimesForObserver();
-      }
-    }, 60000);
   }
-  function deactivate() {
-    active = false;
-    stage.hidden = true;
-    renderer?.setActive(false);
-    if (timeTimer) window.clearInterval(timeTimer);
-    timeTimer = 0;
-  }
-  window.addEventListener("live-earth-location-state", event => {
-    if (event.detail?.enabled === true && isLocationEnabled()) {
-      if (active) refreshObserverLocation();
-    } else {
-      observer = null;
-      if (active) setHiddenTimes("LOCATION OFF · TIMES HIDDEN");
+
+  function activate(view){
+    active=view==="sun";
+    ui.setAttribute("aria-hidden",String(!active));
+    if(!active){
+      if(timer)window.clearInterval(timer); timer=0;
+      if(dragFrame)window.cancelAnimationFrame(dragFrame); dragFrame=0;
+      pendingDragPoint=null; dragging=null;
+      return;
     }
+    buildGeometry();
+    enabled=isLocationEnabled();
+    if(!enabled)showUnavailable("LOCATION OFF · LOCAL SOLAR TIMES HIDDEN");
+    else refreshObserverLocation();
+    if(!timer)timer=window.setInterval(tick,1000);
+  }
+
+  function beginDrag(event,path){
+    if(!active||(event.button!==undefined&&event.button!==0)||!interval)return;
+    dragging=path; live=false;
+    setProgress(nearestProgress(path,event.clientX,event.clientY));
+    try{svg.setPointerCapture(event.pointerId);}catch(_){}
+    event.preventDefault();
+  }
+  function moveDrag(event){
+    if(!dragging)return;
+    pendingDragPoint={clientX:event.clientX,clientY:event.clientY};
+    if(!dragFrame){dragFrame=window.requestAnimationFrame(()=>{
+      dragFrame=0;const point=pendingDragPoint;pendingDragPoint=null;
+      if(dragging&&point)setProgress(nearestProgress(dragging,point.clientX,point.clientY));
+    });}
+    event.preventDefault();
+  }
+  function endDrag(){
+    if(dragFrame)window.cancelAnimationFrame(dragFrame);dragFrame=0;
+    const point=pendingDragPoint;pendingDragPoint=null;
+    if(dragging&&point)setProgress(nearestProgress(dragging,point.clientX,point.clientY));
+    dragging=null;
+  }
+
+  [arcHit,railHit].forEach(path=>{
+    path.addEventListener("pointerdown",event=>beginDrag(event,path),{passive:false});
+    path.addEventListener("keydown",event=>{
+      if(!interval)return;
+      if(event.key==="ArrowLeft"||event.key==="ArrowDown"){setProgress(progress-.01);event.preventDefault();}
+      else if(event.key==="ArrowRight"||event.key==="ArrowUp"){setProgress(progress+.01);event.preventDefault();}
+      else if(event.key==="Home"){setProgress(0);event.preventDefault();}
+      else if(event.key==="End"){setProgress(1);event.preventDefault();}
+    });
   });
-  window.addEventListener("live-earth-location-stop", () => {
-    observer = null;
-    if (active) setHiddenTimes("LOCATION OFF · TIMES HIDDEN");
+  svg.addEventListener("pointermove",moveDrag,{passive:false});
+  svg.addEventListener("pointerup",endDrag);
+  svg.addEventListener("pointercancel",endDrag);
+  svg.addEventListener("lostpointercapture",endDrag);
+  liveButton.addEventListener("click",()=>{
+    if(!interval){if(isLocationEnabled())refreshObserverLocation();return;}
+    live=true;tick();updateLiveButton();
   });
-  window.LiveEarthViewModules.register("sun-procedural-renderer", { views: ["sun"], activate, deactivate });
+  liveButton.addEventListener("pointerdown",event=>event.stopPropagation());
+  if(window.LiveEarthViewModules){
+    window.LiveEarthViewModules.register("sun-procedural-renderer",{
+      views:["sun"],activate:()=>activate("sun"),deactivate:()=>activate("home")
+    });
+  }else{
+    window.addEventListener("live-earth-primary-view-change",event=>activate(event.detail?.view||"home"));
+  }
+  window.addEventListener("live-earth-location-state",event=>{
+    const next=!!event.detail?.enabled&&isLocationEnabled();
+    if(!next){enabled=false;observer=null;interval=null;if(active)showUnavailable("LOCATION OFF · LOCAL SOLAR TIMES HIDDEN");}
+    else{enabled=true;if(active)refreshObserverLocation();}
+  });
+  window.addEventListener("live-earth-location-stop",()=>{
+    enabled=false;observer=null;interval=null;
+    if(active)showUnavailable("LOCATION OFF · LOCAL SOLAR TIMES HIDDEN");
+  });
+  window.addEventListener("resize",()=>{if(active)buildGeometry();},{passive:true});
+  window.visualViewport?.addEventListener("resize",()=>{if(active)buildGeometry();},{passive:true});
+  let resizeObserver=null;
+  if(typeof ResizeObserver!=="undefined"){
+    resizeObserver=new ResizeObserver(()=>{if(active)buildGeometry();});
+    resizeObserver.observe(root);
+  }
+  window.addEventListener("pagehide",()=>{
+    if(timer)window.clearInterval(timer);timer=0;
+    if(dragFrame)window.cancelAnimationFrame(dragFrame);dragFrame=0;
+    resizeObserver?.disconnect();
+  },{once:true});
+
+  buildGeometry();
+  showUnavailable("LOCATION OFF · LOCAL SOLAR TIMES HIDDEN");
+  if(window.LiveEarthViewManager?.getActiveView?.()==="sun")activate("sun");
+
+  window.__liveEarthSunViewInstalled=true;
+  window.__liveEarthSunRendererInstalled=true;
+  window.__liveEarthSunViewBooting=false;
+  window.dispatchEvent(new Event("live-earth-sun-view-ready"));
 })();
