@@ -116,6 +116,47 @@ body{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset
   -webkit-backdrop-filter:blur(2px);
 }
 #le-feature-library .le-feature-library-panel{z-index:1}
+#le-feature-library .le-feature-library-head{
+  top:calc(env(safe-area-inset-top) + clamp(50px,12vmin,68px))!important;
+}
+#le-feature-library .le-feature-library-heading{
+  font-size:clamp(15px,4vmin,20px)!important;
+  color:#c7eeff!important;
+  text-shadow:0 0 12px rgba(112,202,255,.24),0 2px 12px rgba(0,0,0,.92)!important;
+}
+#le-feature-library .le-feature-library-head .le-stack-butterfly-layer{
+  position:absolute;inset:-5px -5px -18px;z-index:4;overflow:visible;
+  pointer-events:none;user-select:none;
+}
+#le-feature-library .le-stack-butterfly{
+  position:absolute;display:block;font-size:12px;line-height:1;
+  opacity:.76;pointer-events:none;will-change:transform;
+  filter:drop-shadow(0 1px 4px rgba(137,207,255,.34));
+}
+#le-feature-library .le-stack-butterfly-1{left:5%;top:8px;animation:le-stack-butterfly-one 10.8s ease-in-out -2.1s infinite}
+#le-feature-library .le-stack-butterfly-2{right:5%;top:23px;animation:le-stack-butterfly-two 12.4s ease-in-out -6.2s infinite}
+#le-feature-library .le-stack-butterfly-3{left:51%;top:44px;animation:le-stack-butterfly-three 11.6s ease-in-out -4.4s infinite}
+@keyframes le-stack-butterfly-one{
+  0%,100%{transform:translate3d(0,0,0) rotate(-14deg) scale(.88)}
+  25%{transform:translate3d(15px,-9px,0) rotate(13deg) scale(1)}
+  50%{transform:translate3d(28px,3px,0) rotate(24deg) scale(.94)}
+  75%{transform:translate3d(13px,11px,0) rotate(-8deg) scale(.9)}
+}
+@keyframes le-stack-butterfly-two{
+  0%,100%{transform:translate3d(0,0,0) rotate(12deg) scale(.92)}
+  25%{transform:translate3d(-18px,-10px,0) rotate(-18deg) scale(1)}
+  50%{transform:translate3d(-30px,2px,0) rotate(-28deg) scale(.86)}
+  75%{transform:translate3d(-14px,10px,0) rotate(9deg) scale(.96)}
+}
+@keyframes le-stack-butterfly-three{
+  0%,100%{transform:translate3d(0,0,0) rotate(-8deg) scale(.82)}
+  25%{transform:translate3d(22px,4px,0) rotate(18deg) scale(.96)}
+  50%{transform:translate3d(4px,9px,0) rotate(30deg) scale(.9)}
+  75%{transform:translate3d(-18px,3px,0) rotate(-15deg) scale(1)}
+}
+@media(prefers-reduced-motion:reduce){
+  #le-feature-library .le-stack-butterfly{animation:none!important;will-change:auto!important}
+}
 /* Closing Stacks is immediate; selecting a feature Orb keeps its existing collection motion. */
 #le-feature-library .le-feature-library-item.le-orb-collecting{transition:none!important;animation:none!important}
 </style>
@@ -309,6 +350,33 @@ html.le-boot-pending body > :not(#le-boot-overlay):not(#le-startup-gate){visibil
     }
     return nativeSetTimeout(callback, delay, ...args);
   };
+})();
+</script>
+<script id="le-stacks-heading-butterflies">
+(() => {
+  'use strict';
+  if (!('MutationObserver' in window)) return;
+  let observer;
+  const decorateStacksHeading = () => {
+    const header = document.querySelector('#le-feature-library .le-feature-library-head');
+    if (!header) return;
+    if (!header.querySelector('.le-stack-butterfly-layer')) {
+      const layer = document.createElement('span');
+      layer.className = 'le-stack-butterfly-layer';
+      layer.setAttribute('aria-hidden', 'true');
+      for (let index = 1; index <= 3; index++) {
+        const butterfly = document.createElement('span');
+        butterfly.className = `le-stack-butterfly le-stack-butterfly-${index}`;
+        butterfly.textContent = '🦋';
+        layer.appendChild(butterfly);
+      }
+      header.appendChild(layer);
+    }
+    observer?.disconnect();
+  };
+  observer = new MutationObserver(decorateStacksHeading);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  decorateStacksHeading();
 })();
 </script>
 <script type="module">
