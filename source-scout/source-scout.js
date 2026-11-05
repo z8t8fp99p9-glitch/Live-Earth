@@ -437,11 +437,4 @@
     });
   });
 
-  document.getElementById('closeButton').addEventListener('click', () => {
-    if (window.parent && window.parent !== window) {
-      window.parent.postMessage({ type: 'LIVE_EARTH_SOURCE_SCOUT_CLOSE' }, window.location.origin);
-    } else if (window.history.length > 1) {
-      window.history.back();
-    }
-  });
 })();

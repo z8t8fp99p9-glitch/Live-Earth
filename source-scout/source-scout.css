@@ -14,7 +14,7 @@ html, body { min-height: 100%; margin: 0; background: var(--page); color: var(--
 body { min-height: 100svh; }
 button, input { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
-.app-shell { min-height: 100svh; padding: env(safe-area-inset-top) 18px calc(24px + env(safe-area-inset-bottom)); }
+.app-shell { min-height: 100svh; padding: env(safe-area-inset-top) 18px calc(132px + env(safe-area-inset-bottom)); }
 .topbar { display: flex; align-items: center; justify-content: space-between; min-height: 56px; border-bottom: 1px solid #e9eaed; }
 .brand { display: flex; gap: 9px; align-items: center; color: #555b64; font-size: 11px; font-weight: 800; letter-spacing: .13em; }
 .brand-mark { display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid #c9d0d6; border-radius: 50%; color: var(--accent); font-size: 16px; }
