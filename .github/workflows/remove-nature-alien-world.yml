@@ -1,0 +1,542 @@
+name: LIVE // EARTH — Retire Nature and Alien World
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+  pages: write
+
+concurrency:
+  group: live-earth-retire-nature-alien-world
+  cancel-in-progress: false
+
+jobs:
+  retire-views:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Remove both Views, source assignments, databases and workflows
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          import os
+          import re
+          import shutil
+          import time
+          from pathlib import Path
+          from urllib.error import HTTPError
+          from urllib.request import Request, urlopen
+
+          ROOT = Path.cwd()
+          REPO = os.environ["GH_REPO"]
+          TOKEN = os.environ["GH_TOKEN"]
+          API = f"https://api.github.com/repos/{REPO}"
+          HEADERS = {
+              "Accept": "application/vnd.github+json",
+              "Authorization": f"Bearer {TOKEN}",
+              "X-GitHub-Api-Version": "2022-11-28",
+              "User-Agent": "live-earth-view-retirement",
+          }
+
+          def api(method: str, path: str):
+              data = b"{}" if method in {"PUT", "POST", "PATCH"} else None
+              request = Request(f"{API}/{path.lstrip('/')}", data=data, headers=HEADERS, method=method)
+              try:
+                  with urlopen(request, timeout=30) as response:
+                      raw = response.read()
+                      return json.loads(raw.decode("utf-8")) if raw else {}
+              except HTTPError as exc:
+                  body = exc.read().decode("utf-8", errors="replace")
+                  raise RuntimeError(f"GitHub API {method} {path} failed ({exc.code}): {body[:700]}") from exc
+
+          def file_text(relative: str) -> str:
+              path = ROOT / relative
+              if not path.is_file():
+                  raise RuntimeError(f"Required file is missing: {relative}")
+              return path.read_text(encoding="utf-8")
+
+          def write_text(relative: str, content: str) -> None:
+              path = ROOT / relative
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_text(content, encoding="utf-8", newline="\n")
+
+          def update_json(relative: str, mutator) -> None:
+              path = ROOT / relative
+              data = json.loads(file_text(relative))
+              mutator(data)
+              write_text(relative, json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+
+          def replace_exact(relative: str, old: str, new: str, expected: int = 1) -> None:
+              content = file_text(relative)
+              found = content.count(old)
+              if found != expected:
+                  raise RuntimeError(
+                      f"Safe edit stopped: {relative} expected {expected} exact match(es), found {found}."
+                  )
+              write_text(relative, content.replace(old, new))
+
+          # 1. Stop the old scheduled workflows before removing their files.
+          retired_workflows = {
+              ".github/workflows/nature-publisher.yml",
+              ".github/workflows/alien-world-publisher.yml",
+              ".github/workflows/global-database-cleaner.yml",
+          }
+          workflow_doc = api("GET", "actions/workflows?per_page=100")
+          retired_ids = []
+          for workflow in workflow_doc.get("workflows", []):
+              if workflow.get("path") not in retired_workflows:
+                  continue
+              workflow_id = workflow.get("id")
+              if workflow_id is None:
+                  continue
+              api("PUT", f"actions/workflows/{workflow_id}/disable")
+              retired_ids.append(workflow_id)
+              for status in ("queued", "in_progress"):
+                  runs = api("GET", f"actions/workflows/{workflow_id}/runs?status={status}&per_page=100")
+                  for run in runs.get("workflow_runs", []):
+                      run_id = run.get("id")
+                      if run_id:
+                          api("POST", f"actions/runs/{run_id}/cancel")
+
+          # Do not purge a database cache while an old queued/running job remains.
+          for _ in range(20):
+              active = []
+              for workflow_id in retired_ids:
+                  for status in ("queued", "in_progress"):
+                      runs = api("GET", f"actions/workflows/{workflow_id}/runs?status={status}&per_page=100")
+                      active.extend(item.get("id") for item in runs.get("workflow_runs", []) if item.get("id"))
+              if not active:
+                  break
+              for run_id in set(active):
+                  api("POST", f"actions/runs/{run_id}/cancel")
+              time.sleep(2)
+          else:
+              raise RuntimeError("An old publisher/cleaner run is still active; no database cache was deleted.")
+
+          # 2. Delete only the four known Nature/Alien World Actions-cache families.
+          cache_prefixes = (
+              "nature-db-v1-",
+              "alien-world-db-v1-",
+              "global-database-cleaner-nature-",
+              "global-database-cleaner-alien-world-",
+          )
+          all_caches = []
+          for page in range(1, 101):
+              result = api("GET", f"actions/caches?per_page=100&page={page}")
+              entries = result.get("actions_caches", [])
+              all_caches.extend(entries)
+              if len(entries) < 100:
+                  break
+          else:
+              raise RuntimeError("Cache listing exceeded 10,000 entries; refusing a partial database purge.")
+
+          deleted_cache_count = 0
+          for cache in all_caches:
+              key = str(cache.get("key") or "")
+              cache_id = cache.get("id")
+              if cache_id and key.startswith(cache_prefixes):
+                  api("DELETE", f"actions/caches/{cache_id}")
+                  print(f"Deleted database cache: {key}")
+                  deleted_cache_count += 1
+          print(f"Deleted {deleted_cache_count} Nature/Alien World database cache entr(y/ies).")
+
+          # 3. Empty the Global Manager source catalogue, subscriptions, profiles and schedules.
+          update_json(
+              "global_collection_manager/config/source-registry.json",
+              lambda data: data.update({"registryVersion": "1.1.0-no-active-view-sources", "sources": []}),
+          )
+          update_json(
+              "global_collection_manager/config/source-view-assignments.json",
+              lambda data: data.update({"assignments": []}),
+          )
+          update_json(
+              "global_collection_manager/config/view-collection-profiles.json",
+              lambda data: data.update({"profiles": []}),
+          )
+          profiles_py = file_text("global_collection_manager/profiles.py")
+          empty_profiles_guard = (
+              '        if not self.profiles:\n'
+              '            raise ManagerError("At least one View Collection Profile must be registered.")\n'
+          )
+          if profiles_py.count(empty_profiles_guard) != 1:
+              raise RuntimeError("Safe edit stopped: empty-Manager guard changed in profiles.py.")
+          write_text("global_collection_manager/profiles.py", profiles_py.replace(empty_profiles_guard, ""))
+          update_json(
+              "global_collection_manager/config/scheduler.json",
+              lambda data: data.update({"views": {}}),
+          )
+
+          # 4. Remove Alien World from the app catalogue and both feed controllers from startup.
+          replace_exact(
+              "index.html",
+              "    './alien-world/view/alien-world-view-controller.js',\n",
+              "",
+          )
+
+          update_manager = file_text("update-manager.js")
+          old_build = 'const BUILD_ID = "v109-alien-view-reset";'
+          if update_manager.count(old_build) != 1:
+              raise RuntimeError("Safe edit stopped: update-manager.js build identity changed.")
+          update_manager = update_manager.replace(old_build, 'const BUILD_ID = "v110-retired-news-views";')
+          update_manager = update_manager.replace(
+              '      window.__liveEarthAlienWorldViewInstalled === true &&\n',
+              "",
+          )
+          start_marker = "  // Nature is an optional Stacks view."
+          end_marker = "  // Magazine is a deliberately blank full-screen Feature Orb view for now."
+          if update_manager.count(start_marker) != 1 or update_manager.count(end_marker) != 1:
+              raise RuntimeError("Safe edit stopped: Nature loader block boundaries changed in update-manager.js.")
+          start = update_manager.index(start_marker)
+          end = update_manager.index(end_marker, start)
+          update_manager = update_manager[:start] + update_manager[end:]
+          nature_call = (
+              '  loadNatureView().catch(error => {\n'
+              '    console.warn("[LIVE // EARTH] Nature view is not available yet; Home, Moon and the existing Stacks views remain available.", error?.message || error);\n'
+              '  });\n'
+          )
+          if update_manager.count(nature_call) != 1:
+              raise RuntimeError("Safe edit stopped: Nature loader call changed in update-manager.js.")
+          update_manager = update_manager.replace(nature_call, "")
+          update_manager = update_manager.replace("exact V109 build identity", "exact V110 build identity")
+          write_text("update-manager.js", update_manager)
+
+          sw = file_text("sw.js")
+          old_sw_header = "LIVE // EARTH V109 — clean global Feature Orb shell with a fresh Alien World view."
+          old_sw_build = 'const BUILD_ID = "v109-alien-view-reset";'
+          old_cache_name = 'const CACHE_NAME = "live-earth-shell-v109-alien-view-reset";'
+          if any(sw.count(value) != 1 for value in (old_sw_header, old_sw_build, old_cache_name)):
+              raise RuntimeError("Safe edit stopped: service-worker V109 build identity changed.")
+          sw = sw.replace(old_sw_header, "LIVE // EARTH V110 — Nature and Alien World feed Views retired.")
+          sw = sw.replace(old_sw_build, 'const BUILD_ID = "v110-retired-news-views";')
+          sw = sw.replace(old_cache_name, 'const CACHE_NAME = "live-earth-shell-v110-retired-news-views";')
+          alien_app_shell = '"./stacks-feature-views.js","./alien-world/view/alien-world-view-controller.js","./sky-view-controller.js"'
+          if sw.count(alien_app_shell) != 1:
+              raise RuntimeError("Safe edit stopped: Alien World service-worker app-shell entry changed.")
+          sw = sw.replace(alien_app_shell, '"./stacks-feature-views.js","./sky-view-controller.js"')
+          alien_repair = "      if (!window.__liveEarthAlienWorldViewInstalled) paths.push('./alien-world/view/alien-world-view-controller.js');\n"
+          if sw.count(alien_repair) != 1:
+              raise RuntimeError("Safe edit stopped: Alien World service-worker repair entry changed.")
+          sw = sw.replace(alien_repair, "")
+          alien_script = "'./stacks-feature-views.js','./alien-world/view/alien-world-view-controller.js','./sky-view-controller.js'"
+          if sw.count(alien_script) != 1:
+              raise RuntimeError("Safe edit stopped: Alien World service-worker script list changed.")
+          sw = sw.replace(alien_script, "'./stacks-feature-views.js','./sky-view-controller.js'")
+          sw = sw.replace("The old weekly Alien reader cache is obsolete.", "The old weekly reader cache is obsolete.")
+          write_text("sw.js", sw)
+
+          registry_path = ROOT / "view-module-registry.js"
+          registry_lines = file_text("view-module-registry.js").splitlines(keepends=True)
+          registry_lines = [line for line in registry_lines if 'data-feature="alien-world"' not in line]
+          registry_lines = [line for line in registry_lines if '{ id: "alien-world", title: "Alien World"' not in line]
+          registry_text = "".join(registry_lines)
+          registry_text = registry_text.replace(
+              "behind Clouds, Weather, Alien World, etc.",
+              "behind another active Feature View.",
+          )
+          write_text("view-module-registry.js", registry_text)
+
+          # 5. Keep the shared Writer generic: it may write only to a View profile
+          # that exists in Global Manager. At present, the Manager has no profiles.
+          bridge = file_text("newsroom-database-writer/section13_database_bridge.py")
+          old_guard = (
+              '    if view_id not in {"nature", "alien-world"}:\n'
+              '        raise Section13DatabaseBridgeError("Unregistered View ID.")\n'
+              '    writer = _load_writer(root)\n'
+              '    profile, db_path = writer._repository_contract(root, view_id, job)\n'
+          )
+          new_guard = (
+              '    if not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,62}", view_id):\n'
+              '        raise Section13DatabaseBridgeError("Invalid View ID.")\n'
+              '    writer = _load_writer(root)\n'
+              '    try:\n'
+              '        profile, db_path = writer._repository_contract(root, view_id, job)\n'
+              '    except Exception as exc:\n'
+              '        raise Section13DatabaseBridgeError(\n'
+              '            f"View is not registered in Global Collection Manager: {exc}"\n'
+              '        ) from exc\n'
+          )
+          if bridge.count(old_guard) != 1:
+              raise RuntimeError("Safe edit stopped: database bridge View allowlist changed.")
+          write_text("newsroom-database-writer/section13_database_bridge.py", bridge.replace(old_guard, new_guard))
+
+          # 6. Make the orchestration failure-report folder work for any future
+          # Manager-registered View, without a retired-view allowlist.
+          orchestrator = file_text("editorial-engine/newsroom_orchestrator.py")
+          old_safe_view = '                safe_view = args.view if args.view in {"nature", "alien-world"} else "unknown-view"\n'
+          new_safe_view = (
+              '                safe_view = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in args.view)[:80] or "unknown-view"\n'
+          )
+          if orchestrator.count(old_safe_view) != 1:
+              raise RuntimeError("Safe edit stopped: orchestrator failure-report View handling changed.")
+          write_text("editorial-engine/newsroom_orchestrator.py", orchestrator.replace(old_safe_view, new_safe_view))
+
+          # 7. Replace tests that asserted the two retired Views were active.
+          manager_test = '''from __future__ import annotations
+
+          import tempfile
+          import unittest
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          from global_collection_manager.manager import build_manager
+          from global_collection_manager.models import ManagerError
+
+          ROOT = Path(__file__).resolve().parents[1]
+          CONFIG = ROOT / "config"
+
+          class RetiredViewManagerTests(unittest.TestCase):
+              def test_no_sources_views_assignments_or_scheduled_jobs_remain(self):
+                  registry, profiles, assignments, scheduler, dispatcher, _ = build_manager(
+                      CONFIG, Path(tempfile.mkdtemp())
+                  )
+                  self.assertEqual(registry.ids(), set())
+                  self.assertEqual(profiles.ids(), set())
+                  self.assertEqual(assignments.all(), [])
+                  self.assertEqual(scheduler.config["views"], {})
+                  self.assertEqual(scheduler.due_views(datetime(2026, 11, 5, 10, 15, tzinfo=timezone.utc)), [])
+                  for retired_view in ("nature", "alien-world"):
+                      with self.subTest(view=retired_view):
+                          with self.assertRaisesRegex(ManagerError, "No Collection Profile"):
+                              dispatcher.create_job(retired_view)
+
+          if __name__ == "__main__":
+              unittest.main(verbosity=2)
+          '''
+          write_text("global_collection_manager/tests/test_manager.py", manager_test)
+
+          architecture_test = '''from __future__ import annotations
+
+          import json
+          import unittest
+          from pathlib import Path
+
+          ROOT = Path(__file__).resolve().parents[2]
+
+          class GlobalArchitectureContractTests(unittest.TestCase):
+              def test_no_active_collection_sources_views_assignments_or_schedules(self):
+                  base = ROOT / "global_collection_manager" / "config"
+                  self.assertEqual(json.loads((base / "source-registry.json").read_text())["sources"], [])
+                  self.assertEqual(json.loads((base / "source-view-assignments.json").read_text())["assignments"], [])
+                  self.assertEqual(json.loads((base / "view-collection-profiles.json").read_text())["profiles"], [])
+                  self.assertEqual(json.loads((base / "scheduler.json").read_text())["views"], {})
+
+              def test_shared_global_engines_are_preserved(self):
+                  for relative in (
+                      "global_collector/collector.py",
+                      "global_collection_manager/manager.py",
+                      "global-checker/global_checker.py",
+                      "image-engine/global_image_pipeline.py",
+                      "editorial-engine/newsroom_orchestrator.py",
+                      "newsroom-database-writer/newsroom_database_writer.py",
+                  ):
+                      with self.subTest(path=relative):
+                          self.assertTrue((ROOT / relative).is_file())
+
+              def test_retired_view_runtime_and_cleaner_implementation_are_absent(self):
+                  for relative in (
+                      "nature",
+                      "alien-world",
+                      "scripts/global_database_cleaner.py",
+                  ):
+                      with self.subTest(path=relative):
+                          self.assertFalse((ROOT / relative).exists())
+
+          if __name__ == "__main__":
+              unittest.main(verbosity=2)
+          '''
+          write_text("global-checker/tests/test_global_architecture_contract.py", architecture_test)
+
+          bridge_test = '''from __future__ import annotations
+
+          import importlib.util
+          import pathlib
+          import unittest
+
+          MODULE = pathlib.Path(__file__).resolve().parents[1] / "newsroom-database-writer" / "section13_database_bridge.py"
+          SPEC = importlib.util.spec_from_file_location("section13_database_bridge", MODULE)
+          BRIDGE = importlib.util.module_from_spec(SPEC)
+          SPEC.loader.exec_module(BRIDGE)
+
+          def make_report(view="test-view"):
+              job = {
+                  "jobId": "job-1", "idempotencyKey": "idem-1", "viewId": view,
+                  "profileId": view + "-collection-profile", "assignmentIds": ["a1"],
+                  "sourceIds": ["s1"], "feedUrls": ["https://feed.example/rss"],
+                  "collectorEntrypoint": "global_collector",
+                  "collectorWorkflow": ".github/workflows/test-view.yml",
+                  "destinationDatabaseId": view + "-sqlite",
+                  "destinationDatabasePath": f".publisher-data/{view}/stories.sqlite3",
+                  "scheduledAt": "2026-11-05T00:00:00Z", "requestWindowHours": 24,
+                  "configVersion": "1", "trigger": "scheduled",
+              }
+              return {
+                  "schemaVersion": 2, "checker": "LIVE // EARTH Global Content Rights & Provenance Checker",
+                  "checkerVersion": "2.1.1", "jobId": "job-1", "viewId": view, "posts": [],
+                  "sections": {
+                      "managerIdCard": {"payload": job, "sha256": BRIDGE._canonical_hash(job)},
+                      "postEditorialFinalVerification": {
+                          "posts": [], "statistics": {"approvedForDatabase": 0},
+                          "ownership": {"databaseOpenedOrWritten": False},
+                      },
+                      "liveFeedOutput": {"posts": []},
+                  },
+              }
+
+          class Section13BridgeGuards(unittest.TestCase):
+              def test_valid_hashed_manager_view_id(self):
+                  self.assertEqual(BRIDGE._manager_job(make_report())["viewId"], "test-view")
+
+              def test_report_view_mismatch_is_rejected(self):
+                  report = make_report()
+                  report["viewId"] = "tampered-view"
+                  with self.assertRaises(BRIDGE.Section13DatabaseBridgeError):
+                      BRIDGE._manager_job(report)
+
+              def test_tampered_manager_card_is_rejected(self):
+                  report = make_report()
+                  report["sections"]["managerIdCard"]["payload"]["viewId"] = "tampered-view"
+                  with self.assertRaises(BRIDGE.Section13DatabaseBridgeError):
+                      BRIDGE._manager_job(report)
+
+              def test_view_without_manager_profile_cannot_write(self):
+                  with self.assertRaises(BRIDGE.Section13DatabaseBridgeError):
+                      BRIDGE.write_section13_approved_posts(make_report("unregistered-view"), repository_root=".")
+
+              def test_empty_approval_set_does_not_write(self):
+                  report = make_report("test-view")
+                  self.assertEqual(BRIDGE._approved_inputs(report, "test-view"), [])
+
+          if __name__ == "__main__":
+              unittest.main()
+          '''
+          write_text("tests/test_section13_database_bridge.py", bridge_test)
+
+          # 8. Refresh the operational notes while preserving older pipeline notes as history.
+          manager_readme = file_text("global_collection_manager/README.md")
+          status_note = (
+              "\n> **Current status — 5 November 2026:** Nature and Alien World have been retired. "
+              "The active source catalogue, assignments, View profiles and schedules are empty. "
+              "The shared Global Manager and Global Collector remain available for a future, separately registered View. "
+              "Older Nature/Alien World pipeline documents are historical records only.\n\n"
+          )
+          if "Current status — 5 November 2026" not in manager_readme:
+              manager_readme = manager_readme.replace("# LIVE // EARTH — Global Collection Manager\n", "# LIVE // EARTH — Global Collection Manager\n" + status_note, 1)
+          manager_readme = manager_readme.replace("python -m global_collection_manager.manager assign --view nature\n", "")
+          manager_readme = manager_readme.replace("python -m global_collection_manager.manager assign --view alien-world\n", "")
+          write_text("global_collection_manager/README.md", manager_readme)
+
+          writer_readme = file_text("newsroom-database-writer/NEWSROOM-DATABASE-WRITER.md")
+          start = writer_readme.find("## Isolation and retention\n")
+          end = writer_readme.find("## Python entry point\n", start)
+          if start < 0 or end < 0:
+              raise RuntimeError("Safe edit stopped: shared Writer isolation documentation changed.")
+          replacement = (
+              "## Isolation and retention\n\n"
+              "- The Writer resolves a destination only from an enabled Global Manager View profile.\n"
+              "- No Nature or Alien World database profile is currently registered.\n"
+              "- A future View must receive its own Manager-owned database identity and path under `.publisher-data/<viewId>/`.\n"
+              "- The Writer never resets, drops or adopts an unowned database; retention is applied only inside the selected View database.\n"
+              "- There is no numerical story-count cap. Raw source records, raw article text, HTML and evidence excerpts are not persisted.\n\n"
+          )
+          writer_readme = writer_readme[:start] + replacement + writer_readme[end:]
+          write_text("newsroom-database-writer/NEWSROOM-DATABASE-WRITER.md", writer_readme)
+
+          first_readme = file_text("README-FIRST.txt")
+          archive_notice = (
+              "CURRENT STATUS — 5 NOVEMBER 2026\n"
+              "The Nature and Alien World Views, their Global Manager source assignments, their publisher workflows, "
+              "and their database caches are retired. This file describes the former setup and is preserved as history only. "
+              "Do not use its old upload/workflow instructions to reactivate those Views.\n\n"
+          )
+          if not first_readme.startswith("CURRENT STATUS — 5 NOVEMBER 2026"):
+              write_text("README-FIRST.txt", archive_notice + first_readme)
+
+          handoff = """# LIVE // EARTH — View Retirement Handoff
+
+          **Date:** 5 November 2026  
+          **Branch:** `main`
+
+          ## Completed retirement
+
+          Nature and Alien World are no longer active app or feed Views. Their app controllers, publishers, tests, source folders, published-output folders, workflow templates and database-cleaner implementation were removed. The three existing scheduled/cleaner workflows were disabled through the GitHub Actions API; their YAML files, plus this one-time cleanup workflow, must be deleted manually after this run because the standard workflow token is not used to edit files under `.github/workflows`.
+
+          The Global Collection Manager now has an empty source catalogue, no source-to-View assignments, no View profiles and no schedules. It cannot issue jobs for either retired View. The shared Global Manager, Global Collector, Global Checker, Global Image Engine, Editorial Engine and generic Newsroom Database Writer remain in place.
+
+          The matching GitHub Actions database cache families were deleted: `nature-db-v1-*`, `alien-world-db-v1-*`, `global-database-cleaner-nature-*` and `global-database-cleaner-alien-world-*`. Existing Checker report artifacts and historical project notes were not deleted.
+
+          The app's service-worker and update-manager build identity was advanced together to `v110-retired-news-views`; the retired controller is no longer in the app shell, repair list, startup loader or Stacks catalogue. The browser must receive the next successful Pages update before the installed app stops using its older cached shell.
+
+          ## Preserved deliberately
+
+          Shared global pipeline engines and their contracts remain. The Global Checker source-rights catalogue is retained as shared policy/reference data; it is not a Global Manager source subscription and no feed job can reach it while Manager profiles and assignments are empty. Historical Nature/Alien World notes remain for project history and are not active configuration.
+
+          ## Validation
+
+          The retirement workflow runs the Manager, database-bridge and global architecture regression tests, plus JavaScript syntax checks for the changed app files. After it succeeds, manually delete `.github/workflows/nature-publisher.yml`, `.github/workflows/alien-world-publisher.yml`, `.github/workflows/global-database-cleaner.yml` and `.github/workflows/remove-nature-alien-world.yml`. Then check the Pages update and installed-iPhone behavior.
+          """
+          write_text("VIEW-REMOVAL-HANDOFF-2026-11-05.md", handoff)
+
+          # 9. Delete view-specific code, content, recovery copies and cached workspace paths.
+          for relative in (
+              "nature",
+              "alien-world",
+              "recovery/data-collection/alien-world",
+              ".publisher-data/nature",
+              ".publisher-data/alien-world",
+          ):
+              path = ROOT / relative
+              if path.is_dir():
+                  shutil.rmtree(path)
+
+          for relative in (
+              "scripts/global_database_cleaner.py",
+              "recovery/alien-world-view-controller.js.v109-baseline.txt",
+          ):
+              path = ROOT / relative
+              if path.is_file():
+                  path.unlink()
+
+          # The old workflow files are disabled above and must be deleted manually after success.
+          # This avoids asking the standard workflow token to edit .github/workflows.
+          # Historical dated notes and Checker policy references are intentionally retained.
+          print("Nature and Alien World runtime, Manager connections and database paths have been removed; old workflows are disabled.")
+          PY
+
+          # Run focused regression checks before creating the removal commit.
+          python -m unittest discover -s global_collection_manager/tests -p 'test_manager.py' -v
+          python -m unittest discover -s global-checker/tests -p 'test_global_architecture_contract.py' -v
+          python -m unittest discover -s tests -p 'test_section13_database_bridge.py' -v
+          node --check update-manager.js
+          node --check sw.js
+          node --check view-module-registry.js
+
+          git add -A
+          git diff --cached --stat
+          if git diff --cached --quiet; then
+            echo "No retirement changes were staged; refusing to create an empty commit."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Remove Nature and Alien World views and data pipelines"
+          git push origin HEAD:main
+
+          # Request a fresh Pages build when the repository uses branch-based Pages.
+          # The source commit remains valid if Pages is not configured for this endpoint.
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/pages/builds" >/dev/null 2>&1 || true
