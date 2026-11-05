@@ -88,6 +88,31 @@ body{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset
 @media(orientation:landscape){#navButtons{bottom:calc(env(safe-area-inset-bottom) + clamp(14px,4vmin,20px))}}
 
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* Stacks Orb Hunt — a Scout-style, CSS-only sky atmosphere. Orbs and their hitboxes remain untouched. */
+#le-feature-library{
+  isolation:isolate;
+  background:linear-gradient(165deg,rgba(8,27,49,.74),rgba(13,39,65,.62) 48%,rgba(5,19,36,.78)) !important;
+}
+#le-feature-library::before{
+  content:"";
+  position:absolute;
+  inset:-6%;
+  z-index:0;
+  pointer-events:none;
+  opacity:.96;
+  background:
+    radial-gradient(ellipse 46% 19% at 14% 22%,rgba(202,222,241,.25) 0%,rgba(148,180,209,.14) 40%,transparent 76%),
+    radial-gradient(ellipse 48% 21% at 86% 32%,rgba(195,219,240,.22) 0%,rgba(126,164,197,.12) 43%,transparent 77%),
+    radial-gradient(ellipse 58% 24% at 28% 61%,rgba(183,208,231,.18) 0%,rgba(112,151,185,.10) 46%,transparent 79%),
+    radial-gradient(ellipse 52% 20% at 84% 79%,rgba(198,219,238,.19) 0%,rgba(124,160,190,.10) 44%,transparent 78%),
+    radial-gradient(ellipse 72% 33% at 50% 48%,rgba(35,83,122,.24) 0%,transparent 75%),
+    linear-gradient(180deg,rgba(8,28,49,.24),rgba(11,34,58,.12) 52%,rgba(4,17,32,.34));
+  filter:blur(22px);
+  transform:scale(1.06);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+}
+#le-feature-library .le-feature-library-panel{z-index:1}
 </style>
 <!-- V75 EARLY BOOT CURTAIN: self-contained and available before the service worker controls this page. -->
 <style id="le-early-boot-style">
