@@ -394,7 +394,7 @@ def main(argv: list[str] | None = None) -> int:
                 sys.path.insert(0, checker_path)
                 from checker_report_pdf import create_execution_failure_pdf
 
-                safe_view = args.view if args.view in {"nature", "alien-world"} else "unknown-view"
+                safe_view = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in args.view)[:80] or "unknown-view"
                 timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
                 failure_path = root / ".checker-archive" / safe_view / f"execution-failure-{timestamp}.pdf"
                 failure_pdf = create_execution_failure_pdf(

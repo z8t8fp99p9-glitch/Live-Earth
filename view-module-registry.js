@@ -137,7 +137,6 @@
       .le-feature-symbol{position:absolute;inset:0;display:grid;place-items:center;font-size:clamp(25px,7vw,36px);line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.7));pointer-events:none}
       .le-feature-orb[data-feature="clouds"] .orbShell,.le-feature-library-item[data-feature="clouds"] .orbShell,.le-feature-stage[data-feature="clouds"] .le-feature-stage-symbol{box-shadow:inset 2px 2px 5px #fff8,inset -3px -4px 8px #001329aa,0 0 18px #9ccfff55,0 5px 10px #000a}
       .le-feature-orb[data-feature="weather"] .orbShell,.le-feature-library-item[data-feature="weather"] .orbShell,.le-feature-stage[data-feature="weather"] .le-feature-stage-symbol{box-shadow:inset 2px 2px 5px #fff8,inset -3px -4px 8px #001329aa,0 0 18px #45b8ff66,0 5px 10px #000a}
-      .le-feature-orb[data-feature="alien-world"] .orbShell,.le-feature-library-item[data-feature="alien-world"] .orbShell,.le-feature-stage[data-feature="alien-world"] .le-feature-stage-symbol{box-shadow:inset 2px 2px 5px #e8fff866,inset -3px -4px 8px #081029aa,0 0 20px #a57aff66,0 5px 10px #000a}
       .le-feature-orb[data-feature="elevation"] .orbShell,.le-feature-library-item[data-feature="elevation"] .orbShell,.le-feature-stage[data-feature="elevation"] .le-feature-stage-symbol{box-shadow:inset 2px 2px 5px #fff8,inset -3px -4px 8px #111b0aaa,0 0 18px #6cce9c55,0 5px 10px #000a}
       .le-feature-orb[data-feature="earthquakes"] .orbShell,.le-feature-library-item[data-feature="earthquakes"] .orbShell,.le-feature-stage[data-feature="earthquakes"] .le-feature-stage-symbol{box-shadow:inset 2px 2px 5px #fff8,inset -3px -4px 8px #241007aa,0 0 18px #ff9b5c55,0 5px 10px #000a}
       .le-feature-orb[data-feature="traffic"] .orbShell,.le-feature-library-item[data-feature="traffic"] .orbShell,.le-feature-stage[data-feature="traffic"] .le-feature-stage-symbol{box-shadow:inset 2px 2px 5px #fff8,inset -3px -4px 8px #001d16aa,0 0 18px #58e9bd55,0 5px 10px #000a}
@@ -165,7 +164,6 @@
       .le-feature-library-item[aria-pressed="true"] .orbShell{border-color:rgba(231,250,255,.9);filter:drop-shadow(0 0 10px rgba(95,202,255,.58))}
       .le-feature-library-item[data-feature="clouds"] .orbShell{box-shadow:inset 2px 2px 5px #fff8,inset -3px -4px 8px #001329aa,0 0 18px #9ccfff55,0 5px 10px #000a}
       .le-feature-library-item[data-feature="weather"] .orbShell{box-shadow:inset 2px 2px 5px #fff8,inset -3px -4px 8px #001329aa,0 0 18px #45b8ff66,0 5px 10px #000a}
-      .le-feature-library-item[data-feature="alien-world"] .orbShell{box-shadow:inset 2px 2px 5px #e8fff866,inset -3px -4px 8px #081029aa,0 0 20px #a57aff66,0 5px 10px #000a}
       .le-feature-library-item[data-feature="elevation"] .orbShell{box-shadow:inset 2px 2px 5px #fff8,inset -3px -4px 8px #111b0aaa,0 0 18px #6cce9c55,0 5px 10px #000a}
       .le-feature-library-item[data-feature="earthquakes"] .orbShell{box-shadow:inset 2px 2px 5px #fff8,inset -3px -4px 8px #241007aa,0 0 18px #ff9b5c55,0 5px 10px #000a}
       .le-feature-library-item[data-feature="traffic"] .orbShell{box-shadow:inset 2px 2px 5px #fff8,inset -3px -4px 8px #001d16aa,0 0 18px #58e9bd55,0 5px 10px #000a}
@@ -665,7 +663,7 @@
 
       // A feature Orb replaces the currently active primary scene. Explicitly return
       // Moon/Sun/Earth Explorer to Home before painting the feature stage so an old
-      // celestial view can never remain visible behind Clouds, Weather, Alien World, etc.
+      // celestial view can never remain visible behind another active Feature View.
       const primaryManager = window.LiveEarthViewManager;
       const primaryView = primaryManager?.getActiveView?.() || "home";
       if (primaryView !== "home") primaryManager?.requestView?.("home");
@@ -787,7 +785,6 @@
     [
       { id: "clouds", title: "Clouds", shortLabel: "Clouds", symbol: "☁", description: "Cloud-view shell. The cloud data layer is not connected yet." },
       { id: "weather", title: "Weather", shortLabel: "Weather", symbol: "🌦", description: "Weather-view shell. Forecast and live weather data are not connected yet." },
-      { id: "alien-world", title: "Alien World", shortLabel: "Alien World", symbol: "🛸", description: "A new world-view shell for testing global feature navigation. Its world content is not connected yet." },
       { id: "elevation", title: "Elevation", shortLabel: "Elevation", symbol: "⛰", description: "Elevation-view shell. The terrain data layer is not connected yet." },
       { id: "earthquakes", title: "Earthquakes", shortLabel: "Quakes", symbol: "〰", description: "Earthquake-view shell. Live earthquake data is not connected yet." },
       { id: "traffic", title: "Traffic", shortLabel: "Traffic", symbol: "↗", description: "Traffic-view shell. The traffic data layer is not connected yet." }

@@ -1,11 +1,11 @@
-/* LIVE // EARTH V109 — clean global Feature Orb shell with a fresh Alien World view. */
+/* LIVE // EARTH V110 — Nature and Alien World feed Views retired. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v109-alien-view-reset";
-const CACHE_NAME = "live-earth-shell-v109-alien-view-reset";
+const BUILD_ID = "v110-retired-news-views";
+const CACHE_NAME = "live-earth-shell-v110-retired-news-views";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
- "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./view-manager.js","./view-module-registry.js","./stacks-feature-views.js","./alien-world/view/alien-world-view-controller.js","./sky-view-controller.js","./moon-view-controller.js","./moon-lunar-interface.js",
+ "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./view-manager.js","./view-module-registry.js","./stacks-feature-views.js","./sky-view-controller.js","./moon-view-controller.js","./moon-lunar-interface.js",
  "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js","./location-scanner.js",
  "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
  "./moon-sky-background-responsive.svg",
@@ -587,7 +587,7 @@ self.addEventListener("install", event => {
 });
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
-    // The old weekly Alien reader cache is obsolete. User IndexedDB and other
+    // The old weekly reader cache is obsolete. User IndexedDB and other
     // bounded optional resources remain untouched.
     await caches.delete("live-earth-weekly-reader-v1");
     await self.clients.claim();
@@ -841,7 +841,6 @@ function injectStartupGate(html) {
       if (!window.LiveEarthSkyViews) paths.push('./sky-view-controller.js');
       if (!window.__liveEarthMoonRendererInstalled) paths.push('./moon-view-controller.js');
       if (!window.__liveEarthStacksFeatureViewsInstalled) paths.push('./stacks-feature-views.js');
-      if (!window.__liveEarthAlienWorldViewInstalled) paths.push('./alien-world/view/alien-world-view-controller.js');
       if (!window.__liveEarthControlsInstalled || typeof window.liveEarthLocationAllowed !== 'function') paths.push('./orb-controls-v4.js');
       if (!window.__liveEarthLocationScannerInstalled) paths.push('./location-scanner.js');
       const brokenImages = [...document.querySelectorAll('#navButtons .orbImage')].filter(img => img.complete && img.naturalWidth === 0);
@@ -1076,7 +1075,7 @@ function injectStartupGate(html) {
     window.addEventListener('error', event => {
       if (event.target && event.target.tagName === 'SCRIPT') {
         const src = event.target.src || '';
-        const scriptPaths = ['./orb-controls-v4.js','./earth-mode-navigation.js','./view-manager.js','./view-module-registry.js','./stacks-feature-views.js','./alien-world/view/alien-world-view-controller.js','./sky-view-controller.js','./moon-view-controller.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
+        const scriptPaths = ['./orb-controls-v4.js','./earth-mode-navigation.js','./view-manager.js','./view-module-registry.js','./stacks-feature-views.js','./sky-view-controller.js','./moon-view-controller.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
         for (const path of scriptPaths) if (src.endsWith(path.slice(1))) knownBadPaths.push(path);
         sceneFailure = 'A required startup script failed to load.';
       } else if (event.error) {

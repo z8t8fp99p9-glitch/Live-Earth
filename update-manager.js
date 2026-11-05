@@ -3,7 +3,7 @@
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v109-alien-view-reset";
+  const BUILD_ID = "v110-retired-news-views";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
@@ -16,7 +16,6 @@
       window.LiveEarthViewModules.has("moon-lunar-interface") &&
       window.__liveEarthMoonRendererInstalled === true &&
       window.__liveEarthStacksFeatureViewsInstalled === true &&
-      window.__liveEarthAlienWorldViewInstalled === true &&
       window.LiveEarthSkyViews &&
       window.__liveEarthControlsInstalled &&
       window.__liveEarthLocationScannerInstalled &&
@@ -28,7 +27,7 @@
   function signalVerifiedStartup() {
     const controller = navigator.serviceWorker.controller;
     if (!controller || !readyControllersPresent()) return;
-    // The service worker and update manager must share the exact V109 build identity.
+    // The service worker and update manager must share the exact V110 build identity.
     controller.postMessage({ type: "LIVE_EARTH_APP_READY_V75", buildId: BUILD_ID });
   }
 
@@ -50,30 +49,6 @@
     });
     window.__liveEarthSunRendererLoadPromise = loading;
     return loading;
-  }
-
-  // Nature is an optional Stacks view. It loads only after the shared feature
-  // registry exists, and its failure must never block Home, Moon or app startup.
-  async function loadNatureView() {
-    if (window.__liveEarthNatureViewInstalled) return true;
-    if (!window.LiveEarthFeatureViews?.register) throw new Error("The Stacks feature registry is not ready yet.");
-    if (window.__liveEarthNatureViewLoadPromise) return window.__liveEarthNatureViewLoadPromise;
-    const loading = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = new URL("./nature/view/nature-view-controller.js", document.baseURI).href;
-      script.async = true;
-      script.onload = () => {
-        if (window.__liveEarthNatureViewInstalled) resolve(true);
-        else reject(new Error("The Nature controller loaded but did not register its view."));
-      };
-      script.onerror = () => reject(new Error("The Nature view file could not be loaded."));
-      document.head.appendChild(script);
-    });
-    window.__liveEarthNatureViewLoadPromise = loading;
-    return loading.catch(error => {
-      window.__liveEarthNatureViewLoadPromise = null;
-      throw error;
-    });
   }
 
   // Magazine is a deliberately blank full-screen Feature Orb view for now.
@@ -107,9 +82,6 @@
   }).catch(error => {
     window.__liveEarthSunRendererReady = false;
     console.warn("[LIVE // EARTH] Procedural Sun is not available yet; Home and Moon remain available.", error?.message || error);
-  });
-  loadNatureView().catch(error => {
-    console.warn("[LIVE // EARTH] Nature view is not available yet; Home, Moon and the existing Stacks views remain available.", error?.message || error);
   });
   loadMagazineView().catch(error => {
     console.warn("[LIVE // EARTH] Magazine view is not available yet; Home, Moon and the other Stacks views remain available.", error?.message || error);

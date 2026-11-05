@@ -1,5 +1,8 @@
 # LIVE // EARTH — Global Collection Manager
 
+> **Current status — 5 November 2026:** Nature and Alien World have been retired. The active source catalogue, assignments, View profiles and schedules are empty. The shared Global Manager and Global Collector remain available for a future, separately registered View. Older Nature/Alien World pipeline documents are historical records only.
+
+
 **Version:** 0.2.0  
 **Status:** Shared production assignment layer for every View.
 
@@ -29,8 +32,6 @@ From the repository root:
 
 ```bash
 python -m global_collection_manager.manager overview
-python -m global_collection_manager.manager assign --view nature
-python -m global_collection_manager.manager assign --view alien-world
 python -m global_collection_manager.manager assign-due
 ```
 

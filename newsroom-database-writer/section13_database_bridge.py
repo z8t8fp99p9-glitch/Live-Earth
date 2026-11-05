@@ -184,10 +184,15 @@ def write_section13_approved_posts(report: dict, *, repository_root=".") -> dict
     root = Path(repository_root).resolve()
     job = _manager_job(report)
     view_id = str(job["viewId"])
-    if view_id not in {"nature", "alien-world"}:
-        raise Section13DatabaseBridgeError("Unregistered View ID.")
+    if not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,62}", view_id):
+        raise Section13DatabaseBridgeError("Invalid View ID.")
     writer = _load_writer(root)
-    profile, db_path = writer._repository_contract(root, view_id, job)
+    try:
+        profile, db_path = writer._repository_contract(root, view_id, job)
+    except Exception as exc:
+        raise Section13DatabaseBridgeError(
+            f"View is not registered in Global Collection Manager: {exc}"
+        ) from exc
     approved = _approved_inputs(report, view_id)
     if not approved:
         return {

@@ -1,65 +1,6 @@
 {
   "schemaVersion": 1,
   "registryName": "LIVE // EARTH Global Collection Source Registry",
-  "registryVersion": "1.0.0",
-  "sources": [
-    {
-      "sourceId": "source-nasa",
-      "sourceName": "NASA",
-      "websiteUrl": "https://www.nasa.gov/",
-      "feedUrls": [
-        "https://www.nasa.gov/feeds/iotd-feed/",
-        "https://science.nasa.gov/feed/?science_org=19791%2C22453",
-        "https://www.nasa.gov/news-release/feed/",
-        "https://science.nasa.gov/feed/",
-        "https://www.nasa.gov/blogs/artemis/feed/",
-        "https://www.nasa.gov/blogs/spacestation/feed/"
-      ],
-      "connectorType": "rss_atom",
-      "sourceStatus": "enabled",
-      "checkerPolicyRef": "nasa-official-federal-source-text-v1",
-      "lastChecked": null,
-      "notes": "Collection catalogue entry only. Global Checker remains the rights/provenance authority."
-    },
-    {
-      "sourceId": "source-noaa-ocean-service",
-      "sourceName": "NOAA — National Ocean Service",
-      "websiteUrl": "https://oceanservice.noaa.gov/",
-      "feedUrls": [
-        "https://oceanservice.noaa.gov/rss/oceanfacts.xml",
-        "https://oceanservice.noaa.gov/rss/nosnews.xml"
-      ],
-      "connectorType": "rss",
-      "sourceStatus": "enabled",
-      "checkerPolicyRef": "noaa-ocean-service-educational-government-v1",
-      "lastChecked": null,
-      "notes": "Assigned to Nature through Global Collection Manager; rights remain with Global Checker."
-    },
-    {
-      "sourceId": "source-usgs-national-news",
-      "sourceName": "USGS — National News Releases",
-      "websiteUrl": "https://www.usgs.gov/",
-      "feedUrls": [
-        "https://www.usgs.gov/news/national-news-release/feed"
-      ],
-      "connectorType": "rss",
-      "sourceStatus": "enabled",
-      "checkerPolicyRef": "usgs-national-news-educational-government-v1",
-      "lastChecked": null,
-      "notes": "Assigned to Nature through Global Collection Manager; rights remain with Global Checker."
-    },
-    {
-      "sourceId": "source-mongabay",
-      "sourceName": "Mongabay",
-      "websiteUrl": "https://news.mongabay.com/",
-      "feedUrls": [
-        "https://news.mongabay.com/feed/"
-      ],
-      "connectorType": "rss",
-      "sourceStatus": "enabled",
-      "checkerPolicyRef": "mongabay-per-item-open-license-required-v2",
-      "lastChecked": null,
-      "notes": "Exact article licence and author checks remain with Global Checker."
-    }
-  ]
+  "registryVersion": "1.1.0-no-active-view-sources",
+  "sources": []
 }

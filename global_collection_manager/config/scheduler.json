@@ -5,11 +5,11 @@
   "manualRefreshEnabled": true,
   "manualRefreshRequiresAuthorization": true,
   "maxRetries": 2,
-  "retryBackoffSeconds": [60, 300],
+  "retryBackoffSeconds": [
+    60,
+    300
+  ],
   "overlapPolicy": "skip-duplicate-active-view-job",
-  "views": {
-    "nature": {"enabled": true, "cadence": "hourly", "anchorMinuteUtc": 15},
-    "alien-world": {"enabled": true, "cadence": "hourly", "anchorMinuteUtc": 45}
-  },
+  "views": {},
   "note": "Schedules are generic and keyed by View ID. Every assigned job targets the single shared Global Collector. This Manager does not modify or trigger existing workflows."
 }

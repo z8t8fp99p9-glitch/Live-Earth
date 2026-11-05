@@ -1,3 +1,6 @@
+CURRENT STATUS — 5 NOVEMBER 2026
+The Nature and Alien World Views, their Global Manager source assignments, their publisher workflows, and their database caches are retired. This file describes the former setup and is preserved as history only. Do not use its old upload/workflow instructions to reactivate those Views.
+
 LIVE // EARTH — GLOBAL-ONLY COLLECTION REPAIR
 Prepared: 3 November 2026
 Repository: z8t8fp99p9-glitch/Live-Earth

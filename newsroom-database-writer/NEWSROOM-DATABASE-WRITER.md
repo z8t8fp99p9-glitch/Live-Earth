@@ -14,12 +14,11 @@ Image Engine-approved JPEGs remain private under that View's cache until the mat
 
 ## Isolation and retention
 
-- Nature: `.publisher-data/nature/nature.sqlite3`.
-- Alien World: `.publisher-data/alien-world/alien-world.sqlite3`.
-- Every additional View gets its own Manager-registered directory and SQLite path; no View name is added to Writer code.
-- Retention is driven by `retentionDays` in the Manager profile (32 days for the current Views). Cleanup is restricted to the current `view_id`; other View records are not affected.
-- There is no numerical story-count cap.
-- Raw source records, raw article text, HTML and evidence excerpts are not persisted.
+- The Writer resolves a destination only from an enabled Global Manager View profile.
+- No Nature or Alien World database profile is currently registered.
+- A future View must receive its own Manager-owned database identity and path under `.publisher-data/<viewId>/`.
+- The Writer never resets, drops or adopts an unowned database; retention is applied only inside the selected View database.
+- There is no numerical story-count cap. Raw source records, raw article text, HTML and evidence excerpts are not persisted.
 
 ## Python entry point
 

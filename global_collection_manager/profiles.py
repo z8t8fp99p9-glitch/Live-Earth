@@ -61,8 +61,6 @@ class ViewProfiles:
             profile["destinationDatabaseId"] = db_id
             self.profiles[vid] = profile
 
-        if not self.profiles:
-            raise ManagerError("At least one View Collection Profile must be registered.")
 
     def get(self, view_id: str) -> dict[str, Any]:
         if view_id not in self.profiles:
