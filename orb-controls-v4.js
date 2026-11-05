@@ -6,6 +6,197 @@
   if (!buttons.length || window.__liveEarthControlsInstalled) return;
   window.__liveEarthControlsInstalled = true;
 
+  // Global Orb contract: Main and active Feature dock share one diameter;
+  // Hunter Orbs are 72% of that diameter. All diameters use the shorter viewport
+  // side (vmin), and glass rings/glows scale in em units from each Orb diameter.
+  // Bottom offsets are a separate layout measurement and never affect Orb size.
+  const orbBottomSpacingStyle = document.createElement('style');
+  orbBottomSpacingStyle.id = 'le-orb-bottom-spacing';
+  orbBottomSpacingStyle.textContent = `
+    /* Bottom placement only — never used to size an Orb. */
+    html body #navButtons {
+      bottom: calc(env(safe-area-inset-bottom) + clamp(16px, 4.5vmin, 24px)) !important;
+    }
+    @media (orientation: landscape) {
+      html body #navButtons {
+        bottom: calc(env(safe-area-inset-bottom) + clamp(7px, 2vmin, 10px)) !important;
+      }
+    }
+    html body #le-feature-dock {
+      bottom: calc(env(safe-area-inset-bottom) + clamp(12px, 4vmin, 19px)) !important;
+    }
+    @media (orientation: landscape) {
+      html body #le-feature-dock {
+        bottom: calc(env(safe-area-inset-bottom) + clamp(7px, 2vmin, 11px)) !important;
+      }
+    }
+
+    /* One short-side sizing system:
+       Main = 14.2% of the shorter viewport side, bounded 49–76px.
+       Active Feature dock = exactly the same diameter.
+       Hunter = exactly 72% of Main (same short-side basis and scaled bounds). */
+    :root {
+      --le-orb-main-size: clamp(49px, 14.2vmin, 76px);
+      --le-orb-hunter-size: clamp(35.28px, 10.224vmin, 54.72px);
+      --le-orb-size-primary: var(--le-orb-main-size) !important;
+      --le-orb-size-dock: var(--le-orb-main-size) !important;
+      --le-orb-size-feature: var(--le-orb-hunter-size) !important;
+    }
+
+    html body #navButtons .orbShell,
+    html body #le-feature-dock .orbShell {
+      width: var(--le-orb-main-size) !important;
+      height: auto !important;
+      aspect-ratio: 1 / 1 !important;
+      flex: 0 0 auto !important;
+      font-size: var(--le-orb-main-size) !important;
+    }
+
+    html body #le-feature-library .le-feature-library-item .orbShell {
+      width: var(--le-orb-hunter-size) !important;
+      height: auto !important;
+      aspect-ratio: 1 / 1 !important;
+      flex: 0 0 auto !important;
+      font-size: var(--le-orb-hunter-size) !important;
+    }
+
+    /* Shared circular glass body and proportional outer luminous ring. */
+    html body #navButtons .orbShell,
+    html body #le-feature-dock .orbShell,
+    html body #le-feature-library .le-feature-library-item .orbShell {
+      box-sizing: border-box !important;
+      border: .022em solid rgba(220,245,255,.42) !important;
+      border-radius: 50% !important;
+      background: linear-gradient(145deg,rgba(255,255,255,.16),rgba(94,149,190,.045) 42%,rgba(0,5,15,.42)) !important;
+      box-shadow:
+        inset .025em .025em .07em rgba(255,255,255,.38),
+        inset -.04em -.06em .13em rgba(0,0,0,.62),
+        0 .07em .15em rgba(0,0,0,.60),
+        0 0 0 .018em rgba(160,220,255,.10) !important;
+      overflow: visible !important;
+      backdrop-filter: blur(.09em) !important;
+      -webkit-backdrop-filter: blur(.09em) !important;
+      filter:
+        drop-shadow(0 .07em .13em rgba(0,0,0,.62))
+        drop-shadow(0 0 .10em var(--orb-tint, var(--le-hunter-glow, rgba(125,210,255,.22)))) !important;
+    }
+
+    /* Same spherical highlight and inner glass rim in all three Orb scenes. */
+    html body #navButtons .orbShell::before,
+    html body #le-feature-dock .orbShell::before,
+    html body #le-feature-library .le-feature-library-item .orbShell::before {
+      content: "" !important;
+      position: absolute !important;
+      inset: 1.5% !important;
+      z-index: 2 !important;
+      border-radius: 50% !important;
+      pointer-events: none !important;
+      background:
+        radial-gradient(ellipse at 28% 13%,rgba(255,255,255,.54),transparent 23%),
+        radial-gradient(ellipse at 72% 88%,var(--orb-tint-soft, rgba(130,210,255,.10)),transparent 38%),
+        linear-gradient(138deg,rgba(255,255,255,.22),rgba(255,255,255,.035) 25%,transparent 44%,rgba(255,255,255,.02) 68%,rgba(255,255,255,.18)) !important;
+      box-shadow:
+        inset .02em .02em .055em rgba(255,255,255,.66),
+        inset -.035em -.055em .10em rgba(0,0,0,.52) !important;
+    }
+
+    html body #navButtons .orbShell::after,
+    html body #le-feature-dock .orbShell::after,
+    html body #le-feature-library .le-feature-library-item .orbShell::after {
+      content: "" !important;
+      position: absolute !important;
+      z-index: 3 !important;
+      left: 17% !important;
+      top: 7% !important;
+      width: 37% !important;
+      height: 12% !important;
+      border-radius: 50% !important;
+      transform: rotate(-34deg) !important;
+      background: linear-gradient(90deg,transparent,rgba(255,255,255,.92),rgba(255,255,255,.20),transparent) !important;
+      filter: blur(.015em) !important;
+      opacity: .82 !important;
+      pointer-events: none !important;
+    }
+
+    html body #navButtons .orbImage,
+    html body #le-feature-dock .orbImage,
+    html body #le-feature-library .le-feature-library-item .orbImage {
+      display: block !important;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: contain !important;
+      border-radius: 50% !important;
+    }
+
+    html body #navButtons .orbShine,
+    html body #le-feature-dock .orbShine {
+      position: absolute !important;
+      inset: 1% !important;
+      z-index: 4 !important;
+      border-radius: 50% !important;
+      pointer-events: none !important;
+      mix-blend-mode: screen !important;
+      opacity: .20 !important;
+      box-shadow: inset 0 0 0 .018em rgba(255,255,255,.20) !important;
+    }
+
+    /* Keep the feature symbol above the shared glass reflections. */
+    html body #le-feature-library .le-feature-library-item .le-feature-symbol {
+      z-index: 4 !important;
+    }
+
+    /* Retain each Orb's own colour while keeping the glow proportional. */
+    html body #le-feature-library .le-feature-library-item[data-feature="clouds"],
+    html body #le-feature-dock .le-feature-orb[data-feature="clouds"] { --le-hunter-glow: rgba(156,207,255,.34); }
+    html body #le-feature-library .le-feature-library-item[data-feature="weather"],
+    html body #le-feature-dock .le-feature-orb[data-feature="weather"] { --le-hunter-glow: rgba(69,184,255,.40); }
+    html body #le-feature-library .le-feature-library-item[data-feature="elevation"],
+    html body #le-feature-dock .le-feature-orb[data-feature="elevation"] { --le-hunter-glow: rgba(108,206,156,.34); }
+    html body #le-feature-library .le-feature-library-item[data-feature="earthquakes"],
+    html body #le-feature-dock .le-feature-orb[data-feature="earthquakes"] { --le-hunter-glow: rgba(255,155,92,.36); }
+    html body #le-feature-library .le-feature-library-item[data-feature="traffic"],
+    html body #le-feature-dock .le-feature-orb[data-feature="traffic"] { --le-hunter-glow: rgba(88,233,189,.36); }
+
+    html body #navButtons .orbButton[aria-pressed="true"] .orbShell,
+    html body #le-feature-dock .orbButton[aria-pressed="true"] .orbShell,
+    html body #le-feature-library .le-feature-library-item[aria-pressed="true"] .orbShell {
+      border-color: rgba(235,250,255,.90) !important;
+      box-shadow:
+        inset .025em .025em .07em rgba(255,255,255,.62),
+        inset -.04em -.06em .12em rgba(0,0,0,.54),
+        0 0 0 .028em var(--orb-tint, var(--le-hunter-glow, rgba(125,210,255,.36))),
+        0 0 .22em var(--orb-tint, var(--le-hunter-glow, rgba(125,210,255,.36))),
+        0 .08em .17em rgba(0,0,0,.58) !important;
+      filter:
+        brightness(1.06) saturate(1.08)
+        drop-shadow(0 .07em .13em rgba(0,0,0,.58))
+        drop-shadow(0 0 .15em var(--orb-tint, var(--le-hunter-glow, rgba(125,210,255,.36)))) !important;
+    }
+
+    /* Location and Stacks keep their signature red and cyan active rings. */
+    html body #le-feature-dock .orbButton[data-view="location"][aria-pressed="true"] .orbShell,
+    html body #navButtons .orbButton[data-view="location"][aria-pressed="true"] .orbShell {
+      border-color: rgba(255,170,180,.94) !important;
+      box-shadow:
+        inset .025em .025em .07em rgba(255,255,255,.68),
+        inset -.04em -.06em .12em rgba(0,0,0,.54),
+        0 0 0 .028em rgba(255,50,80,.54),
+        0 0 .24em rgba(255,35,75,.62),
+        0 .08em .17em rgba(0,0,0,.58) !important;
+    }
+    html body #le-feature-dock .orbButton[data-view="stacks"][aria-pressed="true"] .orbShell,
+    html body #navButtons .orbButton[data-view="stacks"][aria-pressed="true"] .orbShell {
+      border-color: rgba(190,255,255,.92) !important;
+      box-shadow:
+        inset .025em .025em .07em rgba(255,255,255,.68),
+        inset -.04em -.06em .12em rgba(0,0,0,.54),
+        0 0 0 .028em rgba(85,245,255,.42),
+        0 0 .24em rgba(0,217,255,.60),
+        0 .08em .17em rgba(0,0,0,.58) !important;
+    }
+  `;
+  (document.head || document.documentElement).appendChild(orbBottomSpacingStyle);
+
   const status = document.querySelector('#status');
   let selected = 'home';
   let locationEnabled = false;
