@@ -95,6 +95,28 @@
     });
   }
 
+  async function loadCelestialEngineFeatureViews() {
+    if (window.__liveEarthCelestialEngineFeatureViewsInstalled) return true;
+    if (!window.LiveEarthFeatureViews?.register) throw new Error("The Feature Orb registry is not ready yet.");
+    if (window.__liveEarthCelestialEngineFeatureViewsLoadPromise) return window.__liveEarthCelestialEngineFeatureViewsLoadPromise;
+    const loading = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = new URL("./celestial-engine-feature-views.js", document.baseURI).href;
+      script.async = true;
+      script.onload = () => {
+        if (window.__liveEarthCelestialEngineFeatureViewsInstalled) resolve(true);
+        else reject(new Error("The Celestial Engine Feature Orb controller loaded but did not register its workspaces."));
+      };
+      script.onerror = () => reject(new Error("The Celestial Engine Feature Orb controller could not be loaded."));
+      document.head.appendChild(script);
+    });
+    window.__liveEarthCelestialEngineFeatureViewsLoadPromise = loading;
+    return loading.catch(error => {
+      window.__liveEarthCelestialEngineFeatureViewsLoadPromise = null;
+      throw error;
+    });
+  }
+
   loadProceduralSun().then(() => {
     window.__liveEarthSunRendererReady = true;
     signalVerifiedStartup();
@@ -110,6 +132,10 @@
     .then(() => loadEngineFeatureViews())
     .catch(error => {
       console.warn("[LIVE // EARTH] Editorial and Image Engine Feature Orbs are not available yet; Home, Moon and the other Stacks views remain available.", error?.message || error);
+    })
+    .then(() => loadCelestialEngineFeatureViews())
+    .catch(error => {
+      console.warn("[LIVE // EARTH] Celestial Engine inspection workspaces are not available yet; existing app views remain available.", error?.message || error);
     });
 
   window.addEventListener("live-earth-scene-ready", signalVerifiedStartup);
