@@ -15,7 +15,7 @@
 
   const definitions = [
     { id:'celestial-earth-engine', key:'earth', title:'Earth Engine', shortLabel:'Earth Engine', symbol:'🌎', subtitle:'The reusable Earth renderer, surface, axial tilt and sidereal rotation.', theme:'earth' },
-    { id:'celestial-moon-engine', key:'moon', title:'Moon Engine', shortLabel:'Moon Engine', symbol:'🌕', subtitle:'The lunar surface, orbital motion, synchronous rotation and changing illumination.', theme:'moon' },
+    { id:'celestial-moon-engine', key:'moon', title:'Moon Engine', shortLabel:'Moon Engine', symbol:'🌕', subtitle:'The lunar surface, synchronous rotation and changing illumination in deep space.', theme:'moon' },
     { id:'celestial-sun-engine', key:'sun', title:'Sun Engine', shortLabel:'Sun Engine', symbol:'☀️', subtitle:'The solar surface renderer, rotation and reusable directional-light bridge.', theme:'sun' }
   ];
   const scriptPromises = new Map();
@@ -55,6 +55,37 @@
       @media(orientation:landscape){.le-celestial-main{inset:calc(env(safe-area-inset-top) + 42px) 18px calc(env(safe-area-inset-bottom) + 83px);display:grid;grid-template-columns:minmax(190px,.75fr) minmax(260px,1.5fr);grid-template-rows:auto auto auto 1fr auto;column-gap:22px;row-gap:5px;max-width:1000px;margin:0 auto}.le-celestial-eyebrow,.le-celestial-title,.le-celestial-subtitle,.le-celestial-controls,.le-celestial-status{grid-column:1;justify-self:center}.le-celestial-title{align-self:end}.le-celestial-subtitle{max-width:280px}.le-celestial-stage{grid-column:2;grid-row:1 / span 5;width:100%;height:100%;max-height:none;min-height:0;margin:0}.le-celestial-foot{bottom:calc(env(safe-area-inset-bottom) + 54px)}}
       @media(max-height:520px) and (orientation:landscape){.le-celestial-main{inset:calc(env(safe-area-inset-top) + 30px) 14px calc(env(safe-area-inset-bottom) + 72px)}.le-celestial-title{font-size:24px}.le-celestial-subtitle{font-size:9px}.le-celestial-controls button{padding:6px 10px;min-height:27px}.le-celestial-foot{display:none}}
       @media(prefers-reduced-motion:reduce){.le-celestial-preview *{scroll-behavior:auto!important;transition:none!important}}
+      /* Moon inspection: immersive space canvas, with no dashboard card or headings. */
+      .le-celestial-preview--moon{background:#02040a}
+      .le-celestial-preview--moon:before{
+        background-color:#02040a;
+        background-image:
+          radial-gradient(1.4px 1.4px at 8% 12%,#ffffffcc 98%,transparent),
+          radial-gradient(1px 1px at 19% 28%,#d9e9ff99 98%,transparent),
+          radial-gradient(1.2px 1.2px at 31% 9%,#ffffffaa 98%,transparent),
+          radial-gradient(1px 1px at 43% 22%,#d9e9ff88 98%,transparent),
+          radial-gradient(1.5px 1.5px at 58% 11%,#ffffffbb 98%,transparent),
+          radial-gradient(1px 1px at 73% 25%,#d9e9ff99 98%,transparent),
+          radial-gradient(1.3px 1.3px at 89% 14%,#ffffffaa 98%,transparent),
+          radial-gradient(1px 1px at 13% 49%,#d9e9ff88 98%,transparent),
+          radial-gradient(1.4px 1.4px at 27% 68%,#ffffff99 98%,transparent),
+          radial-gradient(1px 1px at 41% 83%,#d9e9ff88 98%,transparent),
+          radial-gradient(1.2px 1.2px at 65% 71%,#ffffffaa 98%,transparent),
+          radial-gradient(1px 1px at 82% 57%,#d9e9ff99 98%,transparent),
+          radial-gradient(1.4px 1.4px at 94% 86%,#ffffffaa 98%,transparent),
+          radial-gradient(ellipse at 50% 45%,#111a2a22 0,transparent 60%);
+      }
+      .le-celestial-preview--moon .le-celestial-head,
+      .le-celestial-preview--moon .le-celestial-eyebrow,
+      .le-celestial-preview--moon .le-celestial-title,
+      .le-celestial-preview--moon .le-celestial-subtitle,
+      .le-celestial-preview--moon .le-celestial-state,
+      .le-celestial-preview--moon .le-celestial-controls,
+      .le-celestial-preview--moon .le-celestial-status,
+      .le-celestial-preview--moon .le-celestial-foot{display:none!important}
+      .le-celestial-preview--moon .le-celestial-main{inset:0;display:block;min-height:0;margin:0;padding:0;}
+      .le-celestial-preview--moon .le-celestial-stage{position:absolute;inset:0;width:100%;height:100%;max-width:none;max-height:none;min-width:0;min-height:0;margin:0;border:0;border-radius:0;background:transparent;box-shadow:none;overflow:hidden;}
+      .le-celestial-preview--moon .le-celestial-renderer{position:absolute;inset:0;width:100%;height:100%;}
     `;
     document.head.appendChild(style);styleReady=true;
   }

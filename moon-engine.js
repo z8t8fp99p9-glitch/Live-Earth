@@ -84,18 +84,24 @@
   async function makeInstance(container, options = {}) {
     if (!container || !container.appendChild) throw new TypeError('Moon Engine needs a container element.');
     const T=await import(THREE_URL);
+    const previewMode=options.preview!==false;
     const renderer=new T.WebGLRenderer({antialias:true,alpha:true,powerPreference:'low-power'});
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));renderer.setClearColor(0x000000,0);renderer.outputColorSpace=T.SRGBColorSpace;
-    renderer.domElement.className='le-celestial-engine-canvas';renderer.domElement.setAttribute('aria-label','Interactive three-dimensional Moon and orbit preview');
+    renderer.domElement.className='le-celestial-engine-canvas';renderer.domElement.setAttribute('aria-label','Interactive three-dimensional Moon in deep-space preview');
     renderer.domElement.style.cssText='display:block;width:100%;height:100%;touch-action:none;cursor:grab;';container.appendChild(renderer.domElement);
     const scene=new T.Scene();
-    const camera=new T.PerspectiveCamera(39,1,.1,50);camera.position.set(0,1.05,6.25);
+    const camera=new T.PerspectiveCamera(39,1,.1,50);camera.position.set(0,0,previewMode?3.45:6.25);camera.lookAt(0,0,0);
     const rig=new T.Group();scene.add(rig);
-    const orbitGeometry=new T.RingGeometry(2.16,2.18,192);const orbitMaterial=new T.MeshBasicMaterial({color:0x7592b8,transparent:true,opacity:.34,side:T.DoubleSide});
-    const orbit=new T.Mesh(orbitGeometry,orbitMaterial);orbit.rotation.x=Math.PI/2;rig.add(orbit);
-    const earthGeometry=new T.SphereGeometry(.22,48,32);const earthMaterial=new T.MeshPhongMaterial({color:0x226ca0,emissive:0x06192c,shininess:18});
-    const earthReference=new T.Mesh(earthGeometry,earthMaterial);rig.add(earthReference);
-    const moonGeometry=new T.SphereGeometry(.72,96,64);const moonTexture=makeMoonTexture(T);
+    // Inspection mode is an uncluttered Moon sphere. The reusable shared engine
+    // retains the full Earth/Moon orbital scene for a later production connection.
+    const orbitGeometry=previewMode?null:new T.RingGeometry(2.16,2.18,192);
+    const orbitMaterial=previewMode?null:new T.MeshBasicMaterial({color:0x7592b8,transparent:true,opacity:.34,side:T.DoubleSide});
+    const orbit=previewMode?null:new T.Mesh(orbitGeometry,orbitMaterial);
+    if(orbit){orbit.rotation.x=Math.PI/2;rig.add(orbit);}
+    const earthGeometry=previewMode?null:new T.SphereGeometry(.22,48,32);
+    const earthMaterial=previewMode?null:new T.MeshPhongMaterial({color:0x226ca0,emissive:0x06192c,shininess:18});
+    const earthReference=previewMode?new T.Object3D():new T.Mesh(earthGeometry,earthMaterial);rig.add(earthReference);
+    const moonGeometry=new T.SphereGeometry(previewMode ? 0.88 : 0.72,96,64);const moonTexture=makeMoonTexture(T);
     const moonMaterial=new T.MeshStandardMaterial({map:moonTexture,roughness:.98,metalness:0});
     const moon=new T.Mesh(moonGeometry,moonMaterial);rig.add(moon);
     const ambient=new T.HemisphereLight(0xb8c9df,0x141923,.28);scene.add(ambient);
@@ -117,12 +123,24 @@
     renderer.domElement.addEventListener('pointerdown',down);renderer.domElement.addEventListener('pointermove',move);renderer.domElement.addEventListener('pointerup',up);renderer.domElement.addEventListener('pointercancel',up);
 
     function updateObjects(){
-      const p=lunarPosition(simDate);moon.position.set(p.x,p.y,p.z);moon.lookAt(earthReference.position);
-      const toEarth=new T.Vector3().subVectors(earthReference.position,moon.position).normalize();
-      const toSun=sunlight.position.clone().sub(moon.position).normalize();
-      const illumination=Math.max(0,Math.min(1,(1-toSun.dot(toEarth))*.5));
+      const p=lunarPosition(simDate);
       const age=((simDate.getTime()-Date.UTC(2000,0,6,18,14))/86400000%SYNODIC_MONTH_DAYS+SYNODIC_MONTH_DAYS)%SYNODIC_MONTH_DAYS;
       const waxing=age<SYNODIC_MONTH_DAYS/2;
+      let toEarth;
+      if(previewMode){
+        // Keep the Moon centred for the immersive inspection view while its
+        // synchronous spin and lunar phase continue to follow the orbital date.
+        moon.position.set(0,0,0);
+        moon.rotation.set(0,Math.atan2(-p.x,-p.z),0);
+        const phaseAngle=2*Math.PI*age/SYNODIC_MONTH_DAYS;
+        sunlight.position.set(Math.sin(phaseAngle)*8,0,Math.cos(phaseAngle)*8);
+        toEarth=new T.Vector3(0,0,1);
+      }else{
+        moon.position.set(p.x,p.y,p.z);moon.lookAt(earthReference.position);
+        toEarth=new T.Vector3().subVectors(earthReference.position,moon.position).normalize();
+      }
+      const toSun=sunlight.position.clone().sub(moon.position).normalize();
+      const illumination=Math.max(0,Math.min(1,(1-toSun.dot(toEarth))*.5));
       latest={date:simDate.toISOString(),phase:phaseName(illumination,waxing),illumination,ageDays:age,orbitalPosition:{x:p.x,y:p.y,z:p.z},siderealMonthDays:SIDEREAL_MONTH_DAYS};
     }
     function frame(now){if(disposed)return;raf=requestAnimationFrame(frame);if(document.hidden){previous=now;return;}const delta=previous?Math.min(80,now-previous):0;previous=now;if(!paused&&delta>0)simDate=new Date(simDate.getTime()+delta*timeScale*speed);updateObjects();renderer.render(scene,camera);}
@@ -136,7 +154,7 @@
       getState(){return Object.freeze({...latest,speed,paused});},
       getObject3D(){return rig;},
       attach(nextContainer){if(!nextContainer?.appendChild)throw new TypeError('A container element is required.');if(renderer.domElement.parentElement!==nextContainer)nextContainer.appendChild(renderer.domElement);resizeObserver?.unobserve(activeContainer);activeContainer=nextContainer;resizeObserver?.observe(activeContainer);resize();},
-      destroy(){if(disposed)return;disposed=true;cancelAnimationFrame(raf);resizeObserver?.disconnect();window.removeEventListener('resize',resize);renderer.domElement.removeEventListener('pointerdown',down);renderer.domElement.removeEventListener('pointermove',move);renderer.domElement.removeEventListener('pointerup',up);renderer.domElement.removeEventListener('pointercancel',up);renderer.dispose();orbitGeometry.dispose();orbitMaterial.dispose();earthGeometry.dispose();earthMaterial.dispose();moonGeometry.dispose();moonTexture.dispose();moonMaterial.dispose();renderer.domElement.remove();}
+      destroy(){if(disposed)return;disposed=true;cancelAnimationFrame(raf);resizeObserver?.disconnect();window.removeEventListener('resize',resize);renderer.domElement.removeEventListener('pointerdown',down);renderer.domElement.removeEventListener('pointermove',move);renderer.domElement.removeEventListener('pointerup',up);renderer.domElement.removeEventListener('pointercancel',up);renderer.dispose();orbitGeometry?.dispose();orbitMaterial?.dispose();earthGeometry?.dispose();earthMaterial?.dispose();moonGeometry.dispose();moonTexture.dispose();moonMaterial.dispose();renderer.domElement.remove();}
     };
   }
 
