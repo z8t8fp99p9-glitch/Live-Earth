@@ -14,21 +14,33 @@ WHAT THIS FIX DOES
 - Makes both Publishers read only their own Checker-approved Newsroom rows.
 - Applies Manager-profile retention (currently 32 days) without resetting existing data.
 
-UPLOAD
-Upload this exact file, LIVE_EARTH_MAIN_UPLOAD.zip, to the ROOT of the repository on branch main. Do not unpack it. The ZIP Extractor validates UPLOAD_MANIFEST.json, applies files and delete paths, then removes the uploaded ZIP.
+UPLOAD — CURRENT RULE
+- Upload one ZIP file to the repository ROOT on branch main. The ZIP can have any filename, but its extension must be .zip.
+- Do NOT unpack the ZIP before uploading it.
+- Keep exactly one root-level .zip file in the repository for each upload attempt. If a failed attempt leaves a ZIP behind, remove that old ZIP before retrying.
+- The ZIP must contain UPLOAD_MANIFEST.json at its ROOT. The manifest must use schemaVersion 1 and list every payload file with its path, byte size and SHA-256 checksum.
+- The manifest must also contain a meaningful, task-specific one-line commitTitle (1–100 characters). The extractor uses that exact title for the GitHub commit. Do not use generic titles such as "Update files" or "Upload ZIP".
+- The extractor validates the complete package before applying any file or deletion. It removes the uploaded ZIP only after successful validation and application.
+- Payloads may not write to .git/ or .github/, overwrite UPLOAD_MANIFEST.json, or add another .zip file. Keep all existing path, size, checksum and symbolic-link protections.
 
-MANUAL WORKFLOW FILES
-The extractor refuses .github/ paths. After the ZIP Extractor completes, replace these two workflow files using the matching complete templates in the repository:
+WORKFLOW BOOTSTRAP / WORKFLOW CHANGES
+The extractor intentionally blocks .github/ paths, including its own workflow file. Therefore the first change to the extractor, and any later workflow change, must be installed manually at:
+.github/workflows/zip-extract-auto-upload.yml
+Use the complete approved workflow YAML and make a separate GitHub commit with a meaningful title describing that workflow change. Once installed, ordinary ZIP payloads can use any root-level .zip filename.
+
+MANIFEST COMMIT TITLE EXAMPLE
+"Repair Location Orb GPS activation and update its tests"
+Choose a title that describes the actual files and task in that ZIP. The ZIP's manifest commitTitle is the source of the automatic commit title.
+
+MANUAL WORKFLOW FILES — HISTORICAL COLLECTION NOTE
+The extractor refuses .github/ paths. The old Nature/Alien workflow-template instructions below belong to the retired collection setup and must not be used to reactivate those Views:
 1. .github/workflows/nature-publisher.yml ← nature/publisher/NATURE_PUBLISHER_WORKFLOW_UPDATE.yml
 2. .github/workflows/alien-world-publisher.yml ← alien-world/publisher/ALIEN_WORLD_PUBLISHER_WORKFLOW_UPDATE.yml
 
-The workflow templates keep the existing hourly schedules, separate cache paths, output commits and Alien World Pages rebuild.
-
-AUTOMATIC ZIP EXTRACTOR COMMIT TITLE
-Apply LIVE // EARTH Main Upload
+The historical templates kept separate cache paths, output commits and an Alien World Pages rebuild.
 
 SAFETY
-No database is reset, dropped or replaced. Existing ownership metadata is checked. Only the current View's expired rows are pruned according to its Manager retention setting. No Home/Moon/Sun/Orb/UI, offline, service-worker, IndexedDB, saved-PDF or local recovery files are changed.
+No database is reset, dropped or replaced. Existing ownership metadata is checked. Only the current View's expired rows are pruned according to its Manager retention setting. No Home/Moon/Sun/Orb/UI, offline, service-worker, IndexedDB, saved-PDF or local recovery files are changed by the collection repair described above.
 
 VALIDATION
 - Python compile check passed for the shared Manager, Collector, Newsroom Writer, Orchestrator, both Publisher adapters, and Global Checker dispatch modules (local Python 3.13.5).
