@@ -1,10 +1,10 @@
-name: LIVE // EARTH ZIP Extractor
+name: LIVE // EARTH Manifest-Validated ZIP Extractor
 
 on:
   push:
     branches: [main]
     paths:
-      - "LIVE_EARTH_MAIN_UPLOAD.zip"
+      - "*.zip"
 
 permissions:
   contents: write
@@ -30,12 +30,17 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Validate and apply the one-file ZIP upload
+      - name: Validate and apply one manifest-validated ZIP upload
+        env:
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.sha }}
         shell: bash
         run: |
           python - <<'PY'
           import hashlib
           import json
+          import os
+          import re
           import shutil
           import stat
           import subprocess
@@ -44,88 +49,255 @@ jobs:
           from pathlib import Path, PurePosixPath
 
           repo = Path.cwd().resolve()
-          archive = repo / "LIVE_EARTH_MAIN_UPLOAD.zip"
+          before = os.environ.get("PUSH_BEFORE", "")
+          after = os.environ.get("PUSH_AFTER", "")
+          zero_sha = "0" * 40
 
-          if not archive.is_file():
-              raise SystemExit("Upload ZIP not found at repository root.")
+          # Only a root-level ZIP changed by this push can be the upload.
+          if before and before != zero_sha and after:
+              changed_result = subprocess.run(
+                  ["git", "diff", "--name-only", "--diff-filter=AM", before, after],
+                  check=True, capture_output=True, text=True,
+              )
+              changed_paths = changed_result.stdout.splitlines()
+          else:
+              changed_paths = [
+                  p.name for p in repo.iterdir()
+                  if p.is_file() and p.name.endswith(".zip")
+              ]
+
+          changed_zips = sorted({
+              name for name in changed_paths
+              if len(PurePosixPath(name).parts) == 1
+              and PurePosixPath(name).suffix.lower() == ".zip"
+              and (repo / name).is_file()
+          })
+
+          if len(changed_zips) != 1:
+              raise SystemExit(
+                  "Upload rejected: this push must add or replace exactly one root-level .zip file."
+              )
+
+          # Refuse ambiguous root uploads, including ZIPs left by earlier failed attempts.
+          root_zips = sorted(
+              p.name for p in repo.iterdir()
+              if p.is_file() and p.suffix.lower() == ".zip"
+          )
+
+          if root_zips != changed_zips:
+              raise SystemExit(
+                  "Upload rejected: keep exactly one root-level .zip in the repository, "
+                  "and make sure it is the ZIP changed by this push."
+              )
+
+          archive = repo / changed_zips[0]
+
           if archive.stat().st_size > 100 * 1024 * 1024:
               raise SystemExit("Upload ZIP exceeds the 100 MiB safety limit.")
 
           def safe_path(value):
               if not isinstance(value, str) or not value or "\\" in value or "\x00" in value:
                   raise ValueError(f"Invalid path in manifest: {value!r}")
-              path = PurePosixPath(value)
-              if path.is_absolute() or any(part in ("", ".", "..") for part in path.parts):
+
+              raw_parts = value.split("/")
+
+              if any(part in ("", ".", "..") for part in raw_parts):
                   raise ValueError(f"Unsafe path in manifest: {value!r}")
+
+              path = PurePosixPath(value)
+
+              if path.is_absolute():
+                  raise ValueError(f"Absolute path is not allowed: {value!r}")
+
               if path.parts[0] in (".git", ".github"):
-                  raise ValueError("Uploads may not change Git metadata or GitHub workflow/configuration files.")
+                  raise ValueError(
+                      "Uploads may not change Git metadata or GitHub workflow/configuration files."
+                  )
+
               if ":" in path.parts[0]:
                   raise ValueError(f"Drive-qualified path is not allowed: {value!r}")
-              if path.as_posix() in ("UPLOAD_MANIFEST.json", "LIVE_EARTH_MAIN_UPLOAD.zip"):
+
+              if path.as_posix() == "UPLOAD_MANIFEST.json" or path.suffix.lower() == ".zip":
                   raise ValueError(f"Reserved upload path is not allowed: {value!r}")
+
               return path
 
           with zipfile.ZipFile(archive) as zf:
-              infos = [info for info in zf.infolist() if not info.is_dir()]
+              all_infos = zf.infolist()
+              infos = [info for info in all_infos if not info.is_dir()]
+
               if len(infos) > 5000:
                   raise SystemExit("Upload contains more than 5,000 files.")
 
+              # Reject unsafe names even when they appear only as ZIP directory entries.
+              for info in all_infos:
+                  entry_name = info.filename.rstrip("/") if info.is_dir() else info.filename
+
+                  if entry_name:
+                      if info.is_dir():
+                          parts = entry_name.split("/")
+
+                          if (
+                              any(part in ("", ".", "..") for part in parts)
+                              or parts[0] in (".git", ".github")
+                          ):
+                              raise SystemExit(
+                                  f"Unsafe ZIP directory entry: {info.filename}"
+                              )
+                      else:
+                          if entry_name != "UPLOAD_MANIFEST.json":
+                              safe_path(entry_name)
+
               names = [info.filename for info in infos]
+
               if len(names) != len(set(names)):
                   raise SystemExit("Upload contains duplicate ZIP paths.")
+
               if "UPLOAD_MANIFEST.json" not in names:
-                  raise SystemExit("UPLOAD_MANIFEST.json is missing.")
+                  raise SystemExit("UPLOAD_MANIFEST.json is missing from the ZIP root.")
 
               manifest_raw = zf.read("UPLOAD_MANIFEST.json")
+
               if len(manifest_raw) > 2 * 1024 * 1024:
                   raise SystemExit("Upload manifest is unexpectedly large.")
+
               manifest = json.loads(manifest_raw)
-              if manifest.get("schemaVersion") != 1 or not isinstance(manifest.get("files"), list):
-                  raise SystemExit("Unsupported or invalid upload manifest.")
+
+              if (
+                  not isinstance(manifest, dict)
+                  or type(manifest.get("schemaVersion")) is not int
+                  or manifest["schemaVersion"] != 1
+              ):
+                  raise SystemExit("Unsupported or invalid upload manifest schema.")
+
+              if not isinstance(manifest.get("files"), list):
+                  raise SystemExit("Upload manifest must contain a files list.")
+
+              # Every package must provide a meaningful, task-specific Git commit title.
+              commit_title = manifest.get("commitTitle")
+
+              if not isinstance(commit_title, str):
+                  raise SystemExit(
+                      "Upload manifest is missing the required commitTitle."
+                  )
+
+              commit_title = commit_title.strip()
+
+              if (
+                  not 1 <= len(commit_title) <= 100
+                  or any(ord(ch) < 32 or ord(ch) == 127 for ch in commit_title)
+              ):
+                  raise SystemExit(
+                      "commitTitle must be a one-line title between 1 and 100 characters."
+                  )
 
               expected = {}
+
               for item in manifest["files"]:
+                  if not isinstance(item, dict):
+                      raise SystemExit(
+                          "Each manifest file entry must be an object."
+                      )
+
                   rel = safe_path(item.get("path"))
                   name = rel.as_posix()
+
                   if name in expected:
                       raise SystemExit(f"Duplicate manifest path: {name}")
+
+                  size = item.get("size")
+                  digest = item.get("sha256")
+
+                  if type(size) is not int or size < 0:
+                      raise SystemExit(f"Invalid size in manifest: {name}")
+
+                  if (
+                      not isinstance(digest, str)
+                      or not re.fullmatch(r"[0-9a-fA-F]{64}", digest)
+                  ):
+                      raise SystemExit(f"Invalid SHA-256 in manifest: {name}")
+
                   expected[name] = item
 
               archive_payload = set(names) - {"UPLOAD_MANIFEST.json"}
+
               if archive_payload != set(expected):
-                  raise SystemExit("ZIP contents do not exactly match the manifest file list.")
+                  raise SystemExit(
+                      "ZIP contents do not exactly match the manifest file list."
+                  )
 
               deletions = manifest.get("delete", [])
+
               if not isinstance(deletions, list):
                   raise SystemExit("Manifest delete field must be a list.")
-              delete_paths = [safe_path(path).as_posix() for path in deletions]
+
+              delete_paths = [
+                  safe_path(path).as_posix() for path in deletions
+              ]
+
               if len(delete_paths) != len(set(delete_paths)):
                   raise SystemExit("Manifest contains duplicate deletion paths.")
+
               if set(delete_paths) & set(expected):
-                  raise SystemExit("Manifest has conflicting write and deletion paths.")
+                  raise SystemExit(
+                      "Manifest has conflicting write and deletion paths."
+                  )
+
+              # Reject file/directory path collisions before touching the checkout.
+              expected_names = set(expected)
+              all_targets = expected_names | set(delete_paths)
+
+              for name in all_targets:
+                  parts = PurePosixPath(name).parts
+
+                  for index in range(1, len(parts)):
+                      parent_name = "/".join(parts[:index])
+
+                      if parent_name in all_targets:
+                          raise SystemExit(
+                              f"Conflicting file/directory paths: {parent_name} and {name}"
+                          )
 
               total_uncompressed = 0
+
               for info in infos:
                   mode = (info.external_attr >> 16) & 0xFFFF
-                  if stat.S_ISLNK(mode):
-                      raise SystemExit(f"Symbolic links are not allowed: {info.filename}")
-                  if info.file_size > 50 * 1024 * 1024:
-                      raise SystemExit(f"File exceeds 50 MiB: {info.filename}")
-                  total_uncompressed += info.file_size
-              if total_uncompressed > 250 * 1024 * 1024:
-                  raise SystemExit("Uncompressed upload exceeds 250 MiB.")
 
-              with tempfile.TemporaryDirectory(prefix="live-earth-import-") as temp_dir:
+                  if stat.S_ISLNK(mode):
+                      raise SystemExit(
+                          f"Symbolic links are not allowed: {info.filename}"
+                      )
+
+                  if info.file_size > 50 * 1024 * 1024:
+                      raise SystemExit(
+                          f"File exceeds 50 MiB: {info.filename}"
+                      )
+
+                  total_uncompressed += info.file_size
+
+              if total_uncompressed > 250 * 1024 * 1024:
+                  raise SystemExit(
+                      "Uncompressed upload exceeds 250 MiB."
+                  )
+
+              with tempfile.TemporaryDirectory(
+                  prefix="live-earth-import-"
+              ) as temp_dir:
+
                   stage = Path(temp_dir)
 
                   # Validate every payload file before changing the checkout.
                   for name, item in expected.items():
                       data = zf.read(name)
-                      if len(data) != item.get("size"):
+
+                      if len(data) != item["size"]:
                           raise SystemExit(f"Size mismatch: {name}")
+
                       digest = hashlib.sha256(data).hexdigest()
-                      if digest != item.get("sha256"):
+
+                      if digest.lower() != item["sha256"].lower():
                           raise SystemExit(f"SHA-256 mismatch: {name}")
+
                       target = stage / name
                       target.parent.mkdir(parents=True, exist_ok=True)
                       target.write_bytes(data)
@@ -134,39 +306,93 @@ jobs:
                   for name in sorted(expected):
                       rel = safe_path(name)
                       target = repo.joinpath(*rel.parts)
+
                       target.parent.mkdir(parents=True, exist_ok=True)
+
                       for ancestor in (target, *target.parents):
                           if ancestor == repo.parent:
                               break
+
                           if ancestor.is_symlink():
-                              raise SystemExit(f"Refusing to write through a symbolic link: {name}")
+                              raise SystemExit(
+                                  f"Refusing to write through a symbolic link: {name}"
+                              )
+
                       if repo not in target.resolve().parents:
-                          raise SystemExit(f"Destination escapes repository: {name}")
+                          raise SystemExit(
+                              f"Destination escapes repository: {name}"
+                          )
+
                       shutil.copy2(stage / name, target)
                       print(f"Applied: {name}")
 
                   for name in delete_paths:
                       rel = safe_path(name)
                       target = repo.joinpath(*rel.parts)
+
+                      for ancestor in target.parents:
+                          if ancestor == repo.parent:
+                              break
+
+                          if ancestor.is_symlink():
+                              raise SystemExit(
+                                  f"Refusing to delete through a symbolic link: {name}"
+                              )
+
                       if target.is_symlink():
-                          raise SystemExit(f"Refusing to delete a symbolic link: {name}")
+                          raise SystemExit(
+                              f"Refusing to delete a symbolic link: {name}"
+                          )
+
                       if target.exists() and target.is_file():
                           target.unlink()
                           print(f"Deleted: {name}")
-                      elif target.exists():
-                          raise SystemExit(f"Refusing to delete a directory: {name}")
 
-          # Remove the uploaded archive only after successful validation and application.
+                      elif target.exists():
+                          raise SystemExit(
+                              f"Refusing to delete a directory: {name}"
+                          )
+
+          # Remove the uploaded ZIP only after the entire package passes and is applied.
           archive.unlink()
-          subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
-          subprocess.run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"], check=True)
+
+          subprocess.run(
+              ["git", "config", "user.name", "github-actions[bot]"],
+              check=True,
+          )
+
+          subprocess.run(
+              [
+                  "git",
+                  "config",
+                  "user.email",
+                  "41898282+github-actions[bot]@users.noreply.github.com",
+              ],
+              check=True,
+          )
+
           subprocess.run(["git", "add", "-A"], check=True)
 
-          changed = subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode != 0
+          changed = (
+              subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode != 0
+          )
+
           if changed:
-              subprocess.run(["git", "commit", "-m", "Apply LIVE // EARTH Main Upload"], check=True)
-              subprocess.run(["git", "push", "origin", "HEAD:main"], check=True)
-              print("Main upload applied and committed to main.")
+              subprocess.run(
+                  ["git", "commit", "-m", commit_title],
+                  check=True,
+              )
+
+              subprocess.run(
+                  ["git", "push", "origin", "HEAD:main"],
+                  check=True,
+              )
+
+              print(
+                  f"Main upload applied and committed with title: {commit_title}"
+              )
+
           else:
               print("No repository changes were present in the upload.")
+
           PY
