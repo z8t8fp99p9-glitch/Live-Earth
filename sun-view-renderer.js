@@ -142,6 +142,51 @@
     source = source
       .replace('await import("./vendor/three.module.js")', 'await import(new URL("./vendor/three.module.js", document.baseURI).href)')
       .replace('await import("./astronomy.js")', 'await import(new URL("./astronomy.js", document.baseURI).href)');
+    const sunAmberEndpointTheme = `
+    /* SUN_ENDPOINT_AMBER_THEME — limited to the two small Rise/Set scroller markers and captions. */
+    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-rise .le-sv-scroller-end-icon {
+      filter:drop-shadow(0 0 2px #f5c36f) drop-shadow(0 0 5px #bd762b9c) !important;
+    }
+    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-set .le-sv-scroller-end-icon {
+      filter:drop-shadow(0 0 2px #e9a450) drop-shadow(0 0 5px #a85e279c) !important;
+    }
+    /* Rise: brighter honey-gold details, coloured individually. */
+    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-rise .le-sv-scroller-end-icon path:nth-of-type(1) { stroke:#d9963f !important; }
+    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-rise .le-sv-scroller-end-icon path:nth-of-type(2) { stroke:#f0b85f !important; }
+    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-rise .le-sv-scroller-end-icon path:nth-of-type(3) { fill:#f6bd65 !important; stroke:#fff0d0 !important; }
+    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-rise .le-sv-scroller-end-icon path:nth-of-type(4) { fill:#ffe2a2 !important; filter:drop-shadow(0 0 2px #ffc45e) !important; }
+    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-rise .le-sv-scroller-end-icon path:nth-of-type(5) { stroke:#f8ca7a !important; }
+    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-rise .le-sv-scroller-end-icon path:nth-of-type(6) { stroke:#e8ad5b !important; }
+    /* Set: a slightly deeper sunset amber, with a soft champagne highlight. */
+    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-set .le-sv-scroller-end-icon path:nth-of-type(1) { stroke:#c98237 !important; }
+    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-set .le-sv-scroller-end-icon path:nth-of-type(2) { stroke:#e7a052 !important; }
+    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-set .le-sv-scroller-end-icon path:nth-of-type(3) { fill:#eaa650 !important; stroke:#ffe4bb !important; }
+    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-set .le-sv-scroller-end-icon path:nth-of-type(4) { fill:#ffd18d !important; filter:drop-shadow(0 0 2px #efa74c) !important; }
+    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-set .le-sv-scroller-end-icon path:nth-of-type(5) { stroke:#e7a85c !important; }
+    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-set .le-sv-scroller-end-icon path:nth-of-type(6) { stroke:#d99748 !important; }
+
+    /* Local times and the small RISE/SET captions. These colours apply only to Sun View. */
+    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-rise .start-label {
+      color:#ffe4b2 !important;
+      text-shadow:0 0 5px #e6a94f65,0 1px 5px #000 !important;
+    }
+    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-set .end-label {
+      color:#ffd79a !important;
+      text-shadow:0 0 5px #d98d3e65,0 1px 5px #000 !important;
+    }
+    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-rise .le-sv-end-label-copy small {
+      color:#e8b86f !important;
+      text-shadow:0 0 4px #d9963f55,0 1px 4px #000 !important;
+    }
+    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-set .le-sv-end-label-copy small {
+      color:#dca15d !important;
+      text-shadow:0 0 4px #c77e3855,0 1px 4px #000 !important;
+    }
+    `;
+    const styleInstall = '  style.textContent = css;\n  document.head.appendChild(style);';
+    if (!source.includes(styleInstall)) throw new Error("Sun endpoint theme insertion point is missing.");
+    source = source.replace(styleInstall,
+      '  style.textContent = css + `' + sunAmberEndpointTheme + '`;\n  document.head.appendChild(style);');
 
     if (/(moon|lunar)/i.test(source) || !source.includes("function drawArcSparkles") ||
         !source.includes("function drawScrollerSparkles") || !source.includes("calculateAstronomy") ||
