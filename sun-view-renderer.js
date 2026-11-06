@@ -1,7 +1,7 @@
 /* LIVE // EARTH — Sun View clone adapter.
    Builds the Sun controller from the exact Moon controller deployed beside it.
    This keeps the approved Moon geometry, trail rendering, responsive layout and scroller
-   implementation in one source of truth. Only solar data/artwork and Sun module wiring differ.
+   implementation in one source of truth. Sun-specific endpoint icon artwork, solar data and wiring differ.
 */
 (() => {
   "use strict";
@@ -143,39 +143,23 @@
       .replace('await import("./vendor/three.module.js")', 'await import(new URL("./vendor/three.module.js", document.baseURI).href)')
       .replace('await import("./astronomy.js")', 'await import(new URL("./astronomy.js", document.baseURI).href)');
     const sunAmberEndpointTheme = `
-    /* SUN_ENDPOINT_AMBER_THEME — limited to the two small Rise/Set scroller markers and captions. */
-    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-rise .le-sv-scroller-end-icon {
-      filter:drop-shadow(0 0 2px #f5c36f) drop-shadow(0 0 5px #bd762b9c) !important;
+    /* SUN_ENDPOINT_AMBER_THEME — Sun View only; the original blue icon set stays unchanged. */
+    #le-sky-view[data-view="sun"] .le-sv-sun-rise-icon {
+      filter:drop-shadow(0 0 2px #ffd88c) drop-shadow(0 0 5px #d78e3b9c) !important;
     }
-    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-set .le-sv-scroller-end-icon {
-      filter:drop-shadow(0 0 2px #e9a450) drop-shadow(0 0 5px #a85e279c) !important;
+    #le-sky-view[data-view="sun"] .le-sv-sun-set-icon {
+      filter:drop-shadow(0 0 2px #f5b96a) drop-shadow(0 0 5px #bb682c9c) !important;
     }
-    /* Rise: brighter honey-gold details, coloured individually. */
-    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-rise .le-sv-scroller-end-icon path:nth-of-type(1) { stroke:#d9963f !important; }
-    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-rise .le-sv-scroller-end-icon path:nth-of-type(2) { stroke:#f0b85f !important; }
-    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-rise .le-sv-scroller-end-icon path:nth-of-type(3) { fill:#f6bd65 !important; stroke:#fff0d0 !important; }
-    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-rise .le-sv-scroller-end-icon path:nth-of-type(4) { fill:#ffe2a2 !important; filter:drop-shadow(0 0 2px #ffc45e) !important; }
-    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-rise .le-sv-scroller-end-icon path:nth-of-type(5) { stroke:#f8ca7a !important; }
-    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-rise .le-sv-scroller-end-icon path:nth-of-type(6) { stroke:#e8ad5b !important; }
-    /* Set: a slightly deeper sunset amber, with a soft champagne highlight. */
-    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-set .le-sv-scroller-end-icon path:nth-of-type(1) { stroke:#c98237 !important; }
-    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-set .le-sv-scroller-end-icon path:nth-of-type(2) { stroke:#e7a052 !important; }
-    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-set .le-sv-scroller-end-icon path:nth-of-type(3) { fill:#eaa650 !important; stroke:#ffe4bb !important; }
-    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-set .le-sv-scroller-end-icon path:nth-of-type(4) { fill:#ffd18d !important; filter:drop-shadow(0 0 2px #efa74c) !important; }
-    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-set .le-sv-scroller-end-icon path:nth-of-type(5) { stroke:#e7a85c !important; }
-    #le-sky-view[data-view="sun"] .le-sv-endpoint-info-set .le-sv-scroller-end-icon path:nth-of-type(6) { stroke:#d99748 !important; }
-
-    /* Local times and the small RISE/SET captions. These colours apply only to Sun View. */
     #le-sky-view[data-view="sun"] .le-sv-endpoint-info-rise .start-label {
-      color:#ffe4b2 !important;
+      color:#ffe6b8 !important;
       text-shadow:0 0 5px #e6a94f65,0 1px 5px #000 !important;
     }
     #le-sky-view[data-view="sun"] .le-sv-endpoint-info-set .end-label {
-      color:#ffd79a !important;
+      color:#ffd79b !important;
       text-shadow:0 0 5px #d98d3e65,0 1px 5px #000 !important;
     }
     #le-sky-view[data-view="sun"] .le-sv-endpoint-info-rise .le-sv-end-label-copy small {
-      color:#e8b86f !important;
+      color:#edbd78 !important;
       text-shadow:0 0 4px #d9963f55,0 1px 4px #000 !important;
     }
     #le-sky-view[data-view="sun"] .le-sv-endpoint-info-set .le-sv-end-label-copy small {
@@ -183,6 +167,63 @@
       text-shadow:0 0 4px #c77e3855,0 1px 4px #000 !important;
     }
     `;
+
+    /* Custom miniature SVG artwork — independently coloured sunrise and sunset. */
+    const sunRiseIcon = `
+      <svg class="le-sv-scroller-end-icon le-sv-sun-rise-icon" viewBox="0 0 42 25" role="img" aria-label="Sunrise">
+        <defs>
+          <linearGradient id="leSvRiseAmber" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#fff0bd"/><stop offset="48%" stop-color="#ffc96f"/><stop offset="100%" stop-color="#df8736"/>
+          </linearGradient>
+        </defs>
+        <path d="M21 1.4V4.3 M10.2 5.1L12.4 7.4 M31.8 5.1L29.6 7.4 M5.4 11.2L9 12.2 M36.6 11.2L33 12.2"
+          fill="none" stroke="#f4bd68" stroke-width="1.15" stroke-linecap="round"/>
+        <path d="M13.4 16.4A7.6 7.6 0 0 1 28.6 16.4Z" fill="url(#leSvRiseAmber)" stroke="#fff0ca" stroke-width=".65"/>
+        <path d="M11.4 16.6A9.6 9.6 0 0 1 30.6 16.6" fill="none" stroke="#ffe2a5" stroke-width=".65" opacity=".78"/>
+        <path d="M3.2 17H38.8" fill="none" stroke="#f0b85f" stroke-width="1.25" stroke-linecap="round"/>
+        <path d="M5.2 19.6Q10.2 17.9 15.2 19.6T25.2 19.6T36.8 19.6 M9 22.3Q13 21 17 22.3T25 22.3T33 22.3"
+          fill="none" stroke="#e5a24d" stroke-width=".8" stroke-linecap="round" opacity=".92"/>
+        <circle cx="21" cy="16.1" r=".85" fill="#fff7df"/>
+      </svg>`;
+
+    const sunSetIcon = `
+      <svg class="le-sv-scroller-end-icon le-sv-sun-set-icon" viewBox="0 0 42 25" role="img" aria-label="Sunset">
+        <defs>
+          <linearGradient id="leSvSetAmber" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffe2a7"/><stop offset="48%" stop-color="#f4ad55"/><stop offset="100%" stop-color="#c66a2b"/>
+          </linearGradient>
+        </defs>
+        <path d="M10.1 7.4L12.5 9.2 M31.9 7.4L29.5 9.2" fill="none" stroke="#e6a052" stroke-width="1.05" stroke-linecap="round"/>
+        <path d="M13.8 16.5A7.2 7.2 0 0 1 28.2 16.5Z" fill="url(#leSvSetAmber)" stroke="#ffe7bf" stroke-width=".65"/>
+        <path d="M11.8 16.7A9.2 9.2 0 0 1 30.2 16.7" fill="none" stroke="#edb36a" stroke-width=".65" opacity=".82"/>
+        <path d="M3.2 16.9H38.8" fill="none" stroke="#dfa052" stroke-width="1.25" stroke-linecap="round"/>
+        <path d="M21 17.7V21.7 M16.2 17.8L14.4 20.8 M25.8 17.8L27.6 20.8"
+          fill="none" stroke="#d98a43" stroke-width=".85" stroke-linecap="round" opacity=".9"/>
+        <path d="M5.2 21.1Q10.2 19.7 15.2 21.1T25.2 21.1T36.8 21.1 M12 23.4Q16 22.5 20 23.4T28 23.4"
+          fill="none" stroke="#f2bd78" stroke-width=".72" stroke-linecap="round" opacity=".9"/>
+        <circle cx="21" cy="16.3" r=".8" fill="#fff0d2"/>
+      </svg>`;
+
+    function replaceSunEndpointIcon(endpointClass, endpointMarker, iconMarkup) {
+      const endpointAt = source.indexOf(endpointMarker);
+      const iconStart = source.indexOf('<svg class="le-sv-scroller-end-icon"', endpointAt);
+      const iconEnd = source.indexOf("</svg>", iconStart);
+      if (endpointAt < 0 || iconStart < 0 || iconEnd < 0) {
+        throw new Error("Sun " + endpointClass + " icon insertion point is missing.");
+      }
+      source = source.slice(0, iconStart) + iconMarkup + source.slice(iconEnd + 6);
+    }
+    replaceSunEndpointIcon(
+      "rise",
+      '<div class="le-sv-endpoint-info le-sv-endpoint-info-rise">',
+      sunRiseIcon
+    );
+    replaceSunEndpointIcon(
+      "set",
+      '<div class="end le-sv-endpoint-info le-sv-endpoint-info-set">',
+      sunSetIcon
+    );
+
     const styleInstall = '  style.textContent = css;\n  document.head.appendChild(style);';
     if (!source.includes(styleInstall)) throw new Error("Sun endpoint theme insertion point is missing.");
     source = source.replace(styleInstall,
@@ -190,7 +231,8 @@
 
     if (/(moon|lunar)/i.test(source) || !source.includes("function drawArcSparkles") ||
         !source.includes("function drawScrollerSparkles") || !source.includes("calculateAstronomy") ||
-        !source.includes("window.__liveEarthSunActualModule = { activate, deactivate };")) {
+        !source.includes("window.__liveEarthSunActualModule = { activate, deactivate };") ||
+        !source.includes("le-sv-sun-rise-icon") || !source.includes("le-sv-sun-set-icon")) {
       throw new Error("Converted Sun controller failed its structural checks.");
     }
     return source;
