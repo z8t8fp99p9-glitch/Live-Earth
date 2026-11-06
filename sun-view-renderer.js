@@ -143,9 +143,96 @@
       .replace('await import("./vendor/three.module.js")', 'await import(new URL("./vendor/three.module.js", document.baseURI).href)')
       .replace('await import("./astronomy.js")', 'await import(new URL("./astronomy.js", document.baseURI).href)');
 
+    const amberTheme = `
+    /* Sun-only amber treatment: preserve Moon View's original blue theme and layout. */
+    #le-sky-view[data-view="sun"] .le-sv-stage { color:#f6d49a; }
+    #le-sky-view[data-view="sun"] .le-sv-solar-info {
+      color:#f4c77d;
+      text-shadow:0 1px 9px #020b1ccc,0 0 8px #f0a43b24;
+    }
+    #le-sky-view[data-view="sun"] .le-sv-solar-kicker { color:#e9b96f !important; }
+    #le-sky-view[data-view="sun"] .le-sv-solar-illumination {
+      color:#ffd184 !important;
+      text-shadow:0 0 5px #ffbd5a90,0 0 13px #e78c2e58 !important;
+    }
+    #le-sky-view[data-view="sun"] .le-sv-solar-subtitle { color:#e8bd7c !important; }
+    #le-sky-view[data-view="sun"] .le-sv-solar-value { color:#ffe0a6 !important; }
+    #le-sky-view[data-view="sun"] .le-sv-solar-countdown { color:#dcae69 !important; }
+    #le-sky-view[data-view="sun"] .le-sv-selected-time {
+      color:#ffd080 !important;
+      text-shadow:0 0 4px #f3a43cbd,0 0 11px #d9772291,0 1px 8px #000 !important;
+    }
+    #le-sky-view[data-view="sun"] .le-sv-event-label { fill:#e9bd78 !important; }
+    #le-sky-view[data-view="sun"] .le-sv-event-time { fill:#ffe0a6 !important; }
+    #le-sky-view[data-view="sun"] .le-sv-end-labels .start-label,
+    #le-sky-view[data-view="sun"] .le-sv-end-labels .end-label { color:#ffe0a6 !important; }
+    #le-sky-view[data-view="sun"] .le-sv-end-labels .le-sv-end-label-copy small,
+    #le-sky-view[data-view="sun"] .le-sv-end-labels small { color:#d7a65f !important; }
+    #le-sky-view[data-view="sun"] .le-sv-location-note { color:#edc888 !important; }
+    #le-sky-view[data-view="sun"] .le-sv-arc-sparkle,
+    #le-sky-view[data-view="sun"] .le-sv-arc-star {
+      fill:#ffe7b6 !important;
+      filter:drop-shadow(0 0 2px #fff0ce) drop-shadow(0 0 6px #ffb84dba) !important;
+    }
+    #le-sky-view[data-view="sun"] .le-sv-arc-dust-mote,
+    #le-sky-view[data-view="sun"] .le-sv-arc-sparkle-cool { fill:#edc47f !important; }
+    #le-sky-view[data-view="sun"] .le-sv-arc-sparkle-warm,
+    #le-sky-view[data-view="sun"] .le-sv-arc-star-glow { fill:#ffd58e !important; }
+    #le-sky-view[data-view="sun"] .le-sv-horizontal-trail-blue,
+    #le-sky-view[data-view="sun"] .le-sv-horizontal-trail-gold,
+    #le-sky-view[data-view="sun"] .le-sv-vertical-trail-blue,
+    #le-sky-view[data-view="sun"] .le-sv-vertical-trail-gold { filter:drop-shadow(0 0 3px #ffc66fba) drop-shadow(0 0 8px #e8913780) !important; }
+    #le-sky-view[data-view="sun"] .le-sv-horizontal-dust-blue,
+    #le-sky-view[data-view="sun"] .le-sv-vertical-dust-blue { fill:#f6d89e !important; }
+    #le-sky-view[data-view="sun"] .le-sv-horizontal-dust-gold,
+    #le-sky-view[data-view="sun"] .le-sv-vertical-dust-gold { fill:#ffd58c !important; }
+    #le-sky-view[data-view="sun"] .le-sv-horizontal-sun-marker { filter:drop-shadow(0 0 5px #ffc66fba) drop-shadow(0 0 9px #e8913780) !important; }
+    #le-sky-view[data-view="sun"] .le-sv-horizontal-sun-halo { fill:#ffbf62 !important; }
+    #le-sky-view[data-view="sun"] .le-sv-horizontal-sun-surface,
+    #le-sky-view[data-view="sun"] .le-sv-horizontal-sun-rim { stroke:#ffe0a6 !important; }
+    #le-sky-view[data-view="sun"] .le-sv-endpoint { fill:#ffe3ad !important; filter:drop-shadow(0 0 5px #e9aa4f) !important; }
+    #le-sky-view[data-view="sun"] .le-sv-endpoint-halo { fill:#eaa94c !important; }
+    #le-sky-view[data-view="sun"] .le-sv-main-rise-set-icon,
+    #le-sky-view[data-view="sun"] .le-sv-scroller-end-icon { filter:drop-shadow(0 0 3px #f0b95eaa) !important; }
+    #le-sky-view[data-view="sun"] .le-sv-scroller-end-icon path[stroke],
+    #le-sky-view[data-view="sun"] .le-sv-main-rise-set-icon path[stroke] { stroke:#f0bd70 !important; }
+    #le-sky-view[data-view="sun"] .le-sv-scroller-end-icon path[fill],
+    #le-sky-view[data-view="sun"] .le-sv-main-rise-set-icon path[fill] { fill:#f7ca7c !important; }
+    #le-sky-view[data-view="sun"] .le-sv-vertical-ribbon-glow { fill:#e9a23d !important; }
+    #le-sky-view[data-view="sun"] .le-sv-vertical-dust-gold,
+    #le-sky-view[data-view="sun"] .le-sv-horizontal-dust-gold { filter:drop-shadow(0 0 2px #ffcf7d) drop-shadow(0 0 4px #ffad4d80) !important; }
+    #navButtons:has(.orbButton[data-view="sun"][aria-pressed="true"]) .orbLabel {
+      color:#ffd080 !important;
+      text-shadow:0 1px 7px #000,0 0 9px #e9a54470 !important;
+    }
+    #le-sky-view[data-view="sun"] .le-sv-svg linearGradient[id^="leSvHorizontalTrail"],
+    #le-sky-view[data-view="sun"] .le-sv-svg linearGradient[id^="leSvVertical"] {
+      color:#f1bd72;
+    }
+    #le-sky-view[data-view="sun"] .le-sv-svg linearGradient[id^="leSvHorizontalTrail"] stop:nth-child(1),
+    #le-sky-view[data-view="sun"] .le-sv-svg linearGradient[id^="leSvVertical"] stop:nth-child(1) { stop-color:#d28b3f !important; }
+    #le-sky-view[data-view="sun"] .le-sv-svg linearGradient[id^="leSvHorizontalTrail"] stop:nth-child(2),
+    #le-sky-view[data-view="sun"] .le-sv-svg linearGradient[id^="leSvVertical"] stop:nth-child(2) { stop-color:#efb45f !important; }
+    #le-sky-view[data-view="sun"] .le-sv-svg linearGradient[id^="leSvHorizontalTrail"] stop:nth-child(3),
+    #le-sky-view[data-view="sun"] .le-sv-svg linearGradient[id^="leSvVertical"] stop:nth-child(3) { stop-color:#ffe5ae !important; }
+    #le-sky-view[data-view="sun"] .le-sv-svg linearGradient[id^="leSvHorizontalTrail"] stop:nth-child(4),
+    #le-sky-view[data-view="sun"] .le-sv-svg linearGradient[id^="leSvVertical"] stop:nth-child(4) { stop-color:#ffcd7b !important; }
+    #le-sky-view[data-view="sun"] .le-sv-svg linearGradient[id^="leSvArc"] stop:nth-child(1),
+    #le-sky-view[data-view="sun"] .le-sv-svg linearGradient[id^="leSvArc"] stop:nth-child(7) { stop-color:#e2a04d !important; }
+    #le-sky-view[data-view="sun"] .le-sv-svg linearGradient[id^="leSvArc"] stop:nth-child(2),
+    #le-sky-view[data-view="sun"] .le-sv-svg linearGradient[id^="leSvArc"] stop:nth-child(6) { stop-color:#f3c779 !important; }
+    #le-sky-view[data-view="sun"] .le-sv-svg linearGradient[id^="leSvArc"] stop:nth-child(3),
+    #le-sky-view[data-view="sun"] .le-sv-svg linearGradient[id^="leSvArc"] stop:nth-child(5) { stop-color:#fff0ca !important; }
+    #le-sky-view[data-view="sun"] .le-sv-svg linearGradient[id^="leSvArc"] stop:nth-child(4) { stop-color:#ffe0a1 !important; }
+  `;
+    const styleInstall = '  style.textContent = css;\n  document.head.appendChild(style);';
+    if (!source.includes(styleInstall)) throw new Error("Sun amber theme insertion point is missing.");
+    source = source.replace(styleInstall, '  style.textContent = css + `' + amberTheme + '`;\n  document.head.appendChild(style);');
+
     if (/(moon|lunar)/i.test(source) || !source.includes("function drawArcSparkles") ||
         !source.includes("function drawScrollerSparkles") || !source.includes("calculateAstronomy") ||
-        !source.includes("window.__liveEarthSunActualModule = { activate, deactivate };")) {
+        !source.includes("window.__liveEarthSunActualModule = { activate, deactivate };") ||
+        !source.includes("le-sv-solar-illumination") || !source.includes("#ffd080")) {
       throw new Error("Converted Sun controller failed its structural checks.");
     }
     return source;
