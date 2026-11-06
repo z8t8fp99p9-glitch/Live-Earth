@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "files": [
+    {
+      "path": "sun-view-renderer.js",
+      "size": 10687,
+      "sha256": "e26fa870841497b9b189a0b4ede5f13e6330ba0acd737e4e297b11c4bf15894a"
+    },
+    {
+      "path": "sun-surface-equirectangular.png",
+      "size": 1228307,
+      "sha256": "410bab03ba3874b450901ca56f6e4533fe8139537f03df530e753179ff75c50a"
+    }
+  ]
+}
