@@ -238,7 +238,24 @@
     return source;
   }
 
+  async function waitForSkyRoot() {
+    if (document.getElementById("le-sky-view")) return;
+    await new Promise((resolve, reject) => {
+      const observer = new MutationObserver(() => {
+        if (document.getElementById("le-sky-view")) {
+          observer.disconnect();
+          resolve();
+        }
+      });
+      const target = document.documentElement || document;
+      observer.observe(target, { childList: true, subtree: true });
+      // The shared Sky View controller creates this root during startup.
+      // Keep waiting for that controller instead of treating early startup as a fatal error.
+    });
+  }
+
   async function loadAndInstallClone() {
+    await waitForSkyRoot();
     const moonUrl = new URL("./moon-view-controller.js", document.baseURI);
     const response = await fetch(moonUrl.href, { credentials: "same-origin", cache: "no-cache" });
     if (!response.ok) throw new Error("Moon controller fetch failed: HTTP " + response.status);
@@ -266,6 +283,7 @@
       loadPromise = loadAndInstallClone().catch(error => {
         console.error("[LIVE // EARTH] Sun View clone could not be installed.", error);
         window.__liveEarthSunRendererBooting = false;
+        loadPromise = null;
         throw error;
       });
     }
