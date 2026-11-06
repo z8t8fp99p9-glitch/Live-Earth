@@ -168,6 +168,44 @@
     }
     `;
 
+    const solarPathTheme = `
+    /* SOLAR_PLASMA_WAVE_TRAIL — applies only to the Sun's curved sky path. */
+    #le-sky-view[data-view="sun"] .le-sv-solar-plasma-glow {
+      fill:none; stroke:#ff9d43; stroke-width:15; stroke-linecap:round; stroke-linejoin:round;
+      opacity:.20; filter:blur(4px) drop-shadow(0 0 9px #ff9d43a8); pointer-events:none;
+    }
+    #le-sky-view[data-view="sun"] .le-sv-solar-plasma-core {
+      fill:none; stroke:#f6a64e; stroke-width:5.2; stroke-linecap:round; stroke-linejoin:round;
+      opacity:.72; filter:drop-shadow(0 0 4px #ffc56e) drop-shadow(0 0 9px #ed8d35a8); pointer-events:none;
+    }
+    #le-sky-view[data-view="sun"] .le-sv-solar-liquid-ribbon {
+      fill:#f6a64e; opacity:.32; filter:drop-shadow(0 0 4px #f8aa53a0) drop-shadow(0 0 9px #e98b3d70);
+      pointer-events:none;
+    }
+    #le-sky-view[data-view="sun"] .le-sv-solar-liquid-highlight {
+      fill:#ffe2a5; opacity:.34; filter:drop-shadow(0 0 3px #ffe0a0b8); pointer-events:none;
+    }
+    #le-sky-view[data-view="sun"] .le-sv-solar-core-highlight {
+      fill:none; stroke:#fff0cb; stroke-width:1.15; stroke-linecap:round; stroke-linejoin:round;
+      opacity:.88; filter:drop-shadow(0 0 3px #ffe4af); pointer-events:none;
+    }
+    #le-sky-view[data-view="sun"] .le-sv-solar-light-streak {
+      fill:none; stroke:#fff0c8; stroke-width:1.2; stroke-linecap:round; stroke-linejoin:round;
+      stroke-dasharray:2 24; opacity:.88; filter:drop-shadow(0 0 3px #ffd98e) drop-shadow(0 0 6px #f5a64d);
+      animation:leSvSolarStreakFlow 3.8s linear infinite; pointer-events:none;
+    }
+    #le-sky-view[data-view="sun"] .le-sv-solar-light-streak-secondary {
+      fill:none; stroke:#ffd28c; stroke-width:.85; stroke-linecap:round; stroke-linejoin:round;
+      stroke-dasharray:1.4 38; opacity:.72; filter:drop-shadow(0 0 3px #ffbd70);
+      animation:leSvSolarStreakFlow 6.2s linear infinite reverse; pointer-events:none;
+    }
+    @keyframes leSvSolarStreakFlow { to { stroke-dashoffset:-52; } }
+    @media (prefers-reduced-motion: reduce) {
+      #le-sky-view[data-view="sun"] .le-sv-solar-light-streak,
+      #le-sky-view[data-view="sun"] .le-sv-solar-light-streak-secondary { animation:none !important; }
+    }
+    `;
+
     /* Custom miniature SVG artwork — independently coloured sunrise and sunset. */
     const sunRiseIcon = `
       <svg class="le-sv-scroller-end-icon le-sv-sun-rise-icon" viewBox="0 0 42 25" role="img" aria-label="Sunrise">
@@ -224,15 +262,93 @@
       sunSetIcon
     );
 
+    const solarArcRenderer = `  function drawArcSparkles() {
+    const group = $("#le-sv-arc-sparkles");
+    const mainPath = $("#le-sv-main");
+    if (!group || !mainPath || !arcGeometry) return;
+    group.replaceChildren();
+    const ns = "http://www.w3.org/2000/svg";
+    const mainD = mainPath.getAttribute("d");
+    if (!mainD) return;
+    const sampleCount = clamp(Math.ceil((dimensions.w + dimensions.h) * 0.28), 180, 420);
+    const pointText = point => point[0].toFixed(2) + " " + point[1].toFixed(2);
+
+    // A gently undulating, tapered ribbon creates the liquid-light surface.
+    // The original arc geometry remains the positioning source of truth.
+    const ribbonPath = (baseOffset, maxWidth, waveAmplitude, phase) => {
+      const upper = [], lower = [];
+      for (let i = 0; i <= sampleCount; i++) {
+        const t = i / sampleCount;
+        const frame = arcFrame(t);
+        const taper = Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.86);
+        const wave = waveAmplitude * taper * (
+          Math.sin(t * Math.PI * 8 + phase) + 0.30 * Math.sin(t * Math.PI * 15 - phase)
+        );
+        const center = baseOffset + wave;
+        const halfWidth = 0.32 + (maxWidth * 0.5) * taper;
+        upper.push([
+          frame.p.x + frame.nx * (center + halfWidth),
+          frame.p.y + frame.ny * (center + halfWidth)
+        ]);
+        lower.push([
+          frame.p.x + frame.nx * (center - halfWidth),
+          frame.p.y + frame.ny * (center - halfWidth)
+        ]);
+      }
+      return "M " + pointText(upper[0]) + " " + upper.slice(1).map(point => "L " + pointText(point)).join(" ") +
+        " " + lower.reverse().map(point => "L " + pointText(point)).join(" ") + " Z";
+    };
+
+    const offsetLine = (baseOffset, waveAmplitude, phase) => {
+      const points = [];
+      for (let i = 0; i <= sampleCount; i++) {
+        const t = i / sampleCount;
+        const frame = arcFrame(t);
+        const taper = Math.pow(Math.max(0, Math.sin(Math.PI * t)), 0.9);
+        const wave = waveAmplitude * taper * Math.sin(t * Math.PI * 8 + phase);
+        const offset = baseOffset + wave;
+        points.push([
+          frame.p.x + frame.nx * offset,
+          frame.p.y + frame.ny * offset
+        ]);
+      }
+      return "M " + pointText(points[0]) + " " + points.slice(1).map(point => "L " + pointText(point)).join(" ");
+    };
+
+    const addPath = (className, d) => {
+      const path = document.createElementNS(ns, "path");
+      path.setAttribute("class", className);
+      path.setAttribute("d", d);
+      path.setAttribute("aria-hidden", "true");
+      group.appendChild(path);
+      return path;
+    };
+
+    // Layer order: soft plasma bloom, flowing liquid ribbons, hot arc core, then moving streaks.
+    addPath("le-sv-solar-plasma-glow", mainD);
+    addPath("le-sv-solar-liquid-ribbon", ribbonPath(0, 5.8, 1.15, 0.25));
+    addPath("le-sv-solar-liquid-highlight", ribbonPath(-1.55, 2.25, 0.72, 1.65));
+    addPath("le-sv-solar-plasma-core", mainD);
+    addPath("le-sv-solar-core-highlight", offsetLine(-0.55, 0.42, 0.6));
+    addPath("le-sv-solar-light-streak", offsetLine(-2.15, 0.72, 0.15));
+    addPath("le-sv-solar-light-streak-secondary", offsetLine(2.25, 0.62, 2.05));
+  }`;
+    source = replaceBetween(source,
+      "  function drawArcSparkles() {",
+      "  function appendStaticStar(",
+      solarArcRenderer
+    );
+
     const styleInstall = '  style.textContent = css;\n  document.head.appendChild(style);';
     if (!source.includes(styleInstall)) throw new Error("Sun endpoint theme insertion point is missing.");
     source = source.replace(styleInstall,
-      '  style.textContent = css + `' + sunAmberEndpointTheme + '`;\n  document.head.appendChild(style);');
+      '  style.textContent = css + `' + sunAmberEndpointTheme + '` + `' + solarPathTheme + '`;\n  document.head.appendChild(style);');
 
     if (/(moon|lunar)/i.test(source) || !source.includes("function drawArcSparkles") ||
         !source.includes("function drawScrollerSparkles") || !source.includes("calculateAstronomy") ||
         !source.includes("window.__liveEarthSunActualModule = { activate, deactivate };") ||
-        !source.includes("le-sv-sun-rise-icon") || !source.includes("le-sv-sun-set-icon")) {
+        !source.includes("le-sv-sun-rise-icon") || !source.includes("le-sv-sun-set-icon") ||
+        !source.includes("le-sv-solar-plasma-core") || !source.includes("le-sv-solar-liquid-ribbon")) {
       throw new Error("Converted Sun controller failed its structural checks.");
     }
     return source;
