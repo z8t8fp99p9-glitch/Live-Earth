@@ -90,7 +90,7 @@
     renderer.domElement.className='le-celestial-engine-canvas';renderer.domElement.setAttribute('aria-label','Interactive three-dimensional Moon in deep-space preview');
     renderer.domElement.style.cssText='display:block;width:100%;height:100%;touch-action:none;cursor:grab;';container.appendChild(renderer.domElement);
     const scene=new T.Scene();
-    const camera=new T.PerspectiveCamera(39,1,.1,50);camera.position.set(0,0,previewMode?3.45:6.25);camera.lookAt(0,0,0);
+    const camera=new T.PerspectiveCamera(39,1,.1,50);camera.position.set(0,0,previewMode?6.7:6.25);camera.lookAt(0,0,0);
     const rig=new T.Group();scene.add(rig);
     // Inspection mode is an uncluttered Moon sphere. The reusable shared engine
     // retains the full Earth/Moon orbital scene for a later production connection.
@@ -116,11 +116,45 @@
     const resize=()=>{if(disposed)return;const r=activeContainer.getBoundingClientRect();width=Math.max(1,Math.round(r.width||activeContainer.clientWidth||320));height=Math.max(1,Math.round(r.height||activeContainer.clientHeight||320));renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();};
     if(typeof ResizeObserver==='function'){resizeObserver=new ResizeObserver(resize);resizeObserver.observe(activeContainer);}else window.addEventListener('resize',resize,{passive:true});resize();
 
-    let dragging=false,lastX=0,lastY=0;
-    const down=e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;renderer.domElement.style.cursor='grabbing';renderer.domElement.setPointerCapture?.(e.pointerId);};
-    const move=e=>{if(!dragging)return;const dx=e.clientX-lastX,dy=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;rig.rotation.y+=dx*.006;rig.rotation.x=Math.max(-.45,Math.min(.45,rig.rotation.x+dy*.004));};
-    const up=()=>{dragging=false;renderer.domElement.style.cursor='grab';};
-    renderer.domElement.addEventListener('pointerdown',down);renderer.domElement.addEventListener('pointermove',move);renderer.domElement.addEventListener('pointerup',up);renderer.domElement.addEventListener('pointercancel',up);
+    // One finger rotates the Moon; two fingers pinch to zoom in/out.
+    // Gesture zoom is limited to the independent inspection preview so the
+    // shared production engine keeps its existing camera and interaction model.
+    let dragging=false,lastX=0,lastY=0,pinchDistance=0;
+    const activePointers=new Map();
+    const zoomLimits={min:3.8,max:12.5};
+    const clampCamera=()=>{camera.position.z=Math.max(zoomLimits.min,Math.min(zoomLimits.max,camera.position.z));camera.lookAt(0,0,0);};
+    const distanceBetween=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+    const down=e=>{
+      activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      renderer.domElement.setPointerCapture?.(e.pointerId);
+      if(activePointers.size>=2){
+        const pts=[...activePointers.values()];pinchDistance=distanceBetween(pts[0],pts[1]);dragging=false;
+      }else{dragging=true;lastX=e.clientX;lastY=e.clientY;renderer.domElement.style.cursor='grabbing';}
+    };
+    const move=e=>{
+      if(!activePointers.has(e.pointerId))return;
+      const previous=activePointers.get(e.pointerId);activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(previewMode&&activePointers.size>=2){
+        const pts=[...activePointers.values()];const nextDistance=distanceBetween(pts[0],pts[1]);
+        if(pinchDistance>0&&nextDistance>0){camera.position.z*=pinchDistance/nextDistance;clampCamera();}
+        pinchDistance=nextDistance;dragging=false;return;
+      }
+      if(!dragging||activePointers.size!==1)return;
+      const dx=e.clientX-previous.x,dy=e.clientY-previous.y;lastX=e.clientX;lastY=e.clientY;
+      rig.rotation.y+=dx*.006;rig.rotation.x=Math.max(-.45,Math.min(.45,rig.rotation.x+dy*.004));
+    };
+    const up=e=>{
+      activePointers.delete(e.pointerId);
+      if(activePointers.size>=2){const pts=[...activePointers.values()];pinchDistance=distanceBetween(pts[0],pts[1]);dragging=false;}
+      else if(activePointers.size===1){const remaining=[...activePointers.values()][0];lastX=remaining.x;lastY=remaining.y;dragging=true;pinchDistance=0;}
+      else{dragging=false;pinchDistance=0;renderer.domElement.style.cursor='grab';}
+    };
+    const wheel=e=>{if(!previewMode)return;e.preventDefault();camera.position.z*=Math.exp(e.deltaY*.001);clampCamera();};
+    renderer.domElement.addEventListener('pointerdown',down);
+    renderer.domElement.addEventListener('pointermove',move);
+    renderer.domElement.addEventListener('pointerup',up);
+    renderer.domElement.addEventListener('pointercancel',up);
+    renderer.domElement.addEventListener('wheel',wheel,{passive:false});
 
     function updateObjects(){
       const p=lunarPosition(simDate);
@@ -154,7 +188,7 @@
       getState(){return Object.freeze({...latest,speed,paused});},
       getObject3D(){return rig;},
       attach(nextContainer){if(!nextContainer?.appendChild)throw new TypeError('A container element is required.');if(renderer.domElement.parentElement!==nextContainer)nextContainer.appendChild(renderer.domElement);resizeObserver?.unobserve(activeContainer);activeContainer=nextContainer;resizeObserver?.observe(activeContainer);resize();},
-      destroy(){if(disposed)return;disposed=true;cancelAnimationFrame(raf);resizeObserver?.disconnect();window.removeEventListener('resize',resize);renderer.domElement.removeEventListener('pointerdown',down);renderer.domElement.removeEventListener('pointermove',move);renderer.domElement.removeEventListener('pointerup',up);renderer.domElement.removeEventListener('pointercancel',up);renderer.dispose();orbitGeometry?.dispose();orbitMaterial?.dispose();earthGeometry?.dispose();earthMaterial?.dispose();moonGeometry.dispose();moonTexture.dispose();moonMaterial.dispose();renderer.domElement.remove();}
+      destroy(){if(disposed)return;disposed=true;cancelAnimationFrame(raf);resizeObserver?.disconnect();window.removeEventListener('resize',resize);renderer.domElement.removeEventListener('pointerdown',down);renderer.domElement.removeEventListener('pointermove',move);renderer.domElement.removeEventListener('pointerup',up);renderer.domElement.removeEventListener('pointercancel',up);renderer.domElement.removeEventListener('wheel',wheel);renderer.dispose();orbitGeometry?.dispose();orbitMaterial?.dispose();earthGeometry?.dispose();earthMaterial?.dispose();moonGeometry.dispose();moonTexture.dispose();moonMaterial.dispose();renderer.domElement.remove();}
     };
   }
 
