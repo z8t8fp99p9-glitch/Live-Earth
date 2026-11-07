@@ -1,37 +1,40 @@
 # LIVE // EARTH — Working Rules
 
-## Before changing code
-
-- Inspect `main` and confirm the current commit.
-- Read the relevant current controller/engine and its callers.
-- Read the matching project standard and tests.
-- Explain the proposed scope in plain language before risky or architectural changes.
-- Do not treat old dated notes as active instructions without checking their status.
+## Before every task
+- Inspect current `main` and record its commit.
+- Read the three `VERY VERY IMPORTANT` root notes.
+- Read the matching standard, component README/contract and relevant tests.
+- Inspect the actual source and callers; do not rely only on old handoffs.
+- Identify the smallest file scope that can fulfil the request.
 
 ## Protected boundaries
+- No unapproved changes to Global Orb behaviour/dependencies.
+- Do not merge Moon and Sun implementations.
+- Do not change Home composition as a side effect of a different task.
+- Do not remove runtime/offline assets without dependency tracing.
+- Do not reset databases, IndexedDB, Cache Storage or local data as generic troubleshooting.
+- Keep Global engines shared. Do not create per-View Collector or Checker copies.
+- Do not reactivate Nature or Alien World from historical notes.
+- Do not alter `.github/workflows/` through the ZIP extractor; it protects that directory.
 
-- Do not change Global Orb behaviour or dependencies unless explicitly requested.
-- Do not merge Moon and Sun implementations; they are independent views.
-- Do not remove offline/runtime assets during code or documentation cleanup.
-- Keep shared engines global and reusable.
-- Do not reactivate retired Nature or Alien World workflows from historical notes.
-- Do not change unrelated files to make a patch appear more complete.
-
-## Documentation
-
-- Keep `docs/INDEX.md`, `docs/CURRENT-STATUS.md`, and `docs/ARCHITECTURE.md` as the concise starting point.
-- Keep component-specific technical contracts beside their component.
-- Put new long-form decision records in a clearly named dated note, then add a link in `docs/HISTORY-INDEX.md`.
-- Mark superseded decisions clearly; preserve history unless deletion is explicitly requested.
-- Do not move old files in bulk until links and references have been checked.
+## Documentation rules
+- Master documents and ZIP upload standard remain visible at repository root.
+- Current reusable rules belong in `docs/standards/`.
+- Architecture belongs in `docs/architecture/`.
+- Dated, superseded decisions belong in `docs/history/`.
+- Detailed engine/API contracts remain next to their implementation.
+- Do not silently erase a decision. Mark it superseded and retain its context in history.
+- Do not create duplicate notes for an existing topic; update its canonical document.
 
 ## Tests and reporting
+- Run the narrowest relevant tests first, then broader checks when suitable.
+- Report exact test names/counts and failures; do not hide failing legacy tests.
+- Separate local syntax/tests from live source requests, GitHub Actions, deployment and iPhone verification.
+- Do not claim an Action, commit or deployment succeeded until verified from GitHub.
+- Review the final diff for accidental changes to protected files.
 
-- Run the narrowest relevant tests first, then broader checks when appropriate.
-- Separate checks that passed from checks not run.
-- Do not claim live feeds, GitHub Actions, deployment or iPhone behaviour was tested unless it actually was.
-- Inspect the final diff for accidental changes to protected files.
+## Repository ZIP procedure
+Follow the root-level `ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md` exactly. Upload one ZIP to the repository root on `main` without unpacking it. The archive must contain its own root `UPLOAD_MANIFEST.json`; include exact payload paths, sizes, SHA-256 values, a task-specific `commitTitle`, and only approved deletions. Check the Action and resulting commit after upload.
 
-## ZIP upload
-
-Follow `ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md`. A valid package needs a root-level manifest, exact sizes and SHA-256 checksums, a meaningful `commitTitle`, and safe deletion paths. Upload one ZIP to the repository root without unpacking it. Confirm the Actions run and resulting commit afterward.
+## End-of-task continuity
+Update the relevant current note and the project history when a decision, contract or milestone changes. Preserve what was superseded and state what was actually tested.

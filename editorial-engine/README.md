@@ -1,80 +1,81 @@
-# LIVE // EARTH Universal Editorial System
+# LIVE // EARTH — Universal Editorial System
 
-**Scope:** one shared editorial production system for every content-producing view in LIVE // EARTH.
+**Ownership:** one shared, View-independent editorial system.  
+**Current registration status:** Nature and Alien World are retired; the Global Collection Manager currently has no active View profiles, assignments or schedules. This Engine remains shared infrastructure for a future approved View.
 
-The browser companion and production Engine intentionally live together in this directory. They execute in different environments and have different responsibilities, but expose one shared editorial system to the application.
+## 1. Components
 
-## Directory contents
-
-| File | Role |
+| File | Responsibility |
 |---|---|
-| `universal-editorial-engine.js` | Browser-side shared output-contract validators and safe helpers. Exposes `window.LiveEarthUniversalEditorialEngine`. |
-| `universal_editorial_engine.py` | Python production Engine. Exposes `run_engine(...)` to view Publishers. |
-| `requirements.txt` | Pinned dependencies for the Python production Engine and its optional PDF/image output. |
-| `README.md` | This shared architecture and integration contract. |
+| `universal-editorial-engine.js` | Browser-side output-contract validators and safe helpers; exposes `window.LiveEarthUniversalEditorialEngine`. |
+| `universal_editorial_engine.py` | Python production Engine; exposes `run_engine(...)` to a configured Publisher. |
+| `requirements.txt` | Pinned Python production dependencies for enabled output features. |
 
-The JavaScript companion does not duplicate the Python implementation. JavaScript validates and safely exposes published outputs to browser views; Python creates feed/PDF artifacts. The two layers remain view-independent.
+The JavaScript companion and Python Engine run in different environments. JavaScript validates/presents completed outputs; Python produces configured feed/document outputs. They are one shared system, not per-View Engine copies.
 
-## Ownership boundaries
+## 2. Ownership boundaries
 
-- **View database:** each content-producing view owns an independent logical database and its own records/retention rules.
-- **Collection:** the same Global Collection Manager and Global Collector serve every View. The Global Collector returns transient source candidates and never writes a database.
-- **Publisher:** each view has its own Publisher. It opens only its own database read-only, supplies its profile/command and bounded output destination, and routes the completed Engine result to that view's publication directory. A Publisher does not browse external sources or write its source database.
-- **Universal Editorial Engine:** shared by all Publishers. It does not fetch external sources, open or own databases, own schedules, or write view database records. It produces the requested validated feed and/or self-contained PDF from Publisher-supplied input.
-- **Browser companion:** loaded on demand from `./editorial-engine/universal-editorial-engine.js` by browser views that consume editorial publications. Future views reuse the existing global object and validators rather than creating another browser-side Engine.
-- **Global PDF Reader:** one view-independent reader opens the completed PDF selected by a calling view and returns to that caller on close. The reader is separate from the Editorial Engine and is not duplicated by Publishers.
+- **Global Collection Manager:** assigns the source work, View identity, profile and destination. It does not collect or decide rights.
+- **Global Collector:** one shared intake service. It retrieves source evidence and returns a transient structured batch; it does not write the View database.
+- **Global Checker:** owns permission, provenance and approval decisions.
+- **Global Image Engine:** prepares exact image candidates under Checker-issued permissions. It does not approve rights or publish.
+- **Universal Editorial Engine:** formats approved input into the requested output. It does not collect external data, open or own databases, own schedules, grant rights or write View story records.
+- **Newsroom Database Writer:** persists individually final-approved stories to the Manager-selected, View-isolated database.
+- **View Publisher:** opens only its own approved records read-only, passes bounded input/output instructions to the shared Engine and writes only the configured View output.
+- **Global PDF Reader:** one view-independent reader for a PDF selected by a calling View; separate from the Editorial Engine.
 
-## Publisher integration contract
+## 3. Publisher integration contract
 
-A new View integrates by adding Manager profile/source assignments/schedule and the matching Global Checker policy, plus a separate destination database identity/path and presentation adapter. No new Collector or per-View collection code is added. The shared Newsroom Database Writer initializes the schema and applies the profile retention policy. Its Publisher calls the shared Python Engine with:
+A future View must be registered through the Global Collection Manager and receive:
+1. a stable `viewId`, profile ID and unique assignment IDs;
+2. source subscriptions validated by the Manager;
+3. applicable Global Checker policies;
+4. an isolated database identity/path under `.publisher-data/<viewId>/`;
+5. a Publisher presentation adapter and bounded output destination;
+6. relevant tests and deployment checks.
 
-1. a database connection it opened in read-only mode;
-2. its own validated view profile and publication command;
-3. its bounded output destination and publication time.
+The Publisher opens its own database read-only and supplies the Engine with the database connection, validated View profile/command, bounded output destination and publication time. The Engine returns the output result. The Publisher preserves its last-good output if a run fails.
 
-The Engine returns completed view output data. The Publisher routes only its configured output types and preserves its previous last-good public output if generation fails. Catalogue and archive handling, when required for a different view, belong to that view's Publisher, not to the shared Engine.
+A browser View that reads a completed feed loads the existing shared JavaScript companion and validates the payload against its expected View identity. Do not create another browser-side validator for a new View.
 
-A browser view that reads a published feed loads the shared JavaScript companion and validates the payload against its expected `viewId`. A view that publishes documents may pass a selected PDF to the existing Global PDF Reader when needed.
+## 4. Editorial integrity
 
-## Production PDF design standard (shared Engine)
+The Engine is deterministic and does not call an AI service. It formats the content supplied through the approved handoff; it does not invent reporting, create unsupported facts, decide copyright or override the Checker.
 
-The Python Engine retains optional shared PDF-generation capability for views that require publications. This capability is not enabled for every view.
+The historical text-upgrade work was extractive:
+- sentence ranking using local text similarity;
+- reduction of near-duplicate/redundant sentences;
+- restoration of selected sentences to source order;
+- protections for numbers/measurements, quotations, negation and uncertainty;
+- no invented padding, no fabricated sentence and no paraphrase of restricted text;
+- short source material remains short when there is not enough distinct approved material.
 
-- **Page geometry:** 420 × 912 PDF points, a tall portrait canvas tuned for fit-to-width reading on contemporary phones.
-- **Reading composition:** one column, one page at a time, generous margins, serif editorial headlines, calm sans-serif body text, readable line spacing and printed folios.
-- **Traditional magazine rhythm:** cover, printed contents page, feature/report pages, grouped short field notes where appropriate, chronology, editorial note, printed source/credit pages and a closing page.
-- **Image handling:** use only eligible local assets supplied by the Publisher; preserve aspect ratio; never stretch or crop a subject merely to fill a frame. The Engine prepares a cached, downsampled PDF copy (maximum 1,800 px on the longest edge) for mobile-sized delivery without modifying the Publisher's source asset. If no eligible local asset exists, use deliberate typography and vector ornament rather than substituting unrelated imagery.
-- **Content integrity:** complete Publisher-supplied story bodies are preserved (the Global Collector's configured source-summary bound is 9,000 characters). The magazine-only text normaliser removes known APOD page-navigation boilerplate while retaining the source story and photographer credit; the live-feed summary remains unchanged. Paragraph overflow continues on additional pages; the Engine does not shorten copy to fit a fixed box.
-- **Offline and book-like:** source names, URLs, captions and credits are printed as ordinary text. Contents and page numbers are printed, not clickable. No PDF links, annotations, bookmarks, remote assets or reader preferences are added.
-- **Quality gate:** validate page geometry/count, extracted text, file size, and absence of PDF annotations/bookmarks before atomically replacing a document output. Failed generation leaves the last-good document untouched.
-- **Page target:** a Publisher profile's page target is a guide. Complete stories, legibility and editorial pacing take priority. A 48-page safety ceiling prevents runaway output.
+The Editor receives the completed Checker handoff. Summary permission must be explicit. Source restrictions remain intact.
 
-The Engine is deterministic and does not call an AI service. For Live Feeds it receives only the source text permitted by the Global Checker and preserves that approved summary in the feed; it does not fabricate or paraphrase text when a source has restricted summary use. A headline/link-only item can proceed only through an independently approved image route. The Image Engine prepares any fallback illustration before editorial layout, and the Global Checker approves it before the Editorial Engine receives it. The Editorial Engine arranges approved copy and imagery; it does not invent missing reporting or independently corroborate factual claims.
+## 5. Shared PDF output capability
 
-## Current production consumers
+The Python Engine retains a PDF-generation capability for a Publisher profile that explicitly requires it. This is not enabled for every View.
 
-### Nature Live Feeds
+The documented shared PDF design uses:
+- a tall portrait page of 420 × 912 PDF points;
+- one-column, fit-to-width reading with generous margins and clear hierarchy;
+- source names, URLs, captions and credits printed as text;
+- aspect-ratio-preserving eligible local images supplied by the Publisher;
+- no substitution of unrelated imagery when no eligible local asset exists;
+- preservation of complete Publisher-supplied story bodies, with overflow continuing onto additional pages;
+- validation of page geometry/count, extracted text, file size and absence of annotations/bookmarks before atomic replacement;
+- a 48-page safety ceiling; a profile page target is a guide, not a reason to truncate complete stories.
 
-- Shared collection: `global_collector/`, using Nature assignments from the Global Collection Manager. The shared Writer stores only post-Checker-approved editorial rows in `.publisher-data/nature/nature.sqlite3`.
-- Publisher: `nature/publisher/newsroom_publisher.py`; reads only Nature's Checker-approved Newsroom rows through the read-only adapter, validates the feed, and publishes Nature output.
-- Profile: `nature/publisher/profile.json`; database retention and the uncapped rolling Live Feed window are both 32 days.
-- Workflow: `.github/workflows/nature-publisher.yml`; hourly at minute 15 UTC and manually dispatchable. Its cache directory and `nature-db-v1-...` key family remain unchanged.
-- Browser view: `nature/view/`; requests are `no-store`, the view refreshes every five minutes while open, and the displayed feed is cleared when the view closes. It has no localStorage, sessionStorage or IndexedDB feed persistence.
+The Engine may prepare a cached/downsampled PDF copy without modifying the Publisher's original source asset. The Publisher owns its own assets and output.
 
-### Alien World Live Feeds
+## 6. Live Feeds and source permission
 
-Alien World is configured for Live Feeds only:
+For a Live Feed output, the Engine preserves the Checker-approved source text/summary and its evidence. It does not reconstruct restricted summaries or invent missing facts. If an item is approved only for headline/link use, it must not receive a made-up summary.
 
-- Shared collection: `global_collector/`, using official NASA assignments from the Global Collection Manager. The shared Writer stores only post-Checker-approved editorial rows in `.publisher-data/alien-world/alien-world.sqlite3`.
-- Publisher: `alien-world/publisher/newsroom_publisher.py`; reads only Alien World's Checker-approved Newsroom rows through the read-only adapter and accepts only a Live Feed result.
-- Profile: `alien-world/publisher/profile.json`; source database retention and the uncapped rolling Live Feed window are both 32 days, with no record-count ceiling; collection refresh target is one hour.
-- Public output: `alien-world/published/live-feed.json` only. Alien World does not generate a magazine PDF, catalogue, issue record, latest-publication pointer or archive.
-- Workflow: `.github/workflows/alien-world-publisher.yml`; hourly at minute 45 UTC and manually dispatchable. Its cache directory and `alien-world-db-v1-...` key family remain unchanged.
-- Browser view: `alien-world/view/`; it reads the completed JSON only, uses `cache: no-store`, refreshes every five minutes while open and clears the displayed feed when closed. It has no localStorage, sessionStorage or IndexedDB feed persistence.
+The Image Engine must complete its permitted image handoff before Editorial layout. The final Checker remains the release authority.
 
-**Global-only integration verification (3 November 2026):** Nature and Alien World now use the same Manager → Global Collector → Global Checker → Image Engine → Editorial Engine → final Checker → shared Writer path. No per-View Collector remains. Local tests are green; scheduled GitHub Actions runs and iPhone verification remain pending workflow installation.
+## 7. Current operating state
 
+The current Global Collection Manager documentation states that Nature and Alien World were retired and the Manager's active source catalogue, View assignments, profiles and schedules are empty. Therefore this README does not list them as current production consumers or claim any active feed schedule. Earlier Nature/Alien World workflows and feed paths remain historical.
 
-## Global architecture rule
-
-**One Global Collection Manager. One Global Collector. One Global Checker. One Global Image Engine. One Universal Editorial Engine. One shared Newsroom Database Writer. One Global PDF Reader.** Each View keeps its own Manager destination, database/cache, presentation Publisher and public feed. Never add a View-specific Collector or collection pipeline branch.
+A future View must be registered and tested before it is described as an active consumer of this Engine.

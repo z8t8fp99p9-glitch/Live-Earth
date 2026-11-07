@@ -1,45 +1,35 @@
-# LIVE // EARTH — History and Handoff Index
+# LIVE // EARTH — History Index
 
-This index prevents old implementation notes from being mistaken for current instructions. The source notes remain at their existing paths in this first documentation pass, except for the seven Celestial experiment notes explicitly deleted by the accompanying manifest.
+## How to interpret history
 
-## Retired Nature / Alien World work
+Historical documents record what the project decided or tested at a particular time. They are not automatically current instructions. In particular, Nature and Alien World feed records describe retired Views. The current Manager configuration and current source take precedence.
 
-These documents record retired collection and publishing work. They are historical references only and must not be used to reactivate the retired Views:
+The documentation rebuild moves the scattered root notes into this history structure conceptually and consolidates their useful decisions into the canonical guides. Exact prior file versions remain available through the repository's earlier Git commits.
 
-- `ALIEN-WORLD-PIPELINE-2026-11-02.md`
-- `ALIEN-WORLD-REBUILD-ADDENDUM-2026-11-01.md`
-- `NATURE-PIPELINE-2026-11-02.md`
-- `NATURE-GLOBAL-CHECKER-CENTRAL-POLICIES-2026-11-02.md`
-- `LIVE-EARTH-32-DAY-UNCAPPED-PUBLISHING-ADDENDUM-2026-11-02.md`
-- `LIVE-EARTH-LIVE-FEEDS-ADDENDUM-2026-11-01.md`
-- `NEWSROOM-13-SECTION-INTEGRATION-2026-11-04.md`
-- `NEWSROOM-PIPELINE-INTEGRATION-2026-11-03.md` — records the shared/global architecture from the earlier newsroom implementation; use only for historical design context.
-- `VIEW-REMOVAL-HANDOFF-2026-11-05.md` — retirement handoff; important record of what was retired and what shared code was retained.
+## Consolidated history
 
-## Continuity and completed implementation notes
+- `history/PROJECT-HISTORY.md` — dated record of app safeguards, feed/newsroom architecture, Global services, View retirement, Sun/Moon separation, experimental-note cleanup and documentation decisions.
 
-- `LIVE-EARTH-CONTINUITY.md` — long-form continuity record; consult for history, not as a substitute for checking current code.
-- `LIVE-EARTH-CONTINUITY-ADDENDUM-VIEWS-SEPARATION-2026-10-31.md` — earlier view-separation decisions.
-- `CLEANUP-ADDENDUM-2026-11-01.md` — dated cleanup record.
-- `LIVE-EARTH-WORKFLOW-FIX-2026-11-02.md` — dated workflow repair record.
-- `EDITORIAL-TEXT-UPGRADE.md` — editorial engine improvement reference.
-- `IMAGE-ENGINE-INTEGRATION-ADDENDUM-2026-11-02.md` — image engine integration record.
-- `GLOBAL-CHECKER-STANDARD-2026-11-02.md` — shared Checker standard.
-- `GLOBAL-IMAGE-ENGINE-CHECKER-ARCHITECTURE.md` — shared image/checker architecture reference.
+## Historical topics now covered by current documents
 
-## Current operational references
+| Former root note topic | Current canonical home | Historical context |
+|---|---|---|
+| Long continuity/fixes register | Root `VERY-VERY-IMPORTANT-MASTER-CONTINUITY.md` and `VERY-VERY-IMPORTANT-PROTECTED-DECISIONS.md` | The older version contained dated V93/V96/V97 candidate details; those version labels are not current runtime state |
+| Views separation audit | `standards/INDEPENDENT-SUN-MOON-VIEWS.md` and `architecture/APP-AND-VIEW-ARCHITECTURE.md` | 31 Oct audit; preserves the shared host and separate view responsibilities |
+| Sun amber Rise/Set update | `standards/INDEPENDENT-SUN-MOON-VIEWS.md` and Project History | A narrow historical Sun-only visual change |
+| Global Checker standard and source rules | `standards/CONTENT-RIGHTS-AND-IMAGE-DECISIONS.md` | 2 Nov policy and rights decisions; N/A View subscriptions later retired |
+| Global Image Engine architecture/integration | `standards/SHARED-ENGINES-STANDARD.md` and Project History | Image Engine owns its processing report, not rights or publication approval |
+| Editorial text upgrade | `editorial-engine/README.md` and Project History | Extractive text improvement only; no generated facts or paraphrase of restricted text |
+| Nature/Alien World pipelines and feed settings | Project History | Historical per-View routes, later superseded and retired |
+| Newsroom 13-section wiring | `global_collector/README.md`, `global-checker/README.md`, `image-engine/README.md`, Writer contract | Preserve stage ownership; do not assume old View workflows are active |
+| View retirement handoff | Project History and current status | Nature/Alien World retirement on 5 Nov 2026 |
+| Old test report | Project History | Historical test snapshot with known failures; not a current test result |
+| Recovery rollback note | `recovery/RECOVERY-ROLLBACK.txt` | Recovery principle; use the matching current snapshot and never restore unrelated workflows |
 
-- `SUN-MOON-INDEPENDENT-VIEWS-2026-11-06.md` — current separation reference for the independent Sun and Moon views.
-- `README-SUN-AMBER-UPLOAD.md` — Sun upload/implementation notes.
-- `ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md` — current ZIP upload procedure.
+## Component documents
 
-## Recovery
+The detailed current contracts remain inside `global_collection_manager/`, `global_collector/`, `global-checker/`, `image-engine/`, `editorial-engine/` and `newsroom-database-writer/`.
 
-- `recovery/README.md`
-- `recovery/README-ROLLBACK.md`
-- `recovery/ROLLBACK_PATHS.md`
-- Other files in `recovery/` are rollback snapshots or recovery evidence. Do not treat them as active source files.
+## Deletion policy
 
-## Cleanup policy
-
-New decisions should be added to the relevant component contract or to one dated history note, then linked here. Avoid creating another root-level note for the same decision. Before moving or deleting any additional old note, check inbound links and confirm its unique information has been preserved.
+Only remove a historical record when the owner explicitly requests its deletion. If a note is superseded, preserve its decision and outcome in this history record. The seven Celestial experiment notes previously requested for removal were already absent from the branch inspected for this package; no other experiment, code file or test is included for deletion.

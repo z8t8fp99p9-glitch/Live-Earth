@@ -1,55 +1,74 @@
-# LIVE // EARTH — Current Status Checkpoint
+# LIVE // EARTH — Current Status
 
-**Checkpoint date:** 7 November 2026  
+**Inspected:** 7 November 2026  
 **Repository:** `z8t8fp99p9-glitch/Live-Earth`  
-**Branch inspected:** `main`  
-**Inspected head:** `5d162a5d3d53685eb0daba804bd3e6e3c16d6610`
+**Branch:** `main`  
+**Commit inspected:** `fcb2f778abb0faf78886de14cfbea85919b84f55`  
+**Commit title:** `Add prominent LIVE EARTH master notes`
 
-This checkpoint is a navigation aid, not a substitute for checking the live branch before a new task.
+This checkpoint describes the repository snapshot inspected for this documentation rebuild. Always re-check `main` before a later task.
 
-## App and views
+## 1. Application
 
-- Treat the existing app shell and current view modules as production code.
-- Moon and Sun are independent views. Keep their controllers and renderers separate.
-- Preserve the shared stage/registry integration points unless a task explicitly changes them.
-- Global Orb behaviour and dependencies are protected. Do not alter them as a side effect of another task.
-- Keep existing offline/runtime assets. The repository contains real Moon surface imagery and Moon/Sun sky backgrounds used by the app shell.
+The application and its existing source modules are to be treated as production code. The documentation package does not modify any application/runtime code.
 
-## Shared modules
+Important source areas include:
+- `index.html` — app shell.
+- `view-manager.js` — primary-view transitions.
+- `view-module-registry.js` — shared module and feature lifecycle/registry.
+- `orb-controls-v4.js` — protected Orb controls and orientation recovery.
+- `ios-standalone-root-flow.js` — iOS full-screen root-flow support.
+- `sky-view-controller.js` — shared Sun/Moon sky stage.
+- `moon-view-controller.js` and `moon-lunar-interface.js` — Moon-specific renderer and interface.
+- `sun-view-renderer.js` — Sun-specific renderer.
+- `engine-feature-views.js` and `stacks-feature-views.js` — feature workspaces; do not confuse these with retired Celestial experiment notes.
 
-The repository contains reusable shared modules for:
-- Global Collection Manager
-- Global Collector
-- Global Checker
-- Global Image Engine
-- Universal Editorial Engine
-- Newsroom Database Writer
+## 2. Protected behaviour
 
-These modules are shared capabilities. Do not duplicate them into per-view implementations without an explicit architecture decision.
+- Global Orb behaviour/dependencies are protected.
+- Preserve the approved Home composition and five navigation Orbs.
+- Moon and Sun are independent views.
+- Location is OFF unless manually enabled.
+- Preserve runtime/offline assets, startup/update safeguards, local data and recovery paths.
+- Do not clear browser storage or reset a database as a generic fix.
 
-## Retired systems
+## 3. Shared engine modules
 
-- Nature and Alien World collection/publishing Views and their old schedules are retired.
-- Old Nature/Alien World feed, workflow and database notes remain historical. They must not be used to reactivate those pipelines.
-- Historical newsroom notes may describe a previous multi-view setup. The retirement handoff and current Manager configuration take precedence.
+The repository contains:
+- `global_collection_manager/`
+- `global_collector/`
+- `global-checker/`
+- `image-engine/`
+- `editorial-engine/`
+- `newsroom-database-writer/`
 
-## Celestial experiment cleanup in this package
+Their component READMEs describe distinct responsibilities and contracts. The single Global services remain shared; do not create view-specific duplicates.
 
-The package deletes these seven documentation files only:
-- `CELESTIAL-ENGINE-TEST-REPORT-2026-11-07.md`
-- `GLOBAL-CELESTIAL-ENGINES-FOUNDATION-2026-11-07.md`
-- `ENGINE-FEATURE-VIEWS-ADDENDUM-2026-11-05.md`
-- `MOON-ENGINE-API.md`
-- `MOON-ENGINE-SPACE-PREVIEW-2026-11-07.md`
-- `MOON-ENGINE-UPGRADE-TEST-REPORT.md`
-- `MOON-PREVIEW-ZOOM-GESTURES-2026-11-07.md`
+## 4. Current Manager configuration and retired Views
 
-This is a notes-only deletion. It does not delete `tests/moon-engine-api.test.cjs`, `engine-feature-views.js`, Moon/Sun controllers, renderer files, or runtime assets. Those are code/test/runtime items and are deliberately outside this cleanup.
+The current `global_collection_manager/README.md` records that Nature and Alien World are retired and that the source catalogue, assignments, View profiles and schedules are empty. The shared Manager and Collector remain available for a future approved View.
 
-## Known separate follow-up
+Consequences:
+- There are no active Nature or Alien World collection/publishing Views in the current documented Manager configuration.
+- Old Nature/Alien World workflows, schedules, database retention values, feed windows and test outcomes are historical.
+- Do not treat old 32-day/768-hour/10-story/50-story settings as current settings for any future View.
+- A future View must be registered through Manager configuration and receive applicable Checker policy, an isolated destination, a Publisher and tests.
 
-A previous read-only inspection noted a possible build-ID mismatch between `sw.js` and `update-manager.js`. It is not changed by this documentation package. Verify both current files and the intended release identity before addressing it in a separate task.
+## 5. Documentation baseline
 
-## Verification boundary
+This package replaces the earlier scattered root-level notes with:
+- three detailed `VERY VERY IMPORTANT` root master documents;
+- concise root `README.md` and `README-FIRST.txt`;
+- current standards under `docs/standards/`;
+- architecture references under `docs/architecture/`;
+- a consolidated historical record under `docs/history/`.
 
-This package changes documentation and requests deletion of seven notes. It does not modify app JavaScript, HTML, CSS, Python engines, tests, service worker, update manager, workflows, databases or runtime assets. No runtime or device test is required for these documentation-only changes; successful application must still be confirmed in the GitHub Actions run and resulting commit.
+The permanent ZIP upload standard remains at the root unchanged. The repository's component-specific implementation READMEs and tests remain in their component folders.
+
+## 6. Separate follow-ups
+
+This documentation task does not change build IDs, service-worker caches, app controllers, runtime assets, source policies, database schemas or workflow YAML. Any suspected runtime mismatch must be verified from current source in a separate, scoped engineering task.
+
+## 7. Verification boundary
+
+The inspected GitHub branch and current tree were read. This package's file paths, sizes, SHA-256 manifest and ZIP structure are validated locally. No application tests, runtime tests, GitHub Actions run, deployment or iPhone acceptance test is claimed for a documentation-only package. Those must be checked after upload.

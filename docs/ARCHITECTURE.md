@@ -1,44 +1,46 @@
-# LIVE // EARTH — Simple Architecture Map
+# LIVE // EARTH — Architecture Overview
 
-This is a high-level guide. The source files remain the authority for exact behaviour.
+This document is the short map. For detailed ownership rules, read `architecture/APP-AND-VIEW-ARCHITECTURE.md` and `architecture/SHARED-NEWSROOM-PIPELINE.md`. Source code and component contracts remain authoritative for exact behaviour.
 
-## 1. App layer
+## 1. Application and view layer
 
-The repository-root app files coordinate the app shell, view registration, navigation, update handling and view controllers. Individual views own their rendering and interaction logic.
+The root app shell and managers coordinate navigation and lifecycle. The current source layout separates:
+- Home and its protected visual/Orb baseline;
+- primary views and their controllers/renderers;
+- global utility features such as Location and Stacks;
+- reusable feature workspaces;
+- offline/runtime resources and recovery.
 
-## 2. View layer
+Moon and Sun use the shared sky host but retain separate rendering and view-specific behaviour. The existing view manager remains the primary-view transition authority.
 
-- Home and other registered app views use the shared app shell.
-- Moon has its own Moon controller and Moon-specific rendering/assets.
-- Sun has its own Sun renderer and Sun-specific calculations/assets.
-- Orb behaviour is a protected shared standard; do not change its dependency chain casually.
-- Stacks and feature workspaces use their existing feature modules. `engine-feature-views.js` is a working feature-workspace module and is not the deleted Celestial experiment notes.
+## 2. Shared service layer
 
-## 3. Shared engines
+The reusable content services are independent of the view UI:
+1. Global Collection Manager assigns sources, View identity, destination and schedule.
+2. Global Collector gathers source and article/image evidence into a transient batch.
+3. Global Checker owns permission, provenance and approval decisions.
+4. Global Image Engine prepares an exact image candidate under Checker-issued permissions.
+5. Universal Editorial Engine formats approved material and creates configured output.
+6. Final Global Checker verifies the final handoff.
+7. Shared Newsroom Database Writer persists only individually approved records to the Manager-selected View database.
+8. The configured View Publisher creates that View's output.
 
-The shared engines are reusable services, not copies owned by individual views:
+No component should silently take over another stage's authority.
 
-- Collection Manager — defines assignments/jobs and directs collection.
-- Global Collector — gathers source material; it is not the permissions authority.
-- Global Checker — evaluates permissions, provenance and approval gates.
-- Global Image Engine — handles approved image workflows.
-- Universal Editorial Engine — performs shared editorial processing.
-- Newsroom Database Writer — generic persistence layer, using the selected destination and its ownership rules.
+## 3. Current registration state
 
-Nature and Alien World are retired. Their historical documents may describe older workflows that are no longer active.
+The Global Collection Manager's current README records an empty source catalogue, no source-to-View assignments, no View profiles and no schedules after Nature and Alien World retirement. The engines remain shared capabilities for future registration; this does not mean a collection pipeline is currently running.
 
-## 4. Data and assets
+## 4. Data and storage
 
-- `runtime-assets/` contains runtime/offline assets. Do not remove these during a documentation cleanup.
-- View controllers and renderers should retain their own IDs and boundaries.
-- Database and cache ownership must be respected by the component that owns them.
-- Recovery files are kept separate in `recovery/`.
+A future/registered View receives its own identity, database destination and presentation adapter. The generic Writer validates the Manager-selected destination under `.publisher-data/<viewId>/`, applies that View's retention rule and refuses to adopt a database with mismatched ownership. It does not publish feeds or assets.
 
-## 5. Safe change path
+Do not reset, merge or delete databases, browser storage, cache families or local data as part of unrelated work.
 
-1. Inspect the current source and callers.
-2. Identify the exact component that owns the behaviour.
-3. Check its tests and dependencies.
-4. Change only the named scope.
-5. Run targeted checks.
-6. Review the diff and verify the deployed/device result where applicable.
+## 5. Runtime and recovery
+
+Service-worker shell entries, optional runtime assets, view controllers, local data and recovery files are linked dependencies. Removing or relocating a file requires current-source reference tracing, build/cache alignment and relevant online/offline tests.
+
+## 6. Documentation map
+
+Current standards live in `docs/standards/`; architecture maps in `docs/architecture/`; historical decisions in `docs/history/`; detailed component contracts remain beside code.
