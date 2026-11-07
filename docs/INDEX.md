@@ -1,41 +1,18 @@
 # LIVE // EARTH — Documentation Index
 
-This folder is the front door for project documentation. Use it before opening older dated notes.
+## VERY VERY IMPORTANT — read these first
+1. `VERY-VERY-IMPORTANT-MASTER-CONTINUITY.md` — project continuity and safe working sequence.
+2. `VERY-VERY-IMPORTANT-GLOBAL-STANDARDS.md` — protected shared standards.
+3. `VERY-VERY-IMPORTANT-PROTECTED-DECISIONS.md` — decisions that must not change without approval.
+4. `ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md` — mandatory upload procedure. This file stays at repository root.
 
-## Read in this order
+## Project navigation
+- `docs/CURRENT-STATUS.md` — status checkpoint; verify against current `main` before acting.
+- `docs/ARCHITECTURE.md` — app and shared-engine map.
+- `docs/WORKING-RULES.md` — change and test discipline.
+- `docs/HISTORY-INDEX.md` — dated historical records.
+- Component folders contain their own detailed implementation contracts.
+- `recovery/` contains rollback and recovery records.
+- `runtime-assets/` contains offline/runtime assets; do not move during documentation cleanup.
 
-1. [Current status](CURRENT-STATUS.md) — active, retired and protected systems.
-2. [Architecture map](ARCHITECTURE.md) — how the app and shared modules fit together.
-3. [Working rules](WORKING-RULES.md) — safe change, testing and upload rules.
-4. [History index](HISTORY-INDEX.md) — where older decisions and handoffs are recorded.
-
-## Current technical references
-
-| Topic | File |
-|---|---|
-| Sun/Moon separation | `SUN-MOON-INDEPENDENT-VIEWS-2026-11-06.md` |
-| Sun amber upload details | `README-SUN-AMBER-UPLOAD.md` |
-| Global Checker standard | `GLOBAL-CHECKER-STANDARD-2026-11-02.md` |
-| Global Image Engine / Checker architecture | `GLOBAL-IMAGE-ENGINE-CHECKER-ARCHITECTURE.md` |
-| Editorial text upgrade | `EDITORIAL-TEXT-UPGRADE.md` |
-| ZIP upload rules | `ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md` |
-| Recovery and rollback | `recovery/README.md` and `recovery/README-ROLLBACK.md` |
-
-## How to read the older root-level notes
-
-The repository accumulated dated notes during implementation. They are not all current instructions. Use `HISTORY-INDEX.md` to distinguish retired-view records, earlier newsroom wiring, continuity records and completed handoffs.
-
-Do not move or delete a historical note merely to make the root look cleaner. First check whether another file links to it and whether it contains a decision that has not been preserved elsewhere.
-
-## Folder guide
-
-- `docs/` — current navigation and project guidance.
-- `editorial-engine/` — Universal Editorial Engine implementation and contracts.
-- `global-checker/` — shared rights, provenance and validation checks.
-- `global_collection_manager/` — shared job and assignment manager.
-- `global_collector/` — shared collection implementation.
-- `image-engine/` — shared image processing and image engine code.
-- `newsroom-database-writer/` — generic shared persistence/writer implementation.
-- `runtime-assets/` — offline/runtime image assets; preserve unless specifically tasked.
-- `tests/` — app and integration tests.
-- `recovery/` — rollback snapshots and recovery instructions.
+The four references in the first section intentionally remain visible at repository root. Do not move them into a folder.
