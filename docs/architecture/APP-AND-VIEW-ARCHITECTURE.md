@@ -4,8 +4,8 @@
 - `index.html` is the application shell.
 - `view-manager.js` is the primary-view state/transition authority.
 - `view-module-registry.js` manages registered view modules and shared feature lifecycle.
-- `orb-controls-v4.js` implements the protected Home Orb controls and orientation-specific scroll recovery.
-- `ios-standalone-root-flow.js` supports the iOS full-screen/root-flow behaviour.
+- `orb-controls-v4.js` implements protected Home Orb controls and orientation-specific scroll recovery.
+- `ios-standalone-root-flow.js` supports iOS full-screen/root-flow behaviour.
 - `earth-mode-navigation.js` owns Earth exploration controls and view-transition integration.
 
 Do not create parallel primary-view state or bypass the existing manager without an explicit architecture decision.
@@ -19,16 +19,16 @@ Do not create parallel primary-view state or bypass the existing manager without
 The Moon and Sun implementations remain separate. See `docs/standards/INDEPENDENT-SUN-MOON-VIEWS.md`.
 
 ## Global utility features
-Location and Stacks are utility features rather than replacement primary views. Location privacy is OFF by default. Stacks and feature workspaces use the shared feature registry and existing interaction/lifecycle safeguards.
+Location and Stacks are utility features rather than replacement primary views. Location privacy is OFF by default. Stacks and its environmental feature workspaces use the shared feature registry and existing interaction/lifecycle safeguards.
 
-## Other feature workspaces
-`engine-feature-views.js` and `stacks-feature-views.js` are ordinary feature-workspace modules. The removal of experimental Celestial notes did not remove these files or the production Moon/Sun engines.
+## Retained editorial workspace
+`engine-feature-views.js` registers only the Universal Editorial Engine workspace. The Editorial Engine core is held in `editorial-engine/`. The feature does not register additional collection or publication views.
 
 ## Runtime and data
 - `sw.js` manages service-worker resource caching and startup shell behaviour.
-- `update-manager.js` coordinates readiness and staged updates.
+- `update-manager.js` coordinates readiness and staged updates, including the Editorial Engine workspace.
 - `runtime-assets/` and root Moon/Sun artwork contain real runtime assets.
 - `data-store.js` and `data-recovery.js` support local data/recovery.
-- `recovery/` contains rollback snapshots and instructions.
+- `recovery/` contains general rollback instructions and retained snapshots.
 
 Every file referenced by the service worker, update manager, view controller or lazy-loading path is a dependency. Do not remove or relocate based on filename alone.

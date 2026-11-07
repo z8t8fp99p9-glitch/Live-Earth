@@ -1,46 +1,25 @@
 # LIVE // EARTH — Architecture Overview
 
-This document is the short map. For detailed ownership rules, read `architecture/APP-AND-VIEW-ARCHITECTURE.md` and `architecture/SHARED-NEWSROOM-PIPELINE.md`. Source code and component contracts remain authoritative for exact behaviour.
-
 ## 1. Application and view layer
 
-The root app shell and managers coordinate navigation and lifecycle. The current source layout separates:
+The root app shell and managers coordinate navigation and lifecycle:
 - Home and its protected visual/Orb baseline;
-- primary views and their controllers/renderers;
-- global utility features such as Location and Stacks;
-- reusable feature workspaces;
+- Earth, Moon and Sun primary views;
+- Location and Stacks global utilities;
+- independent environmental Stacks feature workspaces;
+- the single Universal Editorial Engine feature workspace;
 - offline/runtime resources and recovery.
 
 Moon and Sun use the shared sky host but retain separate rendering and view-specific behaviour. The existing view manager remains the primary-view transition authority.
 
-## 2. Shared service layer
+## 2. Retained editorial tool
 
-The reusable content services are independent of the view UI:
-1. Global Collection Manager assigns sources, View identity, destination and schedule.
-2. Global Collector gathers source and article/image evidence into a transient batch.
-3. Global Checker owns permission, provenance and approval decisions.
-4. Global Image Engine prepares an exact image candidate under Checker-issued permissions.
-5. Universal Editorial Engine formats approved material and creates configured output.
-6. Final Global Checker verifies the final handoff.
-7. Shared Newsroom Database Writer persists only individually approved records to the Manager-selected View database.
-8. The configured View Publisher creates that View's output.
+The Universal Editorial Engine is retained under `editorial-engine/`. Its core Python implementation, browser helper and extractive text-intelligence utilities remain in place. The Engine workspace is the only retained content-related Feature Orb.
 
-No component should silently take over another stage's authority.
+The app no longer contains the previous source-discovery, collection, rights-checking, image-processing, feed, database-writing, Publisher or Magazine services. The preserved Editorial Engine core still contains its prior read-only approved-record input contract; without those former upstream services, that contract is dormant. Do not describe the app as running a live content pipeline.
 
-## 3. Current registration state
+## 3. Runtime and data
 
-The Global Collection Manager's current README records an empty source catalogue, no source-to-View assignments, no View profiles and no schedules after Nature and Alien World retirement. The engines remain shared capabilities for future registration; this does not mean a collection pipeline is currently running.
+`sw.js` manages service-worker resource caching and startup shell behaviour. `update-manager.js` coordinates readiness and staged updates. `runtime-assets/` and root Moon/Sun artwork contain real runtime assets. `data-store.js` and `data-recovery.js` support local data/recovery.
 
-## 4. Data and storage
-
-A future/registered View receives its own identity, database destination and presentation adapter. The generic Writer validates the Manager-selected destination under `.publisher-data/<viewId>/`, applies that View's retention rule and refuses to adopt a database with mismatched ownership. It does not publish feeds or assets.
-
-Do not reset, merge or delete databases, browser storage, cache families or local data as part of unrelated work.
-
-## 5. Runtime and recovery
-
-Service-worker shell entries, optional runtime assets, view controllers, local data and recovery files are linked dependencies. Removing or relocating a file requires current-source reference tracing, build/cache alignment and relevant online/offline tests.
-
-## 6. Documentation map
-
-Current standards live in `docs/standards/`; architecture maps in `docs/architecture/`; historical decisions in `docs/history/`; detailed component contracts remain beside code.
+Every file referenced by the service worker, update manager, view controller or lazy-loading path is a dependency. Do not remove or relocate based on filename alone. Do not reset, merge or delete databases, browser storage, cache families or local data as part of unrelated work.

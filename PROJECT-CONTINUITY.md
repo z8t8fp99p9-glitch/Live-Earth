@@ -4,22 +4,20 @@
 
 **Repository:** `z8t8fp99p9-glitch/Live-Earth`  
 **Branch:** `main`  
-**Baseline inspected for this correction:** `bf7e0582ce40c5daf1528a9f16abfb0b49744b76`  
-**Inspection date:** 7 November 2026
+**Baseline inspected:** 7 November 2026  
 
-This document records the decisions that prevent repeated mistakes and accidental regressions. It is a guide to what must be protected; the latest source code remains the authority for exact implementation details.
+This document records the safeguards that prevent regressions. The latest source remains authoritative for exact implementation details.
 
 ## 1. Non-negotiable project rules
 
-1. **Inspect first.** Read the actual `main` branch, current commit, relevant source, callers, contracts and tests before changing anything. An old note or previously prepared ZIP is not proof of current code.
-2. **Keep scope narrow.** Change only what the owner asked for. Do not redesign, refactor or clean up unrelated modules to make a patch look more complete.
-3. **Protect Global Orb behaviour.** The Orb system and its dependency chain are an established global standard. Do not change its interaction, sizing, layout, navigation or dependencies unless the owner explicitly asks.
-4. **Keep Moon and Sun independent.** They are separate views with their own renderer/controller responsibilities. Shared hosting does not mean merging their rendering or lifecycle logic.
+1. **Inspect first.** Read current `main`, relevant source, callers, contracts and tests before changing anything.
+2. **Keep scope narrow.** Change only what the owner requested. Do not refactor unrelated modules.
+3. **Protect Global Orb behaviour.** The Orb system and dependency chain are an established global standard. Do not alter interaction, sizing, layout, navigation or dependencies without explicit approval.
+4. **Keep Moon and Sun independent.** They share a stage host but retain separate renderers, controllers and lifecycle responsibilities.
 5. **Preserve Home.** Keep the approved Earth composition, camera/framing, texture, five Home Orbs, Moon/Sky placement and existing visual baseline.
-6. **Preserve data and offline behaviour.** Do not remove runtime assets, alter service-worker shell paths, reset databases, clear browser storage or delete recovery material without a coordinated, approved plan.
-7. **Keep shared services global.** The Global Collection Manager, Global Collector, Global Checker, Global Image Engine, Universal Editorial Engine and generic Newsroom Database Writer are shared capabilities. Do not create view-specific copies.
-8. **Do not resurrect retired Views.** Nature and Alien World collection/publishing Views and their old schedules are retired. Their dated notes are historical records only.
-9. **Report truthfully.** Separate source inspection, local tests, ZIP validation, GitHub Actions, deployment and iPhone acceptance. One does not prove the others.
+6. **Preserve data and offline behaviour.** Do not remove runtime assets, alter service-worker shell paths, reset databases, clear browser storage or delete recovery material without a coordinated approved plan.
+7. **Retain the Universal Editorial Engine.** The Editorial Engine core, browser helper, text-intelligence utilities and Editorial Engine Feature Orb are retained. Do not recreate the retired publishing system around them.
+8. **Report truthfully.** Separate source inspection, local checks, ZIP validation, Actions, deployment and iPhone acceptance.
 
 ## 2. Protected application behaviour
 
@@ -27,64 +25,47 @@ This document records the decisions that prevent repeated mistakes and accidenta
 The established Home navigation contains five Orbs: Earth, Moon, Sun, Location and Stacks. Earth, Moon and Sun are primary views. Location and Stacks are global utilities; they must not unexpectedly close or replace an active primary view. Preserve the approved circular, width-driven Orb geometry and touch targets.
 
 ### iOS root flow and scrolling
-`ios-standalone-root-flow.js` supports the iOS full-screen/viewport flow. The orientation recovery in `orb-controls-v4.js` is intentionally narrower than ordinary resize handling: stale scroll is cleared on an orientation transition, not on every resize. Do not remove or broaden this logic without tracing it and testing the installed iPhone PWA in portrait and landscape.
+`ios-standalone-root-flow.js` supports iOS full-screen/viewport behaviour. The orientation recovery in `orb-controls-v4.js` is intentionally narrower than ordinary resize handling. Do not remove or broaden this logic without tracing it and testing the installed iPhone app in portrait and landscape.
 
-A separate Home visual/image has been described by the owner as intentionally hidden while supporting the scroller workaround. Its exact selector has not been confidently identified in the historical audit. Until it is identified from current source, do not remove or optimise away a hidden image, placeholder or visibility rule merely because it is not visible in the normal Home composition.
+The owner previously identified a hidden Home image/visual that supports the scroller workaround. Its exact selector was not confidently identified. Do not remove an apparently unused hidden element or asset until its role is mapped from current source.
 
 ### Home visual lock
 Preserve the approved Earth size, camera framing/position, texture, baseline geometry and renderer pixel ratio; Moon geometry; star/stardust and orbital visuals; and five Home Orbs. Exploration zoom/quality must not leak into the Home baseline.
 
 ### Stacks and feature workspaces
-The feature Orb scatter and its hit targets share a coordinate space. Keep each visible Orb aligned with its interactive hitbox; avoid nested scrolling that offsets touch positions. Preserve animation completion guards/fallbacks so an absent `transitionend` event cannot leave the interface stuck. `engine-feature-views.js` is a working feature-workspace controller and is not the deleted Celestial experiment note set.
+The feature Orb scatter and hit targets share a coordinate space. Keep each visible Orb aligned with its interactive hitbox; avoid nested scrolling that offsets touch positions. Preserve animation completion guards/fallbacks. `stacks-feature-views.js` provides the independent environmental Stacks features and must remain intact.
+
+The Engine Feature Orb module now registers only **Editorial Engine**. It must not reintroduce collection, feed, source-discovery, policy-checking, image-processing or Publisher views.
 
 ### Location privacy
 Location is OFF unless manually enabled. Do not trigger geolocation from Home, startup, verification or Moon View. When Location is OFF, observer-local values such as lunar rise/set times remain hidden by design. Never clear saved data as a location troubleshooting shortcut.
 
 ### Sun and Moon
-`sky-view-controller.js` is the shared sky-stage/hosting layer. Moon-specific rendering is in `moon-view-controller.js`, with its Moon interface/scroller in `moon-lunar-interface.js`. The Sun renderer is `sun-view-renderer.js`. Preserve each view's responsibilities and use the existing shared stage/registry integration rather than merging implementations.
+`sky-view-controller.js` is the shared sky-stage/hosting layer. Moon-specific rendering is in `moon-view-controller.js`, with its interface/scroller in `moon-lunar-interface.js`. The Sun renderer is `sun-view-renderer.js`. Preserve each view's responsibilities and use the existing shared stage/registry integration rather than merging implementations.
 
 ### Startup, updates and local data
-`sw.js` and `update-manager.js` coordinate the offline shell and staged updates. Their build identity and cache paths must be checked together before any release change. Validate the saved shell and runtime dependencies; do not bypass readiness checks to hide an error. `data-store.js` and `data-recovery.js` support local data/recovery. Do not reset IndexedDB, local records or caches without explicit approval and a migration/recovery plan.
+`sw.js` and `update-manager.js` coordinate the offline shell and staged updates. Their build identity and cache paths must be checked together before a release change. Validate the saved shell and runtime dependencies; do not bypass readiness checks to hide an error. `data-store.js` and `data-recovery.js` support local data/recovery. Do not reset IndexedDB, local records or caches without explicit approval and a migration/recovery plan.
 
-## 3. Shared Global services — ownership is fixed
+## 3. Current content-tool boundary
 
-- **Global Collection Manager:** owns source catalogue, View profile, source-to-View assignments, schedules and immutable job creation. It assigns work; it does not fetch sources or make rights decisions.
-- **Global Collector:** one universal source-intake service for every View. It collects evidence and returns a transient structured package. It does not decide rights, edit, publish or write the View database.
-- **Global Checker:** owns source, provenance, text, image and approval decisions. Unknown or incomplete permission evidence must not silently pass.
-- **Global Image Engine:** prepares an exact candidate only within permissions supplied by the Checker. It does not grant rights or publish.
-- **Universal Editorial Engine:** shared deterministic editorial/output system. It uses approved input; it does not invent reporting or override Checker decisions.
-- **Newsroom Database Writer:** shared persistence layer. It writes only final Checker-approved stories into the destination selected by a valid Manager View profile; it does not publish the public feed.
-- **View Publisher:** a presentation/output adapter for its own destination. It must not become a second Collector or rights authority.
+The Universal Editorial Engine is the only retained editorial/content tool. Its Python core and browser helper remain preserved. It is not a source collector, rights checker, database writer, scheduled feed service or Publisher. Its former read-only approved-record input contract remains inside the preserved core but is dormant until a separate, explicitly approved input design exists.
 
-The component READMEs and contracts beside these engines contain their detailed input/output schemas. Read them before working on an engine.
+The following systems and their related views were removed at the owner's direction on 7 November 2026: Global collection/Manager, Collector, Checker, Image Engine, Newsroom database writer, Source Scout, feed discovery/mini-browser, feed-collector service, Publisher and Magazine publishing scaffold. Do not restore them from old handoffs or recovery snapshots.
 
-## 4. Current Manager position and retired Views
-
-The current `global_collection_manager/README.md` states that Nature and Alien World have been retired and that the active source catalogue, source-to-View assignments, View profiles and schedules are empty. The shared Manager and Collector remain available for a future, separately registered View.
-
-This distinction matters:
-- Shared engine code may remain in the repository even when no View is currently assigned to use it.
-- Historical Nature/Alien World workflow notes do not reactivate those Views.
-- No current collection schedule, active feed or successful run should be inferred from old cron values or old test reports.
-- A future View must be deliberately registered through the Manager configuration and have corresponding Checker policy, isolated destination, Publisher and tests.
-
-## 5. Documentation and continuity rules
+## 4. Documentation and continuity rules
 
 - `PROJECT-CONTINUITY.md`, `GLOBAL-STANDARDS.md` and `PROTECTED-DECISIONS.md` stay directly at the repository root.
-- `ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md` also stays directly at the root, unchanged. It must never be moved, renamed, rewritten or deleted.
-- Current guidance belongs in `docs/`; component contracts remain beside their components; superseded decisions belong in `docs/history/`.
-- Keep the distinction between active standards, historical implementation records and unresolved questions.
-- Do not create another root-level note when the same information can be added to an existing canonical guide.
-- Earlier versions of consolidated root notes remain available in Git commit history; the consolidated history guide records what each former note contributed.
+- `ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md` stays at the root, unchanged.
+- Current guidance belongs in `docs/`; component documentation remains beside retained components; historical app decisions belong in `docs/history/`.
+- Keep active standards separate from historical implementation records.
 
-## 6. Safe working sequence
+## 5. Safe working sequence
 
 1. Read this file and the other two root-level project reference documents.
-2. Read `docs/CURRENT-STATUS.md` and `docs/ARCHITECTURE.md`.
-3. Read the relevant component README/contract and tests.
-4. Inspect current source and callers.
-5. Explain the scope in plain language before a risky or architectural change.
-6. Make one focused change and run targeted checks.
-7. Review the exact diff for unrelated and protected-file changes.
-8. Build the ZIP using the root upload standard; validate every path, size and hash.
-9. After upload, verify the Actions run, resulting commit and deployed/device behaviour before calling the task complete.
+2. Read `docs/CURRENT-STATUS.md`, `docs/ARCHITECTURE.md` and the relevant component README/tests.
+3. Inspect current source and callers.
+4. Explain the scope in plain language before a risky or architectural change.
+5. Make one focused change and run targeted checks.
+6. Review the exact diff for unrelated and protected-file changes.
+7. Build the ZIP using the root upload standard; validate every path, size and hash.
+8. After upload, verify Actions, the resulting commit and deployed/device behaviour before calling the task complete.

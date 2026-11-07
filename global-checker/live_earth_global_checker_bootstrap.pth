@@ -1,2 +1,0 @@
-import live_earth_global_checker_bootstrap; live_earth_global_checker_bootstrap.bootstrap()
-import newsroom_publisher_gate; newsroom_publisher_gate.bootstrap()

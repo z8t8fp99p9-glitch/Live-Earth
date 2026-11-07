@@ -1,4 +1,4 @@
-/* LIVE // EARTH V111 update manager — full-screen Engine Feature Orbs. */
+/* LIVE // EARTH V111 update manager — Editorial Engine Feature Orb only. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
@@ -36,20 +36,6 @@
     });
     window.__liveEarthSunRendererLoadPromise = loading; return loading;
   }
-  async function loadMagazineView() {
-    if (window.__liveEarthMagazineViewInstalled) return true;
-    if (!window.LiveEarthFeatureViews?.register) throw new Error("The Stacks feature registry is not ready yet.");
-    if (window.__liveEarthMagazineViewLoadPromise) return window.__liveEarthMagazineViewLoadPromise;
-    const loading = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = new URL("./magazine/view/magazine-view-controller.js", document.baseURI).href; script.async = true;
-      script.onload = () => window.__liveEarthMagazineViewInstalled ? resolve(true) : reject(new Error("The Magazine controller loaded but did not register its view."));
-      script.onerror = () => reject(new Error("The Magazine view file could not be loaded."));
-      document.head.appendChild(script);
-    });
-    window.__liveEarthMagazineViewLoadPromise = loading;
-    return loading.catch(error => { window.__liveEarthMagazineViewLoadPromise = null; throw error; });
-  }
   async function loadEngineFeatureViews() {
     if (window.__liveEarthEngineFeatureViewsInstalled) return true;
     if (!window.LiveEarthFeatureViews?.register) throw new Error("The Stacks feature registry is not ready yet.");
@@ -57,26 +43,12 @@
     const loading = new Promise((resolve, reject) => {
       const script = document.createElement("script");
       script.src = new URL("./engine-feature-views.js", document.baseURI).href; script.async = true;
-      script.onload = () => window.__liveEarthEngineFeatureViewsInstalled ? resolve(true) : reject(new Error("The Engine Feature Orb controller loaded but did not register its views."));
-      script.onerror = () => reject(new Error("The Engine Feature Orb controller could not be loaded."));
+      script.onload = () => window.__liveEarthEngineFeatureViewsInstalled ? resolve(true) : reject(new Error("The Editorial Engine workspace loaded but did not register its view."));
+      script.onerror = () => reject(new Error("The Editorial Engine workspace controller could not be loaded."));
       document.head.appendChild(script);
     });
     window.__liveEarthEngineFeatureViewsLoadPromise = loading;
     return loading.catch(error => { window.__liveEarthEngineFeatureViewsLoadPromise = null; throw error; });
-  }
-  async function loadFeedCollectorView() {
-    if (window.__liveEarthFeedCollectorViewInstalled) return true;
-    if (!window.LiveEarthFeatureViews?.register) throw new Error("The Feed Collector Orb registry is not ready yet.");
-    if (window.__liveEarthFeedCollectorViewLoadPromise) return window.__liveEarthFeedCollectorViewLoadPromise;
-    const loading = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = new URL("./feed-collector/feed-collector-view.js", document.baseURI).href; script.async = true;
-      script.onload = () => window.__liveEarthFeedCollectorViewInstalled ? resolve(true) : reject(new Error("The Feed Collector workspace loaded but did not attach to its existing Orb."));
-      script.onerror = () => reject(new Error("The Feed Collector workspace controller could not be loaded."));
-      document.head.appendChild(script);
-    });
-    window.__liveEarthFeedCollectorViewLoadPromise = loading;
-    return loading.catch(error => { window.__liveEarthFeedCollectorViewLoadPromise = null; throw error; });
   }
 
   loadProceduralSun().then(() => { window.__liveEarthSunRendererReady = true; signalVerifiedStartup(); }).catch(error => {
@@ -84,11 +56,10 @@
     console.warn("[LIVE // EARTH] Procedural Sun is not available yet; Home and Moon remain available.", error?.message || error);
   });
 
-  loadMagazineView()
-    .catch(error => console.warn("[LIVE // EARTH] Magazine view is not available yet; Home, Moon and the other Stacks views remain available.", error?.message || error))
-    .then(() => loadEngineFeatureViews())
-    .then(() => loadFeedCollectorView())
-    .catch(error => console.warn("[LIVE // EARTH] An optional Stacks workspace is not available; Home, Moon and other views remain available.", error?.message || error));
+  loadEngineFeatureViews().catch(error => console.warn(
+    "[LIVE // EARTH] Editorial Engine view is not available yet; Home, Moon and other Stacks views remain available.",
+    error?.message || error
+  ));
 
   window.addEventListener("live-earth-scene-ready", signalVerifiedStartup);
   window.addEventListener("live-earth-startup-ready", signalVerifiedStartup);

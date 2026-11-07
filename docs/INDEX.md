@@ -4,51 +4,34 @@ This is the documentation front door. The three core project reference documents
 
 ## First read — repository root
 
-1. `PROJECT-CONTINUITY.md` — project history, safeguards and safe task sequence.
-2. `GLOBAL-STANDARDS.md` — Orb, view and shared-engine rules.
-3. `PROTECTED-DECISIONS.md` — decisions that require explicit approval.
+1. `PROJECT-CONTINUITY.md` — project safeguards and safe task sequence.
+2. `GLOBAL-STANDARDS.md` — Orb, view and Editorial Engine standards.
+3. `PROTECTED-DECISIONS.md` — decisions requiring explicit approval.
 4. `ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md` — permanent root-level ZIP upload procedure; do not move or modify it.
 
 ## Current project guidance
 
 - [`CURRENT-STATUS.md`](CURRENT-STATUS.md) — inspected repository position and known boundaries.
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — app, view and shared-service architecture.
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — app, view and retained-engine architecture.
 - [`WORKING-RULES.md`](WORKING-RULES.md) — inspection, change, test and reporting rules.
 
 ## Standards
 
 - `standards/GLOBAL-ORB-STANDARD.md`
 - `standards/INDEPENDENT-SUN-MOON-VIEWS.md`
-- `standards/SHARED-ENGINES-STANDARD.md`
-- `standards/CONTENT-RIGHTS-AND-IMAGE-DECISIONS.md`
 
 ## Architecture references
 
 - `architecture/APP-AND-VIEW-ARCHITECTURE.md`
-- `architecture/SHARED-NEWSROOM-PIPELINE.md`
 
 ## History
 
-- [`history/PROJECT-HISTORY.md`](history/PROJECT-HISTORY.md) — dated decisions and superseded states.
+- [`history/PROJECT-HISTORY.md`](history/PROJECT-HISTORY.md) — dated app decisions and superseded states.
 - [`HISTORY-INDEX.md`](HISTORY-INDEX.md) — historical note mapping and interpretation.
 
-## Component-owned technical contracts
+## Retained component documentation
 
-Read these beside their implementations before editing a component:
+- `editorial-engine/README.md` — retained Universal Editorial Engine boundary and test scope.
+- `recovery/README-ROLLBACK.md` and `recovery/RECOVERY-ROLLBACK.txt` — generic recovery guidance.
 
-- `global_collection_manager/README.md`
-- `global_collector/README.md`
-- `global-checker/README.md`
-- `image-engine/README.md`
-- `editorial-engine/README.md`
-- `newsroom-database-writer/NEWSROOM-DATABASE-WRITER.md`
-- `recovery/README.md`
-
-## Repository folders
-
-- `tests/` and component `tests/` — regression coverage.
-- `runtime-assets/` — runtime/offline assets.
-- `recovery/` — rollback snapshots and recovery guidance.
-- `docs/history/` — historical records, not current configuration.
-
-The project reference documents and ZIP upload standard are intentionally kept visible at repository root.
+The app source and component tests remain authoritative for exact implementation details.
