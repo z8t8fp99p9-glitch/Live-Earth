@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#06182a">
+  <title>Feed Collector · LIVE // EARTH</title>
+  <link rel="stylesheet" href="feed-collector.css">
+  <script src="feed-collector.js" defer></script>
+</head>
+<body>
+  <div class="fc-app">
+    <header class="fc-topbar">
+      <div class="fc-brand"><span class="fc-brand-mark">◉</span><span>LIVE // EARTH</span></div>
+      <span class="fc-mode">SOURCE INSPECTION</span>
+    </header>
+
+    <main class="fc-main">
+      <section class="fc-intro">
+        <p class="fc-eyebrow">READ · EXAMINE · VERIFY</p>
+        <h1>Feed <span>Collector</span></h1>
+        <p>Inspect the complete public article, its original images and every available source detail in one place.</p>
+      </section>
+
+      <form class="fc-url-form" id="inspectForm">
+        <label for="sourceUrl">Article or website URL</label>
+        <div class="fc-input-row">
+          <input id="sourceUrl" name="sourceUrl" type="url" inputmode="url" autocomplete="url" autocapitalize="none" spellcheck="false" placeholder="https://example.com/article" required>
+          <button class="fc-primary" id="inspectButton" type="submit">Inspect</button>
+        </div>
+        <p class="fc-hint">Enter one public page URL. This view only inspects it; it does not publish or forward anything.</p>
+      </form>
+
+      <div class="fc-status" id="status" role="status" aria-live="polite">Enter a URL to inspect its available content.</div>
+
+      <section class="fc-results" id="results" hidden>
+        <div class="fc-result-head">
+          <div>
+            <p class="fc-eyebrow">INSPECTED SOURCE</p>
+            <h2 id="articleTitle">Article details</h2>
+            <a id="sourceLink" class="fc-source-link" href="#" target="_blank" rel="noopener noreferrer"></a>
+          </div>
+          <div class="fc-actions">
+            <button class="fc-secondary" id="shareButton" type="button">Share</button>
+            <button class="fc-primary" id="exportButton" type="button">Export</button>
+          </div>
+        </div>
+
+        <div class="fc-stats" id="stats"></div>
+
+        <section class="fc-panel" aria-labelledby="imagesHeading">
+          <div class="fc-panel-head"><div><p class="fc-eyebrow">ORIGINAL MEDIA</p><h2 id="imagesHeading">Images</h2></div><span class="fc-count" id="imageCount">0</span></div>
+          <div class="fc-images" id="images"></div>
+          <p class="fc-empty-note" id="noImages" hidden>No image URLs were exposed by the reading service for this page.</p>
+        </section>
+
+        <section class="fc-panel" aria-labelledby="articleHeading">
+          <div class="fc-panel-head"><div><p class="fc-eyebrow">COMPLETE SOURCE TEXT</p><h2 id="articleHeading">Full article</h2></div><span class="fc-count" id="wordCount">—</span></div>
+          <div class="fc-article" id="articleBody"></div>
+        </section>
+
+        <section class="fc-panel" aria-labelledby="metadataHeading">
+          <div class="fc-panel-head"><div><p class="fc-eyebrow">SOURCE RECORD</p><h2 id="metadataHeading">All available information</h2></div><span class="fc-count" id="fieldCount">0 fields</span></div>
+          <div class="fc-metadata" id="metadata"></div>
+        </section>
+
+        <section class="fc-panel" aria-labelledby="linksHeading">
+          <div class="fc-panel-head"><div><p class="fc-eyebrow">REFERENCES & ATTACHMENTS</p><h2 id="linksHeading">Links and media</h2></div><span class="fc-count" id="linkCount">0</span></div>
+          <div class="fc-links" id="links"></div>
+          <p class="fc-empty-note" id="noLinks" hidden>No additional links were exposed by the reading service.</p>
+        </section>
+
+        <details class="fc-panel fc-raw-panel">
+          <summary><span><span class="fc-eyebrow">ORIGINAL READER RESPONSE</span><strong>Raw source metadata</strong></span><span class="fc-count">JSON</span></summary>
+          <pre id="rawMetadata"></pre>
+        </details>
+
+        <p class="fc-disclaimer">Inspection depends on what the public source and reading service make accessible. Paywalls, blocked pages, missing metadata and hotlink restrictions are reported rather than bypassed. Export preserves the complete retrieved text and image URLs; remote image files may need to be opened or saved separately.</p>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
