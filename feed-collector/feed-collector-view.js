@@ -1,7 +1,6 @@
-/* LIVE // EARTH — independent Feed Collector workspace adapter.
-   Uses only the existing Feed Collector Orb registration/lifecycle so it does
-   not create another Orb. Article inspection runs locally in the browser.
-   No Global Collector, Checker, Scout, Manager, Publisher or database calls. */
+/* LIVE // EARTH — Feed Collector discovery workspace adapter.
+   Registers only the existing Feed Collector feature identity. It does not add
+   an Orb, alter global Orb behaviour, or fork any shared collection engine. */
 (() => {
   'use strict';
   if (window.__liveEarthFeedCollectorViewInstalled) return;
@@ -23,19 +22,19 @@
       root.id = 'le-feed-collector-view';
       root.dataset.feature = 'feed-collector';
       root.setAttribute('role', 'region');
-      root.setAttribute('aria-label', 'Feed Collector independent article inspection workspace');
+      root.setAttribute('aria-label', 'Feed Collector website discovery and inspection workspace');
       root.style.cssText = 'position:fixed;inset:0;z-index:6;display:none;overflow:hidden;background:#020811;pointer-events:auto;';
       document.body.appendChild(root);
     }
     root.replaceChildren();
     frame = document.createElement('iframe');
     frame.id = 'le-feed-collector-frame';
-    frame.title = 'Feed Collector article and source inspection';
-    frame.setAttribute('aria-label', 'Independent Feed Collector article and source inspection workspace');
-    frame.setAttribute('allow', 'clipboard-write; web-share');
+    frame.title = 'Feed Collector website and feed inspection';
+    frame.setAttribute('aria-label', 'Discover website feeds and inspect their entries and source information');
+    frame.setAttribute('allow', 'clipboard-write');
     frame.setAttribute('referrerpolicy', 'no-referrer');
     frame.style.cssText = 'position:absolute;inset:0;z-index:1;width:100%;height:100%;border:0;background:#061321;';
-    frame.src = new URL('./feed-collector/feed-collector.html', document.baseURI).href;
+    frame.src = new URL('./feed-collector/discovery.html', document.baseURI).href;
     root.appendChild(frame);
   }
 
@@ -55,7 +54,7 @@
     title: 'Feed Collector',
     shortLabel: 'Collector',
     symbol: '📡',
-    description: 'Inspect public article HTML, complete extracted text, original image references, links and source metadata locally in this browser. No external reader or shared collection engine is used.',
+    description: 'Discover RSS, Atom and supported JSON feeds from a website, filter entries by date, and inspect original source material using the shared Global Collector retrieval and parsing code.',
     connected: true,
     activate: openWorkspace,
     deactivate: closeWorkspace

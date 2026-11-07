@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#06182a">
+  <title>Feed Collector · LIVE // EARTH</title>
+  <link rel="stylesheet" href="discovery.css">
+  <script src="discovery-config.js" defer></script>
+  <script src="discovery.js" defer></script>
+</head>
+<body>
+  <div class="fc-app">
+    <header class="fc-topbar">
+      <div class="fc-brand"><span class="fc-brand-mark">◉</span><span>LIVE // EARTH</span></div>
+      <span class="fc-mode">GLOBAL FEED DISCOVERY</span>
+    </header>
+    <main class="fc-main">
+      <section class="fc-intro">
+        <p class="fc-eyebrow">DISCOVER · FILTER · INSPECT</p>
+        <h1>Feed <span>Collector</span></h1>
+        <p>Enter a website to discover its available RSS, Atom and JSON feeds. Choose a period, open a feed and inspect its entries and original source information.</p>
+      </section>
+
+      <form class="fc-search" id="siteForm">
+        <label for="siteUrl">Website URL</label>
+        <div class="fc-search-row">
+          <input id="siteUrl" name="siteUrl" type="text" inputmode="url" autocomplete="url" autocapitalize="none" spellcheck="false" placeholder="https://www.example.org" required>
+          <select id="lookbackDays" aria-label="Feed lookback period">
+            <option value="10">Last 10 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="60">Last 60 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="7">Last 7 days</option>
+            <option value="14">Last 14 days</option>
+          </select>
+          <button class="fc-primary" id="discoverButton" type="submit">Find feeds</button>
+        </div>
+        <p class="fc-hint">Feed discovery checks feed links declared by the website and common feed addresses. Only feeds that return recognizable entries are listed.</p>
+      </form>
+
+      <div class="fc-status" id="status" role="status" aria-live="polite">Enter a website address to discover available feeds.</div>
+
+      <section id="feedResults" hidden>
+        <div class="fc-section-heading">
+          <div><p class="fc-eyebrow">DISCOVERED ON THIS WEBSITE</p><h2 id="siteTitle">Available feeds</h2><p class="fc-subheading" id="siteUrlLabel"></p></div>
+          <span class="fc-count" id="feedCount">0 feeds</span>
+        </div>
+        <div class="fc-feed-list" id="feedList"></div>
+        <p class="fc-empty" id="noFeeds" hidden>No readable RSS, Atom or supported JSON feeds were discovered on this website.</p>
+      </section>
+
+      <section id="feedDetail" hidden>
+        <button class="fc-back" id="backToFeeds" type="button">← All discovered feeds</button>
+        <div class="fc-detail-head">
+          <div><p class="fc-eyebrow">SELECTED FEED</p><h2 id="feedTitle">Feed details</h2><a id="feedUrl" class="fc-source-link" target="_blank" rel="noopener noreferrer"></a></div>
+          <span class="fc-count" id="feedFormat"></span>
+        </div>
+        <div class="fc-stats" id="feedStats"></div>
+        <section class="fc-panel">
+          <div class="fc-panel-head"><div><p class="fc-eyebrow">FEED INFORMATION</p><h3>Source details</h3></div></div>
+          <div class="fc-metadata" id="feedMetadata"></div>
+        </section>
+        <section class="fc-panel">
+          <div class="fc-panel-head"><div><p class="fc-eyebrow">PUBLISHED ENTRIES</p><h3>Entries in selected period</h3><p class="fc-hint">Select an entry to retrieve its full article, continuation pages, images and source-rights evidence.</p></div><span class="fc-count" id="entryCount"></span></div>
+          <div class="fc-entry-list" id="entryList"></div>
+          <p class="fc-empty" id="noEntries" hidden>No dated entries were published inside this period.</p>
+          <details class="fc-undated"><summary>Entries without a publication date <span class="fc-count" id="undatedCount">0</span></summary><div class="fc-entry-list" id="undatedEntryList"></div><p class="fc-empty" id="noUndatedEntries" hidden>No undated entries.</p></details>
+        </section>
+        <details class="fc-panel fc-evidence"><summary>Complete feed metadata and source retrieval evidence</summary><pre id="feedRawMetadata"></pre></details>
+      </section>
+
+      <section id="articleDetail" hidden>
+        <button class="fc-back" id="backToFeed" type="button">← Back to feed entries</button>
+        <div class="fc-detail-head"><div><p class="fc-eyebrow">FULL SOURCE INSPECTION</p><h2 id="articleTitle">Article details</h2><a id="articleUrl" class="fc-source-link" target="_blank" rel="noopener noreferrer"></a></div><span class="fc-count" id="articleWordCount">0 words</span></div>
+        <div class="fc-stats" id="articleStats"></div>
+        <section class="fc-panel">
+          <div class="fc-panel-head"><div><p class="fc-eyebrow">EXTRACTED ARTICLE</p><h3>Full text</h3></div></div>
+          <div class="fc-article" id="articleBody"></div>
+          <p class="fc-empty" id="noArticleText" hidden>The source did not expose a readable article body. The source metadata and retrieval evidence are still shown below.</p>
+        </section>
+        <section class="fc-panel">
+          <div class="fc-panel-head"><div><p class="fc-eyebrow">ORIGINAL IMAGE REFERENCES</p><h3>Images</h3></div><span class="fc-count" id="articleImageCount">0</span></div>
+          <div class="fc-images" id="articleImages"></div>
+          <p class="fc-empty" id="noArticleImages" hidden>No image references were exposed by this article.</p>
+        </section>
+        <section class="fc-panel">
+          <div class="fc-panel-head"><div><p class="fc-eyebrow">SOURCE RECORD</p><h3>Available information</h3></div><span class="fc-count">38-field schema</span></div>
+          <div class="fc-metadata" id="articleMetadata"></div>
+        </section>
+        <details class="fc-panel fc-evidence"><summary>Source rights evidence and retrieval pages</summary><pre id="rightsEvidence"></pre></details>
+        <details class="fc-panel fc-evidence"><summary>Complete normalized source record</summary><pre id="rawRecord"></pre></details>
+        <p class="fc-disclaimer">This is a source inspection only. Manager assignment, Global Checker approval, database storage and publication have not been performed.</p>
+      </section>
+
+      <footer class="fc-footnote">Read-only inspection · No database writes · No automatic publication</footer>
+    </main>
+  </div>
+</body>
+</html>
