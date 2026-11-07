@@ -1,17 +1,17 @@
 # LIVE // EARTH — Documentation Index
 
-This is the documentation front door. Use the `VERY VERY IMPORTANT` root notes before opening older implementation records.
+This is the documentation front door. The three core project reference documents and ZIP upload standard remain directly at the repository root.
 
 ## First read — repository root
 
-1. `VERY-VERY-IMPORTANT-MASTER-CONTINUITY.md` — project continuity, safeguards and safe task sequence.
-2. `VERY-VERY-IMPORTANT-GLOBAL-STANDARDS.md` — Orb, view and shared-engine rules.
-3. `VERY-VERY-IMPORTANT-PROTECTED-DECISIONS.md` — decisions that require explicit approval.
-4. `ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md` — permanent root-level ZIP upload rule; never move it.
+1. `PROJECT-CONTINUITY.md` — project history, safeguards and safe task sequence.
+2. `GLOBAL-STANDARDS.md` — Orb, view and shared-engine rules.
+3. `PROTECTED-DECISIONS.md` — decisions that require explicit approval.
+4. `ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md` — permanent root-level ZIP upload procedure; do not move or modify it.
 
 ## Current project guidance
 
-- [`CURRENT-STATUS.md`](CURRENT-STATUS.md) — verified repository position and known boundaries.
+- [`CURRENT-STATUS.md`](CURRENT-STATUS.md) — inspected repository position and known boundaries.
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — app, view and shared-service architecture.
 - [`WORKING-RULES.md`](WORKING-RULES.md) — inspection, change, test and reporting rules.
 
@@ -29,12 +29,12 @@ This is the documentation front door. Use the `VERY VERY IMPORTANT` root notes b
 
 ## History
 
-- [`history/PROJECT-HISTORY.md`](history/PROJECT-HISTORY.md) — consolidated history, decisions and superseded states.
-- [`HISTORY-INDEX.md`](HISTORY-INDEX.md) — historical source-note mapping and how to interpret it.
+- [`history/PROJECT-HISTORY.md`](history/PROJECT-HISTORY.md) — dated decisions and superseded states.
+- [`HISTORY-INDEX.md`](HISTORY-INDEX.md) — historical note mapping and interpretation.
 
 ## Component-owned technical contracts
 
-These remain next to their implementations and should be read before editing the corresponding component:
+Read these beside their implementations before editing a component:
 
 - `global_collection_manager/README.md`
 - `global_collector/README.md`
@@ -51,4 +51,4 @@ These remain next to their implementations and should be read before editing the
 - `recovery/` — rollback snapshots and recovery guidance.
 - `docs/history/` — historical records, not current configuration.
 
-**Root protection:** the three master notes and the ZIP upload standard stay directly at the repository root.
+The project reference documents and ZIP upload standard are intentionally kept visible at repository root.

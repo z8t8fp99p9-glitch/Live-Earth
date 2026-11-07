@@ -1,4 +1,6 @@
-# VERY VERY IMPORTANT — PROTECTED DECISIONS
+# Protected Decisions Register
+
+> **Critical project reference — changes to these areas require explicit owner approval.**
 
 **Approval rule:** do not change any item in this register without the owner's explicit request or approval, a scoped dependency review and relevant tests.
 
@@ -18,7 +20,7 @@
 | Shared Global engines | Manager, Collector, Checker, Image Engine, Editorial Engine and Writer remain shared | No View-specific copies or transfer of decision authority |
 | Retired Nature/Alien World | Their collection/publishing Views and old schedules remain retired | No reactivation based on historical documents |
 | ZIP upload standard | `ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md` remains at repository root, byte-for-byte untouched by documentation cleanup | Never move, rename, rewrite, replace or delete that file |
-| Master notes | The three `VERY-VERY-IMPORTANT` files remain at repository root | Never bury them in `docs/` or rename them casually |
+| Project reference documents | `PROJECT-CONTINUITY.md`, `GLOBAL-STANDARDS.md` and `PROTECTED-DECISIONS.md` stay at repository root | Keep the official names; do not bury them in `docs/` |
 | History | Important decisions and superseded outcomes remain discoverable | No silent deletion of project knowledge |
 
 ## Special handling for the hidden Home visual

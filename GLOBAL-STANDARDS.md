@@ -1,6 +1,8 @@
-# VERY VERY IMPORTANT — GLOBAL STANDARDS
+# Global Standards
 
-These standards apply across LIVE // EARTH. The master continuity file explains the project history; this document defines the rules that govern changes.
+> **Critical project reference — applies across all LIVE // EARTH work.**
+
+These standards define the rules that govern changes. The Project Continuity document explains the project safeguards and history; the Protected Decisions register lists areas that require explicit approval before changes.
 
 ## 1. Global Orb standard
 

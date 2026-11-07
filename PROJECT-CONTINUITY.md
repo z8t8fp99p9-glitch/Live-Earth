@@ -1,13 +1,15 @@
-# VERY VERY IMPORTANT — MASTER CONTINUITY
+# Project Continuity
+
+> **Critical project reference — read before starting work.**
 
 **Repository:** `z8t8fp99p9-glitch/Live-Earth`  
 **Branch:** `main`  
-**Baseline inspected for this documentation rebuild:** `fcb2f778abb0faf78886de14cfbea85919b84f55`  
+**Baseline inspected for this correction:** `bf7e0582ce40c5daf1528a9f16abfb0b49744b76`  
 **Inspection date:** 7 November 2026
 
-This is the first continuity document to read before any LIVE // EARTH task. It records the decisions that prevent repeated mistakes and accidental regressions. It is a guide to what must be protected; the latest source code remains the authority for exact implementation details.
+This document records the decisions that prevent repeated mistakes and accidental regressions. It is a guide to what must be protected; the latest source code remains the authority for exact implementation details.
 
-## 1. The non-negotiable project rules
+## 1. Non-negotiable project rules
 
 1. **Inspect first.** Read the actual `main` branch, current commit, relevant source, callers, contracts and tests before changing anything. An old note or previously prepared ZIP is not proof of current code.
 2. **Keep scope narrow.** Change only what the owner asked for. Do not redesign, refactor or clean up unrelated modules to make a patch look more complete.
@@ -68,16 +70,16 @@ This distinction matters:
 
 ## 5. Documentation and continuity rules
 
-- The three `VERY VERY IMPORTANT` master files stay directly at the repository root.
+- `PROJECT-CONTINUITY.md`, `GLOBAL-STANDARDS.md` and `PROTECTED-DECISIONS.md` stay directly at the repository root.
 - `ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md` also stays directly at the root, unchanged. It must never be moved, renamed, rewritten or deleted.
 - Current guidance belongs in `docs/`; component contracts remain beside their components; superseded decisions belong in `docs/history/`.
 - Keep the distinction between active standards, historical implementation records and unresolved questions.
 - Do not create another root-level note when the same information can be added to an existing canonical guide.
-- This documentation rebuild consolidates root-level notes. Their earlier versions remain available in Git commit history; the consolidated history guide records what each former note contributed.
+- Earlier versions of consolidated root notes remain available in Git commit history; the consolidated history guide records what each former note contributed.
 
 ## 6. Safe working sequence
 
-1. Read this file and the other two `VERY-VERY-IMPORTANT` root files.
+1. Read this file and the other two root-level project reference documents.
 2. Read `docs/CURRENT-STATUS.md` and `docs/ARCHITECTURE.md`.
 3. Read the relevant component README/contract and tests.
 4. Inspect current source and callers.

@@ -1,13 +1,13 @@
 LIVE // EARTH — START HERE
 Repository: z8t8fp99p9-glitch/Live-Earth
 Branch: main
-Documentation checkpoint inspected: 7 November 2026
-Inspected branch commit: fcb2f778abb0faf78886de14cfbea85919b84f55
+Branch commit inspected for this naming correction: bf7e0582ce40c5daf1528a9f16abfb0b49744b76
+Inspection date: 7 November 2026
 
 READ THESE FIRST — IN THIS ORDER
-1. VERY-VERY-IMPORTANT-MASTER-CONTINUITY.md
-2. VERY-VERY-IMPORTANT-GLOBAL-STANDARDS.md
-3. VERY-VERY-IMPORTANT-PROTECTED-DECISIONS.md
+1. PROJECT-CONTINUITY.md
+2. GLOBAL-STANDARDS.md
+3. PROTECTED-DECISIONS.md
 4. ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md
 5. docs/INDEX.md
 6. docs/CURRENT-STATUS.md
@@ -23,7 +23,7 @@ CURRENT PROJECT POSITION
 - Do not reactivate old Nature/Alien World workflows based on historical notes.
 
 SAFE WORK
-- Read the relevant master standard, component contract and tests.
+- Read the relevant project reference, component contract and tests.
 - Change only the requested scope.
 - Never reset databases, browser storage, caches or local recovery data as a generic fix.
 - Do not claim tests, GitHub Actions, deployment or iPhone verification unless they actually passed.
