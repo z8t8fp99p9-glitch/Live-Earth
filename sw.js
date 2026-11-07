@@ -1,7 +1,7 @@
 /* LIVE // EARTH V110 — Nature and Alien World feed Views retired. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v111-shared-offline-moon-surface";
-const CACHE_NAME = "live-earth-shell-v111-shared-offline-moon-surface";
+const BUILD_ID = "v112-remove-experimental-celestial-engines";
+const CACHE_NAME = "live-earth-shell-v112-remove-experimental-celestial-engines";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
