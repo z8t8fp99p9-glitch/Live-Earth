@@ -7,96 +7,20 @@
   <title>Feed Collector · LIVE // EARTH</title>
   <link rel="stylesheet" href="discovery.css">
   <script src="discovery-config.js" defer></script>
+  <script src="browser-engine.js" defer></script>
   <script src="discovery.js" defer></script>
 </head>
 <body>
   <div class="fc-app">
-    <header class="fc-topbar">
-      <div class="fc-brand"><span class="fc-brand-mark">◉</span><span>LIVE // EARTH</span></div>
-      <span class="fc-mode">ONLINE FEED EXPLORER</span>
-    </header>
+    <header class="fc-topbar"><div class="fc-brand"><span class="fc-brand-mark">◉</span><span>LIVE // EARTH</span></div><span class="fc-mode">ONLINE FEED EXPLORER</span></header>
     <main class="fc-main">
-      <section class="fc-intro">
-        <p class="fc-eyebrow">SEARCH · READ · UNDERSTAND</p>
-        <h1>Feed <span>Explorer</span></h1>
-        <p>Enter a website to see its available feeds and news. Open any story to read the article, view its images and explore the information supplied by its source.</p>
-      </section>
-
-      <form class="fc-search" id="siteForm">
-        <label for="siteUrl">Enter a website address</label>
-        <div class="fc-search-row">
-          <input id="siteUrl" name="siteUrl" type="text" inputmode="url" autocomplete="url" autocapitalize="none" spellcheck="false" placeholder="https://www.example.org" required>
-          <select id="lookbackDays" aria-label="News date range">
-            <option value="7">Last 7 days</option>
-            <option value="10">Last 10 days</option>
-            <option value="14">Last 14 days</option>
-            <option value="30" selected>Last 30 days</option>
-            <option value="60">Last 60 days</option>
-            <option value="90">Last 90 days</option>
-          </select>
-          <button class="fc-primary" id="discoverButton" type="submit">Search website</button>
-        </div>
-        <p class="fc-hint">We look for feeds the website makes available. Results depend on what that website exposes publicly.</p>
-      </form>
-
+      <section class="fc-intro"><p class="fc-eyebrow">SEARCH · READ · UNDERSTAND</p><h1>Feed <span>Explorer</span></h1><p>Enter a website to discover its public feeds, inspect stories, read available article text, view image references and examine source information.</p></section>
+      <form class="fc-search" id="siteForm"><label for="siteUrl">Enter a website address</label><div class="fc-search-row"><input id="siteUrl" name="siteUrl" type="text" inputmode="url" autocomplete="url" autocapitalize="none" spellcheck="false" placeholder="https://www.example.org" required><select id="lookbackDays" aria-label="News date range"><option value="7">Last 7 days</option><option value="10">Last 10 days</option><option value="14">Last 14 days</option><option value="30" selected>Last 30 days</option><option value="60">Last 60 days</option><option value="90">Last 90 days</option></select><button class="fc-primary" id="discoverButton" type="submit">Search website</button></div><p class="fc-hint">The browser reads only sources that allow cross-origin access. If a website blocks browser access, try its direct public RSS or Atom feed address.</p></form>
       <div class="fc-status" id="status" role="status" aria-live="polite">Enter a website address to begin exploring.</div>
-
-      <section id="feedResults" hidden>
-        <div class="fc-section-heading">
-          <div><p class="fc-eyebrow">WEBSITE RESULTS</p><h2 id="siteTitle">Available feeds</h2><p class="fc-subheading" id="siteUrlLabel"></p></div>
-          <span class="fc-count" id="feedCount">0 feeds</span>
-        </div>
-        <div class="fc-feed-list" id="feedList"></div>
-        <p class="fc-empty" id="noFeeds" hidden>No readable feeds were found. This website may not expose RSS, Atom or supported JSON feeds.</p>
-      </section>
-
-      <section id="feedDetail" hidden>
-        <button class="fc-back" id="backToFeeds" type="button">← Back to website feeds</button>
-        <div class="fc-detail-head">
-          <div><p class="fc-eyebrow">NEWS FROM THIS FEED</p><h2 id="feedTitle">Feed details</h2><a id="feedUrl" class="fc-source-link" target="_blank" rel="noopener noreferrer"></a></div>
-          <span class="fc-count" id="feedFormat"></span>
-        </div>
-        <div class="fc-stats" id="feedStats"></div>
-        <section class="fc-panel">
-          <div class="fc-panel-head"><div><p class="fc-eyebrow">ABOUT THIS FEED</p><h3>Feed information</h3></div></div>
-          <div class="fc-metadata" id="feedMetadata"></div>
-        </section>
-        <section class="fc-panel">
-          <div class="fc-panel-head"><div><p class="fc-eyebrow">AVAILABLE STORIES</p><h3>News and articles</h3><p class="fc-hint">Choose any story to open its article, images and source information.</p></div><span class="fc-count" id="entryCount"></span></div>
-          <div class="fc-entry-list" id="entryList"></div>
-          <p class="fc-empty" id="noEntries" hidden>No dated stories were found in this period.</p>
-          <details class="fc-undated"><summary>Stories without a publication date <span class="fc-count" id="undatedCount">0</span></summary><div class="fc-entry-list" id="undatedEntryList"></div><p class="fc-empty" id="noUndatedEntries" hidden>No undated stories.</p></details>
-        </section>
-        <details class="fc-panel fc-evidence"><summary>Technical feed details</summary><pre id="feedRawMetadata"></pre></details>
-      </section>
-
-      <section id="articleDetail" hidden>
-        <button class="fc-back" id="backToFeed" type="button">← Back to stories</button>
-        <div class="fc-detail-head">
-          <div><p class="fc-eyebrow">ARTICLE READER</p><h2 id="articleTitle">Article</h2><a id="articleUrl" class="fc-source-link" target="_blank" rel="noopener noreferrer"></a></div>
-          <span class="fc-count" id="articleWordCount">0 words</span>
-        </div>
-        <div class="fc-stats" id="articleStats"></div>
-        <section class="fc-panel fc-reading-panel">
-          <div class="fc-panel-head"><div><p class="fc-eyebrow">THE STORY</p><h3>Article and images</h3></div></div>
-          <div id="articleLead"></div>
-          <div class="fc-article" id="articleBody"></div>
-          <p class="fc-empty" id="noArticleText" hidden>The source did not provide readable article text. The available source information is still shown below.</p>
-        </section>
-        <section class="fc-panel">
-          <div class="fc-panel-head"><div><p class="fc-eyebrow">SOURCE IMAGES</p><h3>Images and credits</h3></div><span class="fc-count" id="articleImageCount">0 images</span></div>
-          <div class="fc-images" id="articleImages"></div>
-          <p class="fc-empty" id="noArticleImages" hidden>No image references were provided by the source.</p>
-        </section>
-        <section class="fc-panel">
-          <div class="fc-panel-head"><div><p class="fc-eyebrow">UNDERSTAND THE SOURCE</p><h3>Article information</h3><p class="fc-hint">All standard information fields are kept. Missing values are identified honestly.</p></div><span class="fc-count" id="fieldCount">38 fields</span></div>
-          <div class="fc-information-groups" id="articleMetadata"></div>
-        </section>
-        <details class="fc-panel fc-evidence"><summary>Detailed source rights and retrieval evidence</summary><pre id="rightsEvidence"></pre></details>
-        <details class="fc-panel fc-evidence"><summary>Original source record (technical view)</summary><pre id="rawRecord"></pre></details>
-      </section>
-
-      <footer class="fc-footnote">Online inspection only · Nothing is saved to a news database · Nothing is published</footer>
+      <section id="feedResults" hidden><div class="fc-section-heading"><div><p class="fc-eyebrow">WEBSITE RESULTS</p><h2 id="siteTitle">Available feeds</h2><p class="fc-subheading" id="siteUrlLabel"></p></div><span class="fc-count" id="feedCount">0 feeds</span></div><div class="fc-feed-list" id="feedList"></div><p class="fc-empty" id="noFeeds" hidden>No readable feeds were found. The site may block browser access or may not expose a supported feed.</p></section>
+      <section id="feedDetail" hidden><button class="fc-back" id="backToFeeds" type="button">← Back to website feeds</button><div class="fc-detail-head"><div><p class="fc-eyebrow">NEWS FROM THIS FEED</p><h2 id="feedTitle">Feed details</h2><a id="feedUrl" class="fc-source-link" target="_blank" rel="noopener noreferrer"></a></div><span class="fc-count" id="feedFormat"></span></div><div class="fc-stats" id="feedStats"></div><section class="fc-panel"><div class="fc-panel-head"><div><p class="fc-eyebrow">ABOUT THIS FEED</p><h3>Feed information</h3></div></div><div class="fc-metadata" id="feedMetadata"></div></section><section class="fc-panel"><div class="fc-panel-head"><div><p class="fc-eyebrow">AVAILABLE STORIES</p><h3>News and articles</h3><p class="fc-hint">Choose any story to open its article, images and source information.</p></div><span class="fc-count" id="entryCount"></span></div><div class="fc-entry-list" id="entryList"></div><p class="fc-empty" id="noEntries" hidden>No dated stories were found in this period.</p><details class="fc-undated"><summary>Stories without a publication date <span class="fc-count" id="undatedCount">0</span></summary><div class="fc-entry-list" id="undatedEntryList"></div><p class="fc-empty" id="noUndatedEntries" hidden>No undated stories.</p></details></section><details class="fc-panel fc-evidence"><summary>Technical feed details</summary><pre id="feedRawMetadata"></pre></details></section>
+      <section id="articleDetail" hidden><button class="fc-back" id="backToFeed" type="button">← Back to stories</button><div class="fc-detail-head"><div><p class="fc-eyebrow">ARTICLE READER</p><h2 id="articleTitle">Article</h2><a id="articleUrl" class="fc-source-link" target="_blank" rel="noopener noreferrer"></a></div><span class="fc-count" id="articleWordCount">0 words</span></div><div class="fc-stats" id="articleStats"></div><section class="fc-panel fc-reading-panel"><div class="fc-panel-head"><div><p class="fc-eyebrow">THE STORY</p><h3>Article and images</h3></div></div><div id="articleLead"></div><div class="fc-article" id="articleBody"></div><p class="fc-empty" id="noArticleText" hidden>The source did not provide readable article text. The available source information is still shown below.</p></section><section class="fc-panel"><div class="fc-panel-head"><div><p class="fc-eyebrow">SOURCE IMAGES</p><h3>Images and credits</h3></div><span class="fc-count" id="articleImageCount">0 images</span></div><div class="fc-images" id="articleImages"></div><p class="fc-empty" id="noArticleImages" hidden>No image references were provided by the source.</p></section><section class="fc-panel"><div class="fc-panel-head"><div><p class="fc-eyebrow">UNDERSTAND THE SOURCE</p><h3>Article information</h3><p class="fc-hint">All 38 standard information fields are retained. Missing values are identified honestly.</p></div><span class="fc-count" id="fieldCount">38 fields</span></div><div class="fc-information-groups" id="articleMetadata"></div></section><details class="fc-panel fc-evidence"><summary>Detailed source rights and retrieval evidence</summary><pre id="rightsEvidence"></pre></details><details class="fc-panel fc-evidence"><summary>Original source record (technical view)</summary><pre id="rawRecord"></pre></details></section>
+      <footer class="fc-footnote">Browser-based online inspection only · No news database writes · No Checker decision · Nothing is published. Some websites block browser access.</footer>
     </main>
   </div>
 </body>

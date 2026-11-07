@@ -1,0 +1,100 @@
+/* LIVE // EARTH Feed Collector — browser-native, read-only inspection adapter.
+   It intercepts only this workspace's existing /api/feed-collector requests.
+   No database, Manager, Checker, Publisher, other View or Orb is contacted. */
+(() => {
+  'use strict';
+  if (window.__leFeedBrowserEngine) return;
+  window.__leFeedBrowserEngine = true;
+  const nativeFetch = window.fetch.bind(window);
+  const FIELDS = ['schemaVersion','postId','sourcePostId','viewId','sourceId','sourceName','sourcePlatform','sourceType','sourceFeedUrl','sourceWebsiteUrl','originalUrl','canonicalUrl','title','subtitle','summary','excerpt','fullText','fullTextHtml','authorName','authorId','authorUrl','contributors','publishedAt','updatedAt','collectedAt','language','categories','tags','topics','location','media','attachments','links','engagement','rightsMetadata','provenance','sourceMetadata','collectionContext'];
+  const MAX_BYTES = 2 * 1024 * 1024, MAX_CANDIDATES = 40, MAX_FEEDS = 30;
+  const now = () => new Date().toISOString();
+  const clean = (v, n=20000) => String(v == null ? '' : v).replace(/\s+/g,' ').trim().slice(0,n);
+  const abs = (v, base) => { try { const u = new URL(v,base); return u.protocol === 'https:' && !u.username && !u.password && !u.port ? u.href : ''; } catch { return ''; } };
+  function validate(v) { let u; try { u = new URL(/^https?:\/\//i.test(String(v||'')) ? String(v).trim() : 'https://' + String(v||'').trim()); } catch { throw Error('Enter a valid public HTTPS website address.'); } if(u.protocol!=='https:' || !u.hostname || u.username || u.password || u.port) throw Error('For secure inspection, use a public HTTPS address on the standard port.'); const host=u.hostname.toLowerCase().replace(/^\[|\]$/g,''); if(host==='localhost'||host.endsWith('.localhost')||host.endsWith('.local')||host==='::1'||host==='0.0.0.0'||/^127\./.test(host)||/^10\./.test(host)||/^192\.168\./.test(host)||/^169\.254\./.test(host)||/^172\.(1[6-9]|2[0-9]|3[01])\./.test(host)) throw Error('Private or local network addresses cannot be inspected. Enter a public website.'); return u.href; }
+  async function get(url) {
+    const safe = validate(url);
+    let response;
+    try { response = await nativeFetch(safe,{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',redirect:'follow',referrerPolicy:'no-referrer'}); }
+    catch(e) { throw Error('This website did not allow browser access (usually a CORS restriction), or the network blocked the request. Try its public RSS/Atom feed address directly.'); }
+    if(!response.ok) throw Error(`Website returned HTTP ${response.status}.`);
+    const type = response.headers.get('content-type') || '';
+    const len = Number(response.headers.get('content-length')||0);
+    if(len > MAX_BYTES) throw Error('The source response is larger than the 2 MB inspection limit.');
+    const body = await response.text();
+    if(body.length > MAX_BYTES) throw Error('The source response is larger than the 2 MB inspection limit.');
+    return {text:body,url:response.url||safe,status:response.status,type,etag:response.headers.get('etag')||'',lastModified:response.headers.get('last-modified')||'',bytes:new Blob([body]).size};
+  }
+  const local = n => String(n.localName || n.nodeName || '').split(':').pop().toLowerCase();
+  const child = (el,n) => [...(el?.children||[])].find(x=>local(x)===n);
+  const val = (el,n) => clean(child(el,n)?.textContent || '');
+  const dateValue = v => { if(!v)return ''; const d=new Date(v); return Number.isNaN(d.getTime()) ? clean(v,300) : d.toISOString(); };
+  function imageObj(url,base,extra={}) { const u=abs(url,base); return u ? {mediaType:'image',url:u,originalUrl:u,thumbnailUrl:u,title:clean(extra.title||''),caption:clean(extra.caption||''),altText:clean(extra.alt||''),creator:clean(extra.creator||''),credit:clean(extra.credit||''),licenseName:clean(extra.licenseName||''),licenseUrl:abs(extra.licenseUrl||'',base),rightsNotice:clean(extra.rightsNotice||''),mimeType:clean(extra.mimeType||'image/unknown'),sourcePage:base,position:0,metadata:extra.metadata||{}} : null; }
+  function parseFeed(raw, type, base) {
+    const trimmed=raw.trim();
+    if(type.includes('json') || trimmed.startsWith('{')) {
+      let j; try{j=JSON.parse(trimmed)}catch{throw Error('The address did not return valid JSON feed data.');}
+      const items=j.items||j.entries||j.posts||j.articles||[]; if(!Array.isArray(items))throw Error('JSON feed has no readable item list.');
+      return {format:'json',title:j.title||j.name||'',description:j.description||j.subtitle||'',homePageUrl:abs(j.home_page_url||j.homePageUrl||j.website||'',base),language:j.language||'',updatedAt:j._updated||j.last_updated||'',generator:j.feed_url||'',rawMetadata:j,items:items.map(x=>({raw:x,title:x.title||'',url:abs(x.url||x.external_url||x.id||'',base),id:x.id||x.url||'',summary:x.summary||x.description||'',content:x.content_text||x.content_html||'',author:x.authors?.[0]?.name||x.author?.name||x.author||'',published:x.date_published||x.date_modified||'',updated:x.date_modified||'',tags:x.tags||[],image:x.image||x.banner_image||'',attachments:x.attachments||[],language:x.language||j.language||''}))};
+    }
+    if(!trimmed.startsWith('<'))throw Error('The address did not return an RSS, Atom or JSON feed.');
+    const doc=new DOMParser().parseFromString(trimmed,'application/xml'); if(doc.querySelector('parsererror'))throw Error('The XML feed could not be parsed.');
+    const root=doc.documentElement, rss=local(root)==='rss'||!!doc.querySelector('channel'), atom=local(root)==='feed';
+    if(!rss&&!atom)throw Error('The XML document is not a supported RSS or Atom feed.');
+    const channel=rss?(doc.querySelector('channel')||root):root;
+    const title=val(channel,'title'), description=val(channel,'description')||val(channel,'subtitle');
+    const home= rss ? val(channel,'link') : (child(channel,'link')?.getAttribute('href')||'');
+    const items=[...doc.getElementsByTagName('*')].filter(x=>local(x)===(rss?'item':'entry'));
+    const mapped=items.map(el=>{
+      const links=[...el.children].filter(x=>local(x)==='link');
+      const link=links.find(x=>!x.getAttribute('rel')||x.getAttribute('rel')==='alternate');
+      const url=rss?(link?.textContent||''):(link?.getAttribute('href')||'');
+      const media=[];
+      for(const n of [...el.getElementsByTagName('*')]) { const ln=local(n); if((ln==='enclosure'||ln==='content'||ln==='thumbnail') && (n.getAttribute('url')||n.getAttribute('href'))) { const u=n.getAttribute('url')||n.getAttribute('href'); const typ=n.getAttribute('type')||''; if(typ.startsWith('image/')||/\.(jpe?g|png|gif|webp|avif)(?:[?#]|$)/i.test(u)) {const im=imageObj(u,base,{mimeType:typ,alt:n.getAttribute('title')||''});if(im)media.push(im);} } }
+      const encoded=[...el.getElementsByTagName('*')].find(x=>local(x)==='encoded');
+      const content=val(el,'encoded')||val(el,'content')||val(el,'description')||val(el,'summary');
+      const cats=[...el.getElementsByTagName('*')].filter(x=>local(x)==='category').map(x=>clean(x.getAttribute('term')||x.textContent)).filter(Boolean);
+      return {raw:el.outerHTML,title:val(el,'title'),url:abs(url,base),id:val(el,'guid')||val(el,'id')||url,summary:val(el,'summary')||val(el,'description'),content,contentHtml:encoded?.textContent||'',author:val(el,'creator')||val(el,'author'),published:val(el,'pubdate')||val(el,'published')||val(el,'date'),updated:val(el,'updated'),categories:cats,media,language:val(el,'language')};
+    });
+    return {format:rss?'rss_atom':'rss_atom',title,description,homePageUrl:abs(home,base),language:val(channel,'language'),updatedAt:val(channel,'lastBuildDate')||val(channel,'updated'),generator:val(channel,'generator'),rawMetadata:{title,description,language:val(channel,'language')},items:mapped};
+  }
+  function siteLinks(html,url) {
+    const doc=new DOMParser().parseFromString(html,'text/html'); const title=clean(doc.title||''); const found=[];
+    for(const l of doc.querySelectorAll('link[rel~="alternate"][href]')) {const t=(l.getAttribute('type')||'').toLowerCase();if(/rss|atom|feed\+json|xml|json/.test(t))found.push({url:abs(l.href,url),title:l.title||'',type:t,rel:'html-alternate'});}
+    for(const a of doc.querySelectorAll('a[href]')) if(/(?:rss|atom|feed|\.xml|\.json)(?:[?#].*)?$/i.test(a.getAttribute('href')||''))found.push({url:abs(a.href,url),title:a.title||clean(a.textContent)||'Feed link',type:'',rel:'page-link'});
+    const origin=new URL(url).origin; for(const p of ['/feed','/feed/','/rss','/rss.xml','/feed.xml','/atom.xml','/index.xml','/feed.json','/feeds/posts/default'])found.push({url:origin+p,title:'',type:'',rel:'common-feed-path'});
+    const seen=new Set();return {title,feeds:found.filter(x=>x.url&&!seen.has(x.url)&&seen.add(x.url)).slice(0,MAX_CANDIDATES)};
+  }
+  function within(item,days) {const raw=item.published||item.updated||''; if(!raw)return 'undated';const d=new Date(raw);if(Number.isNaN(d.getTime()))return 'undated';const age=Date.now()-d.getTime();return age>=-86400000&&age<=days*86400000?'recent':'old';}
+  function makeRecord(item,feed,site,format,retrieval) {
+    const sourceName=feed.title||new URL(feed.url).hostname; const article=item.url||''; const sourceId='';
+    const key=String(item.id||article||item.title||JSON.stringify(item.raw||{}));
+    const id='fc-'+hash(sourceName+'|'+key);
+    const media=(item.media||[]).filter(Boolean); if(item.image){const im=imageObj(item.image,article||feed.url);if(im)media.push(im);}
+    const attachments=(item.attachments||[]).map(a=>{const u=a.url||a.data||'';return {mediaType:a.mime_type?.startsWith('image/')?'image':'unknown',url:abs(u,article||feed.url),mimeType:a.mime_type||'',title:a.title||''};}).filter(x=>x.url);
+    const summary=clean(item.summary||item.content||'',6000);
+    const raw=item.raw||item;
+    const record={schemaVersion:1,postId:id,sourcePostId:clean(item.id||'',500),viewId:'',sourceId,sourceName,sourcePlatform:'website',sourceType:format,sourceFeedUrl:feed.url,sourceWebsiteUrl:site,originalUrl:article,canonicalUrl:article,title:clean(item.title,2000),subtitle:'',summary,excerpt:summary,fullText:plain(item.content||item.summary||''),fullTextHtml:item.contentHtml||'',authorName:clean(item.author,500),authorId:'',authorUrl:'',contributors:[],publishedAt:dateValue(item.published),updatedAt:dateValue(item.updated),collectedAt:now(),language:clean(item.language||feed.language||''),categories:item.categories||[],tags:item.tags||[],topics:[],location:{},media,attachments,links:article?[{url:article,rel:'article'}]:[],engagement:{},rightsMetadata:{copyrightNotice:'',licenseName:'',licenseUrl:'',creator:'',attribution:'',credit:'',rightsNotice:'',termsUrl:'',sourcePage:article,metadata:{}},provenance:{requestedUrl:feed.url,finalUrl:feed.url,httpStatus:retrieval.httpStatus,contentType:retrieval.contentType,fetchedAt:retrieval.fetchedAt,sourceFormat:format},sourceMetadata:raw,collectionContext:{jobId:'',idempotencyKey:'',viewId:'',profileId:'',assignmentIds:[],sourceIds:[],feedUrls:[feed.url],collectorEntrypoint:'Feed Collector browser inspection adapter',collectorWorkflow:'manual-read-only-inspection',destinationDatabaseId:'',destinationDatabasePath:'',scheduledAt:'',requestWindowHours:'',configVersion:'',trigger:'manual-user-request',collectorVersion:'browser-adapter-v1'}};
+    return Object.fromEntries(FIELDS.map(k=>[k,record[k]??'']));
+  }
+  function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(16).padStart(8,'0');}
+  function plain(s){const d=new DOMParser().parseFromString(String(s||''),'text/html');return clean(d.body.textContent||s||'',100000);}
+  async function discover(p){const url=validate(p.url),days=Number(p.lookbackDays||30);const page=await get(url);let candidates=[],siteTitle='';let parsed;
+    if(/xml|rss|atom|json/.test(page.type)||/^\s*[<{]/.test(page.text)){try{parsed=parseFeed(page.text,page.type,page.url);}catch{}}
+    if(parsed?.items?.length)candidates=[{url:page.url,title:parsed.title,type:page.type,rel:'submitted-url',parsed}];else{const links=siteLinks(page.text,page.url);siteTitle=links.title;candidates=links.feeds;}
+    if(!candidates.length)throw Error('The website opened, but no feed links or standard feed locations were found.');
+    const results=await Promise.all(candidates.map(async c=>{try{const r=c.parsed?{...page}:await get(c.url);const f=c.parsed||parseFeed(r.text,r.type,r.url);if(!f.items.length)return null;const dated=f.items.map(x=>within(x,days));return {url:r.url,title:f.title||c.title||siteTitle||new URL(r.url).hostname,description:f.description||'',format:f.format,contentType:r.type,entriesInWindow:dated.filter(x=>x==='recent').length,entriesTotal:f.items.length,undatedEntries:dated.filter(x=>x==='undated').length,feedData:f,retrieval:r};}catch{return null;}}));
+    const feeds=results.filter(Boolean).filter((x,i,a)=>a.findIndex(y=>y.url===x.url)===i).sort((a,b)=>b.entriesInWindow-a.entriesInWindow).slice(0,MAX_FEEDS);
+    return {schemaVersion:1,operation:'discover-site-feeds',site:{requestedUrl:url,finalUrl:page.url,title:siteTitle||new URL(page.url).hostname,httpStatus:page.status,contentType:page.type,fetchedAt:now()},lookbackDays:days,feedsFound:feeds.length,feeds:feeds.map(({feedData,retrieval,...x})=>({...x,feedId:hash(x.url),discoveredBy:'browser-feed-discovery'})),discovery:{candidateLocationsChecked:candidates.length,note:'Browser-only inspection. Sites that block cross-origin requests cannot be read from this static app.'}};
+  }
+  const cache=new Map();
+  async function inspectFeed(p){const url=validate(p.feedUrl),days=Number(p.lookbackDays||30),r=await get(url),f=parseFeed(r.text,r.type,r.url);const feed={title:f.title||new URL(url).hostname,description:f.description||'',homePageUrl:f.homePageUrl||'',language:f.language||'',updatedAt:f.updatedAt||'',generator:f.generator||'',feedUrl:url,format:f.format,requestedUrl:url,finalUrl:r.url,httpStatus:r.status,contentType:r.type,etag:r.etag,lastModified:r.lastModified,responseBytes:r.bytes,fetchedAt:now(),rawMetadata:f.rawMetadata};const retrieval={requestedUrl:url,finalUrl:r.url,httpStatus:r.status,contentType:r.type,etag:r.etag,lastModified:r.lastModified,fetchedAt:now(),detectedFormat:f.format,responseBytes:r.bytes};const records=[],undatedRecords=[];for(const item of f.items){const bucket=within(item,days);if(bucket==='old')continue;const rec=makeRecord(item,feed,f.homePageUrl||new URL(url).origin,f.format,retrieval);(bucket==='undated'?undatedRecords:records).push(rec);cache.set(rec.postId,rec);}records.sort((a,b)=>Date.parse(b.publishedAt||0)-Date.parse(a.publishedAt||0));return {schemaVersion:1,operation:'inspect-feed',feed,lookbackDays:days,statistics:{entriesTotal:f.items.length,entriesInWindow:records.length,undatedEntries:undatedRecords.length,fieldsPerEntry:FIELDS.length,imageReferences:records.reduce((n,x)=>n+x.media.length,0)},recordSchema:'LIVE_EARTH_UNIVERSAL_POST_V1',recordFields:FIELDS,records,undatedRecords,lineage:{managerJob:'not-applicable — direct user inspection',viewId:'',databaseWrite:false,checkerDecision:'not-run',publication:'not-run'}};}
+  function metadata(doc,selectors){for(const s of selectors){const n=doc.querySelector(s);const v=n?.content||n?.getAttribute('href')||n?.textContent;if(v)return clean(v,6000);}return '';}
+  async function inspectArticle(p){const url=validate(p.articleUrl),r=await get(url),doc=new DOMParser().parseFromString(r.text,'text/html');const title=metadata(doc,['meta[property="og:title"]','meta[name="twitter:title"]','meta[name="title"]','title']);const canonical=abs(doc.querySelector('link[rel="canonical"]')?.href||url,url)||url;const body=doc.querySelector('article')||doc.querySelector('main')||doc.querySelector('[role="main"]')||doc.body;body.querySelectorAll('script,style,noscript,nav,footer,header,form,aside').forEach(x=>x.remove());const fullText=clean(body.innerText||body.textContent||'',100000);const images=[];for(const img of doc.images){const src=img.currentSrc||img.getAttribute('src')||img.getAttribute('data-src')||img.getAttribute('data-lazy-src');const item=imageObj(src,url,{alt:img.alt||'',caption:img.closest('figure')?.querySelector('figcaption')?.textContent||'',credit:img.getAttribute('data-credit')||'',creator:img.getAttribute('data-author')||'',mimeType:'image/unknown'});if(item&&!images.some(x=>x.url===item.url))images.push(item);}
+    const author=metadata(doc,['meta[name="author"]','meta[property="article:author"]']);const published=metadata(doc,['meta[property="article:published_time"]','meta[name="date"]','time[datetime]']);const updated=metadata(doc,['meta[property="article:modified_time"]']);const description=metadata(doc,['meta[property="og:description"]','meta[name="description"]']);const imageMeta=metadata(doc,['meta[property="og:image"]','meta[name="twitter:image"]']);if(imageMeta&&!images.some(x=>x.url===abs(imageMeta,url))){const im=imageObj(imageMeta,url,{alt:title});if(im)images.unshift(im);}
+    const retrieval={requestedUrl:url,finalUrl:r.url,httpStatus:r.status,contentType:r.type,etag:r.etag,lastModified:r.lastModified,fetchedAt:now(),detectedFormat:'html',responseBytes:r.bytes};const rec=makeRecord({title,url:canonical,id:canonical,summary:description,content:fullText,author,published,updated,media:images,raw:{metaTitle:title,description,canonical,author,published,updated}}, {url:r.url,title:new URL(r.url).hostname,language:''},new URL(r.url).origin,'html',retrieval);rec.fullText=fullText;rec.media=images;rec.canonicalUrl=canonical;rec.originalUrl=url;rec.rightsMetadata={copyrightNotice:metadata(doc,['meta[name="copyright"]']),licenseName:metadata(doc,['meta[name="license"]']),licenseUrl:metadata(doc,['link[rel="license"]']),creator:author,attribution:'',credit:'',rightsNotice:'No reuse permission inferred. Public visibility is not a licence.',termsUrl:'',sourcePage:r.url,metadata:{ogImage:metadata(doc,['meta[property="og:image"]'])}};rec.sourceMetadata={pageTitle:doc.title,metaDescription:description,metaAuthor:author,metaPublished:published,metaModified:updated,canonicalUrl:canonical};
+    const pages=[{requestedUrl:url,finalUrl:r.url,httpStatus:r.status,contentType:r.type,detectedFormat:'html',retrievalStatus:'collected',fetchedAt:retrieval.fetchedAt,fullText,rightsMetadata:rec.rightsMetadata,sourceMetadata:rec.sourceMetadata}];const rights={evidenceOnly:true,decision:'not-run',note:'Feed Collector records source evidence only. It does not grant copyright permission or make a Checker decision.',pageEvidence:pages.map(x=>({url:x.finalUrl,rightsMetadata:x.rightsMetadata}))};return {schemaVersion:1,operation:'inspect-article',lookbackDays:Number(p.lookbackDays||30),retrieval,recordSchema:'LIVE_EARTH_UNIVERSAL_POST_V1',recordFields:FIELDS,record:rec,fullArticle:{articleUrl:canonical,title,author,publishedAt:dateValue(published),updatedAt:dateValue(updated),fullText,fullTextHtml:'',wordCount:fullText.split(/\s+/).filter(Boolean).length,pages},originalImageRecords:images,sourceRightsEvidence:rights,lineage:{managerJob:'not-applicable — direct user inspection',viewId:'',databaseWrite:false,checkerDecision:'not-run',publication:'not-run'}};
+  }
+  async function route(path,p){if(path.endsWith('/discover'))return discover(p);if(path.endsWith('/inspect-feed'))return inspectFeed(p);if(path.endsWith('/inspect-article'))return inspectArticle(p);throw Error('Unknown Feed Collector operation.');}
+  window.fetch = function(input,init={}) {const url=typeof input==='string'?input:input?.url||'';if(/\/api\/feed-collector\/(discover|inspect-feed|inspect-article)\/?(?:\?|$)/.test(url)){return (async()=>{try{const payload=JSON.parse(init.body||'{}');const result=await route(url,payload);return new Response(JSON.stringify(result),{status:200,headers:{'Content-Type':'application/json'}});}catch(e){return new Response(JSON.stringify({error:e?.message||'Feed inspection failed.'}),{status:422,headers:{'Content-Type':'application/json'}});}})();}return nativeFetch(input,init);};
+})();
