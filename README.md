@@ -1,24 +1,24 @@
-# LIVE // EARTH — Section 13 View-ID Database Bridge
+# LIVE // EARTH
 
-This is an additive integration package for the existing `Live-Earth` repository.
+LIVE // EARTH is a modular web app and PWA. This repository contains the app shell, view controllers, shared rendering systems, reusable engines, runtime assets, tests, and project documentation.
 
-## What it does
-- Reads the authoritative `viewId` from the hashed Manager ID Card.
-- Resolves the database only through the existing Manager profile registry.
-- Accepts only Section 13 posts marked `APPROVE_FOR_DATABASE`.
-- Cross-checks post identity, Section 9 image lineage, Section 12 READY output, image hash and staging path.
-- Writes approved rows to the existing `newsroom_approved_stories` table using the existing writer's additive schema and upsert protections.
-- Copies approved image bytes only into the matching View's private `.publisher-data/<viewId>/newsroom-assets/` cache.
-- Does not open the other View database, reset a database, publish a feed, or write public assets.
+## Start here
 
-## Run
-From repository root:
-```bash
-python newsroom-database-writer/section13_database_bridge.py \
-  --checker-report path/to/completed-sections-1-to-13-report.json \
-  --repository-root . \
-  --output section13-database-write-report.json
-```
+1. Read [`README-FIRST.txt`](README-FIRST.txt) for the current project status and safety rules.
+2. Open [`docs/INDEX.md`](docs/INDEX.md) for the documentation map.
+3. Read [`docs/CURRENT-STATUS.md`](docs/CURRENT-STATUS.md) before making code changes.
+4. Read [`docs/WORKING-RULES.md`](docs/WORKING-RULES.md) before preparing an upload.
 
-## Important
-This bridge is additive. Do not alter the production workflows until the integration tests are run against real Nature and Alien World report fixtures. A blocked report exits non-zero and must not be treated as a successful write.
+## Main areas
+
+- App shell and view integration: repository-root JavaScript files.
+- Shared engine modules: `global-checker/`, `global_collection_manager/`, `global_collector/`, `image-engine/`, `editorial-engine/`, and `newsroom-database-writer/`.
+- Current view/runtime code and assets: repository-root controllers and `runtime-assets/`.
+- Tests: `tests/` and the test folders inside individual modules.
+- Recovery snapshots and rollback guidance: `recovery/`.
+
+## Documentation policy
+
+`docs/` is the navigation and current-guidance layer. Existing technical notes are being classified and indexed before any broad relocation. Dated notes remain at their existing paths until reviewed; do not assume that a dated note is an active instruction.
+
+Nature and Alien World collection views are retired. Their notes are historical only. The experimental Celestial Engine notes listed in the upload manifest are removed by this package. Working Moon and Sun view code, real runtime textures, shared feature-engine code, and Orb behaviour are not changed.
