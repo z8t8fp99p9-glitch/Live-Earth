@@ -9,7 +9,7 @@ Sun and Moon are independent primary views. They may share a sky-stage host and 
 - `sky-view-controller.js` — shared sky stage/host, common background selection and view lifecycle.
 - `moon-view-controller.js` — Moon-specific 3D rendering and Moon View behaviour.
 - `moon-lunar-interface.js` — Moon-specific lunar Arc/time-scroller interface and overlay lifecycle.
-- `sun-view-renderer.js` — standalone Sun renderer, solar calculations, Sun-specific Arc/scroller and Sun visual treatment.
+- `sun-view-controller.js` — standalone Sun controller, solar calculations, Sun-specific Arc/scroller and Sun visual treatment.
 - `view-manager.js` — primary-view transition authority.
 - `view-module-registry.js` — shared view-module lifecycle/registry.
 

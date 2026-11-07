@@ -10,7 +10,7 @@
 | Location | OFF by default; geolocation only after deliberate user action | No automatic location request; no clearing local data to fix a location issue |
 | Stacks | Shared feature registry, dock, scatter coordinate space, hitbox alignment and cleanup guards remain intact | No nested-scroller offset, dead hitbox or animation that can remain stuck |
 | Moon View | Separate Moon controller, renderer, lunar interface/scroller and assets | No merge into Sun or Home; no unapproved geometry or lifecycle change |
-| Sun View | Separate Sun renderer and solar-specific behaviour | No runtime Moon-source transformation or Moon dependency |
+| Sun View | Separate Sun controller and solar-specific behaviour | No runtime Moon-source transformation or Moon dependency |
 | iOS full-screen flow | Root-flow and orientation-specific recovery are deliberate safeguards | No removal of the hidden Home visual/placeholder until its exact role is mapped |
 | Startup/update | Service-worker shell, update manager, build IDs and staged-update safeguards work as a coordinated system | No shell path or cache identity change without dependency tracing and online/offline tests |
 | Local data | Data-store, recovery, IndexedDB and database boundaries are protected | No destructive reset, deletion or migration without approval and recovery plan |

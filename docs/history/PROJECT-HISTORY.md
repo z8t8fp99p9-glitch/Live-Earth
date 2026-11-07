@@ -20,7 +20,7 @@ Historical build references from that period are snapshots/candidates, not curre
 
 ## 1–6 November 2026 — View and renderer refinements
 
-The application work during this period established the current protections for independent Sun and Moon implementations, the shared sky stage, and the existing feature Orb lifecycle. The Sun renderer remains separate from the Moon controller and lunar interface. A Sun-only amber Rise/Set marker refinement did not alter Moon colours, positions, calculations, Home or Orb behaviour.
+The application work during this period established the current protections for independent Sun and Moon implementations, the shared sky stage, and the existing feature Orb lifecycle. The Sun controller remains separate from the Moon controller and lunar interface. A Sun-only amber Rise/Set marker refinement did not alter Moon colours, positions, calculations, Home or Orb behaviour.
 
 The Global Orb standard, Stacks coordinate/hitbox alignment, Location-OFF privacy, iOS root-flow handling and recovery boundaries remain important application decisions. Historical test reports from this period are snapshots only; they are not current proof of a green build or iPhone acceptance.
 

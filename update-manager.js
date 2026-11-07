@@ -29,9 +29,9 @@
     if (!window.LiveEarthViewModules) throw new Error("The view registry is not ready yet.");
     const loading = new Promise((resolve, reject) => {
       const script = document.createElement("script");
-      script.src = new URL("./sun-view-renderer.js", document.baseURI).href; script.async = true;
-      script.onload = () => window.LiveEarthViewModules?.has("sun-procedural-renderer") ? resolve(true) : reject(new Error("The Sun renderer loaded but did not register its view."));
-      script.onerror = () => reject(new Error("The Sun renderer file could not be loaded."));
+      script.src = new URL("./sun-view-controller.js", document.baseURI).href; script.async = true;
+      script.onload = () => window.LiveEarthViewModules?.has("sun-procedural-renderer") ? resolve(true) : reject(new Error("The Sun controller loaded but did not register its view."));
+      script.onerror = () => reject(new Error("The Sun controller file could not be loaded."));
       document.head.appendChild(script);
     });
     window.__liveEarthSunRendererLoadPromise = loading; return loading;

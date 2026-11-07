@@ -19,7 +19,7 @@ Moon and Sun are independent views. The shared sky stage/host is an integration 
 - Shared host: `sky-view-controller.js`.
 - Moon renderer: `moon-view-controller.js`.
 - Moon interface and lunar overlay/scroller: `moon-lunar-interface.js`.
-- Sun renderer: `sun-view-renderer.js`.
+- Sun controller: `sun-view-controller.js`.
 - Shared module integration uses the existing view registry and stage.
 - Keep Sun-specific calculations/rendering out of Moon, and Moon-specific calculations/interface behaviour out of Sun.
 - Validate open/close, repeated transitions, portrait/landscape and return-to-Home behaviour on the installed iPhone.

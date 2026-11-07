@@ -13,7 +13,7 @@ Do not create parallel primary-view state or bypass the existing manager without
 ## Primary views
 - Earth/Home Explorer uses the existing Home/Earth scene and approved baseline.
 - Moon uses `moon-view-controller.js` and `moon-lunar-interface.js`.
-- Sun uses `sun-view-renderer.js`.
+- Sun uses `sun-view-controller.js`.
 - `sky-view-controller.js` provides the shared Sun/Moon stage host.
 
 The Moon and Sun implementations remain separate. See `docs/standards/INDEPENDENT-SUN-MOON-VIEWS.md`.

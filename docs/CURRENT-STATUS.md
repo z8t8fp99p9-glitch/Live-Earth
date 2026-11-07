@@ -17,7 +17,7 @@ The application and existing source modules are production code. Important areas
 - `ios-standalone-root-flow.js` — iOS full-screen root-flow support.
 - `sky-view-controller.js` — shared Sun/Moon sky stage.
 - `moon-view-controller.js` and `moon-lunar-interface.js` — Moon renderer and interface.
-- `sun-view-renderer.js` — Sun renderer.
+- `sun-view-controller.js` — Sun controller.
 - `stacks-feature-views.js` — independent environmental Stacks features.
 - `engine-feature-views.js` — Editorial Engine workspace only.
 

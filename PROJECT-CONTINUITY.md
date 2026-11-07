@@ -41,7 +41,7 @@ The Engine Feature Orb module now registers only **Editorial Engine**. It must n
 Location is OFF unless manually enabled. Do not trigger geolocation from Home, startup, verification or Moon View. When Location is OFF, observer-local values such as lunar rise/set times remain hidden by design. Never clear saved data as a location troubleshooting shortcut.
 
 ### Sun and Moon
-`sky-view-controller.js` is the shared sky-stage/hosting layer. Moon-specific rendering is in `moon-view-controller.js`, with its interface/scroller in `moon-lunar-interface.js`. The Sun renderer is `sun-view-renderer.js`. Preserve each view's responsibilities and use the existing shared stage/registry integration rather than merging implementations.
+`sky-view-controller.js` is the shared sky-stage/hosting layer. Moon-specific rendering is in `moon-view-controller.js`, with its interface/scroller in `moon-lunar-interface.js`. The Sun controller is `sun-view-controller.js`. Preserve each view's responsibilities and use the existing shared stage/registry integration rather than merging implementations.
 
 ### Startup, updates and local data
 `sw.js` and `update-manager.js` coordinate the offline shell and staged updates. Their build identity and cache paths must be checked together before a release change. Validate the saved shell and runtime dependencies; do not bypass readiness checks to hide an error. `data-store.js` and `data-recovery.js` support local data/recovery. Do not reset IndexedDB, local records or caches without explicit approval and a migration/recovery plan.
