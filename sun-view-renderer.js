@@ -15,7 +15,7 @@
   "use strict";
   if (window.__liveEarthSunRendererInstalled || window.__liveEarthSunRendererBooting) return;
   window.__liveEarthSunRendererBooting = true;
-  const SUN_TEXTURE_DATA = new URL("./sun-surface-equirectangular.png", document.baseURI).href;
+  const SUN_TEXTURE_DATA = new URL("./sun-surface-shared.webp", document.baseURI).href;
 
   const root = document.getElementById("le-sky-view");
   if (!root) {
@@ -464,74 +464,13 @@
       camera = new THREE.OrthographicCamera(0, 1, 1, 0, 0.1, 500);
       camera.position.set(0, 0, 100);
       camera.lookAt(0, 0, 0);
-      const sphereTextureUrl = new URL("./sun-sphere-equirectangular.png", document.baseURI).href;
-      sunTexture = await new THREE.TextureLoader().loadAsync(sphereTextureUrl);
+      sunTexture = await new THREE.TextureLoader().loadAsync(SUN_TEXTURE_DATA);
       sunTexture.colorSpace = THREE.SRGBColorSpace;
-      sunTexture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-
-      // Warm, softly shaded solar photosphere. The limb darkening keeps the sphere
-      // dimensional without a hard black outline or a flat pasted-on disc.
-      const material = new THREE.ShaderMaterial({
-        uniforms: { uMap: { value: sunTexture } },
-        vertexShader: `
-          varying vec2 vUv;
-          varying vec3 vNormalView;
-          varying vec3 vPosition;
-          void main() {
-            vUv = uv;
-            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-            vNormalView = normalize(normalMatrix * normal);
-            vPosition = position;
-            gl_Position = projectionMatrix * mvPosition;
-          }
-        `,
-        fragmentShader: `
-          uniform sampler2D uMap;
-          varying vec2 vUv;
-          varying vec3 vNormalView;
-          varying vec3 vPosition;
-          void main() {
-            vec3 texel = texture2D(uMap, vUv).rgb;
-            float facing = clamp(abs(normalize(vNormalView).z), 0.0, 1.0);
-            float limb = 0.72 + 0.28 * pow(facing, 0.55);
-            float innerRim = pow(1.0 - facing, 2.2);
-            vec3 warmRim = vec3(1.0, 0.30, 0.035) * innerRim * 0.22;
-            vec3 color = texel * limb + warmRim;
-            gl_FragColor = vec4(color, 1.0);
-          }
-        `,
-        transparent: false,
-        depthWrite: true,
-        toneMapped: false
-      });
-      sun = new THREE.Mesh(new THREE.SphereGeometry(1, 96, 64), material);
-      sun.name = "leSunView3DOrb";
+      sunTexture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+      const material = new THREE.MeshBasicMaterial({ map: sunTexture, color: 0xffffff });
+      sun = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 48), material);
+      sun.name = "leSunView3DOrb"
       scene.add(sun);
-
-      // A broad, low-opacity corona sits behind the photosphere and fades smoothly
-      // into the sky. It is generated locally, so Sun View remains fully offline.
-      const coronaCanvas = document.createElement("canvas");
-      coronaCanvas.width = coronaCanvas.height = 256;
-      const ctx = coronaCanvas.getContext("2d");
-      const gradient = ctx.createRadialGradient(128, 128, 34, 128, 128, 126);
-      gradient.addColorStop(0.00, "rgba(255,190,92,0.34)");
-      gradient.addColorStop(0.30, "rgba(255,139,49,0.22)");
-      gradient.addColorStop(0.62, "rgba(255,105,30,0.09)");
-      gradient.addColorStop(1.00, "rgba(255,90,20,0.00)");
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 256, 256);
-      const coronaTexture = new THREE.CanvasTexture(coronaCanvas);
-      coronaTexture.colorSpace = THREE.SRGBColorSpace;
-      const coronaMaterial = new THREE.SpriteMaterial({
-        map: coronaTexture, color: 0xffffff, transparent: true,
-        opacity: 0.82, depthWrite: false, blending: THREE.AdditiveBlending
-      });
-      const corona = new THREE.Sprite(coronaMaterial);
-      corona.name = "leSunViewSolarCorona";
-      corona.scale.set(3.25, 3.25, 1);
-      corona.position.set(0, 0, -0.15);
-      scene.add(corona);
-      sun.userData.corona = corona;
       initialized = true;
       resize();
     })().catch(error => {
@@ -1047,9 +986,6 @@
     const p = currentPoint(), h = dimensions.h;
     sun.position.set(p.x, h - p.y, 0);
     sun.scale.setScalar(dimensions.radius);
-    if (sun.userData.corona) {
-      sun.userData.corona.scale.set(dimensions.radius * 3.25, dimensions.radius * 3.25, 1);
-    }
   }
 
   function updateHorizontalMarker() {
