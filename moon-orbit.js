@@ -62,31 +62,13 @@ export function moonPositionAt(T, date = new Date()) {
   const equatorial = eclipticToEquatorial(xEcliptic, yEcliptic, zEcliptic, date);
   return { ...equatorial, distanceEarthRadii: r, date: date.toISOString() };
 }
-function makeProceduralMoonTexture(T) {
-  // Offline-first procedural albedo with layered maria and craters; spherical lighting supplies relief cues.
-  const canvas = document.createElement('canvas'); canvas.width = 1024; canvas.height = 512;
-  const ctx = canvas.getContext('2d', { alpha: false });
-  const img = ctx.createImageData(canvas.width, canvas.height);
-  let seed = 991827; const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
-  for (let y = 0; y < canvas.height; y++) for (let x = 0; x < canvas.width; x++) {
-    const n = (rand() - .5) * 19 + Math.sin(x * .033) * 4 + Math.cos(y * .061) * 3;
-    const k = (y * canvas.width + x) * 4, v = Math.max(92, Math.min(205, 164 + n));
-    img.data[k] = v; img.data[k + 1] = v; img.data[k + 2] = Math.min(220, v + 5); img.data[k + 3] = 255;
-  }
-  ctx.putImageData(img, 0, 0);
-  // Broad low-contrast lunar maria, repeated around the equirectangular map.
-  for (let n = 0; n < 34; n++) {
-    const x = rand() * canvas.width, y = 25 + rand() * (canvas.height - 50), rx = 18 + rand() * 85, ry = 8 + rand() * 27;
-    ctx.fillStyle = `rgba(63,68,78,${.045 + rand() * .085})`; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rand() * Math.PI, 0, Math.PI * 2); ctx.fill();
-  }
-  // Crater rims and shadowed floors, kept subtle so directional light remains dominant.
-  for (let n = 0; n < 1250; n++) {
-    const x = rand() * canvas.width, y = 4 + rand() * (canvas.height - 8), r = 1.2 + Math.pow(rand(), 2) * 12;
-    ctx.strokeStyle = `rgba(235,238,244,${.08 + rand() * .20})`; ctx.lineWidth = Math.max(.6, r * .13);
-    ctx.beginPath(); ctx.ellipse(x, y, r, r * (.62 + rand() * .38), rand() * .4, 0, Math.PI * 2); ctx.stroke();
-    ctx.fillStyle = `rgba(48,53,63,${.035 + rand() * .12})`; ctx.beginPath(); ctx.ellipse(x + r * .12, y + r * .13, r * .74, r * .65, 0, 0, Math.PI * 2); ctx.fill();
-  }
-  const texture = new T.CanvasTexture(canvas); texture.colorSpace = T.SRGBColorSpace; texture.anisotropy = 4; return texture;
+function loadSharedMoonSurfaceTexture(T) {
+  // Home and Moon Engine use this same first-party image. sw.js precaches it
+  // as an essential app-shell asset, including for fresh offline installations.
+  const texture = new T.TextureLoader().load('./runtime-assets/moon-surface-lroc-1536.jpg');
+  texture.colorSpace = T.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
 }
 export function createMoonOrbit(T, earthGroup, options = {}) {
   const { earthRadius = 1, samples = 721, displayDistanceFactor = 0.42, displayMoonRadius = 0.32 } = options;
@@ -129,7 +111,7 @@ export function createMoonOrbit(T, earthGroup, options = {}) {
     && Math.abs((child.geometry.parameters?.radius ?? 0) - earthRadius) < 1e-8
     && child.material?.type === 'MeshStandardMaterial');
   const moonGeometry = new T.SphereGeometry(earthRadius * displayMoonRadius, 56, 40);
-  const texture = makeProceduralMoonTexture(T);
+  const texture = loadSharedMoonSurfaceTexture(T);
   const material = new T.MeshStandardMaterial({ map: texture, color: 0xffffff, roughness: 1, metalness: 0 });
   const moon = new T.Mesh(moonGeometry, material); moon.name = 'liveMoonSphere'; system.add(moon);
   const update = (date = new Date()) => {

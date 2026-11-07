@@ -1,13 +1,14 @@
 /* LIVE // EARTH V110 — Nature and Alien World feed Views retired. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v110-retired-news-views";
-const CACHE_NAME = "live-earth-shell-v110-retired-news-views";
+const BUILD_ID = "v111-shared-offline-moon-surface";
+const CACHE_NAME = "live-earth-shell-v111-shared-offline-moon-surface";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
  "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./view-manager.js","./view-module-registry.js","./stacks-feature-views.js","./sky-view-controller.js","./moon-view-controller.js","./moon-lunar-interface.js",
  "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js","./location-scanner.js",
  "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
+ "./runtime-assets/moon-surface-lroc-1536.jpg",
  "./moon-sky-background-responsive.svg",
  "./moon-sky-background-portrait.webp","./moon-sky-background-landscape.webp",
  "./sun-sky-background-portrait.webp","./sun-sky-background-landscape.webp",

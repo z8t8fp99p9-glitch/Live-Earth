@@ -13,7 +13,7 @@
   const PREVIEW_RATE = SYNODIC_MONTH_DAYS * 86400000 / 120000;
   const J2000 = Date.UTC(2000, 0, 1, 12, 0, 0);
   let sharedInstance = null;
-  const MOON_SURFACE_URL = 'https://svs.gsfc.nasa.gov/vis/a000000/a004700/a004720/lroc_color_2k.jpg';
+  const MOON_SURFACE_URL = './runtime-assets/moon-surface-lroc-1536.jpg';
   const textureCaches = new WeakMap();
   const liveTextureEntries = new Set();
   let pageHideCleanupInstalled = false;
@@ -42,40 +42,9 @@
   }
 
   async function loadMoonSurfaceTexture(T, url) {
-    // Cache the NASA source image in the app's own Cache Storage bucket.
-    // Later views can use the saved image offline without changing the protected
-    // app-shell/service-worker startup contract.
-    if (typeof caches !== 'undefined' && typeof fetch === 'function' && typeof createImageBitmap === 'function') {
-      let bitmap = null;
-      try {
-        const assetCache = await caches.open('live-earth-moon-surface-v1');
-        let response = await assetCache.match(url);
-        if (!response && (typeof navigator === 'undefined' || navigator.onLine !== false)) {
-          response = await fetch(url, { mode: 'cors', credentials: 'omit', cache: 'force-cache' });
-          const contentType = response?.headers?.get?.('content-type') || '';
-          if (!response?.ok || response.type === 'opaque' || !/^image\//i.test(contentType)) {
-            throw new Error('NASA did not return a readable image response for the LROC surface map.');
-          }
-        }
-        if (!response) throw new Error('The NASA Moon surface map is not saved yet. Connect once to load it for offline use.');
-        const blob = await response.blob();
-        if (blob.size < 100000) throw new Error('The NASA Moon surface map is unexpectedly small or incomplete.');
-        bitmap = await createImageBitmap(blob);
-        if (bitmap.width < 1024 || bitmap.height < 512) throw new Error('The NASA Moon surface map has unexpected dimensions.');
-        if (!(await assetCache.match(url))) await assetCache.put(url, response.clone());
-        const texture = new T.Texture(bitmap);
-        texture.needsUpdate = true;
-        bitmap = null; // The texture now owns this decoded image bitmap.
-        return texture;
-      } catch (cacheError) {
-        bitmap?.close?.();
-        if (typeof navigator !== 'undefined' && navigator.onLine === false) throw cacheError;
-        // Cache Storage may be unavailable in restricted browser modes. A normal
-        // online TextureLoader request still allows the Moon to render.
-      }
-    }
+    // This first-party image is included in the app shell and precached by sw.js.
+    // A fresh installation therefore has the Moon surface available offline.
     const loader = new T.TextureLoader();
-    loader.setCrossOrigin?.('anonymous');
     return loader.loadAsync(url);
   }
 
@@ -398,14 +367,14 @@
   // caller adds object3D to its own scene and owns its camera, renderer and lights.
   engines.moon=Object.freeze({
     id:'moon',name:'Moon Engine',version:'2.0.0',
-    surface:Object.freeze({url:MOON_SURFACE_URL,source:'NASA LROC global colour map',projection:'equirectangular'}),
+    surface:Object.freeze({url:MOON_SURFACE_URL,source:'NASA LROC global colour map (user-supplied 1536 × 768 copy)',projection:'equirectangular',offlineAsset:true}),
     create:createObject,
     createObject:createObject,
     createObject3D:createObject,
     createPreview:(container,options={})=>makeInstance(container,{...options,preview:true}),
     mountShared,getShared:()=>sharedInstance,
     releaseShared:()=>{if(sharedInstance)sharedInstance.destroy();sharedInstance=null;},
-    getSurfaceInfo:()=>Object.freeze({url:MOON_SURFACE_URL,source:'NASA LROC global colour map',cachedDuringPageLifetime:true})
+    getSurfaceInfo:()=>Object.freeze({url:MOON_SURFACE_URL,source:'NASA LROC global colour map',precachedByServiceWorker:true})
   });
   window.dispatchEvent(new CustomEvent('live-earth-celestial-engine-ready',{detail:{engine:'moon'}}));
 })();
