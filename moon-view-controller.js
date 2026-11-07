@@ -261,7 +261,7 @@
         <g id="le-mv-vertical-sparkle-group" aria-hidden="true"></g>
         <circle class="le-mv-vertical-end-halo" cx="50" cy="5" r="8"/><circle class="le-mv-vertical-end" cx="50" cy="5" r="3"/>
         <circle class="le-mv-vertical-end-halo" cx="50" cy="295" r="8"/><circle class="le-mv-vertical-end" cx="50" cy="295" r="3"/>
-        <g id="le-mv-vertical-marker" transform="translate(50 150)"><g id="le-mv-vertical-marker-shape"><circle class="le-mv-vertical-marker-halo" r="19"/><circle class="le-mv-horizontal-moon-surface" r="13" fill="url(#leMvVerticalMoonTexture)"/><circle class="le-mv-horizontal-moon-shade" r="13" fill="url(#leMvVerticalMoonShade)"/><circle class="le-mv-horizontal-moon-rim" r="13"/></g></g>
+        <g id="le-mv-vertical-marker" transform="translate(50 150)"><g id="le-mv-vertical-marker-shape"><circle class="le-mv-vertical-marker-halo" r="16"/><circle class="le-mv-horizontal-moon-surface" r="13" fill="url(#leMvVerticalMoonTexture)"/><circle class="le-mv-horizontal-moon-shade" r="13" fill="url(#leMvVerticalMoonShade)"/><circle class="le-mv-horizontal-moon-rim" r="13"/></g></g>
       </svg></div>
       <div class="le-mv-end-labels">
         <div class="le-mv-endpoint-info le-mv-endpoint-info-rise">
@@ -954,13 +954,46 @@
     moonLightTarget.position.copy(moon.position);
     moonLightTarget.updateMatrixWorld();
   }
+  function getAdaptiveMarkerMetrics(markerSvg, baseHaloRadius = 16, fallbackWidth = 390, fallbackHeight = 98) {
+    if (!markerSvg) return null;
+    const rect = markerSvg.getBoundingClientRect();
+    if (!(rect.width > 0 && rect.height > 0)) return null;
+    const viewBox = markerSvg.viewBox?.baseVal;
+    const viewWidth = viewBox?.width || fallbackWidth;
+    const viewHeight = viewBox?.height || fallbackHeight;
+    const xScale = rect.width / viewWidth;
+    const yScale = rect.height / viewHeight;
+    const shortestSide = Math.min(dimensions.w || rect.width, dimensions.h || rect.height);
+    // Scale from the shorter view dimension; the bounds prevent oversized markers
+    // on large displays while remaining legible on compact screens.
+    // Reuse the existing scene-orb scale, which is already derived from the
+    // shorter view dimension. This keeps timeline markers proportional to the
+    // main Moon/Sun orb on phones, tablets and larger displays.
+    const adaptiveSceneRadius = dimensions.radius || clamp(shortestSide * 0.052, 16, 42);
+    const targetHaloRadius = adaptiveSceneRadius * 0.65;
+    const scaleX = targetHaloRadius / (baseHaloRadius * xScale);
+    const scaleY = targetHaloRadius / (baseHaloRadius * yScale);
+    if (![scaleX, scaleY, targetHaloRadius].every(value => Number.isFinite(value) && value > 0)) return null;
+    return {
+      scaleX,
+      scaleY,
+      haloRadius: targetHaloRadius,
+      surfaceRadius: targetHaloRadius * (13 / baseHaloRadius)
+    };
+  }
+
   function updateHorizontalMarker() {
     if (!horizontalMoonMarker || !horizontalScrollerGeometry) return;
     const { trailStart, trailLength, blueCurveY, goldCurveY } = horizontalScrollerGeometry;
     const t = clamp(progress, 0, 1);
     const x = trailStart + trailLength * t;
     const y = (blueCurveY(t) + goldCurveY(t)) / 2;
-    horizontalMoonMarker.setAttribute("transform", `translate(${x.toFixed(2)} ${y.toFixed(2)})`);
+    const horizontalMarkerSvg = horizontalMoonMarker.ownerSVGElement;
+    const horizontalMarkerMetrics = getAdaptiveMarkerMetrics(horizontalMarkerSvg, 16, 390, 98);
+    const horizontalTransform = horizontalMarkerMetrics
+      ? `translate(${x.toFixed(2)} ${y.toFixed(2)}) scale(${horizontalMarkerMetrics.scaleX.toFixed(6)} ${horizontalMarkerMetrics.scaleY.toFixed(6)})`
+      : `translate(${x.toFixed(2)} ${y.toFixed(2)})`;
+    horizontalMoonMarker.setAttribute("transform", horizontalTransform);
     selectedLabel.textContent = fmt(selectedTime);
     if (dimensions.w <= dimensions.h) {
       // Red clock is visually attached to the mini Moon; the transparent slider
@@ -968,7 +1001,7 @@
       selectedLabel.style.left = `${x.toFixed(2)}px`;
       selectedLabel.style.right = "auto";
       selectedLabel.style.width = "max-content";
-      selectedLabel.style.top = `${Math.max(22, y - 13).toFixed(2)}px`;
+      selectedLabel.style.top = `${Math.max(22, y - (horizontalMarkerMetrics?.surfaceRadius + 4 || 13)).toFixed(2)}px`;
       selectedLabel.style.transform = "translate(-50%,-100%)";
       selectedLabel.style.color = "#ff7189";
     } else {
@@ -983,24 +1016,16 @@
       // Portrait remains exactly on its original progress mapping. Landscape alone
       // places Rise at the bottom and Set at the top of the vertical rail.
       const railProgress = landscape ? 1 - clamp(progress, 0, 1) : clamp(progress, 0, 1);
-      // The vertical rail SVG intentionally fills its landscape container with
-      // preserveAspectRatio="none". Counter only the orb's Y scale so its circles
-      // remain true circles in CSS pixels; the path and timeline geometry stay put.
-      if (verticalMarkerShape && verticalScrollerSvg) {
-        const railRect = verticalScrollerSvg.getBoundingClientRect();
-        const viewBox = verticalScrollerSvg.viewBox?.baseVal;
-        const viewWidth = viewBox?.width || 100;
-        const viewHeight = viewBox?.height || 300;
-        if (landscape && railRect.width > 0 && railRect.height > 0) {
-          const xScale = railRect.width / viewWidth;
-          const yScale = railRect.height / viewHeight;
-          const yCorrection = xScale / yScale;
-          if (Number.isFinite(yCorrection) && yCorrection > 0) {
-            verticalMarkerShape.setAttribute("transform", `scale(1 ${yCorrection.toFixed(6)})`);
-          }
-        } else {
-          verticalMarkerShape.removeAttribute("transform");
-        }
+      // Normalize the marker to a circle and size it from the shorter view dimension.
+      // This changes only the marker artwork; the rail path and time mapping stay untouched.
+      const verticalMarkerMetrics = getAdaptiveMarkerMetrics(verticalScrollerSvg, 16, 100, 300);
+      if (verticalMarkerShape && landscape && verticalMarkerMetrics) {
+        verticalMarkerShape.setAttribute(
+          "transform",
+          `scale(${verticalMarkerMetrics.scaleX.toFixed(6)} ${verticalMarkerMetrics.scaleY.toFixed(6)})`
+        );
+      } else if (verticalMarkerShape) {
+        verticalMarkerShape.removeAttribute("transform");
       }
       const point = verticalPath.getPointAtLength(length * railProgress);
       verticalMarker.setAttribute("transform", `translate(${point.x} ${point.y})`);
@@ -1009,7 +1034,8 @@
         const timelineRect = timeline.getBoundingClientRect();
         const y = railRect.top - timelineRect.top + (point.y / 300) * railRect.height;
         // Keep the red timer attached just 4 CSS pixels to the Moon's left edge by a 4 CSS pixel gap (13px radius + 4px gap).
-        selectedLabel.style.left = `${Math.max(2, railRect.left - timelineRect.left + railRect.width * (point.x / 100) - 17)}px`;
+        const labelOffset = (verticalMarkerMetrics?.surfaceRadius || 13) + 4;
+        selectedLabel.style.left = `${Math.max(2, railRect.left - timelineRect.left + railRect.width * (point.x / 100) - labelOffset)}px`;
         selectedLabel.style.right = "auto";
         selectedLabel.style.width = "max-content";
         selectedLabel.style.top = `${y}px`;
