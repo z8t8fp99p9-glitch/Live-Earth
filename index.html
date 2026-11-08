@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#02050b">
 <title>LIVE // EARTH</title>
 <link rel="manifest" href="./manifest.json">
-<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="icon" href="./Global/icon.svg" type="image/svg+xml">
 <script src="./ios-standalone-root-flow.js"></script>
 <style>
 :root{--le-orb-size-primary:clamp(49px,14.2vmin,76px);color-scheme:dark;background:#02050b;color:#eaf5ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
@@ -326,11 +326,11 @@ html.le-boot-pending body > :not(#le-boot-overlay):not(#le-startup-gate){visibil
 <div class="brand">LIVE <span>//</span> EARTH</div>
 <div id="status" class="status">Preparing Earth…</div>
 <nav id="navButtons" aria-label="Main navigation">
-  <button class="orbButton" data-view="earth" aria-label="Earth" aria-pressed="true"><span class="orbShell"><img class="orbImage" src="./earth.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Earth</span></button>
-  <button class="orbButton" data-view="moon" aria-label="Moon" aria-pressed="false"><span class="orbShell"><img class="orbImage" src="./moon.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Moon</span></button>
-  <button class="orbButton" data-view="sun" aria-label="Sun" aria-pressed="false"><span class="orbShell"><img class="orbImage" src="./sun.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Sun</span></button>
-  <button class="orbButton" data-view="location" aria-label="Location" aria-pressed="false"><span class="orbShell"><img class="orbImage" src="./location.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Location</span></button>
-  <button class="orbButton" data-view="stacks" aria-label="Stacks" aria-pressed="false"><span class="orbShell"><img class="orbImage" src="./stacks.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Stacks</span></button>
+  <button class="orbButton" data-view="earth" aria-label="Earth" aria-pressed="true"><span class="orbShell"><img class="orbImage" src="./Earth/earth.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Earth</span></button>
+  <button class="orbButton" data-view="moon" aria-label="Moon" aria-pressed="false"><span class="orbShell"><img class="orbImage" src="./Moon/moon.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Moon</span></button>
+  <button class="orbButton" data-view="sun" aria-label="Sun" aria-pressed="false"><span class="orbShell"><img class="orbImage" src="./Sun/sun.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Sun</span></button>
+  <button class="orbButton" data-view="location" aria-label="Location" aria-pressed="false"><span class="orbShell"><img class="orbImage" src="./Location/location.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Location</span></button>
+  <button class="orbButton" data-view="stacks" aria-label="Stacks" aria-pressed="false"><span class="orbShell"><img class="orbImage" src="./Stacks/stacks.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Stacks</span></button>
 </nav>
 <script id="le-stacks-close-motion-fix">
 (() => {
@@ -381,7 +381,7 @@ html.le-boot-pending body > :not(#le-boot-overlay):not(#le-startup-gate){visibil
 </script>
 <script type="module">
 if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator && navigator.serviceWorker.controller) {
-  import('./data-store.js')
+  import('./Data/data-store.js')
     .then(module => module.initializeLocalDatabase())
     .then(result => console.info('[LIVE // EARTH] Local database ready; save/retrieve self-test passed.', result))
     .catch(error => console.warn('[LIVE // EARTH] Local database unavailable; globe remains independent.', error));
@@ -507,7 +507,7 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
     syncCanvasViewport();
     settleCanvasViewport();
 
-    const earthEngine = await import('./earth-engine.js');
+    const earthEngine = await import('./Global/earth-engine.js');
     const createEarthGlobe = earthEngine.createEarthGlobe || earthEngine.createGlobe;
     if (typeof createEarthGlobe !== 'function') {
       throw new Error('The reusable Earth Engine API is unavailable.');
@@ -531,7 +531,7 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
 
     let moonSystem = { update: () => null };
     try {
-      const moonModule = await import('./moon-orbit.js');
+      const moonModule = await import('./Home/moon-orbit.js');
       moonSystem = moonModule.createMoonOrbit(T, group, {
         earthRadius: 1,
         samples: 721,
@@ -679,16 +679,16 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
   // in parallel. Loading them here too would duplicate transfers on a weak connection.
   if (window.__leBootControlledAtStart !== true || !('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return;
   const assets = [
-    './orb-controls-v4.js',
-    './earth-view-controller.js',
-    './location-scanner.js',
-    './view-manager.js',
-    './view-module-registry.js',
-    './stacks-feature-views.js',
-    './sky-view-controller.js',
-    './moon-view-controller.js',
-    './moon-lunar-interface.js',
-    './update-manager.js'
+    './Global/orb-controls-v4.js',
+    './Earth/earth-view-controller.js',
+    './Location/location-scanner.js',
+    './Global/view-manager.js',
+    './Global/view-module-registry.js',
+    './Stacks/stacks-feature-views.js',
+    './Global/sky-view-controller.js',
+    './Moon/moon-view-controller.js',
+    './Moon/moon-lunar-interface.js',
+    './Global/update-manager.js'
   ];
   function loadScript(src, module = false) {
     return new Promise((resolve, reject) => {
@@ -702,7 +702,7 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
     });
   }
   assets.reduce((chain, src) => chain.then(() => loadScript(src)), Promise.resolve())
-    .then(() => loadScript('./data-recovery.js', true))
+    .then(() => loadScript('./Data/data-recovery.js', true))
     .catch(error => {
       console.error('[LIVE // EARTH] Controller startup failed.', error);
       window.dispatchEvent(new ErrorEvent('error', {message:error.message, error, cancelable:true}));

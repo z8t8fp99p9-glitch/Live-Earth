@@ -1,19 +1,19 @@
-/* LIVE // EARTH V116 — fixed Home Earth Engine integration. */
+/* LIVE // EARTH V117 — flat responsibility folders; behaviour preserved. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v116-fixed-home-earth-engine";
-const CACHE_NAME = "live-earth-shell-v116-fixed-home-earth-engine";
+const BUILD_ID = "v117-flat-view-folders";
+const CACHE_NAME = "live-earth-shell-v117-flat-view-folders";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
- "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-engine.js","./earth-view-controller.js","./view-manager.js","./view-module-registry.js","./stacks-feature-views.js","./sky-view-controller.js","./moon-view-controller.js","./moon-lunar-interface.js","./sun-view-controller.js","./sun-surface-shared.webp",
- "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js","./location-scanner.js",
- "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
- "./runtime-assets/moon-surface-lroc-1536.jpg",
- "./moon-sky-background-responsive.svg",
- "./moon-sky-background-portrait.webp","./moon-sky-background-landscape.webp",
- "./sun-sky-background-portrait.webp","./sun-sky-background-landscape.webp",
- "./update-manager.js","./data-recovery.js",
- "./earth.webp","./moon.webp","./sun.webp","./location.webp","./stacks.webp"
+ "./","./index.html","./ios-standalone-root-flow.js","./Global/orb-controls-v4.js","./Global/earth-engine.js","./Earth/earth-view-controller.js","./Global/view-manager.js","./Global/view-module-registry.js","./Stacks/stacks-feature-views.js","./Global/sky-view-controller.js","./Moon/moon-view-controller.js","./Moon/moon-lunar-interface.js","./Sun/sun-view-controller.js","./Sun/sun-surface-shared.webp",
+ "./Earth/location.html","./Earth/earth-orb-globe.js","./manifest.json","./Global/icon.svg","./Data/data-store.js","./Location/location-scanner.js",
+ "./Global/astronomy.js","./Home/moon-orbit.js","./Data/dataset-manifest.json",
+ "./Home/moon-surface-lroc-1536.jpg",
+ "./Moon/moon-sky-background-responsive.svg",
+ "./Moon/moon-sky-background-portrait.webp","./Moon/moon-sky-background-landscape.webp",
+ "./Sun/sun-sky-background-portrait.webp","./Sun/sun-sky-background-landscape.webp",
+ "./Global/update-manager.js","./Data/data-recovery.js",
+ "./Earth/earth.webp","./Moon/moon.webp","./Sun/sun.webp","./Location/location.webp","./Stacks/stacks.webp"
 ];
 
 // These runtime assets are cached under same-origin virtual URLs. That lets the
@@ -513,7 +513,7 @@ function injectStartupGate(html) {
       <div class="le-gate-brand"><span style="color:#62d6ff">LIVE</span><span class="le-gate-slash">//</span> EARTH</div>
       <div class="le-gate-world" aria-hidden="true">
         <div class="le-gate-orbit"></div><div class="le-gate-orbit le-gate-orbit-two"></div>
-        <div class="le-gate-planet"><img src="./earth.webp" alt="" draggable="false" onerror="this.style.display='none'"></div>
+        <div class="le-gate-planet"><img src="./Earth/earth.webp" alt="" draggable="false" onerror="this.style.display='none'"></div>
       </div>
       <h1 class="le-gate-title">Preparing your world</h1>
       <p id="le-gate-message" class="le-gate-message">Checking essential assets…</p>
@@ -697,14 +697,14 @@ function injectStartupGate(html) {
     function getMissingControllers() {
       const paths = [...knownBadPaths];
       if (!window.LiveEarthScene) paths.push('./vendor/three.module.js','./vendor/three.core.js','./runtime-assets/earth-land-ocean-ice-2048.png');
-      if (!window.LiveEarthEngine) paths.push('./earth-engine.js');
-      if (window.__liveEarthEarthRendererInstalled !== true) paths.push('./earth-view-controller.js');
-      if (!window.LiveEarthViewManager) paths.push('./view-manager.js');
-      if (!window.LiveEarthSkyViews) paths.push('./sky-view-controller.js');
-      if (!window.__liveEarthMoonRendererInstalled) paths.push('./moon-view-controller.js');
-      if (!window.__liveEarthStacksFeatureViewsInstalled) paths.push('./stacks-feature-views.js');
-      if (!window.__liveEarthControlsInstalled || typeof window.liveEarthLocationAllowed !== 'function') paths.push('./orb-controls-v4.js');
-      if (!window.__liveEarthLocationScannerInstalled) paths.push('./location-scanner.js');
+      if (!window.LiveEarthEngine) paths.push('./Global/earth-engine.js');
+      if (window.__liveEarthEarthRendererInstalled !== true) paths.push('./Earth/earth-view-controller.js');
+      if (!window.LiveEarthViewManager) paths.push('./Global/view-manager.js');
+      if (!window.LiveEarthSkyViews) paths.push('./Global/sky-view-controller.js');
+      if (!window.__liveEarthMoonRendererInstalled) paths.push('./Moon/moon-view-controller.js');
+      if (!window.__liveEarthStacksFeatureViewsInstalled) paths.push('./Stacks/stacks-feature-views.js');
+      if (!window.__liveEarthControlsInstalled || typeof window.liveEarthLocationAllowed !== 'function') paths.push('./Global/orb-controls-v4.js');
+      if (!window.__liveEarthLocationScannerInstalled) paths.push('./Location/location-scanner.js');
       const brokenImages = [...document.querySelectorAll('#navButtons .orbImage')].filter(img => img.complete && img.naturalWidth === 0);
       for (const img of brokenImages) {
         const src = img.getAttribute('src');
@@ -941,7 +941,7 @@ function injectStartupGate(html) {
     window.addEventListener('error', event => {
       if (event.target && event.target.tagName === 'SCRIPT') {
         const src = event.target.src || '';
-        const scriptPaths = ['./orb-controls-v4.js','./earth-engine.js','./earth-view-controller.js','./view-manager.js','./view-module-registry.js','./stacks-feature-views.js','./sky-view-controller.js','./moon-view-controller.js','./sun-view-controller.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
+        const scriptPaths = ['./Global/orb-controls-v4.js','./Global/earth-engine.js','./Earth/earth-view-controller.js','./Global/view-manager.js','./Global/view-module-registry.js','./Stacks/stacks-feature-views.js','./Global/sky-view-controller.js','./Moon/moon-view-controller.js','./Sun/sun-view-controller.js','./Global/update-manager.js','./Data/data-recovery.js','./Location/location-scanner.js','./Home/moon-orbit.js','./Data/data-store.js'];
         for (const path of scriptPaths) if (src.endsWith(path.slice(1))) knownBadPaths.push(path);
         sceneFailure = 'A required startup script failed to load.';
       } else if (event.error) {
@@ -1001,46 +1001,46 @@ async function transformHomeHTML(request, response, forceHome = false) {
   html = injectSameGlobeAPI(html);
   html = injectSolarDayNight(html);
   if (!html.includes("orb-controls-v4.js")) {
-    html = html.replace(/<\/body\s*>/i, '<script src="./orb-controls-v4.js" defer></script>\n</body>');
+    html = html.replace(/<\/body\s*>/i, '<script src="./Global/orb-controls-v4.js" defer></script>\n</body>');
   }
   if (!html.includes("earth-view-controller.js")) {
-    html = html.replace(/<\/body\s*>/i, '<script src="./earth-view-controller.js" defer></script>\n</body>');
+    html = html.replace(/<\/body\s*>/i, '<script src="./Earth/earth-view-controller.js" defer></script>\n</body>');
   }
   if (!html.includes("location-scanner.js")) {
-    html = html.replace(/<\/body\s*>/i, '<script src="./location-scanner.js" defer></script>\n</body>');
+    html = html.replace(/<\/body\s*>/i, '<script src="./Location/location-scanner.js" defer></script>\n</body>');
   }
   if (!html.includes("sky-view-controller.js")) {
-    html = html.replace(/<\/body\s*>/i, '<script src="./sky-view-controller.js" defer></script>\n</body>');
+    html = html.replace(/<\/body\s*>/i, '<script src="./Global/sky-view-controller.js" defer></script>\n</body>');
   }
   if (!html.includes("moon-view-controller.js")) {
-    html = html.replace(/<\/body\s*>/i, '<script src="./moon-view-controller.js" defer></script>\n</body>');
+    html = html.replace(/<\/body\s*>/i, '<script src="./Moon/moon-view-controller.js" defer></script>\n</body>');
   }
   if (!html.includes("view-manager.js")) {
-    html = html.replace(/<\/body\s*>/i, '<script src="./view-manager.js" defer></script>\n</body>');
+    html = html.replace(/<\/body\s*>/i, '<script src="./Global/view-manager.js" defer></script>\n</body>');
   }
   // Prefer adding the registry to the existing sequential controller bootstrap,
   // preserving manager -> registry -> view-controller ordering on older cached HTML.
   if (!html.includes("view-module-registry.js")) {
-    const bootstrapAnchor = "'./view-manager.js',";
+    const bootstrapAnchor = "'./Global/view-manager.js',";
     if (html.includes(bootstrapAnchor)) {
-      html = html.replace(bootstrapAnchor, bootstrapAnchor + "\n    './view-module-registry.js',");
+      html = html.replace(bootstrapAnchor, bootstrapAnchor + "\n    './Global/view-module-registry.js',");
     } else {
-      html = html.replace(/<\/body\s*>/i, '<script src="./view-module-registry.js" defer></script>\n</body>');
+      html = html.replace(/<\/body\s*>/i, '<script src="./Global/view-module-registry.js" defer></script>\n</body>');
     }
   }
   if (!html.includes("stacks-feature-views.js")) {
-    const registryAnchor = "'./view-module-registry.js',";
+    const registryAnchor = "'./Global/view-module-registry.js',";
     if (html.includes(registryAnchor)) {
-      html = html.replace(registryAnchor, registryAnchor + "\n    './stacks-feature-views.js',");
+      html = html.replace(registryAnchor, registryAnchor + "\n    './Stacks/stacks-feature-views.js',");
     } else {
-      html = html.replace(/<\/body\s*>/i, '<script src="./stacks-feature-views.js" defer></script>\n</body>');
+      html = html.replace(/<\/body\s*>/i, '<script src="./Stacks/stacks-feature-views.js" defer></script>\n</body>');
     }
   }
   if (!html.includes("update-manager.js")) {
-    html = html.replace(/<\/body\s*>/i, '<script src="./update-manager.js" defer></script>\n</body>');
+    html = html.replace(/<\/body\s*>/i, '<script src="./Global/update-manager.js" defer></script>\n</body>');
   }
   if (!html.includes("data-recovery.js")) {
-    html = html.replace(/<\/body\s*>/i, '<script type="module" src="./data-recovery.js"></script>\n</body>');
+    html = html.replace(/<\/body\s*>/i, '<script type="module" src="./Data/data-recovery.js"></script>\n</body>');
   }
   html = injectStartupGate(html);
 

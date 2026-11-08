@@ -13,18 +13,21 @@ Read these before starting work:
 
 ## Documentation
 
-Start at [`docs/INDEX.md`](docs/INDEX.md). It points to current status, architecture, application standards and consolidated app history.
+Start at [`Documentation/INDEX.md`](Documentation/INDEX.md). It points to current status, architecture, application standards and consolidated app history.
 
 ## Main repository areas
 
 | Area | Purpose |
 |---|---|
-| Root application files | App shell, navigation, view lifecycle and rendering |
-| `editorial-engine/` | Retained Universal Editorial Engine and extractive text utilities |
-| `runtime-assets/` | Runtime/offline assets |
-| `recovery/` | General app recovery instructions and retained recovery material |
-| `tests/` and component tests | App and retained-engine regression tests |
-| `docs/` | Current guidance, standards, architecture and app history |
+| `Global/` | Shared view systems, Orb controls, astronomy, Earth Engine, PDF reader and update manager |
+| `Data/` | Local data store, recovery logic and dataset manifest |
+| `Tools/` | Layout editor tool |
+| Root application files | App shell, navigation and iOS startup safeguard |
+| `Editorial-Engine/` | Retained Universal Editorial Engine and extractive text utilities |
+| `Home/`, `Earth/`, `Moon/`, `Sun/`, `Location/`, `Stacks/` | View-specific code and artwork kept together |
+| `Recovery/` | General app recovery instructions and retained recovery material |
+| `Tests/` | App and retained-engine regression tests |
+| `Documentation/` | Current guidance, standards, architecture and app history |
 
 ## Current system boundary
 

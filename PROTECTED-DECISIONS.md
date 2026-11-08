@@ -19,7 +19,7 @@
 | Removed publishing systems | Collection, source discovery, feed, policy-checking, image-processing, database-writing, Publisher and Magazine modules were removed at the owner's direction | Do not restore them from historical notes, old packages or recovery snapshots |
 | Generic PDF Reader | Shared, view-independent PDF Reader remains separate from Editorial Engine | Do not remove or merge it as part of an editorial-workspace change |
 | ZIP upload standard | `ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md` remains at repository root, byte-for-byte untouched by cleanup | Never move, rename, rewrite, replace or delete that file |
-| Project reference documents | `PROJECT-CONTINUITY.md`, `GLOBAL-STANDARDS.md` and `PROTECTED-DECISIONS.md` stay at repository root | Keep the official names; do not bury them in `docs/` |
+| Project reference documents | `PROJECT-CONTINUITY.md`, `GLOBAL-STANDARDS.md` and `PROTECTED-DECISIONS.md` stay at repository root | Keep the official names; do not bury them in `Documentation/` |
 | History | Important app decisions and superseded outcomes remain discoverable | No silent deletion of unrelated project knowledge |
 
 ## Special handling for the hidden Home visual

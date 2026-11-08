@@ -16,18 +16,18 @@
 
 Moon and Sun are independent views. The shared sky stage/host is an integration point, not permission to merge renderers or view-specific state.
 
-- Shared host: `sky-view-controller.js`.
-- Moon renderer: `moon-view-controller.js`.
-- Moon interface and lunar overlay/scroller: `moon-lunar-interface.js`.
-- Sun controller: `sun-view-controller.js`.
+- Shared host: `Global/sky-view-controller.js`.
+- Moon renderer: `Moon/moon-view-controller.js`.
+- Moon interface and lunar overlay/scroller: `Moon/moon-lunar-interface.js`.
+- Sun controller: `Sun/sun-view-controller.js`.
 - Shared module integration uses the existing view registry and stage.
 - Keep Sun-specific calculations/rendering out of Moon, and Moon-specific calculations/interface behaviour out of Sun.
 - Validate open/close, repeated transitions, portrait/landscape and return-to-Home behaviour on the installed iPhone.
 
 ## 3. Feature-workspace standard
 
-- `stacks-feature-views.js` owns the existing independent environmental Stacks features. Keep it and its feature lifecycle unchanged unless explicitly requested.
-- `engine-feature-views.js` registers only the Universal Editorial Engine workspace.
+- `Stacks/stacks-feature-views.js` owns the existing independent environmental Stacks features. Keep it and its feature lifecycle unchanged unless explicitly requested.
+- `Editorial-Engine/engine-feature-views.js` registers only the Universal Editorial Engine workspace.
 - The Editorial Engine workspace does not create another Orb or alter the global Orb contract.
 - No collection, source-discovery, feed, policy-checking, image-processing, database-writing, publishing or magazine workspace is part of the current app.
 

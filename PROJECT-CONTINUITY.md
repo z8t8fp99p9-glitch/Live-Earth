@@ -25,7 +25,7 @@ This document records the safeguards that prevent regressions. The latest source
 The established Home navigation contains five Orbs: Earth, Moon, Sun, Location and Stacks. Earth, Moon and Sun are primary views. Location and Stacks are global utilities; they must not unexpectedly close or replace an active primary view. Preserve the approved circular, width-driven Orb geometry and touch targets.
 
 ### iOS root flow and scrolling
-`ios-standalone-root-flow.js` supports iOS full-screen/viewport behaviour. The orientation recovery in `orb-controls-v4.js` is intentionally narrower than ordinary resize handling. Do not remove or broaden this logic without tracing it and testing the installed iPhone app in portrait and landscape.
+`ios-standalone-root-flow.js` supports iOS full-screen/viewport behaviour. The orientation recovery in `Global/orb-controls-v4.js` is intentionally narrower than ordinary resize handling. Do not remove or broaden this logic without tracing it and testing the installed iPhone app in portrait and landscape.
 
 The owner previously identified a hidden Home image/visual that supports the scroller workaround. Its exact selector was not confidently identified. Do not remove an apparently unused hidden element or asset until its role is mapped from current source.
 
@@ -33,7 +33,7 @@ The owner previously identified a hidden Home image/visual that supports the scr
 Preserve the approved Earth size, camera framing/position, texture, baseline geometry and renderer pixel ratio; Moon geometry; star/stardust and orbital visuals; and five Home Orbs. Exploration zoom/quality must not leak into the Home baseline.
 
 ### Stacks and feature workspaces
-The feature Orb scatter and hit targets share a coordinate space. Keep each visible Orb aligned with its interactive hitbox; avoid nested scrolling that offsets touch positions. Preserve animation completion guards/fallbacks. `stacks-feature-views.js` provides the independent environmental Stacks features and must remain intact.
+The feature Orb scatter and hit targets share a coordinate space. Keep each visible Orb aligned with its interactive hitbox; avoid nested scrolling that offsets touch positions. Preserve animation completion guards/fallbacks. `Stacks/stacks-feature-views.js` provides the independent environmental Stacks features and must remain intact.
 
 The Engine Feature Orb module now registers only **Editorial Engine**. It must not reintroduce collection, feed, source-discovery, policy-checking, image-processing or Publisher views.
 
@@ -41,10 +41,10 @@ The Engine Feature Orb module now registers only **Editorial Engine**. It must n
 Location is OFF unless manually enabled. Do not trigger geolocation from Home, startup, verification or Moon View. When Location is OFF, observer-local values such as lunar rise/set times remain hidden by design. Never clear saved data as a location troubleshooting shortcut.
 
 ### Sun and Moon
-`sky-view-controller.js` is the shared sky-stage/hosting layer. Moon-specific rendering is in `moon-view-controller.js`, with its interface/scroller in `moon-lunar-interface.js`. The Sun controller is `sun-view-controller.js`. Preserve each view's responsibilities and use the existing shared stage/registry integration rather than merging implementations.
+`Global/sky-view-controller.js` is the shared sky-stage/hosting layer. Moon-specific rendering is in `Moon/moon-view-controller.js`, with its interface/scroller in `Moon/moon-lunar-interface.js`. The Sun controller is `Sun/sun-view-controller.js`. Preserve each view's responsibilities and use the existing shared stage/registry integration rather than merging implementations.
 
 ### Startup, updates and local data
-`sw.js` and `update-manager.js` coordinate the offline shell and staged updates. Their build identity and cache paths must be checked together before a release change. Validate the saved shell and runtime dependencies; do not bypass readiness checks to hide an error. `data-store.js` and `data-recovery.js` support local data/recovery. Do not reset IndexedDB, local records or caches without explicit approval and a migration/recovery plan.
+`sw.js` and `Global/update-manager.js` coordinate the offline shell and staged updates. Their build identity and cache paths must be checked together before a release change. Validate the saved shell and runtime dependencies; do not bypass readiness checks to hide an error. `Data/data-store.js` and `Data/data-recovery.js` support local data/recovery. Do not reset IndexedDB, local records or caches without explicit approval and a migration/recovery plan.
 
 ## 3. Current content-tool boundary
 
@@ -56,13 +56,13 @@ The following systems and their related views were removed at the owner's direct
 
 - `PROJECT-CONTINUITY.md`, `GLOBAL-STANDARDS.md` and `PROTECTED-DECISIONS.md` stay directly at the repository root.
 - `ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md` stays at the root, unchanged.
-- Current guidance belongs in `docs/`; component documentation remains beside retained components; historical app decisions belong in `docs/history/`.
+- Current guidance, architecture, standards and dated history belong directly in `Documentation/`. Retained component notes remain beside their relevant component folder.
 - Keep active standards separate from historical implementation records.
 
 ## 5. Safe working sequence
 
 1. Read this file and the other two root-level project reference documents.
-2. Read `docs/CURRENT-STATUS.md`, `docs/ARCHITECTURE.md` and the relevant component README/tests.
+2. Read `Documentation/CURRENT-STATUS.md`, `Documentation/ARCHITECTURE.md` and the relevant component README/tests.
 3. Inspect current source and callers.
 4. Explain the scope in plain language before a risky or architectural change.
 5. Make one focused change and run targeted checks.

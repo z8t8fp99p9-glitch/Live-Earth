@@ -8,8 +8,8 @@ READ THESE FIRST — IN THIS ORDER
 2. GLOBAL-STANDARDS.md
 3. PROTECTED-DECISIONS.md
 4. ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md
-5. docs/INDEX.md
-6. docs/CURRENT-STATUS.md
+5. Documentation/INDEX.md
+6. Documentation/CURRENT-STATUS.md
 
 CURRENT PROJECT POSITION
 - Treat the app and existing modules as production code. Inspect main before every task.
@@ -18,8 +18,8 @@ CURRENT PROJECT POSITION
 - Moon and Sun are independent views.
 - Location is OFF unless the user enables it.
 - Preserve real runtime/offline assets, local data, service-worker rules and recovery paths.
-- `stacks-feature-views.js` retains the environmental Stacks views.
-- `engine-feature-views.js` registers only the Universal Editorial Engine workspace.
+- `Stacks/stacks-feature-views.js` retains the environmental Stacks views.
+- `Editorial-Engine/engine-feature-views.js` registers only the Universal Editorial Engine workspace.
 - The Editorial Engine core and browser helper are retained. Its former upstream collection/publishing integration is not active.
 - The previous collection, source-discovery, feed, policy-checking, image-processing, database-writing, Publisher and Magazine systems were removed at the owner's direction.
 

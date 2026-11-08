@@ -9,5 +9,5 @@
   "background_color": "#050a12",
   "theme_color": "#07111f",
   "orientation": "any",
-  "icons": [{ "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+  "icons": [{ "src": "./Global/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
 }
