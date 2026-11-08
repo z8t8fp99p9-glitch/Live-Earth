@@ -1,16 +1,16 @@
-# Current architecture — v128-global-orb-system (8 November 2026)
+# Current architecture — v130-home-engine-lifecycle (9 November 2026)
 
 The Global Orb System now exposes one registry and effective-view lifecycle for Home/Primary views, Location and Stacks utility Orbs, and expandable Stacks Secondary views. The existing five-Orb main row and three-Orb Secondary dock remain visually and behaviourally protected. Location toggles state without navigation; Stacks opens/closes its library without replacing the active view; Secondary views open, close or switch exclusively.
 
 `window.LiveEarthOrbSystem` is the unified public facade. `Global/view-module-registry.js` emits `live-earth-view-transition` before outgoing cleanup and `live-earth-view-changed` after the incoming view is active. Primary and Secondary navigation share the owner identity format `primary:<id>` / `secondary:<id>`.
 
-Earth Engine now owns one global quaternion snapshot (`x`, `y`, `z`, `w`) and automatically associates each `createEarthGlobe()` instance with the active owner. It captures only at view transitions and page hide, and applies once to an incoming existing group or when a group is created. Existing Stacks overlays continue to use the Home Earth group; future Secondary views may create their own Engine globe without adding viewpoint bridge code to individual views. Legacy Home-only V3/V2/V1 session snapshots are read for migration.
+Earth Engine now owns one global quaternion snapshot (`x`, `y`, `z`, `w`) and automatically associates each `createEarthGlobe()` instance with the active owner. It captures only at view transitions and page hide, and applies once to an incoming existing group or when a group is created. Existing Stacks overlays continue to use the Home Earth group; future Secondary views may create their own Engine globe without adding viewpoint bridge code to individual views. Legacy Home-only V3/V2/V1 session snapshots are not used; the Engine reads only its own global V1 viewpoint key.
 
 No camera/zoom transfer, continuous rotation observer, polling or per-frame storage was introduced. Home's group/surface identity, locked zoom, Moon additive orbit and independent Earth renderer remain protected.
 
 # LIVE // EARTH — Current Status
 
-**Updated:** 8 November 2026  
+**Updated:** 9 November 2026  
 **Repository:** `z8t8fp99p9-glitch/Live-Earth`  
 **Working branch:** `main`  
 **Source baseline:** user-tested `Live-Earth-fullscreen-stacks-feature-views-v118.zip`  
@@ -125,3 +125,7 @@ The supplied source archive did not contain the Earth texture PNG as a repositor
 The former Home-only viewpoint bridge has been deleted. `EarthEngine/Core/earth-engine.js` is the sole viewpoint owner and reads/writes only `liveEarthGlobalViewpointV1`; the retired Home-only V3/V2/V1 session keys are no longer used as migration sources. The exact outgoing owner named in `live-earth-view-transition` determines which registered Earth group is captured, preventing a stale active-group pointer from supplying the wrong pose. `live-earth-view-changed` applies the saved quaternion immediately, and a group created asynchronously receives it during registration.
 
 Home uses the Engine quaternion interaction controller and remains zoom-locked. Independent Earth View uses the same controller with its own camera zoom adapter. No Euler X/Y drag writes remain in the Home renderer. The independent Earth Modes renderer remains a separate path and was not modified by this Home cleanup. The Service Worker and Update Manager build identity is `v129-engine-quaternion-viewpoint`. The full local JavaScript regression suite and 24 Python tests pass; iPhone confirmation of the delayed viewpoint symptom remains pending.
+
+## 9 November 2026 — V130 Engine-managed Home lifecycle
+
+The Earth Engine exposes `registerViewRuntime({ activate, deactivate })` on Engine-created globes. It suspends a renderer before transition only when the incoming owner resolves to a different Engine Earth group. At `live-earth-view-changed`, the Engine applies the shared quaternion before resuming that group's runtime. Home cancels its pending frame and viewport settling work, stops its Moon refresh timer and resets its pointer gesture while Independent Earth or another separate Engine globe owns the screen. When Home becomes active again, its Moon position is refreshed, viewport settling resumes and a fresh frame is requested without user touch. Home's Earth group, surface, texture, camera framing, Moon orbit, star field and locked zoom are preserved. Stacks overlays that use Home's persistent Earth group keep the shared renderer available for their feature layers; a Secondary view with its own Engine globe takes over and suspends Home. Engine API: `2.4.0`. Service Worker / Update Manager identity: `v130-home-engine-lifecycle`. All nine JavaScript regression tests, all JavaScript syntax checks and all 24 Python tests pass locally. Installed-iPhone confirmation remains pending.

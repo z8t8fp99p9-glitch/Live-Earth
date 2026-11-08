@@ -1,7 +1,7 @@
 /* LIVE // EARTH V127 — EarthEngine root-folder architecture. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v129-engine-quaternion-viewpoint";
-const CACHE_NAME = "live-earth-shell-v129-engine-quaternion-viewpoint";
+const BUILD_ID = "v130-home-engine-lifecycle";
+const CACHE_NAME = "live-earth-shell-v130-home-engine-lifecycle";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [

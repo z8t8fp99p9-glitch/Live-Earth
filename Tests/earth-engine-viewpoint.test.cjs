@@ -107,6 +107,15 @@ vm.runInContext(source, sandbox, { filename: 'EarthEngine/Core/earth-engine.js' 
   assert.deepEqual(storageReads, ['liveEarthGlobalViewpointV1'], 'Only the current Engine storage key may be read.');
 
   const home = await engine.createEarthGlobe({ name: 'home' });
+  const homeRuntimeEvents = [];
+  const unregisterHomeRuntime = home.registerViewRuntime({
+    activate() {
+      homeRuntimeEvents.push({ type: 'activate', quaternion: [home.group.quaternion.x, home.group.quaternion.y, home.group.quaternion.z, home.group.quaternion.w] });
+    },
+    deactivate() { homeRuntimeEvents.push({ type: 'deactivate' }); }
+  });
+  assert.equal(homeRuntimeEvents.length, 1, 'A runtime registered for the current Home owner must activate immediately.');
+  assert.equal(homeRuntimeEvents[0].type, 'activate');
   assert.deepEqual(
     [home.group.quaternion.x, home.group.quaternion.y, home.group.quaternion.z, home.group.quaternion.w],
     [0, 0, 0, 1],
@@ -121,6 +130,7 @@ vm.runInContext(source, sandbox, { filename: 'EarthEngine/Core/earth-engine.js' 
   }));
   assert.equal(storageWrites, beforeHomeToEarthWrites + 1, 'A transition must persist one settled quaternion immediately.');
   assert.ok(storageValues.has('liveEarthGlobalViewpointV1'), 'The Engine must persist its single global quaternion key.');
+  assert.equal(homeRuntimeEvents.at(-1).type, 'deactivate', 'The Engine must suspend Home before the incoming view activates.');
 
   activeOwner = 'primary:earth';
   windowMock.dispatchEvent(new CustomEventMock('live-earth-view-changed', {
@@ -130,12 +140,9 @@ vm.runInContext(source, sandbox, { filename: 'EarthEngine/Core/earth-engine.js' 
   const asArray = group => [group.quaternion.x, group.quaternion.y, group.quaternion.z, group.quaternion.w];
   assert.deepEqual(asArray(earth.group), asArray(home.group), 'A globe registered after activation must receive the current snapshot immediately.');
 
-  // Simulate a stale cached active-group pointer: Home is currently cached,
-  // while the lifecycle event correctly identifies Earth as the outgoing owner.
+  // Simulate a stale cached active-owner value: the lifecycle event still
+  // identifies Earth as outgoing, so the exact registered owner must win.
   activeOwner = 'primary:home';
-  windowMock.dispatchEvent(new CustomEventMock('live-earth-view-changed', {
-    detail: { previousOwner: 'primary:earth', nextOwner: 'primary:home' }
-  }));
 
   // Earth → Home: the exact previous-owner group must win over that stale pointer.
   setUnit(earth.group.quaternion, 0.1, 0.75, -0.2, 0.62);
@@ -154,6 +161,8 @@ vm.runInContext(source, sandbox, { filename: 'EarthEngine/Core/earth-engine.js' 
     detail: { previousOwner: 'primary:earth', nextOwner: 'primary:home' }
   }));
   assert.deepEqual(asArray(home.group), expectedEarth, 'Home must receive the outgoing Earth quaternion synchronously on the view-changed event.');
+  assert.equal(homeRuntimeEvents.at(-1).type, 'activate', 'Home must resume automatically when it becomes the active owner again.');
+  assert.deepEqual(homeRuntimeEvents.at(-1).quaternion, expectedEarth, 'Home must resume only after the latest Engine quaternion has been applied.');
 
   // Secondary overlays without their own globe resolve to the Home group.
   windowMock.dispatchEvent(new CustomEventMock('live-earth-view-transition', {
@@ -163,14 +172,19 @@ vm.runInContext(source, sandbox, { filename: 'EarthEngine/Core/earth-engine.js' 
   windowMock.dispatchEvent(new CustomEventMock('live-earth-view-changed', {
     detail: { previousOwner: 'primary:home', nextOwner: 'secondary:clouds' }
   }));
+  assert.equal(homeRuntimeEvents.at(-1).type, 'activate', 'A Secondary overlay that uses the persistent Home Earth group must keep that shared renderer available.');
   assert.equal(engine.getCurrentOwner(), 'secondary:clouds');
 
   const cloudsGlobe = await engine.createEarthGlobe({ name: 'clouds-independent-earth' });
+  assert.equal(homeRuntimeEvents.at(-1).type, 'deactivate', 'When a Secondary view registers its own Engine globe, Home must suspend.');
   assert.deepEqual(asArray(cloudsGlobe.group), expectedEarth, 'A separately-created Secondary globe must inherit the latest global quaternion.');
 
   // The snapshot is deliberately quaternion-only: no Euler angles, camera or zoom.
   assert.deepEqual(Object.keys(engine.getSnapshot()).sort(), ['w', 'x', 'y', 'z']);
   assert.ok(!source.includes('LEGACY_STORAGE_KEYS'), 'No legacy storage migration list may remain.');
+  assert.match(source, /registerViewRuntime/, 'The Engine must expose a shared view-runtime lifecycle contract.');
+  assert.match(source, /if \(outgoing && outgoing !== incoming\) suspendRuntimesForGroup\(outgoing\)/, 'The Engine must suspend the outgoing renderer only when ownership moves to another Earth group.');
+  assert.match(source, /applyEarthGroupSnapshot\(activeEarthGroup\);\s*\/\/ Resume the incoming renderer only after its latest shared quaternion lands\.\s*setActiveRuntimeOwner\(nextOwner\)/, 'The incoming runtime must resume only after the shared viewpoint is applied.');
   assert.ok(!source.includes('liveEarthHomeViewpointV3'), 'The Engine must not reference the removed V3 key.');
   assert.ok(!read('sw.js').includes('earth-viewpoint-bridge.js'), 'The retired bridge must not remain in the offline shell.');
   assert.ok(!fs.existsSync(path.join(root, 'EarthEngine/Core/earth-viewpoint-bridge.js')), 'The obsolete bridge source must be deleted.');
@@ -178,6 +192,9 @@ vm.runInContext(source, sandbox, { filename: 'EarthEngine/Core/earth-engine.js' 
 
   const homeSource = read('index.html');
   assert.match(homeSource, /earthGlobe\.attachInteractions\(/, 'Home must use the Engine-owned interaction controller.');
+  assert.match(homeSource, /earthGlobe\.registerViewRuntime\(/, 'Home must register its renderer lifecycle with the shared Engine.');
+  assert.match(homeSource, /if \(!homeActive \|\| frame\) return;/, 'Home must not schedule frames while the Engine has suspended it.');
+  assert.match(homeSource, /homeInteractions\.reset\(\)/, 'Suspending Home must clear any in-progress pointer interaction.');
   assert.match(homeSource, /zoom:\s*\{\s*enabled:\s*false\s*\}/, 'Home zoom must remain locked.');
   assert.doesNotMatch(homeSource, /(?:group|earthGroup)\.rotation\.[xy]\s*(?:\+=|=)/, 'Home must not contain direct Euler drag writes.');
   assert.match(read('Earth/earth-view-controller.js'), /earthGlobe\.attachInteractions\(/, 'Independent Earth View must also use the Engine interaction controller.');
@@ -185,6 +202,7 @@ vm.runInContext(source, sandbox, { filename: 'EarthEngine/Core/earth-engine.js' 
   const beforePageHide = asArray(home.group);
   windowMock.dispatchEvent(new EventMock('pagehide'));
   assert.deepEqual(asArray(home.group), beforePageHide);
+  unregisterHomeRuntime();
   cloudsGlobe.dispose();
   assert.equal(created.find(item => item.globe.group === cloudsGlobe.group).globe.disposed, true);
   console.log('Engine-owned quaternion viewpoint lifecycle tests passed.');

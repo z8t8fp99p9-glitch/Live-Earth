@@ -12,6 +12,7 @@ let viewpointSnapshot = null;
 let activeOwner = null;
 let activeEarthGroup = null;
 const earthGroupsByOwner = new Map();
+const viewRuntimesByOwner = new Map();
 let lifecycleInstalled = false;
 
 function validQuaternion(value) {
@@ -113,6 +114,70 @@ function incomingGroupFor(owner) {
   return null;
 }
 
+function callRuntime(runtime, method) {
+  const callback = runtime?.callbacks?.[method];
+  if (typeof callback !== "function") return;
+  try {
+    callback(Object.freeze({ owner: runtime.owner, activeOwner }));
+  } catch (error) {
+    console.error(`[LIVE // EARTH] Engine view runtime ${method} failed: ${error?.message || error}`, error);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent?.(new CustomEvent("live-earth-engine-runtime-error", {
+        detail: { owner: runtime.owner, method, error }
+      }));
+    }
+  }
+}
+
+function setRuntimeActive(runtime, shouldBeActive) {
+  if (!runtime) return;
+  if (shouldBeActive && !runtime.active) {
+    runtime.active = true;
+    runtime.initialized = true;
+    callRuntime(runtime, "activate");
+  } else if (!shouldBeActive && (runtime.active || !runtime.initialized)) {
+    runtime.active = false;
+    runtime.initialized = true;
+    callRuntime(runtime, "deactivate");
+  }
+}
+
+function setActiveRuntimeOwner(owner) {
+  const activeGroup = incomingGroupFor(owner);
+  for (const runtime of viewRuntimesByOwner.values()) {
+    setRuntimeActive(runtime, !!activeGroup && runtime.group === activeGroup);
+  }
+}
+
+function suspendRuntimesForGroup(group) {
+  if (!group) return;
+  for (const runtime of viewRuntimesByOwner.values()) {
+    if (runtime.group === group) setRuntimeActive(runtime, false);
+  }
+}
+
+function registerEarthViewRuntime(owner, group, callbacks = {}) {
+  if (typeof owner !== "string" || !owner.trim()) {
+    throw new TypeError("An Engine view runtime requires a stable owner identity.");
+  }
+  if (!callbacks || typeof callbacks !== "object") {
+    throw new TypeError("An Engine view runtime requires lifecycle callbacks.");
+  }
+  if (viewRuntimesByOwner.has(owner)) {
+    throw new Error(`An Engine view runtime is already registered for ${owner}.`);
+  }
+  const runtime = { owner, group, callbacks, active: false, initialized: false };
+  viewRuntimesByOwner.set(owner, runtime);
+  const currentOwner = getCurrentOwner();
+  activeOwner = currentOwner;
+  setActiveRuntimeOwner(currentOwner);
+  return () => {
+    if (viewRuntimesByOwner.get(owner) !== runtime) return;
+    setRuntimeActive(runtime, false);
+    viewRuntimesByOwner.delete(owner);
+  };
+}
+
 function installLifecycle() {
   if (lifecycleInstalled || typeof window === "undefined") return;
   lifecycleInstalled = true;
@@ -125,6 +190,11 @@ function installLifecycle() {
     const outgoing = earthGroupsByOwner.get(previousOwner)
       || (activeOwner === previousOwner ? activeEarthGroup : null);
     if (outgoing) captureEarthGroup(outgoing);
+    const nextOwner = event.detail?.nextOwner || null;
+    const incoming = incomingGroupFor(nextOwner);
+    // Suspend a renderer only when ownership moves to a different Engine Earth
+    // group. Secondary overlays that use Home's persistent group still need it.
+    if (outgoing && outgoing !== incoming) suspendRuntimesForGroup(outgoing);
   });
 
   window.addEventListener("live-earth-view-changed", event => {
@@ -132,6 +202,8 @@ function installLifecycle() {
     activeOwner = nextOwner;
     activeEarthGroup = incomingGroupFor(nextOwner);
     if (activeEarthGroup) applyEarthGroupSnapshot(activeEarthGroup);
+    // Resume the incoming renderer only after its latest shared quaternion lands.
+    setActiveRuntimeOwner(nextOwner);
   });
 
   window.addEventListener("live-earth-orb-system-ready", () => {
@@ -140,6 +212,7 @@ function installLifecycle() {
     activeOwner = nextOwner;
     activeEarthGroup = incomingGroupFor(nextOwner);
     if (activeEarthGroup) applyEarthGroupSnapshot(activeEarthGroup);
+    setActiveRuntimeOwner(nextOwner);
   });
 
   window.addEventListener("pagehide", () => {
@@ -147,6 +220,7 @@ function installLifecycle() {
     const group = earthGroupsByOwner.get(owner)
       || (activeOwner === owner ? activeEarthGroup : null);
     if (group) captureEarthGroup(group);
+    setActiveRuntimeOwner(null);
   }, { once: true });
 }
 
@@ -321,6 +395,9 @@ function registerEarthGroup(globe, owner) {
     activeOwner = owner;
     activeEarthGroup = group;
     applyEarthGroupSnapshot(group);
+    // A newly-created Engine globe may replace the fallback Home group for an
+    // already-active Secondary owner; switch render ownership immediately.
+    setActiveRuntimeOwner(owner);
   }
   return () => {
     if (earthGroupsByOwner.get(owner) === group) earthGroupsByOwner.delete(owner);
@@ -334,7 +411,18 @@ export async function createEarthGlobe(options = {}) {
   const globe = await createEarthGraphics(options);
   const unregister = registerEarthGroup(globe, ownerAtRequest);
   const interactionControllers = new Set();
+  const runtimeUnregisters = new Set();
   let disposed = false;
+
+  function registerViewRuntime(callbacks = {}) {
+    if (disposed) throw new Error("Cannot register a runtime for a disposed Earth globe.");
+    const unregisterRuntime = registerEarthViewRuntime(ownerAtRequest, globe.group, callbacks);
+    runtimeUnregisters.add(unregisterRuntime);
+    return () => {
+      if (!runtimeUnregisters.delete(unregisterRuntime)) return;
+      unregisterRuntime();
+    };
+  }
 
   function attachInteractions(interactionOptions = {}) {
     if (disposed) throw new Error("Cannot attach gestures to a disposed Earth globe.");
@@ -352,11 +440,14 @@ export async function createEarthGlobe(options = {}) {
   return Object.freeze({
     ...globe,
     attachInteractions,
+    registerViewRuntime,
     dispose() {
       if (disposed) return;
       disposed = true;
       for (const interaction of interactionControllers) interaction.dispose();
       interactionControllers.clear();
+      for (const unregisterRuntime of runtimeUnregisters) unregisterRuntime();
+      runtimeUnregisters.clear();
       unregister();
       globe.dispose();
     }
@@ -365,7 +456,7 @@ export async function createEarthGlobe(options = {}) {
 
 export const createGlobe = createEarthGlobe;
 export const EarthEngine = Object.freeze({
-  version: "2.3.0",
+  version: "2.4.0",
   createGlobe: createEarthGlobe,
   createEarthGlobe,
   getGlobalViewpoint: getSnapshot,

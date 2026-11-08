@@ -30,6 +30,11 @@ At the owner's direction, the former content-collection and publishing system an
 
 The retained Engine core was not rewritten as part of that removal. Its former read-only approved-record input contract remains dormant because the upstream services that previously supplied it are no longer present. No live source collection, scheduled feed or Publisher operation is implied.
 
+
+## 9 November 2026 — Engine-managed Home renderer lifecycle
+
+The Earth Engine now exposes a generic `registerViewRuntime({ activate, deactivate })` adapter on each Engine-created globe. The Engine suspends an outgoing renderer before a transition only when the incoming owner resolves to a different Engine Earth group. On the incoming `live-earth-view-changed` event, the Engine applies the shared quaternion first and then activates the runtime associated with that group. Home therefore pauses its on-demand render scheduling, pending viewport work, Moon refresh timer and active pointer gesture while a separate Earth group owns the screen; it resumes and requests a fresh frame when the Home group becomes active again. Home's Earth group, texture, camera framing, Moon orbit, star field and locked zoom remain allocated. Stacks Secondary overlays without their own globe continue using Home's shared Earth renderer for their registered layers; a Secondary view with its own globe takes over and suspends Home. The Engine public API is 2.4.0 and the Service Worker / Update Manager identity advances together to `v130-home-engine-lifecycle`. All nine JavaScript regression tests, all JavaScript syntax checks and all 24 Python tests pass locally. Installed-iPhone transition testing remains pending.
+
 ## Historical test-report caveat
 
 Former test reports recorded mixed snapshots and explicitly distinguished local tests from GitHub Actions, deployment and iPhone verification. They are not current test results and must not be presented as proof of current green tests.

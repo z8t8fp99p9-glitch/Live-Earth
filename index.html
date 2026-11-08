@@ -447,6 +447,7 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
       camera.lookAt(0, 0, 0);
     }
 
+    let homeActive = true;
     let draw = () => {};
     let viewportSyncFrame = 0;
     let viewportSettleTimers = [];
@@ -455,6 +456,7 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
     let lastPixelRatio = 0;
 
     function syncCanvasViewport() {
+      if (!homeActive) return;
       const size = getCanvasViewport();
       const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
       if (
@@ -473,6 +475,7 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
     }
 
     function queueCanvasViewportSync() {
+      if (!homeActive) return;
       if (viewportSyncFrame) cancelAnimationFrame(viewportSyncFrame);
       viewportSyncFrame = requestAnimationFrame(() => {
         viewportSyncFrame = 0;
@@ -482,6 +485,7 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
     }
 
     function settleCanvasViewport() {
+      if (!homeActive) return;
       queueCanvasViewportSync();
       viewportSettleTimers.forEach(timer => clearTimeout(timer));
       viewportSettleTimers = [100, 300, 650].map(delay => setTimeout(queueCanvasViewportSync, delay));
@@ -563,7 +567,7 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
 
     let frame = 0;
     draw = () => {
-      if (frame) return;
+      if (!homeActive || frame) return;
       frame = requestAnimationFrame(() => {
         frame = 0;
         renderer.render(scene, camera);
@@ -573,15 +577,25 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
     draw();
 
     let moonTick = Date.now();
-    const moonClock = setInterval(() => {
-      if (document.hidden) return;
-      const now = Date.now();
-      if (now - moonTick >= 30000) {
-        moonTick = now;
-        moonSystem.update(new Date(now));
-        draw();
-      }
-    }, 10000);
+    let moonClock = 0;
+    function startMoonClock() {
+      if (moonClock) return;
+      moonTick = Date.now();
+      moonClock = window.setInterval(() => {
+        if (document.hidden || !homeActive) return;
+        const now = Date.now();
+        if (now - moonTick >= 30000) {
+          moonTick = now;
+          moonSystem.update(new Date(now));
+          draw();
+        }
+      }, 10000);
+    }
+    function stopMoonClock() {
+      if (!moonClock) return;
+      window.clearInterval(moonClock);
+      moonClock = 0;
+    }
 
     // The service worker inserts the Home Earth APIs at this stable marker.
     // Keep it before Home interaction setup for lexical access.
@@ -589,11 +603,11 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
 
     // Home rotation is quaternion-only through the Engine interaction controller.
     // Home camera framing stays locked; two-finger input cannot change its distance.
-    earthGlobe.attachInteractions({
+    const homeInteractions = earthGlobe.attachInteractions({
       element: canvas,
       enabled: () => {
         const owner = window.LiveEarthOrbSystem?.getActiveViewIdentity?.();
-        return !owner || owner === 'primary:home';
+        return homeActive && (!owner || owner === 'primary:home');
       },
       rotation: {
         sensitivityX: 0.009,
@@ -605,12 +619,37 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
       onRotate: () => draw()
     });
 
+    // The Engine owns Home's active/suspended state. Home only supplies the
+    // renderer and interaction hooks; it never decides which view is active.
+    const unregisterHomeRuntime = earthGlobe.registerViewRuntime({
+      activate: () => {
+        homeActive = true;
+        moonSystem.update(new Date());
+        startMoonClock();
+        settleCanvasViewport();
+        draw();
+      },
+      deactivate: () => {
+        homeActive = false;
+        stopMoonClock();
+        if (frame) cancelAnimationFrame(frame);
+        frame = 0;
+        if (viewportSyncFrame) cancelAnimationFrame(viewportSyncFrame);
+        viewportSyncFrame = 0;
+        viewportSettleTimers.forEach(timer => clearTimeout(timer));
+        viewportSettleTimers = [];
+        homeInteractions.reset();
+      }
+    });
+    window.addEventListener('pagehide', unregisterHomeRuntime, { once: true });
+
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         if (frame) cancelAnimationFrame(frame);
         frame = 0;
         return;
       }
+      if (!homeActive) return;
       settleCanvasViewport();
       draw();
     });

@@ -65,8 +65,8 @@ assert.match(registry, /preparePrimaryOwnerTransition = \(next, previous\)/, 'Di
 assert.match(manager, /let activeView = "home"/);
 assert.match(manager, /const supported = new Set\(\["home", "earth", "moon", "sun"\]\)/);
 assert.match(orbControls, /const primaryActive =/);
-assert.match(sw, /v129-engine-quaternion-viewpoint/);
-assert.match(updateManager, /v129-engine-quaternion-viewpoint/);
+assert.match(sw, /v130-home-engine-lifecycle/);
+assert.match(updateManager, /v130-home-engine-lifecycle/);
 assert.match(updateManager, /window\.LiveEarthOrbSystem/);
 assert.match(sw, /window\.LiveEarthGlobalViewpoint && !!window\.LiveEarthOrbSystem/, 'Offline startup gate must wait for the new global Engine viewpoint and Orb system.');
 assert.doesNotMatch(sw, /window\.LiveEarthViewpointBridge/, 'Offline startup must not wait for the retired Home-only bridge.');

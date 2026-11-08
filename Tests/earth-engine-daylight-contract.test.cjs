@@ -7,7 +7,7 @@ const source = fs.readFileSync(enginePath, 'utf8');
 const corePath = path.join(__dirname, '..', 'EarthEngine', 'Core', 'earth-engine.js');
 const coreSource = fs.readFileSync(corePath, 'utf8');
 
-assert.match(coreSource, /version: \"2\.3\.0\"/, 'Public Earth Engine contract version must be incremented.');
+assert.match(coreSource, /version: \"2\.4\.0\"/, 'Public Earth Engine contract version must be incremented.');
 assert.match(source, /function solarLocalDirection\(/, 'Engine must calculate the geographic subsolar direction.');
 assert.match(source, /surface\.getWorldQuaternion\(worldQuaternion\)/, 'Solar direction must follow the globe world quaternion.');
 assert.match(source, /applyQuaternion\(worldQuaternion\)/, 'Solar direction must be transformed through quaternion orientation.');

@@ -258,11 +258,11 @@ const THREE = {
   const manager = read('Global/update-manager.js');
   assert.ok(sw.includes('"./EarthEngine/Core/earth-engine.js"'), 'The canonical Earth Engine must remain an essential offline shell asset.');
   assert.ok(!sw.includes('earth-viewpoint-bridge.js'), 'The retired Home-only viewpoint bridge must not remain in the offline shell.');
-  assert.ok(sw.includes('v129-engine-quaternion-viewpoint'), 'The service-worker cache identity must advance when the app shell contract changes.');
+  assert.ok(sw.includes('v130-home-engine-lifecycle'), 'The service-worker cache identity must advance when the app shell contract changes.');
   assert.ok(sw.includes('"./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js"') && sw.includes('"./EarthEngine/Graphics/earth-engine-3d-graphics-core.js"'), 'Both graphics modules must remain essential offline shell assets.');
   assert.ok(sw.includes('"./EarthEngine/Assets/earth-land-ocean-ice-2048.png"'), 'Home Engine texture must remain an offline runtime dependency.');
   assert.ok(!sw.includes('earth-mode-navigation.js'), 'The retired controller path must not remain in the service worker.');
-  assert.ok(sw.includes('v129-engine-quaternion-viewpoint') && manager.includes('v129-engine-quaternion-viewpoint'), 'Service worker and update manager build IDs must match.');
+  assert.ok(sw.includes('v130-home-engine-lifecycle') && manager.includes('v130-home-engine-lifecycle'), 'Service worker and update manager build IDs must match.');
   assert.ok(sw.includes('const anchor = "// LIVE_EARTH_HOME_RENDERER_HOOKS";'), 'Home API injection must use the stable named hook.');
   assert.ok(sw.includes('const readableRemoteThreeImport = /try\\s*\\{'), 'Service worker must transform the readable Home Three.js import.');
   assert.ok(sw.includes("html = html.replace(readableRemoteThreeImport, \"T = await import('./vendor/three.module.js');\");"), 'Readable Home import must resolve to the staged offline Three.js module.');
