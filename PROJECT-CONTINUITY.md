@@ -121,3 +121,14 @@ The supplied ZIP did not contain `earth-land-ocean-ice-2048.png` as a tracked bi
 - Earth Engine owns one rotation-only snapshot and no longer needs per-view bridge calls.
 - Existing Home group identity and additive Moon orbit remain untouched.
 - Build identity: `v128-global-orb-system`.
+
+
+## 9 November 2026 — Engine-owned quaternion viewpoint cleanup (V129)
+
+The old Home-only `EarthEngine/Core/earth-viewpoint-bridge.js` module and its bridge-specific test were retired and deleted. `EarthEngine/Core/earth-engine.js` is the sole owner of viewpoint state; it reads/writes only `liveEarthGlobalViewpointV1` and no longer falls back to the old Home-only V3/V2/V1 session keys. The Service Worker no longer treats the bridge as an essential offline asset, and both `sw.js` and `Global/update-manager.js` now use the synchronized `v129-engine-quaternion-viewpoint` identity.
+
+The outgoing transition event's explicit owner is now authoritative when selecting the Earth group to capture. This avoids capturing from a stale cached active-group pointer. The incoming group receives the normalized quaternion directly on the view-changed event; an Engine group created asynchronously later receives the current snapshot on registration. `Tests/earth-engine-viewpoint.test.cjs` covers stale V3 rejection, exact outgoing-owner capture, synchronous Home restoration, and quaternion-only state.
+
+Home's current runtime already uses `earthGlobe.attachInteractions()` from Earth Engine, with `zoom.enabled: false`; its drag path contains no direct Euler X/Y writes. The independent Earth View uses the same quaternion controller. A separate Euler-based drag implementation remains in `Earth/earth-orb-globe.js` for the standalone Earth Modes renderer; it is not Home and was intentionally left outside this Home/viewpoint patch. The remaining active Home presentation, stars, Moon orbit/path, Location marker state, lighting, camera framing and Orb behaviour were not changed.
+
+All JavaScript regression tests and 24 Python tests passed locally. Installed-iPhone confirmation is still required to verify that the observed multi-second viewpoint delay has been eliminated.

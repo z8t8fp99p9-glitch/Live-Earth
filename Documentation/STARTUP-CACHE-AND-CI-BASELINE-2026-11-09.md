@@ -35,7 +35,6 @@ These are application files and runtime assets, not 47 datasets, feeds, articles
 ./ios-standalone-root-flow.js
 ./Global/orb-controls-v4.js
 ./EarthEngine/Core/earth-engine.js
-./EarthEngine/Core/earth-viewpoint-bridge.js
 ./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js
 ./EarthEngine/Graphics/earth-engine-3d-graphics-core.js
 ./EarthEngine/Assets/README.md
@@ -115,7 +114,7 @@ The current `Tests/` inventory contains 10 files:
 Tests/earth-engine-view-separation.test.cjs
 Tests/earth-modes-surface-alignment.test.cjs
 Tests/earth-view-drag-orientation.test.cjs
-Tests/earth-viewpoint-bridge.test.cjs
+Tests/earth-engine-viewpoint.test.cjs
 Tests/global-orb-system-contract.test.cjs
 Tests/location-service-path.test.cjs
 Tests/moon-earth-isolation.test.cjs
@@ -133,3 +132,6 @@ Keep Home's fixed camera/framing/zoom and high-detail Earth; keep Basic/HD and z
 ## 6. Next workstream
 
 Proceed to the **Earth Engine viewpoint issue** as a separate task. The specific current device symptom has not yet been recorded in this checkpoint, so do not claim a cause or prepare a patch yet. Start by capturing the exact observed behavior, then inspect the latest live source and trace the outgoing/incoming view lifecycle, quaternion owner identity, and affected controller. Keep the change narrow and add a regression for the reproduced failure.
+
+
+Current Service Worker / Update Manager build identity: `v129-engine-quaternion-viewpoint`. The retired Home-only viewpoint bridge is not an app-shell asset.

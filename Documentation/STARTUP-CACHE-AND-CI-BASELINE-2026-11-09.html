@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>LIVE // EARTH — Startup Cache &amp; Regression Baseline | Live-Earth</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="LIVE // EARTH — Startup Cache &amp; Regression Baseline" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="https://z8t8fp99p9-glitch.github.io/Live-Earth/Documentation/STARTUP-CACHE-AND-CI-BASELINE-2026-11-09.html" />
+<meta property="og:url" content="https://z8t8fp99p9-glitch.github.io/Live-Earth/Documentation/STARTUP-CACHE-AND-CI-BASELINE-2026-11-09.html" />
+<meta property="og:site_name" content="Live-Earth" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="LIVE // EARTH — Startup Cache &amp; Regression Baseline" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","headline":"LIVE // EARTH — Startup Cache &amp; Regression Baseline","url":"https://z8t8fp99p9-glitch.github.io/Live-Earth/Documentation/STARTUP-CACHE-AND-CI-BASELINE-2026-11-09.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/Live-Earth/assets/css/style.css?v=ffa3a17cc096627db155504177e51a110305f9e4">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/Live-Earth/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="container-lg px-3 my-5 markdown-body">
+      
+      <h1><a href="https://z8t8fp99p9-glitch.github.io/Live-Earth/">Live-Earth</a></h1>
+      
+
+      <h1 id="live--earth--startup-cache--regression-baseline">LIVE // EARTH — Startup Cache &amp; Regression Baseline</h1>
+
+<p><strong>Date:</strong> 9 November 2026<br />
+<strong>Repository:</strong> <code class="language-plaintext highlighter-rouge">z8t8fp99p9-glitch/Live-Earth</code><br />
+<strong>Branch:</strong> <code class="language-plaintext highlighter-rouge">main</code><br />
+<strong>Inspected HEAD:</strong> <code class="language-plaintext highlighter-rouge">cb0bcd4ab1edecdebd8813e997cc7b56e56b6e40</code><br />
+<strong>HEAD title:</strong> <code class="language-plaintext highlighter-rouge">Add automated JavaScript and Python regression checks</code></p>
+
+<h2 id="1-decision-confirmed-by-the-owner">1. Decision confirmed by the owner</h2>
+
+<p>Keep the existing launch contract:</p>
+
+<ul>
+  <li><strong>Online:</strong> request fresh versions of all essential app-shell/runtime resources before Home is released.</li>
+  <li><strong>Offline:</strong> use the saved verified app shell from the last available cache state.</li>
+  <li><strong>Readiness:</strong> keep Home behind the startup gate until required resources and core systems pass checks.</li>
+  <li><strong>No redesign approved:</strong> do not split or defer essential resources merely to shorten the progress screen. The owner reviewed the 47-resource count and confirmed the current online-fresh / offline-saved-cache approach is acceptable.</li>
+</ul>
+
+<p>This note records the accepted direction; it does not authorize a startup or cache refactor.</p>
+
+<h2 id="2-what-the-47-resources-count">2. What the 47 resources count</h2>
+
+<p>The startup gate derives its expected paths from <code class="language-plaintext highlighter-rouge">APP_SHELL</code> plus <code class="language-plaintext highlighter-rouge">RUNTIME_DEPENDENCIES</code> in <code class="language-plaintext highlighter-rouge">sw.js</code>:</p>
+
+<ul>
+  <li><strong>44 first-party app-shell paths</strong></li>
+  <li><strong>3 runtime dependencies</strong></li>
+  <li><strong>47 unique required paths total</strong></li>
+</ul>
+
+<p>These are application files and runtime assets, not 47 datasets, feeds, articles or user-data downloads.</p>
+
+<h3 id="44-app-shell-paths">44 app-shell paths</h3>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./
+./index.html
+./ios-standalone-root-flow.js
+./Global/orb-controls-v4.js
+./EarthEngine/Core/earth-engine.js
+./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js
+./EarthEngine/Graphics/earth-engine-3d-graphics-core.js
+./EarthEngine/Assets/README.md
+./Earth/earth-view-controller.js
+./Global/view-manager.js
+./Global/view-module-registry.js
+./Stacks/stacks-feature-views.js
+./Clouds/clouds-view.js
+./Weather/weather-view.js
+./Traffic/traffic-view.js
+./Earthquakes/earthquakes-view.js
+./Global/sky-view-controller.js
+./Moon/moon-view-controller.js
+./Moon/moon-lunar-interface.js
+./Sun/sun-view-controller.js
+./Sun/sun-surface-shared.webp
+./Earth/location.html
+./Earth/earth-orb-globe.js
+./manifest.json
+./Global/icon.svg
+./Data/data-store.js
+./Location/location.js
+./Global/astronomy.js
+./Home/moon-orbit.js
+./Data/dataset-manifest.json
+./Home/moon-surface-lroc-1536.jpg
+./Moon/moon-sky-background-responsive.svg
+./Moon/moon-sky-background-portrait.webp
+./Moon/moon-sky-background-landscape.webp
+./Sun/sun-sky-background-portrait.webp
+./Sun/sun-sky-background-landscape.webp
+./Global/update-manager.js
+./Data/data-recovery.js
+./Earth/earth.webp
+./Moon/moon.webp
+./Sun/sun.webp
+./Location/location.webp
+./Stacks/stacks.webp
+</code></pre></div></div>
+
+<h3 id="3-runtime-dependencies">3 runtime dependencies</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Cached local path</th>
+      <th>Fresh source strategy</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">./vendor/three.core.js</code></td>
+      <td>Three.js r180 CDN primary + unpkg fallback</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">./vendor/three.module.js</code></td>
+      <td>Three.js r180 CDN primary + unpkg fallback</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">./EarthEngine/Assets/earth-land-ocean-ice-2048.png</code></td>
+      <td>NASA Earth texture primary + Three.js example texture fallback</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The exact remote URLs and validation logic remain in <code class="language-plaintext highlighter-rouge">sw.js</code>; this list describes the three local runtime paths.</p>
+
+<h2 id="3-verified-launch-behavior-in-current-source">3. Verified launch behavior in current source</h2>
+
+<ul>
+  <li>The startup page expects all 47 paths and requests fresh online copies with <code class="language-plaintext highlighter-rouge">cache: "no-store"</code> and the <code class="language-plaintext highlighter-rouge">X-Live-Earth-Force-Fresh: 1</code> header.</li>
+  <li>Each path gets up to two page-level attempts before the sync is considered failed.</li>
+  <li>The Service Worker validates responses before replacing the corresponding saved cache entry. App-shell validation checks response status/type, content type, and a minimum byte size. Runtime dependencies also receive type and truncation checks.</li>
+  <li>If <strong>every</strong> online request fails at the network layer, startup switches to the saved-shell path and verifies all expected paths before releasing Home.</li>
+  <li>A partial sync or a response that fails HTTP/content-type/integrity validation does not silently fall back to cached content while online; startup remains blocked and requires retry/repair.</li>
+  <li>When explicitly offline, startup checks the saved shell. Missing or invalid entries are repaired only when a usable connection is available, then rechecked before reload.</li>
+  <li>During Service Worker installation, the candidate worker stages the 44 app-shell paths and 3 runtime dependencies before <code class="language-plaintext highlighter-rouge">skipWaiting()</code>. A failed install does not activate that candidate worker.</li>
+  <li>The optional-resource cache is separately bounded at 48 entries. User IndexedDB/local data is not reset by this launch flow.</li>
+</ul>
+
+<p><strong>Implementation nuance:</strong> the ordinary online refresh path replaces validated cache entries per resource; it is not a single atomic 47-file transaction. A partial online refresh blocks Home. Do not describe this recurring refresh as an atomic batch. The separate new-Service-Worker install path does wait for all staged essentials before activation.</p>
+
+<h2 id="4-regression-workflow-evidence">4. Regression workflow evidence</h2>
+
+<ul>
+  <li>Workflow: <code class="language-plaintext highlighter-rouge">LIVE // EARTH Regression Tests</code></li>
+  <li>Run: <code class="language-plaintext highlighter-rouge">42514084234</code></li>
+  <li>Commit tested: <code class="language-plaintext highlighter-rouge">cb0bcd4ab1edecdebd8813e997cc7b56e56b6e40</code></li>
+  <li>Result: <strong>completed / success</strong></li>
+  <li>Job: <code class="language-plaintext highlighter-rouge">JavaScript and Python regression checks</code> — success</li>
+  <li>Successful steps: Node.js setup, Python setup, JavaScript syntax validation, JavaScript regression tests, Python compile and Editorial Engine unit tests.</li>
+  <li>Run URL: https://github.com/z8t8fp99p9-glitch/Live-Earth/actions/runs/42514084234</li>
+</ul>
+
+<p>The current <code class="language-plaintext highlighter-rouge">Tests/</code> inventory contains 10 files:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Tests/earth-engine-view-separation.test.cjs
+Tests/earth-modes-surface-alignment.test.cjs
+Tests/earth-view-drag-orientation.test.cjs
+Tests/earth-engine-viewpoint.test.cjs
+Tests/global-orb-system-contract.test.cjs
+Tests/location-service-path.test.cjs
+Tests/moon-earth-isolation.test.cjs
+Tests/stacks-feature-folders.test.cjs
+Tests/test_editorial_phases_1_2_3.py
+Tests/test_editorial_text_intelligence.py
+</code></pre></div></div>
+
+<p>These are regression/source-level checks. They do not replace a real iPhone/browser run, an online/offline device test, or verification of a Pages deployment. No new Pages deployment result is claimed here.</p>
+
+<h2 id="5-protected-behavior">5. Protected behavior</h2>
+
+<p>Keep Home’s fixed camera/framing/zoom and high-detail Earth; keep Basic/HD and zoom controls in Earth View only. Preserve the Home Moon orbit and ensure it does not change Earth’s orientation. Keep Sun/Moon independent, protect the Global Orb lifecycle, Location-OFF privacy, Stacks features, IndexedDB and recovery data. Do not change <code class="language-plaintext highlighter-rouge">sw.js</code>, <code class="language-plaintext highlighter-rouge">index.html</code>, build IDs, cache names or feature startup dependencies as part of the upcoming viewpoint task unless a directly evidenced dependency requires it.</p>
+
+<h2 id="6-next-workstream">6. Next workstream</h2>
+
+<p>Proceed to the <strong>Earth Engine viewpoint issue</strong> as a separate task. The specific current device symptom has not yet been recorded in this checkpoint, so do not claim a cause or prepare a patch yet. Start by capturing the exact observed behavior, then inspect the latest live source and trace the outgoing/incoming view lifecycle, quaternion owner identity, and affected controller. Keep the change narrow and add a regression for the reproduced failure.</p>
+
+
+      
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" integrity="sha256-lZaRhKri35AyJSypXXs4o6OPFTbTmUoltBbDCbdzegg=" crossorigin="anonymous"></script>
+    <script>anchors.add();</script>
+  <p>Current Service Worker / Update Manager build identity: <code>v129-engine-quaternion-viewpoint</code>. The retired Home-only viewpoint bridge is not an app-shell asset.</p>
+</body>
+</html>

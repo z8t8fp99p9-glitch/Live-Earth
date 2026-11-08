@@ -10,8 +10,7 @@
 ```text
 EarthEngine/
 ├── Core/
-│   ├── earth-engine.js
-│   └── earth-viewpoint-bridge.js
+│   └── earth-engine.js
 ├── Graphics/
 │   ├── earth-engine-3d-graphics-engine.js
 │   └── earth-engine-3d-graphics-core.js

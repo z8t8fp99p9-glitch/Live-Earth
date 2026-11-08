@@ -3,7 +3,7 @@
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v128-global-orb-system";
+  const BUILD_ID = "v129-engine-quaternion-viewpoint";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {

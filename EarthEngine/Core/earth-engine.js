@@ -8,11 +8,6 @@ import { createEarthGraphics } from "../Graphics/earth-engine-3d-graphics-engine
 
 const VIEWPOINT_STATE_KEY = "__liveEarthGlobalViewpointV1";
 const VIEWPOINT_STORAGE_KEY = "liveEarthGlobalViewpointV1";
-const LEGACY_STORAGE_KEYS = [
-  "liveEarthHomeViewpointV3",
-  "liveEarthHomeViewpointV2",
-  "liveEarthHomeViewpointV1"
-];
 let viewpointSnapshot = null;
 let activeOwner = null;
 let activeEarthGroup = null;
@@ -38,15 +33,11 @@ function normalizeQuaternion(value) {
 function readStoredSnapshot() {
   if (typeof window === "undefined") return null;
   try {
-    const storage = window.sessionStorage;
-    for (const key of [VIEWPOINT_STORAGE_KEY, ...LEGACY_STORAGE_KEYS]) {
-      const raw = storage?.getItem(key);
-      if (!raw) continue;
-      const parsed = JSON.parse(raw);
-      const candidate = parsed?.orientation || parsed?.quaternion || parsed;
-      const normalized = normalizeQuaternion(candidate);
-      if (normalized) return normalized;
-    }
+    const raw = window.sessionStorage?.getItem(VIEWPOINT_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const candidate = parsed?.orientation || parsed?.quaternion || parsed;
+    return normalizeQuaternion(candidate);
   } catch (_) {
     // A blocked or malformed session store must not stop the globe from loading.
   }
@@ -129,7 +120,10 @@ function installLifecycle() {
 
   window.addEventListener("live-earth-view-transition", event => {
     const previousOwner = event.detail?.previousOwner || activeOwner;
-    const outgoing = activeEarthGroup || earthGroupsByOwner.get(previousOwner) || null;
+    // The lifecycle event names the outgoing owner. Prefer that exact registered
+    // group over the cached active pointer, which may lag during async view startup.
+    const outgoing = earthGroupsByOwner.get(previousOwner)
+      || (activeOwner === previousOwner ? activeEarthGroup : null);
     if (outgoing) captureEarthGroup(outgoing);
   });
 
@@ -149,7 +143,9 @@ function installLifecycle() {
   });
 
   window.addEventListener("pagehide", () => {
-    const group = activeEarthGroup || incomingGroupFor(getCurrentOwner());
+    const owner = getCurrentOwner();
+    const group = earthGroupsByOwner.get(owner)
+      || (activeOwner === owner ? activeEarthGroup : null);
     if (group) captureEarthGroup(group);
   }, { once: true });
 }

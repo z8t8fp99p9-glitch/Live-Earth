@@ -50,14 +50,14 @@ The previous content-collection and publishing services have been removed. Do no
 
 Old content-collection, rights-checking and publication notes are historical. They do not describe installed code or active services and must not be used to recreate removed modules. The current repository source and this standard determine the supported application boundary.
 
-- Home is the source of truth for the initial Earth viewpoint. Independent Earth Engine views may consume the orientation snapshot through `EarthEngine/Core/earth-viewpoint-bridge.js`; they must never write their rotation back to Home or share Home's scene/camera/renderer.
+- Earth Engine owns one quaternion-only viewpoint snapshot (`{x, y, z, w}`) shared across active Engine-created Earth groups. Views never share scenes, cameras, renderers or zoom.
 
 
 ## Home Earth viewpoint hand-off
-Home's settled Earth orientation may be shared with independent Earth renderers through `EarthEngine/Core/earth-viewpoint-bridge.js`. The bridge may use same-tab `sessionStorage` to survive page navigation, but must not use or reset app databases, persistent user settings, or caches. Only the initial orientation is shared; views retain independent scenes, cameras, zoom, renderers and interactions. Secondary views must never publish orientation back to Home.
+`EarthEngine/Core/earth-engine.js` captures the exact outgoing owner's quaternion before a view transition and applies it to the incoming group immediately. It persists only `liveEarthGlobalViewpointV1`. The retired Home-only V3/V2/V1 bridge and its migration fallbacks are removed; no old key may be restored. Home rotation uses the Engine's quaternion interaction controller, with zoom disabled.
 
 ### V125 — canonical Earth Engine and strict Moon/Earth isolation
-`EarthEngine/Core/earth-engine.js` is the only Earth globe factory. Home, Independent Earth View and Earth Modes use the same engine, Earth texture and fixed surface calibration, creating separate instances only because their scenes/renderers are independent. The bridge transfers only Home's user-controlled Earth-group quaternion. Moon Orbit may update its own Moon/orbit objects only; it must never read or mutate the Earth surface or Earth group. The V124 surface-quaternion bridge was an incorrect expansion of the legacy Moon/Earth coupling and is superseded.
+`EarthEngine/Core/earth-engine.js` is the only Earth globe factory. Home, Independent Earth View and Earth Modes use the same engine, Earth texture and fixed surface calibration, creating separate instances only because their scenes/renderers are independent. The Engine lifecycle transfers only the user-controlled Earth-group quaternion. Moon Orbit may update its own Moon/orbit objects only; it must never read or mutate the Earth surface or Earth group. The V124 surface-quaternion bridge was an incorrect expansion of the legacy Moon/Earth coupling and is superseded.
 
 
 ## Global Orb System — 8 November 2026

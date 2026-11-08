@@ -33,3 +33,9 @@ The retained Engine core was not rewritten as part of that removal. Its former r
 ## Historical test-report caveat
 
 Former test reports recorded mixed snapshots and explicitly distinguished local tests from GitHub Actions, deployment and iPhone verification. They are not current test results and must not be presented as proof of current green tests.
+
+## 9 November 2026 — Engine-owned quaternion viewpoint cleanup
+
+The retired Home-only viewpoint bridge (`EarthEngine/Core/earth-viewpoint-bridge.js`) and bridge test were deleted. The Global Earth Engine now reads only `liveEarthGlobalViewpointV1`; legacy Home-only V3/V2/V1 session keys are no longer migration sources. The obsolete bridge was removed from the offline shell, and the Service Worker / Update Manager cache identity advanced together to `v129-engine-quaternion-viewpoint`.
+
+The Engine now selects the outgoing Earth group by the exact owner named in the pre-transition event, rather than preferring a potentially stale cached active-group pointer. The incoming group receives the saved quaternion immediately at the post-transition event, or on registration if it is created asynchronously. Home's existing Engine interaction path is quaternion-only and remains zoom-locked; the independent Earth View uses the same shared controller. All JavaScript regression tests and 24 Python tests passed locally. Device acceptance remains pending.

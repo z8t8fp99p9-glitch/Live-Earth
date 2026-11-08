@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>LIVE // EARTH — Shared Earth Engine Interactions | Live-Earth</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="LIVE // EARTH — Shared Earth Engine Interactions" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="https://z8t8fp99p9-glitch.github.io/Live-Earth/Documentation/EARTH-ENGINE-SHARED-INTERACTIONS-2026-11-09.html" />
+<meta property="og:url" content="https://z8t8fp99p9-glitch.github.io/Live-Earth/Documentation/EARTH-ENGINE-SHARED-INTERACTIONS-2026-11-09.html" />
+<meta property="og:site_name" content="Live-Earth" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="LIVE // EARTH — Shared Earth Engine Interactions" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","headline":"LIVE // EARTH — Shared Earth Engine Interactions","url":"https://z8t8fp99p9-glitch.github.io/Live-Earth/Documentation/EARTH-ENGINE-SHARED-INTERACTIONS-2026-11-09.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/Live-Earth/assets/css/style.css?v=ffa3a17cc096627db155504177e51a110305f9e4">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/Live-Earth/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="container-lg px-3 my-5 markdown-body">
+      
+      <h1><a href="https://z8t8fp99p9-glitch.github.io/Live-Earth/">Live-Earth</a></h1>
+      
+
+      <h1 id="live--earth--shared-earth-engine-interactions">LIVE // EARTH — Shared Earth Engine Interactions</h1>
+
+<p><strong>Date:</strong> 9 November 2026<br />
+<strong>Repository:</strong> <code class="language-plaintext highlighter-rouge">z8t8fp99p9-glitch/Live-Earth</code><br />
+<strong>Branch baseline:</strong> <code class="language-plaintext highlighter-rouge">main</code> at <code class="language-plaintext highlighter-rouge">95d64872b8e09540cd25f3ab0210ba6f6b69f704</code><br />
+<strong>Scope:</strong> Shared default finger gestures and Home return-orientation correction.</p>
+
+<h2 id="approved-experience">Approved experience</h2>
+
+<p>Home remains intentionally simple:</p>
+
+<ul>
+  <li>One Home Earth globe instance created by the reusable Earth Engine.</li>
+  <li>Home uses the Engine’s shared quaternion rotation gesture.</li>
+  <li>Home camera framing and zoom remain locked. Its Engine interaction attaches with <code class="language-plaintext highlighter-rouge">zoom.enabled: false</code>.</li>
+  <li>The existing Home Moon layer and orbital path stay additive under the same Engine group and are not modified by this work.</li>
+  <li>The existing five Home Orbs, placement, styling, touch targets and global lifecycle are not modified.</li>
+</ul>
+
+<p>Independent Earth View uses the same Engine gesture implementation, with its own camera-distance adapter and limits. Its Basic/HD controls, plus/minus zoom buttons, Scanner, renderer, scene, camera and visual lifecycle remain view-owned.</p>
+
+<h2 id="shared-engine-api">Shared Engine API</h2>
+
+<p><code class="language-plaintext highlighter-rouge">EarthEngine/Core/earth-engine.js</code> now exposes <code class="language-plaintext highlighter-rouge">earthGlobe.attachInteractions({ ... })</code> on each Engine-created globe. The existing Engine-owned viewpoint snapshot, active-owner transitions, persistence key and <code class="language-plaintext highlighter-rouge">live-earth-view-transition</code> / <code class="language-plaintext highlighter-rouge">live-earth-view-changed</code> lifecycle are unchanged.
+The Engine-owned global quaternion lifecycle is the only viewpoint handoff. The retired Home-only bridge file and legacy V3/V2/V1 storage migration are removed from the app shell and runtime.</p>
+
+<p>Defaults:</p>
+
+<ul>
+  <li>One pointer rotates the globe using local-Y yaw and world-X pitch quaternion deltas.</li>
+  <li>The pitch is recovered directly from the transferred quaternion; gesture code never reads or writes Euler X/Y.</li>
+  <li>Two pointers enter pinch mode. They do not rotate the globe while pinching.</li>
+  <li>Pinch zoom is enabled only when the view supplies <code class="language-plaintext highlighter-rouge">zoom.enabled: true</code>, <code class="language-plaintext highlighter-rouge">getDistance</code>, <code class="language-plaintext highlighter-rouge">setDistance</code>, and its own optional min/max distance adapters.</li>
+  <li>Views supply their own <code class="language-plaintext highlighter-rouge">enabled</code> predicate and redraw/interaction callbacks.</li>
+  <li>The returned handle supports <code class="language-plaintext highlighter-rouge">reset()</code> and <code class="language-plaintext highlighter-rouge">dispose()</code>; disposing the globe also disposes any attached interaction controllers.</li>
+  <li>Gesture listeners run in capture phase so an older per-view pointer handler cannot run a second, conflicting rotation path.</li>
+</ul>
+
+<h2 id="root-cause-correction">Root-cause correction</h2>
+
+<p>The recording showed Earth View rotation transferred successfully, then the first Home touch caused an upside-down snap. The earlier Home Euler drag path was replaced by the shared Engine quaternion controller. Both Home and Independent Earth View now use axis-angle quaternion deltas; neither reads or writes Euler X/Y for user drag rotation.</p>
+
+<p>Both Home and Independent Earth View now delegate pointer rotation to the same Engine implementation. This removes the split Euler/quaternion gesture ownership.</p>
+
+<h2 id="files-changed-in-the-package">Files changed in the package</h2>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">EarthEngine/Core/earth-engine.js</code> — shared Engine interaction controller and <code class="language-plaintext highlighter-rouge">attachInteractions</code> API.</li>
+  <li><code class="language-plaintext highlighter-rouge">index.html</code> — Home attaches shared rotation and explicitly disables zoom; legacy Home Euler drag handler removed.</li>
+  <li><code class="language-plaintext highlighter-rouge">Earth/earth-view-controller.js</code> — attaches the same Engine interactions with Earth View’s own pinch-zoom camera adapter and limits; duplicate per-view drag/pinch handler removed. Basic/HD, buttons and Scanner remain.</li>
+  <li><code class="language-plaintext highlighter-rouge">Tests/earth-view-drag-orientation.test.cjs</code> — expanded regression coverage for yaw beyond 90°, first Home touch, pitch tracking, two-finger zoom limits, and locked Home zoom.</li>
+</ul>
+
+<p><code class="language-plaintext highlighter-rouge">Home/moon-orbit.js</code>, Sun, Location, Global Orb files, Moon/Sun controllers, <code class="language-plaintext highlighter-rouge">sw.js</code>, and <code class="language-plaintext highlighter-rouge">Global/update-manager.js</code> are intentionally unchanged. All modified runtime paths are already in the current Service Worker app shell; the existing online fresh-sync / offline verified-cache startup contract remains in place.</p>
+
+<h2 id="verification-boundary">Verification boundary</h2>
+
+<ul>
+  <li>JavaScript syntax checks passed for the changed Engine, Home inline module, Earth View controller and regression test.</li>
+  <li>Focused shared-interaction regression test passed locally, including the first-touch yaw-branch case, bounded pitch, Home pinch lock, and Earth View pinch-distance limit.</li>
+  <li>The complete repository regression workflow and actual installed-iPhone retest still need to run after the owner uploads the ZIP. The existing workflow discovers <code class="language-plaintext highlighter-rouge">Tests/*.test.cjs</code>, so this focused regression test will run in CI.</li>
+  <li>Do not claim the on-device issue is fully resolved until the owner repeats: Home → Earth View → rotate past 90° yaw → Home → first touch.</li>
+</ul>
+
+<h2 id="protected-boundaries">Protected boundaries</h2>
+
+<p>No camera, zoom or renderer is transferred between views. No Moon surface transform, orbit, or path is modified. Home remains fixed zoom, fixed high detail, and uses its existing scene, camera, renderer, solar layer, Location marker, feature layers and five Orbs. Sun/Moon and Global Orb lifecycle remain untouched.</p>
+
+<p>The owner uploads/commits/deploys. The assistant does not write directly to GitHub.</p>
+
+
+      
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" integrity="sha256-lZaRhKri35AyJSypXXs4o6OPFTbTmUoltBbDCbdzegg=" crossorigin="anonymous"></script>
+    <script>anchors.add();</script>
+  </body>
+</html>

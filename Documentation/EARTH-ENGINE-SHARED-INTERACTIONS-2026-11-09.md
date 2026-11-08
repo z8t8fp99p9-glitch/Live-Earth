@@ -20,7 +20,7 @@ Independent Earth View uses the same Engine gesture implementation, with its own
 ## Shared Engine API
 
 `EarthEngine/Core/earth-engine.js` now exposes `earthGlobe.attachInteractions({ ... })` on each Engine-created globe. The existing Engine-owned viewpoint snapshot, active-owner transitions, persistence key and `live-earth-view-transition` / `live-earth-view-changed` lifecycle are unchanged.
-The separate `EarthEngine/Core/earth-viewpoint-bridge.js` compatibility file remains untouched and remains in the offline app shell. This patch does not replace the viewpoint handoff, move its ownership, introduce a second snapshot store, or add per-view bridge calls.
+The Engine-owned global quaternion lifecycle is the only viewpoint handoff. The retired Home-only bridge file and legacy V3/V2/V1 storage migration are removed from the app shell and runtime.
 
 Defaults:
 
@@ -34,7 +34,7 @@ Defaults:
 
 ## Root-cause correction
 
-The recording showed Earth View rotation transferred successfully, then the first Home touch caused an upside-down snap. Home had retained Euler-based `group.rotation.x/y` drag updates while Earth View had separate quaternion-based drag logic. After a transferred quaternion crossed the alternate Euler branch, Home could clamp the wrong canonical Euler X value.
+The recording showed Earth View rotation transferred successfully, then the first Home touch caused an upside-down snap. The earlier Home Euler drag path was replaced by the shared Engine quaternion controller. Both Home and Independent Earth View now use axis-angle quaternion deltas; neither reads or writes Euler X/Y for user drag rotation.
 
 Both Home and Independent Earth View now delegate pointer rotation to the same Engine implementation. This removes the split Euler/quaternion gesture ownership.
 

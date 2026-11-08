@@ -31,7 +31,7 @@ assert.ok(worker.includes('if (!html.includes("location.js"))'), 'Startup fallba
 assert.ok(worker.includes("'./Location/location.js'"), 'Startup script-error repair must use the Location service');
 assert.ok(!worker.includes('location-scanner.js'), 'Service worker must not retain the original script path');
 assert.ok(!worker.includes('location-orb-controller.js'), 'Service worker must not retain the intermediate filename');
-assert.ok(worker.includes('v128-global-orb-system'), 'Service worker build identity must be advanced');
-assert.ok(read('Global/update-manager.js').includes('v128-global-orb-system'), 'Update manager identity must match service worker');
+assert.ok(worker.includes('v129-engine-quaternion-viewpoint'), 'Service worker build identity must be advanced');
+assert.ok(read('Global/update-manager.js').includes('v129-engine-quaternion-viewpoint'), 'Update manager identity must match service worker');
 
 console.log('Location service path and Earth Scanner ownership checks passed.');

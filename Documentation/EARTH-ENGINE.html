@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Earth Engine and Earth View Controller | Live-Earth</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Earth Engine and Earth View Controller" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="https://z8t8fp99p9-glitch.github.io/Live-Earth/Documentation/EARTH-ENGINE.html" />
+<meta property="og:url" content="https://z8t8fp99p9-glitch.github.io/Live-Earth/Documentation/EARTH-ENGINE.html" />
+<meta property="og:site_name" content="Live-Earth" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Earth Engine and Earth View Controller" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","headline":"Earth Engine and Earth View Controller","url":"https://z8t8fp99p9-glitch.github.io/Live-Earth/Documentation/EARTH-ENGINE.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/Live-Earth/assets/css/style.css?v=ffa3a17cc096627db155504177e51a110305f9e4">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/Live-Earth/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="container-lg px-3 my-5 markdown-body">
+      
+      <h1><a href="https://z8t8fp99p9-glitch.github.io/Live-Earth/">Live-Earth</a></h1>
+      
+
+      <h1 id="earth-engine-and-earth-view-controller">Earth Engine and Earth View Controller</h1>
+
+<p><strong>Decision date:</strong> 8 November 2026<br />
+<strong>Baseline:</strong> owner-supplied repository snapshot, reorganized under build <code class="language-plaintext highlighter-rouge">v127-earthengine-root-folder</code>; global-viewpoint integration is build <code class="language-plaintext highlighter-rouge">v129-engine-quaternion-viewpoint</code>.</p>
+
+<h2 id="naming-and-ownership">Naming and ownership</h2>
+
+<h2 id="repository-structure">Repository structure</h2>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>EarthEngine/
+├── Core/
+│   └── earth-engine.js
+├── Graphics/
+│   ├── earth-engine-3d-graphics-engine.js
+│   └── earth-engine-3d-graphics-core.js
+└── Assets/
+    └── README.md
+</code></pre></div></div>
+
+<p>The two Graphics modules are actual working modules: Graphics Engine assembles the globe objects, while Graphics Core owns the reusable Three.js geometry, materials, texture lifecycle and disposal primitives. Three.js itself is still the separately cached low-level dependency at <code class="language-plaintext highlighter-rouge">vendor/three.module.js</code> and <code class="language-plaintext highlighter-rouge">vendor/three.core.js</code>; it is not duplicated or copied into this folder.</p>
+
+<p>The source archive did not include the NASA texture as a tracked binary file. The service worker downloads it and caches it at the logical same-origin path <code class="language-plaintext highlighter-rouge">EarthEngine/Assets/earth-land-ocean-ice-2048.png</code>, with the pre-existing Three.js Earth texture fallback. See <code class="language-plaintext highlighter-rouge">EarthEngine/Assets/README.md</code>.</p>
+
+<ul>
+  <li><strong>Home Earth</strong> is the main globe rendered by the inline Three.js module in <code class="language-plaintext highlighter-rouge">index.html</code>. It uses Earth Engine only for its globe group, surface mesh, atmosphere, material, texture and fixed geometry detail. Home retains its own scene, locked camera framing, WebGL renderer, lights, responsive sizing, rotation input, stars, animation and Home-specific layers.</li>
+  <li><strong>Earth Engine</strong> (<code class="language-plaintext highlighter-rouge">EarthEngine/Core/earth-engine.js</code>) is the reusable globe-object factory for any view that supplies its own Three.js namespace. It creates independent globe groups/surfaces and owns the geometry/material/texture lifecycle. Its geometry API uses generic <code class="language-plaintext highlighter-rouge">standard</code> and <code class="language-plaintext highlighter-rouge">high</code> detail levels; it does not know about view-specific UI labels. It does not create a scene, camera, WebGL renderer, navigation state or Location permission state.</li>
+  <li><strong>Earth View Controller</strong> (<code class="language-plaintext highlighter-rouge">Earth/earth-view-controller.js</code>) owns the separate full-screen Earth View. It owns its stage, scene, camera, WebGL renderer, responsive sizing, solar shader, gestures, zoom, quality controls and Scanner UI. It obtains its Earth group/surface/atmosphere from Earth Engine.</li>
+  <li>The existing <code class="language-plaintext highlighter-rouge">earth-mode-navigation.js</code> filename is retired. <code class="language-plaintext highlighter-rouge">index.html</code> bootstrap and <code class="language-plaintext highlighter-rouge">sw.js</code> shell/fallback paths point to <code class="language-plaintext highlighter-rouge">Earth/earth-view-controller.js</code>.</li>
+</ul>
+
+<h2 id="reusable-api">Reusable API</h2>
+
+<p>A view imports <code class="language-plaintext highlighter-rouge">createEarthGlobe</code> or <code class="language-plaintext highlighter-rouge">createGlobe</code> from <code class="language-plaintext highlighter-rouge">EarthEngine/Core/earth-engine.js</code>, supplies its own Three.js namespace, and attaches the returned group to its own scene:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">createEarthGlobe</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">"</span><span class="s2">../EarthEngine/Core/earth-engine.js</span><span class="dl">"</span><span class="p">;</span>
+<span class="kd">const</span> <span class="nx">globe</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">createEarthGlobe</span><span class="p">({</span>
+  <span class="nx">THREE</span><span class="p">,</span>
+  <span class="na">radius</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+  <span class="na">textureUrl</span><span class="p">:</span> <span class="dl">"</span><span class="s2">./EarthEngine/Assets/earth-land-ocean-ice-2048.png</span><span class="dl">"</span><span class="p">,</span>
+  <span class="na">geometryDetail</span><span class="p">:</span> <span class="dl">"</span><span class="s2">standard</span><span class="dl">"</span><span class="p">,</span> <span class="c1">// or "high"</span>
+    <span class="na">atmosphere</span><span class="p">:</span> <span class="kc">true</span>
+<span class="p">});</span>
+<span class="nx">scene</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">globe</span><span class="p">.</span><span class="nx">group</span><span class="p">);</span>
+<span class="c1">// The calling view owns its camera, lights, animation and interaction.</span>
+<span class="c1">// To release the globe when that view is permanently destroyed:</span>
+<span class="nx">globe</span><span class="p">.</span><span class="nx">dispose</span><span class="p">();</span>
+</code></pre></div></div>
+
+<p>Each call creates its own group, surface mesh, geometry and materials. The module shares an asynchronously loaded surface texture between simultaneous globe instances using reference-counted ownership; disposing one view cannot invalidate another. The final dispose releases the shared texture. <code class="language-plaintext highlighter-rouge">setGeometryDetail("standard" | "high")</code> changes only that instance’s sphere geometry.</p>
+
+<h2 id="home-earth-integration-contract">Home Earth integration contract</h2>
+
+<ul>
+  <li>Home assigns <code class="language-plaintext highlighter-rouge">group = earthGlobe.group</code> and <code class="language-plaintext highlighter-rouge">earth = earthGlobe.surface</code>, then attaches that exact group directly to the Home scene. These lexical references remain available to the service-worker-injected Home API and solar/day-night layer.</li>
+  <li>Home starts at fixed <strong>high</strong> geometry detail (96 × 64 segments), matching its previous sphere geometry. Home has no Basic/HD selector, no zoom buttons and no pinch-to-zoom mode. Its camera framing, renderer, pixel ratio, lights, pointer rotation, stars and frame scheduler remain Home-owned.</li>
+  <li>The Home Moon orbit is an independent, Home-only additive layer. It receives the Home Engine group and attaches only its own Moon/orbit objects. Its updates may change only Moon/orbit-owned objects, especially <code class="language-plaintext highlighter-rouge">moon.position</code>. It must never look up or write to the Earth surface or Earth group.</li>
+  <li>Earth orientation is owned exclusively by the Home user’s globe drag. Moon orbital calculations, sidereal time and Moon rendering have no authority to rotate or otherwise modify Earth.</li>
+  <li>The solar/day/night shader and Location marker continue to reference the same Earth surface mesh. Home geometry detail is fixed after initialization.</li>
+  <li>The service-worker-injected <code class="language-plaintext highlighter-rouge">LiveEarthScene</code> API is limited to current Home integrations: approved Location state, registered feature layers, Three.js access and redraw. It does not expose Home zoom or Basic/HD controls. Its API and solar layer use the stable <code class="language-plaintext highlighter-rouge">// LIVE_EARTH_HOME_RENDERER_HOOKS</code> insertion marker.</li>
+</ul>
+
+<h2 id="protected-boundaries">Protected boundaries</h2>
+
+<ul>
+  <li>Home Earth now uses Earth Engine for its globe objects, while its own scene, renderer, locked camera, solar layer, Location service and Moon orbit remain Home-owned.</li>
+  <li>Do not move Home camera, renderer, navigation, Location permission, feature-layer host or Orb behaviour into Earth Engine.</li>
+  <li>Do not attach <code class="language-plaintext highlighter-rouge">Home/moon-orbit.js</code> to Earth Engine. That orbit remains a Home-only layer.</li>
+  <li>Do not let Earth View change Home Earth renderer, scene, camera, rotation, geometry detail or pixel ratio.</li>
+  <li>Keep both new JavaScript files and the already-approved Earth texture/Three.js files in the service-worker essential app shell so first offline use can resolve the module.</li>
+  <li>Keep <code class="language-plaintext highlighter-rouge">sw.js</code> at the repository root and its cache/build identity synchronized with <code class="language-plaintext highlighter-rouge">Global/update-manager.js</code>.</li>
+</ul>
+
+<h2 id="verification">Verification</h2>
+
+<p>Local tests cover: module syntax, separate per-view scene objects, radius/geometry isolation, shared-texture reference counting and disposal, fixed Home geometry and locked camera, Home surface identity, runtime proof that Moon Orbit cannot mutate Earth, independent Earth Basic/HD mapping to generic Engine detail, Home API scope, controller registration and service-worker shell/build wiring.</p>
+
+<p>The checks do not establish GitHub Actions, deployment or installed-iPhone acceptance. Those require the owner-uploaded ZIP, verified Action/commit, and online/offline device testing.</p>
+
+<h2 id="one-global-earth-engine-and-home-viewpoint-bridge">One Global Earth Engine and Home viewpoint bridge</h2>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">EarthEngine/Core/earth-engine.js</code> is the only Earth globe construction engine. Home, <code class="language-plaintext highlighter-rouge">Earth/earth-view-controller.js</code> and <code class="language-plaintext highlighter-rouge">Earth/earth-orb-globe.js</code> all create their globe instances through this module, using the same local Earth texture. The one fixed <code class="language-plaintext highlighter-rouge">-0.35</code> surface calibration is owned centrally by the Engine, not repeated in view controllers.</li>
+  <li>Each renderer receives its own Engine-created group/surface instance. This is required because Home, Independent Earth View and Earth Modes own separate scenes and WebGL renderers; they do not share or reparent one live Three.js mesh. They nevertheless render the same canonical Earth through the same Engine implementation and texture.</li>
+  <li><code class="language-plaintext highlighter-rouge">EarthEngine/Core/earth-engine.js</code> owns one global user-controlled parent-group quaternion across active Engine-created views. It does not read or apply the Earth surface child quaternion. The Engine-owned <code class="language-plaintext highlighter-rouge">-0.35</code> surface calibration remains identical in every view. The retired Home-only bridge and legacy V3/V2/V1 storage migration are removed; only the Engine global viewpoint key is active.</li>
+  <li>Home uses the Engine quaternion gesture controller; the Engine captures settled orientation at view transitions and persists it under <code class="language-plaintext highlighter-rouge">liveEarthGlobalViewpointV1</code>. No Moon update may publish or modify the Earth viewpoint.</li>
+  <li>Independent Earth View and Earth Modes first create their Earth through the Global Engine, then apply Home’s parent-group orientation. Their own camera and zoom are initialized/animated afterward and remain independent.</li>
+  <li>The bridge is one-way. Secondary Earth views must not publish rotations back into Home. Weather, Clouds, Elevation, Earthquakes and Traffic already attach layers to the exact Home Earth scene, so they follow its orientation without a bridge.</li>
+  <li>Moon and Sun are separate celestial systems. Moon Orbit may update only its own Moon/orbit objects; it must never mutate Earth’s surface or parent transform. Sun/day-night lighting may shade Earth but must not rotate it.</li>
+</ul>
+
+<h3 id="v124-bridge-correction-superseded">V124 bridge correction superseded</h3>
+<p>V124 incorrectly treated the Moon-driven Earth surface rotation as part of the Home viewpoint and copied the child surface quaternion. That expanded a pre-existing Moon/Earth coupling into every bridged view. This was the wrong contract. V125 removes that transfer and removes the Moon Orbit write to the Earth surface. The canonical Engine base calibration remains fixed and identical across all Earth views.</p>
+
+
+      
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" integrity="sha256-lZaRhKri35AyJSypXXs4o6OPFTbTmUoltBbDCbdzegg=" crossorigin="anonymous"></script>
+    <script>anchors.add();</script>
+  </body>
+</html>

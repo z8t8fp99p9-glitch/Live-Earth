@@ -14,7 +14,7 @@ Earth, Moon and Sun are three independent primary views. They share the Global P
 | Stable public globe factory | `EarthEngine/Core/earth-engine.js` |
 | 3D globe assembly and per-view surface/atmosphere setup | `EarthEngine/Graphics/earth-engine-3d-graphics-engine.js` |
 | Low-level geometry, materials, shared texture lease and disposal | `EarthEngine/Graphics/earth-engine-3d-graphics-core.js` |
-| One-way Home orientation snapshot bridge | `EarthEngine/Core/earth-viewpoint-bridge.js` |
+| Global quaternion viewpoint lifecycle and transition persistence | `EarthEngine/Core/earth-engine.js` |
 | Home Earth scene, fixed camera, renderer, lights, responsive sizing and interaction | Home module in `index.html` |
 | Home-only Moon orbit attached to Home Earth group | `Home/moon-orbit.js` |
 | Independent Earth 3D scene, camera, renderer and controls | `Earth/earth-view-controller.js` |

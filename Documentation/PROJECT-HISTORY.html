@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>LIVE // EARTH — Consolidated Application History | Live-Earth</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="LIVE // EARTH — Consolidated Application History" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="https://z8t8fp99p9-glitch.github.io/Live-Earth/Documentation/PROJECT-HISTORY.html" />
+<meta property="og:url" content="https://z8t8fp99p9-glitch.github.io/Live-Earth/Documentation/PROJECT-HISTORY.html" />
+<meta property="og:site_name" content="Live-Earth" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="LIVE // EARTH — Consolidated Application History" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","headline":"LIVE // EARTH — Consolidated Application History","url":"https://z8t8fp99p9-glitch.github.io/Live-Earth/Documentation/PROJECT-HISTORY.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/Live-Earth/assets/css/style.css?v=ffa3a17cc096627db155504177e51a110305f9e4">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/Live-Earth/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="container-lg px-3 my-5 markdown-body">
+      
+      <h1><a href="https://z8t8fp99p9-glitch.github.io/Live-Earth/">Live-Earth</a></h1>
+      
+
+      <h1 id="live--earth--consolidated-application-history">LIVE // EARTH — Consolidated Application History</h1>
+
+<p><strong>Purpose:</strong> preserve the important application, visual and recovery decisions while keeping historical implementation detail separate from current runtime configuration.</p>
+
+<h2 id="2831-october-2026--app-continuity-and-view-boundaries">28–31 October 2026 — App continuity and view boundaries</h2>
+
+<p>The engineering continuity register recorded safeguards that must not be removed as apparent cleanup:</p>
+<ul>
+  <li>iOS full-screen/root-flow and viewport recovery, including orientation-only stale-scroll clearing.</li>
+  <li>An owner-identified hidden Home image/visual used by the scroller workaround. Its exact selector was not conclusively located; it remains protected until traced.</li>
+  <li>Home visual lock: Earth framing, size, texture, renderer baseline, Moon geometry, star/stardust/orbit visuals and five Home Orbs.</li>
+  <li>Five Home Orbs and the distinction between primary views (Earth, Moon, Sun) and global utilities (Location, Stacks).</li>
+  <li>Stacks scatter/hitbox alignment and animation completion fallback.</li>
+  <li>Location OFF privacy; no automatic geolocation; local observer-time values remain hidden when off.</li>
+  <li>Startup integrity checks, online/offline readiness, staged updates, local data/recovery and coordinated <code class="language-plaintext highlighter-rouge">sw.js</code>/<code class="language-plaintext highlighter-rouge">Global/update-manager.js</code> release identities.</li>
+  <li>Basic Map was retained pending route clarification.</li>
+</ul>
+
+<p>A 31 October Views Separation audit described <code class="language-plaintext highlighter-rouge">Global/view-manager.js</code> as the primary-view authority, <code class="language-plaintext highlighter-rouge">Global/view-module-registry.js</code> as the shared module/feature registry, <code class="language-plaintext highlighter-rouge">Global/sky-view-controller.js</code> as the shared sky host, Moon’s controller/interface as separate, and Sun’s renderer as separately loaded. The PDF Reader was a shared, view-independent utility.</p>
+
+<p>Historical build references from that period are snapshots/candidates, not current release configuration. Inspect current source before changing a build identity.</p>
+
+<h2 id="16-november-2026--view-and-renderer-refinements">1–6 November 2026 — View and renderer refinements</h2>
+
+<p>The application work during this period established the current protections for independent Sun and Moon implementations, the shared sky stage, and the existing feature Orb lifecycle. The Sun controller remains separate from the Moon controller and lunar interface. A Sun-only amber Rise/Set marker refinement did not alter Moon colours, positions, calculations, Home or Orb behaviour.</p>
+
+<p>The Global Orb standard, Stacks coordinate/hitbox alignment, Location-OFF privacy, iOS root-flow handling and recovery boundaries remain important application decisions. Historical test reports from this period are snapshots only; they are not current proof of a green build or iPhone acceptance.</p>
+
+<h2 id="7-november-2026--content-systems-retirement">7 November 2026 — Content systems retirement</h2>
+
+<p>At the owner’s direction, the former content-collection and publishing system and its related views, services, component documentation, tests and implementation-specific recovery snapshots were removed from the application. The Universal Editorial Engine core, browser helper, text-intelligence utilities, editorial-quality tests and Editorial Engine Feature Orb were retained.</p>
+
+<p>The retained Engine core was not rewritten as part of that removal. Its former read-only approved-record input contract remains dormant because the upstream services that previously supplied it are no longer present. No live source collection, scheduled feed or Publisher operation is implied.</p>
+
+<h2 id="historical-test-report-caveat">Historical test-report caveat</h2>
+
+<p>Former test reports recorded mixed snapshots and explicitly distinguished local tests from GitHub Actions, deployment and iPhone verification. They are not current test results and must not be presented as proof of current green tests.</p>
+
+
+      
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" integrity="sha256-lZaRhKri35AyJSypXXs4o6OPFTbTmUoltBbDCbdzegg=" crossorigin="anonymous"></script>
+    <script>anchors.add();</script>
+  
+<h2>9 November 2026 — Engine-owned quaternion viewpoint cleanup</h2>
+<p>The retired Home-only viewpoint bridge (<code>EarthEngine/Core/earth-viewpoint-bridge.js</code>) and bridge test were deleted. The Global Earth Engine now reads only <code>liveEarthGlobalViewpointV1</code>; legacy Home-only V3/V2/V1 session keys are no longer migration sources. The obsolete bridge was removed from the offline shell, and the Service Worker / Update Manager cache identity advanced together to <code>v129-engine-quaternion-viewpoint</code>.</p>
+<p>The Engine selects the outgoing Earth group by the exact owner named in the pre-transition event, rather than preferring a potentially stale cached active-group pointer. The incoming group receives the saved quaternion immediately at the post-transition event, or on registration if it is created asynchronously. Home’s existing Engine interaction path is quaternion-only and remains zoom-locked; the independent Earth View uses the same shared controller. All JavaScript regression tests and 24 Python tests passed locally. Device acceptance remains pending.</p>
+</body>
+</html>

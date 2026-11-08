@@ -587,8 +587,8 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
     // Keep it before Home interaction setup for lexical access.
     // LIVE_EARTH_HOME_RENDERER_HOOKS
 
-    // Home uses the Engine's shared quaternion rotation, but keeps its camera
-    // framing locked. Two-finger input never changes Home camera distance.
+    // Home rotation is quaternion-only through the Engine interaction controller.
+    // Home camera framing stays locked; two-finger input cannot change its distance.
     earthGlobe.attachInteractions({
       element: canvas,
       enabled: () => {

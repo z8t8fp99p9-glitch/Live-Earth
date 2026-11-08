@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>8 November 2026 — Reusable Earth Engine | Live-Earth</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="8 November 2026 — Reusable Earth Engine" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="https://z8t8fp99p9-glitch.github.io/Live-Earth/Documentation/EARTH-ENGINE-2026-11-08.html" />
+<meta property="og:url" content="https://z8t8fp99p9-glitch.github.io/Live-Earth/Documentation/EARTH-ENGINE-2026-11-08.html" />
+<meta property="og:site_name" content="Live-Earth" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="8 November 2026 — Reusable Earth Engine" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","headline":"8 November 2026 — Reusable Earth Engine","url":"https://z8t8fp99p9-glitch.github.io/Live-Earth/Documentation/EARTH-ENGINE-2026-11-08.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/Live-Earth/assets/css/style.css?v=ffa3a17cc096627db155504177e51a110305f9e4">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/Live-Earth/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="container-lg px-3 my-5 markdown-body">
+      
+      <h1><a href="https://z8t8fp99p9-glitch.github.io/Live-Earth/">Live-Earth</a></h1>
+      
+
+      <h1 id="8-november-2026--reusable-earth-engine">8 November 2026 — Reusable Earth Engine</h1>
+
+<p>The owner clarified that Home Earth must stay as it is. The inline Home renderer in <code class="language-plaintext highlighter-rouge">index.html</code>, its existing <code class="language-plaintext highlighter-rouge">LiveEarthScene</code> service-worker injection, solar day/night shader, Location state and Home-only <code class="language-plaintext highlighter-rouge">Home/moon-orbit.js</code> integration are preserved. Only the controller bootstrap path in <code class="language-plaintext highlighter-rouge">index.html</code> changes to the renamed Earth View Controller.</p>
+
+<p>A reusable <code class="language-plaintext highlighter-rouge">EarthEngine/Core/earth-engine.js</code> module now builds independent Earth globe objects for other views. Each caller supplies its own Three.js namespace and owns its scene, camera, renderer, controls and lifecycle. The Engine provides configurable radius, texture URL, basic/HD sphere geometry, initial surface rotation and optional atmosphere. It shares texture loads safely among simultaneous view instances, with reference-counted cleanup.</p>
+
+<p>The separate full-screen Earth View is owned by <code class="language-plaintext highlighter-rouge">Earth/earth-view-controller.js</code>; it uses Earth Engine for its globe objects and retains its own stage, camera, renderer, responsive behaviour, solar day/night shading, gestures, zoom, Basic/HD controls and optional approved Location Scanner. The old <code class="language-plaintext highlighter-rouge">earth-mode-navigation.js</code> source path is retired. The worker shell and update-manager build identity are advanced together so new files are essential offline assets.</p>
+
+<p>Static syntax checks and the focused Earth Engine isolation/texture-lifecycle test passed locally. The pre-existing <code class="language-plaintext highlighter-rouge">Tests/moon-engine-api.test.cjs</code> could not run because its referenced <code class="language-plaintext highlighter-rouge">moon-engine.js</code> is absent from the inspected <code class="language-plaintext highlighter-rouge">main</code> tree (GitHub returned 404); that unrelated test/source mismatch is not changed here. GitHub Actions, deployed behaviour and installed-iPhone online/offline testing remain pending owner upload and device verification.</p>
+
+<h2 id="home-earth-adoption-and-fixed-camera-boundary--v116">Home Earth adoption and fixed-camera boundary — V116</h2>
+
+<p>After the reusable Engine landed, Home was migrated to use the same Engine for its Earth surface, atmosphere, material and texture. Home continues to own its scene, camera, renderer, lighting, responsive camera fitting, pointer rotation, stars and draw loop. The Home module was rewritten into readable, structured code rather than leaving the renderer compressed into long single-line statements.</p>
+
+<p>The Home module retains <code class="language-plaintext highlighter-rouge">group = earthGlobe.group</code> and <code class="language-plaintext highlighter-rouge">earth = earthGlobe.surface</code>. The exact Engine group is passed to <code class="language-plaintext highlighter-rouge">createMoonOrbit</code>; the surface remains a direct child <code class="language-plaintext highlighter-rouge">MeshStandardMaterial</code> sphere and remains the same object that the solar/day-night layer and Location marker use. The Moon source itself was not changed, and the Moon orbit remains Home-only.</p>
+
+<p>The owner clarified that Home has a fixed zoom framing and no Basic/HD controls. Basic/HD and zoom belong exclusively to Independent Earth View. The Engine therefore now exposes generic <code class="language-plaintext highlighter-rouge">geometryDetail: "standard" | "high"</code> and <code class="language-plaintext highlighter-rouge">setGeometryDetail(...)</code> naming. Independent Earth View translates its own Basic/HD UI into those generic detail values. Home starts at fixed high detail (96 × 64 segments) and does not change geometry detail after initialization.</p>
+
+<p>The Home <code class="language-plaintext highlighter-rouge">LiveEarthScene</code> service-worker API was narrowed to the current required interfaces: approved Location state, registered Stacks feature layers, Three.js access and redraw. Obsolete Home exploration, Basic/HD, unlock and pinch-zoom state was removed. Home retains rotation-only pointer input and locked camera framing. The Home API and solar-layer injection use the named <code class="language-plaintext highlighter-rouge">LIVE_EARTH_HOME_RENDERER_HOOKS</code> marker.</p>
+
+<p>The service worker and update manager advance together to V116. No direct GitHub writes were made. Online/offline deployment and installed-iPhone acceptance remain pending the owner-uploaded ZIP, verified Action/commit and device tests.</p>
+
+<h2 id="global-view-ownership-update--v128">Global view ownership update — v128</h2>
+
+<p>The public Core factory now owns one global rotation quaternion across Engine-created Earth groups. It listens to the Global Orb System’s pre-transition and post-transition events, captures only the outgoing active group’s normalized quaternion, and applies it to the incoming group’s quaternion. If the incoming group is created after the transition, <code class="language-plaintext highlighter-rouge">createEarthGlobe()</code> applies the current snapshot automatically. Current Stacks views reuse the Home group when they do not create a separate Engine globe.</p>
+
+<p>The snapshot is restricted to <code class="language-plaintext highlighter-rouge">{x, y, z, w}</code> and is persisted to same-tab <code class="language-plaintext highlighter-rouge">sessionStorage</code> on view transitions and <code class="language-plaintext highlighter-rouge">pagehide</code>, not during pointer movement. Only <code class="language-plaintext highlighter-rouge">liveEarthGlobalViewpointV1</code> is read; the retired Home-only V3/V2/V1 keys are no longer migration sources. No camera, zoom, surface child transform, renderer, scene or Moon orbit state is transferred. Individual view controllers no longer import or call the Home-only bridge.</p>
+
+
+      
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" integrity="sha256-lZaRhKri35AyJSypXXs4o6OPFTbTmUoltBbDCbdzegg=" crossorigin="anonymous"></script>
+    <script>anchors.add();</script>
+  </body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Project Continuity | Live-Earth</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Project Continuity" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="https://z8t8fp99p9-glitch.github.io/Live-Earth/PROJECT-CONTINUITY.html" />
+<meta property="og:url" content="https://z8t8fp99p9-glitch.github.io/Live-Earth/PROJECT-CONTINUITY.html" />
+<meta property="og:site_name" content="Live-Earth" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Project Continuity" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","headline":"Project Continuity","url":"https://z8t8fp99p9-glitch.github.io/Live-Earth/PROJECT-CONTINUITY.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/Live-Earth/assets/css/style.css?v=ffa3a17cc096627db155504177e51a110305f9e4">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/Live-Earth/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="container-lg px-3 my-5 markdown-body">
+      
+      <h1><a href="https://z8t8fp99p9-glitch.github.io/Live-Earth/">Live-Earth</a></h1>
+      
+
+      <h1 id="project-continuity">Project Continuity</h1>
+
+<blockquote>
+  <p><strong>Critical project reference — read before starting work.</strong></p>
+</blockquote>
+
+<p><strong>Repository:</strong> <code class="language-plaintext highlighter-rouge">z8t8fp99p9-glitch/Live-Earth</code><br />
+<strong>Branch:</strong> <code class="language-plaintext highlighter-rouge">main</code><br />
+<strong>Baseline inspected:</strong> 7 November 2026</p>
+
+<p>This document records the safeguards that prevent regressions. The latest source remains authoritative for exact implementation details.</p>
+
+<h2 id="1-non-negotiable-project-rules">1. Non-negotiable project rules</h2>
+
+<ol>
+  <li><strong>Inspect first.</strong> Read current <code class="language-plaintext highlighter-rouge">main</code>, relevant source, callers, contracts and tests before changing anything.</li>
+  <li><strong>Keep scope narrow.</strong> Change only what the owner requested. Do not refactor unrelated modules.</li>
+  <li><strong>Protect Global Orb behaviour.</strong> The Orb system and dependency chain are an established global standard. Do not alter interaction, sizing, layout, navigation or dependencies without explicit approval.</li>
+  <li><strong>Keep Moon and Sun independent.</strong> They share a stage host but retain separate renderers, controllers and lifecycle responsibilities.</li>
+  <li><strong>Preserve Home.</strong> Keep the approved Earth composition, camera/framing, texture, five Home Orbs, Moon/Sky placement and existing visual baseline.</li>
+  <li><strong>Preserve data and offline behaviour.</strong> Do not remove runtime assets, alter service-worker shell paths, reset databases, clear browser storage or delete recovery material without a coordinated approved plan.</li>
+  <li><strong>Retain the Universal Editorial Engine.</strong> The Editorial Engine core, browser helper, text-intelligence utilities and Editorial Engine Feature Orb are retained. Do not recreate the retired publishing system around them.</li>
+  <li><strong>Report truthfully.</strong> Separate source inspection, local checks, ZIP validation, Actions, deployment and iPhone acceptance.</li>
+</ol>
+
+<h2 id="2-protected-application-behaviour">2. Protected application behaviour</h2>
+
+<h3 id="home-and-five-navigation-orbs">Home and five navigation Orbs</h3>
+<p>The established Home navigation contains five Orbs: Earth, Moon, Sun, Location and Stacks. Earth, Moon and Sun are primary views. Location and Stacks are global utilities; they must not unexpectedly close or replace an active primary view. Preserve the approved circular, width-driven Orb geometry and touch targets.</p>
+
+<h3 id="ios-root-flow-and-scrolling">iOS root flow and scrolling</h3>
+<p><code class="language-plaintext highlighter-rouge">ios-standalone-root-flow.js</code> supports iOS full-screen/viewport behaviour. The orientation recovery in <code class="language-plaintext highlighter-rouge">Global/orb-controls-v4.js</code> is intentionally narrower than ordinary resize handling. Do not remove or broaden this logic without tracing it and testing the installed iPhone app in portrait and landscape.</p>
+
+<p>The owner previously identified a hidden Home image/visual that supports the scroller workaround. Its exact selector was not confidently identified. Do not remove an apparently unused hidden element or asset until its role is mapped from current source.</p>
+
+<h3 id="home-visual-lock">Home visual lock</h3>
+<p>Preserve the approved Earth size, camera framing/position, texture, baseline geometry and renderer pixel ratio; Moon geometry; star/stardust and orbital visuals; and five Home Orbs. Exploration zoom/quality must not leak into the Home baseline.</p>
+
+<h3 id="stacks-and-feature-workspaces">Stacks and feature workspaces</h3>
+<p>The feature Orb scatter and hit targets share a coordinate space. Keep each visible Orb aligned with its interactive hitbox; avoid nested scrolling that offsets touch positions. Preserve animation completion guards/fallbacks. <code class="language-plaintext highlighter-rouge">Global/view-module-registry.js</code> owns the protected three-Orb feature dock: active feature (tap to close), Location and Stacks. <code class="language-plaintext highlighter-rouge">Stacks/stacks-feature-views.js</code> is the shared feature runtime and retains Elevation; Weather, Clouds, Traffic and Earthquakes have separate top-level folders and register through that runtime. Their view code may be developed independently, but the Global lifecycle and Orb behaviour remain unchanged.</p>
+
+<p>The Engine Feature Orb module now registers only <strong>Editorial Engine</strong>. It must not reintroduce collection, feed, source-discovery, policy-checking, image-processing or Publisher views.</p>
+
+<h3 id="location-privacy">Location privacy</h3>
+<p><code class="language-plaintext highlighter-rouge">Location/location.js</code> is the shared Location permission and GPS service used by the Home Location Orb and other approved consumers. The Scanner button in <code class="language-plaintext highlighter-rouge">Earth/earth-view-controller.js</code> only shows/hides the already-approved marker in Earth View; it does not request permission or switch the Location Orb. Location is OFF unless manually enabled. Do not trigger geolocation from Home, startup, verification or Moon View. When Location is OFF, observer-local values such as lunar rise/set times remain hidden by design. Never clear saved data as a location troubleshooting shortcut.</p>
+
+<h3 id="sun-and-moon">Sun and Moon</h3>
+<p><code class="language-plaintext highlighter-rouge">Global/sky-view-controller.js</code> is the shared sky-stage/hosting layer. Moon-specific rendering is in <code class="language-plaintext highlighter-rouge">Moon/moon-view-controller.js</code>, with its interface/scroller in <code class="language-plaintext highlighter-rouge">Moon/moon-lunar-interface.js</code>. The Sun controller is <code class="language-plaintext highlighter-rouge">Sun/sun-view-controller.js</code>. Preserve each view’s responsibilities and use the existing shared stage/registry integration rather than merging implementations.</p>
+
+<h3 id="startup-updates-and-local-data">Startup, updates and local data</h3>
+<p><code class="language-plaintext highlighter-rouge">sw.js</code> and <code class="language-plaintext highlighter-rouge">Global/update-manager.js</code> coordinate the offline shell and staged updates. Their build identity and cache paths must be checked together before a release change. Validate the saved shell and runtime dependencies; do not bypass readiness checks to hide an error. <code class="language-plaintext highlighter-rouge">Data/data-store.js</code> and <code class="language-plaintext highlighter-rouge">Data/data-recovery.js</code> support local data/recovery. Do not reset IndexedDB, local records or caches without explicit approval and a migration/recovery plan.</p>
+
+<h2 id="3-current-content-tool-boundary">3. Current content-tool boundary</h2>
+
+<p>The Universal Editorial Engine is the only retained editorial/content tool. Its Python core and browser helper remain preserved. It is not a source collector, rights checker, database writer, scheduled feed service or Publisher. Its former read-only approved-record input contract remains inside the preserved core but is dormant until a separate, explicitly approved input design exists.</p>
+
+<p>The following systems and their related views were removed at the owner’s direction on 7 November 2026: Global collection/Manager, Collector, Checker, Image Engine, Newsroom database writer, Source Scout, feed discovery/mini-browser, feed-collector service, Publisher and Magazine publishing scaffold. Do not restore them from old handoffs or recovery snapshots.</p>
+
+<h2 id="4-documentation-and-continuity-rules">4. Documentation and continuity rules</h2>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">PROJECT-CONTINUITY.md</code>, <code class="language-plaintext highlighter-rouge">GLOBAL-STANDARDS.md</code> and <code class="language-plaintext highlighter-rouge">PROTECTED-DECISIONS.md</code> stay directly at the repository root.</li>
+  <li><code class="language-plaintext highlighter-rouge">ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md</code> stays at the root, unchanged.</li>
+  <li>Current guidance, architecture, standards and dated history belong directly in <code class="language-plaintext highlighter-rouge">Documentation/</code>. Retained component notes remain beside their relevant component folder.</li>
+  <li>Keep active standards separate from historical implementation records.</li>
+</ul>
+
+<h2 id="5-safe-working-sequence">5. Safe working sequence</h2>
+
+<ol>
+  <li>Read this file and the other two root-level project reference documents.</li>
+  <li>Read <code class="language-plaintext highlighter-rouge">Documentation/CURRENT-STATUS.md</code>, <code class="language-plaintext highlighter-rouge">Documentation/ARCHITECTURE.md</code> and the relevant component README/tests.</li>
+  <li>Inspect current source and callers.</li>
+  <li>Explain the scope in plain language before a risky or architectural change.</li>
+  <li>Make one focused change and run targeted checks.</li>
+  <li>Review the exact diff for unrelated and protected-file changes.</li>
+  <li>Build the ZIP using the root upload standard; validate every path, size and hash.</li>
+  <li>After upload, verify Actions, the resulting commit and deployed/device behaviour before calling the task complete.</li>
+</ol>
+
+<h2 id="8-november-2026--v118-stacks-full-screen-feature-views">8 November 2026 — V118 Stacks full-screen feature views</h2>
+
+<p>Starting from the V117 flat-folder ZIP, Weather, Clouds, Traffic and Earthquakes were separated into dedicated top-level folders. <code class="language-plaintext highlighter-rouge">Stacks/stacks-feature-views.js</code> remains the shared runtime and retains Elevation. The Global three-Orb registry and Orb controller are unchanged byte-for-byte. Feature registration order remains Clouds → Weather → Elevation → Earthquakes → Traffic so the feature Orb scatter order stays stable. The four dedicated views use full-stage layouts behind the existing three-Orb dock; Elevation keeps its prior compact panel. The service worker and update manager use the synchronized <code class="language-plaintext highlighter-rouge">v118-fullscreen-feature-views</code> identity, and all four modules are essential offline shell assets. See <code class="language-plaintext highlighter-rouge">Documentation/STACKS-FEATURE-VIEWS.md</code> for the view contracts.</p>
+
+<h2 id="8-november-2026--v119-location-orb-controller-path-correction">8 November 2026 — V119 Location Orb controller path correction</h2>
+
+<p>Starting from V118, <code class="language-plaintext highlighter-rouge">Location/location-scanner.js</code> was renamed to <code class="language-plaintext highlighter-rouge">Location/location-orb-controller.js</code> to reflect its actual responsibility: the Home Location Orb permission request, GPS watch, fresh-fix validation and ON/OFF state. The Earth View Scanner button and its marker visibility remain in <code class="language-plaintext highlighter-rouge">Earth/earth-view-controller.js</code>; it reads the approved state and does not request geolocation. The original compatibility marker <code class="language-plaintext highlighter-rouge">window.__liveEarthLocationScannerInstalled</code> and public Location state APIs are intentionally retained to avoid changing the existing Orb/service handshake. All script loading, service-worker shell, recovery and startup-repair paths now use <code class="language-plaintext highlighter-rouge">Location/location-orb-controller.js</code>. The service-worker and update-manager build identity is synchronized to <code class="language-plaintext highlighter-rouge">v119-location-orb-controller</code>. No Orb code or Location behaviour was changed.</p>
+
+<h2 id="8-november-2026--v120-location-service-filename-simplification">8 November 2026 — V120 Location service filename simplification</h2>
+
+<p>Starting from V119, <code class="language-plaintext highlighter-rouge">Location/location-orb-controller.js</code> was renamed to <code class="language-plaintext highlighter-rouge">Location/location.js</code>. Location is a shared utility/service, not a view, so its source filename no longer implies a dedicated Orb controller. Its permission request, GPS watch, fresh-fix checks, OFF-by-default privacy, existing public state APIs and legacy readiness marker are unchanged. The Earth View Scanner button and marker visibility remain in <code class="language-plaintext highlighter-rouge">Earth/earth-view-controller.js</code> and continue to consume only approved Location state. <code class="language-plaintext highlighter-rouge">index.html</code>, service-worker shell/recovery/startup-repair paths, tests and active guidance use <code class="language-plaintext highlighter-rouge">Location/location.js</code>. The synchronized build identity is <code class="language-plaintext highlighter-rouge">v120-location-service</code>. The manifest removes both superseded filenames from the repository. No Global Orb behaviour or GPS behaviour was changed.</p>
+
+<h2 id="v122-persistent-viewpoint-bridge-correct-group-only-design">V122 persistent viewpoint bridge (correct group-only design)</h2>
+<p>The Global Earth Engine is the source of truth for one active-view rotation snapshot. <code class="language-plaintext highlighter-rouge">LiveEarthOrbSystem</code> supplies the effective active owner (<code class="language-plaintext highlighter-rouge">primary:&lt;id&gt;</code> or <code class="language-plaintext highlighter-rouge">secondary:&lt;id&gt;</code>). Earth Engine captures the outgoing active Engine group’s normalized parent quaternion once before view cleanup and applies it once to the incoming existing group, or automatically when the incoming view later calls <code class="language-plaintext highlighter-rouge">createEarthGlobe()</code>. It persists only <code class="language-plaintext highlighter-rouge">{x,y,z,w}</code> on transitions and page hide. No camera, zoom, scene, renderer, light, surface-child transform, layer or Moon state is transferred. The former Home-only bridge remains as a legacy migration reference; current views no longer call it. Existing Stacks layers reuse the Home Earth group. Moon and Sun remain independent unless a future view explicitly creates its own Engine Earth group.</p>
+
+<h3 id="v124-bridge-change-incorrect-superseded">V124 bridge change (incorrect; superseded)</h3>
+<p>V124 incorrectly treated Moon Orbit’s legacy sidereal Earth-surface write as a required part of the Earth viewpoint and copied the child-surface quaternion. That was the wrong ownership model. The V124 design is superseded by V125 and must not be reintroduced.</p>
+
+<h2 id="v125-correction--strict-earth-ownership">V125 correction — strict Earth ownership</h2>
+
+<p>The V124 diagnosis was wrong. The Moon Orbit module had a direct write to the Home Earth mesh: <code class="language-plaintext highlighter-rouge">earthSurface.rotation.y = greenwichMeanSiderealAngle(date)</code>, executed during Moon Orbit initialization and the scheduled 30-second update. V124 then expanded this coupling by copying the child surface quaternion through the viewpoint bridge. This is not acceptable. V125 removes the Earth-surface lookup/write from Moon Orbit; Moon updates only its own position. The bridge transfers only Home’s user-controlled parent-group quaternion. Home, Independent Earth View and Earth Modes all use the single <code class="language-plaintext highlighter-rouge">EarthEngine/Core/earth-engine.js</code> factory and the same Earth texture/base calibration, with separate instances only to preserve their independent scenes and renderers. No Moon or Sun calculation may modify Earth’s transform.</p>
+
+<h2 id="2026-11-08--v126-earth-view-first-touch-orientation-correction">2026-11-08 — V126 Earth View first-touch orientation correction</h2>
+<ul>
+  <li>Observed behaviour: Home viewpoint transferred correctly when Earth View opened, but the first touch/drag in Earth View flipped the globe.</li>
+  <li>Cause: Earth View copied Home’s quaternion, then its pointer handler read <code class="language-plaintext highlighter-rouge">earthGroup.rotation.x</code> and wrote Euler X/Y. Three.js may decompose a valid transferred XYZ quaternion using the alternate Euler branch when yaw crosses +/-90 degrees. The existing pitch clamp then snapped X to its bound on the first pointer movement.</li>
+  <li>Correction: recover Home’s bounded pitch directly from the XYZ quaternion, and apply horizontal/vertical drag deltas using local-Y/world-X axis-angle quaternion multiplication. No Home gesture, Moon, Engine, texture, camera or Orb behaviour changed.</li>
+  <li>Build identity: <code class="language-plaintext highlighter-rouge">v127-earthengine-root-folder</code>.</li>
+</ul>
+
+<h2 id="2026-11-08--v127-earthengine-folder-architecture">2026-11-08 — V127 EarthEngine folder architecture</h2>
+<p>The dedicated root-level <code class="language-plaintext highlighter-rouge">EarthEngine/</code> folder separates Core, Graphics and Assets ownership. <code class="language-plaintext highlighter-rouge">Core/earth-engine.js</code> is the stable public globe factory and now owns global viewpoint continuity; <code class="language-plaintext highlighter-rouge">Graphics/earth-engine-3d-graphics-engine.js</code> assembles each view-owned globe group/surface/atmosphere, while <code class="language-plaintext highlighter-rouge">Graphics/earth-engine-3d-graphics-core.js</code> owns low-level geometry/material helpers and shared texture acquisition/disposal. The Global Orb System provides one registry and effective-view lifecycle for Primary views, utility Feature Orbs and expandable Secondary views. The five-Orb and three-Orb layouts, Moon/Sun systems, Home group identity, Three.js vendor-runtime placement and per-view scenes/cameras/renderers remain protected.</p>
+
+<p>The supplied ZIP did not contain <code class="language-plaintext highlighter-rouge">earth-land-ocean-ice-2048.png</code> as a tracked binary. The service worker retains the existing NASA download plus fallback and now caches it at <code class="language-plaintext highlighter-rouge">EarthEngine/Assets/earth-land-ocean-ice-2048.png</code>; <code class="language-plaintext highlighter-rouge">EarthEngine/Assets/README.md</code> documents the virtual runtime asset and NASA credit. Do not claim the image binary is physically committed until a source archive containing that exact file is available. Build identity: <code class="language-plaintext highlighter-rouge">v127-earthengine-root-folder</code>.</p>
+
+<h2 id="8-november-2026--global-orb-system-v128">8 November 2026 — Global Orb System (V128)</h2>
+
+<ul>
+  <li>One <code class="language-plaintext highlighter-rouge">LiveEarthOrbSystem</code> facade now describes Home, Earth, Moon, Sun, Location, Stacks and all registered Secondary views.</li>
+  <li>Home is the default Primary screen, not a sixth button. The main five controls remain Earth/Moon/Sun/Location/Stacks.</li>
+  <li>Location and Stacks are Feature Orbs; neither replaces the active view.</li>
+  <li>Secondary views remain single-active and use the three-Orb dock [active Secondary, Location, Stacks].</li>
+  <li><code class="language-plaintext highlighter-rouge">live-earth-view-transition</code> is emitted before outgoing cleanup; <code class="language-plaintext highlighter-rouge">live-earth-view-changed</code> follows incoming activation.</li>
+  <li>Earth Engine owns one rotation-only snapshot and no longer needs per-view bridge calls.</li>
+  <li>Existing Home group identity and additive Moon orbit remain untouched.</li>
+  <li>Build identity: <code class="language-plaintext highlighter-rouge">v128-global-orb-system</code>.</li>
+</ul>
+
+
+      
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" integrity="sha256-lZaRhKri35AyJSypXXs4o6OPFTbTmUoltBbDCbdzegg=" crossorigin="anonymous"></script>
+    <script>anchors.add();</script>
+  
+<h2>9 November 2026 — Engine-owned quaternion viewpoint cleanup (V129)</h2>
+<p>The old Home-only <code>EarthEngine/Core/earth-viewpoint-bridge.js</code> module and its bridge-specific test were retired and deleted. <code>EarthEngine/Core/earth-engine.js</code> is the sole owner of viewpoint state; it reads/writes only <code>liveEarthGlobalViewpointV1</code> and no longer falls back to the old Home-only V3/V2/V1 session keys. The Service Worker no longer treats the bridge as an essential offline asset, and both <code>sw.js</code> and <code>Global/update-manager.js</code> now use the synchronized <code>v129-engine-quaternion-viewpoint</code> identity.</p>
+<p>The outgoing transition event’s explicit owner is authoritative when selecting the Earth group to capture. The incoming group receives the normalized quaternion on the view-changed event; a group created asynchronously later receives the current snapshot on registration. Home’s current runtime already uses the Engine’s quaternion interaction controller with locked zoom; its drag path contains no direct Euler X/Y writes. The separate Earth Modes renderer’s Euler drag path was left outside this Home patch. All JavaScript regression tests and 24 Python tests passed locally; installed-device acceptance remains pending.</p>
+</body>
+</html>

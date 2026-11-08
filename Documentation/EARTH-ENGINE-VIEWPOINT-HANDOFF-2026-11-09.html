@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>LIVE // EARTH — Engine-Owned Quaternion Viewpoint</title></head><body>
+<h1>LIVE // EARTH — Engine-Owned Quaternion Viewpoint</h1>
+<p><strong>Date:</strong> 9 November 2026<br><strong>Repository:</strong> <code>z8t8fp99p9-glitch/Live-Earth</code><br><strong>Branch:</strong> <code>main</code><br><strong>Source baseline:</strong> <code>ffa3a17cc096627db155504177e51a110305f9e4</code></p>
+<h2>Current contract</h2>
+<ul>
+<li><code>EarthEngine/Core/earth-engine.js</code> owns the global quaternion viewpoint and view-transition lifecycle.</li>
+<li>The transferable state is only <code>{x, y, z, w}</code>; cameras, zoom, scenes, renderers, surface alignment, feature layers and Moon state are never transferred.</li>
+<li>The pre-transition event captures the exact outgoing owner’s registered group. The named owner is authoritative over a potentially stale cached group pointer.</li>
+<li>The post-transition event applies the saved quaternion to the incoming group immediately. A group created asynchronously later receives the current snapshot during registration.</li>
+<li>The sole persisted key is <code>liveEarthGlobalViewpointV1</code>. Old Home-only V3/V2/V1 data is not read or migrated.</li>
+<li>Home uses Engine quaternion interactions with locked zoom. Independent Earth View uses the same Engine interaction controller with its own camera adapters.</li>
+<li>Stacks overlays without their own globe reuse Home’s registered Earth group.</li>
+</ul>
+<h2>Retired components</h2>
+<ul><li><code>EarthEngine/Core/earth-viewpoint-bridge.js</code> has been deleted.</li><li><code>Tests/earth-viewpoint-bridge.test.cjs</code> has been replaced by <code>Tests/earth-engine-viewpoint.test.cjs</code>.</li><li>The obsolete bridge was removed from the Service Worker app shell. The cache identity is now <code>v129-engine-quaternion-viewpoint</code>.</li></ul>
+<h2>Verification</h2>
+<p>The focused regression test verifies that legacy V3 is ignored, the exact outgoing owner is captured, Home receives the outgoing quaternion synchronously, and Home remains quaternion-only with locked zoom. The broader JavaScript and Python regression suites pass. Installed-device confirmation is still required to verify the observed multi-second delay is eliminated.</p>
+<h2>Protected boundaries</h2>
+<p>No Home camera, framing, star field, Moon orbit/path, Location marker state, lighting ownership, Orb presentation, or independent Sun/Moon controller was changed by the viewpoint cleanup. The assistant prepares a root ZIP only; the owner uploads it through the repository’s ZIP extractor.</p>
+</body></html>

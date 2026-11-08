@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Independent Celestial Views | Live-Earth</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Independent Celestial Views" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="https://z8t8fp99p9-glitch.github.io/Live-Earth/Documentation/INDEPENDENT-CELESTIAL-VIEWS.html" />
+<meta property="og:url" content="https://z8t8fp99p9-glitch.github.io/Live-Earth/Documentation/INDEPENDENT-CELESTIAL-VIEWS.html" />
+<meta property="og:site_name" content="Live-Earth" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Independent Celestial Views" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","headline":"Independent Celestial Views","url":"https://z8t8fp99p9-glitch.github.io/Live-Earth/Documentation/INDEPENDENT-CELESTIAL-VIEWS.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/Live-Earth/assets/css/style.css?v=ffa3a17cc096627db155504177e51a110305f9e4">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/Live-Earth/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="container-lg px-3 my-5 markdown-body">
+      
+      <h1><a href="https://z8t8fp99p9-glitch.github.io/Live-Earth/">Live-Earth</a></h1>
+      
+
+      <h1 id="independent-celestial-views">Independent Celestial Views</h1>
+
+<p><strong>Decision baseline:</strong> 8 November 2026.</p>
+
+<h2 id="architecture">Architecture</h2>
+
+<p>Earth, Moon and Sun are three independent primary views. They share the Global Primary View Manager, View Module Registry and full-screen Sky View host. Sharing the host is an integration contract only; it does not merge renderers, cameras, scenes or view-specific state.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Responsibility</th>
+      <th>Owner</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Primary-view transitions</td>
+      <td><code class="language-plaintext highlighter-rouge">Global/view-manager.js</code></td>
+    </tr>
+    <tr>
+      <td>Module activation/deactivation</td>
+      <td><code class="language-plaintext highlighter-rouge">Global/view-module-registry.js</code></td>
+    </tr>
+    <tr>
+      <td>Full-screen stage and common background</td>
+      <td><code class="language-plaintext highlighter-rouge">Global/sky-view-controller.js</code></td>
+    </tr>
+    <tr>
+      <td>Stable public globe factory</td>
+      <td><code class="language-plaintext highlighter-rouge">EarthEngine/Core/earth-engine.js</code></td>
+    </tr>
+    <tr>
+      <td>3D globe assembly and per-view surface/atmosphere setup</td>
+      <td><code class="language-plaintext highlighter-rouge">EarthEngine/Graphics/earth-engine-3d-graphics-engine.js</code></td>
+    </tr>
+    <tr>
+      <td>Low-level geometry, materials, shared texture lease and disposal</td>
+      <td><code class="language-plaintext highlighter-rouge">EarthEngine/Graphics/earth-engine-3d-graphics-core.js</code></td>
+    </tr>
+    <tr>
+      <td>Global quaternion viewpoint lifecycle and transition persistence</td>
+      <td><code class="language-plaintext highlighter-rouge">EarthEngine/Core/earth-engine.js</code></td>
+    </tr>
+    <tr>
+      <td>Home Earth scene, fixed camera, renderer, lights, responsive sizing and interaction</td>
+      <td>Home module in <code class="language-plaintext highlighter-rouge">index.html</code></td>
+    </tr>
+    <tr>
+      <td>Home-only Moon orbit attached to Home Earth group</td>
+      <td><code class="language-plaintext highlighter-rouge">Home/moon-orbit.js</code></td>
+    </tr>
+    <tr>
+      <td>Independent Earth 3D scene, camera, renderer and controls</td>
+      <td><code class="language-plaintext highlighter-rouge">Earth/earth-view-controller.js</code></td>
+    </tr>
+    <tr>
+      <td>Independent Moon renderer and lunar interface</td>
+      <td><code class="language-plaintext highlighter-rouge">Moon/moon-view-controller.js</code>, <code class="language-plaintext highlighter-rouge">Moon/moon-lunar-interface.js</code></td>
+    </tr>
+    <tr>
+      <td>Independent Sun renderer and solar interface</td>
+      <td><code class="language-plaintext highlighter-rouge">Sun/sun-view-controller.js</code></td>
+    </tr>
+    <tr>
+      <td>Home Main Earth integration</td>
+      <td>Home inline renderer in <code class="language-plaintext highlighter-rouge">index.html</code>, using Earth Engine only for globe objects</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="protected-home-earth-boundary">Protected Home Earth boundary</h2>
+
+<ul>
+  <li>Home Earth uses Earth Engine for its globe group and surface, but retains its fixed zoom framing, own scene, renderer, responsive camera fit, single-pointer rotation and animation. Opening or closing Earth View must not alter Home state.</li>
+  <li>The Home Engine surface remains the exact <code class="language-plaintext highlighter-rouge">earth</code> mesh; the Home Engine group remains the exact <code class="language-plaintext highlighter-rouge">group</code> attached to Home scene. The Moon orbit, solar/day-night shader, Location marker and Stacks feature-layer interface keep their existing references to those objects.</li>
+  <li>Earth View starts at the same fitted globe diameter as Home (75% of the shorter viewport dimension), then performs its own camera-only cinematic zoom inside the independent renderer.</li>
+  <li>The Earth View contains no Moon, Moon orbit, lunar geometry or Moon controller dependency.</li>
+  <li>Portrait/landscape resizing updates only the active independent Earth renderer and preserves its relative zoom. It cannot redefine Home camera framing.</li>
+  <li>Home has one fixed high-detail sphere (96 × 64 segments), no Basic/HD selector and no zoom controls. Basic/HD, zoom and Scanner controls affect only the independent Earth renderer. The independent view maps Basic/HD to generic <code class="language-plaintext highlighter-rouge">standard</code>/<code class="language-plaintext highlighter-rouge">high</code> geometry detail levels in Earth Engine.</li>
+</ul>
+
+<h2 id="location-privacy">Location privacy</h2>
+
+<p>Location remains OFF until the user explicitly enables the Location Orb. Earth View never requests geolocation. Its optional Scanner reads only the already-approved, fresh in-memory location supplied by the existing Location service. When Location is OFF, stale or unavailable, the marker is hidden and no coordinates or local location data are shown.</p>
+
+<h2 id="offline-and-compatibility">Offline and compatibility</h2>
+
+<p>The Earth View Controller is named <code class="language-plaintext highlighter-rouge">Earth/earth-view-controller.js</code>. The Earth Engine Core and Graphics modules remain in the verified service-worker app shell so Home and registered views can load the same globe factory offline. The controller implements the independent renderer and registers <code class="language-plaintext highlighter-rouge">earth-independent-renderer</code>; it obtains its Earth group and surface mesh from <code class="language-plaintext highlighter-rouge">EarthEngine/Core/earth-engine.js</code> and never changes Home <code class="language-plaintext highlighter-rouge">LiveEarthScene</code> camera or renderer state.</p>
+
+<p>The manager emits canonical <code class="language-plaintext highlighter-rouge">earth</code> view events. <code class="language-plaintext highlighter-rouge">getActiveView()</code> preserves the historic <code class="language-plaintext highlighter-rouge">explorer</code> label as a compatibility adapter for the protected Orb controller and existing Stacks return paths; <code class="language-plaintext highlighter-rouge">getCanonicalActiveView()</code> exposes the canonical state.</p>
+
+<p>Three.js remains a separate low-level dependency under the existing <code class="language-plaintext highlighter-rouge">vendor/</code> runtime paths. The Earth texture is downloaded by the service worker and cached at <code class="language-plaintext highlighter-rouge">EarthEngine/Assets/earth-land-ocean-ice-2048.png</code>; the supplied snapshot did not include this image as a tracked binary file. No new network-only Earth assets are introduced.</p>
+
+<h2 id="verification-required">Verification required</h2>
+
+<ol>
+  <li>Syntax-check all changed JavaScript and the transformed Home module.</li>
+  <li>Confirm Home uses the Engine surface directly, has locked framing and exposes no Basic/HD or zoom controls.</li>
+  <li>Confirm Moon Orbit updates only its own Moon/orbit objects and never looks up or mutates the Home Earth surface or parent transform.</li>
+  <li>Confirm the independent Earth UI maps Basic/HD to generic Engine detail and has no Home camera/renderer mutation calls or Moon-orbit import.</li>
+  <li>Confirm registry contains independent Earth, Moon and Sun modules under the shared stage.</li>
+  <li>Open/close Earth repeatedly and switch Earth → Moon → Sun → Home.</li>
+  <li>Test portrait → landscape → portrait while each view is active; Home Earth must retain its fixed framing.</li>
+  <li>Verify Location OFF never requests geolocation or exposes a marker; enable Location explicitly before using Scanner.</li>
+  <li>Verify online/offline launch and app-shell cache behaviour.</li>
+  <li>Complete the final installed-iPhone visual and touch test before considering the work fully accepted.</li>
+</ol>
+
+<p>Static source validation is not a substitute for the installed-iPhone tests above.</p>
+
+
+      
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" integrity="sha256-lZaRhKri35AyJSypXXs4o6OPFTbTmUoltBbDCbdzegg=" crossorigin="anonymous"></script>
+    <script>anchors.add();</script>
+  </body>
+</html>
