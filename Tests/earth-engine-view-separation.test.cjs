@@ -86,7 +86,7 @@ const THREE = {
   const homeIndex = read('index.html');
   const homeModule = homeIndex.match(/<script type="module">\s*if \(window\.__leBootControlledAtStart[\s\S]*?<\/script>/)?.[0];
   assert.ok(homeModule, 'Home Earth module must remain in index.html.');
-  assert.ok(homeModule.includes("await import('./Global/earth-engine.js')"), 'Home must create its globe through Earth Engine.');
+  assert.ok(homeModule.includes("import('./Global/earth-engine.js')"), 'Home must create its globe through Earth Engine.');
   assert.ok(homeModule.includes("geometryDetail: 'high'"), 'Home must use one fixed high-detail sphere profile.');
   assert.ok(!/\bquality\b|\bBasic\b|\bHD\b|setQuality|zoomBy|pinch/i.test(homeModule), 'Home module must not contain Basic/HD quality or zoom controls.');
   assert.ok(homeModule.includes('const group = earthGlobe.group;'), 'Engine group identity must remain Home\'s transform group.');
@@ -169,7 +169,7 @@ const THREE = {
   assert.ok(sw.includes('"./Global/earth-engine.js"') && sw.includes('"./Earth/earth-view-controller.js"'), 'Both Earth files must remain essential offline shell assets.');
   assert.ok(sw.includes('"./runtime-assets/earth-land-ocean-ice-2048.png"'), 'Home Engine texture must remain an offline runtime dependency.');
   assert.ok(!sw.includes('earth-mode-navigation.js'), 'The retired controller path must not remain in the service worker.');
-  assert.ok(sw.includes('v120-location-service') && manager.includes('v120-location-service'), 'Service worker and update manager build IDs must match.');
+  assert.ok(sw.includes('v121-earth-viewpoint-bridge') && manager.includes('v121-earth-viewpoint-bridge'), 'Service worker and update manager build IDs must match.');
   assert.ok(sw.includes('const anchor = "// LIVE_EARTH_HOME_RENDERER_HOOKS";'), 'Home API injection must use the stable named hook.');
   assert.ok(sw.includes('const readableRemoteThreeImport = /try\\s*\\{'), 'Service worker must transform the readable Home Three.js import.');
   assert.ok(sw.includes("html = html.replace(readableRemoteThreeImport, \"T = await import('./vendor/three.module.js');\");"), 'Readable Home import must resolve to the staged offline Three.js module.');

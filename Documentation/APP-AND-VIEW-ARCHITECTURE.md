@@ -39,3 +39,7 @@ Weather reads only a fresh position already provided by the explicitly enabled L
 - `Recovery/` contains general rollback instructions and retained snapshots.
 
 Every file referenced by the service worker, update manager, view controller or lazy-loading path is a dependency. Do not remove or relocate based on filename alone.
+
+
+## Shared Earth viewpoint
+Home is the source of truth for the starting Earth orientation. `Global/earth-viewpoint-bridge.js` publishes a quaternion snapshot from the Home Earth group; independent Earth Engine views may apply that snapshot to their own group. The bridge does not share cameras or scenes and never writes a secondary view's rotation back to Home. Stacks feature layers already use the Home Earth scene and naturally share its orientation. Moon and Sun remain independent. The separate Earth Modes page is not yet connected because it uses its own standalone globe renderer rather than Earth Engine.

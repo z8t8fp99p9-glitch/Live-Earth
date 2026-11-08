@@ -1,11 +1,11 @@
-/* LIVE // EARTH V120 — Location shared-service filename simplification. */
+/* LIVE // EARTH V121 — Home-to-viewpoint bridge. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v120-location-service";
-const CACHE_NAME = "live-earth-shell-v120-location-service";
+const BUILD_ID = "v121-earth-viewpoint-bridge";
+const CACHE_NAME = "live-earth-shell-v121-earth-viewpoint-bridge";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
- "./","./index.html","./ios-standalone-root-flow.js","./Global/orb-controls-v4.js","./Global/earth-engine.js","./Earth/earth-view-controller.js","./Global/view-manager.js","./Global/view-module-registry.js","./Stacks/stacks-feature-views.js","./Clouds/clouds-view.js","./Weather/weather-view.js","./Traffic/traffic-view.js","./Earthquakes/earthquakes-view.js","./Global/sky-view-controller.js","./Moon/moon-view-controller.js","./Moon/moon-lunar-interface.js","./Sun/sun-view-controller.js","./Sun/sun-surface-shared.webp",
+ "./","./index.html","./ios-standalone-root-flow.js","./Global/orb-controls-v4.js","./Global/earth-engine.js","./Global/earth-viewpoint-bridge.js","./Earth/earth-view-controller.js","./Global/view-manager.js","./Global/view-module-registry.js","./Stacks/stacks-feature-views.js","./Clouds/clouds-view.js","./Weather/weather-view.js","./Traffic/traffic-view.js","./Earthquakes/earthquakes-view.js","./Global/sky-view-controller.js","./Moon/moon-view-controller.js","./Moon/moon-lunar-interface.js","./Sun/sun-view-controller.js","./Sun/sun-surface-shared.webp",
  "./Earth/location.html","./Earth/earth-orb-globe.js","./manifest.json","./Global/icon.svg","./Data/data-store.js","./Location/location.js",
  "./Global/astronomy.js","./Home/moon-orbit.js","./Data/dataset-manifest.json",
  "./Home/moon-surface-lroc-1536.jpg",
@@ -698,6 +698,7 @@ function injectStartupGate(html) {
       const paths = [...knownBadPaths];
       if (!window.LiveEarthScene) paths.push('./vendor/three.module.js','./vendor/three.core.js','./runtime-assets/earth-land-ocean-ice-2048.png');
       if (!window.LiveEarthEngine) paths.push('./Global/earth-engine.js');
+      if (!window.LiveEarthViewpointBridge) paths.push('./Global/earth-viewpoint-bridge.js');
       if (window.__liveEarthEarthRendererInstalled !== true) paths.push('./Earth/earth-view-controller.js');
       if (!window.LiveEarthViewManager) paths.push('./Global/view-manager.js');
       if (!window.LiveEarthSkyViews) paths.push('./Global/sky-view-controller.js');
@@ -751,7 +752,7 @@ function injectStartupGate(html) {
       const imagesReady = orbImages.length === 5 && orbImages.every(img => img.complete && img.naturalWidth > 0);
       const modules = window.LiveEarthViewModules;
       return document.readyState === 'complete' &&
-        !!window.LiveEarthScene && !!window.LiveEarthEngine && window.__liveEarthEarthRendererInstalled === true &&
+        !!window.LiveEarthScene && !!window.LiveEarthEngine && !!window.LiveEarthViewpointBridge && window.__liveEarthEarthRendererInstalled === true &&
         !!window.LiveEarthViewManager && !!modules && modules.has('earth-independent-renderer') &&
         modules.has('sky-container') && modules.has('moon-lunar-interface') &&
         window.__liveEarthMoonRendererInstalled === true && window.__liveEarthStacksFeatureViewsInstalled === true && !!window.LiveEarthSkyViews &&

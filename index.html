@@ -507,7 +507,10 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
     syncCanvasViewport();
     settleCanvasViewport();
 
-    const earthEngine = await import('./Global/earth-engine.js');
+    const [earthEngine, viewpointBridge] = await Promise.all([
+      import('./Global/earth-engine.js'),
+      import('./Global/earth-viewpoint-bridge.js')
+    ]);
     const createEarthGlobe = earthEngine.createEarthGlobe || earthEngine.createGlobe;
     if (typeof createEarthGlobe !== 'function') {
       throw new Error('The reusable Earth Engine API is unavailable.');
@@ -528,6 +531,8 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
     const group = earthGlobe.group;
     const earth = earthGlobe.surface;
     scene.add(group);
+    // Home is the single source of truth for the starting Earth viewpoint.
+    viewpointBridge.publishHomeOrientation(group);
 
     let moonSystem = { update: () => null };
     try {
@@ -618,6 +623,7 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
         -1.15,
         Math.min(1.15, group.rotation.x + (event.clientY - y) * 0.0055)
       );
+      viewpointBridge.publishHomeOrientation(group);
       x = event.clientX;
       y = event.clientY;
       draw();

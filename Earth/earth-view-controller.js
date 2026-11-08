@@ -66,6 +66,7 @@
   let atmosphere = null;
   let locationMarker = null;
   let earthGlobe = null;
+  let viewpointBridge = null;
   let quality = "basic";
   let active = false;
   let activationGeneration = 0;
@@ -344,7 +345,11 @@
       fill.position.set(4, -2, -3);
       scene.add(fill);
 
-      const engineModule = await import("../Global/earth-engine.js");
+      const [engineModule, bridgeModule] = await Promise.all([
+        import("../Global/earth-engine.js"),
+        import("../Global/earth-viewpoint-bridge.js")
+      ]);
+      viewpointBridge = bridgeModule;
       const createEarthGlobe = engineModule.createEarthGlobe || engineModule.createGlobe || window.LiveEarthEngine?.createGlobe;
       if (typeof createEarthGlobe !== "function") throw new Error("The reusable Earth Engine API is unavailable.");
       earthGlobe = await createEarthGlobe({
@@ -483,6 +488,9 @@
     paintQuality();
     initializeRenderer().then(() => {
       if (!active || activation !== activationGeneration) return;
+      // Copy only Home's globe orientation. This view keeps its own scene,
+      // camera, zoom, renderer and subsequent exploration state.
+      viewpointBridge?.applyHomeOrientation?.(earthGroup);
       resizeRenderer(true);
       camera.position.z = baseDistance;
       camera.lookAt(0, 0, 0);

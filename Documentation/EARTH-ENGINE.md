@@ -55,3 +55,13 @@ Each call creates its own group, surface mesh, geometry and materials. The modul
 Local tests cover: module syntax, separate per-view scene objects, radius/geometry isolation, shared-texture reference counting and disposal, fixed Home geometry and locked camera, Home surface identity, compatibility with the Moon orbit direct-child lookup, independent Earth Basic/HD mapping to generic Engine detail, Home API scope, controller registration and service-worker shell/build wiring.
 
 The checks do not establish GitHub Actions, deployment or installed-iPhone acceptance. Those require the owner-uploaded ZIP, verified Action/commit, and online/offline device testing.
+
+
+## Home-to-viewpoint bridge
+
+- `Global/earth-viewpoint-bridge.js` is a small shared orientation hand-off, separate from the reusable Earth Engine. Home publishes its Earth group quaternion after startup and whenever the user rotates Home.
+- The independent Earth View reads that snapshot when activated and applies it to its own Earth group. It shares only the starting globe orientation—not the scene, camera, renderer, zoom, lighting, geometry, textures, feature layers or interaction state.
+- The bridge is deliberately one-way. Independent Earth View exploration must not write its orientation back into Home; the Home scene and rotation remain protected.
+- Weather, Clouds, Elevation, Earthquakes and Traffic attach layers to the exact Home Earth scene, so they already follow Home's orientation without copying or bridging anything.
+- Moon and Sun are separate celestial views and do not consume Earth's orientation. The separate Earth Modes page currently uses `Earth/earth-orb-globe.js`, not Earth Engine; it is not part of this bridge.
+- Future independent Earth Engine views should call `applyHomeOrientation()` on their newly created Earth group. Do not move orientation ownership into `Global/earth-engine.js`; the engine remains a reusable object factory without navigation state.

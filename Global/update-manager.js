@@ -1,14 +1,14 @@
-/* LIVE // EARTH V120 update manager — Location service filename simplification. */
+/* LIVE // EARTH V121 update manager — Home-to-viewpoint bridge. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v120-location-service";
+  const BUILD_ID = "v121-earth-viewpoint-bridge";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
     return Boolean(
-      window.LiveEarthScene && window.LiveEarthEngine && window.LiveEarthViewManager && window.LiveEarthViewModules &&
+      window.LiveEarthScene && window.LiveEarthEngine && window.LiveEarthViewpointBridge && window.LiveEarthViewManager && window.LiveEarthViewModules &&
       window.LiveEarthViewModules.has("sky-container") &&
       window.LiveEarthViewModules.has("earth-independent-renderer") &&
       window.__liveEarthEarthRendererInstalled === true &&
