@@ -1,0 +1,72 @@
+
+name: LIVE // EARTH Regression Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-earth-regression-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  regression:
+    name: JavaScript and Python regression checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' source_files < <(find . -type f \( -name '*.js' -o -name '*.cjs' \) -not -path './.git/*' -print0 | sort -z)
+          if ((${#source_files[@]} == 0)); then
+            echo "No JavaScript source files were found."
+            exit 1
+          fi
+          for file in "${source_files[@]}"; do
+            echo "Checking $file"
+            node --check "$file"
+          done
+
+      - name: Run JavaScript regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          test_files=(Tests/*.test.cjs)
+          if ((${#test_files[@]} == 0)); then
+            echo "No JavaScript regression tests were found."
+            exit 1
+          fi
+          for test_file in "${test_files[@]}"; do
+            echo "Running $test_file"
+            node "$test_file"
+          done
+
+      - name: Compile Python sources and run Editorial Engine tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q Editorial-Engine Tests
+          python -m unittest discover -s Tests -p 'test_*.py' -v
