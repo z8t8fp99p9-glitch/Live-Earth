@@ -1,9 +1,9 @@
-/* LIVE // EARTH V121 update manager — Home-to-viewpoint bridge. */
+/* LIVE // EARTH V122 update manager — persistent Home-to-viewpoint bridge. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v121-earth-viewpoint-bridge";
+  const BUILD_ID = "v122-persistent-earth-viewpoint-bridge";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {

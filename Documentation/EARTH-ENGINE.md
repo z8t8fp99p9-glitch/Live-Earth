@@ -15,7 +15,7 @@
 A view imports `createEarthGlobe` or `createGlobe` from `Global/earth-engine.js`, supplies its own Three.js namespace, and attaches the returned group to its own scene:
 
 ```js
-import { createEarthGlobe } from "./earth-engine.js";
+import { createEarthGlobe } from "../Global/earth-engine.js";
 const globe = await createEarthGlobe({
   THREE,
   radius: 1,
@@ -59,9 +59,9 @@ The checks do not establish GitHub Actions, deployment or installed-iPhone accep
 
 ## Home-to-viewpoint bridge
 
-- `Global/earth-viewpoint-bridge.js` is a small shared orientation hand-off, separate from the reusable Earth Engine. Home publishes its Earth group quaternion after startup and whenever the user rotates Home.
-- The independent Earth View reads that snapshot when activated and applies it to its own Earth group. It shares only the starting globe orientation—not the scene, camera, renderer, zoom, lighting, geometry, textures, feature layers or interaction state.
-- The bridge is deliberately one-way. Independent Earth View exploration must not write its orientation back into Home; the Home scene and rotation remain protected.
+- `Global/earth-viewpoint-bridge.js` is a shared orientation hand-off, separate from the reusable Earth Engine. Home publishes its Earth group quaternion after startup and while the user rotates Home.
+- Pointer-move updates remain in memory; the settled pose is persisted in same-tab `sessionStorage` on pointer release. This lets the orientation survive navigation from Home to the separate `Earth/location.html` document without touching user databases, localStorage settings or app caches.
+- Home restores the last same-tab orientation when it is recreated. Independent Earth View applies the snapshot to its own Earth Engine group on activation. The separate Earth Modes Basic/HD/Offline renderer (`Earth/earth-orb-globe.js`) also applies the snapshot after creating its own group.
+- The bridge shares only the starting globe orientation—not the scene, camera, renderer, zoom, lighting, geometry, textures, feature layers or interaction state. It is one-way: secondary views must not publish their rotations back into Home.
 - Weather, Clouds, Elevation, Earthquakes and Traffic attach layers to the exact Home Earth scene, so they already follow Home's orientation without copying or bridging anything.
-- Moon and Sun are separate celestial views and do not consume Earth's orientation. The separate Earth Modes page currently uses `Earth/earth-orb-globe.js`, not Earth Engine; it is not part of this bridge.
-- Future independent Earth Engine views should call `applyHomeOrientation()` on their newly created Earth group. Do not move orientation ownership into `Global/earth-engine.js`; the engine remains a reusable object factory without navigation state.
+- Moon and Sun are separate celestial views and do not consume Earth's orientation. Do not move orientation ownership into `Global/earth-engine.js`; the engine remains a reusable object factory without navigation state.

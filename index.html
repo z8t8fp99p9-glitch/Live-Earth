@@ -531,6 +531,8 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
     const group = earthGlobe.group;
     const earth = earthGlobe.surface;
     scene.add(group);
+    // Restore the last Home orientation after same-tab navigation, then publish it.
+    viewpointBridge.applyHomeOrientation(group);
     // Home is the single source of truth for the starting Earth viewpoint.
     viewpointBridge.publishHomeOrientation(group);
 
@@ -623,7 +625,7 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
         -1.15,
         Math.min(1.15, group.rotation.x + (event.clientY - y) * 0.0055)
       );
-      viewpointBridge.publishHomeOrientation(group);
+      viewpointBridge.publishHomeOrientation(group, { persist: false });
       x = event.clientX;
       y = event.clientY;
       draw();
@@ -633,6 +635,8 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
       if (event.pointerId !== active) return;
       drag = false;
       active = null;
+      // Persist only the settled orientation, not every pointer-move frame.
+      viewpointBridge.publishHomeOrientation(group);
     };
     canvas.addEventListener('pointerup', endDrag);
     canvas.addEventListener('pointercancel', endDrag);

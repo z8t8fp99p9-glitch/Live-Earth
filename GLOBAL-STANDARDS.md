@@ -51,3 +51,7 @@ The previous content-collection and publishing services have been removed. Do no
 Old content-collection, rights-checking and publication notes are historical. They do not describe installed code or active services and must not be used to recreate removed modules. The current repository source and this standard determine the supported application boundary.
 
 - Home is the source of truth for the initial Earth viewpoint. Independent Earth Engine views may consume the orientation snapshot through `Global/earth-viewpoint-bridge.js`; they must never write their rotation back to Home or share Home's scene/camera/renderer.
+
+
+## Home Earth viewpoint hand-off
+Home's settled Earth orientation may be shared with independent Earth renderers through `Global/earth-viewpoint-bridge.js`. The bridge may use same-tab `sessionStorage` to survive page navigation, but must not use or reset app databases, persistent user settings, or caches. Only the initial orientation is shared; views retain independent scenes, cameras, zoom, renderers and interactions. Secondary views must never publish orientation back to Home.

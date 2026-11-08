@@ -169,7 +169,7 @@ const THREE = {
   assert.ok(sw.includes('"./Global/earth-engine.js"') && sw.includes('"./Earth/earth-view-controller.js"'), 'Both Earth files must remain essential offline shell assets.');
   assert.ok(sw.includes('"./runtime-assets/earth-land-ocean-ice-2048.png"'), 'Home Engine texture must remain an offline runtime dependency.');
   assert.ok(!sw.includes('earth-mode-navigation.js'), 'The retired controller path must not remain in the service worker.');
-  assert.ok(sw.includes('v121-earth-viewpoint-bridge') && manager.includes('v121-earth-viewpoint-bridge'), 'Service worker and update manager build IDs must match.');
+  assert.ok(sw.includes('v122-persistent-earth-viewpoint-bridge') && manager.includes('v122-persistent-earth-viewpoint-bridge'), 'Service worker and update manager build IDs must match.');
   assert.ok(sw.includes('const anchor = "// LIVE_EARTH_HOME_RENDERER_HOOKS";'), 'Home API injection must use the stable named hook.');
   assert.ok(sw.includes('const readableRemoteThreeImport = /try\\s*\\{'), 'Service worker must transform the readable Home Three.js import.');
   assert.ok(sw.includes("html = html.replace(readableRemoteThreeImport, \"T = await import('./vendor/three.module.js');\");"), 'Readable Home import must resolve to the staged offline Three.js module.');

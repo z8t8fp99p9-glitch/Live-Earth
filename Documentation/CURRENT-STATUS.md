@@ -4,7 +4,7 @@
 **Repository:** `z8t8fp99p9-glitch/Live-Earth`  
 **Working branch:** `main`  
 **Source baseline:** user-tested `Live-Earth-fullscreen-stacks-feature-views-v118.zip`  
-**Working package:** V120 — Location shared-service filename simplification (includes V118 feature views and V119 Location ownership correction)
+**Working package:** V122 — persistent Home-to-Earth viewpoint bridge (built on V121; includes V118 feature views and V120 Location service naming)
 
 This checkpoint is based on the supplied V117 ZIP, not a fresh GitHub branch-head query. Re-check `main` before any later task.
 
@@ -68,3 +68,8 @@ V120 starts from the V119 package and renames `Location/location-orb-controller.
 ## V121 — Home-to-viewpoint bridge
 
 V121 adds `Global/earth-viewpoint-bridge.js`. Home publishes an immutable quaternion snapshot of its Earth group at startup and after user rotation. The independent Earth View applies that snapshot to its own Earth group whenever activated, sharing only the starting globe orientation. The bridge is intentionally one-way: Earth View interaction does not rotate or otherwise change Home. Weather, Clouds, Elevation, Earthquakes and Traffic already attach to the Home Earth scene and therefore naturally share its orientation. Moon and Sun remain independent. The separate Earth Modes page still uses its own standalone `earth-orb-globe.js` renderer and is not connected by this change. The new bridge is in the service-worker app shell and required by startup verification/repair.
+
+
+## 8 November 2026 — V122 persistent Earth viewpoint bridge
+
+V121's in-memory-only orientation snapshot did not survive navigation to the separate Earth Modes document. V122 stores the settled Home Earth group quaternion in same-tab `sessionStorage`, restores it when Home is recreated, and connects `Earth/earth-orb-globe.js` so Basic/HD/Offline Earth Modes inherit the Home starting orientation. Independent Earth View continues to consume the same bridge. During pointer movement the latest snapshot is updated in memory; session storage is written on pointer release rather than every frame. Secondary Earth views remain one-way consumers and do not write their exploration state back to Home. Build identity is `v122-persistent-earth-viewpoint-bridge`.

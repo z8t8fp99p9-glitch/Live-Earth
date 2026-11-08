@@ -1,4 +1,5 @@
-/* Interactive 3D Earth orb for Earth-mode screens only. Home index.html is not modified. */
+/* Interactive 3D Earth orb for Earth Modes; receives Home's saved starting orientation. */
+import { applyHomeOrientation } from "../Global/earth-viewpoint-bridge.js";
 (() => {
 'use strict';
 const orb=document.querySelector('#earth-orb'),canvas=document.querySelector('#earth-canvas'),status=document.querySelector('#status');
@@ -26,6 +27,8 @@ group=new T.Group();scene.add(group);let tex;try{tex=await texture(T,['https://e
 tex.colorSpace=T.SRGBColorSpace;tex.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),4);const seg=mode==='hd'?112:80;
 const earth=new T.Mesh(new T.SphereGeometry(1,seg,Math.round(seg*.67)),new T.MeshStandardMaterial({map:tex,roughness:1,metalness:0}));earth.rotation.y=-.35;group.add(earth);
 group.add(new T.Mesh(new T.SphereGeometry(1.028,64,48),new T.MeshBasicMaterial({color:0x329dff,transparent:true,opacity:.17,side:T.BackSide,blending:T.AdditiveBlending,depthWrite:false})));
+// Earth Modes is a separate document, so the bridge restores the Home pose from sessionStorage.
+applyHomeOrientation(group);
 orb.classList.add('globe-ready');say(mode==='offline'?'Globe ready · full offline operation still depends on cached engine and texture.':'3D Earth ready · drag to rotate, pinch to zoom.');resize();if('ResizeObserver'in window)new ResizeObserver(resize).observe(orb);else addEventListener('resize',resize,{passive:true})
 }catch(e){console.error('[LIVE // EARTH] Globe startup failed',e);say('Interactive 3D is unavailable. The saved Earth artwork remains visible; check connection and reload.')}}
 addEventListener('pagehide',()=>{disposed=true;if(frame)cancelAnimationFrame(frame);renderer?.dispose()},{once:true});start();

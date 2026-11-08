@@ -1,7 +1,7 @@
-/* LIVE // EARTH V121 — Home-to-viewpoint bridge. */
+/* LIVE // EARTH V122 — persistent Home-to-viewpoint bridge. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v121-earth-viewpoint-bridge";
-const CACHE_NAME = "live-earth-shell-v121-earth-viewpoint-bridge";
+const BUILD_ID = "v122-persistent-earth-viewpoint-bridge";
+const CACHE_NAME = "live-earth-shell-v122-persistent-earth-viewpoint-bridge";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
