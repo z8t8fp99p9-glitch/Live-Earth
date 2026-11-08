@@ -1,4 +1,4 @@
-/* LIVE // EARTH V111 update manager — Editorial Engine Feature Orb only. */
+/* LIVE // EARTH V113 update manager — independent celestial views + Editorial Engine Feature Orb. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
@@ -10,6 +10,8 @@
     return Boolean(
       window.LiveEarthScene && window.LiveEarthViewManager && window.LiveEarthViewModules &&
       window.LiveEarthViewModules.has("sky-container") &&
+      window.LiveEarthViewModules.has("earth-independent-renderer") &&
+      window.__liveEarthEarthRendererInstalled === true &&
       window.LiveEarthViewModules.has("sun-procedural-renderer") &&
       window.LiveEarthViewModules.has("moon-lunar-interface") &&
       window.__liveEarthMoonRendererInstalled === true &&
@@ -68,5 +70,5 @@
   else window.addEventListener("load", signalVerifiedStartup, { once: true });
   navigator.serviceWorker.ready.then(registration => {
     if (navigator.onLine !== false && typeof registration.update === "function") registration.update().catch(() => {});
-  }).catch(() =>{});
- })();
+  }).catch(() => {});
+})();

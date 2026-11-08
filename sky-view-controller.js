@@ -1,5 +1,5 @@
-/* LIVE // EARTH — dedicated cinematic Sun/Moon background views.
-   Additive layer: preserves the Home canvas, orb geometry, and existing global orb styling. */
+/* LIVE // EARTH — shared full-screen Sky View host for independent celestial views.
+   The host owns the overlay lifecycle; Earth, Moon and Sun own separate renderers. */
 (() => {
   "use strict";
   if (window.__liveEarthSkyViewController) return;
@@ -28,6 +28,9 @@
       background-size: cover;
       background-repeat: no-repeat;
       pointer-events: none;
+    }
+    #le-sky-view[data-view="earth"] .le-sky-bg {
+      background-image: radial-gradient(ellipse at 50% 48%, #0a1c31 0%, #030914 56%, #010308 100%);
     }
     #le-sky-view[data-view="moon"] .le-sky-bg {
       background-image: url("./moon-sky-background-portrait.webp");
@@ -79,28 +82,19 @@
   let activeView = null;
   let previousBodyOverflow = "";
 
-  function setSkyOrbState(view) {
-    // Sun and Moon share the global pressed/glow styling already in index.html.
-    // Leave the independent Location and Stacks states alone.
-    document.querySelectorAll('.orbButton[data-view="earth"], .orbButton[data-view="sun"], .orbButton[data-view="moon"]')
-      .forEach(button => button.setAttribute("aria-pressed", String(button.dataset.view === view)));
-  }
-
   function open(view) {
-    if (view !== "sun" && view !== "moon") return;
+    if (view !== "earth" && view !== "sun" && view !== "moon") return;
     if (!activeView) {
       previousBodyOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
     }
     activeView = view;
     root.dataset.view = view;
-    root.setAttribute("aria-label", view === "moon" ? "Moon View" : "Sun View");
+    root.setAttribute("aria-label", view === "moon" ? "Moon View" : view === "sun" ? "Sun View" : "Earth View");
     root.setAttribute("aria-hidden", "false");
     root.hidden = false;
     document.body.classList.add("le-sky-view-open");
-    window.dispatchEvent(new CustomEvent("live-earth-sky-view", {
-      detail: { active: view }
-    }));
+    window.dispatchEvent(new CustomEvent("live-earth-sky-view", { detail: { active: view } }));
   }
 
   function close() {
@@ -112,36 +106,32 @@
     root.removeAttribute("data-view");
     document.body.classList.remove("le-sky-view-open");
     document.body.style.overflow = previousBodyOverflow;
-    window.dispatchEvent(new CustomEvent("live-earth-sky-view", {
-      detail: { active: null, closed: closedView }
-    }));
+    window.dispatchEvent(new CustomEvent("live-earth-sky-view", { detail: { active: null, closed: closedView } }));
   }
 
-  // The shared sky container is registered as a view module. Switching Moon ↔ Sun
-  // updates its mode in-place; leaving both views closes the shared overlay.
   if (window.LiveEarthViewModules) {
     window.LiveEarthViewModules.register("sky-container", {
-      views: ["sun", "moon"],
+      views: ["earth", "sun", "moon"],
       activate: view => open(view),
       deactivate: () => close(),
       change: view => open(view)
     });
   } else {
-    // Compatibility fallback for an older cached shell. The current service worker
-    // treats view-module-registry.js as essential and will repair a missing copy.
     window.addEventListener("live-earth-primary-view-change", event => {
       const view = event.detail?.view || "home";
-      if (view === "sun" || view === "moon") open(view);
+      if (view === "earth" || view === "sun" || view === "moon") open(view);
       else close();
     });
   }
 
   window.addEventListener("pagehide", close, { once: true });
-
   window.LiveEarthSkyViews = Object.freeze({
     open,
     close,
     isOpen: () => activeView !== null,
     getActive: () => activeView
   });
+  // Controllers that load before the host wait for this signal. This also
+  // guarantees registry order: shared host first, independent renderer second.
+  window.dispatchEvent(new Event("live-earth-sky-view-ready"));
 })();

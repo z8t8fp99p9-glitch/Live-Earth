@@ -1,16 +1,18 @@
 /* LIVE // EARTH — Global Primary View Manager.
-   Single source of truth: Home, Earth Explorer, Moon View, or Sun View. */
+   Single source of truth: Home, independent Earth View, Moon View, or Sun View. */
 (() => {
   "use strict";
   if (window.__liveEarthViewManagerInstalled) return;
   window.__liveEarthViewManagerInstalled = true;
 
-  const supported = new Set(["home", "explorer", "moon", "sun"]);
+  const supported = new Set(["home", "earth", "moon", "sun"]);
+  // Compatibility adapter for the existing Orb controller and saved feature return paths.
+  const normalizeView = view => view === "explorer" ? "earth" : view;
   let activeView = "home";
   let switching = false;
 
   function paintPrimaryOrbs(view) {
-    const activeOrb = view === "explorer" ? "earth" : view === "home" ? null : view;
+    const activeOrb = view === "home" ? null : view;
     document.querySelectorAll('.orbButton[data-view="earth"], .orbButton[data-view="moon"], .orbButton[data-view="sun"]')
       .forEach(button => {
         const active = button.dataset.view === activeOrb;
@@ -24,8 +26,9 @@
   }
 
   function requestView(requested) {
-    if (!supported.has(requested) || switching) return activeView;
-    const next = requested === activeView ? "home" : requested;
+    const normalized = normalizeView(requested);
+    if (!supported.has(normalized) || switching) return activeView;
+    const next = normalized === activeView ? "home" : normalized;
     if (next === activeView) return activeView;
     switching = true;
     const previous = activeView;
@@ -45,14 +48,17 @@
     if (id === "earth" || id === "sun" || id === "moon") {
       event.preventDefault();
       event.stopImmediatePropagation();
-      requestView(id === "earth" ? "explorer" : id);
+      requestView(id);
     }
   }, true);
 
   paintPrimaryOrbs(activeView);
   window.LiveEarthViewManager = Object.freeze({
     requestView,
-    getActiveView: () => activeView,
-    isActive: view => activeView === view
+    // getActiveView keeps the legacy "explorer" label visible to the protected
+    // Orb controller; events and module registration use canonical "earth".
+    getActiveView: () => activeView === "earth" ? "explorer" : activeView,
+    getCanonicalActiveView: () => activeView,
+    isActive: view => activeView === normalizeView(view)
   });
 })();
