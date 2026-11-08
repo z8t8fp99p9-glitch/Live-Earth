@@ -1,7 +1,7 @@
 /* LIVE // EARTH V127 — EarthEngine root-folder architecture. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v130-home-engine-lifecycle";
-const CACHE_NAME = "live-earth-shell-v130-home-engine-lifecycle";
+const BUILD_ID = "v131-home-location-marker";
+const CACHE_NAME = "live-earth-shell-v131-home-location-marker";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -204,15 +204,29 @@ function injectSameGlobeAPI(html) {
   if (html.includes(anchor) && !html.includes("window.LiveEarthScene")) {
     const api = `
 window.LiveEarthScene = (() => {
-  // TEMPORARILY DISABLED: the Home Location marker geometry and visual.
-  // Location coordinates remain available to the existing Location service
-  // and registered layers, but Home does not draw a marker on the globe.
+  // Home Location marker is parented to the exact Engine surface so it
+  // follows the shared globe rotation without changing Earth geometry.
+  const locationVector = new T.Vector3();
+  const locationMarker = new T.Group();
+  const locationHalo = new T.Mesh(
+    new T.SphereGeometry(0.031, 16, 12),
+    new T.MeshBasicMaterial({color:0xff234d,transparent:true,opacity:0.28,depthWrite:false})
+  );
+  const locationDot = new T.Mesh(
+    new T.SphereGeometry(0.014, 16, 12),
+    new T.MeshBasicMaterial({color:0xff183f,depthWrite:false})
+  );
+  locationMarker.add(locationHalo, locationDot);
+  locationMarker.visible = false;
+  earth.add(locationMarker);
+
   let locationEnabled = false;
   let hasLocation = false;
   let locationCoordinates = null;
   const featureLayers = new Map();
 
-  function syncLocationState() {
+  function syncLocationMarker() {
+    locationMarker.visible = hasLocation && locationEnabled;
     draw();
   }
 
@@ -221,9 +235,18 @@ window.LiveEarthScene = (() => {
         latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
       return false;
     }
+    const phi = latitude * Math.PI / 180;
+    const lambda = longitude * Math.PI / 180;
+    locationVector.set(
+      Math.cos(phi) * Math.cos(lambda),
+      Math.sin(phi),
+      -Math.cos(phi) * Math.sin(lambda)
+    ).normalize();
     locationCoordinates = { latitude, longitude, capturedAt: Date.now() };
     hasLocation = true;
-    syncLocationState();
+    locationHalo.position.copy(locationVector).multiplyScalar(1.006);
+    locationDot.position.copy(locationVector).multiplyScalar(1.019);
+    syncLocationMarker();
     return true;
   }
 
@@ -233,7 +256,7 @@ window.LiveEarthScene = (() => {
       hasLocation = false;
       locationCoordinates = null;
     }
-    syncLocationState();
+    syncLocationMarker();
   }
 
   function getLocation() {
