@@ -1,7 +1,7 @@
-/* LIVE // EARTH V53 — verified Location permission/fix state.
+/* LIVE // EARTH V120 — shared Location permission/fix service.
    The Location Orb stays visually OFF until the browser supplies a fresh,
-   valid position. The existing Orb controller remains the owner of the
-   protected Orb styling and navigation; this scanner owns the request lifecycle. */
+   valid position. The existing Global Orb controller remains the owner of
+   protected Orb styling and navigation; this file owns the GPS request lifecycle. */
 (() => {
   "use strict";
   if (window.__liveEarthLocationScannerInstalled) return;
@@ -253,7 +253,7 @@
       hideForNoFreshFix();
       publishState(false, "stale");
       paintLocationOrbs();
-      showStatus("The last location fix is no longer fresh. The Location Orb is OFF while the scanner waits for an update.", 0);
+      showStatus("The last location fix is no longer fresh. The Location Orb is OFF while the Location service waits for an update.", 0);
     }, 15000);
   }
 
@@ -293,7 +293,7 @@
 
   function onControllerLocationState(event) {
     const detail = event.detail || {};
-    // Ignore the scanner's reasoned lifecycle events. An untagged OFF event is
+    // Ignore this controller's reasoned lifecycle events. An untagged OFF event is
     // the established Orb controller's explicit user-OFF action.
     if (detail.status) return;
     if (detail.enabled === false) {

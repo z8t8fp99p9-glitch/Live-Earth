@@ -1,12 +1,12 @@
-/* LIVE // EARTH V118 — dedicated full-screen Stacks feature views. */
+/* LIVE // EARTH V120 — Location shared-service filename simplification. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v118-fullscreen-feature-views";
-const CACHE_NAME = "live-earth-shell-v118-fullscreen-feature-views";
+const BUILD_ID = "v120-location-service";
+const CACHE_NAME = "live-earth-shell-v120-location-service";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
  "./","./index.html","./ios-standalone-root-flow.js","./Global/orb-controls-v4.js","./Global/earth-engine.js","./Earth/earth-view-controller.js","./Global/view-manager.js","./Global/view-module-registry.js","./Stacks/stacks-feature-views.js","./Clouds/clouds-view.js","./Weather/weather-view.js","./Traffic/traffic-view.js","./Earthquakes/earthquakes-view.js","./Global/sky-view-controller.js","./Moon/moon-view-controller.js","./Moon/moon-lunar-interface.js","./Sun/sun-view-controller.js","./Sun/sun-surface-shared.webp",
- "./Earth/location.html","./Earth/earth-orb-globe.js","./manifest.json","./Global/icon.svg","./Data/data-store.js","./Location/location-scanner.js",
+ "./Earth/location.html","./Earth/earth-orb-globe.js","./manifest.json","./Global/icon.svg","./Data/data-store.js","./Location/location.js",
  "./Global/astronomy.js","./Home/moon-orbit.js","./Data/dataset-manifest.json",
  "./Home/moon-surface-lroc-1536.jpg",
  "./Moon/moon-sky-background-responsive.svg",
@@ -704,7 +704,7 @@ function injectStartupGate(html) {
       if (!window.__liveEarthMoonRendererInstalled) paths.push('./Moon/moon-view-controller.js');
       if (!window.__liveEarthStacksFeatureViewsInstalled) paths.push('./Stacks/stacks-feature-views.js');
       if (!window.__liveEarthControlsInstalled || typeof window.liveEarthLocationAllowed !== 'function') paths.push('./Global/orb-controls-v4.js');
-      if (!window.__liveEarthLocationScannerInstalled) paths.push('./Location/location-scanner.js');
+      if (!window.__liveEarthLocationScannerInstalled) paths.push('./Location/location.js');
       const brokenImages = [...document.querySelectorAll('#navButtons .orbImage')].filter(img => img.complete && img.naturalWidth === 0);
       for (const img of brokenImages) {
         const src = img.getAttribute('src');
@@ -941,7 +941,7 @@ function injectStartupGate(html) {
     window.addEventListener('error', event => {
       if (event.target && event.target.tagName === 'SCRIPT') {
         const src = event.target.src || '';
-        const scriptPaths = ['./Global/orb-controls-v4.js','./Global/earth-engine.js','./Earth/earth-view-controller.js','./Global/view-manager.js','./Global/view-module-registry.js','./Stacks/stacks-feature-views.js','./Clouds/clouds-view.js','./Weather/weather-view.js','./Traffic/traffic-view.js','./Earthquakes/earthquakes-view.js','./Global/sky-view-controller.js','./Moon/moon-view-controller.js','./Sun/sun-view-controller.js','./Global/update-manager.js','./Data/data-recovery.js','./Location/location-scanner.js','./Home/moon-orbit.js','./Data/data-store.js'];
+        const scriptPaths = ['./Global/orb-controls-v4.js','./Global/earth-engine.js','./Earth/earth-view-controller.js','./Global/view-manager.js','./Global/view-module-registry.js','./Stacks/stacks-feature-views.js','./Clouds/clouds-view.js','./Weather/weather-view.js','./Traffic/traffic-view.js','./Earthquakes/earthquakes-view.js','./Global/sky-view-controller.js','./Moon/moon-view-controller.js','./Sun/sun-view-controller.js','./Global/update-manager.js','./Data/data-recovery.js','./Location/location.js','./Home/moon-orbit.js','./Data/data-store.js'];
         for (const path of scriptPaths) if (src.endsWith(path.slice(1))) knownBadPaths.push(path);
         sceneFailure = 'A required startup script failed to load.';
       } else if (event.error) {
@@ -1006,8 +1006,8 @@ async function transformHomeHTML(request, response, forceHome = false) {
   if (!html.includes("earth-view-controller.js")) {
     html = html.replace(/<\/body\s*>/i, '<script src="./Earth/earth-view-controller.js" defer></script>\n</body>');
   }
-  if (!html.includes("location-scanner.js")) {
-    html = html.replace(/<\/body\s*>/i, '<script src="./Location/location-scanner.js" defer></script>\n</body>');
+  if (!html.includes("location.js")) {
+    html = html.replace(/<\/body\s*>/i, '<script src="./Location/location.js" defer></script>\n</body>');
   }
   if (!html.includes("sky-view-controller.js")) {
     html = html.replace(/<\/body\s*>/i, '<script src="./Global/sky-view-controller.js" defer></script>\n</body>');

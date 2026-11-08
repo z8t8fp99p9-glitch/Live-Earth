@@ -1,9 +1,9 @@
-/* LIVE // EARTH V116 update manager — fixed Home Earth Engine + independent celestial views. */
+/* LIVE // EARTH V120 update manager — Location service filename simplification. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v118-fullscreen-feature-views";
+  const BUILD_ID = "v120-location-service";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {

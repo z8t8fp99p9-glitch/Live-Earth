@@ -38,7 +38,7 @@ The feature Orb scatter and hit targets share a coordinate space. Keep each visi
 The Engine Feature Orb module now registers only **Editorial Engine**. It must not reintroduce collection, feed, source-discovery, policy-checking, image-processing or Publisher views.
 
 ### Location privacy
-Location is OFF unless manually enabled. Do not trigger geolocation from Home, startup, verification or Moon View. When Location is OFF, observer-local values such as lunar rise/set times remain hidden by design. Never clear saved data as a location troubleshooting shortcut.
+`Location/location.js` is the shared Location permission and GPS service used by the Home Location Orb and other approved consumers. The Scanner button in `Earth/earth-view-controller.js` only shows/hides the already-approved marker in Earth View; it does not request permission or switch the Location Orb. Location is OFF unless manually enabled. Do not trigger geolocation from Home, startup, verification or Moon View. When Location is OFF, observer-local values such as lunar rise/set times remain hidden by design. Never clear saved data as a location troubleshooting shortcut.
 
 ### Sun and Moon
 `Global/sky-view-controller.js` is the shared sky-stage/hosting layer. Moon-specific rendering is in `Moon/moon-view-controller.js`, with its interface/scroller in `Moon/moon-lunar-interface.js`. The Sun controller is `Sun/sun-view-controller.js`. Preserve each view's responsibilities and use the existing shared stage/registry integration rather than merging implementations.
@@ -74,3 +74,13 @@ The following systems and their related views were removed at the owner's direct
 ## 8 November 2026 — V118 Stacks full-screen feature views
 
 Starting from the V117 flat-folder ZIP, Weather, Clouds, Traffic and Earthquakes were separated into dedicated top-level folders. `Stacks/stacks-feature-views.js` remains the shared runtime and retains Elevation. The Global three-Orb registry and Orb controller are unchanged byte-for-byte. Feature registration order remains Clouds → Weather → Elevation → Earthquakes → Traffic so the feature Orb scatter order stays stable. The four dedicated views use full-stage layouts behind the existing three-Orb dock; Elevation keeps its prior compact panel. The service worker and update manager use the synchronized `v118-fullscreen-feature-views` identity, and all four modules are essential offline shell assets. See `Documentation/STACKS-FEATURE-VIEWS.md` for the view contracts.
+
+
+## 8 November 2026 — V119 Location Orb controller path correction
+
+Starting from V118, `Location/location-scanner.js` was renamed to `Location/location-orb-controller.js` to reflect its actual responsibility: the Home Location Orb permission request, GPS watch, fresh-fix validation and ON/OFF state. The Earth View Scanner button and its marker visibility remain in `Earth/earth-view-controller.js`; it reads the approved state and does not request geolocation. The original compatibility marker `window.__liveEarthLocationScannerInstalled` and public Location state APIs are intentionally retained to avoid changing the existing Orb/service handshake. All script loading, service-worker shell, recovery and startup-repair paths now use `Location/location-orb-controller.js`. The service-worker and update-manager build identity is synchronized to `v119-location-orb-controller`. No Orb code or Location behaviour was changed.
+
+
+## 8 November 2026 — V120 Location service filename simplification
+
+Starting from V119, `Location/location-orb-controller.js` was renamed to `Location/location.js`. Location is a shared utility/service, not a view, so its source filename no longer implies a dedicated Orb controller. Its permission request, GPS watch, fresh-fix checks, OFF-by-default privacy, existing public state APIs and legacy readiness marker are unchanged. The Earth View Scanner button and marker visibility remain in `Earth/earth-view-controller.js` and continue to consume only approved Location state. `index.html`, service-worker shell/recovery/startup-repair paths, tests and active guidance use `Location/location.js`. The synchronized build identity is `v120-location-service`. The manifest removes both superseded filenames from the repository. No Global Orb behaviour or GPS behaviour was changed.

@@ -3,8 +3,8 @@
 **Updated:** 8 November 2026  
 **Repository:** `z8t8fp99p9-glitch/Live-Earth`  
 **Working branch:** `main`  
-**Source baseline:** user-supplied `Live-Earth-flat-folder-layout-v117.zip`  
-**Working package:** V118 — full-screen Stacks feature views
+**Source baseline:** user-tested `Live-Earth-fullscreen-stacks-feature-views-v118.zip`  
+**Working package:** V120 — Location shared-service filename simplification (includes V118 feature views and V119 Location ownership correction)
 
 This checkpoint is based on the supplied V117 ZIP, not a fresh GitHub branch-head query. Re-check `main` before any later task.
 
@@ -52,4 +52,14 @@ Weather, Clouds, Traffic and Earthquakes now each have a dedicated top-level fol
 
 ## 6. Verification boundary
 
-The supplied V117 ZIP was extracted and used as the local working baseline. V118 JavaScript syntax checks passed for all 27 JavaScript files; the Earth Engine regression suite passed all 11 checks; the Stacks feature-folder and runtime registration tests passed; all 24 Editorial Engine Python tests passed. The Global three-Orb registry and Orb controller remain byte-for-byte unchanged. The service-worker shell references and archive membership, byte sizes and SHA-256 hashes are validated. `Tests/moon-engine-api.test.cjs` remains an existing stale test that expects a root `moon-engine.js` absent from the supplied baseline; it was not changed as part of this feature-view task. No claim is made about GitHub Actions, deployment or installed-iPhone acceptance until those are checked after upload.
+The user-supplied V118 ZIP was extracted as the baseline for V119. V119 JavaScript syntax checks pass for all 27 JavaScript files. The Earth/Home/Moon-orbit regression suite passes all 11 checks; the Stacks feature-folder/runtime tests and the Location Orb/Earth Scanner ownership test pass; all 24 Editorial Engine Python tests pass. `Global/orb-controls-v4.js` and `Global/view-module-registry.js` remain byte-for-byte unchanged from V118. `Tests/moon-engine-api.test.cjs` remains an existing stale test that expects a root `moon-engine.js` absent from V118; it was not changed. No claim is made about GitHub Actions, deployment or installed-iPhone acceptance until those are checked after upload.
+
+
+## V119 — Location Orb controller path correction
+
+V119 starts from the user-tested V118 full-screen feature-view package. The Home Location Orb permission/GPS lifecycle file is now `Location/location-orb-controller.js`; the Earth View Scanner button and marker visibility remain in `Earth/earth-view-controller.js`. The legacy readiness marker and public Location state APIs remain unchanged for compatibility. `index.html`, `sw.js`, startup recovery, shell asset list, script-error repair paths and documentation use the new filename. The service worker and update manager share `v119-location-orb-controller`. The dedicated Location ownership regression test was added. JavaScript syntax (27 files), the 11-check Earth/Home/Moon-orbit regression suite, Stacks feature tests, Location ownership test and 24 Editorial Engine Python tests pass. The pre-existing Moon API test still cannot start because `moon-engine.js` is absent from V118; that unrelated condition is not changed by V119.
+
+
+## V120 — Location shared-service filename simplification
+
+V120 starts from the V119 package and renames `Location/location-orb-controller.js` to `Location/location.js`. This names the file as a shared Location service rather than a view or Orb-specific controller. The Home Location Orb permission/GPS lifecycle, public state APIs and legacy `window.__liveEarthLocationScannerInstalled` readiness marker remain unchanged for compatibility. The Earth View Scanner button and marker visibility remain in `Earth/earth-view-controller.js`. `index.html`, service-worker shell/recovery/startup-repair paths, tests and active guidance use `Location/location.js`. The service worker and update manager share `v120-location-service`. The V119 path and original `Location/location-scanner.js` are both included in the manifest delete list. No Global Orb, Earth Scanner, GPS, privacy or data behaviour was changed.

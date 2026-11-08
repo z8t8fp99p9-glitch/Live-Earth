@@ -19,7 +19,7 @@ Do not create parallel primary-view state or bypass the existing manager without
 The Moon and Sun implementations remain separate. See `Documentation/INDEPENDENT-SUN-MOON-VIEWS.md`.
 
 ## Global utility features
-Location and Stacks are utility features rather than replacement primary views. Location privacy is OFF by default. Stacks feature workspaces use the shared feature registry and existing interaction/lifecycle safeguards. The Global registry owns the protected three-Orb feature dock: active feature toggle, Location toggle and Stacks library.
+Location and Stacks are utility features rather than replacement primary views. `Location/location.js` owns the Home Location Orb's explicit permission request, GPS watch, fresh-fix validation and ON/OFF lifecycle. The separate Scanner button and marker visibility in `Earth/earth-view-controller.js` belong to Earth View and only consume an already-approved position; they never request geolocation. Location privacy is OFF by default. Stacks feature workspaces use the shared feature registry and existing interaction/lifecycle safeguards. The Global registry owns the protected three-Orb feature dock: active feature toggle, Location toggle and Stacks library.
 
 ## Stacks feature workspaces
 `Stacks/stacks-feature-views.js` is the shared feature runtime and retains Elevation. The independently-owned full-screen views are held in four flat top-level folders: `Weather/weather-view.js`, `Clouds/clouds-view.js`, `Traffic/traffic-view.js` and `Earthquakes/earthquakes-view.js`. Each module registers through the shared Stacks runtime; none creates a second Earth scene or bypasses the Home Earth feature-layer contract.

@@ -9,6 +9,7 @@
 - Preserve width-driven circular sizing, approved positions, touch areas, visual states and landscape geometry.
 - Primary-view navigation belongs to the existing view manager. Utility Orbs must not unexpectedly replace an active primary view.
 - Location is OFF by default; enabling it is an explicit user action, not a navigation side effect.
+- `Location/location.js` owns the Home Location Orb permission request, GPS watch, fresh-fix validation and ON/OFF lifecycle. `Earth/earth-view-controller.js` owns the separate Earth View Scanner button and marker visibility; it consumes only the already-approved Location state and never requests GPS permission.
 - Preserve Stacks feature lifecycle, the feature dock, hitbox alignment and animation cleanup guards.
 - Do not change Orb code or its dependency chain without explicit owner approval and targeted iPhone tests.
 
