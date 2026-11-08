@@ -1,3 +1,13 @@
+# Current architecture — v128-global-orb-system (8 November 2026)
+
+The Global Orb System now exposes one registry and effective-view lifecycle for Home/Primary views, Location and Stacks utility Orbs, and expandable Stacks Secondary views. The existing five-Orb main row and three-Orb Secondary dock remain visually and behaviourally protected. Location toggles state without navigation; Stacks opens/closes its library without replacing the active view; Secondary views open, close or switch exclusively.
+
+`window.LiveEarthOrbSystem` is the unified public facade. `Global/view-module-registry.js` emits `live-earth-view-transition` before outgoing cleanup and `live-earth-view-changed` after the incoming view is active. Primary and Secondary navigation share the owner identity format `primary:<id>` / `secondary:<id>`.
+
+Earth Engine now owns one global quaternion snapshot (`x`, `y`, `z`, `w`) and automatically associates each `createEarthGlobe()` instance with the active owner. It captures only at view transitions and page hide, and applies once to an incoming existing group or when a group is created. Existing Stacks overlays continue to use the Home Earth group; future Secondary views may create their own Engine globe without adding viewpoint bridge code to individual views. Legacy Home-only V3/V2/V1 session snapshots are read for migration.
+
+No camera/zoom transfer, continuous rotation observer, polling or per-frame storage was introduced. Home's group/surface identity, locked zoom, Moon additive orbit and independent Earth renderer remain protected.
+
 # LIVE // EARTH — Current Status
 
 **Updated:** 8 November 2026  

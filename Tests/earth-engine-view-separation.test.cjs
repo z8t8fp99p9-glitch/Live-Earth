@@ -168,7 +168,7 @@ const THREE = {
   assert.ok(!earthModes.includes('new T.SphereGeometry'), 'Earth Modes must not construct a duplicate Earth sphere.');
   assert.ok(!earthModes.includes('new T.MeshStandardMaterial'), 'Earth Modes must not construct a duplicate Earth material.');
   assert.ok(!earthModes.includes('https://eoimages.gsfc.nasa.gov'), 'Earth Modes must not bypass the local shared texture.');
-  assert.ok(earthModes.includes('applyHomeOrientation(group)'), 'Earth Modes must apply only Home group orientation after Engine creation.');
+  assert.doesNotMatch(earthModes, /viewpoint-bridge|applyHomeOrientation|publishHomeOrientation/, 'Earth Modes must receive global rotation from Earth Engine without per-view bridge wiring.');
 
   const controller = read('Earth/earth-view-controller.js');
   assert.ok(controller.includes('import("../EarthEngine/Core/earth-engine.js")'), 'Independent Earth View must also use Earth Engine.');
@@ -187,7 +187,7 @@ const THREE = {
   assert.ok(sw.includes('"./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js"') && sw.includes('"./EarthEngine/Graphics/earth-engine-3d-graphics-core.js"'), 'Both graphics modules must remain essential offline shell assets.');
   assert.ok(sw.includes('"./EarthEngine/Assets/earth-land-ocean-ice-2048.png"'), 'Home Engine texture must remain an offline runtime dependency.');
   assert.ok(!sw.includes('earth-mode-navigation.js'), 'The retired controller path must not remain in the service worker.');
-  assert.ok(sw.includes('v127-earthengine-root-folder') && manager.includes('v127-earthengine-root-folder'), 'Service worker and update manager build IDs must match.');
+  assert.ok(sw.includes('v128-global-orb-system') && manager.includes('v128-global-orb-system'), 'Service worker and update manager build IDs must match.');
   assert.ok(sw.includes('const anchor = "// LIVE_EARTH_HOME_RENDERER_HOOKS";'), 'Home API injection must use the stable named hook.');
   assert.ok(sw.includes('const readableRemoteThreeImport = /try\\s*\\{'), 'Service worker must transform the readable Home Three.js import.');
   assert.ok(sw.includes("html = html.replace(readableRemoteThreeImport, \"T = await import('./vendor/three.module.js');\");"), 'Readable Home import must resolve to the staged offline Three.js module.');

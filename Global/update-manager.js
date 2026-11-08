@@ -1,14 +1,14 @@
-/* LIVE // EARTH V127 update manager — EarthEngine root-folder architecture. */
+/* LIVE // EARTH V128 update manager — Global Orb and view lifecycle. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v127-earthengine-root-folder";
+  const BUILD_ID = "v128-global-orb-system";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
     return Boolean(
-      window.LiveEarthScene && window.LiveEarthEngine && window.LiveEarthViewpointBridge && window.LiveEarthViewManager && window.LiveEarthViewModules &&
+      window.LiveEarthScene && window.LiveEarthEngine && window.LiveEarthGlobalViewpoint && window.LiveEarthViewManager && window.LiveEarthViewModules && window.LiveEarthOrbSystem &&
       window.LiveEarthViewModules.has("sky-container") &&
       window.LiveEarthViewModules.has("earth-independent-renderer") &&
       window.__liveEarthEarthRendererInstalled === true &&

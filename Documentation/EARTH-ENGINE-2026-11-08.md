@@ -20,3 +20,9 @@ The owner clarified that Home has a fixed zoom framing and no Basic/HD controls.
 The Home `LiveEarthScene` service-worker API was narrowed to the current required interfaces: approved Location state, registered Stacks feature layers, Three.js access and redraw. Obsolete Home exploration, Basic/HD, unlock and pinch-zoom state was removed. Home retains rotation-only pointer input and locked camera framing. The Home API and solar-layer injection use the named `LIVE_EARTH_HOME_RENDERER_HOOKS` marker.
 
 The service worker and update manager advance together to V116. No direct GitHub writes were made. Online/offline deployment and installed-iPhone acceptance remain pending the owner-uploaded ZIP, verified Action/commit and device tests.
+
+## Global view ownership update — v128
+
+The public Core factory now owns one global rotation quaternion across Engine-created Earth groups. It listens to the Global Orb System's pre-transition and post-transition events, captures only the outgoing active group's normalized quaternion, and applies it to the incoming group's quaternion. If the incoming group is created after the transition, `createEarthGlobe()` applies the current snapshot automatically. Current Stacks views reuse the Home group when they do not create a separate Engine globe.
+
+The snapshot is restricted to `{x, y, z, w}` and is persisted to same-tab `sessionStorage` on view transitions and `pagehide`, not during pointer movement. Existing `liveEarthHomeViewpointV3/V2/V1` data is accepted as a migration source. No camera, zoom, surface child transform, renderer, scene or Moon orbit state is transferred. Individual view controllers no longer import or call the Home-only bridge.

@@ -1,7 +1,7 @@
 /* LIVE // EARTH V127 — EarthEngine root-folder architecture. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v127-earthengine-root-folder";
-const CACHE_NAME = "live-earth-shell-v127-earthengine-root-folder";
+const BUILD_ID = "v128-global-orb-system";
+const CACHE_NAME = "live-earth-shell-v128-global-orb-system";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -698,9 +698,9 @@ function injectStartupGate(html) {
       const paths = [...knownBadPaths];
       if (!window.LiveEarthScene) paths.push('./vendor/three.module.js','./vendor/three.core.js','./EarthEngine/Assets/earth-land-ocean-ice-2048.png');
       if (!window.LiveEarthEngine) paths.push('./EarthEngine/Core/earth-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-core.js');
-      if (!window.LiveEarthViewpointBridge) paths.push('./EarthEngine/Core/earth-viewpoint-bridge.js');
       if (window.__liveEarthEarthRendererInstalled !== true) paths.push('./Earth/earth-view-controller.js');
       if (!window.LiveEarthViewManager) paths.push('./Global/view-manager.js');
+      if (!window.LiveEarthOrbSystem) paths.push('./Global/view-module-registry.js');
       if (!window.LiveEarthSkyViews) paths.push('./Global/sky-view-controller.js');
       if (!window.__liveEarthMoonRendererInstalled) paths.push('./Moon/moon-view-controller.js');
       if (!window.__liveEarthStacksFeatureViewsInstalled) paths.push('./Stacks/stacks-feature-views.js');
@@ -752,7 +752,7 @@ function injectStartupGate(html) {
       const imagesReady = orbImages.length === 5 && orbImages.every(img => img.complete && img.naturalWidth > 0);
       const modules = window.LiveEarthViewModules;
       return document.readyState === 'complete' &&
-        !!window.LiveEarthScene && !!window.LiveEarthEngine && !!window.LiveEarthViewpointBridge && window.__liveEarthEarthRendererInstalled === true &&
+        !!window.LiveEarthScene && !!window.LiveEarthEngine && !!window.LiveEarthGlobalViewpoint && !!window.LiveEarthOrbSystem && window.__liveEarthEarthRendererInstalled === true &&
         !!window.LiveEarthViewManager && !!modules && modules.has('earth-independent-renderer') &&
         modules.has('sky-container') && modules.has('moon-lunar-interface') &&
         window.__liveEarthMoonRendererInstalled === true && window.__liveEarthStacksFeatureViewsInstalled === true && !!window.LiveEarthSkyViews &&

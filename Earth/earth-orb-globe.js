@@ -3,7 +3,6 @@
  * Camera, renderer, zoom, controls and scene remain owned by this page.
  */
 import { createEarthGlobe } from "../EarthEngine/Core/earth-engine.js";
-import { applyHomeOrientation } from "../EarthEngine/Core/earth-viewpoint-bridge.js";
 
 (() => {
   "use strict";
@@ -163,8 +162,6 @@ import { applyHomeOrientation } from "../EarthEngine/Core/earth-viewpoint-bridge
       if (disposed) { earthGlobe.dispose(); earthGlobe = null; return; }
       group = earthGlobe.group;
       scene.add(group);
-      // The bridge changes only the parent/user viewpoint. Engine calibration stays canonical.
-      applyHomeOrientation(group);
       orb.classList.add("globe-ready");
       say(mode === "offline"
         ? "Globe ready · using the saved local Earth texture when available."

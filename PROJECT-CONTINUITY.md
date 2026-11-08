@@ -87,7 +87,7 @@ Starting from V119, `Location/location-orb-controller.js` was renamed to `Locati
 
 
 ## V122 persistent viewpoint bridge (correct group-only design)
-Home is the source of truth for the starting Earth viewpoint. `EarthEngine/Core/earth-viewpoint-bridge.js` publishes only Home's user-controlled parent-group quaternion in memory during pointer movement and persists the settled orientation to same-tab `sessionStorage` after pointer release. Home restores that snapshot if the app navigates away and returns in the same tab. Independent Earth View and Earth Modes apply the Home group orientation to their own Engine-created group. Keep scenes, cameras, renderers, zoom, lights, geometry, textures, layers and interaction state independent. The bridge is one-way: secondary views must never publish their rotation back to Home. Stacks feature layers already run on the Home Earth scene and follow it automatically. Moon and Sun do not consume this Earth orientation.
+The Global Earth Engine is the source of truth for one active-view rotation snapshot. `LiveEarthOrbSystem` supplies the effective active owner (`primary:<id>` or `secondary:<id>`). Earth Engine captures the outgoing active Engine group's normalized parent quaternion once before view cleanup and applies it once to the incoming existing group, or automatically when the incoming view later calls `createEarthGlobe()`. It persists only `{x,y,z,w}` on transitions and page hide. No camera, zoom, scene, renderer, light, surface-child transform, layer or Moon state is transferred. The former Home-only bridge remains as a legacy migration reference; current views no longer call it. Existing Stacks layers reuse the Home Earth group. Moon and Sun remain independent unless a future view explicitly creates its own Engine Earth group.
 
 ### V124 bridge change (incorrect; superseded)
 V124 incorrectly treated Moon Orbit's legacy sidereal Earth-surface write as a required part of the Earth viewpoint and copied the child-surface quaternion. That was the wrong ownership model. The V124 design is superseded by V125 and must not be reintroduced.
@@ -106,6 +106,18 @@ The V124 diagnosis was wrong. The Moon Orbit module had a direct write to the Ho
 
 
 ## 2026-11-08 — V127 EarthEngine folder architecture
-The dedicated root-level `EarthEngine/` folder now separates Core, Graphics and Assets ownership. `Core/earth-engine.js` is the stable public globe factory; `Core/earth-viewpoint-bridge.js` retains the one-way Home quaternion bridge. `Graphics/earth-engine-3d-graphics-engine.js` assembles each view-owned globe group/surface/atmosphere, while `Graphics/earth-engine-3d-graphics-core.js` owns low-level geometry/material helpers and shared texture acquisition/disposal. Existing Home, Earth View and Earth Modes import paths, essential offline shell entries, repair paths, startup script paths, tests and documentation were updated together. Moon/Sun systems, Three.js vendor-runtime placement, Orb behaviour, and per-view scenes/cameras/renderers remain unchanged.
+The dedicated root-level `EarthEngine/` folder separates Core, Graphics and Assets ownership. `Core/earth-engine.js` is the stable public globe factory and now owns global viewpoint continuity; `Graphics/earth-engine-3d-graphics-engine.js` assembles each view-owned globe group/surface/atmosphere, while `Graphics/earth-engine-3d-graphics-core.js` owns low-level geometry/material helpers and shared texture acquisition/disposal. The Global Orb System provides one registry and effective-view lifecycle for Primary views, utility Feature Orbs and expandable Secondary views. The five-Orb and three-Orb layouts, Moon/Sun systems, Home group identity, Three.js vendor-runtime placement and per-view scenes/cameras/renderers remain protected.
 
 The supplied ZIP did not contain `earth-land-ocean-ice-2048.png` as a tracked binary. The service worker retains the existing NASA download plus fallback and now caches it at `EarthEngine/Assets/earth-land-ocean-ice-2048.png`; `EarthEngine/Assets/README.md` documents the virtual runtime asset and NASA credit. Do not claim the image binary is physically committed until a source archive containing that exact file is available. Build identity: `v127-earthengine-root-folder`.
+
+
+## 8 November 2026 — Global Orb System (V128)
+
+- One `LiveEarthOrbSystem` facade now describes Home, Earth, Moon, Sun, Location, Stacks and all registered Secondary views.
+- Home is the default Primary screen, not a sixth button. The main five controls remain Earth/Moon/Sun/Location/Stacks.
+- Location and Stacks are Feature Orbs; neither replaces the active view.
+- Secondary views remain single-active and use the three-Orb dock [active Secondary, Location, Stacks].
+- `live-earth-view-transition` is emitted before outgoing cleanup; `live-earth-view-changed` follows incoming activation.
+- Earth Engine owns one rotation-only snapshot and no longer needs per-view bridge calls.
+- Existing Home group identity and additive Moon orbit remain untouched.
+- Build identity: `v128-global-orb-system`.

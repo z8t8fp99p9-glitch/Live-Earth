@@ -507,10 +507,7 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
     syncCanvasViewport();
     settleCanvasViewport();
 
-    const [earthEngine, viewpointBridge] = await Promise.all([
-      import('./EarthEngine/Core/earth-engine.js'),
-      import('./EarthEngine/Core/earth-viewpoint-bridge.js')
-    ]);
+    const earthEngine = await import('./EarthEngine/Core/earth-engine.js');
     const createEarthGlobe = earthEngine.createEarthGlobe || earthEngine.createGlobe;
     if (typeof createEarthGlobe !== 'function') {
       throw new Error('The reusable Earth Engine API is unavailable.');
@@ -530,10 +527,6 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
     const group = earthGlobe.group;
     const earth = earthGlobe.surface;
     scene.add(group);
-    // Restore and publish only Home's user-controlled Earth-group viewpoint.
-    viewpointBridge.applyHomeOrientation(group);
-    viewpointBridge.publishHomeOrientation(group);
-
     let moonSystem = { update: () => null };
     try {
       const moonModule = await import('./Home/moon-orbit.js');
@@ -622,7 +615,6 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
         -1.15,
         Math.min(1.15, group.rotation.x + (event.clientY - y) * 0.0055)
       );
-      viewpointBridge.publishHomeOrientation(group, { persist: false });
       x = event.clientX;
       y = event.clientY;
       draw();
@@ -632,8 +624,6 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
       if (event.pointerId !== active) return;
       drag = false;
       active = null;
-      // Persist only the settled orientation, not every pointer-move frame.
-      viewpointBridge.publishHomeOrientation(group);
     };
     canvas.addEventListener('pointerup', endDrag);
     canvas.addEventListener('pointercancel', endDrag);

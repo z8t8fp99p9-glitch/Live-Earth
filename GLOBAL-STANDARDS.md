@@ -58,3 +58,10 @@ Home's settled Earth orientation may be shared with independent Earth renderers 
 
 ### V125 — canonical Earth Engine and strict Moon/Earth isolation
 `EarthEngine/Core/earth-engine.js` is the only Earth globe factory. Home, Independent Earth View and Earth Modes use the same engine, Earth texture and fixed surface calibration, creating separate instances only because their scenes/renderers are independent. The bridge transfers only Home's user-controlled Earth-group quaternion. Moon Orbit may update its own Moon/orbit objects only; it must never read or mutate the Earth surface or Earth group. The V124 surface-quaternion bridge was an incorrect expansion of the legacy Moon/Earth coupling and is superseded.
+
+
+## Global Orb System — 8 November 2026
+
+Home is the default Primary screen. Earth, Moon and Sun are Primary view Orbs; Location and Stacks are utility Feature Orbs; all Stacks catalogue entries are Secondary views. The five-Orb main row and three-Orb Secondary dock remain protected. All categories are exposed through one `LiveEarthOrbSystem` registry and active-view lifecycle. Location and opening/closing Stacks must not emit a view transition. Secondary views remain exclusive: the active one toggles closed and another replaces it.
+
+Earth Engine owns one normalized quaternion snapshot and captures only at view transitions/page hide. No per-view viewpoint API, continuous observer, polling or per-frame storage is permitted.

@@ -6,7 +6,26 @@
   if (window.LiveEarthViewModules) return;
 
   const modules = new Map();
-  let activeView = window.LiveEarthViewManager?.getActiveView?.() || "home";
+  const primaryOwner = view => `primary:${view === "explorer" ? "earth" : (view || "home")}`;
+  const secondaryOwner = id => `secondary:${id}`;
+  let activeView = window.LiveEarthViewManager?.getCanonicalActiveView?.()
+    || window.LiveEarthViewManager?.getActiveView?.() || "home";
+  let suppressPrimaryOwnerTransitions = 0;
+  let preparePrimaryOwnerTransition = null;
+
+  function emitOwnerLifecycle(type, transition) {
+    if (!transition) return;
+    const detail = Object.freeze({
+      previousOwner: transition.previousOwner,
+      nextOwner: transition.nextOwner,
+      previousKind: String(transition.previousOwner || "").split(":", 1)[0],
+      nextKind: String(transition.nextOwner || "").split(":", 1)[0],
+      source: transition.source || "navigation",
+      reason: transition.reason || "view-switch",
+      ...(transition.extra || {})
+    });
+    window.dispatchEvent(new CustomEvent(type, { detail }));
+  }
 
   function matches(entry, view) {
     return entry.views.includes(view);
@@ -27,6 +46,21 @@
     const next = event.detail?.view || "home";
     const previous = event.detail?.previous || activeView;
     if (next === activeView) return;
+
+    let ownerTransition = null;
+    if (!suppressPrimaryOwnerTransitions) {
+      ownerTransition = typeof preparePrimaryOwnerTransition === "function"
+        ? preparePrimaryOwnerTransition(next, previous)
+        : null;
+      ownerTransition ||= {
+        previousOwner: primaryOwner(previous),
+        nextOwner: primaryOwner(next),
+        source: "primary-orb",
+        reason: "primary-view-switch"
+      };
+      emitOwnerLifecycle("live-earth-view-transition", ownerTransition);
+      ownerTransition.before?.();
+    }
 
     for (const entry of modules.values()) {
       const wasActive = entry.active;
@@ -51,6 +85,7 @@
     window.dispatchEvent(new CustomEvent("live-earth-view-modules-changed", {
       detail: { view: next, previous, moduleCount: modules.size }
     }));
+    if (ownerTransition) emitOwnerLifecycle("live-earth-view-changed", ownerTransition);
   }
 
   window.addEventListener("live-earth-primary-view-change", onPrimaryViewChange);
@@ -105,6 +140,14 @@
     const catalog = new Map();
     let activeFeature = null;
     let libraryOpen = false;
+    const baseOrbRegistry = [
+      { id: "home", title: "Home", kind: "primary-view", hasOrb: false, layout: "main", default: true },
+      { id: "earth", title: "Earth", kind: "primary-view", hasOrb: true, layout: "main" },
+      { id: "moon", title: "Moon", kind: "primary-view", hasOrb: true, layout: "main" },
+      { id: "sun", title: "Sun", kind: "primary-view", hasOrb: true, layout: "main" },
+      { id: "location", title: "Location", kind: "feature-orb", hasOrb: true, layout: "main", action: "toggle" },
+      { id: "stacks", title: "Stacks", kind: "feature-orb", hasOrb: true, layout: "main", action: "library" }
+    ];
     let returnView = window.LiveEarthViewManager?.getActiveView?.() || "home";
     const mainNav = document.getElementById("navButtons");
     const originalLocationButton = mainNav.querySelector('.orbButton[data-view="location"]');
@@ -649,16 +692,31 @@
       }
       const previous = activeFeature;
       const previousFeature = previous ? catalog.get(previous) : null;
+      const primaryManager = window.LiveEarthViewManager;
+      const primaryView = primaryManager?.getCanonicalActiveView?.()
+        || (primaryManager?.getActiveView?.() === "explorer" ? "earth" : primaryManager?.getActiveView?.())
+        || "home";
+      const ownerTransition = {
+        previousOwner: previous ? secondaryOwner(previous) : primaryOwner(primaryView),
+        nextOwner: secondaryOwner(id),
+        source,
+        reason: previous ? "secondary-view-switch" : "secondary-view-open"
+      };
+
+      // The one global lifecycle fires before any outgoing feature cleanup or
+      // underlying Primary-view deactivation. Earth Engine snapshots exactly once here.
+      emitOwnerLifecycle("live-earth-view-transition", ownerTransition);
 
       // Mandatory order: outgoing feature is deactivated and cleaned before the next activates.
       if (previousFeature) safeHook(previousFeature.deactivate, id, source);
 
-      // A feature Orb replaces the currently active primary scene. Explicitly return
-      // Moon/Sun/Earth Explorer to Home before painting the feature stage so an old
-      // celestial view can never remain visible behind another active Feature View.
-      const primaryManager = window.LiveEarthViewManager;
-      const primaryView = primaryManager?.getActiveView?.() || "home";
-      if (primaryView !== "home") primaryManager?.requestView?.("home");
+      // A Secondary view uses Home as its base scene. Suppress the intermediate
+      // Primary notification so observers see one direct outgoing -> incoming change.
+      if (primaryView !== "home") {
+        suppressPrimaryOwnerTransitions++;
+        try { primaryManager?.requestView?.("home"); }
+        finally { suppressPrimaryOwnerTransitions--; }
+      }
       returnView = "home";
 
       activeFeature = id;
@@ -675,6 +733,7 @@
       syncMainButtons();
       safeHook(nextFeature.activate, previous, source);
       emitChange(id, previous, "activate", { source, returnView });
+      emitOwnerLifecycle("live-earth-view-changed", ownerTransition);
       if (libraryGrid.childElementCount) renderLibrary();
       return true;
     }
@@ -686,6 +745,18 @@
       }
       const previous = activeFeature;
       const previousFeature = catalog.get(previous);
+      const primaryManager = window.LiveEarthViewManager;
+      const primaryView = primaryManager?.getCanonicalActiveView?.()
+        || (primaryManager?.getActiveView?.() === "explorer" ? "earth" : primaryManager?.getActiveView?.())
+        || "home";
+      const ownerTransition = {
+        previousOwner: secondaryOwner(previous),
+        nextOwner: primaryOwner(primaryView),
+        source: "secondary-orb",
+        reason: reason || "secondary-view-close"
+      };
+      // Snapshot outgoing view before its cleanup removes layers or view-owned objects.
+      emitOwnerLifecycle("live-earth-view-transition", ownerTransition);
       // Cleanup happens before restoring the base view and its original five controls.
       if (previousFeature) safeHook(previousFeature.deactivate, null, reason);
       activeFeature = null;
@@ -701,6 +772,7 @@
       document.body.classList.remove("le-feature-view-active");
       syncMainButtons();
       emitChange(null, previous, "deactivate", { reason, returnView });
+      emitOwnerLifecycle("live-earth-view-changed", ownerTransition);
       return true;
     }
 
@@ -712,6 +784,102 @@
       event.stopImmediatePropagation();
       toggleLibrary();
     }
+
+    // A Primary view opened through the central manager while a Secondary view is
+    // active replaces it in one transition. The outgoing feature is cleaned only
+    // after the Engine has received the pre-transition snapshot event.
+    preparePrimaryOwnerTransition = (next, previous) => {
+      const transition = {
+        previousOwner: activeFeature ? secondaryOwner(activeFeature) : primaryOwner(previous),
+        nextOwner: primaryOwner(next),
+        source: "primary-orb",
+        reason: "primary-view-switch"
+      };
+      if (activeFeature) {
+        transition.before = () => {
+          const outgoingId = activeFeature;
+          const outgoingFeature = catalog.get(outgoingId);
+          if (outgoingFeature) safeHook(outgoingFeature.deactivate, null, "primary-view-switch");
+          activeFeature = null;
+          returnView = next;
+          libraryOpen = false;
+          document.documentElement?.classList.remove("le-stacks-library-open");
+          document.body.classList.remove("le-stacks-library-open");
+          library.hidden = true;
+          dock.hidden = true;
+          stage.hidden = true;
+          stage.removeAttribute("data-feature");
+          mainNav.hidden = false;
+          mainNav.removeAttribute("aria-hidden");
+          document.body.classList.remove("le-feature-view-active");
+          syncMainButtons();
+          emitChange(null, outgoingId, "deactivate", { reason: "primary-view-switch", returnView });
+        };
+      }
+      return transition;
+    };
+
+    const getPrimaryView = () => window.LiveEarthViewManager?.getCanonicalActiveView?.()
+      || (window.LiveEarthViewManager?.getActiveView?.() === "explorer" ? "earth" : window.LiveEarthViewManager?.getActiveView?.())
+      || activeView || "home";
+    const getActiveOwner = () => activeFeature ? secondaryOwner(activeFeature) : primaryOwner(getPrimaryView());
+    const getOrbRegistry = () => [
+      ...baseOrbRegistry.map(item => Object.freeze({
+        ...item,
+        active: item.kind === "primary-view"
+          ? (!activeFeature && getPrimaryView() === item.id)
+          : item.id === "location" ? !!locationEnabled
+            : item.id === "stacks" ? !!libraryOpen : false
+      })),
+      ...[...catalog.values()].map(feature => Object.freeze({
+        id: feature.id, title: feature.title, shortLabel: feature.shortLabel,
+        symbol: feature.symbol, description: feature.description,
+        kind: "secondary-view", hasOrb: true, layout: "stacks",
+        connected: feature.connected, active: activeFeature === feature.id
+      }))
+    ];
+    function registerSecondary(idOrDefinition, options = {}) {
+      if (idOrDefinition && typeof idOrDefinition === "object") {
+        const definition = idOrDefinition;
+        const kind = definition.kind || definition.type || "secondary-view";
+        if (!["secondary", "secondary-view"].includes(kind)) {
+          throw new TypeError("The expandable Stacks registry accepts Secondary views only.");
+        }
+        return api.register(definition.id, definition.options || definition);
+      }
+      return api.register(idOrDefinition, options);
+    }
+    function activateOrb(id, source = "global-orb-system") {
+      if (id === "earth" || id === "moon" || id === "sun") {
+        return window.LiveEarthViewManager?.requestView?.(id) ?? false;
+      }
+      if (id === "home") {
+        if (activeFeature) return closeActiveFeature("home-selected");
+        return window.LiveEarthViewManager?.requestView?.("home") ?? false;
+      }
+      if (id === "location") { originalLocationButton?.click(); return true; }
+      if (id === "stacks") { toggleLibrary(); return true; }
+      return catalog.has(id) ? activateFeature(id, source) : false;
+    }
+    function closeOrb(id = null, reason = "global-orb-system") {
+      if (id === "location") {
+        if (locationEnabled) originalLocationButton?.click();
+        return true;
+      }
+      if (id === "stacks") {
+        if (libraryOpen) toggleLibrary();
+        return true;
+      }
+      if (id && catalog.has(id)) return activeFeature === id ? closeActiveFeature(reason) : false;
+      if (id === "home") return activeFeature ? closeActiveFeature(reason) : getPrimaryView() === "home";
+      if (["earth", "moon", "sun"].includes(id)) {
+        return getPrimaryView() === id ? window.LiveEarthViewManager?.requestView?.(id) : false;
+      }
+      if (activeFeature) return closeActiveFeature(reason);
+      const current = getPrimaryView();
+      return current !== "home" ? window.LiveEarthViewManager?.requestView?.(current) : false;
+    }
+
 
     // The capture handler runs before the legacy button's direct click listener,
     // so Stacks has one owner rather than two competing panels.
@@ -738,6 +906,9 @@
       register(feature, options = {}) {
         if (!feature || typeof feature !== "string" || !feature.trim()) throw new TypeError("A feature view needs a stable id.");
         const id = feature.trim();
+        if (baseOrbRegistry.some(item => item.id === id)) {
+          throw new TypeError(`The Orb id ${id} is reserved for a built-in Primary or Feature Orb.`);
+        }
         const existing = catalog.get(id);
         const entry = {
           id,
@@ -745,13 +916,16 @@
           shortLabel: String(options.shortLabel || existing?.shortLabel || options.title || existing?.title || id),
           symbol: String(options.symbol || existing?.symbol || "✦"),
           description: String(options.description || existing?.description || "This feature view is registered and ready for its own content."),
-          connected: options.connected === true || existing?.connected === true,
+          connected: typeof options.connected === "boolean" ? options.connected : existing?.connected === true,
           activate: options.activate || existing?.activate,
           deactivate: options.deactivate || existing?.deactivate
         };
         catalog.set(id, entry);
         if (activeFeature === id) { updateStage(); updateDock(); }
         if (libraryOpen) { renderLibrary(); layoutLooseOrbs(); }
+        window.dispatchEvent(new CustomEvent("live-earth-orb-registry-change", {
+          detail: { id, action: existing ? "update" : "register", kind: "secondary-view", count: catalog.size }
+        }));
         return Object.freeze({ id, unregister: () => api.unregister(id) });
       },
       unregister(id) {
@@ -759,6 +933,9 @@
         if (activeFeature === id) closeActiveFeature("unregister");
         catalog.delete(id);
         if (libraryOpen) { renderLibrary(); layoutLooseOrbs(); }
+        window.dispatchEvent(new CustomEvent("live-earth-orb-registry-change", {
+          detail: { id, action: "unregister", kind: "secondary-view", count: catalog.size }
+        }));
         return true;
       },
       open: (id, source = "api") => activateFeature(id, source),
@@ -782,7 +959,43 @@
       { id: "traffic", title: "Traffic", shortLabel: "Traffic", symbol: "↗", description: "Traffic-view shell. The traffic data layer is not connected yet." }
     ].forEach(item => api.register(item.id, item));
 
+    window.LiveEarthOrbSystem = Object.freeze({
+      version: "1.0.0",
+      register: registerSecondary,
+      registerSecondary,
+      unregister: id => api.unregister(id),
+      activate: activateOrb,
+      open: activateOrb,
+      close: closeOrb,
+      toggle: id => activateOrb(id, "global-orb-toggle"),
+      getActiveView: () => activeFeature || getPrimaryView(),
+      getActiveViewKind: () => activeFeature ? "secondary-view" : "primary-view",
+      getActiveViewIdentity: getActiveOwner,
+      getPrimaryView,
+      getActiveSecondaryView: () => activeFeature,
+      getLayout: () => activeFeature ? "three-orb" : "five-orb",
+      getOrbRegistry,
+      getViewRegistry: () => getOrbRegistry().filter(item => item.kind === "primary-view" || item.kind === "secondary-view"),
+      getState: () => Object.freeze({
+        activeView: activeFeature || getPrimaryView(),
+        activeViewIdentity: getActiveOwner(),
+        activeViewKind: activeFeature ? "secondary-view" : "primary-view",
+        primaryView: getPrimaryView(),
+        secondaryView: activeFeature,
+        layout: activeFeature ? "three-orb" : "five-orb",
+        stacksLibraryOpen: libraryOpen,
+        locationEnabled: !!locationEnabled
+      }),
+      isActive: id => activeFeature ? activeFeature === id : getPrimaryView() === id,
+      isOrbActive: id => id === "location" ? !!locationEnabled : id === "stacks" ? !!libraryOpen : activeFeature ? activeFeature === id : getPrimaryView() === id,
+      list: getOrbRegistry
+    });
+    window.dispatchEvent(new Event("live-earth-orb-system-ready"));
+
     syncMainButtons();
+    window.dispatchEvent(new CustomEvent("live-earth-orb-registry-change", {
+      detail: { action: "bootstrap", kind: "registry", count: baseOrbRegistry.length + catalog.size }
+    }));
     window.dispatchEvent(new Event("live-earth-feature-views-ready"));
   }
 

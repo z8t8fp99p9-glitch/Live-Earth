@@ -66,7 +66,6 @@
   let atmosphere = null;
   let locationMarker = null;
   let earthGlobe = null;
-  let viewpointBridge = null;
   let quality = "basic";
   let active = false;
   let activationGeneration = 0;
@@ -369,11 +368,7 @@
       fill.position.set(4, -2, -3);
       scene.add(fill);
 
-      const [engineModule, bridgeModule] = await Promise.all([
-        import("../EarthEngine/Core/earth-engine.js"),
-        import("../EarthEngine/Core/earth-viewpoint-bridge.js")
-      ]);
-      viewpointBridge = bridgeModule;
+      const engineModule = await import("../EarthEngine/Core/earth-engine.js");
       const createEarthGlobe = engineModule.createEarthGlobe || engineModule.createGlobe || window.LiveEarthEngine?.createGlobe;
       if (typeof createEarthGlobe !== "function") throw new Error("The reusable Earth Engine API is unavailable.");
       earthGlobe = await createEarthGlobe({
@@ -529,7 +524,6 @@
       if (!active || activation !== activationGeneration) return;
       // Copy only Home's globe orientation. This view keeps its own scene,
       // camera, zoom, renderer and subsequent exploration state.
-      viewpointBridge?.applyHomeOrientation?.(earthGroup);
       // Recover Home's original bounded pitch from the quaternion itself so
       // Earth View's first drag cannot snap through an alternate Euler branch.
       earthDragPitch = homePitchFromQuaternion(earthGroup.quaternion);

@@ -1,7 +1,7 @@
 # Earth Engine and Earth View Controller
 
 **Decision date:** 8 November 2026  
-**Baseline:** owner-supplied repository snapshot, reorganized under build `v127-earthengine-root-folder`.
+**Baseline:** owner-supplied repository snapshot, reorganized under build `v127-earthengine-root-folder`; global-viewpoint integration is build `v128-global-orb-system`.
 
 ## Naming and ownership
 
@@ -79,7 +79,7 @@ The checks do not establish GitHub Actions, deployment or installed-iPhone accep
 
 - `EarthEngine/Core/earth-engine.js` is the only Earth globe construction engine. Home, `Earth/earth-view-controller.js` and `Earth/earth-orb-globe.js` all create their globe instances through this module, using the same local Earth texture. The one fixed `-0.35` surface calibration is owned centrally by the Engine, not repeated in view controllers.
 - Each renderer receives its own Engine-created group/surface instance. This is required because Home, Independent Earth View and Earth Modes own separate scenes and WebGL renderers; they do not share or reparent one live Three.js mesh. They nevertheless render the same canonical Earth through the same Engine implementation and texture.
-- `EarthEngine/Core/earth-viewpoint-bridge.js` transfers only Home's user-controlled parent-group quaternion. It does not read or apply the Earth surface child's quaternion. The Engine-owned `-0.35` surface calibration remains identical in every view.
+- `EarthEngine/Core/earth-engine.js` owns one global user-controlled parent-group quaternion across active Engine-created views. It does not read or apply the Earth surface child quaternion. The Engine-owned `-0.35` surface calibration remains identical in every view. The legacy bridge remains only as a migration reference; current view controllers do not call it.
 - Home restores the saved group quaternion at startup, publishes pointer-move snapshots in memory, and persists the settled user orientation in same-tab `sessionStorage`. No Moon update may publish or modify the Earth viewpoint.
 - Independent Earth View and Earth Modes first create their Earth through the Global Engine, then apply Home's parent-group orientation. Their own camera and zoom are initialized/animated afterward and remain independent.
 - The bridge is one-way. Secondary Earth views must not publish rotations back into Home. Weather, Clouds, Elevation, Earthquakes and Traffic already attach layers to the exact Home Earth scene, so they follow its orientation without a bridge.

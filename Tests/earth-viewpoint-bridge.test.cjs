@@ -3,135 +3,191 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const root = path.join(__dirname, '..');
-const read = name => fs.readFileSync(path.join(root, name), 'utf8');
+const root = path.resolve(__dirname, '..');
+const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 
-function createStorage() {
-  const values = new Map();
-  return {
-    values,
-    getItem(key) { return values.has(key) ? values.get(key) : null; },
-    setItem(key, value) { values.set(key, String(value)); },
-    removeItem(key) { values.delete(key); }
-  };
+const listeners = new Map();
+const eventLog = [];
+let activeOwner = 'primary:home';
+const storageValues = new Map();
+let storageWrites = 0;
+const storage = {
+  getItem(key) { return storageValues.has(key) ? storageValues.get(key) : null; },
+  setItem(key, value) { storageWrites++; storageValues.set(key, String(value)); },
+  removeItem(key) { storageValues.delete(key); }
+};
+class EventMock { constructor(type) { this.type = type; } }
+class CustomEventMock extends EventMock { constructor(type, init = {}) { super(type); this.detail = init.detail || {}; } }
+
+function setUnit(quaternion, x, y, z, w) {
+  const length = Math.hypot(x, y, z, w);
+  quaternion.set(x / length, y / length, z / length, w / length);
 }
 
-function loadBridge(sessionStorage, sharedWindow = null) {
-  const source = read('EarthEngine/Core/earth-viewpoint-bridge.js').replace(/^export function /gm, 'function ');
-  const dispatched = [];
-  const window = sharedWindow || {
-    sessionStorage,
-    dispatchEvent: event => dispatched.push(event.type)
-  };
-  const sandbox = {
-    Math,
-    Object,
-    Number,
-    JSON,
-    Event: class Event { constructor(type) { this.type = type; } },
-    window
-  };
-  vm.runInNewContext(`${source}\nglobalThis.__bridgeForTest = { publishHomeOrientation, getHomeOrientation, applyHomeOrientation };`, sandbox);
-  return { bridge: sandbox.__bridgeForTest, window, dispatched };
-}
-
-function makeGroup(x = 0, y = 0, z = 0, w = 1) {
+function makeGroup(initial = { x: 0, y: 0, z: 0, w: 1 }) {
   return {
     quaternion: {
-      x, y, z, w,
-      set(nextX, nextY, nextZ, nextW) {
-        this.x = nextX; this.y = nextY; this.z = nextZ; this.w = nextW;
-      }
+      ...initial,
+      set(x, y, z, w) { this.x = x; this.y = y; this.z = z; this.w = w; }
     },
-    matrixUpdated: false,
-    worldMatrixUpdated: false,
-    updateMatrix() { this.matrixUpdated = true; },
-    updateMatrixWorld(force) { this.worldMatrixUpdated = force === true; }
+    matrixUpdated: 0,
+    worldMatrixUpdated: 0,
+    updateMatrix() { this.matrixUpdated++; },
+    updateMatrixWorld(force) { if (force) this.worldMatrixUpdated++; }
   };
 }
 
-const storage = createStorage();
-const firstPage = loadBridge(storage);
-const bridge = firstPage.bridge;
-assert.equal(bridge.getHomeOrientation(), null, 'No viewpoint should exist before Home publishes one.');
-assert.equal(bridge.applyHomeOrientation(makeGroup()), false, 'A target must not be modified before Home publishes a viewpoint.');
+const created = [];
+async function createEarthGraphics(options) {
+  const group = makeGroup();
+  const globe = {
+    group,
+    surface: { rotation: { y: -0.35 } },
+    atmosphere: null,
+    setGeometryDetail(value) { return value; },
+    getState() { return { disposed: false }; },
+    dispose() { globe.disposed = true; }
+  };
+  created.push({ options, globe });
+  return globe;
+}
 
-const home = makeGroup(0, 0.6, 0, 0.8);
-assert.equal(bridge.publishHomeOrientation(home, { persist: false }), true, 'Home should publish live in-page orientation.');
-assert.equal(storage.values.size, 0, 'Pointer-move updates should not write sessionStorage every frame.');
-assert.equal(bridge.getHomeOrientation().y, 0.6);
+const windowMock = {
+  sessionStorage: storage,
+  LiveEarthOrbSystem: { getActiveViewIdentity: () => activeOwner },
+  LiveEarthViewManager: { getCanonicalActiveView: () => activeOwner.split(':')[1] || 'home' },
+  addEventListener(type, callback) {
+    const entries = listeners.get(type) || [];
+    entries.push(callback);
+    listeners.set(type, entries);
+  },
+  dispatchEvent(event) {
+    eventLog.push(event.type);
+    for (const callback of listeners.get(event.type) || []) callback(event);
+    return true;
+  }
+};
 
-home.quaternion.y = 0.8;
-home.quaternion.w = 0.6;
-assert.equal(bridge.publishHomeOrientation(home), true, 'The settled Home orientation should be persisted.');
-assert.ok(storage.values.has('liveEarthHomeViewpointV3'), 'The settled orientation must survive same-tab navigation.');
-assert.deepEqual(firstPage.dispatched, [
-  'live-earth-viewpoint-bridge-ready',
-  'live-earth-home-viewpoint-changed',
-  'live-earth-home-viewpoint-changed'
-]);
-
-const samePageTarget = makeGroup();
-const independentSurface = { quaternion: { x: 0, y: 0, z: 0, w: 1, set(x, y, z, w) { this.x=x; this.y=y; this.z=z; this.w=w; } } };
-assert.equal(bridge.applyHomeOrientation(samePageTarget, independentSurface), true);
-assert.ok(Math.abs(samePageTarget.quaternion.y - 0.8) < 1e-12);
-assert.ok(Math.abs(samePageTarget.quaternion.w - 0.6) < 1e-12);
-assert.deepEqual([independentSurface.quaternion.x, independentSurface.quaternion.y, independentSurface.quaternion.z, independentSurface.quaternion.w], [0, 0, 0, 1], 'Bridge must not apply any child-surface transform.');
-assert.equal(Object.prototype.hasOwnProperty.call(bridge.getHomeOrientation(), 'surface'), false, 'Snapshot must contain only Home user-controlled group orientation.');
-assert.equal(samePageTarget.matrixUpdated, true);
-assert.equal(samePageTarget.worldMatrixUpdated, true);
-
-// Simulate Earth Modes opening as a new document: module memory is gone, but
-// the same-tab sessionStorage snapshot must still be available to its module.
-const secondPage = loadBridge(storage);
-assert.ok(Math.abs(secondPage.bridge.getHomeOrientation().y - 0.8) < 1e-12, 'A new page must restore the saved Home orientation.');
-const earthModesTarget = makeGroup();
-assert.equal(secondPage.bridge.applyHomeOrientation(earthModesTarget), true, 'Earth Modes must accept the persisted Home orientation.');
-assert.ok(Math.abs(earthModesTarget.quaternion.y - 0.8) < 1e-12);
-assert.ok(Math.abs(earthModesTarget.quaternion.w - 0.6) < 1e-12);
-
-// Simulate two module instances in one document: both must see the shared window state.
-const duplicateInstance = loadBridge(storage, firstPage.window);
-assert.ok(Math.abs(duplicateInstance.bridge.getHomeOrientation().y - 0.8) < 1e-12, 'Bridge instances must share the window-level snapshot.');
-
-// V124 stored an extra child-surface quaternion. V125 must migrate only the group pose.
-const v124Storage = createStorage();
-v124Storage.setItem('liveEarthHomeViewpointV2', JSON.stringify({
-  version: 2,
-  orientation: { x: 0, y: 0.6, z: 0, w: 0.8, surface: { x: 0, y: 0.7, z: 0, w: Math.sqrt(1 - 0.7 * 0.7) } }
+// Legacy V3 Home data is migrated on read; subsequent writes use the Engine's
+// single global V1 quaternion key.
+storage.setItem('liveEarthHomeViewpointV3', JSON.stringify({
+  version: 3,
+  orientation: { x: 0, y: 0.6, z: 0, w: 0.8 }
 }));
-const migratedPage = loadBridge(v124Storage);
-assert.ok(Math.abs(migratedPage.bridge.getHomeOrientation().y - 0.6) < 1e-12, 'V124 group orientation must remain available during migration.');
-assert.equal(Object.prototype.hasOwnProperty.call(migratedPage.bridge.getHomeOrientation(), 'surface'), false, 'V124 Moon-driven surface data must be discarded.');
-const migratedTarget = makeGroup();
-const protectedSurface = { quaternion: { x: 0, y: 0, z: 0, w: 1, set() { throw new Error('Surface must never be changed.'); } } };
-assert.equal(migratedPage.bridge.applyHomeOrientation(migratedTarget, protectedSurface), true);
-assert.deepEqual([protectedSurface.quaternion.x, protectedSurface.quaternion.y, protectedSurface.quaternion.z, protectedSurface.quaternion.w], [0, 0, 0, 1]);
-assert.equal(migratedPage.bridge.publishHomeOrientation(migratedTarget), true);
-assert.ok(v124Storage.values.has('liveEarthHomeViewpointV3'), 'Next Home publish must save the new group-only V3 format.');
+storageWrites = 0;
 
-assert.equal(bridge.publishHomeOrientation({ quaternion: { x: 0, y: 0, z: 0, w: 0 } }), false, 'A zero-length quaternion must be rejected.');
-assert.equal(bridge.publishHomeOrientation({}), false, 'Objects without a quaternion must be rejected.');
+let source = read('EarthEngine/Core/earth-engine.js');
+source = source.replace('import { createEarthGraphics } from "../Graphics/earth-engine-3d-graphics-engine.js";', 'const createEarthGraphics = (...args) => globalThis.__createEarthGraphics(...args);');
+source = source.replace(/^export async function /gm, 'async function ');
+source = source.replace(/^export const /gm, 'const ');
+source += '\nglobalThis.__engineTestApi = { createEarthGlobe, createGlobe, EarthEngine, getSnapshot, getCurrentOwner };';
+const sandbox = vm.createContext({
+  window: windowMock,
+  Event: EventMock,
+  CustomEvent: CustomEventMock,
+  console,
+  Math,
+  JSON,
+  Number,
+  String,
+  Object,
+  Map,
+  Promise,
+  globalThis: null,
+  __createEarthGraphics: createEarthGraphics
+});
+sandbox.globalThis = sandbox;
+vm.runInContext(source, sandbox, { filename: 'EarthEngine/Core/earth-engine.js' });
 
-const index = read('index.html');
-const earthController = read('Earth/earth-view-controller.js');
-const earthModes = read('Earth/earth-orb-globe.js');
-const sw = read('sw.js');
-const updateManager = read('Global/update-manager.js');
-assert.match(index, /import\('\.\/EarthEngine\/Core\/earth-viewpoint-bridge\.js'\)/, 'Home must load the bridge module.');
-assert.match(index, /applyHomeOrientation\(group\)/, 'Home must restore the saved orientation after same-tab navigation.');
-assert.match(index, /publishHomeOrientation\(group, \{ persist: false \}\)/, 'Home must publish live pointer movement without storage writes per frame.');
-assert.match(index, /viewpointBridge\.publishHomeOrientation\(group\);\s*\n\s*\};/, 'Home must persist its settled orientation after pointer release.');
-assert.match(earthController, /import\("\.\.\/EarthEngine\/Core\/earth-viewpoint-bridge\.js"\)/, 'Independent Earth View must load the bridge.');
-assert.match(earthController, /applyHomeOrientation\?\.\(earthGroup\)/, 'Independent Earth View must consume Home orientation on activation.');
-assert.match(earthModes, /import \{ applyHomeOrientation \} from "\.\.\/EarthEngine\/Core\/earth-viewpoint-bridge\.js"/, 'Earth Modes must load the bridge.');
-assert.match(earthModes, /applyHomeOrientation\(group\)/, 'Earth Modes must consume Home orientation.');
-assert.match(earthModes, /import \{ createEarthGlobe \} from "\.\.\/EarthEngine\/Core\/earth-engine\.js"/, 'Earth Modes must use the canonical Global Earth Engine.');
-assert.match(sw, /v127-earthengine-root-folder/, 'The service worker build identity must be bumped.');
-assert.match(sw, /"\.\/Earth\/earth-orb-globe\.js"/, 'Earth Modes controller must remain an essential offline asset.');
-assert.match(sw, /"\.\/EarthEngine\/Core\/earth-viewpoint-bridge\.js"/, 'The bridge must be an essential offline shell asset.');
-assert.match(updateManager, /v127-earthengine-root-folder/, 'Update manager and service worker must share the build identity.');
-assert.doesNotMatch(earthController, /publishHomeOrientation/, 'Independent Earth View must not write its orientation back to Home.');
-assert.doesNotMatch(earthModes, /publishHomeOrientation/, 'Earth Modes must not write its orientation back to Home.');
+(async () => {
+  const engine = sandbox.__engineTestApi;
+  const migrated = engine.getSnapshot();
+  assert.ok(Math.abs(migrated.y - 0.6) < 1e-12, 'The Engine must migrate the last Home-only quaternion.');
+  assert.ok(Math.abs(migrated.w - 0.8) < 1e-12);
 
-console.log('Persistent Earth viewpoint bridge tests passed.');
+  const home = await engine.createEarthGlobe({ name: 'home' });
+  assert.ok(Math.abs(home.group.quaternion.y - 0.6) < 1e-12, 'A newly-created Home globe must receive the global snapshot automatically.');
+  assert.equal(home.group.matrixUpdated, 1);
+  assert.equal(home.group.worldMatrixUpdated, 1);
+
+  // Rotating the outgoing globe is not persisted during movement. The one
+  // synchronous pre-transition event captures its final quaternion once.
+  setUnit(home.group.quaternion, 0.2, 0.4, 0.1, 0.8);
+  const beforeHomeToEarthWrites = storageWrites;
+  windowMock.dispatchEvent(new CustomEventMock('live-earth-view-transition', {
+    detail: { previousOwner: 'primary:home', nextOwner: 'primary:earth' }
+  }));
+  assert.equal(storageWrites, beforeHomeToEarthWrites + 1, 'One view transition must write one snapshot, not a stream of rotations.');
+  assert.ok(storageValues.has('liveEarthGlobalViewpointV1'), 'The Engine must persist one global quaternion key.');
+
+  activeOwner = 'primary:earth';
+  windowMock.dispatchEvent(new CustomEventMock('live-earth-view-changed', {
+    detail: { previousOwner: 'primary:home', nextOwner: 'primary:earth' }
+  }));
+  const earth = await engine.createEarthGlobe({ name: 'earth' });
+  const sameAsHome = () => [home.group.quaternion.x, home.group.quaternion.y, home.group.quaternion.z, home.group.quaternion.w];
+  const sameAsEarth = () => [earth.group.quaternion.x, earth.group.quaternion.y, earth.group.quaternion.z, earth.group.quaternion.w];
+  assert.deepEqual(sameAsEarth(), sameAsHome(), 'An Engine globe created after its view activates must receive the saved rotation.');
+
+  setUnit(earth.group.quaternion, 0.1, 0.75, -0.2, 0.62);
+  windowMock.dispatchEvent(new CustomEventMock('live-earth-view-transition', {
+    detail: { previousOwner: 'primary:earth', nextOwner: 'secondary:clouds' }
+  }));
+  activeOwner = 'secondary:clouds';
+  windowMock.dispatchEvent(new CustomEventMock('live-earth-view-changed', {
+    detail: { previousOwner: 'primary:earth', nextOwner: 'secondary:clouds' }
+  }));
+  assert.deepEqual(sameAsHome(), sameAsEarth(), 'A Secondary overlay without its own globe must reuse the shared Home Earth rotation.');
+
+  const cloudsGlobe = await engine.createEarthGlobe({ name: 'clouds-independent-earth' });
+  assert.deepEqual(
+    [cloudsGlobe.group.quaternion.x, cloudsGlobe.group.quaternion.y, cloudsGlobe.group.quaternion.z, cloudsGlobe.group.quaternion.w],
+    sameAsEarth(),
+    'A future Secondary view that creates its own Engine globe must automatically receive the global rotation.'
+  );
+
+  setUnit(cloudsGlobe.group.quaternion, -0.15, 0.5, 0.3, 0.78);
+  windowMock.dispatchEvent(new CustomEventMock('live-earth-view-transition', {
+    detail: { previousOwner: 'secondary:clouds', nextOwner: 'primary:moon' }
+  }));
+  activeOwner = 'primary:moon';
+  windowMock.dispatchEvent(new CustomEventMock('live-earth-view-changed', {
+    detail: { previousOwner: 'secondary:clouds', nextOwner: 'primary:moon' }
+  }));
+  assert.equal(engine.getCurrentOwner(), 'primary:moon');
+
+  // An incoming view may create its Engine globe after the transition. It gets
+  // the most recently captured quaternion without any view-specific bridge call.
+  activeOwner = 'primary:home';
+  windowMock.dispatchEvent(new CustomEventMock('live-earth-view-transition', {
+    detail: { previousOwner: 'primary:moon', nextOwner: 'primary:home' }
+  }));
+  windowMock.dispatchEvent(new CustomEventMock('live-earth-view-changed', {
+    detail: { previousOwner: 'primary:moon', nextOwner: 'primary:home' }
+  }));
+  const finalHome = await engine.createEarthGlobe({ name: 'later-home-instance' });
+  const saved = engine.getSnapshot();
+  assert.ok(Math.abs(finalHome.group.quaternion.x - saved.x) < 1e-12);
+  assert.ok(Math.abs(finalHome.group.quaternion.y - saved.y) < 1e-12);
+  assert.ok(Math.abs(finalHome.group.quaternion.z - saved.z) < 1e-12);
+  assert.ok(Math.abs(finalHome.group.quaternion.w - saved.w) < 1e-12);
+
+  // The snapshot is deliberately a quaternion only. Camera, zoom and child
+  // surface state are never included.
+  assert.deepEqual(Object.keys(saved).sort(), ['w', 'x', 'y', 'z']);
+  assert.equal(storageWrites <= 4, true, 'Rotation persistence must happen only on transitions or page hide.');
+  assert.ok(!read('index.html').includes('publishHomeOrientation'), 'Home must not publish rotations from pointer movement.');
+  assert.ok(!read('Earth/earth-view-controller.js').includes('applyHomeOrientation'), 'Independent Earth must not contain a view-specific viewpoint bridge call.');
+  assert.ok(!read('Earth/earth-orb-globe.js').includes('applyHomeOrientation'), 'Earth Modes must rely on the Engine automatically.');
+
+  const finalQuaternion = [finalHome.group.quaternion.x, finalHome.group.quaternion.y, finalHome.group.quaternion.z, finalHome.group.quaternion.w];
+  windowMock.dispatchEvent(new EventMock('pagehide'));
+  assert.deepEqual([engine.getSnapshot().x, engine.getSnapshot().y, engine.getSnapshot().z, engine.getSnapshot().w], finalQuaternion);
+
+  cloudsGlobe.dispose();
+  assert.equal(created.find(item => item.globe.group === cloudsGlobe.group).globe.disposed, true);
+  console.log('Global Earth Engine viewpoint lifecycle tests passed.');
+})().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});
