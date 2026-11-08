@@ -33,7 +33,7 @@ The owner previously identified a hidden Home image/visual that supports the scr
 Preserve the approved Earth size, camera framing/position, texture, baseline geometry and renderer pixel ratio; Moon geometry; star/stardust and orbital visuals; and five Home Orbs. Exploration zoom/quality must not leak into the Home baseline.
 
 ### Stacks and feature workspaces
-The feature Orb scatter and hit targets share a coordinate space. Keep each visible Orb aligned with its interactive hitbox; avoid nested scrolling that offsets touch positions. Preserve animation completion guards/fallbacks. `Stacks/stacks-feature-views.js` provides the independent environmental Stacks features and must remain intact.
+The feature Orb scatter and hit targets share a coordinate space. Keep each visible Orb aligned with its interactive hitbox; avoid nested scrolling that offsets touch positions. Preserve animation completion guards/fallbacks. `Global/view-module-registry.js` owns the protected three-Orb feature dock: active feature (tap to close), Location and Stacks. `Stacks/stacks-feature-views.js` is the shared feature runtime and retains Elevation; Weather, Clouds, Traffic and Earthquakes have separate top-level folders and register through that runtime. Their view code may be developed independently, but the Global lifecycle and Orb behaviour remain unchanged.
 
 The Engine Feature Orb module now registers only **Editorial Engine**. It must not reintroduce collection, feed, source-discovery, policy-checking, image-processing or Publisher views.
 
@@ -69,3 +69,8 @@ The following systems and their related views were removed at the owner's direct
 6. Review the exact diff for unrelated and protected-file changes.
 7. Build the ZIP using the root upload standard; validate every path, size and hash.
 8. After upload, verify Actions, the resulting commit and deployed/device behaviour before calling the task complete.
+
+
+## 8 November 2026 — V118 Stacks full-screen feature views
+
+Starting from the V117 flat-folder ZIP, Weather, Clouds, Traffic and Earthquakes were separated into dedicated top-level folders. `Stacks/stacks-feature-views.js` remains the shared runtime and retains Elevation. The Global three-Orb registry and Orb controller are unchanged byte-for-byte. Feature registration order remains Clouds → Weather → Elevation → Earthquakes → Traffic so the feature Orb scatter order stays stable. The four dedicated views use full-stage layouts behind the existing three-Orb dock; Elevation keeps its prior compact panel. The service worker and update manager use the synchronized `v118-fullscreen-feature-views` identity, and all four modules are essential offline shell assets. See `Documentation/STACKS-FEATURE-VIEWS.md` for the view contracts.

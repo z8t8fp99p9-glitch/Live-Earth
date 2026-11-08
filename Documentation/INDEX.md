@@ -23,6 +23,7 @@ This is the documentation front door. The three core project reference documents
 ## Architecture references
 
 - `APP-AND-VIEW-ARCHITECTURE.md`
+- `STACKS-FEATURE-VIEWS.md`
 
 ## History
 

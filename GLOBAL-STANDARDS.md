@@ -26,7 +26,7 @@ Moon and Sun are independent views. The shared sky stage/host is an integration 
 
 ## 3. Feature-workspace standard
 
-- `Stacks/stacks-feature-views.js` owns the existing independent environmental Stacks features. Keep it and its feature lifecycle unchanged unless explicitly requested.
+- `Stacks/stacks-feature-views.js` owns the shared Stacks feature runtime and Elevation. Weather, Clouds, Traffic and Earthquakes are separate top-level feature folders that register through the shared runtime. Preserve the Global three-Orb lifecycle: active feature Orb closes the view, Location toggles the existing service, and Stacks opens the feature library. Do not change Orb geometry, hitboxes, animation, touch behaviour, or cleanup guards.
 - `Editorial-Engine/engine-feature-views.js` registers only the Universal Editorial Engine workspace.
 - The Editorial Engine workspace does not create another Orb or alter the global Orb contract.
 - No collection, source-discovery, feed, policy-checking, image-processing, database-writing, publishing or magazine workspace is part of the current app.

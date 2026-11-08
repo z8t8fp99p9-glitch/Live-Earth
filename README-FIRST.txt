@@ -18,7 +18,7 @@ CURRENT PROJECT POSITION
 - Moon and Sun are independent views.
 - Location is OFF unless the user enables it.
 - Preserve real runtime/offline assets, local data, service-worker rules and recovery paths.
-- `Stacks/stacks-feature-views.js` retains the environmental Stacks views.
+- `Stacks/stacks-feature-views.js` is the shared Stacks feature runtime and retains Elevation. Weather, Clouds, Traffic and Earthquakes have separate top-level view folders.
 - `Editorial-Engine/engine-feature-views.js` registers only the Universal Editorial Engine workspace.
 - The Editorial Engine core and browser helper are retained. Its former upstream collection/publishing integration is not active.
 - The previous collection, source-discovery, feed, policy-checking, image-processing, database-writing, Publisher and Magazine systems were removed at the owner's direction.

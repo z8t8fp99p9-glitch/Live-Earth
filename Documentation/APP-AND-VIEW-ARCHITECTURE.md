@@ -19,7 +19,14 @@ Do not create parallel primary-view state or bypass the existing manager without
 The Moon and Sun implementations remain separate. See `Documentation/INDEPENDENT-SUN-MOON-VIEWS.md`.
 
 ## Global utility features
-Location and Stacks are utility features rather than replacement primary views. Location privacy is OFF by default. Stacks and its environmental feature workspaces use the shared feature registry and existing interaction/lifecycle safeguards.
+Location and Stacks are utility features rather than replacement primary views. Location privacy is OFF by default. Stacks feature workspaces use the shared feature registry and existing interaction/lifecycle safeguards. The Global registry owns the protected three-Orb feature dock: active feature toggle, Location toggle and Stacks library.
+
+## Stacks feature workspaces
+`Stacks/stacks-feature-views.js` is the shared feature runtime and retains Elevation. The independently-owned full-screen views are held in four flat top-level folders: `Weather/weather-view.js`, `Clouds/clouds-view.js`, `Traffic/traffic-view.js` and `Earthquakes/earthquakes-view.js`. Each module registers through the shared Stacks runtime; none creates a second Earth scene or bypasses the Home Earth feature-layer contract.
+
+The full-screen feature surfaces remain underneath the protected Global three-Orb dock. The active feature Orb is the close action; the other two Orbs continue to control Location and the Stacks library. Avoid adding a close button, changing Orb geometry, or introducing nested scroll containers that shift the feature scatter/hitbox coordinate space.
+
+Weather reads only a fresh position already provided by the explicitly enabled Location system. Clouds uses NASA GIBS cloud-fraction imagery. Earthquakes uses the USGS latest-day GeoJSON feed. Traffic remains an honest preview until a verified traffic data source is approved; it must not fabricate congestion.
 
 ## Retained editorial workspace
 `Editorial-Engine/engine-feature-views.js` registers only the Universal Editorial Engine workspace. The Editorial Engine core is held in `Editorial-Engine/`. The feature does not register additional collection or publication views.
@@ -27,7 +34,7 @@ Location and Stacks are utility features rather than replacement primary views. 
 ## Runtime and data
 - `sw.js` manages service-worker resource caching and startup shell behaviour.
 - `Global/update-manager.js` coordinates readiness and staged updates, including the Editorial Engine workspace.
-- View-owned runtime artwork lives in the corresponding Home, Earth, Moon, Sun, Location and Stacks folders.
+- View-owned runtime artwork lives in the corresponding Home, Earth, Moon, Sun, Location, Stacks and feature folders.
 - `Data/data-store.js` and `Data/data-recovery.js` support local data/recovery.
 - `Recovery/` contains general rollback instructions and retained snapshots.
 
