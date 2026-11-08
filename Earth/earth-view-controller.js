@@ -370,8 +370,8 @@
       scene.add(fill);
 
       const [engineModule, bridgeModule] = await Promise.all([
-        import("../Global/earth-engine.js"),
-        import("../Global/earth-viewpoint-bridge.js")
+        import("../EarthEngine/Core/earth-engine.js"),
+        import("../EarthEngine/Core/earth-viewpoint-bridge.js")
       ]);
       viewpointBridge = bridgeModule;
       const createEarthGlobe = engineModule.createEarthGlobe || engineModule.createGlobe || window.LiveEarthEngine?.createGlobe;
@@ -379,7 +379,7 @@
       earthGlobe = await createEarthGlobe({
         THREE: T,
         radius: 1,
-        textureUrl: "./runtime-assets/earth-land-ocean-ice-2048.png",
+        textureUrl: "./EarthEngine/Assets/earth-land-ocean-ice-2048.png",
         geometryDetail: quality === "hd" ? "high" : "standard",
         maxAnisotropy: renderer.capabilities.getMaxAnisotropy(),
           atmosphere: true

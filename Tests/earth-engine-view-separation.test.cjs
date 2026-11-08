@@ -86,7 +86,7 @@ const THREE = {
   const homeIndex = read('index.html');
   const homeModule = homeIndex.match(/<script type="module">\s*if \(window\.__leBootControlledAtStart[\s\S]*?<\/script>/)?.[0];
   assert.ok(homeModule, 'Home Earth module must remain in index.html.');
-  assert.ok(homeModule.includes("import('./Global/earth-engine.js')"), 'Home must create its globe through Earth Engine.');
+  assert.ok(homeModule.includes("import('./EarthEngine/Core/earth-engine.js')"), 'Home must create its globe through Earth Engine.');
   assert.ok(homeModule.includes("geometryDetail: 'high'"), 'Home must use one fixed high-detail sphere profile.');
   assert.ok(!homeModule.includes('initialRotationY'), 'Home must not override the Global Engine base calibration.');
   assert.ok(!/\bquality\b|\bBasic\b|\bHD\b|setQuality|zoomBy|pinch/i.test(homeModule), 'Home module must not contain Basic/HD quality or zoom controls.');
@@ -102,19 +102,24 @@ const THREE = {
   assert.ok(homeModule.includes('displayMoonRadius: 0.32'), 'The existing Home Moon display radius must remain unchanged.');
   assert.ok(homeIndex.includes('Drag with one finger to rotate.'), 'Home canvas guidance must reflect its fixed zoom and rotation-only gesture.');
 
-  const engineSource = read('Global/earth-engine.js');
+  const engineSource = read('EarthEngine/Core/earth-engine.js');
   assert.ok(engineSource.includes('export async function createEarthGlobe'), 'Reusable Earth Engine export is required.');
-  assert.ok(engineSource.includes('textureRecords'), 'Earth Engine must safely share loaded textures.');
-  assert.ok(engineSource.includes('setGeometryDetail'), 'Engine must expose a generic geometry-detail API.');
-  assert.ok(engineSource.includes('const EARTH_BASE_SURFACE_ROTATION_Y = -0.35;'), 'Global Earth Engine must own the one canonical surface calibration.');
-  assert.ok(engineSource.includes('surface.rotation.y = EARTH_BASE_SURFACE_ROTATION_Y;'), 'Every Engine-created Earth must use the canonical base surface orientation.');
-  assert.ok(!/\bquality\b|\bBasic\b|\bHD\b|setQuality/i.test(engineSource), 'Engine must not own Independent Earth View UI naming.');
-  const engine = await import(pathToFileURL(path.join(root, 'Global/earth-engine.js')).href);
+  assert.ok(engineSource.includes('createEarthGraphics'), 'Public Core API must delegate to the Graphics Engine.');
+  assert.ok(engineSource.includes('export const createGlobe = createEarthGlobe'), 'Legacy createGlobe alias must remain available.');
+  const graphicsEngineSource = read('EarthEngine/Graphics/earth-engine-3d-graphics-engine.js');
+  const graphicsCoreSource = read('EarthEngine/Graphics/earth-engine-3d-graphics-core.js');
+  assert.ok(graphicsEngineSource.includes('const EARTH_BASE_SURFACE_ROTATION_Y = -0.35;'), 'Graphics Engine must own the one canonical surface calibration.');
+  assert.ok(graphicsEngineSource.includes('surface.rotation.y = EARTH_BASE_SURFACE_ROTATION_Y;'), 'Every Engine-created Earth must use the canonical base surface orientation.');
+  assert.ok(graphicsEngineSource.includes('setGeometryDetail'), 'Graphics Engine must expose generic geometry detail.');
+  assert.ok(graphicsCoreSource.includes('textureRecords'), 'Graphics Core must safely share loaded textures.');
+  assert.ok(graphicsCoreSource.includes('createEarthSurfaceGeometry'), 'Graphics Core must own low-level sphere geometry construction.');
+  assert.ok(!/\bquality\b|\bBasic\b|\bHD\b|setQuality/i.test(engineSource + graphicsEngineSource), 'Earth Engine must not own Independent Earth View UI naming.');
+  const engine = await import(pathToFileURL(path.join(root, 'EarthEngine/Core/earth-engine.js')).href);
 
   const homeGlobe = await engine.createEarthGlobe({
     THREE,
     radius: 1,
-    textureUrl: './runtime-assets/earth-land-ocean-ice-2048.png',
+    textureUrl: './EarthEngine/Assets/earth-land-ocean-ice-2048.png',
     geometryDetail: 'high'
   });
   assert.equal(homeGlobe.surface.geometry.parameters.width, 96, 'Home fixed high detail must match its former 96-segment sphere.');
@@ -124,8 +129,8 @@ const THREE = {
   assert.equal(homeGlobe.group.children[0], homeGlobe.surface, 'The Engine-owned surface remains the first direct child in Home group.');
 
   const [first, second] = await Promise.all([
-    engine.createEarthGlobe({ THREE, radius: 1, textureUrl: './runtime-assets/earth-land-ocean-ice-2048.png', geometryDetail: 'standard' }),
-    engine.createGlobe({ THREE, radius: 0.5, textureUrl: './runtime-assets/earth-land-ocean-ice-2048.png', geometryDetail: 'standard' })
+    engine.createEarthGlobe({ THREE, radius: 1, textureUrl: './EarthEngine/Assets/earth-land-ocean-ice-2048.png', geometryDetail: 'standard' }),
+    engine.createGlobe({ THREE, radius: 0.5, textureUrl: './EarthEngine/Assets/earth-land-ocean-ice-2048.png', geometryDetail: 'standard' })
   ]);
   assert.equal(textureLoads, 1, 'Concurrent views must share a single surface texture load.');
   assert.notEqual(first.group, second.group, 'Each view must receive an independent Earth group.');
@@ -142,7 +147,7 @@ const THREE = {
   assert.equal(sharedTexture.disposed, false, 'Home must keep the shared surface texture alive while it still owns a lease.');
   homeGlobe.dispose();
   assert.equal(sharedTexture.disposed, true, 'The shared texture must release only after the final view disposes.');
-  const third = await engine.createEarthGlobe({ THREE, textureUrl: './runtime-assets/earth-land-ocean-ice-2048.png' });
+  const third = await engine.createEarthGlobe({ THREE, textureUrl: './EarthEngine/Assets/earth-land-ocean-ice-2048.png' });
   assert.equal(textureLoads, 2, 'A later view must load a fresh texture after the previous shared texture was disposed.');
   assert.notEqual(third.surface.material.map, sharedTexture, 'A disposed shared texture must never be reused.');
   third.dispose();
@@ -156,8 +161,8 @@ const THREE = {
   assert.ok(moonSource.includes('earthGroup.add(system)'), 'Moon Orbit remains an additive visual layer under the Home Earth group.');
 
   const earthModes = read('Earth/earth-orb-globe.js');
-  assert.ok(earthModes.includes('import { createEarthGlobe } from "../Global/earth-engine.js"'), 'Earth Modes must use the canonical Global Earth Engine.');
-  assert.ok(earthModes.includes('textureUrl: "../runtime-assets/earth-land-ocean-ice-2048.png"'), 'Earth Modes must use the canonical local Earth texture.');
+  assert.ok(earthModes.includes('import { createEarthGlobe } from "../EarthEngine/Core/earth-engine.js"'), 'Earth Modes must use the canonical Earth Engine.');
+  assert.ok(earthModes.includes('textureUrl: "../EarthEngine/Assets/earth-land-ocean-ice-2048.png"'), 'Earth Modes must use the canonical local Earth texture.');
   assert.ok(!earthModes.includes('initialRotationY'), 'Earth Modes must not override the Global Engine base calibration.');
   assert.ok(earthModes.includes('geometryDetail: mode === "hd" ? "high" : "standard"'), 'Earth Modes must map HD to the shared Engine geometry profile.');
   assert.ok(!earthModes.includes('new T.SphereGeometry'), 'Earth Modes must not construct a duplicate Earth sphere.');
@@ -166,7 +171,7 @@ const THREE = {
   assert.ok(earthModes.includes('applyHomeOrientation(group)'), 'Earth Modes must apply only Home group orientation after Engine creation.');
 
   const controller = read('Earth/earth-view-controller.js');
-  assert.ok(controller.includes('import("../Global/earth-engine.js")'), 'Independent Earth View must also use Earth Engine.');
+  assert.ok(controller.includes('import("../EarthEngine/Core/earth-engine.js")'), 'Independent Earth View must also use Earth Engine.');
   assert.ok(controller.includes('T = await import("../vendor/three.module.js")'), 'Home and Independent Earth View must resolve the same Three.js namespace.');
   assert.ok(controller.includes('earth-independent-renderer'), 'Independent Earth view registration must remain intact.');
   assert.ok(controller.includes('data-quality="basic"') && controller.includes('data-quality="hd"'), 'Basic/HD choices must remain in Independent Earth View.');
@@ -178,10 +183,11 @@ const THREE = {
 
   const sw = read('sw.js');
   const manager = read('Global/update-manager.js');
-  assert.ok(sw.includes('"./Global/earth-engine.js"') && sw.includes('"./Earth/earth-view-controller.js"'), 'Both Earth files must remain essential offline shell assets.');
-  assert.ok(sw.includes('"./runtime-assets/earth-land-ocean-ice-2048.png"'), 'Home Engine texture must remain an offline runtime dependency.');
+  assert.ok(sw.includes('"./EarthEngine/Core/earth-engine.js"') && sw.includes('"./EarthEngine/Core/earth-viewpoint-bridge.js"'), 'Earth Core modules must remain essential offline shell assets.');
+  assert.ok(sw.includes('"./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js"') && sw.includes('"./EarthEngine/Graphics/earth-engine-3d-graphics-core.js"'), 'Both graphics modules must remain essential offline shell assets.');
+  assert.ok(sw.includes('"./EarthEngine/Assets/earth-land-ocean-ice-2048.png"'), 'Home Engine texture must remain an offline runtime dependency.');
   assert.ok(!sw.includes('earth-mode-navigation.js'), 'The retired controller path must not remain in the service worker.');
-  assert.ok(sw.includes('v126-quaternion-stable-earth-drag') && manager.includes('v126-quaternion-stable-earth-drag'), 'Service worker and update manager build IDs must match.');
+  assert.ok(sw.includes('v127-earthengine-root-folder') && manager.includes('v127-earthengine-root-folder'), 'Service worker and update manager build IDs must match.');
   assert.ok(sw.includes('const anchor = "// LIVE_EARTH_HOME_RENDERER_HOOKS";'), 'Home API injection must use the stable named hook.');
   assert.ok(sw.includes('const readableRemoteThreeImport = /try\\s*\\{'), 'Service worker must transform the readable Home Three.js import.');
   assert.ok(sw.includes("html = html.replace(readableRemoteThreeImport, \"T = await import('./vendor/three.module.js');\");"), 'Readable Home import must resolve to the staged offline Three.js module.');

@@ -1,11 +1,11 @@
-/* LIVE // EARTH V124 — complete Home-to-viewpoint bridge. */
+/* LIVE // EARTH V127 — EarthEngine root-folder architecture. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v126-quaternion-stable-earth-drag";
-const CACHE_NAME = "live-earth-shell-v126-quaternion-stable-earth-drag";
+const BUILD_ID = "v127-earthengine-root-folder";
+const CACHE_NAME = "live-earth-shell-v127-earthengine-root-folder";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
- "./","./index.html","./ios-standalone-root-flow.js","./Global/orb-controls-v4.js","./Global/earth-engine.js","./Global/earth-viewpoint-bridge.js","./Earth/earth-view-controller.js","./Global/view-manager.js","./Global/view-module-registry.js","./Stacks/stacks-feature-views.js","./Clouds/clouds-view.js","./Weather/weather-view.js","./Traffic/traffic-view.js","./Earthquakes/earthquakes-view.js","./Global/sky-view-controller.js","./Moon/moon-view-controller.js","./Moon/moon-lunar-interface.js","./Sun/sun-view-controller.js","./Sun/sun-surface-shared.webp",
+ "./","./index.html","./ios-standalone-root-flow.js","./Global/orb-controls-v4.js","./EarthEngine/Core/earth-engine.js","./EarthEngine/Core/earth-viewpoint-bridge.js","./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-core.js","./EarthEngine/Assets/README.md","./Earth/earth-view-controller.js","./Global/view-manager.js","./Global/view-module-registry.js","./Stacks/stacks-feature-views.js","./Clouds/clouds-view.js","./Weather/weather-view.js","./Traffic/traffic-view.js","./Earthquakes/earthquakes-view.js","./Global/sky-view-controller.js","./Moon/moon-view-controller.js","./Moon/moon-lunar-interface.js","./Sun/sun-view-controller.js","./Sun/sun-surface-shared.webp",
  "./Earth/location.html","./Earth/earth-orb-globe.js","./manifest.json","./Global/icon.svg","./Data/data-store.js","./Location/location.js",
  "./Global/astronomy.js","./Home/moon-orbit.js","./Data/dataset-manifest.json",
  "./Home/moon-surface-lroc-1536.jpg",
@@ -36,7 +36,7 @@ const RUNTIME_DEPENDENCIES = [
     ]
   },
   {
-    path: "./runtime-assets/earth-land-ocean-ice-2048.png",
+    path: "./EarthEngine/Assets/earth-land-ocean-ice-2048.png",
     urls: [
       "https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57730/land_ocean_ice_2048.png",
       "https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg"
@@ -696,9 +696,9 @@ function injectStartupGate(html) {
     }
     function getMissingControllers() {
       const paths = [...knownBadPaths];
-      if (!window.LiveEarthScene) paths.push('./vendor/three.module.js','./vendor/three.core.js','./runtime-assets/earth-land-ocean-ice-2048.png');
-      if (!window.LiveEarthEngine) paths.push('./Global/earth-engine.js');
-      if (!window.LiveEarthViewpointBridge) paths.push('./Global/earth-viewpoint-bridge.js');
+      if (!window.LiveEarthScene) paths.push('./vendor/three.module.js','./vendor/three.core.js','./EarthEngine/Assets/earth-land-ocean-ice-2048.png');
+      if (!window.LiveEarthEngine) paths.push('./EarthEngine/Core/earth-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-core.js');
+      if (!window.LiveEarthViewpointBridge) paths.push('./EarthEngine/Core/earth-viewpoint-bridge.js');
       if (window.__liveEarthEarthRendererInstalled !== true) paths.push('./Earth/earth-view-controller.js');
       if (!window.LiveEarthViewManager) paths.push('./Global/view-manager.js');
       if (!window.LiveEarthSkyViews) paths.push('./Global/sky-view-controller.js');
@@ -862,7 +862,7 @@ function injectStartupGate(html) {
         while (!coreReady()) {
           if (sceneFailure) {
             const missing = getMissingControllers();
-            const repairPaths = missing.length ? missing : ['./vendor/three.module.js','./vendor/three.core.js','./runtime-assets/earth-land-ocean-ice-2048.png'];
+            const repairPaths = missing.length ? missing : ['./vendor/three.module.js','./vendor/three.core.js','./EarthEngine/Assets/earth-land-ocean-ice-2048.png'];
             try { if (await repairThenReload(repairPaths, userRequested)) return; } catch (_) {}
             throw new Error(sceneFailure);
           }
@@ -887,7 +887,7 @@ function injectStartupGate(html) {
           }
         } catch (renderError) {
           const missing = getMissingControllers();
-          const repairPaths = missing.length ? missing : ['./vendor/three.module.js','./vendor/three.core.js','./runtime-assets/earth-land-ocean-ice-2048.png'];
+          const repairPaths = missing.length ? missing : ['./vendor/three.module.js','./vendor/three.core.js','./EarthEngine/Assets/earth-land-ocean-ice-2048.png'];
           try { if (await repairThenReload(repairPaths, userRequested)) return; } catch (_) {}
           throw renderError;
         }
@@ -942,7 +942,7 @@ function injectStartupGate(html) {
     window.addEventListener('error', event => {
       if (event.target && event.target.tagName === 'SCRIPT') {
         const src = event.target.src || '';
-        const scriptPaths = ['./Global/orb-controls-v4.js','./Global/earth-engine.js','./Earth/earth-view-controller.js','./Global/view-manager.js','./Global/view-module-registry.js','./Stacks/stacks-feature-views.js','./Clouds/clouds-view.js','./Weather/weather-view.js','./Traffic/traffic-view.js','./Earthquakes/earthquakes-view.js','./Global/sky-view-controller.js','./Moon/moon-view-controller.js','./Sun/sun-view-controller.js','./Global/update-manager.js','./Data/data-recovery.js','./Location/location.js','./Home/moon-orbit.js','./Data/data-store.js'];
+        const scriptPaths = ['./Global/orb-controls-v4.js','./EarthEngine/Core/earth-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-core.js','./Earth/earth-view-controller.js','./Global/view-manager.js','./Global/view-module-registry.js','./Stacks/stacks-feature-views.js','./Clouds/clouds-view.js','./Weather/weather-view.js','./Traffic/traffic-view.js','./Earthquakes/earthquakes-view.js','./Global/sky-view-controller.js','./Moon/moon-view-controller.js','./Sun/sun-view-controller.js','./Global/update-manager.js','./Data/data-recovery.js','./Location/location.js','./Home/moon-orbit.js','./Data/data-store.js'];
         for (const path of scriptPaths) if (src.endsWith(path.slice(1))) knownBadPaths.push(path);
         sceneFailure = 'A required startup script failed to load.';
       } else if (event.error) {
@@ -993,11 +993,11 @@ async function transformHomeHTML(request, response, forceHome = false) {
   );
   html = html.replaceAll(
     "https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57730/land_ocean_ice_2048.png",
-    "./runtime-assets/earth-land-ocean-ice-2048.png"
+    "./EarthEngine/Assets/earth-land-ocean-ice-2048.png"
   );
   html = html.replaceAll(
     "https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg",
-    "./runtime-assets/earth-land-ocean-ice-2048.png"
+    "./EarthEngine/Assets/earth-land-ocean-ice-2048.png"
   );
   html = injectSameGlobeAPI(html);
   html = injectSolarDayNight(html);

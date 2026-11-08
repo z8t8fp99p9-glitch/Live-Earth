@@ -17,7 +17,7 @@ function createStorage() {
 }
 
 function loadBridge(sessionStorage, sharedWindow = null) {
-  const source = read('Global/earth-viewpoint-bridge.js').replace(/^export function /gm, 'function ');
+  const source = read('EarthEngine/Core/earth-viewpoint-bridge.js').replace(/^export function /gm, 'function ');
   const dispatched = [];
   const window = sharedWindow || {
     sessionStorage,
@@ -118,19 +118,19 @@ const earthController = read('Earth/earth-view-controller.js');
 const earthModes = read('Earth/earth-orb-globe.js');
 const sw = read('sw.js');
 const updateManager = read('Global/update-manager.js');
-assert.match(index, /import\('\.\/Global\/earth-viewpoint-bridge\.js'\)/, 'Home must load the bridge module.');
+assert.match(index, /import\('\.\/EarthEngine\/Core\/earth-viewpoint-bridge\.js'\)/, 'Home must load the bridge module.');
 assert.match(index, /applyHomeOrientation\(group\)/, 'Home must restore the saved orientation after same-tab navigation.');
 assert.match(index, /publishHomeOrientation\(group, \{ persist: false \}\)/, 'Home must publish live pointer movement without storage writes per frame.');
 assert.match(index, /viewpointBridge\.publishHomeOrientation\(group\);\s*\n\s*\};/, 'Home must persist its settled orientation after pointer release.');
-assert.match(earthController, /import\("\.\.\/Global\/earth-viewpoint-bridge\.js"\)/, 'Independent Earth View must load the bridge.');
+assert.match(earthController, /import\("\.\.\/EarthEngine\/Core\/earth-viewpoint-bridge\.js"\)/, 'Independent Earth View must load the bridge.');
 assert.match(earthController, /applyHomeOrientation\?\.\(earthGroup\)/, 'Independent Earth View must consume Home orientation on activation.');
-assert.match(earthModes, /import \{ applyHomeOrientation \} from "\.\.\/Global\/earth-viewpoint-bridge\.js"/, 'Earth Modes must load the bridge.');
+assert.match(earthModes, /import \{ applyHomeOrientation \} from "\.\.\/EarthEngine\/Core\/earth-viewpoint-bridge\.js"/, 'Earth Modes must load the bridge.');
 assert.match(earthModes, /applyHomeOrientation\(group\)/, 'Earth Modes must consume Home orientation.');
-assert.match(earthModes, /import \{ createEarthGlobe \} from "\.\.\/Global\/earth-engine\.js"/, 'Earth Modes must use the canonical Global Earth Engine.');
-assert.match(sw, /v126-quaternion-stable-earth-drag/, 'The service worker build identity must be bumped.');
+assert.match(earthModes, /import \{ createEarthGlobe \} from "\.\.\/EarthEngine\/Core\/earth-engine\.js"/, 'Earth Modes must use the canonical Global Earth Engine.');
+assert.match(sw, /v127-earthengine-root-folder/, 'The service worker build identity must be bumped.');
 assert.match(sw, /"\.\/Earth\/earth-orb-globe\.js"/, 'Earth Modes controller must remain an essential offline asset.');
-assert.match(sw, /"\.\/Global\/earth-viewpoint-bridge\.js"/, 'The bridge must be an essential offline shell asset.');
-assert.match(updateManager, /v126-quaternion-stable-earth-drag/, 'Update manager and service worker must share the build identity.');
+assert.match(sw, /"\.\/EarthEngine\/Core\/earth-viewpoint-bridge\.js"/, 'The bridge must be an essential offline shell asset.');
+assert.match(updateManager, /v127-earthengine-root-folder/, 'Update manager and service worker must share the build identity.');
 assert.doesNotMatch(earthController, /publishHomeOrientation/, 'Independent Earth View must not write its orientation back to Home.');
 assert.doesNotMatch(earthModes, /publishHomeOrientation/, 'Earth Modes must not write its orientation back to Home.');
 

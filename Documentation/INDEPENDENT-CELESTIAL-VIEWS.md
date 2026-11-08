@@ -11,7 +11,10 @@ Earth, Moon and Sun are three independent primary views. They share the Global P
 | Primary-view transitions | `Global/view-manager.js` |
 | Module activation/deactivation | `Global/view-module-registry.js` |
 | Full-screen stage and common background | `Global/sky-view-controller.js` |
-| Reusable Earth globe objects and generic geometry/texture lifecycle | `Global/earth-engine.js` |
+| Stable public globe factory | `EarthEngine/Core/earth-engine.js` |
+| 3D globe assembly and per-view surface/atmosphere setup | `EarthEngine/Graphics/earth-engine-3d-graphics-engine.js` |
+| Low-level geometry, materials, shared texture lease and disposal | `EarthEngine/Graphics/earth-engine-3d-graphics-core.js` |
+| One-way Home orientation snapshot bridge | `EarthEngine/Core/earth-viewpoint-bridge.js` |
 | Home Earth scene, fixed camera, renderer, lights, responsive sizing and interaction | Home module in `index.html` |
 | Home-only Moon orbit attached to Home Earth group | `Home/moon-orbit.js` |
 | Independent Earth 3D scene, camera, renderer and controls | `Earth/earth-view-controller.js` |
@@ -34,11 +37,11 @@ Location remains OFF until the user explicitly enables the Location Orb. Earth V
 
 ## Offline and compatibility
 
-The Earth View Controller is named `Earth/earth-view-controller.js`. The reusable `Global/earth-engine.js` module remains in the verified service-worker app shell so Home and registered views can load the same globe factory offline. The controller implements the independent renderer and registers `earth-independent-renderer`; it obtains its Earth group and surface mesh from `Global/earth-engine.js` and never changes Home `LiveEarthScene` camera or renderer state.
+The Earth View Controller is named `Earth/earth-view-controller.js`. The Earth Engine Core and Graphics modules remain in the verified service-worker app shell so Home and registered views can load the same globe factory offline. The controller implements the independent renderer and registers `earth-independent-renderer`; it obtains its Earth group and surface mesh from `EarthEngine/Core/earth-engine.js` and never changes Home `LiveEarthScene` camera or renderer state.
 
 The manager emits canonical `earth` view events. `getActiveView()` preserves the historic `explorer` label as a compatibility adapter for the protected Orb controller and existing Stacks return paths; `getCanonicalActiveView()` exposes the canonical state.
 
-Three.js and the approved Earth texture use the existing same-origin runtime dependency paths already cached by the service worker. No new network-only Earth assets are introduced.
+Three.js remains a separate low-level dependency under the existing `vendor/` runtime paths. The Earth texture is downloaded by the service worker and cached at `EarthEngine/Assets/earth-land-ocean-ice-2048.png`; the supplied snapshot did not include this image as a tracked binary file. No new network-only Earth assets are introduced.
 
 ## Verification required
 

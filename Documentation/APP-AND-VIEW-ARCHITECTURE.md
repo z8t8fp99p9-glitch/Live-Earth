@@ -6,7 +6,7 @@
 - `Global/view-module-registry.js` manages registered view modules and shared feature lifecycle.
 - `Global/orb-controls-v4.js` implements protected Home Orb controls and orientation-specific scroll recovery.
 - `ios-standalone-root-flow.js` supports iOS full-screen/root-flow behaviour.
-- `earth-mode-navigation.js` owns Earth exploration controls and view-transition integration.
+- `Earth/earth-view-controller.js` owns the independent Earth View controls and renderer; Earth Modes use `Earth/earth-orb-globe.js`.
 
 Do not create parallel primary-view state or bypass the existing manager without an explicit architecture decision.
 
@@ -42,7 +42,7 @@ Every file referenced by the service worker, update manager, view controller or 
 
 
 ## Shared Earth viewpoint
-`Global/earth-engine.js` is the one canonical Earth globe factory used by Home, Independent Earth View and Earth Modes Basic/HD/Offline. Each view receives its own globe instance because each owns a separate scene and renderer, but all instances use the same engine, local Earth texture, geometry profiles and fixed base-surface calibration. `Global/earth-viewpoint-bridge.js` transfers only Home's user-controlled parent-group quaternion. It never copies the child surface transform, Moon state, camera or zoom, and secondary views never write their orientation back to Home. Stacks feature layers already use the Home Earth scene and naturally share its orientation. Moon and Sun remain independent.
+`EarthEngine/Core/earth-engine.js` is the stable public Earth globe factory used by Home, Independent Earth View and Earth Modes Basic/HD/Offline. It delegates assembly to `EarthEngine/Graphics/earth-engine-3d-graphics-engine.js`, which uses the primitives in `EarthEngine/Graphics/earth-engine-3d-graphics-core.js`. Each view receives its own globe instance because each owns a separate scene and renderer, but all instances use the same engine, local Earth texture, geometry profiles and fixed base-surface calibration. `EarthEngine/Core/earth-viewpoint-bridge.js` transfers only Home's user-controlled parent-group quaternion. It never copies the child surface transform, Moon state, camera or zoom, and secondary views never write their orientation back to Home. Stacks feature layers already use the Home Earth scene and naturally share its orientation. Moon and Sun remain independent.
 
 
 ## Earth View drag orientation

@@ -4,9 +4,9 @@
 **Repository:** `z8t8fp99p9-glitch/Live-Earth`  
 **Working branch:** `main`  
 **Source baseline:** user-tested `Live-Earth-fullscreen-stacks-feature-views-v118.zip`  
-**Working package:** V126 — one canonical Global Earth Engine, strict Moon/Earth isolation, Home viewpoint hand-off and quaternion-stable Earth View dragging (includes V118 feature views and V120 Location service naming)
+**Working package:** V127 — Earth Engine Core/Graphics/Assets folder architecture, one canonical globe factory, strict Moon/Earth isolation, Home viewpoint hand-off and quaternion-stable Earth View dragging (includes V118 feature views and V120 Location service naming)
 
-This checkpoint is based on the V120 full source snapshot plus the subsequent V121–V124 incremental bridge work. Re-check `main` before any later task.
+This checkpoint is based on the owner-supplied full source snapshot plus the subsequent incremental changes through V127. Re-check `main` before any later task.
 
 ## 1. Application
 
@@ -67,7 +67,7 @@ V120 starts from the V119 package and renames `Location/location-orb-controller.
 
 ## V121 — Home-to-viewpoint bridge
 
-V121 adds `Global/earth-viewpoint-bridge.js`. Home publishes an immutable quaternion snapshot of its Earth group at startup and after user rotation. The independent Earth View applies that snapshot to its own Earth group whenever activated, sharing only the starting globe orientation. The bridge is intentionally one-way: Earth View interaction does not rotate or otherwise change Home. Weather, Clouds, Elevation, Earthquakes and Traffic already attach to the Home Earth scene and therefore naturally share its orientation. Moon and Sun remain independent. The separate Earth Modes page still uses its own standalone `earth-orb-globe.js` renderer and is not connected by this change. The new bridge is in the service-worker app shell and required by startup verification/repair.
+V121 adds `EarthEngine/Core/earth-viewpoint-bridge.js`. Home publishes an immutable quaternion snapshot of its Earth group at startup and after user rotation. The independent Earth View applies that snapshot to its own Earth group whenever activated, sharing only the starting globe orientation. The bridge is intentionally one-way: Earth View interaction does not rotate or otherwise change Home. Weather, Clouds, Elevation, Earthquakes and Traffic already attach to the Home Earth scene and therefore naturally share its orientation. Moon and Sun remain independent. The separate Earth Modes page still uses its own standalone `earth-orb-globe.js` renderer and is not connected by this change. The new bridge is in the service-worker app shell and required by startup verification/repair.
 
 
 ## 8 November 2026 — V122 persistent Earth viewpoint bridge (historical; group-only snapshot)
@@ -83,8 +83,29 @@ V124 incorrectly assumed Moon Orbit's sidereal surface write was part of the int
 
 V125 corrects the V124 architectural mistake. `Home/moon-orbit.js` previously found the Home Earth surface mesh and assigned `earthSurface.rotation.y` from Greenwich Mean Sidereal Time on initial creation and each scheduled Moon update. This directly changed the visible Earth independently of Home's user drag. V124 then copied that child-surface quaternion through the bridge, spreading the coupling into Independent Earth View and Earth Modes. Both behaviours are removed. Moon Orbit now updates only `moon.position`; it never locates or writes to an Earth object.
 
-`Global/earth-engine.js` is now used by all three Earth renderers: Home, Independent Earth View and Earth Modes Basic/HD/Offline. Each view receives a separate Engine-created instance to preserve its independent scene and renderer, but all use the same engine, local Earth texture and geometry profiles; the `-0.35` base surface calibration is now owned only by the Global Engine. The bridge returns to a group-only snapshot: it transfers only Home's user-controlled Earth-group quaternion. Camera/zoom is initialized after the Earth is created and viewpoint applied. Build identity is `v125-global-earth-engine-isolated`.
+`EarthEngine/Core/earth-engine.js` is now used by all three Earth renderers: Home, Independent Earth View and Earth Modes Basic/HD/Offline. Each view receives a separate Engine-created instance to preserve its independent scene and renderer, but all use the same engine, local Earth texture and geometry profiles; the `-0.35` base surface calibration is now owned only by the Global Engine. The bridge returns to a group-only snapshot: it transfers only Home's user-controlled Earth-group quaternion. Camera/zoom is initialized after the Earth is created and viewpoint applied. Build identity is `v125-global-earth-engine-isolated`.
 
 
 ## V126 — Earth View first-touch drag stability
-V125 correctly applies the Home quaternion on Earth View activation, but its drag handler then read and wrote `earthGroup.rotation.x/y`. When Home yaw is beyond +/-90 degrees, Three.js can represent the same valid quaternion using the alternate canonical Euler branch. The old pitch clamp then forced the alternate X value to +/-1.25 on the first pointer move, making the Earth appear to flip upside down. V126 recovers Home's original bounded pitch from the quaternion using the known Home XYZ convention and applies drag deltas with local-Y/world-X quaternion multiplication. It does not change Home gestures, Earth Engine calibration, camera/zoom, Moon Orbit, Sun, Location, or Global Orb behaviour. Build identity is `v126-quaternion-stable-earth-drag`.
+V125 correctly applies the Home quaternion on Earth View activation, but its drag handler then read and wrote `earthGroup.rotation.x/y`. When Home yaw is beyond +/-90 degrees, Three.js can represent the same valid quaternion using the alternate canonical Euler branch. The old pitch clamp then forced the alternate X value to +/-1.25 on the first pointer move, making the Earth appear to flip upside down. V126 recovers Home's original bounded pitch from the quaternion using the known Home XYZ convention and applies drag deltas with local-Y/world-X quaternion multiplication. It does not change Home gestures, Earth Engine calibration, camera/zoom, Moon Orbit, Sun, Location, or Global Orb behaviour. Build identity is `v127-earthengine-root-folder`.
+
+
+## V127 — EarthEngine root-folder architecture
+
+The reusable Earth Engine now has one dedicated repository-root folder with the approved separation:
+
+```text
+EarthEngine/
+├── Core/
+│   ├── earth-engine.js
+│   └── earth-viewpoint-bridge.js
+├── Graphics/
+│   ├── earth-engine-3d-graphics-engine.js
+│   └── earth-engine-3d-graphics-core.js
+└── Assets/
+    └── README.md
+```
+
+The Core facade keeps the public `createEarthGlobe` / `createGlobe` API stable. Graphics Engine assembles the Earth group, surface and atmosphere; Graphics Core owns the low-level geometry, materials, shared texture lease and disposal helpers. Home, Independent Earth View and Earth Modes retain their own scenes, cameras, renderers, controls and view state. Three.js remains a separate low-level runtime dependency under the existing `vendor/` virtual paths; Moon and Sun are not moved into EarthEngine.
+
+The supplied source archive did not contain the Earth texture PNG as a repository file. To avoid substituting a different image or inserting a fake binary, the service worker continues to download the NASA Blue Marble texture (with its existing fallback) and caches it at the new same-origin runtime path `EarthEngine/Assets/earth-land-ocean-ice-2048.png`. `Assets/README.md` records this distinction and the NASA credit. The binary itself is therefore a cached runtime asset, not part of this ZIP payload. Build identity is `v127-earthengine-root-folder`.

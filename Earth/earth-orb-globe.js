@@ -2,8 +2,8 @@
  * Uses the canonical Global Earth Engine and receives only Home's user viewpoint.
  * Camera, renderer, zoom, controls and scene remain owned by this page.
  */
-import { createEarthGlobe } from "../Global/earth-engine.js";
-import { applyHomeOrientation } from "../Global/earth-viewpoint-bridge.js";
+import { createEarthGlobe } from "../EarthEngine/Core/earth-engine.js";
+import { applyHomeOrientation } from "../EarthEngine/Core/earth-viewpoint-bridge.js";
 
 (() => {
   "use strict";
@@ -155,7 +155,7 @@ import { applyHomeOrientation } from "../Global/earth-viewpoint-bridge.js";
       earthGlobe = await createEarthGlobe({
         THREE: T,
         radius: 1,
-        textureUrl: "../runtime-assets/earth-land-ocean-ice-2048.png",
+        textureUrl: "../EarthEngine/Assets/earth-land-ocean-ice-2048.png",
         geometryDetail: mode === "hd" ? "high" : "standard",
         maxAnisotropy: renderer.capabilities.getMaxAnisotropy(),
           atmosphere: true

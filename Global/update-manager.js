@@ -1,9 +1,9 @@
-/* LIVE // EARTH V126 update manager — quaternion-stable Earth View dragging. */
+/* LIVE // EARTH V127 update manager — EarthEngine root-folder architecture. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v126-quaternion-stable-earth-drag";
+  const BUILD_ID = "v127-earthengine-root-folder";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
