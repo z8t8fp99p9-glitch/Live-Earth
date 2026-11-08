@@ -1,7 +1,7 @@
 /* LIVE // EARTH — Global Earth Engine.
- * All views use one globe factory. The Engine also owns the single global
- * rotation snapshot and follows the Global Orb System's active-view lifecycle.
- * It never shares cameras, zoom, scenes, renderers, lighting or child transforms.
+ * All views use one globe factory. The Engine owns the global rotation snapshot,
+ * the shared default finger gestures, and the active-view lifecycle. Cameras,
+ * scenes, renderers, lights, zoom limits and view-specific UI remain view-owned.
  */
 import { createEarthGraphics } from "../Graphics/earth-engine-3d-graphics-engine.js";
 
@@ -116,8 +116,7 @@ function incomingGroupFor(owner) {
   const exact = earthGroupsByOwner.get(owner);
   if (exact) return exact;
   // Existing Stacks views are overlays on the persistent Home Earth scene.
-  // If a future Secondary view creates its own Engine globe, createEarthGlobe
-  // registers that group under its own secondary:<id> identity and takes priority.
+  // A Secondary view with its own Engine globe takes precedence above.
   if (owner.startsWith("secondary:")) return earthGroupsByOwner.get("primary:home") || null;
   return null;
 }
@@ -154,6 +153,168 @@ function installLifecycle() {
   }, { once: true });
 }
 
+// One implementation for every Engine-created globe. It never owns a camera:
+// a view supplies small zoom adapters and its own limits when pinch zoom is on.
+function createEarthInteractions(THREE, group, options = {}) {
+  if (!THREE?.Vector3 || !THREE?.Quaternion || !group?.quaternion) {
+    throw new TypeError("Earth interactions require the calling view's Three.js namespace and Engine group.");
+  }
+  const element = options.element;
+  if (!element?.addEventListener || !element?.removeEventListener) {
+    throw new TypeError("Earth interactions require a DOM event target.");
+  }
+
+  const rotation = options.rotation === false ? { enabled: false } : (options.rotation || {});
+  const zoom = options.zoom || { enabled: false };
+  const enabled = () => {
+    try { return typeof options.enabled === "function" ? options.enabled() !== false : options.enabled !== false; }
+    catch (_) { return false; }
+  };
+  const valueOf = value => typeof value === "function" ? value() : value;
+  const pointers = new Map();
+  const worldXAxis = new THREE.Vector3(1, 0, 0);
+  const localYAxis = new THREE.Vector3(0, 1, 0);
+  const pitchDelta = new THREE.Quaternion();
+  const yawDelta = new THREE.Quaternion();
+  const sensitivityX = Number.isFinite(rotation.sensitivityX) ? rotation.sensitivityX : 0.009;
+  const sensitivityY = Number.isFinite(rotation.sensitivityY) ? rotation.sensitivityY : 0.0055;
+  const minPitch = Number.isFinite(rotation.minPitch) ? rotation.minPitch : -1.15;
+  const maxPitch = Number.isFinite(rotation.maxPitch) ? rotation.maxPitch : 1.15;
+  let dragPitch = 0;
+  let pinchDistance = 0;
+  let disposed = false;
+
+  function pitchFromQuaternion(quaternion) {
+    const normalized = normalizeQuaternion(quaternion);
+    if (!normalized) return 0;
+    // All default gestures use q = qX(pitch) * qY(yaw), never Euler extraction.
+    const yawHalf = Math.atan2(normalized.y, normalized.w);
+    const sinHalfPitch = normalized.x * Math.cos(yawHalf) + normalized.z * Math.sin(yawHalf);
+    const cosHalfPitch = Math.hypot(normalized.w, normalized.y);
+    const pitch = 2 * Math.atan2(sinHalfPitch, cosHalfPitch);
+    return Number.isFinite(pitch) ? Math.max(minPitch, Math.min(maxPitch, pitch)) : 0;
+  }
+
+  function distanceBetween(a, b) {
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  function consume(event) {
+    event.preventDefault?.();
+    event.stopImmediatePropagation?.();
+  }
+
+  function onPointerDown(event) {
+    if (disposed || !enabled() || (event.pointerType === "mouse" && event.button !== 0)) return;
+    if (event.pointerType === "touch" && event.isPrimary === false && pointers.size === 0) return;
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    try { element.setPointerCapture?.(event.pointerId); } catch (_) {}
+    if (pointers.size === 1) {
+      dragPitch = pitchFromQuaternion(group.quaternion);
+      pinchDistance = 0;
+    } else if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      pinchDistance = distanceBetween(a, b);
+    }
+    options.onStart?.(event);
+    consume(event);
+  }
+
+  function onPointerMove(event) {
+    if (disposed || !enabled() || !pointers.has(event.pointerId)) return;
+    const previous = pointers.get(event.pointerId);
+    const current = { x: event.clientX, y: event.clientY };
+    pointers.set(event.pointerId, current);
+
+    if (pointers.size >= 2) {
+      const [a, b] = [...pointers.values()];
+      const nextPinchDistance = distanceBetween(a, b);
+      if (zoom.enabled === true && pinchDistance > 0 && nextPinchDistance > 0 &&
+          typeof zoom.getDistance === "function" && typeof zoom.setDistance === "function") {
+        const currentDistance = Number(zoom.getDistance());
+        if (Number.isFinite(currentDistance) && currentDistance > 0) {
+          const minimum = Number(valueOf(zoom.minDistance));
+          const maximum = Number(valueOf(zoom.maxDistance));
+          let nextDistance = currentDistance * pinchDistance / nextPinchDistance;
+          if (Number.isFinite(minimum)) nextDistance = Math.max(minimum, nextDistance);
+          if (Number.isFinite(maximum)) nextDistance = Math.min(maximum, nextDistance);
+          if (Math.abs(nextDistance - currentDistance) > 1e-9) {
+            zoom.setDistance(nextDistance);
+            options.onZoom?.(nextDistance, event);
+          }
+        }
+      }
+      pinchDistance = nextPinchDistance;
+      consume(event);
+      return;
+    }
+
+    if (rotation.enabled !== false) {
+      const dx = current.x - previous.x;
+      const dy = current.y - previous.y;
+      let changed = false;
+      if (dx) {
+        yawDelta.setFromAxisAngle(localYAxis, dx * sensitivityX);
+        group.quaternion.multiply(yawDelta);
+        changed = true;
+      }
+      if (dy) {
+        const nextPitch = Math.max(minPitch, Math.min(maxPitch, dragPitch + dy * sensitivityY));
+        const pitchChange = nextPitch - dragPitch;
+        if (Math.abs(pitchChange) > 1e-12) {
+          pitchDelta.setFromAxisAngle(worldXAxis, pitchChange);
+          group.quaternion.premultiply(pitchDelta);
+          dragPitch = nextPitch;
+          changed = true;
+        }
+      }
+      if (changed) {
+        group.quaternion.normalize();
+        options.onRotate?.(group.quaternion, event);
+      }
+    }
+    consume(event);
+  }
+
+  function finishPointer(event) {
+    if (!pointers.has(event.pointerId)) return;
+    pointers.delete(event.pointerId);
+    if (pointers.size < 2) pinchDistance = 0;
+    if (pointers.size === 1) {
+      // A remaining finger can continue rotating without a position jump.
+      dragPitch = pitchFromQuaternion(group.quaternion);
+    }
+    if (enabled()) consume(event);
+  }
+
+  function reset() {
+    pointers.clear();
+    pinchDistance = 0;
+    dragPitch = pitchFromQuaternion(group.quaternion);
+  }
+
+  function dispose() {
+    if (disposed) return;
+    disposed = true;
+    reset();
+    element.removeEventListener("pointerdown", onPointerDown, true);
+    element.removeEventListener("pointermove", onPointerMove, true);
+    element.removeEventListener("pointerup", finishPointer, true);
+    element.removeEventListener("pointercancel", finishPointer, true);
+    element.removeEventListener("lostpointercapture", finishPointer, true);
+  }
+
+  // Capture-phase listeners take ownership before legacy per-view handlers.
+  // This prevents a second, conflicting Euler-based drag implementation.
+  element.addEventListener("pointerdown", onPointerDown, { capture: true, passive: false });
+  element.addEventListener("pointermove", onPointerMove, { capture: true, passive: false });
+  element.addEventListener("pointerup", finishPointer, true);
+  element.addEventListener("pointercancel", finishPointer, true);
+  element.addEventListener("lostpointercapture", finishPointer, true);
+
+  return Object.freeze({ reset, dispose });
+}
+
 function registerEarthGroup(globe, owner) {
   installLifecycle();
   const group = globe?.group;
@@ -175,12 +336,30 @@ export async function createEarthGlobe(options = {}) {
   const ownerAtRequest = getCurrentOwner();
   const globe = await createEarthGraphics(options);
   const unregister = registerEarthGroup(globe, ownerAtRequest);
+  const interactionControllers = new Set();
   let disposed = false;
+
+  function attachInteractions(interactionOptions = {}) {
+    if (disposed) throw new Error("Cannot attach gestures to a disposed Earth globe.");
+    const interaction = createEarthInteractions(options.THREE, globe.group, interactionOptions);
+    interactionControllers.add(interaction);
+    return Object.freeze({
+      reset: interaction.reset,
+      dispose() {
+        if (!interactionControllers.delete(interaction)) return;
+        interaction.dispose();
+      }
+    });
+  }
+
   return Object.freeze({
     ...globe,
+    attachInteractions,
     dispose() {
       if (disposed) return;
       disposed = true;
+      for (const interaction of interactionControllers) interaction.dispose();
+      interactionControllers.clear();
       unregister();
       globe.dispose();
     }
@@ -189,7 +368,7 @@ export async function createEarthGlobe(options = {}) {
 
 export const createGlobe = createEarthGlobe;
 export const EarthEngine = Object.freeze({
-  version: "2.0.0",
+  version: "2.1.0",
   createGlobe: createEarthGlobe,
   createEarthGlobe,
   getGlobalViewpoint: getSnapshot,

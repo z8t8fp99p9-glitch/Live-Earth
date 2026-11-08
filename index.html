@@ -419,7 +419,7 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
     fill.position.set(4, -2, -3);
     scene.add(ambient, sun, fill);
 
-    // Home keeps its own camera, renderer, lighting, input and animation.
+    // Home keeps its own camera, renderer, lighting and animation; the Engine supplies globe input.
     // Only the reusable globe objects come from Earth Engine.
     const getCanvasViewport = () => {
       const rect = canvas.getBoundingClientRect();
@@ -590,44 +590,26 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
     }, 10000);
 
     // The service worker inserts the Home Earth APIs at this stable marker.
-    // Keep it before the original pointer input declarations for lexical access.
+    // Keep it before Home interaction setup for lexical access.
     // LIVE_EARTH_HOME_RENDERER_HOOKS
 
-    let active = null;
-    let x = 0;
-    let y = 0;
-    let drag = false;
-
-    canvas.addEventListener('pointerdown', event => {
-      if (active !== null || (event.pointerType === 'touch' && !event.isPrimary)) return;
-      active = event.pointerId;
-      x = event.clientX;
-      y = event.clientY;
-      drag = true;
-      canvas.setPointerCapture?.(event.pointerId);
-      event.preventDefault();
-    }, { passive: false });
-
-    canvas.addEventListener('pointermove', event => {
-      if (!drag || event.pointerId !== active) return;
-      group.rotation.y += (event.clientX - x) * 0.009;
-      group.rotation.x = Math.max(
-        -1.15,
-        Math.min(1.15, group.rotation.x + (event.clientY - y) * 0.0055)
-      );
-      x = event.clientX;
-      y = event.clientY;
-      draw();
-    }, { passive: false });
-
-    const endDrag = event => {
-      if (event.pointerId !== active) return;
-      drag = false;
-      active = null;
-    };
-    canvas.addEventListener('pointerup', endDrag);
-    canvas.addEventListener('pointercancel', endDrag);
-    canvas.addEventListener('lostpointercapture', endDrag);
+    // Home uses the Engine's shared quaternion rotation, but keeps its camera
+    // framing locked. Two-finger input never changes Home camera distance.
+    earthGlobe.attachInteractions({
+      element: canvas,
+      enabled: () => {
+        const owner = window.LiveEarthOrbSystem?.getActiveViewIdentity?.();
+        return !owner || owner === 'primary:home';
+      },
+      rotation: {
+        sensitivityX: 0.009,
+        sensitivityY: 0.0055,
+        minPitch: -1.15,
+        maxPitch: 1.15
+      },
+      zoom: { enabled: false },
+      onRotate: () => draw()
+    });
 
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {

@@ -1,6 +1,6 @@
 /* LIVE // EARTH — Earth View Controller.
-   Owns the full-screen Earth View lifecycle, controls, camera and input.
-   The reusable Earth Engine supplies only this view's Earth globe objects. */
+   Owns the full-screen Earth View lifecycle, controls and camera.
+   Default finger rotation and pinch zoom are supplied by the reusable Earth Engine. */
 (() => {
   "use strict";
   if (window.__liveEarthEarthRendererInstalled) return;
@@ -66,6 +66,7 @@
   let atmosphere = null;
   let locationMarker = null;
   let earthGlobe = null;
+  let earthInteractions = null;
   let quality = "basic";
   let active = false;
   let activationGeneration = 0;
@@ -81,34 +82,12 @@
   let lastWidth = 0;
   let lastHeight = 0;
   let lastPixelRatio = 0;
-  let pinchDistance = 0;
-  const pointers = new Map();
   const fovRadians = FOV * Math.PI / 180;
   let solarVector = null;
   let shaderUniforms = null;
   let resizeSettleTimers = [];
-  // Drag pitch is tracked independently of Three.js Euler decomposition.
-  // A transferred quaternion can represent the same Home pose with an Euler
-  // X value on the alternate branch (for example when yaw passes +/- 90°).
-  let earthDragPitch = 0;
-  let dragWorldXAxis = null;
-  let dragLocalYAxis = null;
-  let dragPitchDeltaQuaternion = null;
-  let dragYawDeltaQuaternion = null;
 
   try { quality = localStorage.getItem(QUALITY_KEY) === "hd" ? "hd" : "basic"; } catch (_) {}
-
-  function homePitchFromQuaternion(quaternion) {
-    if (!quaternion || ![quaternion.x, quaternion.y, quaternion.z, quaternion.w].every(Number.isFinite)) return 0;
-    // Home uses Three.js Euler order XYZ with rotation.z fixed at zero:
-    // q = qX(pitch) * qY(yaw). This recovers its original pitch without
-    // converting through the ambiguous canonical Euler X branch.
-    const yawHalf = Math.atan2(quaternion.y, quaternion.w);
-    const sinHalfPitch = quaternion.x * Math.cos(yawHalf) + quaternion.z * Math.sin(yawHalf);
-    const cosHalfPitch = Math.hypot(quaternion.w, quaternion.y);
-    const pitch = 2 * Math.atan2(sinHalfPitch, cosHalfPitch);
-    return Number.isFinite(pitch) ? clamp(pitch, -1.15, 1.15) : 0;
-  }
 
   function showStatus(message, duration = 2600) {
     const status = document.querySelector("#status");
@@ -140,7 +119,8 @@
     canvas.setAttribute("role", "img");
     stage.appendChild(canvas);
     root.appendChild(stage);
-    bindCanvasGestures();
+    // The Engine binds the shared capture-phase pointer handler after creating
+    // its globe. No view-specific drag implementation is installed here.
     if (resizeObserver) {
       resizeObserver.observe(stage);
       stage.dataset.resizeObserved = "true";
@@ -164,7 +144,6 @@
 
   function homeEquivalentDistance() {
     // Home's approved camera fits the globe to 75% of the shorter screen edge.
-    // This independent camera uses the same visual fit without reading Home state.
     return distanceForDiameter(0.75);
   }
 
@@ -345,10 +324,6 @@
     makeStage();
     initPromise = (async () => {
       T = await import("../vendor/three.module.js");
-      dragWorldXAxis = new T.Vector3(1, 0, 0);
-      dragLocalYAxis = new T.Vector3(0, 1, 0);
-      dragPitchDeltaQuaternion = new T.Quaternion();
-      dragYawDeltaQuaternion = new T.Quaternion();
       renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "low-power" });
       renderer.outputColorSpace = T.SRGBColorSpace;
       renderer.setClearColor(0x02050b, 1);
@@ -377,12 +352,44 @@
         textureUrl: "./EarthEngine/Assets/earth-land-ocean-ice-2048.png",
         geometryDetail: quality === "hd" ? "high" : "standard",
         maxAnisotropy: renderer.capabilities.getMaxAnisotropy(),
-          atmosphere: true
+        atmosphere: true
       });
       earthGroup = earthGlobe.group;
       earthMesh = earthGlobe.surface;
       atmosphere = earthGlobe.atmosphere;
       scene.add(earthGroup);
+      earthInteractions = earthGlobe.attachInteractions({
+        element: canvas,
+        enabled: () => active,
+        rotation: {
+          sensitivityX: 0.008,
+          sensitivityY: 0.006,
+          minPitch: -1.25,
+          maxPitch: 1.25
+        },
+        zoom: {
+          enabled: true,
+          getDistance: () => camera.position.z,
+          setDistance: distance => {
+            camera.position.z = distance;
+            camera.lookAt(0, 0, 0);
+          },
+          minDistance: () => cinematicDistance() * (quality === "hd" ? 0.72 : 0.86),
+          maxDistance: () => baseDistance || homeEquivalentDistance()
+        },
+        onStart: () => {
+          entering = false;
+          stopCameraAnimation();
+        },
+        onRotate: () => {
+          updateSolarDirection();
+          queueDraw();
+        },
+        onZoom: () => {
+          camera.lookAt(0, 0, 0);
+          queueDraw();
+        }
+      });
       solarVector = new T.Vector3(0, 0, 1);
       installDayNightShader(earthMesh.material);
       addLocationMarker();
@@ -448,70 +455,6 @@
     });
   }
 
-  function bindCanvasGestures() {
-    if (!canvas || canvas.dataset.gesturesBound === "true") return;
-    canvas.dataset.gesturesBound = "true";
-    canvas.addEventListener("pointerdown", event => {
-      if (!active || (event.pointerType === "mouse" && event.button !== 0)) return;
-      entering = false;
-      stopCameraAnimation();
-      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-      try { canvas.setPointerCapture(event.pointerId); } catch (_) {}
-      if (pointers.size === 2) {
-        const values = [...pointers.values()];
-        pinchDistance = Math.hypot(values[0].x - values[1].x, values[0].y - values[1].y);
-      }
-      event.preventDefault();
-    }, { passive: false });
-    canvas.addEventListener("pointermove", event => {
-      if (!active || !pointers.has(event.pointerId)) return;
-      const previous = pointers.get(event.pointerId);
-      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-      if (pointers.size >= 2) {
-        const values = [...pointers.values()];
-        const nextDistance = Math.hypot(values[0].x - values[1].x, values[0].y - values[1].y);
-        if (pinchDistance > 0 && nextDistance > 0 && camera) {
-          const next = camera.position.z * pinchDistance / nextDistance;
-          camera.position.z = clamp(next, cinematicDistance() * (quality === "hd" ? 0.72 : 0.86), baseDistance || homeEquivalentDistance());
-          camera.lookAt(0, 0, 0);
-          queueDraw();
-        }
-        pinchDistance = nextDistance;
-      } else if (earthGroup) {
-        const dx = event.clientX - previous.x;
-        const dy = event.clientY - previous.y;
-        // Apply gesture deltas directly to the inherited quaternion. Do not
-        // read/write Euler rotation.x/y here: after Home's quaternion is copied,
-        // Euler extraction can choose the alternate branch and clamp the globe
-        // to an upside-down pose on the very first pointer movement.
-        if (dx && dragYawDeltaQuaternion && dragLocalYAxis) {
-          dragYawDeltaQuaternion.setFromAxisAngle(dragLocalYAxis, dx * 0.008);
-          earthGroup.quaternion.multiply(dragYawDeltaQuaternion);
-        }
-        if (dy && dragPitchDeltaQuaternion && dragWorldXAxis) {
-          const nextPitch = clamp(earthDragPitch + dy * 0.006, -1.25, 1.25);
-          const pitchDelta = nextPitch - earthDragPitch;
-          if (Math.abs(pitchDelta) > 1e-12) {
-            dragPitchDeltaQuaternion.setFromAxisAngle(dragWorldXAxis, pitchDelta);
-            earthGroup.quaternion.premultiply(dragPitchDeltaQuaternion);
-            earthDragPitch = nextPitch;
-          }
-        }
-        earthGroup.quaternion.normalize();
-        updateSolarDirection();
-        queueDraw();
-      }
-      event.preventDefault();
-    }, { passive: false });
-    const finish = event => {
-      pointers.delete(event.pointerId);
-      if (pointers.size < 2) pinchDistance = 0;
-    };
-    canvas.addEventListener("pointerup", finish);
-    canvas.addEventListener("pointercancel", finish);
-    canvas.addEventListener("lostpointercapture", finish);
-  }
-
   function activate() {
     active = true;
     const activation = ++activationGeneration;
@@ -522,11 +465,6 @@
     paintQuality();
     initializeRenderer().then(() => {
       if (!active || activation !== activationGeneration) return;
-      // Copy only Home's globe orientation. This view keeps its own scene,
-      // camera, zoom, renderer and subsequent exploration state.
-      // Recover Home's original bounded pitch from the quaternion itself so
-      // Earth View's first drag cannot snap through an alternate Euler branch.
-      earthDragPitch = homePitchFromQuaternion(earthGroup.quaternion);
       resizeRenderer(true);
       camera.position.z = baseDistance;
       camera.lookAt(0, 0, 0);
@@ -547,14 +485,13 @@
     activationGeneration++;
     entering = false;
     stopCameraAnimation();
+    earthInteractions?.reset();
     if (drawFrame) cancelAnimationFrame(drawFrame);
     drawFrame = 0;
     if (solarTimer) window.clearInterval(solarTimer);
     solarTimer = 0;
     resizeSettleTimers.forEach(timer => clearTimeout(timer));
     resizeSettleTimers = [];
-    pointers.clear();
-    pinchDistance = 0;
     if (stage) stage.hidden = true;
     controls.hidden = true;
     scannerButton.hidden = true;
