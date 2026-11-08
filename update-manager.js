@@ -3,7 +3,7 @@
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v110-retired-news-views";
+  const BUILD_ID = "v113-responsive-sun-moon-views";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
@@ -68,5 +68,5 @@
   else window.addEventListener("load", signalVerifiedStartup, { once: true });
   navigator.serviceWorker.ready.then(registration => {
     if (navigator.onLine !== false && typeof registration.update === "function") registration.update().catch(() => {});
-  }).catch(() => {});
-})();
+  }).catch(() =>{});
+ })();
