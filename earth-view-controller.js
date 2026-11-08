@@ -1,6 +1,6 @@
-/* LIVE // EARTH — Independent Earth View controller.
-   The historic filename is retained so the existing verified/offline shell keeps
-   loading this controller. It no longer unlocks or manipulates the Home renderer. */
+/* LIVE // EARTH — Earth View Controller.
+   Owns the full-screen Earth View lifecycle, controls, camera and input.
+   The reusable Earth Engine supplies only this view's Earth globe objects. */
 (() => {
   "use strict";
   if (window.__liveEarthEarthRendererInstalled) return;
@@ -65,8 +65,7 @@
   let earthMesh = null;
   let atmosphere = null;
   let locationMarker = null;
-  let basicGeometry = null;
-  let hdGeometry = null;
+  let earthGlobe = null;
   let quality = "basic";
   let active = false;
   let activationGeneration = 0;
@@ -195,8 +194,8 @@
   function setQuality(next) {
     quality = next === "hd" ? "hd" : "basic";
     try { localStorage.setItem(QUALITY_KEY, quality); } catch (_) {}
-    if (renderer && earthMesh) {
-      earthMesh.geometry = quality === "hd" ? hdGeometry : basicGeometry;
+    if (renderer && earthMesh && earthGlobe) {
+      earthGlobe.setQuality(quality);
       const pixelRatio = Math.min(window.devicePixelRatio || 1, quality === "hd" ? 1.5 : 1);
       renderer.setPixelRatio(pixelRatio);
       lastPixelRatio = pixelRatio;
@@ -345,27 +344,24 @@
       fill.position.set(4, -2, -3);
       scene.add(fill);
 
-      earthGroup = new T.Group();
-      scene.add(earthGroup);
-      const texture = await new Promise((resolve, reject) => {
-        const loader = new T.TextureLoader();
-        loader.load("./runtime-assets/earth-land-ocean-ice-2048.png", resolve, undefined, reject);
+      const engineModule = await import("./earth-engine.js");
+      const createEarthGlobe = engineModule.createEarthGlobe || engineModule.createGlobe || window.LiveEarthEngine?.createGlobe;
+      if (typeof createEarthGlobe !== "function") throw new Error("The reusable Earth Engine API is unavailable.");
+      earthGlobe = await createEarthGlobe({
+        THREE: T,
+        radius: 1,
+        textureUrl: "./runtime-assets/earth-land-ocean-ice-2048.png",
+        quality,
+        maxAnisotropy: renderer.capabilities.getMaxAnisotropy(),
+        initialRotationY: -0.35,
+        atmosphere: true
       });
-      texture.colorSpace = T.SRGBColorSpace;
-      texture.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 4);
-      basicGeometry = new T.SphereGeometry(1, 64, 48);
-      hdGeometry = new T.SphereGeometry(1, 96, 64);
-      const material = new T.MeshStandardMaterial({ map: texture, roughness: 1, metalness: 0 });
+      earthGroup = earthGlobe.group;
+      earthMesh = earthGlobe.surface;
+      atmosphere = earthGlobe.atmosphere;
+      scene.add(earthGroup);
       solarVector = new T.Vector3(0, 0, 1);
-      installDayNightShader(material);
-      earthMesh = new T.Mesh(quality === "hd" ? hdGeometry : basicGeometry, material);
-      earthMesh.rotation.y = -0.35;
-      earthGroup.add(earthMesh);
-      atmosphere = new T.Mesh(
-        new T.SphereGeometry(1.025, 64, 48),
-        new T.MeshBasicMaterial({ color: 0x329dff, transparent: true, opacity: 0.13, side: T.BackSide, blending: T.AdditiveBlending, depthWrite: false })
-      );
-      earthGroup.add(atmosphere);
+      installDayNightShader(earthMesh.material);
       addLocationMarker();
       addStars();
       initialized = true;

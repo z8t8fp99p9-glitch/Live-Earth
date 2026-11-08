@@ -1,11 +1,11 @@
-/* LIVE // EARTH V110 — Nature and Alien World feed Views retired. */
+/* LIVE // EARTH V114 — reusable Earth Engine and independent Earth View Controller. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v113-responsive-sun-moon-views";
-const CACHE_NAME = "live-earth-shell-v113-responsive-sun-moon-views";
+const BUILD_ID = "v114-reusable-earth-engine";
+const CACHE_NAME = "live-earth-shell-v114-reusable-earth-engine";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
- "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-mode-navigation.js","./view-manager.js","./view-module-registry.js","./stacks-feature-views.js","./sky-view-controller.js","./moon-view-controller.js","./moon-lunar-interface.js","./sun-view-controller.js","./sun-surface-shared.webp",
+ "./","./index.html","./ios-standalone-root-flow.js","./orb-controls-v4.js","./earth-engine.js","./earth-view-controller.js","./view-manager.js","./view-module-registry.js","./stacks-feature-views.js","./sky-view-controller.js","./moon-view-controller.js","./moon-lunar-interface.js","./sun-view-controller.js","./sun-surface-shared.webp",
  "./location.html","./earth-orb-globe.js","./manifest.json","./icon.svg","./data-store.js","./location-scanner.js",
  "./astronomy.js","./moon-orbit.js","./dataset-manifest.json",
  "./runtime-assets/moon-surface-lroc-1536.jpg",
@@ -838,6 +838,7 @@ function injectStartupGate(html) {
     function getMissingControllers() {
       const paths = [...knownBadPaths];
       if (!window.LiveEarthScene) paths.push('./vendor/three.module.js','./vendor/three.core.js','./runtime-assets/earth-land-ocean-ice-2048.png');
+      if (window.__liveEarthEarthRendererInstalled !== true) paths.push('./earth-view-controller.js');
       if (!window.LiveEarthViewManager) paths.push('./view-manager.js');
       if (!window.LiveEarthSkyViews) paths.push('./sky-view-controller.js');
       if (!window.__liveEarthMoonRendererInstalled) paths.push('./moon-view-controller.js');
@@ -888,8 +889,12 @@ function injectStartupGate(html) {
     function coreReady() {
       const orbImages = [...document.querySelectorAll('#navButtons .orbImage')];
       const imagesReady = orbImages.length === 5 && orbImages.every(img => img.complete && img.naturalWidth > 0);
+      const modules = window.LiveEarthViewModules;
       return document.readyState === 'complete' &&
-        !!window.LiveEarthScene && !!window.LiveEarthViewManager && !!window.LiveEarthViewModules && window.LiveEarthViewModules.has('sky-container') && window.LiveEarthViewModules.has('moon-lunar-interface') && window.__liveEarthMoonRendererInstalled === true && window.__liveEarthStacksFeatureViewsInstalled === true && !!window.LiveEarthSkyViews &&
+        !!window.LiveEarthScene && window.__liveEarthEarthRendererInstalled === true &&
+        !!window.LiveEarthViewManager && !!modules && modules.has('earth-independent-renderer') &&
+        modules.has('sky-container') && modules.has('moon-lunar-interface') &&
+        window.__liveEarthMoonRendererInstalled === true && window.__liveEarthStacksFeatureViewsInstalled === true && !!window.LiveEarthSkyViews &&
         window.__liveEarthControlsInstalled === true && window.__liveEarthLocationScannerInstalled === true &&
         typeof window.liveEarthLocationAllowed === 'function' && window.liveEarthLocationAllowed() === false && imagesReady;
     }
@@ -1076,7 +1081,7 @@ function injectStartupGate(html) {
     window.addEventListener('error', event => {
       if (event.target && event.target.tagName === 'SCRIPT') {
         const src = event.target.src || '';
-        const scriptPaths = ['./orb-controls-v4.js','./earth-mode-navigation.js','./view-manager.js','./view-module-registry.js','./stacks-feature-views.js','./sky-view-controller.js','./moon-view-controller.js','./sun-view-controller.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
+        const scriptPaths = ['./orb-controls-v4.js','./earth-view-controller.js','./view-manager.js','./view-module-registry.js','./stacks-feature-views.js','./sky-view-controller.js','./moon-view-controller.js','./sun-view-controller.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
         for (const path of scriptPaths) if (src.endsWith(path.slice(1))) knownBadPaths.push(path);
         sceneFailure = 'A required startup script failed to load.';
       } else if (event.error) {
@@ -1132,8 +1137,8 @@ async function transformHomeHTML(request, response, forceHome = false) {
   if (!html.includes("orb-controls-v4.js")) {
     html = html.replace(/<\/body\s*>/i, '<script src="./orb-controls-v4.js" defer></script>\n</body>');
   }
-  if (!html.includes("earth-mode-navigation.js")) {
-    html = html.replace(/<\/body\s*>/i, '<script src="./earth-mode-navigation.js" defer></script>\n</body>');
+  if (!html.includes("earth-view-controller.js")) {
+    html = html.replace(/<\/body\s*>/i, '<script src="./earth-view-controller.js" defer></script>\n</body>');
   }
   if (!html.includes("location-scanner.js")) {
     html = html.replace(/<\/body\s*>/i, '<script src="./location-scanner.js" defer></script>\n</body>');

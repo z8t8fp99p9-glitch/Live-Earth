@@ -11,10 +11,11 @@ Earth, Moon and Sun are three independent primary views. They share the Global P
 | Primary-view transitions | `view-manager.js` |
 | Module activation/deactivation | `view-module-registry.js` |
 | Full-screen stage and common background | `sky-view-controller.js` |
-| Independent Earth 3D scene, camera, renderer and controls | `earth-mode-navigation.js` (legacy cached path; now the independent Earth View controller) |
+| Reusable Earth globe objects | `earth-engine.js` |
+| Independent Earth 3D scene, camera, renderer and controls | `earth-view-controller.js` |
 | Independent Moon renderer and lunar interface | `moon-view-controller.js`, `moon-lunar-interface.js` |
 | Independent Sun renderer and solar interface | `sun-view-controller.js` |
-| Home Main Earth rendering | Existing renderer in `index.html`, with its existing service-worker injected support |
+| Home Main Earth rendering | Existing inline renderer in `index.html`, unchanged |
 
 ## Protected Home Earth boundary
 
@@ -31,7 +32,7 @@ Location remains OFF until the user explicitly enables the Location Orb. Earth V
 
 ## Offline and compatibility
 
-The Earth controller deliberately retains the existing `earth-mode-navigation.js` path because it is already part of the verified service-worker app shell and sequential startup bootstrap. The file now implements the independent renderer and registers `earth-independent-renderer`; it no longer calls Home `LiveEarthScene.unlock()`, `lock()` or `zoomBy()`.
+The Earth View Controller is named `earth-view-controller.js`. The reusable `earth-engine.js` module is added to the verified service-worker app shell so it can load offline when any registered view requests a globe. The controller implements the independent renderer and registers `earth-independent-renderer`; it obtains its Earth group and surface mesh from `earth-engine.js` and never changes Home `LiveEarthScene` camera or renderer state.
 
 The manager emits canonical `earth` view events. `getActiveView()` preserves the historic `explorer` label as a compatibility adapter for the protected Orb controller and existing Stacks return paths; `getCanonicalActiveView()` exposes the canonical state.
 

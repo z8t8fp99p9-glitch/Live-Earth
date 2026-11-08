@@ -1,9 +1,9 @@
-/* LIVE // EARTH V113 update manager — independent celestial views + Editorial Engine Feature Orb. */
+/* LIVE // EARTH V114 update manager — independent celestial views + Editorial Engine Feature Orb. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v113-responsive-sun-moon-views";
+  const BUILD_ID = "v114-reusable-earth-engine";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
@@ -64,6 +64,7 @@
   ));
 
   window.addEventListener("live-earth-scene-ready", signalVerifiedStartup);
+  window.addEventListener("live-earth-earth-engine-ready", signalVerifiedStartup);
   window.addEventListener("live-earth-startup-ready", signalVerifiedStartup);
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (document.readyState === "complete") signalVerifiedStartup(); });
   if (document.readyState === "complete") signalVerifiedStartup();
