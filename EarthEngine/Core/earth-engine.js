@@ -368,7 +368,7 @@ export async function createEarthGlobe(options = {}) {
 
 export const createGlobe = createEarthGlobe;
 export const EarthEngine = Object.freeze({
-  version: "2.1.0",
+  version: "2.2.0",
   createGlobe: createEarthGlobe,
   createEarthGlobe,
   getGlobalViewpoint: getSnapshot,
