@@ -1,8 +1,8 @@
 /* LIVE // EARTH — Earth 3D graphics assembly engine.
  * Builds the reusable Earth group/surface/atmosphere using the low-level
- * primitives in earth-engine-3d-graphics-core.js. The Engine also owns the
- * common solar-daylight direction and day/night surface treatment. Views keep
- * their scenes, cameras, renderers, framing, zoom policies and UI.
+ * primitives in earth-engine-3d-graphics-core.js. The Engine also provides
+ * the shared Earth light rig, solar direction and day/night surface treatment.
+ * Views keep their scenes, cameras, renderers, framing, zoom policies and UI.
  */
 import {
   acquireEarthTexture,
@@ -93,8 +93,58 @@ function installDayNightShader(shader, solarDirection) {
   shader.uniforms.uLESunDirection = current;
 }
 
+function createEngineLightRig(THREE, group) {
+  if (typeof THREE.AmbientLight !== "function" || typeof THREE.DirectionalLight !== "function") {
+    throw new TypeError("Earth Engine daylight requires Three.js AmbientLight and DirectionalLight.");
+  }
+
+  const rig = new THREE.Group();
+  rig.name = "liveEarthEngineLightRig";
+
+  const ambient = new THREE.AmbientLight(0x8aa7c8, DAYLIGHT_DEFAULTS.ambientIntensity);
+  ambient.name = "liveEarthEngineAmbientLight";
+  ambient.userData = { ...ambient.userData, leEarthEngineLight: true, leEarthEngineAmbient: true };
+
+  const sunlight = new THREE.DirectionalLight(0xffffff, DAYLIGHT_DEFAULTS.sunlightIntensity);
+  sunlight.name = "liveEarthEngineSunlight";
+  sunlight.userData = { ...sunlight.userData, leEarthEngineLight: true, leSolarKey: true };
+  sunlight.position.set(-3, 2, 4);
+  sunlight.target.position.set(0, 0, 0);
+
+  const fill = new THREE.DirectionalLight(0x245b9b, DAYLIGHT_DEFAULTS.fillIntensity);
+  fill.name = "liveEarthEngineBlueFill";
+  fill.userData = { ...fill.userData, leEarthEngineLight: true, leFillKey: true };
+  fill.position.set(4, -2, -3);
+  fill.target.position.set(0, 0, 0);
+
+  // Parenting the rig to the Engine group makes its default lighting available
+  // on the very first frame. Both directional targets follow the globe transform.
+  rig.add(ambient, sunlight, sunlight.target, fill, fill.target);
+  group.add(rig);
+  return Object.freeze({ rig, ambient, sunlight, fill });
+}
+
+function collectSceneLights(scene) {
+  const lights = [];
+  if (typeof scene?.traverse === "function") {
+    scene.traverse(object => {
+      if (object?.isAmbientLight || object?.isDirectionalLight) lights.push(object);
+    });
+    return lights;
+  }
+
+  const visit = object => {
+    if (!object) return;
+    if (object.isAmbientLight || object.isDirectionalLight) lights.push(object);
+    for (const child of object.children || []) visit(child);
+  };
+  visit(scene);
+  return lights;
+}
+
 function createSolarDaylightController(THREE, surface, group, options = {}) {
   const enabled = options.enabled !== false;
+  const lightRig = enabled ? createEngineLightRig(THREE, group) : null;
   const localDirection = new THREE.Vector3();
   const worldDirection = new THREE.Vector3();
   const worldQuaternion = new THREE.Quaternion();
@@ -152,13 +202,23 @@ function createSolarDaylightController(THREE, surface, group, options = {}) {
     surface.getWorldQuaternion(worldQuaternion);
     worldDirection.copy(localDirection).applyQuaternion(worldQuaternion).normalize();
 
-    const children = Array.isArray(scene.children) ? scene.children : [];
-    const ambient = children.find(object => object?.isAmbientLight);
+    const lights = collectSceneLights(scene);
+    const externalAmbient = lights.find(object => object.isAmbientLight && !object.userData?.leEarthEngineLight);
+    const externalDirectional = lights.filter(object => object.isDirectionalLight && !object.userData?.leEarthEngineLight);
+    const engineAmbient = lightRig?.ambient || null;
+    const engineSunlight = lightRig?.sunlight || null;
+    const engineFill = lightRig?.fill || null;
+
+    // Reuse a view's existing lights when it has supplied them. Otherwise the
+    // Engine's own rig is the complete default, so Home needs no light objects.
+    if (engineAmbient) engineAmbient.visible = !externalAmbient;
+    const ambient = externalAmbient || engineAmbient;
     if (ambient) ambient.intensity = DAYLIGHT_DEFAULTS.ambientIntensity;
 
-    const directional = children.filter(object => object?.isDirectionalLight);
-    const sunlight = directional.find(object => object.userData?.leSolarKey)
-      || directional.slice().sort((a, b) => (b.intensity || 0) - (a.intensity || 0))[0];
+    const externalSunlight = externalDirectional.find(object => object.userData?.leSolarKey)
+      || externalDirectional.slice().sort((a, b) => (b.intensity || 0) - (a.intensity || 0))[0];
+    const sunlight = externalSunlight || engineSunlight;
+    if (engineSunlight) engineSunlight.visible = !externalSunlight;
     if (sunlight) {
       sunlight.intensity = DAYLIGHT_DEFAULTS.sunlightIntensity;
       const sunPosition = worldDirection.clone().multiplyScalar(DAYLIGHT_DEFAULTS.lightDistance);
@@ -169,7 +229,9 @@ function createSolarDaylightController(THREE, surface, group, options = {}) {
       }
     }
 
-    const fill = directional.find(object => object !== sunlight);
+    const externalFill = externalDirectional.find(object => object !== externalSunlight);
+    const fill = externalFill || engineFill;
+    if (engineFill) engineFill.visible = !externalFill;
     if (fill) fill.intensity = DAYLIGHT_DEFAULTS.fillIntensity;
 
     if (shaderUniforms?.uLESunDirection) {
@@ -219,7 +281,8 @@ function createSolarDaylightController(THREE, surface, group, options = {}) {
       sunlightIntensity: DAYLIGHT_DEFAULTS.sunlightIntensity,
       fillIntensity: DAYLIGHT_DEFAULTS.fillIntensity,
       nightTerrainFill: DAYLIGHT_DEFAULTS.nightTerrainFill,
-      twilightFill: DAYLIGHT_DEFAULTS.twilightFill
+      twilightFill: DAYLIGHT_DEFAULTS.twilightFill,
+      providesFallbackLights: !!lightRig
     }),
     dispose() {
       if (disposed) return;
@@ -230,6 +293,7 @@ function createSolarDaylightController(THREE, surface, group, options = {}) {
       }
       boundScene = null;
       shaderUniforms = null;
+      lightRig?.rig.removeFromParent?.();
     }
   });
 }

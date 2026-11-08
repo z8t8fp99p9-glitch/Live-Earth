@@ -1,7 +1,8 @@
 /* LIVE // EARTH — Global Earth Engine.
  * All views use one globe factory. The Engine owns the global rotation snapshot,
- * the shared default finger gestures, and the active-view lifecycle. Cameras,
- * scenes, renderers, lights, zoom limits and view-specific UI remain view-owned.
+ * the shared default finger gestures, active-view lifecycle and baseline Earth
+ * lighting. Cameras, scenes, renderers, zoom limits and view-specific UI remain
+ * view-owned; the Engine supplies lights when a view has not supplied its own.
  */
 import { createEarthGraphics } from "../Graphics/earth-engine-3d-graphics-engine.js";
 
@@ -368,7 +369,7 @@ export async function createEarthGlobe(options = {}) {
 
 export const createGlobe = createEarthGlobe;
 export const EarthEngine = Object.freeze({
-  version: "2.2.0",
+  version: "2.3.0",
   createGlobe: createEarthGlobe,
   createEarthGlobe,
   getGlobalViewpoint: getSnapshot,

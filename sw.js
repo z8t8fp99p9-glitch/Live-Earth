@@ -204,29 +204,15 @@ function injectSameGlobeAPI(html) {
   if (html.includes(anchor) && !html.includes("window.LiveEarthScene")) {
     const api = `
 window.LiveEarthScene = (() => {
-  // Home-only Location marker: parent it to the exact Engine surface so it
-  // follows the same rotation without changing the globe or its geometry.
-  const locationVector = new T.Vector3();
-  const locationMarker = new T.Group();
-  const locationHalo = new T.Mesh(
-    new T.SphereGeometry(0.031, 16, 12),
-    new T.MeshBasicMaterial({color:0xff234d,transparent:true,opacity:0.28,depthWrite:false})
-  );
-  const locationDot = new T.Mesh(
-    new T.SphereGeometry(0.014, 16, 12),
-    new T.MeshBasicMaterial({color:0xff183f,depthWrite:false})
-  );
-  locationMarker.add(locationHalo, locationDot);
-  locationMarker.visible = false;
-  earth.add(locationMarker);
-
+  // TEMPORARILY DISABLED: the Home Location marker geometry and visual.
+  // Location coordinates remain available to the existing Location service
+  // and registered layers, but Home does not draw a marker on the globe.
   let locationEnabled = false;
   let hasLocation = false;
   let locationCoordinates = null;
   const featureLayers = new Map();
 
-  function syncLocationMarker() {
-    locationMarker.visible = hasLocation && locationEnabled;
+  function syncLocationState() {
     draw();
   }
 
@@ -235,18 +221,9 @@ window.LiveEarthScene = (() => {
         latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
       return false;
     }
-    const phi = latitude * Math.PI / 180;
-    const lambda = longitude * Math.PI / 180;
-    locationVector.set(
-      Math.cos(phi) * Math.cos(lambda),
-      Math.sin(phi),
-      -Math.cos(phi) * Math.sin(lambda)
-    ).normalize();
-    locationHalo.position.copy(locationVector).multiplyScalar(1.006);
-    locationDot.position.copy(locationVector).multiplyScalar(1.019);
     locationCoordinates = { latitude, longitude, capturedAt: Date.now() };
     hasLocation = true;
-    syncLocationMarker();
+    syncLocationState();
     return true;
   }
 
@@ -256,7 +233,7 @@ window.LiveEarthScene = (() => {
       hasLocation = false;
       locationCoordinates = null;
     }
-    syncLocationMarker();
+    syncLocationState();
   }
 
   function getLocation() {
@@ -317,6 +294,9 @@ window.dispatchEvent(new Event("live-earth-scene-ready"));
   return html;
 }
 
+// TEMPORARILY DISABLED LEGACY HOME DAY/NIGHT INJECTOR.
+// Shared solar lighting and the day/night shader now belong to Earth Engine.
+// Keep this function as a commented-out rollback reference; do not call it.
 function injectSolarDayNight(html) {
   const anchor = "// LIVE_EARTH_HOME_RENDERER_HOOKS";
   if (!html.includes(anchor) || html.includes("LIVE_EARTH_SOLAR_DAY_NIGHT_V9")) return html;
@@ -1000,7 +980,8 @@ async function transformHomeHTML(request, response, forceHome = false) {
     "./EarthEngine/Assets/earth-land-ocean-ice-2048.png"
   );
   html = injectSameGlobeAPI(html);
-  html = injectSolarDayNight(html);
+  // TEMPORARILY DISABLED: Service Worker must not inject a second Home solar system.
+  // html = injectSolarDayNight(html);
   if (!html.includes("orb-controls-v4.js")) {
     html = html.replace(/<\/body\s*>/i, '<script src="./Global/orb-controls-v4.js" defer></script>\n</body>');
   }

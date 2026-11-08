@@ -412,15 +412,9 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
 
     const scene = new T.Scene();
     scene.background = new T.Color(0x02050b);
-    const ambient = new T.AmbientLight(0x8aa7c8, 0.24);
-    const sun = new T.DirectionalLight(0xffffff, 2.15);
-    const fill = new T.DirectionalLight(0x245b9b, 0.055);
-    sun.position.set(-3, 2, 4);
-    fill.position.set(4, -2, -3);
-    scene.add(ambient, sun, fill);
-
-    // Home keeps its own camera, renderer, lighting and animation; the Engine supplies globe input.
-    // Only the reusable globe objects come from Earth Engine.
+    // TEMPORARILY DISABLED: Home-local scene-light construction.
+    // Earth Engine supplies and updates the shared daylight/light rig.
+    // Home keeps its own camera, renderer, framing, star field and animation.
     const getCanvasViewport = () => {
       const rect = canvas.getBoundingClientRect();
       const visual = window.visualViewport;
@@ -522,8 +516,8 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
       atmosphere: true
     });
 
-    // Keep these Home names and object identities stable. Moon Orbit, the
-    // Location marker, the solar shader and registered Home layers use them.
+    // Keep these Home names and object identities stable. Moon Orbit and
+    // registered Home layers use the exact Earth Engine objects.
     const group = earthGlobe.group;
     const earth = earthGlobe.surface;
     scene.add(group);

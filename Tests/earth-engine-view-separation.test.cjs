@@ -34,17 +34,55 @@ class Node3D {
     this.children = [];
     this.parent = null;
     this.rotation = { x: 0, y: 0, z: 0 };
+    this.userData = {};
+    this.visible = true;
+    this.position = new Vector3();
+    this.quaternion = new Quaternion();
   }
-  add(node) {
-    node.parent = this;
-    this.children.push(node);
+  add(...nodes) {
+    for (const node of nodes) {
+      if (node.parent) node.removeFromParent();
+      node.parent = this;
+      this.children.push(node);
+    }
   }
+  traverse(callback) {
+    callback(this);
+    for (const child of this.children) child.traverse?.(callback);
+  }
+  updateMatrixWorld() {}
+  worldToLocal(vector) { return vector; }
+  getWorldQuaternion(target) { return target.set(0, 0, 0, 1); }
   removeFromParent() {
     if (!this.parent) return;
     this.parent.children = this.parent.children.filter(item => item !== this);
     this.parent = null;
   }
 }
+
+class Light extends Node3D {
+  constructor(color, intensity, kind) {
+    super();
+    this.color = color;
+    this.intensity = intensity;
+    this.isAmbientLight = kind === 'ambient';
+    this.isDirectionalLight = kind === 'directional';
+    this.target = new Node3D();
+  }
+}
+class Vector3 {
+  constructor(x = 0, y = 0, z = 0) { this.x = x; this.y = y; this.z = z; }
+  set(x, y, z) { this.x = x; this.y = y; this.z = z; return this; }
+  clone() { return new Vector3(this.x, this.y, this.z); }
+  copy(v) { this.x = v.x; this.y = v.y; this.z = v.z; return this; }
+  normalize() { const n = Math.hypot(this.x, this.y, this.z) || 1; this.x /= n; this.y /= n; this.z /= n; return this; }
+  multiplyScalar(k) { this.x *= k; this.y *= k; this.z *= k; return this; }
+  applyQuaternion() { return this; }
+}
+class Quaternion {
+  set(x, y, z, w) { this.x = x; this.y = y; this.z = z; this.w = w; return this; }
+}
+
 class Mesh extends Node3D {
   constructor(geometry, material) {
     super();
@@ -73,6 +111,10 @@ class TextureLoader {
 const THREE = {
   Group: Node3D,
   Mesh,
+  AmbientLight: class extends Light { constructor(color, intensity) { super(color, intensity, 'ambient'); } },
+  DirectionalLight: class extends Light { constructor(color, intensity) { super(color, intensity, 'directional'); } },
+  Vector3,
+  Quaternion,
   SphereGeometry: Geometry,
   MeshStandardMaterial: StandardMaterial,
   MeshBasicMaterial: BasicMaterial,
@@ -94,6 +136,9 @@ const THREE = {
   assert.ok(homeModule.includes('const earth = earthGlobe.surface;'), 'Engine surface identity must remain Home\'s Earth mesh.');
   assert.ok(homeModule.includes('scene.add(group);'), 'Home must attach the Engine group directly to its own scene.');
   assert.ok(homeModule.includes('createMoonOrbit(T, group'), 'The Home Moon orbit must receive that exact Engine group.');
+  assert.ok(!/new T\.(?:AmbientLight|DirectionalLight)/.test(homeModule), 'Home must not construct its own scene lights.');
+  assert.ok(homeModule.includes('zoom: { enabled: false }'), 'Home zoom must remain locked.');
+  assert.ok(homeModule.includes('starPositions') && homeModule.includes('new T.Points'), 'Home star field must remain in the scene.');
   assert.ok(homeModule.includes('// LIVE_EARTH_HOME_RENDERER_HOOKS'), 'Service-worker injections must use the stable named hook.');
   assert.ok(!homeModule.includes('new T.SphereGeometry'), 'Home must not construct a duplicate Earth sphere.');
   assert.ok(!homeModule.includes('new T.MeshStandardMaterial'), 'Home must not construct a duplicate Earth surface material.');
@@ -111,6 +156,8 @@ const THREE = {
   assert.ok(graphicsEngineSource.includes('const EARTH_BASE_SURFACE_ROTATION_Y = -0.35;'), 'Graphics Engine must own the one canonical surface calibration.');
   assert.ok(graphicsEngineSource.includes('surface.rotation.y = EARTH_BASE_SURFACE_ROTATION_Y;'), 'Every Engine-created Earth must use the canonical base surface orientation.');
   assert.ok(graphicsEngineSource.includes('setGeometryDetail'), 'Graphics Engine must expose generic geometry detail.');
+  assert.ok(graphicsEngineSource.includes('createEngineLightRig'), 'Earth Engine must provide shared fallback scene lighting.');
+  assert.ok(graphicsEngineSource.includes('collectSceneLights'), 'Earth Engine must reuse view-provided lights without duplicating them.');
   assert.ok(graphicsCoreSource.includes('textureRecords'), 'Graphics Core must safely share loaded textures.');
   assert.ok(graphicsCoreSource.includes('createEarthSurfaceGeometry'), 'Graphics Core must own low-level sphere geometry construction.');
   assert.ok(!/\bquality\b|\bBasic\b|\bHD\b|setQuality/i.test(engineSource + graphicsEngineSource), 'Earth Engine must not own Independent Earth View UI naming.');
@@ -125,6 +172,32 @@ const THREE = {
   assert.equal(homeGlobe.surface.geometry.parameters.width, 96, 'Home fixed high detail must match its former 96-segment sphere.');
   assert.equal(homeGlobe.surface.geometry.parameters.height, 64, 'Home fixed high detail must match its former 64-segment sphere.');
   assert.equal(homeGlobe.surface.rotation.y, -0.35, 'Home surface longitude alignment must be retained.');
+  const engineRig = homeGlobe.group.children.find(child => child.name === 'liveEarthEngineLightRig');
+  assert.ok(engineRig, 'Earth Engine must provide a light rig inside its returned globe group.');
+  assert.equal(engineRig.children.filter(child => child.isAmbientLight).length, 1, 'Engine light rig must include one ambient light.');
+  assert.equal(engineRig.children.filter(child => child.isDirectionalLight).length, 2, 'Engine light rig must include key sunlight and blue fill.');
+
+  const homeScene = new Node3D();
+  homeScene.add(homeGlobe.group);
+  homeGlobe.surface.onBeforeRender({}, homeScene, {}, null, homeGlobe.surface.geometry, homeGlobe.surface.material, null);
+  assert.equal(engineRig.children.find(child => child.isAmbientLight).visible, true, 'Home must use Engine fallback ambient lighting when it supplies no local lights.');
+  assert.equal(engineRig.children.find(child => child.userData.leSolarKey).visible, true, 'Home must use Engine fallback sunlight when it supplies no local lights.');
+  assert.equal(homeGlobe.daylight.getState().providesFallbackLights, true, 'Engine daylight state must report its fallback light rig.');
+
+  const secondGlobeForExternalLights = await engine.createEarthGlobe({ THREE, textureUrl: './EarthEngine/Assets/earth-land-ocean-ice-2048.png' });
+  const externalScene = new Node3D();
+  const externalAmbient = new THREE.AmbientLight(0x8aa7c8, 0.24);
+  const externalSun = new THREE.DirectionalLight(0xffffff, 2.3);
+  externalSun.userData.leSolarKey = true;
+  const externalFill = new THREE.DirectionalLight(0x245b9b, 0.055);
+  externalScene.add(externalAmbient, externalSun, externalFill, secondGlobeForExternalLights.group);
+  secondGlobeForExternalLights.surface.onBeforeRender({}, externalScene, {}, null, secondGlobeForExternalLights.surface.geometry, secondGlobeForExternalLights.surface.material, null);
+  const externalRig = secondGlobeForExternalLights.group.children.find(child => child.name === 'liveEarthEngineLightRig');
+  assert.equal(externalRig.children.find(child => child.isAmbientLight).visible, false, 'Engine ambient fallback must hide when a view already supplies ambient lighting.');
+  assert.equal(externalRig.children.find(child => child.userData.leSolarKey).visible, false, 'Engine sunlight fallback must hide when a view already supplies sunlight.');
+  assert.equal(externalRig.children.find(child => child.userData.leFillKey).visible, false, 'Engine fill fallback must hide when a view already supplies secondary directional lighting.');
+  assert.equal(externalAmbient.intensity, 0.12, 'Engine must standardize the existing view ambient light.');
+  secondGlobeForExternalLights.dispose();
 
   assert.equal(homeGlobe.group.children[0], homeGlobe.surface, 'The Engine-owned surface remains the first direct child in Home group.');
 
@@ -198,7 +271,7 @@ const THREE = {
   const readableImportSample = "try {\n  T = await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');\n} catch (primaryError) {\n  T = await import('https://unpkg.com/three@0.180.0/build/three.module.js');\n}";
   assert.ok(readableImportPattern.test(readableImportSample), 'Service-worker pattern must recognize the formatted Home CDN fallback block.');
   assert.equal(readableImportSample.replace(readableImportPattern, "T = await import('./vendor/three.module.js');"), "T = await import('./vendor/three.module.js');", 'Formatted Home import must transform to the staged offline module.');
-  assert.equal(sw.split('const anchor = "// LIVE_EARTH_HOME_RENDERER_HOOKS";').length - 1, 2, 'Home API and solar injections must share the stable marker.');
+  assert.equal(sw.split('const anchor = "// LIVE_EARTH_HOME_RENDERER_HOOKS";').length - 1, 2, 'Home API and retained legacy solar injector must share the stable marker.');
 
   const apiStart = sw.indexOf('function injectSameGlobeAPI(html) {');
   const solarStart = sw.indexOf('function injectSolarDayNight(html) {', apiStart);
@@ -212,12 +285,14 @@ const THREE = {
     assert.ok(apiSource.includes(requiredMethod), `Home API must retain required integration method: ${requiredMethod}`);
   }
   const injectionContext = {};
-  vm.runInNewContext(`${sw.slice(apiStart, injectionEnd)}\nthis.injectHomeLayers = html => injectSolarDayNight(injectSameGlobeAPI(html));`, injectionContext);
+  vm.runInNewContext(`${sw.slice(apiStart, injectionEnd)}\nthis.injectHomeLayers = html => injectSameGlobeAPI(html);`, injectionContext);
   const injectedHome = injectionContext.injectHomeLayers(homeIndex);
-  assert.ok(injectedHome.includes('window.LiveEarthScene = (() => {'), 'LiveEarthScene must still be injected into Home module.');
-  assert.ok(injectedHome.includes('LIVE_EARTH_SOLAR_DAY_NIGHT_V9'), 'Existing solar/day-night layer must still be injected.');
-  assert.ok(injectedHome.indexOf('window.LiveEarthScene = (() => {') < injectedHome.indexOf('// LIVE_EARTH_HOME_RENDERER_HOOKS'), 'Home API must be inserted before the stable marker.');
-  assert.ok(injectedHome.indexOf('LIVE_EARTH_SOLAR_DAY_NIGHT_V9') < injectedHome.indexOf('// LIVE_EARTH_HOME_RENDERER_HOOKS'), 'Solar layer must be inserted before the stable marker.');
+  assert.ok(injectedHome.includes('window.LiveEarthScene = (() => {'), 'LiveEarthScene integration API must still be injected into Home.');
+  assert.doesNotMatch(injectedHome, /locationMarker|locationHalo|locationDot|new T\.SphereGeometry/, 'Home Location marker visuals must remain disabled.');
+  assert.doesNotMatch(injectedHome, /LIVE_EARTH_SOLAR_DAY_NIGHT_V9/, 'The legacy Service Worker solar layer must not be injected.');
+  assert.ok(sw.includes('// html = injectSolarDayNight(html);'), 'Legacy Service Worker day/night injection must remain explicitly commented out.');
+  assert.doesNotMatch(sw, /^\s*html = injectSolarDayNight\(html\);/m, 'Legacy Service Worker day/night injection must not execute.');
+  assert.ok(injectedHome.indexOf('window.LiveEarthScene = (() => {') < injectedHome.indexOf('// LIVE_EARTH_HOME_RENDERER_HOOKS'), 'Home integration API must be inserted before the stable marker.');
 
   console.log(JSON.stringify({
     homeEarthUsesSharedEngine: 'passed',
@@ -230,7 +305,7 @@ const THREE = {
     independentEarthBasicHdMapping: 'passed',
     homeLocationAndFeatureLayerAPI: 'passed',
     offlineShellAndBuildIdentity: 'passed',
-    serviceWorkerHomeAndSolarInjection: 'passed'
+    serviceWorkerHomeIntegrationWithoutMarkerOrLegacySolarInjection: 'passed'
   }, null, 2));
 })().catch(error => {
   console.error(error);
