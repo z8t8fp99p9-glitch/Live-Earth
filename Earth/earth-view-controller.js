@@ -358,8 +358,7 @@
         textureUrl: "./runtime-assets/earth-land-ocean-ice-2048.png",
         geometryDetail: quality === "hd" ? "high" : "standard",
         maxAnisotropy: renderer.capabilities.getMaxAnisotropy(),
-        initialRotationY: -0.35,
-        atmosphere: true
+          atmosphere: true
       });
       earthGroup = earthGlobe.group;
       earthMesh = earthGlobe.surface;

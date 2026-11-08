@@ -1,5 +1,5 @@
-/* LIVE // EARTH — additive Moon orbit layer.
- * LIVE // EARTH cinematic display mode. Earth mesh/material are never edited.
+/* LIVE // EARTH — additive, Earth-independent Moon orbit layer.
+ * Moon geometry, position and orbit artwork are updated without writing to Earth.
  * Orbital distance keeps a lightweight Keplerian approximation; lunar direction uses the
  * app’s existing geocentric Moon model, converted into the equatorial inertial frame.
  * Display distance is intentionally reduced and Moon display radius enlarged for readability.
@@ -20,16 +20,6 @@ function eclipticToEquatorial(xEcliptic, yEcliptic, zEcliptic, date) {
     y: yEcliptic * Math.cos(obliquity) - zEcliptic * Math.sin(obliquity),
     z: yEcliptic * Math.sin(obliquity) + zEcliptic * Math.cos(obliquity)
   };
-}
-
-function greenwichMeanSiderealAngle(date) {
-  const jd = date.getTime() / 86400000 + 2440587.5;
-  const centuries = (jd - J2000) / 36525;
-  const degrees = ((280.46061837
-    + 360.98564736629 * (jd - J2000)
-    + 0.000387933 * centuries * centuries
-    - centuries * centuries * centuries / 38710000) % 360 + 360) % 360;
-  return degrees * RAD;
 }
 
 function toScenePosition(T, p, scale) {
@@ -104,20 +94,15 @@ export function createMoonOrbit(T, earthGroup, options = {}) {
   const dust = new T.Points(dustGeometry, new T.PointsMaterial({ size: 0.022, vertexColors: true, transparent: true, opacity: 0.31, sizeAttenuation: true, depthWrite: false, blending: T.AdditiveBlending }));
   dust.name = 'moonOrbitStardustGrains'; system.add(dust);
 
-  // The live Earth surface is the radius-matching standard-material sphere; the atmosphere shell
-  // has a different radius/material. Its rotation aligns geographic longitudes with the inertial Moon.
-  const earthSurface = earthGroup.children.find(child => child.isMesh
-    && child.geometry?.type === 'SphereGeometry'
-    && Math.abs((child.geometry.parameters?.radius ?? 0) - earthRadius) < 1e-8
-    && child.material?.type === 'MeshStandardMaterial');
+  // Moon Orbit owns only its Moon/orbit objects. It must never look up or mutate
+  // the Home Earth surface, transform, material, texture, camera or viewpoint.
   const moonGeometry = new T.SphereGeometry(earthRadius * displayMoonRadius, 56, 40);
   const texture = loadSharedMoonSurfaceTexture(T);
   const material = new T.MeshStandardMaterial({ map: texture, color: 0xffffff, roughness: 1, metalness: 0 });
   const moon = new T.Mesh(moonGeometry, material); moon.name = 'liveMoonSphere'; system.add(moon);
   const update = (date = new Date()) => {
     const p = moonPositionAt(T, date);
-    // Earth turns underneath the inertial orbit at sidereal rate; camera, size and framing are untouched.
-    if (earthSurface) earthSurface.rotation.y = greenwichMeanSiderealAngle(date);
+    // Update only the Moon's own position. Earth orientation belongs exclusively to Home.
     moon.position.copy(toScenePosition(T, p, earthRadius * displayDistanceFactor));
     return p;
   };

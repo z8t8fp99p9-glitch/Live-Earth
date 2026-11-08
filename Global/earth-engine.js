@@ -4,6 +4,7 @@
  */
 const textureRecords = new WeakMap();
 const DEFAULT_TEXTURE = "./runtime-assets/earth-land-ocean-ice-2048.png";
+const EARTH_BASE_SURFACE_ROTATION_Y = -0.35;
 
 function getTextureRecord(THREE, textureUrl) {
   let records = textureRecords.get(THREE);
@@ -68,7 +69,6 @@ function geometryFor(THREE, radius, geometryDetail) {
  * @param {number} [options.radius=1] Surface sphere radius.
  * @param {string} [options.textureUrl] Same-origin Earth texture path.
  * @param {string} [options.geometryDetail="standard"] Generic sphere detail: standard or high.
- * @param {number} [options.initialRotationY=0] Initial longitude alignment in radians.
  * @param {boolean} [options.atmosphere=true] Whether to include the translucent atmosphere shell.
  * @returns {Promise<{group:object,surface:object,atmosphere:object|null,setGeometryDetail:function,dispose:function,getState:function}>}
  */
@@ -84,7 +84,6 @@ export async function createEarthGlobe(options = {}) {
   const textureUrl = typeof options.textureUrl === "string" && options.textureUrl.trim()
     ? options.textureUrl.trim() : DEFAULT_TEXTURE;
   let geometryDetail = normalizeGeometryDetail(options.geometryDetail);
-  const initialRotationY = Number.isFinite(options.initialRotationY) ? options.initialRotationY : 0;
   const includeAtmosphere = options.atmosphere !== false;
   const textureLease = await acquireTexture(THREE, textureUrl);
   textureLease.texture.anisotropy = Math.max(1, Math.min(Number.isFinite(options.maxAnisotropy) ? options.maxAnisotropy : 4, 4));
@@ -98,7 +97,7 @@ export async function createEarthGlobe(options = {}) {
     surfaceMaterial = new THREE.MeshStandardMaterial({ map: textureLease.texture, roughness: 1, metalness: 0 });
     surface = new THREE.Mesh(surfaceGeometry, surfaceMaterial);
     surface.name = "liveEarthEngineSurface";
-    surface.rotation.y = initialRotationY;
+    surface.rotation.y = EARTH_BASE_SURFACE_ROTATION_Y;
     group.add(surface);
 
     if (includeAtmosphere) {

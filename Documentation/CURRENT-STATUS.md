@@ -4,9 +4,9 @@
 **Repository:** `z8t8fp99p9-glitch/Live-Earth`  
 **Working branch:** `main`  
 **Source baseline:** user-tested `Live-Earth-fullscreen-stacks-feature-views-v118.zip`  
-**Working package:** V122 — persistent Home-to-Earth viewpoint bridge (built on V121; includes V118 feature views and V120 Location service naming)
+**Working package:** V125 — one canonical Global Earth Engine with strict Moon/Earth isolation and Home-only viewpoint hand-off (built on V124; includes V118 feature views and V120 Location service naming)
 
-This checkpoint is based on the supplied V117 ZIP, not a fresh GitHub branch-head query. Re-check `main` before any later task.
+This checkpoint is based on the V120 full source snapshot plus the subsequent V121–V124 incremental bridge work. Re-check `main` before any later task.
 
 ## 1. Application
 
@@ -70,11 +70,17 @@ V120 starts from the V119 package and renames `Location/location-orb-controller.
 V121 adds `Global/earth-viewpoint-bridge.js`. Home publishes an immutable quaternion snapshot of its Earth group at startup and after user rotation. The independent Earth View applies that snapshot to its own Earth group whenever activated, sharing only the starting globe orientation. The bridge is intentionally one-way: Earth View interaction does not rotate or otherwise change Home. Weather, Clouds, Elevation, Earthquakes and Traffic already attach to the Home Earth scene and therefore naturally share its orientation. Moon and Sun remain independent. The separate Earth Modes page still uses its own standalone `earth-orb-globe.js` renderer and is not connected by this change. The new bridge is in the service-worker app shell and required by startup verification/repair.
 
 
-## 8 November 2026 — V122 persistent Earth viewpoint bridge
+## 8 November 2026 — V122 persistent Earth viewpoint bridge (historical; group-only snapshot)
 
-V121's in-memory-only orientation snapshot did not survive navigation to the separate Earth Modes document. V122 stores the settled Home Earth group quaternion in same-tab `sessionStorage`, restores it when Home is recreated, and connects `Earth/earth-orb-globe.js` so Basic/HD/Offline Earth Modes inherit the Home starting orientation. Independent Earth View continues to consume the same bridge. During pointer movement the latest snapshot is updated in memory; session storage is written on pointer release rather than every frame. Secondary Earth views remain one-way consumers and do not write their exploration state back to Home. Build identity is `v122-persistent-earth-viewpoint-bridge`.
+V121's in-memory-only orientation snapshot did not survive navigation to the separate Earth Modes document. V122 added same-tab `sessionStorage` persistence and connected Earth Modes with a group-only snapshot. The later V124 assumption that Moon Orbit must also rotate Earth's child surface was incorrect; V125 explicitly restores group-only ownership and removes that coupling.
+
+## 8 November 2026 — V124 complete Earth viewpoint bridge (incorrect; superseded)
+
+V124 incorrectly assumed Moon Orbit's sidereal surface write was part of the intended Home Earth pose, then copied that child-surface rotation through the bridge. This expanded a legacy ownership violation into every bridged Earth view. V124 must not be used. V125 removes both the Moon-to-Earth write and the child-surface transfer; this entry is retained only as a historical record of the faulty approach.
 
 
-## 8 November 2026 — V123 exact Earth surface alignment
+## V125 — one canonical Global Earth Engine; Moon cannot rotate Earth
 
-V122 correctly transferred Home's Earth-group quaternion, but the separate Earth Modes renderer applied an additional `-0.35` radian rotation to its child surface mesh. That extra longitude offset caused a visible mismatch even when the group quaternion was identical. V123 removes the standalone surface offset so the Home pose and Earth Modes pose use the same zero-offset surface baseline. The one-way bridge, Home scene, independent Earth renderer, Moon, Sun, Location, Stacks, Orb behaviour, and storage contracts are unchanged. The service-worker and update-manager build identity is bumped to `v123-exact-earth-surface-alignment` so the corrected controller is refreshed.
+V125 corrects the V124 architectural mistake. `Home/moon-orbit.js` previously found the Home Earth surface mesh and assigned `earthSurface.rotation.y` from Greenwich Mean Sidereal Time on initial creation and each scheduled Moon update. This directly changed the visible Earth independently of Home's user drag. V124 then copied that child-surface quaternion through the bridge, spreading the coupling into Independent Earth View and Earth Modes. Both behaviours are removed. Moon Orbit now updates only `moon.position`; it never locates or writes to an Earth object.
+
+`Global/earth-engine.js` is now used by all three Earth renderers: Home, Independent Earth View and Earth Modes Basic/HD/Offline. Each view receives a separate Engine-created instance to preserve its independent scene and renderer, but all use the same engine, local Earth texture and geometry profiles; the `-0.35` base surface calibration is now owned only by the Global Engine. The bridge returns to a group-only snapshot: it transfers only Home's user-controlled Earth-group quaternion. Camera/zoom is initialized after the Earth is created and viewpoint applied. Build identity is `v125-global-earth-engine-isolated`.

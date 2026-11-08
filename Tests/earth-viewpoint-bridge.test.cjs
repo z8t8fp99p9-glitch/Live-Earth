@@ -64,7 +64,7 @@ assert.equal(bridge.getHomeOrientation().y, 0.6);
 home.quaternion.y = 0.8;
 home.quaternion.w = 0.6;
 assert.equal(bridge.publishHomeOrientation(home), true, 'The settled Home orientation should be persisted.');
-assert.ok(storage.values.has('liveEarthHomeViewpointV1'), 'The settled orientation must survive same-tab navigation.');
+assert.ok(storage.values.has('liveEarthHomeViewpointV3'), 'The settled orientation must survive same-tab navigation.');
 assert.deepEqual(firstPage.dispatched, [
   'live-earth-viewpoint-bridge-ready',
   'live-earth-home-viewpoint-changed',
@@ -72,9 +72,12 @@ assert.deepEqual(firstPage.dispatched, [
 ]);
 
 const samePageTarget = makeGroup();
-assert.equal(bridge.applyHomeOrientation(samePageTarget), true);
+const independentSurface = { quaternion: { x: 0, y: 0, z: 0, w: 1, set(x, y, z, w) { this.x=x; this.y=y; this.z=z; this.w=w; } } };
+assert.equal(bridge.applyHomeOrientation(samePageTarget, independentSurface), true);
 assert.ok(Math.abs(samePageTarget.quaternion.y - 0.8) < 1e-12);
 assert.ok(Math.abs(samePageTarget.quaternion.w - 0.6) < 1e-12);
+assert.deepEqual([independentSurface.quaternion.x, independentSurface.quaternion.y, independentSurface.quaternion.z, independentSurface.quaternion.w], [0, 0, 0, 1], 'Bridge must not apply any child-surface transform.');
+assert.equal(Object.prototype.hasOwnProperty.call(bridge.getHomeOrientation(), 'surface'), false, 'Snapshot must contain only Home user-controlled group orientation.');
 assert.equal(samePageTarget.matrixUpdated, true);
 assert.equal(samePageTarget.worldMatrixUpdated, true);
 
@@ -90,6 +93,22 @@ assert.ok(Math.abs(earthModesTarget.quaternion.w - 0.6) < 1e-12);
 // Simulate two module instances in one document: both must see the shared window state.
 const duplicateInstance = loadBridge(storage, firstPage.window);
 assert.ok(Math.abs(duplicateInstance.bridge.getHomeOrientation().y - 0.8) < 1e-12, 'Bridge instances must share the window-level snapshot.');
+
+// V124 stored an extra child-surface quaternion. V125 must migrate only the group pose.
+const v124Storage = createStorage();
+v124Storage.setItem('liveEarthHomeViewpointV2', JSON.stringify({
+  version: 2,
+  orientation: { x: 0, y: 0.6, z: 0, w: 0.8, surface: { x: 0, y: 0.7, z: 0, w: Math.sqrt(1 - 0.7 * 0.7) } }
+}));
+const migratedPage = loadBridge(v124Storage);
+assert.ok(Math.abs(migratedPage.bridge.getHomeOrientation().y - 0.6) < 1e-12, 'V124 group orientation must remain available during migration.');
+assert.equal(Object.prototype.hasOwnProperty.call(migratedPage.bridge.getHomeOrientation(), 'surface'), false, 'V124 Moon-driven surface data must be discarded.');
+const migratedTarget = makeGroup();
+const protectedSurface = { quaternion: { x: 0, y: 0, z: 0, w: 1, set() { throw new Error('Surface must never be changed.'); } } };
+assert.equal(migratedPage.bridge.applyHomeOrientation(migratedTarget, protectedSurface), true);
+assert.deepEqual([protectedSurface.quaternion.x, protectedSurface.quaternion.y, protectedSurface.quaternion.z, protectedSurface.quaternion.w], [0, 0, 0, 1]);
+assert.equal(migratedPage.bridge.publishHomeOrientation(migratedTarget), true);
+assert.ok(v124Storage.values.has('liveEarthHomeViewpointV3'), 'Next Home publish must save the new group-only V3 format.');
 
 assert.equal(bridge.publishHomeOrientation({ quaternion: { x: 0, y: 0, z: 0, w: 0 } }), false, 'A zero-length quaternion must be rejected.');
 assert.equal(bridge.publishHomeOrientation({}), false, 'Objects without a quaternion must be rejected.');
@@ -107,11 +126,11 @@ assert.match(earthController, /import\("\.\.\/Global\/earth-viewpoint-bridge\.js
 assert.match(earthController, /applyHomeOrientation\?\.\(earthGroup\)/, 'Independent Earth View must consume Home orientation on activation.');
 assert.match(earthModes, /import \{ applyHomeOrientation \} from "\.\.\/Global\/earth-viewpoint-bridge\.js"/, 'Earth Modes must load the bridge.');
 assert.match(earthModes, /applyHomeOrientation\(group\)/, 'Earth Modes must consume Home orientation.');
-assert.doesNotMatch(earthModes, /earth\.rotation\.y\s*=\s*-?0\.35/, 'Earth Modes surface must not add a longitude offset after applying Home group orientation.');
-assert.match(sw, /v122-persistent-earth-viewpoint-bridge/, 'The service worker build identity must be bumped.');
+assert.match(earthModes, /import \{ createEarthGlobe \} from "\.\.\/Global\/earth-engine\.js"/, 'Earth Modes must use the canonical Global Earth Engine.');
+assert.match(sw, /v125-global-earth-engine-isolated/, 'The service worker build identity must be bumped.');
 assert.match(sw, /"\.\/Earth\/earth-orb-globe\.js"/, 'Earth Modes controller must remain an essential offline asset.');
 assert.match(sw, /"\.\/Global\/earth-viewpoint-bridge\.js"/, 'The bridge must be an essential offline shell asset.');
-assert.match(updateManager, /v122-persistent-earth-viewpoint-bridge/, 'Update manager and service worker must share the build identity.');
+assert.match(updateManager, /v125-global-earth-engine-isolated/, 'Update manager and service worker must share the build identity.');
 assert.doesNotMatch(earthController, /publishHomeOrientation/, 'Independent Earth View must not write its orientation back to Home.');
 assert.doesNotMatch(earthModes, /publishHomeOrientation/, 'Earth Modes must not write its orientation back to Home.');
 

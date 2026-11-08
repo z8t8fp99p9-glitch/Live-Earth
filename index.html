@@ -522,7 +522,6 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
       textureUrl: './runtime-assets/earth-land-ocean-ice-2048.png',
       geometryDetail: 'high',
       maxAnisotropy: renderer.capabilities.getMaxAnisotropy(),
-      initialRotationY: -0.35,
       atmosphere: true
     });
 
@@ -531,9 +530,8 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
     const group = earthGlobe.group;
     const earth = earthGlobe.surface;
     scene.add(group);
-    // Restore the last Home orientation after same-tab navigation, then publish it.
+    // Restore and publish only Home's user-controlled Earth-group viewpoint.
     viewpointBridge.applyHomeOrientation(group);
-    // Home is the single source of truth for the starting Earth viewpoint.
     viewpointBridge.publishHomeOrientation(group);
 
     let moonSystem = { update: () => null };
@@ -548,7 +546,6 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
     } catch (moonError) {
       console.warn('[LIVE // EARTH] Moon layer unavailable; preserving Earth scene.', moonError);
     }
-
     const starPositions = [];
     let seed = 721;
     const random = () => {

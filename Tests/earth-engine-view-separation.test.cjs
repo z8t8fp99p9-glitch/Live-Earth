@@ -88,6 +88,7 @@ const THREE = {
   assert.ok(homeModule, 'Home Earth module must remain in index.html.');
   assert.ok(homeModule.includes("import('./Global/earth-engine.js')"), 'Home must create its globe through Earth Engine.');
   assert.ok(homeModule.includes("geometryDetail: 'high'"), 'Home must use one fixed high-detail sphere profile.');
+  assert.ok(!homeModule.includes('initialRotationY'), 'Home must not override the Global Engine base calibration.');
   assert.ok(!/\bquality\b|\bBasic\b|\bHD\b|setQuality|zoomBy|pinch/i.test(homeModule), 'Home module must not contain Basic/HD quality or zoom controls.');
   assert.ok(homeModule.includes('const group = earthGlobe.group;'), 'Engine group identity must remain Home\'s transform group.');
   assert.ok(homeModule.includes('const earth = earthGlobe.surface;'), 'Engine surface identity must remain Home\'s Earth mesh.');
@@ -105,6 +106,8 @@ const THREE = {
   assert.ok(engineSource.includes('export async function createEarthGlobe'), 'Reusable Earth Engine export is required.');
   assert.ok(engineSource.includes('textureRecords'), 'Earth Engine must safely share loaded textures.');
   assert.ok(engineSource.includes('setGeometryDetail'), 'Engine must expose a generic geometry-detail API.');
+  assert.ok(engineSource.includes('const EARTH_BASE_SURFACE_ROTATION_Y = -0.35;'), 'Global Earth Engine must own the one canonical surface calibration.');
+  assert.ok(engineSource.includes('surface.rotation.y = EARTH_BASE_SURFACE_ROTATION_Y;'), 'Every Engine-created Earth must use the canonical base surface orientation.');
   assert.ok(!/\bquality\b|\bBasic\b|\bHD\b|setQuality/i.test(engineSource), 'Engine must not own Independent Earth View UI naming.');
   const engine = await import(pathToFileURL(path.join(root, 'Global/earth-engine.js')).href);
 
@@ -112,19 +115,13 @@ const THREE = {
     THREE,
     radius: 1,
     textureUrl: './runtime-assets/earth-land-ocean-ice-2048.png',
-    geometryDetail: 'high',
-    initialRotationY: -0.35
+    geometryDetail: 'high'
   });
   assert.equal(homeGlobe.surface.geometry.parameters.width, 96, 'Home fixed high detail must match its former 96-segment sphere.');
   assert.equal(homeGlobe.surface.geometry.parameters.height, 64, 'Home fixed high detail must match its former 64-segment sphere.');
   assert.equal(homeGlobe.surface.rotation.y, -0.35, 'Home surface longitude alignment must be retained.');
 
-  const moonCompatibleSurface = homeGlobe.group.children.find(child => child.isMesh &&
-    child.geometry?.type === 'SphereGeometry' &&
-    Math.abs((child.geometry.parameters?.radius ?? 0) - 1) < 1e-8 &&
-    child.material?.type === 'MeshStandardMaterial');
-  assert.equal(moonCompatibleSurface, homeGlobe.surface, 'Moon Orbit must resolve the exact Engine surface from direct group children.');
-  assert.equal(homeGlobe.group.children[0], homeGlobe.surface, 'The Engine surface must remain the first direct child in Home group.');
+  assert.equal(homeGlobe.group.children[0], homeGlobe.surface, 'The Engine-owned surface remains the first direct child in Home group.');
 
   const [first, second] = await Promise.all([
     engine.createEarthGlobe({ THREE, radius: 1, textureUrl: './runtime-assets/earth-land-ocean-ice-2048.png', geometryDetail: 'standard' }),
@@ -151,8 +148,22 @@ const THREE = {
   third.dispose();
 
   const moonSource = read('Home/moon-orbit.js');
-  assert.ok(moonSource.includes('earthGroup.children.find'), 'Moon Orbit must retain its direct-child Earth mesh lookup.');
-  assert.ok(moonSource.includes('earthGroup.add(system)'), 'Moon Orbit must remain attached to the supplied Home group.');
+  assert.ok(!moonSource.includes('earthGroup.children.find'), 'Moon Orbit must never look up or take ownership of the Earth mesh.');
+  assert.ok(!moonSource.includes('earthSurface'), 'Moon Orbit must not keep a reference to the Earth surface.');
+  assert.ok(!moonSource.includes('greenwichMeanSiderealAngle'), 'Moon Orbit must not calculate or apply Earth sidereal rotation.');
+  assert.ok(!/\.rotation\.[xyz]\s*=|\.rotation\.[xyz]\s*\+=/.test(moonSource), 'Moon Orbit must not write any rotation values.');
+  assert.ok(moonSource.includes('moon.position.copy'), 'Moon Orbit may update only its own Moon position.');
+  assert.ok(moonSource.includes('earthGroup.add(system)'), 'Moon Orbit remains an additive visual layer under the Home Earth group.');
+
+  const earthModes = read('Earth/earth-orb-globe.js');
+  assert.ok(earthModes.includes('import { createEarthGlobe } from "../Global/earth-engine.js"'), 'Earth Modes must use the canonical Global Earth Engine.');
+  assert.ok(earthModes.includes('textureUrl: "../runtime-assets/earth-land-ocean-ice-2048.png"'), 'Earth Modes must use the canonical local Earth texture.');
+  assert.ok(!earthModes.includes('initialRotationY'), 'Earth Modes must not override the Global Engine base calibration.');
+  assert.ok(earthModes.includes('geometryDetail: mode === "hd" ? "high" : "standard"'), 'Earth Modes must map HD to the shared Engine geometry profile.');
+  assert.ok(!earthModes.includes('new T.SphereGeometry'), 'Earth Modes must not construct a duplicate Earth sphere.');
+  assert.ok(!earthModes.includes('new T.MeshStandardMaterial'), 'Earth Modes must not construct a duplicate Earth material.');
+  assert.ok(!earthModes.includes('https://eoimages.gsfc.nasa.gov'), 'Earth Modes must not bypass the local shared texture.');
+  assert.ok(earthModes.includes('applyHomeOrientation(group)'), 'Earth Modes must apply only Home group orientation after Engine creation.');
 
   const controller = read('Earth/earth-view-controller.js');
   assert.ok(controller.includes('import("../Global/earth-engine.js")'), 'Independent Earth View must also use Earth Engine.');
@@ -160,6 +171,7 @@ const THREE = {
   assert.ok(controller.includes('earth-independent-renderer'), 'Independent Earth view registration must remain intact.');
   assert.ok(controller.includes('data-quality="basic"') && controller.includes('data-quality="hd"'), 'Basic/HD choices must remain in Independent Earth View.');
   assert.ok(controller.includes('earthGlobe.setGeometryDetail(quality === "hd" ? "high" : "standard")'), 'Independent Earth UI must map Basic/HD to generic Engine detail.');
+  assert.ok(!controller.includes('initialRotationY'), 'Independent Earth View must not override the Global Engine base calibration.');
   assert.ok(!controller.includes('earthGlobe.setQuality'), 'Independent Earth View must not call the removed Engine quality API.');
   assert.ok(!controller.includes('moon-orbit.js'), 'Independent Earth View must not import the Home Moon orbit.');
   assert.ok(!/LiveEarthScene\.(?:unlock|lock|zoomBy|setQuality)\s*\(/.test(controller), 'Independent Earth View must not control Home camera or geometry.');
@@ -169,7 +181,7 @@ const THREE = {
   assert.ok(sw.includes('"./Global/earth-engine.js"') && sw.includes('"./Earth/earth-view-controller.js"'), 'Both Earth files must remain essential offline shell assets.');
   assert.ok(sw.includes('"./runtime-assets/earth-land-ocean-ice-2048.png"'), 'Home Engine texture must remain an offline runtime dependency.');
   assert.ok(!sw.includes('earth-mode-navigation.js'), 'The retired controller path must not remain in the service worker.');
-  assert.ok(sw.includes('v123-exact-earth-surface-alignment') && manager.includes('v123-exact-earth-surface-alignment'), 'Service worker and update manager build IDs must match.');
+  assert.ok(sw.includes('v125-global-earth-engine-isolated') && manager.includes('v125-global-earth-engine-isolated'), 'Service worker and update manager build IDs must match.');
   assert.ok(sw.includes('const anchor = "// LIVE_EARTH_HOME_RENDERER_HOOKS";'), 'Home API injection must use the stable named hook.');
   assert.ok(sw.includes('const readableRemoteThreeImport = /try\\s*\\{'), 'Service worker must transform the readable Home Three.js import.');
   assert.ok(sw.includes("html = html.replace(readableRemoteThreeImport, \"T = await import('./vendor/three.module.js');\");"), 'Readable Home import must resolve to the staged offline Three.js module.');
@@ -205,7 +217,7 @@ const THREE = {
     homeEarthUsesSharedEngine: 'passed',
     homeFixedGeometryAndLockedZoom: 'passed',
     homeEarthMeshIdentityPreserved: 'passed',
-    homeMoonOrbitMeshLookupAndGroupAttachment: 'passed',
+    moonOrbitCannotMutateEarth: 'passed',
     engineGenericGeometryDetailAPI: 'passed',
     enginePerViewIsolation: 'passed',
     sharedTextureLifecycle: 'passed',

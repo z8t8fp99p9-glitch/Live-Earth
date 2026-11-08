@@ -55,3 +55,6 @@ Old content-collection, rights-checking and publication notes are historical. Th
 
 ## Home Earth viewpoint hand-off
 Home's settled Earth orientation may be shared with independent Earth renderers through `Global/earth-viewpoint-bridge.js`. The bridge may use same-tab `sessionStorage` to survive page navigation, but must not use or reset app databases, persistent user settings, or caches. Only the initial orientation is shared; views retain independent scenes, cameras, zoom, renderers and interactions. Secondary views must never publish orientation back to Home.
+
+### V125 — canonical Earth Engine and strict Moon/Earth isolation
+`Global/earth-engine.js` is the only Earth globe factory. Home, Independent Earth View and Earth Modes use the same engine, Earth texture and fixed surface calibration, creating separate instances only because their scenes/renderers are independent. The bridge transfers only Home's user-controlled Earth-group quaternion. Moon Orbit may update its own Moon/orbit objects only; it must never read or mutate the Earth surface or Earth group. The V124 surface-quaternion bridge was an incorrect expansion of the legacy Moon/Earth coupling and is superseded.

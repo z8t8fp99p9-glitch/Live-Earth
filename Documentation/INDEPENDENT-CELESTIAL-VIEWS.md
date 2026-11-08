@@ -44,7 +44,7 @@ Three.js and the approved Earth texture use the existing same-origin runtime dep
 
 1. Syntax-check all changed JavaScript and the transformed Home module.
 2. Confirm Home uses the Engine surface directly, has locked framing and exposes no Basic/HD or zoom controls.
-3. Confirm Moon Orbit still finds the exact Engine surface as a direct child of the supplied Home group and attaches its orbit system to that same group.
+3. Confirm Moon Orbit updates only its own Moon/orbit objects and never looks up or mutates the Home Earth surface or parent transform.
 4. Confirm the independent Earth UI maps Basic/HD to generic Engine detail and has no Home camera/renderer mutation calls or Moon-orbit import.
 5. Confirm registry contains independent Earth, Moon and Sun modules under the shared stage.
 6. Open/close Earth repeatedly and switch Earth → Moon → Sun → Home.

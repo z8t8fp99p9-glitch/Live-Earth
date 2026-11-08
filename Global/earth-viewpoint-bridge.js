@@ -2,8 +2,9 @@
  * Shares the Home Earth orientation with independent views in this document and
  * across same-tab navigation to Earth Modes. It never shares a scene or camera.
  */
-const STATE_KEY = "__liveEarthHomeViewpointV1";
-const STORAGE_KEY = "liveEarthHomeViewpointV1";
+const STATE_KEY = "__liveEarthHomeViewpointV3";
+const STORAGE_KEY = "liveEarthHomeViewpointV3";
+const LEGACY_STORAGE_KEYS = ["liveEarthHomeViewpointV2", "liveEarthHomeViewpointV1"];
 let localSnapshot = null;
 
 function validSnapshot(value) {
@@ -16,10 +17,14 @@ function copySnapshot(value) {
 
 function readStoredSnapshot() {
   try {
-    const raw = window?.sessionStorage?.getItem(STORAGE_KEY);
+    const storage = window?.sessionStorage;
+    const raw = storage?.getItem(STORAGE_KEY)
+      || LEGACY_STORAGE_KEYS.map(key => storage?.getItem(key)).find(Boolean);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (parsed?.version !== 1 || !validSnapshot(parsed.orientation)) return null;
+    // V124's legacy payload may contain a Moon-driven child-surface quaternion.
+    // Deliberately ignore that field; only Home's user-controlled group is valid.
+    if (![1, 2, 3].includes(parsed?.version) || !validSnapshot(parsed.orientation)) return null;
     const length = Math.hypot(parsed.orientation.x, parsed.orientation.y, parsed.orientation.z, parsed.orientation.w);
     if (!Number.isFinite(length) || length < 1e-12) return null;
     return copySnapshot({
@@ -70,7 +75,7 @@ export function publishHomeOrientation(homeEarthGroup, options = {}) {
     window[STATE_KEY] = snapshot;
     if (options.persist !== false) {
       try {
-        window.sessionStorage?.setItem(STORAGE_KEY, JSON.stringify({ version: 1, orientation: snapshot }));
+        window.sessionStorage?.setItem(STORAGE_KEY, JSON.stringify({ version: 3, orientation: snapshot }));
       } catch (_) { /* In-memory bridge remains available when storage is blocked. */ }
     }
     window.dispatchEvent?.(new Event("live-earth-home-viewpoint-changed"));

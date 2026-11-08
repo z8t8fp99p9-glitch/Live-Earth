@@ -1,7 +1,7 @@
-/* LIVE // EARTH V123 — exact Earth surface alignment. */
+/* LIVE // EARTH V124 — complete Home-to-viewpoint bridge. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v123-exact-earth-surface-alignment";
-const CACHE_NAME = "live-earth-shell-v123-exact-earth-surface-alignment";
+const BUILD_ID = "v125-global-earth-engine-isolated";
+const CACHE_NAME = "live-earth-shell-v125-global-earth-engine-isolated";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
