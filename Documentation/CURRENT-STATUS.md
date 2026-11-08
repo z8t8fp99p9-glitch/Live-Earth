@@ -73,3 +73,8 @@ V121 adds `Global/earth-viewpoint-bridge.js`. Home publishes an immutable quater
 ## 8 November 2026 — V122 persistent Earth viewpoint bridge
 
 V121's in-memory-only orientation snapshot did not survive navigation to the separate Earth Modes document. V122 stores the settled Home Earth group quaternion in same-tab `sessionStorage`, restores it when Home is recreated, and connects `Earth/earth-orb-globe.js` so Basic/HD/Offline Earth Modes inherit the Home starting orientation. Independent Earth View continues to consume the same bridge. During pointer movement the latest snapshot is updated in memory; session storage is written on pointer release rather than every frame. Secondary Earth views remain one-way consumers and do not write their exploration state back to Home. Build identity is `v122-persistent-earth-viewpoint-bridge`.
+
+
+## 8 November 2026 — V123 exact Earth surface alignment
+
+V122 correctly transferred Home's Earth-group quaternion, but the separate Earth Modes renderer applied an additional `-0.35` radian rotation to its child surface mesh. That extra longitude offset caused a visible mismatch even when the group quaternion was identical. V123 removes the standalone surface offset so the Home pose and Earth Modes pose use the same zero-offset surface baseline. The one-way bridge, Home scene, independent Earth renderer, Moon, Sun, Location, Stacks, Orb behaviour, and storage contracts are unchanged. The service-worker and update-manager build identity is bumped to `v123-exact-earth-surface-alignment` so the corrected controller is refreshed.

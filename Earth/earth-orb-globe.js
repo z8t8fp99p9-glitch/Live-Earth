@@ -25,7 +25,7 @@ scene=new T.Scene();camera=new T.PerspectiveCamera(36,1,.1,40);camera.position.z
 scene.add(new T.AmbientLight(0x7898bc,.55));const sun=new T.DirectionalLight(0xffffff,2);sun.position.set(-3,2,4);scene.add(sun);const fill=new T.DirectionalLight(0x2867a9,.16);fill.position.set(4,-2,-3);scene.add(fill);
 group=new T.Group();scene.add(group);let tex;try{tex=await texture(T,['https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57730/land_ocean_ice_2048.png','https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg'])}catch(e){say('Live texture unavailable. Showing the saved Earth artwork instead.');return}if(disposed){tex.dispose();return}
 tex.colorSpace=T.SRGBColorSpace;tex.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),4);const seg=mode==='hd'?112:80;
-const earth=new T.Mesh(new T.SphereGeometry(1,seg,Math.round(seg*.67)),new T.MeshStandardMaterial({map:tex,roughness:1,metalness:0}));earth.rotation.y=-.35;group.add(earth);
+const earth=new T.Mesh(new T.SphereGeometry(1,seg,Math.round(seg*.67)),new T.MeshStandardMaterial({map:tex,roughness:1,metalness:0}));group.add(earth); // Match the zero-offset Earth Engine surface; the bridge supplies the full pose.
 group.add(new T.Mesh(new T.SphereGeometry(1.028,64,48),new T.MeshBasicMaterial({color:0x329dff,transparent:true,opacity:.17,side:T.BackSide,blending:T.AdditiveBlending,depthWrite:false})));
 // Earth Modes is a separate document, so the bridge restores the Home pose from sessionStorage.
 applyHomeOrientation(group);

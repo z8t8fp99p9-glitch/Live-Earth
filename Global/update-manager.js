@@ -1,9 +1,9 @@
-/* LIVE // EARTH V122 update manager — persistent Home-to-viewpoint bridge. */
+/* LIVE // EARTH V123 update manager — exact Earth surface alignment. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v122-persistent-earth-viewpoint-bridge";
+  const BUILD_ID = "v123-exact-earth-surface-alignment";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {

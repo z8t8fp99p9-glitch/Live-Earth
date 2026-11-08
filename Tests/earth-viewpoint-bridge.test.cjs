@@ -107,6 +107,7 @@ assert.match(earthController, /import\("\.\.\/Global\/earth-viewpoint-bridge\.js
 assert.match(earthController, /applyHomeOrientation\?\.\(earthGroup\)/, 'Independent Earth View must consume Home orientation on activation.');
 assert.match(earthModes, /import \{ applyHomeOrientation \} from "\.\.\/Global\/earth-viewpoint-bridge\.js"/, 'Earth Modes must load the bridge.');
 assert.match(earthModes, /applyHomeOrientation\(group\)/, 'Earth Modes must consume Home orientation.');
+assert.doesNotMatch(earthModes, /earth\.rotation\.y\s*=\s*-?0\.35/, 'Earth Modes surface must not add a longitude offset after applying Home group orientation.');
 assert.match(sw, /v122-persistent-earth-viewpoint-bridge/, 'The service worker build identity must be bumped.');
 assert.match(sw, /"\.\/Earth\/earth-orb-globe\.js"/, 'Earth Modes controller must remain an essential offline asset.');
 assert.match(sw, /"\.\/Global\/earth-viewpoint-bridge\.js"/, 'The bridge must be an essential offline shell asset.');
