@@ -11,20 +11,22 @@ Earth, Moon and Sun are three independent primary views. They share the Global P
 | Primary-view transitions | `view-manager.js` |
 | Module activation/deactivation | `view-module-registry.js` |
 | Full-screen stage and common background | `sky-view-controller.js` |
-| Reusable Earth globe objects | `earth-engine.js` |
+| Reusable Earth globe objects and generic geometry/texture lifecycle | `earth-engine.js` |
+| Home Earth scene, fixed camera, renderer, lights, responsive sizing and interaction | Home module in `index.html` |
+| Home-only Moon orbit attached to Home Earth group | `moon-orbit.js` |
 | Independent Earth 3D scene, camera, renderer and controls | `earth-view-controller.js` |
 | Independent Moon renderer and lunar interface | `moon-view-controller.js`, `moon-lunar-interface.js` |
 | Independent Sun renderer and solar interface | `sun-view-controller.js` |
-| Home Main Earth rendering | Existing inline renderer in `index.html`, unchanged |
+| Home Main Earth integration | Home inline renderer in `index.html`, using Earth Engine only for globe objects |
 
 ## Protected Home Earth boundary
 
-- Home Main Earth is not unlocked, resized, zoomed, rotated or otherwise manipulated by opening or closing Earth View.
-- Earth View owns a separate canvas, Three.js scene, camera, renderer, Earth mesh, atmosphere, starfield, lighting and gesture state.
+- Home Earth uses Earth Engine for its globe group and surface, but retains its fixed zoom framing, own scene, renderer, responsive camera fit, single-pointer rotation and animation. Opening or closing Earth View must not alter Home state.
+- The Home Engine surface remains the exact `earth` mesh; the Home Engine group remains the exact `group` attached to Home scene. The Moon orbit, solar/day-night shader, Location marker and Stacks feature-layer interface keep their existing references to those objects.
 - Earth View starts at the same fitted globe diameter as Home (75% of the shorter viewport dimension), then performs its own camera-only cinematic zoom inside the independent renderer.
 - The Earth View contains no Moon, Moon orbit, lunar geometry or Moon controller dependency.
 - Portrait/landscape resizing updates only the active independent Earth renderer and preserves its relative zoom. It cannot redefine Home camera framing.
-- Basic/HD, zoom and Scanner controls affect only the independent Earth renderer.
+- Home has one fixed high-detail sphere (96 × 64 segments), no Basic/HD selector and no zoom controls. Basic/HD, zoom and Scanner controls affect only the independent Earth renderer. The independent view maps Basic/HD to generic `standard`/`high` geometry detail levels in Earth Engine.
 
 ## Location privacy
 
@@ -32,7 +34,7 @@ Location remains OFF until the user explicitly enables the Location Orb. Earth V
 
 ## Offline and compatibility
 
-The Earth View Controller is named `earth-view-controller.js`. The reusable `earth-engine.js` module is added to the verified service-worker app shell so it can load offline when any registered view requests a globe. The controller implements the independent renderer and registers `earth-independent-renderer`; it obtains its Earth group and surface mesh from `earth-engine.js` and never changes Home `LiveEarthScene` camera or renderer state.
+The Earth View Controller is named `earth-view-controller.js`. The reusable `earth-engine.js` module remains in the verified service-worker app shell so Home and registered views can load the same globe factory offline. The controller implements the independent renderer and registers `earth-independent-renderer`; it obtains its Earth group and surface mesh from `earth-engine.js` and never changes Home `LiveEarthScene` camera or renderer state.
 
 The manager emits canonical `earth` view events. `getActiveView()` preserves the historic `explorer` label as a compatibility adapter for the protected Orb controller and existing Stacks return paths; `getCanonicalActiveView()` exposes the canonical state.
 
@@ -40,13 +42,15 @@ Three.js and the approved Earth texture use the existing same-origin runtime dep
 
 ## Verification required
 
-1. Syntax-check all changed JavaScript.
-2. Confirm Earth code has no Home camera/renderer mutation calls and no Moon-orbit import.
-3. Confirm registry contains independent Earth, Moon and Sun modules under the shared stage.
-4. Open/close Earth repeatedly and switch Earth → Moon → Sun → Home.
-5. Test portrait → landscape → portrait while each view is active; Home Earth must retain its original framing.
-6. Verify Location OFF never requests geolocation or exposes a marker; enable Location explicitly before using Scanner.
-7. Verify online/offline launch and app-shell cache behaviour.
-8. Complete the final installed-iPhone visual and touch test before considering the work fully accepted.
+1. Syntax-check all changed JavaScript and the transformed Home module.
+2. Confirm Home uses the Engine surface directly, has locked framing and exposes no Basic/HD or zoom controls.
+3. Confirm Moon Orbit still finds the exact Engine surface as a direct child of the supplied Home group and attaches its orbit system to that same group.
+4. Confirm the independent Earth UI maps Basic/HD to generic Engine detail and has no Home camera/renderer mutation calls or Moon-orbit import.
+5. Confirm registry contains independent Earth, Moon and Sun modules under the shared stage.
+6. Open/close Earth repeatedly and switch Earth → Moon → Sun → Home.
+7. Test portrait → landscape → portrait while each view is active; Home Earth must retain its fixed framing.
+8. Verify Location OFF never requests geolocation or exposes a marker; enable Location explicitly before using Scanner.
+9. Verify online/offline launch and app-shell cache behaviour.
+10. Complete the final installed-iPhone visual and touch test before considering the work fully accepted.
 
 Static source validation is not a substitute for the installed-iPhone tests above.

@@ -195,7 +195,7 @@
     quality = next === "hd" ? "hd" : "basic";
     try { localStorage.setItem(QUALITY_KEY, quality); } catch (_) {}
     if (renderer && earthMesh && earthGlobe) {
-      earthGlobe.setQuality(quality);
+      earthGlobe.setGeometryDetail(quality === "hd" ? "high" : "standard");
       const pixelRatio = Math.min(window.devicePixelRatio || 1, quality === "hd" ? 1.5 : 1);
       renderer.setPixelRatio(pixelRatio);
       lastPixelRatio = pixelRatio;
@@ -351,7 +351,7 @@
         THREE: T,
         radius: 1,
         textureUrl: "./runtime-assets/earth-land-ocean-ice-2048.png",
-        quality,
+        geometryDetail: quality === "hd" ? "high" : "standard",
         maxAnisotropy: renderer.capabilities.getMaxAnisotropy(),
         initialRotationY: -0.35,
         atmosphere: true

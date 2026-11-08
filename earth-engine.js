@@ -50,8 +50,12 @@ async function acquireTexture(THREE, textureUrl) {
   };
 }
 
-function geometryFor(THREE, radius, quality) {
-  return quality === "hd"
+function normalizeGeometryDetail(value) {
+  return value === "high" ? "high" : "standard";
+}
+
+function geometryFor(THREE, radius, geometryDetail) {
+  return geometryDetail === "high"
     ? new THREE.SphereGeometry(radius, 96, 64)
     : new THREE.SphereGeometry(radius, 64, 48);
 }
@@ -63,10 +67,10 @@ function geometryFor(THREE, radius, quality) {
  * @param {object} options.THREE Three.js namespace supplied by the calling view.
  * @param {number} [options.radius=1] Surface sphere radius.
  * @param {string} [options.textureUrl] Same-origin Earth texture path.
- * @param {string} [options.quality="basic"] Initial geometry quality: basic or hd.
+ * @param {string} [options.geometryDetail="standard"] Generic sphere detail: standard or high.
  * @param {number} [options.initialRotationY=0] Initial longitude alignment in radians.
  * @param {boolean} [options.atmosphere=true] Whether to include the translucent atmosphere shell.
- * @returns {Promise<{group:object,surface:object,atmosphere:object|null,setQuality:function,dispose:function,getState:function}>}
+ * @returns {Promise<{group:object,surface:object,atmosphere:object|null,setGeometryDetail:function,dispose:function,getState:function}>}
  */
 export async function createEarthGlobe(options = {}) {
   const THREE = options.THREE;
@@ -79,7 +83,7 @@ export async function createEarthGlobe(options = {}) {
   const radius = Number.isFinite(options.radius) && options.radius > 0 ? options.radius : 1;
   const textureUrl = typeof options.textureUrl === "string" && options.textureUrl.trim()
     ? options.textureUrl.trim() : DEFAULT_TEXTURE;
-  let quality = options.quality === "hd" ? "hd" : "basic";
+  let geometryDetail = normalizeGeometryDetail(options.geometryDetail);
   const initialRotationY = Number.isFinite(options.initialRotationY) ? options.initialRotationY : 0;
   const includeAtmosphere = options.atmosphere !== false;
   const textureLease = await acquireTexture(THREE, textureUrl);
@@ -90,7 +94,7 @@ export async function createEarthGlobe(options = {}) {
   try {
     group = new THREE.Group();
     group.name = "liveEarthEngineGlobe";
-    surfaceGeometry = geometryFor(THREE, radius, quality);
+    surfaceGeometry = geometryFor(THREE, radius, geometryDetail);
     surfaceMaterial = new THREE.MeshStandardMaterial({ map: textureLease.texture, roughness: 1, metalness: 0 });
     surface = new THREE.Mesh(surfaceGeometry, surfaceMaterial);
     surface.name = "liveEarthEngineSurface";
@@ -120,17 +124,18 @@ export async function createEarthGlobe(options = {}) {
     throw error;
   }
 
-  function setQuality(next) {
-    if (disposed) return quality;
-    const requested = next === "hd" ? "hd" : "basic";
-    if (requested === quality) return quality;
+  function setGeometryDetail(next) {
+    if (disposed) return geometryDetail;
+    const requested = normalizeGeometryDetail(next);
+    if (requested === geometryDetail) return geometryDetail;
+
     const replacement = geometryFor(THREE, radius, requested);
     const previous = surface.geometry;
     surface.geometry = replacement;
     surfaceGeometry = replacement;
-    quality = requested;
+    geometryDetail = requested;
     try { previous?.dispose?.(); } catch (_) {}
-    return quality;
+    return geometryDetail;
   }
 
   function dispose() {
@@ -146,9 +151,9 @@ export async function createEarthGlobe(options = {}) {
 
   return Object.freeze({
     group, surface, atmosphere,
-    setQuality,
+    setGeometryDetail,
     dispose,
-    getState: () => Object.freeze({ quality, radius, textureUrl, disposed })
+    getState: () => Object.freeze({ geometryDetail, radius, textureUrl, disposed })
   });
 }
 

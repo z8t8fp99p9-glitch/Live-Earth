@@ -1,7 +1,7 @@
-/* LIVE // EARTH V114 — reusable Earth Engine and independent Earth View Controller. */
+/* LIVE // EARTH V116 — fixed Home Earth Engine integration. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v114-reusable-earth-engine";
-const CACHE_NAME = "live-earth-shell-v114-reusable-earth-engine";
+const BUILD_ID = "v116-fixed-home-earth-engine";
+const CACHE_NAME = "live-earth-shell-v116-fixed-home-earth-engine";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -200,26 +200,12 @@ async function runtimeResponse(request, dependency) {
 }
 
 function injectSameGlobeAPI(html) {
-  const anchor = "let active=null,x=0,y=0,drag=false;";
+  const anchor = "// LIVE_EARTH_HOME_RENDERER_HOOKS";
   if (html.includes(anchor) && !html.includes("window.LiveEarthScene")) {
     const api = `
-window.__leEarthUnlocked = false;
 window.LiveEarthScene = (() => {
-  let unlocked = false;
-  let quality = "basic";
-  try { quality = localStorage.getItem("liveEarthQuality") === "hd" ? "hd" : "basic"; } catch (_) {}
-  let animation = 0;
-  let homeRotation = null;
-  let homeZ = camera.position.z;
-  // HOME VISUAL LOCK: capture the original Home geometry and renderer density
-  // before any exploration quality profile is applied.
-  const homeGeometry = earth.geometry;
-  const homePixelRatio = renderer.getPixelRatio();
-  const reducedGeometry = new T.SphereGeometry(1, 64, 48);
-  const fullGeometry = new T.SphereGeometry(1, 96, 64);
-  // LOCATION MARKER: a small surface-anchored point, parented to the same
-  // rotating group as Earth. Home always shows it when tracking is enabled;
-  // Exploration shows it only while its independent Scanner control is on.
+  // Home-only Location marker: parent it to the exact Engine surface so it
+  // follows the same rotation without changing the globe or its geometry.
   const locationVector = new T.Vector3();
   const locationMarker = new T.Group();
   const locationHalo = new T.Mesh(
@@ -230,226 +216,99 @@ window.LiveEarthScene = (() => {
     new T.SphereGeometry(0.014, 16, 12),
     new T.MeshBasicMaterial({color:0xff183f,depthWrite:false})
   );
-  locationMarker.add(locationHalo,locationDot);
+  locationMarker.add(locationHalo, locationDot);
   locationMarker.visible = false;
   earth.add(locationMarker);
+
   let locationEnabled = false;
-  let scannerVisible = false;
   let hasLocation = false;
   let locationCoordinates = null;
   const featureLayers = new Map();
+
   function syncLocationMarker() {
-    locationMarker.visible = hasLocation && locationEnabled && (!unlocked || scannerVisible);
+    locationMarker.visible = hasLocation && locationEnabled;
     draw();
   }
-  function setLocation(lat, lon) {
-    if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) return false;
-    const phi = lat * Math.PI / 180;
-    const lambda = lon * Math.PI / 180;
-    // Match the solar/texture convention: lon 0° faces local +X;
-    // east-positive longitude turns toward local -Z.
-    locationVector.set(Math.cos(phi)*Math.cos(lambda), Math.sin(phi), -Math.cos(phi)*Math.sin(lambda)).normalize();
+
+  function setLocation(latitude, longitude) {
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+        latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+      return false;
+    }
+    const phi = latitude * Math.PI / 180;
+    const lambda = longitude * Math.PI / 180;
+    locationVector.set(
+      Math.cos(phi) * Math.cos(lambda),
+      Math.sin(phi),
+      -Math.cos(phi) * Math.sin(lambda)
+    ).normalize();
     locationHalo.position.copy(locationVector).multiplyScalar(1.006);
     locationDot.position.copy(locationVector).multiplyScalar(1.019);
-    locationCoordinates = { latitude: lat, longitude: lon, capturedAt: Date.now() };
+    locationCoordinates = { latitude, longitude, capturedAt: Date.now() };
     hasLocation = true;
     syncLocationMarker();
     return true;
   }
+
   function setLocationEnabled(enabled) {
-    locationEnabled = !!enabled;
-    if (!locationEnabled) { hasLocation = false; scannerVisible = false; locationCoordinates = null; }
+    locationEnabled = enabled === true;
+    if (!locationEnabled) {
+      hasLocation = false;
+      locationCoordinates = null;
+    }
     syncLocationMarker();
   }
-  function setScannerVisible(visible) {
-    scannerVisible = !!visible;
-    syncLocationMarker();
-  }
-  function getScannerVisible() { return scannerVisible; }
+
   function getLocation() {
     if (!locationEnabled || !hasLocation || !locationCoordinates) return null;
     if (Date.now() - locationCoordinates.capturedAt > 120000) return null;
-    return { latitude: locationCoordinates.latitude, longitude: locationCoordinates.longitude, capturedAt: locationCoordinates.capturedAt };
+    return {
+      latitude: locationCoordinates.latitude,
+      longitude: locationCoordinates.longitude,
+      capturedAt: locationCoordinates.capturedAt
+    };
   }
+
   function removeLayer(id) {
     const cleanup = featureLayers.get(id);
     if (!cleanup) return false;
     featureLayers.delete(id);
-    try { cleanup(); } catch (error) { console.warn("[LIVE // EARTH] Layer cleanup failed:", id, error); }
+    try { cleanup(); }
+    catch (error) { console.warn("[LIVE // EARTH] Layer cleanup failed:", id, error); }
     draw();
     return true;
   }
+
   function registerLayer(id, factory) {
     if (typeof id !== "string" || !id.trim() || typeof factory !== "function") {
       throw new TypeError("An Earth layer needs a stable id and a factory function.");
     }
     removeLayer(id);
     const cleanup = factory({
-      THREE: T, scene, earth, group, camera, renderer,
-      redraw: draw, requestRender: draw, getLocation
+      THREE: T,
+      scene,
+      earth,
+      group,
+      camera,
+      renderer,
+      redraw: draw,
+      requestRender: draw,
+      getLocation
     });
     if (typeof cleanup === "function") featureLayers.set(id, cleanup);
     draw();
     return () => removeLayer(id);
   }
-  function restoreHomeVisualState() {
-    earth.geometry = homeGeometry;
-    renderer.setPixelRatio(homePixelRatio);
-    draw();
-  }
-  function renderQuality(next) {
-    quality = next === "hd" ? "hd" : "basic";
-    // Quality selection is remembered globally, but only affects the globe
-    // while Exploration is unlocked. Home always uses its captured baseline.
-    if (!unlocked) {
-      restoreHomeVisualState();
-      return quality;
-    }
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, quality === "hd" ? 1.5 : 1));
-    earth.geometry = quality === "hd" ? fullGeometry : reducedGeometry;
-    draw();
-    return quality;
-  }
-  function animateCamera(targetZ, done, targetRotation = null) {
-    if (animation) cancelAnimationFrame(animation);
-    const startZ = camera.position.z, start = performance.now();
-    const startRotation = {x:group.rotation.x,y:group.rotation.y,z:group.rotation.z};
-    const angleDelta = targetRotation ? {
-      x:Math.atan2(Math.sin(targetRotation.x-startRotation.x),Math.cos(targetRotation.x-startRotation.x)),
-      y:Math.atan2(Math.sin(targetRotation.y-startRotation.y),Math.cos(targetRotation.y-startRotation.y)),
-      z:Math.atan2(Math.sin(targetRotation.z-startRotation.z),Math.cos(targetRotation.z-startRotation.z))
-    } : null;
-    const duration = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 720;
-    const tick = now => {
-      const t = duration ? Math.min(1, (now - start) / duration) : 1;
-      const eased = 1 - Math.pow(1 - t, 3);
-      camera.position.z = startZ + (targetZ - startZ) * eased;
-      if (targetRotation && angleDelta) {
-        group.rotation.set(
-          startRotation.x + angleDelta.x * eased,
-          startRotation.y + angleDelta.y * eased,
-          startRotation.z + angleDelta.z * eased
-        );
-        if (t === 1) group.rotation.set(targetRotation.x,targetRotation.y,targetRotation.z);
-      }
-      camera.lookAt(0, 0, 0); draw();
-      if (t < 1) animation = requestAnimationFrame(tick);
-      else { animation = 0; done?.(); }
-    };
-    animation = requestAnimationFrame(tick);
-  }
-  function unlock() {
-    if (unlocked) return;
-    // Capture the actual Home camera before entering exploration. Never derive
-    // the saved Home distance from the already-zoomed exploration camera.
-    homeZ = camera.position.z;
-    homeRotation = {x:group.rotation.x,y:group.rotation.y,z:group.rotation.z};
-    unlocked = true; window.__leEarthUnlocked = true;
-    scannerVisible = false;
-    syncLocationMarker();
-    renderQuality(quality);
-    animateCamera(homeZ * 0.62);
-  }
-  function lock() {
-    if (!unlocked) return;
-    unlocked = false; window.__leEarthUnlocked = false;
-    // Restore Home's original geometry and pixel density before returning.
-    // The saved Basic/HD choice remains available for the next exploration,
-    // but cannot alter the protected Home celestial view.
-    scannerVisible = false;
-    restoreHomeVisualState();
-    syncLocationMarker();
-    // Keep the latest explored globe rotation; only the camera returns Home.
-    animateCamera(homeZ);
-  }
-  function setQuality(next) {
-    quality = next === "hd" ? "hd" : "basic";
-    try { localStorage.setItem("liveEarthQuality", quality); } catch (_) {}
-    return renderQuality(quality);
-  }
-  function zoomBy(factor, smooth = true) {
-    if (!unlocked || !Number.isFinite(factor) || factor <= 0) return camera.position.z;
-    // Give Basic a modestly closer view, while HD unlocks the strongest
-    // zoom-in range. Both profiles remain bounded by the approved Home scale.
-    const minZ = quality === "hd" ? 0.88 : 1.30;
-    const maxZ = Math.max(minZ, homeZ);
-    const targetZ = Math.max(minZ, Math.min(maxZ, camera.position.z * factor));
-    if (smooth) animateCamera(targetZ);
-    else { if (animation) cancelAnimationFrame(animation); animation = 0; camera.position.z = targetZ; camera.lookAt(0,0,0); draw(); }
-    return targetZ;
-  }
-  // Multi-touch is enabled only while exploring. The existing single-finger
-  // pointer drag remains responsible for rotating the same globe.
-  const pointers = new Map();
-  let pinching = false;
-  let pinchDistance = 0;
-  function pointerPoint(event) { return {x:event.clientX,y:event.clientY}; }
-  canvas.addEventListener("pointerdown", event => {
-    if (!unlocked) return;
-    pointers.set(event.pointerId, pointerPoint(event));
-    if (pointers.size >= 2) {
-      pinching = true;
-      drag = false;
-      active = null;
-      pinchDistance = pointerGap();
-      event.preventDefault();
-      event.stopImmediatePropagation();
-    }
-  }, {capture:true,passive:false});
-  canvas.addEventListener("pointermove", event => {
-    if (!unlocked || !pointers.has(event.pointerId)) return;
-    pointers.set(event.pointerId, pointerPoint(event));
-    if (pinching && pointers.size >= 2) {
-      const nextDistance = pointerGap();
-      if (pinchDistance > 0 && nextDistance > 0) zoomBy(pinchDistance / nextDistance, false);
-      pinchDistance = nextDistance;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-    }
-  }, {capture:true,passive:false});
-  function pointerGap() {
-    const pts = [...pointers.values()];
-    if (pts.length < 2) return 0;
-    return Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y);
-  }
-  function finishPointer(event) {
-    if (!pointers.has(event.pointerId)) return;
-    const wasPinching = pinching;
-    pointers.delete(event.pointerId);
-    if (wasPinching) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      drag = false;
-      active = null;
-      if (pointers.size < 2) { pinching = false; pinchDistance = 0; pointers.clear(); }
-    }
-  }
-  canvas.addEventListener("pointerup", finishPointer, {capture:true,passive:false});
-  canvas.addEventListener("pointercancel", finishPointer, {capture:true,passive:false});
-  // The quality selection is global and persistent. Keep the Home camera
-  // baseline separate from the exploration zoom when orientation changes.
-  window.addEventListener("resize", () => {
-    requestAnimationFrame(() => {
-      const fittedZ = camera.position.z; // index.html's fitCamera runs on resize
-      if (unlocked) {
-        if (Number.isFinite(fittedZ) && fittedZ > 0) homeZ = fittedZ;
-        camera.position.z = homeZ * 0.62;
-        renderQuality(quality);
-      } else {
-        homeZ = fittedZ;
-        restoreHomeVisualState();
-      }
-      camera.lookAt(0,0,0); draw();
-    });
-  }, {passive:true});
-  // Apply the saved global profile from first render; Basic is the safe default.
-  renderQuality(quality);
-  return {
-    unlock, lock, setQuality, zoomBy,
-    isUnlocked:()=>unlocked, getQuality:()=>quality,
-    setLocation, setLocationEnabled, setScannerVisible, getScannerVisible, getLocation,
-    registerLayer, unregisterLayer:removeLayer, getTHREE:()=>T, requestRender:draw
-  };
+
+  return Object.freeze({
+    setLocation,
+    setLocationEnabled,
+    getLocation,
+    registerLayer,
+    unregisterLayer: removeLayer,
+    getTHREE: () => T,
+    requestRender: draw
+  });
 })();
 window.dispatchEvent(new Event("live-earth-scene-ready"));
 `;
@@ -459,7 +318,7 @@ window.dispatchEvent(new Event("live-earth-scene-ready"));
 }
 
 function injectSolarDayNight(html) {
-  const anchor = "let active=null,x=0,y=0,drag=false;";
+  const anchor = "// LIVE_EARTH_HOME_RENDERER_HOOKS";
   if (!html.includes(anchor) || html.includes("LIVE_EARTH_SOLAR_DAY_NIGHT_V9")) return html;
   const code = `
 /* LIVE_EARTH_SOLAR_DAY_NIGHT_V9 — geographically aligned solar terminator + restrained night-side terrain reveal. */
@@ -838,6 +697,7 @@ function injectStartupGate(html) {
     function getMissingControllers() {
       const paths = [...knownBadPaths];
       if (!window.LiveEarthScene) paths.push('./vendor/three.module.js','./vendor/three.core.js','./runtime-assets/earth-land-ocean-ice-2048.png');
+      if (!window.LiveEarthEngine) paths.push('./earth-engine.js');
       if (window.__liveEarthEarthRendererInstalled !== true) paths.push('./earth-view-controller.js');
       if (!window.LiveEarthViewManager) paths.push('./view-manager.js');
       if (!window.LiveEarthSkyViews) paths.push('./sky-view-controller.js');
@@ -891,7 +751,7 @@ function injectStartupGate(html) {
       const imagesReady = orbImages.length === 5 && orbImages.every(img => img.complete && img.naturalWidth > 0);
       const modules = window.LiveEarthViewModules;
       return document.readyState === 'complete' &&
-        !!window.LiveEarthScene && window.__liveEarthEarthRendererInstalled === true &&
+        !!window.LiveEarthScene && !!window.LiveEarthEngine && window.__liveEarthEarthRendererInstalled === true &&
         !!window.LiveEarthViewManager && !!modules && modules.has('earth-independent-renderer') &&
         modules.has('sky-container') && modules.has('moon-lunar-interface') &&
         window.__liveEarthMoonRendererInstalled === true && window.__liveEarthStacksFeatureViewsInstalled === true && !!window.LiveEarthSkyViews &&
@@ -1081,7 +941,7 @@ function injectStartupGate(html) {
     window.addEventListener('error', event => {
       if (event.target && event.target.tagName === 'SCRIPT') {
         const src = event.target.src || '';
-        const scriptPaths = ['./orb-controls-v4.js','./earth-view-controller.js','./view-manager.js','./view-module-registry.js','./stacks-feature-views.js','./sky-view-controller.js','./moon-view-controller.js','./sun-view-controller.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
+        const scriptPaths = ['./orb-controls-v4.js','./earth-engine.js','./earth-view-controller.js','./view-manager.js','./view-module-registry.js','./stacks-feature-views.js','./sky-view-controller.js','./moon-view-controller.js','./sun-view-controller.js','./update-manager.js','./data-recovery.js','./location-scanner.js','./moon-orbit.js','./data-store.js'];
         for (const path of scriptPaths) if (src.endsWith(path.slice(1))) knownBadPaths.push(path);
         sceneFailure = 'A required startup script failed to load.';
       } else if (event.error) {
@@ -1114,9 +974,15 @@ async function transformHomeHTML(request, response, forceHome = false) {
   if (!isHome) return response;
 
   let html = await response.clone().text();
-  const remoteThreeImport = "try{T=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js')}catch(e){T=await import('https://unpkg.com/three@0.180.0/build/three.module.js')}";
-  if (html.includes(remoteThreeImport)) {
-    html = html.replace(remoteThreeImport, "T=await import('./vendor/three.module.js');");
+  // Support both the historical compact Home module and the readable module
+  // block. Both forms resolve through the same staged same-origin Three.js file.
+  const compactRemoteThreeImport = "try{T=await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js')}catch(e){T=await import('https://unpkg.com/three@0.180.0/build/three.module.js')}";
+  if (html.includes(compactRemoteThreeImport)) {
+    html = html.replace(compactRemoteThreeImport, "T=await import('./vendor/three.module.js');");
+  }
+  const readableRemoteThreeImport = /try\s*\{\s*T\s*=\s*await import\(['"]https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.180\.0\/build\/three\.module\.js['"]\);\s*\}\s*catch\s*\([^)]*\)\s*\{\s*T\s*=\s*await import\(['"]https:\/\/unpkg\.com\/three@0\.180\.0\/build\/three\.module\.js['"]\);\s*\}/;
+  if (readableRemoteThreeImport.test(html)) {
+    html = html.replace(readableRemoteThreeImport, "T = await import('./vendor/three.module.js');");
   }
   // v71 could cache this malformed adjacent-statement sequence in transformed HTML.
   // Repair it explicitly so an old transformed cache cannot poison the v72 launch.

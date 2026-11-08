@@ -1,14 +1,14 @@
-/* LIVE // EARTH V114 update manager — independent celestial views + Editorial Engine Feature Orb. */
+/* LIVE // EARTH V116 update manager — fixed Home Earth Engine + independent celestial views. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v114-reusable-earth-engine";
+  const BUILD_ID = "v116-fixed-home-earth-engine";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
     return Boolean(
-      window.LiveEarthScene && window.LiveEarthViewManager && window.LiveEarthViewModules &&
+      window.LiveEarthScene && window.LiveEarthEngine && window.LiveEarthViewManager && window.LiveEarthViewModules &&
       window.LiveEarthViewModules.has("sky-container") &&
       window.LiveEarthViewModules.has("earth-independent-renderer") &&
       window.__liveEarthEarthRendererInstalled === true &&
