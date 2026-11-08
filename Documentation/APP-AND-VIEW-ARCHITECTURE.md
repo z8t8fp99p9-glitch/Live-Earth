@@ -43,3 +43,9 @@ Every file referenced by the service worker, update manager, view controller or 
 
 ## Shared Earth viewpoint
 `Global/earth-engine.js` is the one canonical Earth globe factory used by Home, Independent Earth View and Earth Modes Basic/HD/Offline. Each view receives its own globe instance because each owns a separate scene and renderer, but all instances use the same engine, local Earth texture, geometry profiles and fixed base-surface calibration. `Global/earth-viewpoint-bridge.js` transfers only Home's user-controlled parent-group quaternion. It never copies the child surface transform, Moon state, camera or zoom, and secondary views never write their orientation back to Home. Stacks feature layers already use the Home Earth scene and naturally share its orientation. Moon and Sun remain independent.
+
+
+## Earth View drag orientation
+Independent Earth View consumes Home's parent-group quaternion. Its drag controller must continue from that quaternion using axis-angle quaternion deltas; it must not write Euler `rotation.x` or `rotation.y` after receiving the pose. Euler extraction can select an equivalent alternate branch when Home yaw crosses +/-90 degrees, causing the first pointer move to clamp pitch and visibly flip the globe. The initial pitch is recovered from Home's XYZ quaternion convention, then maintained as a separate bounded drag value. Camera zoom remains independent.
+
+Earth View gesture handling preserves the inherited quaternion. It derives the starting pitch from Home's XYZ quaternion convention and applies drag deltas with axis-angle quaternions; it must not read-modify-write Euler `rotation.x/y` after receiving the Home pose. This prevents alternate Euler-branch extraction at yaw angles beyond +/-90 degrees from triggering the first-drag pitch clamp.

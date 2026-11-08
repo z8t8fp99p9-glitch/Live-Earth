@@ -88,8 +88,28 @@
   let solarVector = null;
   let shaderUniforms = null;
   let resizeSettleTimers = [];
+  // Drag pitch is tracked independently of Three.js Euler decomposition.
+  // A transferred quaternion can represent the same Home pose with an Euler
+  // X value on the alternate branch (for example when yaw passes +/- 90°).
+  let earthDragPitch = 0;
+  let dragWorldXAxis = null;
+  let dragLocalYAxis = null;
+  let dragPitchDeltaQuaternion = null;
+  let dragYawDeltaQuaternion = null;
 
   try { quality = localStorage.getItem(QUALITY_KEY) === "hd" ? "hd" : "basic"; } catch (_) {}
+
+  function homePitchFromQuaternion(quaternion) {
+    if (!quaternion || ![quaternion.x, quaternion.y, quaternion.z, quaternion.w].every(Number.isFinite)) return 0;
+    // Home uses Three.js Euler order XYZ with rotation.z fixed at zero:
+    // q = qX(pitch) * qY(yaw). This recovers its original pitch without
+    // converting through the ambiguous canonical Euler X branch.
+    const yawHalf = Math.atan2(quaternion.y, quaternion.w);
+    const sinHalfPitch = quaternion.x * Math.cos(yawHalf) + quaternion.z * Math.sin(yawHalf);
+    const cosHalfPitch = Math.hypot(quaternion.w, quaternion.y);
+    const pitch = 2 * Math.atan2(sinHalfPitch, cosHalfPitch);
+    return Number.isFinite(pitch) ? clamp(pitch, -1.15, 1.15) : 0;
+  }
 
   function showStatus(message, duration = 2600) {
     const status = document.querySelector("#status");
@@ -326,6 +346,10 @@
     makeStage();
     initPromise = (async () => {
       T = await import("../vendor/three.module.js");
+      dragWorldXAxis = new T.Vector3(1, 0, 0);
+      dragLocalYAxis = new T.Vector3(0, 1, 0);
+      dragPitchDeltaQuaternion = new T.Quaternion();
+      dragYawDeltaQuaternion = new T.Quaternion();
       renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "low-power" });
       renderer.outputColorSpace = T.SRGBColorSpace;
       renderer.setClearColor(0x02050b, 1);
@@ -461,8 +485,24 @@
       } else if (earthGroup) {
         const dx = event.clientX - previous.x;
         const dy = event.clientY - previous.y;
-        earthGroup.rotation.y += dx * 0.008;
-        earthGroup.rotation.x = clamp(earthGroup.rotation.x + dy * 0.006, -1.25, 1.25);
+        // Apply gesture deltas directly to the inherited quaternion. Do not
+        // read/write Euler rotation.x/y here: after Home's quaternion is copied,
+        // Euler extraction can choose the alternate branch and clamp the globe
+        // to an upside-down pose on the very first pointer movement.
+        if (dx && dragYawDeltaQuaternion && dragLocalYAxis) {
+          dragYawDeltaQuaternion.setFromAxisAngle(dragLocalYAxis, dx * 0.008);
+          earthGroup.quaternion.multiply(dragYawDeltaQuaternion);
+        }
+        if (dy && dragPitchDeltaQuaternion && dragWorldXAxis) {
+          const nextPitch = clamp(earthDragPitch + dy * 0.006, -1.25, 1.25);
+          const pitchDelta = nextPitch - earthDragPitch;
+          if (Math.abs(pitchDelta) > 1e-12) {
+            dragPitchDeltaQuaternion.setFromAxisAngle(dragWorldXAxis, pitchDelta);
+            earthGroup.quaternion.premultiply(dragPitchDeltaQuaternion);
+            earthDragPitch = nextPitch;
+          }
+        }
+        earthGroup.quaternion.normalize();
         updateSolarDirection();
         queueDraw();
       }
@@ -490,6 +530,9 @@
       // Copy only Home's globe orientation. This view keeps its own scene,
       // camera, zoom, renderer and subsequent exploration state.
       viewpointBridge?.applyHomeOrientation?.(earthGroup);
+      // Recover Home's original bounded pitch from the quaternion itself so
+      // Earth View's first drag cannot snap through an alternate Euler branch.
+      earthDragPitch = homePitchFromQuaternion(earthGroup.quaternion);
       resizeRenderer(true);
       camera.position.z = baseDistance;
       camera.lookAt(0, 0, 0);

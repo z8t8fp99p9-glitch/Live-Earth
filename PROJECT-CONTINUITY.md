@@ -96,3 +96,10 @@ V124 incorrectly treated Moon Orbit's legacy sidereal Earth-surface write as a r
 ## V125 correction — strict Earth ownership
 
 The V124 diagnosis was wrong. The Moon Orbit module had a direct write to the Home Earth mesh: `earthSurface.rotation.y = greenwichMeanSiderealAngle(date)`, executed during Moon Orbit initialization and the scheduled 30-second update. V124 then expanded this coupling by copying the child surface quaternion through the viewpoint bridge. This is not acceptable. V125 removes the Earth-surface lookup/write from Moon Orbit; Moon updates only its own position. The bridge transfers only Home's user-controlled parent-group quaternion. Home, Independent Earth View and Earth Modes all use the single `Global/earth-engine.js` factory and the same Earth texture/base calibration, with separate instances only to preserve their independent scenes and renderers. No Moon or Sun calculation may modify Earth's transform.
+
+
+## 2026-11-08 — V126 Earth View first-touch orientation correction
+- Observed behaviour: Home viewpoint transferred correctly when Earth View opened, but the first touch/drag in Earth View flipped the globe.
+- Cause: Earth View copied Home's quaternion, then its pointer handler read `earthGroup.rotation.x` and wrote Euler X/Y. Three.js may decompose a valid transferred XYZ quaternion using the alternate Euler branch when yaw crosses +/-90 degrees. The existing pitch clamp then snapped X to its bound on the first pointer movement.
+- Correction: recover Home's bounded pitch directly from the XYZ quaternion, and apply horizontal/vertical drag deltas using local-Y/world-X axis-angle quaternion multiplication. No Home gesture, Moon, Engine, texture, camera or Orb behaviour changed.
+- Build identity: `v126-quaternion-stable-earth-drag`.

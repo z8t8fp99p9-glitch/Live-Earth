@@ -1,7 +1,7 @@
 /* LIVE // EARTH V124 — complete Home-to-viewpoint bridge. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v125-global-earth-engine-isolated";
-const CACHE_NAME = "live-earth-shell-v125-global-earth-engine-isolated";
+const BUILD_ID = "v126-quaternion-stable-earth-drag";
+const CACHE_NAME = "live-earth-shell-v126-quaternion-stable-earth-drag";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [

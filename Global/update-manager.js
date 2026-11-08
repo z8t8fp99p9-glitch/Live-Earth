@@ -1,9 +1,9 @@
-/* LIVE // EARTH V122 update manager — persistent Home-to-viewpoint bridge. */
+/* LIVE // EARTH V126 update manager — quaternion-stable Earth View dragging. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v125-global-earth-engine-isolated";
+  const BUILD_ID = "v126-quaternion-stable-earth-drag";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {

@@ -4,7 +4,7 @@
 **Repository:** `z8t8fp99p9-glitch/Live-Earth`  
 **Working branch:** `main`  
 **Source baseline:** user-tested `Live-Earth-fullscreen-stacks-feature-views-v118.zip`  
-**Working package:** V125 — one canonical Global Earth Engine with strict Moon/Earth isolation and Home-only viewpoint hand-off (built on V124; includes V118 feature views and V120 Location service naming)
+**Working package:** V126 — one canonical Global Earth Engine, strict Moon/Earth isolation, Home viewpoint hand-off and quaternion-stable Earth View dragging (includes V118 feature views and V120 Location service naming)
 
 This checkpoint is based on the V120 full source snapshot plus the subsequent V121–V124 incremental bridge work. Re-check `main` before any later task.
 
@@ -84,3 +84,7 @@ V124 incorrectly assumed Moon Orbit's sidereal surface write was part of the int
 V125 corrects the V124 architectural mistake. `Home/moon-orbit.js` previously found the Home Earth surface mesh and assigned `earthSurface.rotation.y` from Greenwich Mean Sidereal Time on initial creation and each scheduled Moon update. This directly changed the visible Earth independently of Home's user drag. V124 then copied that child-surface quaternion through the bridge, spreading the coupling into Independent Earth View and Earth Modes. Both behaviours are removed. Moon Orbit now updates only `moon.position`; it never locates or writes to an Earth object.
 
 `Global/earth-engine.js` is now used by all three Earth renderers: Home, Independent Earth View and Earth Modes Basic/HD/Offline. Each view receives a separate Engine-created instance to preserve its independent scene and renderer, but all use the same engine, local Earth texture and geometry profiles; the `-0.35` base surface calibration is now owned only by the Global Engine. The bridge returns to a group-only snapshot: it transfers only Home's user-controlled Earth-group quaternion. Camera/zoom is initialized after the Earth is created and viewpoint applied. Build identity is `v125-global-earth-engine-isolated`.
+
+
+## V126 — Earth View first-touch drag stability
+V125 correctly applies the Home quaternion on Earth View activation, but its drag handler then read and wrote `earthGroup.rotation.x/y`. When Home yaw is beyond +/-90 degrees, Three.js can represent the same valid quaternion using the alternate canonical Euler branch. The old pitch clamp then forced the alternate X value to +/-1.25 on the first pointer move, making the Earth appear to flip upside down. V126 recovers Home's original bounded pitch from the quaternion using the known Home XYZ convention and applies drag deltas with local-Y/world-X quaternion multiplication. It does not change Home gestures, Earth Engine calibration, camera/zoom, Moon Orbit, Sun, Location, or Global Orb behaviour. Build identity is `v126-quaternion-stable-earth-drag`.

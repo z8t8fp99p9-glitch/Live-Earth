@@ -127,10 +127,10 @@ assert.match(earthController, /applyHomeOrientation\?\.\(earthGroup\)/, 'Indepen
 assert.match(earthModes, /import \{ applyHomeOrientation \} from "\.\.\/Global\/earth-viewpoint-bridge\.js"/, 'Earth Modes must load the bridge.');
 assert.match(earthModes, /applyHomeOrientation\(group\)/, 'Earth Modes must consume Home orientation.');
 assert.match(earthModes, /import \{ createEarthGlobe \} from "\.\.\/Global\/earth-engine\.js"/, 'Earth Modes must use the canonical Global Earth Engine.');
-assert.match(sw, /v125-global-earth-engine-isolated/, 'The service worker build identity must be bumped.');
+assert.match(sw, /v126-quaternion-stable-earth-drag/, 'The service worker build identity must be bumped.');
 assert.match(sw, /"\.\/Earth\/earth-orb-globe\.js"/, 'Earth Modes controller must remain an essential offline asset.');
 assert.match(sw, /"\.\/Global\/earth-viewpoint-bridge\.js"/, 'The bridge must be an essential offline shell asset.');
-assert.match(updateManager, /v125-global-earth-engine-isolated/, 'Update manager and service worker must share the build identity.');
+assert.match(updateManager, /v126-quaternion-stable-earth-drag/, 'Update manager and service worker must share the build identity.');
 assert.doesNotMatch(earthController, /publishHomeOrientation/, 'Independent Earth View must not write its orientation back to Home.');
 assert.doesNotMatch(earthModes, /publishHomeOrientation/, 'Earth Modes must not write its orientation back to Home.');
 
