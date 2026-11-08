@@ -161,7 +161,9 @@
   `;
   const style = document.createElement("style");
   style.id = "le-moon-view-renderer-style";
-  style.textContent = css;
+  style.textContent = css.replace(/(-?\d+(?:\.\d+)?)px\b/g, "calc($1px * var(--le-view-scale, 1))").replace(/(stroke-width\s*:\s*)(-?\d+(?:\.\d+)?)(?=\s*[;}])/gi, "$1calc($2px * var(--le-view-scale, 1))") + `
+    #le-sky-view .le-mv-range { height:max(44px, calc(44px * var(--le-view-scale, 1))) !important; }
+  `;
   document.head.appendChild(style);
 
   const stage = document.createElement("div");
@@ -366,7 +368,7 @@
   let active = false, astronomy = null, THREE = null, renderer = null, scene = null, camera = null;
   let moon = null, moonTexture = null, moonLight = null, moonLightTarget = null;
   let frame = 0, timer = 0, observer = null, interval = null, selectedTime = Date.now(), progress = 0, live = false;
-  let dimensions = { w: 0, h: 0, radius: 0 };
+  let dimensions = { w: 0, h: 0, scale: 1, radius: 0 };
   let arcGeometry = null;
   let horizontalScrollerGeometry = null;
   let cachedLightDirection = null;
@@ -454,7 +456,9 @@
     if (!sizeChanged && !ratioChanged) return;
 
     const landscape = w > h;
-    dimensions = { w, h, radius: clamp(Math.min(w, h) * 0.052, 16, 42) };
+    const uiScale = clamp(Math.min(w, h) / 420, 0.88, 1.35);
+    dimensions = { w, h, scale: uiScale, radius: clamp(Math.min(w, h) * 0.052, 16, 42) };
+    stage.style.setProperty("--le-view-scale", uiScale.toFixed(4));
     if (ratioChanged) {
       renderer.setPixelRatio(pixelRatio);
       lastResizeDpr = pixelRatio;
@@ -497,13 +501,14 @@
     const { w, h } = dimensions;
     const landscape = w > h;
     const x0 = w * (landscape ? 0.16 : 0.114);
-    const x1 = w * (landscape ? 0.80 : 0.921) - (landscape ? 6 : 0);
+    const uiScale = dimensions.scale || 1;
+    const x1 = w * (landscape ? 0.80 : 0.921) - (landscape ? 6 * uiScale : 0);
     const baseline = referenceBaseline(h, landscape);
     // Endpoint-only asymmetry: keep the approved control points and crest region;
     // lift the start by 8 CSS px and lower the end by 14 CSS px (6 px extra on the
     // right compared with the previous trial). Only the end point is adjusted further.
-    const startY = baseline - 8;
-    const endY = baseline + 14;
+    const startY = baseline - 8 * uiScale;
+    const endY = baseline + 14 * uiScale;
     const centerX = (x0 + x1) / 2;
     const rx = (x1 - x0) / 2;
     const ry = h * (landscape ? 0.35 : 0.208);
@@ -519,6 +524,10 @@
     ["le-mv-rise-halo", "le-mv-rise-dot", "le-mv-set-halo", "le-mv-set-dot"].forEach(id => $("#" + id).removeAttribute("display"));
     setCircle("le-mv-rise-halo", rise); setCircle("le-mv-rise-dot", rise);
     setCircle("le-mv-set-halo", set); setCircle("le-mv-set-dot", set);
+    const endpointScale = dimensions.scale || 1;
+    [["le-mv-rise-halo", 8], ["le-mv-set-halo", 8],
+     ["le-mv-rise-dot", 2.2], ["le-mv-set-dot", 2.2]]
+      .forEach(([id, radius]) => $("#" + id).setAttribute("r", (radius * endpointScale).toFixed(2)));
 
     const showLocalTimes = Boolean(interval && observer && isLocationEnabled());
     const textIds = ["le-mv-rise-label", "le-mv-rise-time", "le-mv-set-label", "le-mv-set-time"];
@@ -538,15 +547,15 @@
       $("#le-mv-set-icon").setAttribute("transform", `translate(${set.x.toFixed(2)} ${(set.y + 31).toFixed(2)})`);
     }
     if (showLocalTimes) {
-      $("#le-mv-rise-label").setAttribute("x", Math.max(18, rise.x + 4));
-      $("#le-mv-rise-label").setAttribute("y", rise.y + 55);
-      $("#le-mv-rise-time").setAttribute("x", Math.max(18, rise.x + 4));
-      $("#le-mv-rise-time").setAttribute("y", rise.y + 74);
+      $("#le-mv-rise-label").setAttribute("x", Math.max(18 * uiScale, rise.x + 4 * uiScale));
+      $("#le-mv-rise-label").setAttribute("y", rise.y + 55 * uiScale);
+      $("#le-mv-rise-time").setAttribute("x", Math.max(18 * uiScale, rise.x + 4 * uiScale));
+      $("#le-mv-rise-time").setAttribute("y", rise.y + 74 * uiScale);
       $("#le-mv-rise-time").textContent = fmt(interval.rise);
-      $("#le-mv-set-label").setAttribute("x", Math.min(w - 18, set.x));
-      $("#le-mv-set-label").setAttribute("y", set.y + 53);
-      $("#le-mv-set-time").setAttribute("x", Math.min(w - 18, set.x));
-      $("#le-mv-set-time").setAttribute("y", set.y + 72);
+      $("#le-mv-set-label").setAttribute("x", Math.min(w - 18 * uiScale, set.x));
+      $("#le-mv-set-label").setAttribute("y", set.y + 53 * uiScale);
+      $("#le-mv-set-time").setAttribute("x", Math.min(w - 18 * uiScale, set.x));
+      $("#le-mv-set-time").setAttribute("y", set.y + 72 * uiScale);
       $("#le-mv-set-time").textContent = fmt(interval.set);
     }
   }
@@ -619,7 +628,7 @@
     if (!group || !arcGeometry) return;
     group.replaceChildren();
     const ns = "http://www.w3.org/2000/svg";
-    const scale = clamp(Math.min(dimensions.w, dimensions.h) / 430, 0.82, 1.35);
+    const scale = dimensions.scale || 1;
     let seed = arcGeometry.landscape ? 0x53A71 : 0x2C0A7;
     const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
     const safe = (v, lo, hi) => clamp(v, lo, hi);
@@ -631,24 +640,16 @@
     // its current density while we finish and approve portrait first.
     const PORTRAIT_REFERENCE_ARC_LENGTH = 554.4;
     let renderedArcLength = PORTRAIT_REFERENCE_ARC_LENGTH;
-    if (!arcGeometry.landscape) {
-      const arcPath = $("#le-mv-main");
-      if (arcPath && typeof arcPath.getTotalLength === "function") {
-        try {
-          const measuredLength = arcPath.getTotalLength();
-          if (Number.isFinite(measuredLength) && measuredLength > 0) renderedArcLength = measuredLength;
-        } catch (_) { /* retain the iPhone Air reference as a safe fallback */ }
-      }
+    const arcPath = $("#le-mv-main");
+    if (arcPath && typeof arcPath.getTotalLength === "function") {
+      try {
+        const measuredLength = arcPath.getTotalLength();
+        if (Number.isFinite(measuredLength) && measuredLength > 0) renderedArcLength = measuredLength;
+      } catch (_) { /* retain the iPhone Air reference as a safe fallback */ }
     }
-    const densityRatio = arcGeometry.landscape
-      ? 1
-      : clamp(renderedArcLength / PORTRAIT_REFERENCE_ARC_LENGTH, 0.60, 3.0);
-    const trailParticleCount = arcGeometry.landscape
-      ? 300
-      : clamp(Math.round(300 * densityRatio), 180, 900);
-    const ambientDustCount = arcGeometry.landscape
-      ? 120
-      : clamp(Math.round(120 * densityRatio), 72, 360);
+    const densityRatio = clamp(renderedArcLength / PORTRAIT_REFERENCE_ARC_LENGTH, 0.60, 3.0);
+    const trailParticleCount = clamp(Math.round(300 * densityRatio), 180, 900);
+    const ambientDustCount = clamp(Math.round(120 * densityRatio), 72, 360);
     const coreParticleCount = Math.round(trailParticleCount * 0.8);
 
     // Extra ambient stardust: a second, much finer layer around BOTH sides of
@@ -764,7 +765,9 @@
     const railWidth = Math.max(1, timeline.clientWidth || dimensions.w * 0.86);
     const trailStart = railWidth * 0.05;
     const trailLength = railWidth * 0.90;
-    horizontalRailSparkles.setAttribute("viewBox", `0 0 ${railWidth.toFixed(2)} 98`);
+    const uiScale = dimensions.scale || 1;
+    const trackHeight = 98 * uiScale;
+    horizontalRailSparkles.setAttribute("viewBox", `0 0 ${railWidth.toFixed(2)} ${trackHeight.toFixed(2)}`);
     horizontalTrailGroup.replaceChildren();
     horizontalSparkleGroup.replaceChildren();
 
@@ -772,8 +775,8 @@
     // middle 90% so rise/set gestures never require an uncomfortable edge reach.
     // Reference-matched broad wave: clear upper sweep, lower return, and a slight end-to-end tilt.
     // Both ribbons bloom through the middle and taper to fine tips at the ends.
-    const blueCurveY = t => 61 + 6 * (1 - t) - 6 * t - 14.5 * Math.sin(2 * Math.PI * t) + 1.2 * Math.sin(4 * Math.PI * t - 0.30);
-    const goldCurveY = t => 63.2 + 5 * (1 - t) - 5.8 * t - 13.0 * Math.sin(2 * Math.PI * t + 0.035) + 1.0 * Math.sin(4 * Math.PI * t + 0.28);
+    const blueCurveY = t => (61 + 6 * (1 - t) - 6 * t - 14.5 * Math.sin(2 * Math.PI * t) + 1.2 * Math.sin(4 * Math.PI * t - 0.30)) * uiScale;
+    const goldCurveY = t => (63.2 + 5 * (1 - t) - 5.8 * t - 13.0 * Math.sin(2 * Math.PI * t + 0.035) + 1.0 * Math.sin(4 * Math.PI * t + 0.28)) * uiScale;
     horizontalScrollerGeometry = { railWidth, trailStart, trailLength, blueCurveY, goldCurveY };
     const makeTaperedRibbon = (curveY, endWidth, addedWidth, waveSamples = null) => {
       const samples = waveSamples || Math.max(90, Math.min(180, Math.ceil(railWidth / 2.5)));
@@ -790,11 +793,11 @@
         " " + lower.reverse().map(p => `L ${fmt(p)}`).join(" ") + " Z";
     };
     const blueRibbon = document.createElementNS(ns, "path");
-    blueRibbon.setAttribute("d", makeTaperedRibbon(blueCurveY, 0.14, 3.25));
+    blueRibbon.setAttribute("d", makeTaperedRibbon(blueCurveY, 0.14 * uiScale, 3.25 * uiScale));
     blueRibbon.setAttribute("class", "le-mv-horizontal-trail-blue");
     horizontalTrailGroup.appendChild(blueRibbon);
     const goldRibbon = document.createElementNS(ns, "path");
-    goldRibbon.setAttribute("d", makeTaperedRibbon(goldCurveY, 0.08, 0.78));
+    goldRibbon.setAttribute("d", makeTaperedRibbon(goldCurveY, 0.08 * uiScale, 0.78 * uiScale));
     goldRibbon.setAttribute("class", "le-mv-horizontal-trail-gold");
     horizontalTrailGroup.appendChild(goldRibbon);
 
@@ -802,7 +805,7 @@
     // a seeded generator keeps the arrangement stable until the viewport changes.
     let dustSeed = (0x4D00D + Math.round(railWidth * 7)) >>> 0;
     const randDust = () => ((dustSeed = (dustSeed * 1664525 + 1013904223) >>> 0) / 4294967296);
-    const dustScale = clamp(railWidth / 360, 0.82, 1.3);
+    const dustScale = clamp((railWidth / 360) * uiScale, 0.75, 1.55);
     const dustCount = clamp(Math.round(100 * railWidth / 360), 70, 220);
     for (let i = 0; i < dustCount; i++) {
       const t = 0.025 + randDust() * 0.95;
@@ -811,7 +814,7 @@
       if (randDust() < 0.20) normalOffset += (randDust() < 0.5 ? -1 : 1) * (10 + randDust() * 13) * dustScale;
       const x = clamp(trailStart + trailLength * t + (randDust() + randDust() - 1) * 4.8 * dustScale, trailStart + 1, trailStart + trailLength - 1);
       // Keep the pearls in the atmospheric band around the scroller, clear of the time text.
-      const y = clamp(curveY(t) + normalOffset, 24, 77);
+      const y = clamp(curveY(t) + normalOffset, 24 * uiScale, 77 * uiScale);
       const mote = document.createElementNS(ns, "circle");
       mote.setAttribute("cx", x.toFixed(2)); mote.setAttribute("cy", y.toFixed(2));
       mote.setAttribute("r", (dustScale * (0.34 + randDust() * 0.42)).toFixed(2));
@@ -833,8 +836,8 @@
     horizontalStars.forEach(({t,s,o,r}, index) => {
       const curveY = index % 2 ? goldCurveY : blueCurveY;
       const x = trailStart + trailLength * t;
-      const y = clamp(curveY(t) + o, 38, 84);
-      appendStaticStar(horizontalSparkleGroup, { x, y }, s * 0.72, ns, r);
+      const y = clamp(curveY(t) + o * uiScale, 38 * uiScale, 84 * uiScale);
+      appendStaticStar(horizontalSparkleGroup, { x, y }, s * 0.72 * uiScale, ns, r);
       // Subtle gold glints alternate through the icy trail, without overpowering it.
       if ([2, 7, 12, 17, 20].includes(index)) {
         const base = index * 3;
@@ -888,9 +891,9 @@
           path.setAttribute("class", className);
           verticalTrailGroup.appendChild(path);
         };
-        appendRibbon("le-mv-vertical-ribbon-glow", ribbonD(0.3, 8.2));
-        appendRibbon("le-mv-vertical-trail-blue", ribbonD(0.14, 3.25));
-        appendRibbon("le-mv-vertical-trail-gold", ribbonD(0.08, 0.78, 0.42));
+        appendRibbon("le-mv-vertical-ribbon-glow", ribbonD(0.3 * adapt, 8.2 * adapt));
+        appendRibbon("le-mv-vertical-trail-blue", ribbonD(0.14 * adapt, 3.25 * adapt));
+        appendRibbon("le-mv-vertical-trail-gold", ribbonD(0.08 * adapt, 0.78 * adapt, 0.42 * adapt));
 
         let dustSeed = (0x725ED + Math.round(renderedHeight * 13) + Math.round((verticalRect.width || 80) * 7)) >>> 0;
         const randDust = () => ((dustSeed = (dustSeed * 1664525 + 1013904223) >>> 0) / 4294967296);
@@ -1001,7 +1004,7 @@
       selectedLabel.style.left = `${x.toFixed(2)}px`;
       selectedLabel.style.right = "auto";
       selectedLabel.style.width = "max-content";
-      selectedLabel.style.top = `${Math.max(22, y - (horizontalMarkerMetrics?.surfaceRadius + 4 || 13)).toFixed(2)}px`;
+      selectedLabel.style.top = `${Math.max(22 * (dimensions.scale || 1), y - (horizontalMarkerMetrics?.surfaceRadius + 4 * (dimensions.scale || 1) || 13 * (dimensions.scale || 1))).toFixed(2)}px`;
       selectedLabel.style.transform = "translate(-50%,-100%)";
       selectedLabel.style.color = "#ff7189";
     } else {
@@ -1034,8 +1037,8 @@
         const timelineRect = timeline.getBoundingClientRect();
         const y = railRect.top - timelineRect.top + (point.y / 300) * railRect.height;
         // Keep the red timer attached just 4 CSS pixels to the Moon's left edge by a 4 CSS pixel gap (13px radius + 4px gap).
-        const labelOffset = (verticalMarkerMetrics?.surfaceRadius || 13) + 4;
-        selectedLabel.style.left = `${Math.max(2, railRect.left - timelineRect.left + railRect.width * (point.x / 100) - labelOffset)}px`;
+        const labelOffset = (verticalMarkerMetrics?.surfaceRadius || 13 * (dimensions.scale || 1)) + 4 * (dimensions.scale || 1);
+        selectedLabel.style.left = `${Math.max(2 * (dimensions.scale || 1), railRect.left - timelineRect.left + railRect.width * (point.x / 100) - labelOffset)}px`;
         selectedLabel.style.right = "auto";
         selectedLabel.style.width = "max-content";
         selectedLabel.style.top = `${y}px`;

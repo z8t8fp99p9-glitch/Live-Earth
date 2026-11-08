@@ -27,9 +27,9 @@
     #le-sky-view .le-lunar-arc { fill:none; stroke:url(#leLunarArcGradient); stroke-width:1.85; stroke-linecap:round; filter:drop-shadow(0 0 3px #a9dcffcc) drop-shadow(0 0 8px #4daaff55); }
     #le-sky-view .le-lunar-arc-halo { fill:none; stroke:#70bfff; stroke-opacity:.17; stroke-width:6; }
     #le-sky-view .le-lunar-rail { fill:none; stroke:url(#leLunarRailGradient); stroke-width:1.8; stroke-linecap:round; filter:drop-shadow(0 0 3px #76bfffaa); }
-    #le-sky-view .le-lunar-hit { fill:none; stroke:transparent; stroke-width:34; pointer-events:stroke; touch-action:none; cursor:grab; outline:none; }
+    #le-sky-view .le-lunar-hit { fill:none; stroke:transparent; stroke-width:34px; pointer-events:stroke; touch-action:none; cursor:grab; outline:none; }
     #le-sky-view .le-lunar-hit:active { cursor:grabbing; }
-    #le-sky-view .le-lunar-hit:focus-visible { stroke:#d9f0ff66; stroke-width:28; }
+    #le-sky-view .le-lunar-hit:focus-visible { stroke:#d9f0ff66; stroke-width:28px; }
     #le-sky-view .le-lunar-endpoint { fill:#d9f0ff; filter:drop-shadow(0 0 5px #9bd8ff); }
     #le-sky-view .le-lunar-endpoint-halo { fill:#9bd8ff; fill-opacity:.14; }
     #le-sky-view .le-lunar-label { fill:#d0e6f8; font-size:10px; letter-spacing:1.65px; paint-order:stroke; stroke:#031020a8; stroke-width:2.4px; stroke-linejoin:round; }
@@ -66,7 +66,10 @@
   `;
   const style = document.createElement("style");
   style.id = "le-lunar-stardust-style";
-  style.textContent = css;
+  style.textContent = css.replace(/(-?\d+(?:\.\d+)?)px\b/g, "calc($1px * var(--le-view-scale, 1))").replace(/(stroke-width\s*:\s*)(-?\d+(?:\.\d+)?)(?=\s*[;}])/gi, "$1calc($2px * var(--le-view-scale, 1))") + `
+    #le-sky-view .le-lunar-hit { stroke-width:max(34px, calc(34px * var(--le-view-scale, 1))); }
+    #le-sky-view .le-lunar-live { min-height:max(27px, calc(27px * var(--le-view-scale, 1))); }
+  `;
   document.head.appendChild(style);
 
   const ui = document.createElement("div");
@@ -163,7 +166,7 @@
   let animationTimer = 0;
   let dragFrame = 0;
   let pendingDragPoint = null;
-  let width = 0, height = 0;
+  let width = 0, height = 0, uiScale = 1;
   let geometry = {};
   // SVG path metrics are expensive on mobile Safari. Compute them only when the
   // view geometry changes, not on every drag event or position render.
@@ -211,7 +214,7 @@
       const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       circle.setAttribute("cx", point.x.toFixed(2));
       circle.setAttribute("cy", point.y.toFixed(2));
-      circle.setAttribute("r", (i % 7 === 0 ? 1.45 : i % 3 === 0 ? 1.0 : .62).toString());
+      circle.setAttribute("r", ((i % 7 === 0 ? 1.45 : i % 3 === 0 ? 1.0 : .62) * uiScale).toString());
       circle.setAttribute("class", "le-lunar-dust");
       circle.style.animationDelay = `${((i * .37 + phase) % 4).toFixed(2)}s`;
       group.appendChild(circle);
@@ -221,6 +224,8 @@
   function buildGeometry() {
     width = Math.max(1, root.clientWidth);
     height = Math.max(1, root.clientHeight);
+    uiScale = clamp(Math.min(width, height) / 420, 0.88, 1.35);
+    ui.style.setProperty('--le-view-scale', uiScale.toFixed(4));
     svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
     svg.setAttribute("width", width);
     svg.setAttribute("height", height);
@@ -230,7 +235,7 @@
     const arcY = height * (landscape ? .43 : .455);
     const arcControlY = height * (landscape ? .015 : .015);
     const railY = height * (landscape ? .665 : .715);
-    const railAmp = Math.min(height * (landscape ? .045 : .031), landscape ? 24 : 27);
+    const railAmp = Math.min(height * (landscape ? .045 : .031), (landscape ? 24 : 27) * uiScale);
     const arcD = `M ${x0} ${arcY} Q ${width / 2} ${arcControlY} ${x1} ${arcY}`;
     const railD = `M ${x0} ${railY} C ${x0 + (x1-x0)*.24} ${railY-railAmp}, ${x0+(x1-x0)*.29} ${railY-railAmp}, ${width/2} ${railY} C ${x0+(x1-x0)*.71} ${railY+railAmp}, ${x0+(x1-x0)*.76} ${railY+railAmp}, ${x1} ${railY}`;
     arc.setAttribute("d", arcD); arcHalo.setAttribute("d", arcD); arcHit.setAttribute("d", arcD);
@@ -242,33 +247,42 @@
     writePoint("#le-lunar-rise-dot", {x:x0,y:arcY});
     writePoint("#le-lunar-set-halo", {x:x1,y:arcY});
     writePoint("#le-lunar-set-dot", {x:x1,y:arcY});
+    [
+      ["#le-lunar-rise-halo", 10], ["#le-lunar-set-halo", 10],
+      ["#le-lunar-rise-dot", 2.5], ["#le-lunar-set-dot", 2.5],
+      ["#le-lunar-rail-marker-halo", 21], ["#le-lunar-rail-marker", 9.5]
+    ].forEach(([selector, radius]) => $(selector).setAttribute("r", (radius * uiScale).toFixed(3)));
+    const railCrater = $("#le-lunar-rail-crater");
+    railCrater.setAttribute("cx", (2.5 * uiScale).toFixed(3));
+    railCrater.setAttribute("cy", (-2 * uiScale).toFixed(3));
+    railCrater.setAttribute("r", (2.2 * uiScale).toFixed(3));
     // Keep event labels inside the arc endpoints but outside the main Moon's halo.
     // The marker may sit at either endpoint when live time is before moonrise or
     // when Location is OFF; endpoint text must remain legible in both cases.
-    const labelInset = 48;
-    riseLabel.setAttribute("x", x0 + labelInset); riseLabel.setAttribute("y", arcY + 23);
+    const labelInset = 48 * uiScale;
+    riseLabel.setAttribute("x", x0 + labelInset); riseLabel.setAttribute("y", arcY + 23 * uiScale);
     riseLabel.setAttribute("text-anchor", "start"); riseLabel.textContent = "MOONRISE";
-    riseTime.setAttribute("x", x0 + labelInset); riseTime.setAttribute("y", arcY + 42);
+    riseTime.setAttribute("x", x0 + labelInset); riseTime.setAttribute("y", arcY + 42 * uiScale);
     riseTime.setAttribute("text-anchor", "start");
-    setLabel.setAttribute("x", x1 - labelInset); setLabel.setAttribute("y", arcY + 23); setLabel.textContent = "MOONSET";
+    setLabel.setAttribute("x", x1 - labelInset); setLabel.setAttribute("y", arcY + 23 * uiScale); setLabel.textContent = "MOONSET";
     setLabel.setAttribute("text-anchor", "end");
-    setTime.setAttribute("x", x1 - labelInset); setTime.setAttribute("y", arcY + 42);
+    setTime.setAttribute("x", x1 - labelInset); setTime.setAttribute("y", arcY + 42 * uiScale);
     setTime.setAttribute("text-anchor", "end");
-    hint.setAttribute("x", width / 2); hint.setAttribute("y", Math.min(height - 84, railY + railAmp + 30));
-    addDust($("#le-lunar-arc-dust"), arc, landscape ? 34 : 46, .5);
-    addDust($("#le-lunar-rail-dust"), rail, landscape ? 22 : 30, 1.3);
+    hint.setAttribute("x", width / 2); hint.setAttribute("y", Math.min(height - 84 * uiScale, railY + railAmp + 30 * uiScale));
+    addDust($("#le-lunar-arc-dust"), arc, Math.round((landscape ? 34 : 46) * uiScale), .5);
+    addDust($("#le-lunar-rail-dust"), rail, Math.round((landscape ? 22 : 30) * uiScale), 1.3);
     const ticks = $("#le-lunar-rail-ticks");
     ticks.replaceChildren();
     for (let i=0; i<=24; i++) {
       const p = pathPoint(rail, i/24);
       const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
       line.setAttribute("x1",p.x); line.setAttribute("x2",p.x);
-      line.setAttribute("y1",p.y- (i%6===0?5:2.5)); line.setAttribute("y2",p.y+(i%6===0?5:2.5));
+      line.setAttribute("y1",p.y- (i%6===0?5:2.5) * uiScale); line.setAttribute("y2",p.y+(i%6===0?5:2.5) * uiScale);
       line.setAttribute("class","le-lunar-tick");
       ticks.appendChild(line);
     }
     const pillX = width * (landscape ? .80 : .82);
-    const pillY = railY - railAmp - 28;
+    const pillY = railY - railAmp - 28 * uiScale;
     liveButton.style.left = `${pillX}px`; liveButton.style.top = `${pillY}px`;
     renderPosition();
   }
@@ -305,15 +319,15 @@
     if (!arc || !rail || !width || !height) return;
     const mainPoint = pathPoint(arc, progress);
     const railPoint = pathPoint(rail, progress);
-    moon.setAttribute("transform", `translate(${mainPoint.x} ${mainPoint.y})`);
+    moon.setAttribute("transform", `translate(${mainPoint.x} ${mainPoint.y}) scale(${uiScale})`);
     writePoint("#le-lunar-rail-marker-halo", railPoint);
     writePoint("#le-lunar-rail-marker", railPoint);
     const crater = $("#le-lunar-rail-crater");
     crater.setAttribute("transform", `translate(${railPoint.x} ${railPoint.y})`);
     const textAnchor = progress > .70 ? "end" : progress < .30 ? "start" : "middle";
-    const labelX = progress > .70 ? railPoint.x - 17 : progress < .30 ? railPoint.x + 17 : railPoint.x;
-    currentTimeText.setAttribute("x", clamp(labelX, 12, width - 12));
-    currentTimeText.setAttribute("y", railPoint.y - 26);
+    const labelX = progress > .70 ? railPoint.x - 17 * uiScale : progress < .30 ? railPoint.x + 17 * uiScale : railPoint.x;
+    currentTimeText.setAttribute("x", clamp(labelX, 12 * uiScale, width - 12 * uiScale));
+    currentTimeText.setAttribute("y", railPoint.y - 26 * uiScale);
     currentTimeText.setAttribute("text-anchor", textAnchor);
     currentTimeText.textContent = fmt(selectedTime);
     const value = String(Math.round(progress*100));
