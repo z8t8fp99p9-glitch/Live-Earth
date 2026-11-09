@@ -48,4 +48,10 @@ assert.ok(source.includes('const lowerLegColor'), 'Lower legs should retain char
 assert.ok(source.includes('blended neck'), 'Head and torso should have a soft neck transition');
 assert.ok(source.includes('0xf2c2a5'), 'Face refinement should include subtle nose shaping');
 
+assert.ok(source.includes('function easeActorPose('), 'Activity pose changes should ease instead of snapping');
+assert.ok(source.includes('memory.rotation.lerp(node.rotation, alpha)'), 'Joint transitions should be interpolated');
+assert.ok(source.includes('actor.arms[0].wrist.rotation.x'), 'Hands should have secondary wrist motion');
+assert.ok(source.includes('actor.clothing.skirt.rotation.z'), 'The lady dress should respond to movement and wind');
+assert.ok(source.includes('details.bag = bag'), 'The lady satchel should have an animated pivot reference');
+
 console.log('Residents 3D refinement: faces, rig joints, outfits, movement and mobile lifecycle checks passed.');

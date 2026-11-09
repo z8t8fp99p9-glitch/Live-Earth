@@ -240,6 +240,7 @@ function addClothing(root, person, torso) {
     for (const x of [-0.12, 0, 0.12]) tube(root, [[x, 0.85, 0.19], [x * 1.5, 0.67, 0.35], [x * 1.7, 0.52, 0.33]], COLORS.denimDark, 0.004, 9);
     const bag = box(root, COLORS.brown, [-0.36, 0.86, 0.18], [0.18, 0.19, 0.11]);
     bag.rotation.z = -0.18;
+    details.bag = bag;
     box(root, COLORS.bootLight, [-0.36, 0.91, 0.238], [0.19, 0.07, 0.018]);
     sphere(root, COLORS.gold, [-0.36, 0.85, 0.252], [0.016, 0.016, 0.01]);
     tube(root, [[-0.28, 1.36, 0.21], [-0.23, 1.14, 0.24], [-0.31, 0.98, 0.23], [-0.36, 0.91, 0.22]], 0x9b704d, 0.022, 14);
@@ -447,6 +448,28 @@ function walkCycle(actor, time, index, speed = 3.7, stride = 0.48, bounce = 0.03
   actor.root.position.y = bounce * Math.max(0, Math.sin(phase * 2));
   actor.head.rotation.y = Math.sin(phase * 0.5) * 0.12;
   actor.head.rotation.z = Math.sin(phase) * 0.025;
+}
+
+function easeActorPose(actor, dt) {
+  // Blend the target pose over a short interval so activity changes feel
+  // weighted rather than snapping between unrelated limb positions.
+  const nodes = [
+    actor.root, actor.head, actor.hair,
+    ...actor.arms.flatMap(arm => [arm.shoulder, arm.elbow, arm.wrist]),
+    ...actor.legs.flatMap(leg => [leg.hip, leg.knee, leg.ankle, leg.foot])
+  ];
+  const alpha = 1 - Math.exp(-Math.min(0.08, dt) * 11.5);
+  if (!actor.poseMemory) actor.poseMemory = nodes.map(node => ({
+    rotation: node.rotation.clone(),
+    position: node.position.clone()
+  }));
+  nodes.forEach((node, index) => {
+    const memory = actor.poseMemory[index];
+    memory.rotation.lerp(node.rotation, alpha);
+    memory.position.lerp(node.position, alpha);
+    node.rotation.copy(memory.rotation);
+    node.position.copy(memory.position);
+  });
 }
 
 function poseActor(actor, mode, time, index, state) {
@@ -682,6 +705,26 @@ export function createResidents3D(canvas, roster, initialState = {}) {
     actors.forEach((actor, index) => {
       resetActor(actor);
       poseActor(actor, mode, elapsed, index, state);
+
+      // Small secondary motions keep the trio expressive without making
+      // them bounce continuously: head follow-through, relaxed wrists,
+      // fabric sway and a gentle counter-motion through the torso.
+      const phase = elapsed * 2.15 + index * 1.73;
+      actor.head.rotation.x += Math.sin(phase * 0.62) * 0.018;
+      actor.head.rotation.z += Math.sin(phase) * 0.012;
+      actor.arms[0].wrist.rotation.x = Math.sin(phase + 0.8) * 0.055;
+      actor.arms[1].wrist.rotation.x = Math.sin(phase + 2.1) * 0.055;
+      actor.legs[0].foot.rotation.x += Math.sin(phase + 0.5) * 0.018;
+      actor.legs[1].foot.rotation.x += Math.sin(phase + 2.0) * 0.018;
+      actor.root.rotation.y += Math.sin(phase * 0.45) * 0.012;
+      if (actor.clothing.skirt) {
+        actor.clothing.skirt.rotation.z = Math.sin(phase * 0.8) * (mode === 'wind' ? 0.075 : 0.026);
+      }
+      if (actor.accessories.bag) {
+        actor.accessories.bag.rotation.z = Math.sin(phase * 1.1) * 0.035;
+      }
+      easeActorPose(actor, dt);
+
       const blinkPulse = Math.max(0, Math.sin((elapsed * 0.56 + index * 0.37) * Math.PI * 2));
       const blink = Math.pow(blinkPulse, 32);
       actor.eyes.forEach(eye => { eye.scale.y = 1 - blink * 0.88; });

@@ -34,3 +34,8 @@ No Weather layout, forecast or Location behaviour, Residents preview controls, G
 ## Refinement pass v134
 
 The next polish pass replaces visibly separated limb ellipsoids with overlapping rounded capsule segments while retaining independent shoulder, elbow, hip and knee pivots. It adds a blended neck transition, more subtle nose shaping, softer facial detail and gentler key/fill lighting. Hair motion is slightly more expressive while remaining restrained in calm weather. The established three identities, outfit palettes, preview modes, scene composition, and Weather layout remain unchanged.
+
+
+## Refinement pass v135
+
+Activity changes now ease across articulated joints rather than snapping directly between target poses. Per-character secondary motion adds subtle head follow-through, relaxed wrist and foot movement, restrained torso counter-motion, wind-responsive dress sway and a small satchel swing. The preview activities, character identities, outfits, scene positions and Weather interface remain unchanged.
