@@ -3,6 +3,9 @@
    reusable materials and independent activity animation. Uses the app's existing
    same-origin Three.js runtime; no external models, textures or added libraries. */
 import * as THREE from '../vendor/three.module.js';
+import { createResidentsActivityFramework } from './resident-activity-framework.mjs';
+
+const activityFramework = createResidentsActivityFramework();
 
 const COLORS = {
   skin: 0xf0bd99, skinShade: 0xd99578, cheek: 0xe98981,
@@ -450,22 +453,8 @@ function resetActor(actor) {
 }
 
 function walkCycle(actor, time, index, speed = 3.7, stride = 0.48, bounce = 0.035) {
-  const phase = time * speed + index * 1.25;
-  const swing = Math.sin(phase);
-  const lift = Math.max(0, Math.cos(phase));
-  actor.legs[0].hip.rotation.x = swing * stride;
-  actor.legs[1].hip.rotation.x = -swing * stride;
-  actor.legs[0].knee.rotation.x = lift * 0.48;
-  actor.legs[1].knee.rotation.x = Math.max(0, -Math.cos(phase)) * 0.48;
-  actor.legs[0].ankle.rotation.x = -actor.legs[0].knee.rotation.x * 0.62;
-  actor.legs[1].ankle.rotation.x = -actor.legs[1].knee.rotation.x * 0.62;
-  actor.arms[0].shoulder.rotation.x = -swing * 0.46;
-  actor.arms[1].shoulder.rotation.x = swing * 0.46;
-  actor.arms[0].elbow.rotation.x = 0.14 + lift * 0.12;
-  actor.arms[1].elbow.rotation.x = 0.14 + (1 - lift) * 0.12;
-  actor.root.position.y = bounce * Math.max(0, Math.sin(phase * 2));
-  actor.head.rotation.y = Math.sin(phase * 0.5) * 0.12;
-  actor.head.rotation.z = Math.sin(phase) * 0.025;
+  const profile = typeof speed === 'object' ? speed : { speed, stride, bounce };
+  activityFramework.movement.applyGait(actor, time, index, profile);
 }
 
 function easeActorPose(actor, dt) {
@@ -493,33 +482,7 @@ function easeActorPose(actor, dt) {
 }
 
 function getPlayBeat(time, actors) {
-  // Give each pass a clear contact beat, then a smooth flight and a quiet
-  // receiving pause. The actor positions remain responsive to the viewport.
-  const segmentDuration = 2.25;
-  const kickTime = 0.17;
-  const launchTime = 0.28;
-  const travelDuration = 1.40;
-  const cycleDuration = segmentDuration * actors.length;
-  const cycleTime = ((time % cycleDuration) + cycleDuration) % cycleDuration;
-  const fromIndex = Math.floor(cycleTime / segmentDuration);
-  const localTime = cycleTime - fromIndex * segmentDuration;
-  const toIndex = (fromIndex + 1) % actors.length;
-  const progress = Math.min(1, Math.max(0, (localTime - launchTime) / travelDuration));
-  const eased = progress * progress * (3 - 2 * progress);
-  const fromX = actors[fromIndex].baseX;
-  const toX = actors[toIndex].baseX;
-  const kick = Math.max(0, 1 - Math.abs(localTime - kickTime) / 0.15);
-  const receiveTime = launchTime + travelDuration;
-  const receive = Math.max(0, 1 - Math.abs(localTime - receiveTime) / 0.19);
-
-  return {
-    fromIndex,
-    toIndex,
-    ballX: fromX + (toX - fromX) * eased,
-    ballY: 0.112 + Math.sin(progress * Math.PI) * 0.048,
-    kick,
-    receive
-  };
+  return activityFramework.interactions.getBallExchange(time, actors);
 }
 
 function poseActor(actor, mode, time, index, state, playBeat) {
@@ -564,7 +527,8 @@ function poseActor(actor, mode, time, index, state, playBeat) {
       actor.head.rotation.z = -0.06;
     }
   } else if (mode === 'play' || mode === 'walk') {
-    walkCycle(actor, time, index, mode === 'play' ? 4.0 : 3.35, mode === 'play' ? 0.33 : 0.40, mode === 'play' ? 0.045 : 0.025);
+    const activity = activityFramework.getActivity(mode);
+    walkCycle(actor, time, index, activity?.gait || { speed: 3.7, stride: 0.4, bounce: 0.025 });
     if (mode === 'play') {
       // Keep hands comfortably apart and close to the body so the trio reads
       // as playing together, not holding hands. The walk-cycle X swing supplies
@@ -595,38 +559,9 @@ function poseActor(actor, mode, time, index, state, playBeat) {
         left.wrist.rotation.z = Math.sin(time * 3.9 + 0.5) * 0.08;
       }
 
-      // Heads follow the ball. Receivers cushion it with the near-side foot;
-      // passers use the outgoing inside foot, each with a distinct soft touch.
-      if (playBeat) {
-        const lookX = Math.max(-0.17, Math.min(0.17, (playBeat.ballX - actor.baseX) * 0.14));
-        actor.head.rotation.y = actor.head.rotation.y * 0.55 + lookX * 0.45;
-        const passing = playBeat.fromIndex === index;
-        const receiving = playBeat.toIndex === index;
-        const touch = passing ? playBeat.kick : receiving ? playBeat.receive : 0;
-        if (touch > 0) {
-          const footIndex = receiving ? (index === 0 ? 1 : 0) : (index === 2 ? 0 : 1);
-          const insideLeg = actor.legs[footIndex];
-          const personality = isRed ? 1 : isLady ? 0.72 : 0.88;
-          if (passing) {
-            insideLeg.hip.rotation.x -= touch * 0.34 * personality;
-            insideLeg.knee.rotation.x = Math.max(insideLeg.knee.rotation.x, touch * 0.24 * personality);
-            insideLeg.ankle.rotation.x += touch * 0.14 * personality;
-          } else {
-            insideLeg.hip.rotation.x += touch * 0.13 * personality;
-            insideLeg.knee.rotation.x = Math.max(insideLeg.knee.rotation.x, touch * 0.36 * personality);
-            insideLeg.ankle.rotation.x -= touch * 0.16 * personality;
-            actor.head.rotation.x += touch * 0.045;
-          }
-          if (isRed) {
-            actor.root.position.y += touch * (passing ? 0.022 : 0.008);
-            actor.head.rotation.z += touch * 0.03;
-          } else if (isLady) {
-            actor.root.rotation.z += touch * (passing ? 0.022 : -0.018);
-          } else {
-            actor.head.rotation.z -= touch * 0.035;
-          }
-        }
-      }
+      // Shared interaction engine owns gaze, pass/receive footwork and
+      // character-specific follow-through for every ball-based activity.
+      if (playBeat) activityFramework.interactions.applyBallResponse(actor, index, playBeat);
     }
   } else if (mode === 'rain') {
     if (isLady) {
@@ -826,10 +761,10 @@ export function createResidents3D(canvas, roster, initialState = {}) {
       actor.legs[1].foot.rotation.x += Math.sin(phase + 2.0) * 0.018;
       actor.root.rotation.y += Math.sin(phase * 0.45) * 0.012;
       if (actor.clothing.skirt) {
-        actor.clothing.skirt.rotation.z = Math.sin(phase * 0.8) * (mode === 'wind' ? 0.075 : 0.026);
+        actor.clothing.skirt.rotation.z = environmentMotion.fabricSway;
       }
       if (actor.accessories.bag) {
-        actor.accessories.bag.rotation.z = Math.sin(phase * 1.1) * 0.035;
+        actor.accessories.bag.rotation.z = environmentMotion.accessorySway;
       }
       easeActorPose(actor, dt);
 
@@ -857,7 +792,8 @@ export function createResidents3D(canvas, roster, initialState = {}) {
       actor.face.cheeks.forEach((cheek, cheekIndex) => {
         cheek.scale.y = 0.031 + (joyful ? 0.003 : 0) + Math.sin(elapsed * 1.4 + index + cheekIndex) * 0.001;
       });
-      actor.hair.rotation.x = Math.sin(elapsed * 1.45 + index * 2.15) * (mode === 'wind' ? 0.06 : 0.018);
+      const environmentMotion = activityFramework.environment.sample(mode, elapsed, index, state);
+      actor.hair.rotation.x = environmentMotion.hairSway;
       actor.accessories.kite.position.x = mode === 'kite' ? 0.65 + Math.sin(elapsed * 1.4) * 0.13 : 0.65;
       actor.accessories.fan.rotation.z = mode === 'heat' && actor.person.id === 'lady' ? Math.sin(elapsed * 8) * 0.40 : 0;
     });

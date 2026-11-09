@@ -6,6 +6,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const librarySource = fs.readFileSync(path.join(root, 'Residents/resident-library.js'), 'utf8');
 const engineSource = fs.readFileSync(path.join(root, 'Residents/resident-3d-engine.mjs'), 'utf8');
+const frameworkSource = fs.readFileSync(path.join(root, 'Residents/resident-activity-framework.mjs'), 'utf8');
 const fakeDocument = {
   head: { appendChild() {} },
   getElementById() { return null; },
@@ -31,10 +32,15 @@ for (const feature of ['WebGLRenderer', 'OrthographicCamera', 'HemisphereLight',
   assert.ok(engineSource.includes(feature), `Missing 3D engine capability: ${feature}`);
 }
 assert.ok(engineSource.includes("import * as THREE from '../vendor/three.module.js'"));
-assert.ok(engineSource.includes('renderer.forceContextLoss?.()'), 'WebGL resources must be released on deactivation');
-assert.ok(engineSource.includes("window.matchMedia?.('(prefers-reduced-motion: reduce)')"), 'Reduced-motion preference must be respected');
-assert.ok(engineSource.includes("mode === 'festival'"), 'Festival has a distinct movement pattern');
-assert.ok(engineSource.includes("mode === 'rain'"), 'Rain has umbrellas and a rain-dance pattern');
-assert.ok(engineSource.includes("mode === 'snow'"), 'Snow has winter clothing and shivering');
+assert.ok(engineSource.includes("from './resident-activity-framework.mjs'"), 'The Residents 3D engine must use the shared activity framework');
+assert.ok(frameworkSource.includes('function applyGait('));
+assert.ok(frameworkSource.includes('function getBallExchange('));
+assert.ok(frameworkSource.includes('function applyBallResponse('));
+assert.ok(frameworkSource.includes('function sampleEnvironment('));
+assert.ok(engineSource.includes('renderer.forceContextLoss?.()'));
+assert.ok(engineSource.includes("window.matchMedia?.('(prefers-reduced-motion: reduce)')"));
+assert.ok(engineSource.includes("mode === 'festival'"));
+assert.ok(engineSource.includes("mode === 'rain'"));
+assert.ok(engineSource.includes("mode === 'snow'"));
 
-console.log('Procedural 3D Residents engine contract passed.');
+console.log('Procedural 3D Residents engine and shared activity-framework contract passed.');
