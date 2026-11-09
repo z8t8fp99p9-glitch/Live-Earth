@@ -123,32 +123,60 @@ function tube(parent, points, color, radius = 0.012, tubularSegments = 12) {
   return mesh;
 }
 
+// Front-surface profile for the shared tailored torso. Using the same profile
+// as residentTorsoGeometry keeps fabric inserts on the body at the shoulders,
+// waist and sides instead of cutting through it or floating above it.
+const RESIDENT_TORSO_FRONT_PROFILE = Object.freeze([
+  Object.freeze([0.665, 0.58]), Object.freeze([0.710, 0.78]),
+  Object.freeze([0.8375, 0.94]), Object.freeze([1.010, 1.00]),
+  Object.freeze([1.1975, 0.96]), Object.freeze([1.340, 0.78]),
+  Object.freeze([1.4075, 0.52]), Object.freeze([1.415, 0.00])
+]);
+function residentTorsoSurfaceZ(x, y, offset = 0.008) {
+  let radial = RESIDENT_TORSO_FRONT_PROFILE[0][1];
+  for (let i = 1; i < RESIDENT_TORSO_FRONT_PROFILE.length; i++) {
+    const [nextY, nextRadius] = RESIDENT_TORSO_FRONT_PROFILE[i];
+    const [previousY, previousRadius] = RESIDENT_TORSO_FRONT_PROFILE[i - 1];
+    if (y <= nextY) {
+      const t = Math.max(0, Math.min(1, (y - previousY) / (nextY - previousY)));
+      radial = previousRadius + (nextRadius - previousRadius) * t;
+      break;
+    }
+    radial = nextRadius;
+  }
+  const availableWidth = Math.max(0.025, 0.305 * radial);
+  const across = Math.min(0.985, Math.abs(x) / availableWidth);
+  return 0.215 * radial * Math.sqrt(1 - across * across) + offset;
+}
+
 function curvedFabricPanel(parent, color, drawShape, options = {}) {
   const shape = new THREE.Shape();
   drawShape(shape);
-  const depth = options.depth ?? 0.032;
-  const bevel = options.bevel ?? 0.007;
+  const depth = options.depth ?? 0.020;
+  const bevel = options.bevel ?? 0.004;
+  const surfaceOffset = options.surfaceOffset ?? 0.008;
   const geometry = new THREE.ExtrudeGeometry(shape, {
     depth,
     bevelEnabled: true,
     bevelSegments: 2,
     steps: 1,
     bevelSize: bevel,
-    bevelThickness: bevel * 0.7,
+    bevelThickness: bevel * 0.65,
     curveSegments: 16
   });
   const positions = geometry.attributes.position;
-  const maxWidth = options.maxWidth ?? 0.22;
-  const curvature = options.curvature ?? 0.04;
-  const baseZ = options.baseZ ?? 0.14;
   for (let i = 0; i < positions.count; i++) {
     const x = positions.getX(i);
-    const ratio = Math.min(1, Math.abs(x) / maxWidth);
-    positions.setZ(i, positions.getZ(i) + baseZ + curvature * (1 - ratio * ratio));
+    const y = positions.getY(i);
+    // The back of the extrusion sits just inside the fabric/body join; its
+    // visible front face lands a few millimetres above the torso surface.
+    const backSurface = residentTorsoSurfaceZ(x, y, surfaceOffset) - depth;
+    positions.setZ(i, positions.getZ(i) + backSurface);
   }
   positions.needsUpdate = true;
   geometry.computeVertexNormals();
   const panel = new THREE.Mesh(geometry, mat(color, options.roughness ?? 0.9));
+  panel.castShadow = true;
   parent.add(panel);
   return panel;
 }
@@ -310,7 +338,7 @@ function makeHand(parent, side, skinColor) {
 }
 
 function makeArm(root, side, sleeveColor, skinColor) {
-  const shoulder = joint(root, [side * 0.292, 1.265, 0]);
+  const shoulder = joint(root, [side * 0.265, 1.265, 0]);
   // Overlapping rounded capsules remove the visible ball-joint gaps while
   // retaining separate shoulder, elbow and wrist pivots for animation.
   capsule(shoulder, sleeveColor, [side * 0.018, -0.125, 0], 0.078, 0.17);
@@ -376,7 +404,7 @@ function addClothing(root, person, torso) {
       shape.lineTo(0.165, 0.925);
       shape.bezierCurveTo(0.085, 0.875, -0.085, 0.875, -0.165, 0.925);
       shape.closePath();
-    }, { baseZ: 0.135, maxWidth: 0.215, curvature: 0.052, depth: 0.032, roughness: 0.91 });
+    }, { surfaceOffset: 0.008, depth: 0.020, bevel: 0.004, roughness: 0.91 });
     const skirt = new THREE.Mesh(residentSkirtGeometry, mat(COLORS.denim, 0.89));
     skirt.position.set(0, 0.665, 0);
     root.add(skirt);
@@ -406,7 +434,7 @@ function addClothing(root, person, torso) {
       shape.bezierCurveTo(0.075, 0.865, -0.075, 0.865, -0.145, 0.925);
       shape.lineTo(-0.190, 1.105);
       shape.closePath();
-    }, { baseZ: 0.135, maxWidth: 0.19, curvature: 0.052, depth: 0.034, roughness: 0.90 });
+    }, { surfaceOffset: 0.008, depth: 0.020, bevel: 0.004, roughness: 0.90 });
     sphere(root, COLORS.cream, [0, 1.30, -0.025], [0.22, 0.18, 0.15]);
     tube(root, [[-0.17, 1.35, 0.205], [-0.09, 1.27, 0.225], [-0.12, 1.13, 0.23]], COLORS.navyLight, 0.018, 10);
     tube(root, [[0.17, 1.35, 0.205], [0.09, 1.27, 0.225], [0.12, 1.13, 0.23]], COLORS.navyLight, 0.018, 10);
@@ -462,13 +490,13 @@ function createCharacter(person) {
     root.add(hood);
   }
 
-  const accessories = createAccessories(root, person);
+  const accessories = createAccessories(root, person, arms, head);
   return { root, torso, head, hair, face, eyes, arms, legs, accessories, clothing, shadow, contactShadow, person, facingYaw, baseX: 0 };
 }
 
-function createUmbrella(parent, color) {
+function createUmbrella(parent, color, heldInHand = false) {
   const group = new THREE.Group();
-  group.position.set(0, 2.18, 0.03);
+  group.position.set(0, heldInHand ? 0.48 : 2.18, 0.03);
   const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.36, 22, 14, 0, Math.PI * 2, 0, Math.PI / 2), mat(color, 0.45));
   canopy.scale.y = 0.48;
   group.add(canopy);
@@ -481,12 +509,17 @@ function createUmbrella(parent, color) {
   return group;
 }
 
-function createAccessories(root, person) {
+function createAccessories(root, person, arms, head) {
   const accessories = {};
-  accessories.umbrella = createUmbrella(root, person.id === 'red' ? 0xe77f72 : 0x718fc7);
-  accessories.hat = sphere(root, 0x7894bd, [0, 2.01, -0.01], [0.315, 0.145, 0.29]);
-  accessories.hatPom = sphere(root, 0xffffff, [0, 2.145, -0.01], [0.055, 0.055, 0.055]);
-  accessories.scarf = sphere(root, 0xd87875, [0, 1.36, 0.03], [0.29, 0.085, 0.22]);
+  // Umbrellas are parented to the right palm; the pole now terminates at the
+  // hand, so the rain pose visibly holds the prop instead of wearing it.
+  accessories.umbrella = createUmbrella(arms[1].hand, person.id === 'red' ? 0xe77f72 : 0x718fc7, true);
+  // The snow cap follows head motion and sits over the scalp rather than in
+  // world space. A low, soft brim and pom-pom complete the knitted silhouette.
+  accessories.hat = sphere(head, 0x7894bd, [0, 0.405, -0.01], [0.312, 0.132, 0.286], { roughness: 0.94 });
+  accessories.hatBrim = sphere(head, 0x657fa6, [0, 0.318, 0.012], [0.303, 0.040, 0.278], { roughness: 0.96 });
+  accessories.hatPom = sphere(head, 0xffffff, [0, 0.535, -0.01], [0.052, 0.052, 0.052], { roughness: 0.90 });
+  accessories.scarf = sphere(root, 0xd87875, [0, 1.385, 0.03], [0.245, 0.058, 0.185], { roughness: 0.94 });
   accessories.fan = new THREE.Group();
   sphere(accessories.fan, 0x9c704d, [0, -0.10, 0], [0.018, 0.11, 0.018]);
   const fanDisk = new THREE.Mesh(new THREE.CircleGeometry(0.12, 18), mat(0xf1d18e));
@@ -515,6 +548,7 @@ function createAccessories(root, person) {
 
   accessories.umbrella.visible = false;
   accessories.hat.visible = false;
+  accessories.hatBrim.visible = false;
   accessories.hatPom.visible = false;
   accessories.scarf.visible = false;
   return accessories;
@@ -570,6 +604,7 @@ function createAccessoriesVisibility(actors, props, mode) {
     const accessories = actor.accessories;
     accessories.umbrella.visible = mode === 'rain' && actor.person.id !== 'lady';
     accessories.hat.visible = mode === 'snow';
+    accessories.hatBrim.visible = mode === 'snow';
     accessories.hatPom.visible = mode === 'snow';
     accessories.scarf.visible = mode === 'snow';
     accessories.fan.visible = mode === 'heat' && actor.person.id === 'lady';
@@ -724,12 +759,14 @@ function poseActor(actor, mode, time, index, state, playBeat) {
       right.elbow.rotation.x = -0.28;
       actor.head.rotation.y = Math.sin(time * 2.2) * 0.16;
     } else {
-      left.shoulder.rotation.z = -0.42;
-      right.shoulder.rotation.z = 0.42;
-      left.elbow.rotation.x = -0.45;
-      right.elbow.rotation.x = -0.45;
+      left.shoulder.rotation.z = -0.30;
+      // The right hand reaches up to the umbrella shaft; its parented prop
+      // follows every wrist/shoulder adjustment without drifting overhead.
+      right.shoulder.rotation.z = 2.05;
+      left.elbow.rotation.x = -0.38;
+      right.elbow.rotation.x = -0.32;
+      right.wrist.rotation.z = Math.sin(time * 1.4 + index) * 0.025;
       actor.head.rotation.z = Math.sin(time * 1.15 + index) * 0.035;
-      actor.accessories.umbrella.rotation.z = Math.sin(time * 1.4 + index) * 0.035;
     }
   } else if (mode === 'snow') {
     actor.root.rotation.z = Math.sin(time * 14 + index) * 0.027;
