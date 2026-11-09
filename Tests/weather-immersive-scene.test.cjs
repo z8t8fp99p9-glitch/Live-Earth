@@ -21,8 +21,8 @@ assert.ok(weather.includes('scene.dataset.mode = state.mode'), 'Character poses 
 assert.equal((residents.match(/id: 'one'/g) || []).length, 1, 'Resident one must be defined once in the shared library');
 assert.equal((residents.match(/id: 'two'/g) || []).length, 1, 'Resident two must be defined once in the shared library');
 assert.equal((residents.match(/id: 'three'/g) || []).length, 1, 'Resident three must be defined once in the shared library');
-assert.ok(residents.includes("id !== 'three'"), 'Only the first two residents should hold umbrellas');
-assert.ok(residents.includes('le-weather-prop--rain-joy'), 'The third resident must have a rain-enjoying pose');
+assert.ok(residents.includes("id !== 'two'"), 'The red-hoodie and blue-jacket boys should hold umbrellas');
+assert.ok(residents.includes("id === 'two'") && residents.includes('le-weather-prop--rain-joy'), 'The little lady must have the rain-enjoying pose');
 assert.ok(!weather.includes('function characterMarkup('), 'Weather must not own duplicate character artwork');
 assert.ok(weather.includes('ensureResidentLibrary()'), 'Weather must load the shared Residents library');
 assert.ok(weather.includes('LiveEarthResidentLibrary?.unmount'), 'Weather must release resident markup when deactivated');

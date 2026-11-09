@@ -6,11 +6,11 @@
   'use strict';
 
   const STYLE_ID = 'le-world-residents-library-style';
-  const VERSION = '1.2.1';
+  const VERSION = '1.3.0';
   const ROSTER = Object.freeze([
-    Object.freeze({ id: 'one', displayName: 'Resident One', x: 92, y: 116, skin: '#f0bd99', shirt: '#e99568', shorts: '#405b86', hair: '#443331', accent: '#f3c36f', signature: 'little side tuft' }),
-    Object.freeze({ id: 'two', displayName: 'Resident Two', x: 210, y: 122, skin: '#d89b7b', shirt: '#809fd8', shorts: '#584d86', hair: '#302d35', accent: '#f2a5a0', signature: 'round bob and hair clip' }),
-    Object.freeze({ id: 'three', displayName: 'Resident Three', x: 328, y: 116, skin: '#efc39e', shirt: '#e4b95e', shorts: '#477d75', hair: '#3e312e', accent: '#9dc9c1', signature: 'soft curls' })
+    Object.freeze({ id: 'one', displayName: 'Red Hoodie Boy', asset: 'resident-red-hoodie-boy.webp', x: 92, y: 116, skin: '#f0bd99', shirt: '#b84238', shorts: '#46536a', hair: '#443331', accent: '#f3c36f', signature: 'tousled curls and red hoodie' }),
+    Object.freeze({ id: 'two', displayName: 'Little Lady', asset: 'resident-little-lady.webp', x: 210, y: 122, skin: '#f0bd99', shirt: '#537ca7', shorts: '#405b86', hair: '#443331', accent: '#f3c36f', signature: 'chestnut bob, denim pinafore and satchel' }),
+    Object.freeze({ id: 'three', displayName: 'Blue Jacket Boy', asset: 'resident-blue-jacket-boy.webp', x: 328, y: 116, skin: '#efc39e', shirt: '#536e9a', shorts: '#47536c', hair: '#3e312e', accent: '#9dc9c1', signature: 'soft curls and blue jacket' })
   ]);
 
   const ACTIVITY_CATALOG = Object.freeze({
@@ -32,18 +32,16 @@
 
   const STYLE_TEXT = `
     .le-weather-person{transform-box:fill-box;transform-origin:50% 100%;animation:le-weather-idle 4.5s ease-in-out infinite;transition:transform .65s ease}
+    .le-weather-character-art{display:block;pointer-events:none;overflow:visible;filter:drop-shadow(0 2px 2px #102b3a35)}
     .le-weather-person--two{animation-delay:-1.3s}.le-weather-person--three{animation-delay:-2.4s}
     .le-weather-person .le-weather-shadow{fill:#173b4a33}
-    .le-weather-person .le-weather-head{stroke:#704f43;stroke-width:1.15}
-    .le-weather-person .le-weather-body{stroke:#263f5c;stroke-width:1.2;stroke-linejoin:round}
-    .le-weather-person .le-weather-limbs{fill:none;stroke:#3e4c61;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
     .le-weather-prop{opacity:0;transition:opacity .35s ease;pointer-events:none}
     .le-weather-prop--umbrella,.le-weather-prop--rain-joy,.le-weather-prop--heat,.le-weather-prop--snow,.le-weather-prop--stargaze,.le-weather-prop--kite,.le-weather-prop--picnic,.le-weather-prop--garden,.le-weather-prop--festival,.le-weather-prop--camping,.le-weather-prop--exercise,.le-weather-prop--butterfly{display:none}
     .le-weather-ball{opacity:0;transform-box:fill-box;transform-origin:center;fill:#f6c85f;stroke:#fff8;stroke-width:2}
     .le-weather-people[data-activity="play"] .le-weather-ball{opacity:1;animation:le-weather-ball-play 2.8s ease-in-out infinite}
     .le-weather-people[data-activity="play"] .le-weather-person{animation:le-weather-play 1.7s ease-in-out infinite}
     .le-weather-people[data-activity="rain"] .le-weather-prop--umbrella,.le-weather-people[data-activity="rain"] .le-weather-prop--rain-joy{display:block;opacity:1}
-    .le-weather-people[data-activity="rain"] .le-weather-person--three{animation:le-weather-rain-joy 2.2s ease-in-out infinite}
+    .le-weather-people[data-activity="rain"] .le-weather-person--two{animation:le-weather-rain-joy 2.2s ease-in-out infinite}
     .le-weather-people[data-activity="heat"] .le-weather-prop--heat{display:block;opacity:1}
     .le-weather-people[data-activity="heat"] .le-weather-person{animation:le-weather-heat 3.8s ease-in-out infinite}
     .le-weather-people[data-activity="snow"] .le-weather-prop--snow{display:block;opacity:1}
@@ -61,10 +59,9 @@
     .le-weather-people[data-activity="festival"] .le-weather-prop--festival{display:block;opacity:1}
     .le-weather-people[data-activity="camping"] .le-weather-prop--camping{display:block;opacity:1}
     .le-weather-people[data-activity="morning"] .le-weather-prop--exercise,.le-weather-people[data-activity="morning"] .le-weather-prop--butterfly{display:block;opacity:1}
-    .le-weather-people[data-activity="morning"] .le-weather-person--one .le-weather-character-base .le-weather-limbs,.le-weather-people[data-activity="morning"] .le-weather-person--two .le-weather-character-base .le-weather-limbs,.le-weather-people[data-activity="morning"] .le-weather-person--one .le-weather-default-hands,.le-weather-people[data-activity="morning"] .le-weather-person--two .le-weather-default-hands{opacity:0}
     .le-weather-people[data-activity="morning"] .le-weather-person--one{animation:le-resident-morning-jump 1.55s ease-in-out infinite}
-    .le-weather-people[data-activity="morning"] .le-weather-person--two{animation:le-resident-morning-stretch 3.1s ease-in-out infinite}
-    .le-weather-people[data-activity="morning"] .le-weather-person--three{animation:le-resident-butterfly-chase 1.35s ease-in-out infinite}
+    .le-weather-people[data-activity="morning"] .le-weather-person--two{animation:le-resident-butterfly-chase 1.35s ease-in-out infinite}
+    .le-weather-people[data-activity="morning"] .le-weather-person--three{animation:le-resident-morning-stretch 3.1s ease-in-out infinite}
     .le-weather-people[data-activity="morning"] .le-weather-butterfly{transform-box:fill-box;transform-origin:center;animation:le-resident-butterfly-flight 1.25s ease-in-out infinite alternate}
 
 
@@ -86,37 +83,26 @@
   `;
 
   function installStyles() {
-    if (typeof document === 'undefined' || document.getElementById(STYLE_ID)) return;
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = STYLE_TEXT;
-    document.head.appendChild(style);
-  }
-
-  function hairMarkup(person) {
-    if (person.id === 'one') return `
-      <path d="M-17 21 Q-23 2 -7 -5 Q2 -12 11 -3 Q23 2 17 22 Q10 14 3 13 Q-5 20 -17 21Z" fill="${person.hair}"/>
-      <path d="M-4 -4 Q-1 -13 7 -12 Q6 -5 2 1" fill="${person.hair}"/>`;
-    if (person.id === 'two') return `
-      <path d="M-18 22 Q-24 0 -8 -7 Q8 -15 17 -1 Q23 13 18 38 L12 33 L10 14 Q0 18 -8 13 L-13 35 L-19 37Z" fill="${person.hair}"/>
-      <path d="M10 1 l7 -3 l2 7 l-7 2Z" fill="${person.accent}"/>`;
-    return `
-      <g fill="${person.hair}">
-        <circle cx="-12" cy="7" r="8"/><circle cx="0" cy="1" r="10"/><circle cx="12" cy="7" r="8"/>
-        <circle cx="-17" cy="17" r="6"/><circle cx="17" cy="17" r="6"/>
-      </g>
-      <path d="M-7 1 Q0 -6 7 1" fill="none" stroke="#ffffff35" stroke-width="2" stroke-linecap="round"/>`;
+    if (typeof document === 'undefined') return;
+    let style = document.getElementById(STYLE_ID);
+    if (!style) {
+      style = document.createElement('style');
+      style.id = STYLE_ID;
+      document.head.appendChild(style);
+    }
+    // Replace stale resident CSS in-place when the library upgrades in a live WebView.
+    if (style.textContent !== STYLE_TEXT) style.textContent = STYLE_TEXT;
   }
 
   function personMarkup(person) {
     const { id, x, y, skin, shirt, shorts, accent } = person;
-    const umbrella = id !== 'three' ? `
+    const umbrella = id !== 'two' ? `
       <g class="le-weather-prop le-weather-prop--umbrella" transform="translate(0 -28)">
         <path d="M-25 18 Q0 -13 25 18 Q15 12 8 19 Q0 12 -8 19 Q-16 12 -25 18Z" fill="${id === 'one' ? '#e77f72' : '#718fc7'}" stroke="#fff9" stroke-width="1.7"/>
         <path d="M0 16 V43 Q0 49 6 45" fill="none" stroke="#f4e9d0" stroke-width="2.5" stroke-linecap="round"/>
         <path d="M-8 17 Q0 12 8 17" fill="none" stroke="#fff8" stroke-width="1.4"/>
       </g>` : '';
-    const rainJoy = id === 'three' ? `
+    const rainJoy = id === 'two' ? `
       <g class="le-weather-prop le-weather-prop--rain-joy" fill="none" stroke="#3e4c61" stroke-width="5.5" stroke-linecap="round">
         <path d="M-9 45 Q-25 29 -34 7 M9 45 Q25 29 34 7"/>
         <path d="M-34 7 l-5 -5 M34 7 l5 -5" stroke="${skin}" stroke-width="5"/>
@@ -126,13 +112,8 @@
         <path d="M-10 52 Q-18 41 -22 24 M10 52 Q18 41 22 24"/>
         <path d="M-22 24 l-5 -5 M22 24 l5 -5" stroke="${skin}" stroke-width="5"/>
         <path d="M-15 6 Q0 1 15 6" stroke="#f5d17c" stroke-width="4"/>
-      </g>` : id === 'two' ? `
-      <g class="le-weather-prop le-weather-prop--exercise" fill="none" stroke="#3e4c61" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M-10 52 Q-24 46 -27 29 M10 52 Q15 38 18 21"/>
-        <path d="M-27 29 l-4 -6 M18 21 l4 -7" stroke="${skin}" stroke-width="5"/>
-        <path d="M-16 7 Q0 0 16 7" stroke="#f2a5a0" stroke-width="4"/>
       </g>` : '';
-    const butterfly = id === 'three' ? `
+    const butterfly = id === 'two' ? `
       <g class="le-weather-prop le-weather-prop--butterfly" transform="translate(34 1)">
         <g class="le-weather-butterfly">
           <path d="M0 0 C-11 -20 -27 -13 -19 1 C-13 10 -5 7 0 1 C5 7 13 10 19 1 C27 -13 11 -20 0 0Z" fill="#f5a6cf" stroke="#fff5" stroke-width="1.4"/>
@@ -145,20 +126,7 @@
       <g class="le-weather-person-anchor le-weather-person-anchor--${id}" transform="translate(${x} ${y})" data-resident-id="${id}">
         <g class="le-weather-person le-weather-person--${id}">
         <ellipse class="le-weather-shadow" cx="0" cy="108" rx="20" ry="5"/>
-        <g class="le-weather-character-base">
-          <path d="M-7 92 L-9 101 M7 92 L10 101" fill="none" stroke="${skin}" stroke-width="7" stroke-linecap="round"/>
-          <path d="M-9 100 l-7 4 M10 100 l7 4" fill="none" stroke="#34475f" stroke-width="5.5" stroke-linecap="round"/>
-          <path class="le-weather-body" d="M-13 48 Q0 40 13 48 L16 77 Q0 85 -16 77Z" fill="${shirt}"/>
-          <path d="M-11 76 Q0 81 12 76 L12 87 Q0 91 -12 87Z" fill="${shorts}"/>
-          <path class="le-weather-limbs" d="M-10 51 Q-20 63 -17 75 M10 51 Q20 63 17 75"/>
-          <path class="le-weather-default-hands" d="M-17 73 l-1 4 M17 73 l1 4" fill="none" stroke="${skin}" stroke-width="6" stroke-linecap="round"/>
-          <ellipse class="le-weather-head" cx="0" cy="20" rx="18" ry="20" fill="${skin}"/>
-          ${hairMarkup(person)}
-          <ellipse cx="-6" cy="22" rx="2.3" ry="3" fill="#342a2a"/><ellipse cx="6" cy="22" rx="2.3" ry="3" fill="#342a2a"/>
-          <circle cx="-12" cy="29" r="3.2" fill="#e9847c" opacity=".58"/><circle cx="12" cy="29" r="3.2" fill="#e9847c" opacity=".58"/>
-          <path d="M-3 33 Q0 36 4 32" fill="none" stroke="#9e6257" stroke-width="1.5" stroke-linecap="round"/>
-          <path d="M-8 13 Q-4 10 -1 12 M4 12 Q7 10 9 13" fill="none" stroke="#493d3a" stroke-width="1.3" stroke-linecap="round"/>
-        </g>
+        <image class="le-weather-character-art" href="./Residents/assets/${person.asset}" x="-46" y="-16" width="92" height="128" preserveAspectRatio="xMidYMax meet"/>
         ${umbrella}${rainJoy}${exercise}${butterfly}
         <g class="le-weather-prop le-weather-prop--snow">
           <path d="M-16 47 Q0 39 16 47 L19 79 Q0 91 -19 79Z" fill="#f0f5f5" stroke="#a5c1d4" stroke-width="1.6"/>
@@ -221,7 +189,7 @@
     svg.setAttribute('aria-label', 'Three little LIVE Earth neighbours in their shared world');
     svg.innerHTML = renderMarkup();
     host.appendChild(svg);
-    host.dataset.residentsVersion = '1';
+    host.dataset.residentsVersion = VERSION;
     host.dataset.activity = 'calm';
     return true;
   }

@@ -12,7 +12,7 @@
   }
 
   const { mount, el, setStatus, button, card, attribution, isActive, globe } = runtime;
-  const RESIDENT_LIBRARY_VERSION = '1.2.1';
+  const RESIDENT_LIBRARY_VERSION = '1.3.0';
   let residentLibraryPromise = null;
 
   function ensureResidentLibrary() {

@@ -28,16 +28,18 @@ const library = sandbox.window.LiveEarthResidentLibrary;
 
 assert.ok(library, 'The shared Residents API must register on window');
 
-assert.equal(library.version, '1.2.1');
+assert.equal(library.version, '1.3.0');
 
 const staleWindow = { LiveEarthResidentLibrary: { version: '1.2.0', mount() {} } };
 vm.runInNewContext(residentsSource, { window: staleWindow }, { filename: 'Residents/resident-library.js' });
-assert.equal(staleWindow.LiveEarthResidentLibrary.version, '1.2.1', 'A newer library must replace a stale global already present in the WebView');
+assert.equal(staleWindow.LiveEarthResidentLibrary.version, '1.3.0', 'A newer library must replace a stale global already present in the WebView');
 
 const roster = library.getRoster();
 assert.equal(roster.length, 3, 'The permanent cast must contain exactly three residents');
 assert.deepEqual(Array.from(roster, person => person.id), ['one', 'two', 'three']);
-assert.equal(new Set(Array.from(roster, person => person.shirt)).size, 3, 'Each resident must retain a distinct shirt colour');
+assert.equal(new Set(Array.from(roster, person => person.displayName)).size, 3, 'Each resident must have a distinct stable identity');
+assert.deepEqual(Array.from(roster, person => person.displayName), ['Red Hoodie Boy', 'Little Lady', 'Blue Jacket Boy']);
+assert.ok(roster.every(person => person.asset && person.asset.endsWith('.webp')), 'Every resident must use an optimized WebP character asset');
 assert.ok(roster.every(person => person.signature), 'Each resident must have a stable identifying visual detail');
 
 const activities = library.getActivityCatalog();
@@ -48,6 +50,13 @@ assert.equal(activities.festival.stage, 'shared-library', 'Festival is a host-se
 
 const markup = library.renderMarkup();
 assert.equal((markup.match(/class="le-weather-person le-weather-person--/g) || []).length, 3, 'SVG markup must render exactly three residents');
+assert.equal((markup.match(/<image class="le-weather-character-art"/g) || []).length, 3, 'Each resident must render one image-backed character sprite');
+for (const asset of ['resident-red-hoodie-boy.webp', 'resident-little-lady.webp', 'resident-blue-jacket-boy.webp']) {
+  assert.ok(markup.includes(asset), `The roster must reference ${asset}`);
+}
+for (const asset of ['resident-red-hoodie-boy.webp', 'resident-little-lady.webp', 'resident-blue-jacket-boy.webp']) {
+  assert.ok(fs.existsSync(path.join(root, 'Residents/assets', asset)), `The app asset ${asset} must be included beside the library`);
+}
 assert.equal((markup.match(/le-weather-prop--umbrella/g) || []).length, 2, 'Only two umbrella props should exist');
 assert.ok(markup.includes('le-weather-prop--rain-joy'), 'Resident three must have the rain-enjoying pose');
 assert.ok(markup.includes('le-weather-prop--snow') && markup.includes('le-weather-prop--heat'), 'Snow and heat props must be part of the shared artwork');
@@ -63,7 +72,7 @@ const host = {
 assert.equal(library.mount(host), true, 'The library must mount into a view-owned host');
 assert.equal(host.children.length, 1, 'Mount should add one SVG root');
 assert.equal(host.children[0].attributes.viewBox, '0 0 420 250');
-assert.equal(host.dataset.residentsVersion, '1');
+assert.equal(host.dataset.residentsVersion, '1.3.0');
 
 for (const mode of ['morning', 'play', 'rain', 'snow', 'heat', 'wind', 'stargaze', 'walk', 'picnic', 'kite', 'garden', 'festival', 'camping']) {
   assert.equal(library.setActivity(host, { mode, gustLevel: 'normal' }), true);

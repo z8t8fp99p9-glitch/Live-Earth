@@ -23,7 +23,7 @@ assert.match(weather, /const night = hour >= 20 \|\| hour < 5;/, 'Night must fol
 assert.match(weather, /const dawn = hour >= 5 && hour <= 7;/, '05:00-07:00 local forecast must be treated as dawn');
 assert.doesNotMatch(weather, /number\(item\.isDay\) === 0 \|\| hour >= 20/, 'A sunrise is_day flag must not incorrectly keep 05:00 in night mode');
 
-assert.ok(weather.includes("RESIDENT_LIBRARY_VERSION = '1.2.1'"), 'Weather must reject a stale Residents global and require the matching library version');
+assert.ok(weather.includes("RESIDENT_LIBRARY_VERSION = '1.3.0'"), 'Weather must reject a stale Residents global and require the matching library version');
 assert.match(weather, /script\.src = new URL\('\.\/Residents\/resident-library\.js', document\.baseURI\)\.href/, 'Weather must load Residents as a same-origin script for iOS WebView compatibility');
 assert.match(weather, /residentHost\.classList\.add\('le-weather-resident-overlay'\)/, 'Residents must be promoted into the dedicated foreground overlay');
 assert.match(weather, /view\.root\.appendChild\(residentHost\)/, 'The resident host must be a direct child of the Weather root');
@@ -49,13 +49,13 @@ const sandbox = { window: {}, document: fakeDocument, console };
 vm.runInNewContext(residentSource, sandbox, { filename: 'Residents/resident-library.js' });
 const library = sandbox.window.LiveEarthResidentLibrary;
 assert.ok(library, 'Residents API must register');
-assert.equal(library.version, '1.2.1', 'The shared library version must advance after removing Weather-only layout rules');
+assert.equal(library.version, '1.3.0', 'The shared library version must advance after removing Weather-only layout rules');
 assert.equal(library.getRoster().length, 3, 'The app must retain exactly three neighbours');
 assert.ok(library.getActivityCatalog().morning, 'Morning park activity must be registered');
 
 const markup = library.renderMarkup();
 assert.equal((markup.match(/class="le-weather-person le-weather-person--/g) || []).length, 3, 'Morning scene must retain exactly three residents');
-assert.equal((markup.match(/le-weather-prop--exercise/g) || []).length, 2, 'Only the first two residents should have exercise props');
+assert.equal((markup.match(/le-weather-prop--exercise/g) || []).length, 1, 'The red-hoodie boy should own the morning exercise prop');
 assert.ok(markup.includes('le-weather-prop--butterfly'), 'The third resident must have a butterfly to chase');
 const positionedAnchors = Array.from(markup.matchAll(/<g class="le-weather-person-anchor le-weather-person-anchor--(one|two|three)" transform="translate\((\d+) (\d+)\)" data-resident-id="(one|two|three)">\s*<g class="le-weather-person le-weather-person--(one|two|three)">/g));
 assert.equal(positionedAnchors.length, 3, 'Each resident must have a stationary position anchor and a separate animated child');
@@ -81,8 +81,8 @@ library.setActivity(daytime, { mode: 'calm', phase: 'day', weather: 'clear' });
 assert.equal(daytime.dataset.activity, 'calm', 'Morning routine must end outside the dawn window');
 
 assert.match(residentSource, /le-weather-person--one\{animation:le-resident-morning-jump/, 'Resident one must exercise');
-assert.match(residentSource, /le-weather-person--two\{animation:le-resident-morning-stretch/, 'Resident two must stretch');
-assert.match(residentSource, /le-weather-person--three\{animation:le-resident-butterfly-chase/, 'Resident three must chase the butterfly');
+assert.match(residentSource, /le-weather-person--two\{animation:le-resident-butterfly-chase/, 'The little lady must follow the butterfly');
+assert.match(residentSource, /le-weather-person--three\{animation:le-resident-morning-stretch/, 'The blue-jacket boy must stretch');
 assert.match(residentSource, /le-resident-butterfly-flight/, 'The butterfly must flutter independently');
 
 console.log('Weather floating overlay, local dawn classification and Residents morning activity tests passed.');
