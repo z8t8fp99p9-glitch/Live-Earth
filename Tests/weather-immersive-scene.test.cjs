@@ -5,6 +5,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 const weather = read('Weather/weather-view.js');
+const residents = read('Residents/resident-library.js');
 const stacks = read('Stacks/stacks-feature-views.js');
 const sw = read('sw.js');
 const manager = read('Global/update-manager.js');
@@ -17,11 +18,15 @@ assert.ok(weather.includes('scene.dataset.weather = state.weather'), 'Weather st
 assert.ok(weather.includes('scene.dataset.phase = state.phase'), 'Time of day must affect the same scene lighting');
 assert.ok(weather.includes('scene.dataset.mode = state.mode'), 'Character poses must follow the selected forecast hour');
 
-assert.equal((weather.match(/\{ id: 'one'/g) || []).length, 1, 'Character one must be defined once');
-assert.equal((weather.match(/\{ id: 'two'/g) || []).length, 1, 'Character two must be defined once');
-assert.equal((weather.match(/\{ id: 'three'/g) || []).length, 1, 'Character three must be defined once');
-assert.ok(weather.includes("id !== 'three'"), 'Only the first two characters should hold umbrellas');
-assert.ok(weather.includes('le-weather-prop--rain-joy'), 'The third character must have a rain-enjoying pose');
+assert.equal((residents.match(/id: 'one'/g) || []).length, 1, 'Resident one must be defined once in the shared library');
+assert.equal((residents.match(/id: 'two'/g) || []).length, 1, 'Resident two must be defined once in the shared library');
+assert.equal((residents.match(/id: 'three'/g) || []).length, 1, 'Resident three must be defined once in the shared library');
+assert.ok(residents.includes("id !== 'three'"), 'Only the first two residents should hold umbrellas');
+assert.ok(residents.includes('le-weather-prop--rain-joy'), 'The third resident must have a rain-enjoying pose');
+assert.ok(!weather.includes('function characterMarkup('), 'Weather must not own duplicate character artwork');
+assert.ok(weather.includes('ensureResidentLibrary()'), 'Weather must load the shared Residents library');
+assert.ok(weather.includes('LiveEarthResidentLibrary?.unmount'), 'Weather must release resident markup when deactivated');
+assert.ok(weather.includes('stargaze'), 'Clear nights should offer a quiet stargazing activity');
 assert.ok(weather.includes("mode = snow ? 'snow'"), 'Snow must activate bundled-up character behaviour');
 assert.ok(weather.includes("hot ? 'heat'"), 'Heat must activate the warm-weather character behaviour');
 assert.ok(weather.includes("fastWind ? 'wind'"), 'Fast wind must activate the gust reaction');

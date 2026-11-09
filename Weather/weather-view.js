@@ -12,12 +12,25 @@
   }
 
   const { mount, el, setStatus, button, card, attribution, isActive, globe } = runtime;
+  let residentLibraryPromise = null;
+
+  function ensureResidentLibrary() {
+    if (window.LiveEarthResidentLibrary?.mount) return Promise.resolve(window.LiveEarthResidentLibrary);
+    if (residentLibraryPromise) return residentLibraryPromise;
+    residentLibraryPromise = import('./Residents/resident-library.js').then(() => {
+      if (window.LiveEarthResidentLibrary?.mount) return window.LiveEarthResidentLibrary;
+      throw new Error('The Residents library loaded without registering its API.');
+    }).catch(error => {
+      residentLibraryPromise = null;
+      throw error;
+    });
+    return residentLibraryPromise;
+  }
+
+  // Warm the shared library as soon as the Weather module is registered. The
+  // existing same-origin runtime cache retains it for subsequent offline visits.
+  ensureResidentLibrary().catch(error => console.warn('[LIVE // EARTH] Residents library will retry when Weather opens.', error));
   const STYLE_ID = 'le-weather-living-landscape-style';
-  const CHARACTER_POSITIONS = [
-    { id: 'one', x: 92, y: 118, shirt: '#e99a68', trousers: '#405b86', skin: '#e8b28d' },
-    { id: 'two', x: 210, y: 126, shirt: '#7c9fd6', trousers: '#594e86', skin: '#c98e70' },
-    { id: 'three', x: 328, y: 118, shirt: '#e1b85e', trousers: '#477d75', skin: '#f0c49b' }
-  ];
   const MAX_FORECAST_HOURS = 18;
 
   function addStyles() {
@@ -49,15 +62,6 @@
       .le-weather-landscape svg,.le-weather-people svg{display:block;width:100%;height:100%;overflow:visible}
       .le-weather-people{position:absolute;left:0;right:0;bottom:3%;height:43%;z-index:2;overflow:visible}
       .le-weather-people svg{overflow:visible}
-      .le-weather-person{transform-box:fill-box;transform-origin:50% 100%;animation:le-weather-idle 4.5s ease-in-out infinite;transition:transform .65s ease}
-      .le-weather-person:nth-child(2){animation-delay:-1.3s}.le-weather-person:nth-child(3){animation-delay:-2.4s}
-      .le-weather-person .le-weather-shadow{fill:#173b4a33}
-      .le-weather-person .le-weather-head{stroke:#704f43;stroke-width:1.1}
-      .le-weather-person .le-weather-body{stroke:#263f5c;stroke-width:1.2;stroke-linejoin:round}
-      .le-weather-person .le-weather-limbs{fill:none;stroke:#3e4c61;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
-      .le-weather-prop{opacity:0;transition:opacity .35s ease}
-      .le-weather-prop--umbrella,.le-weather-prop--rain-joy,.le-weather-prop--heat,.le-weather-prop--snow{display:none}
-      .le-weather-ball{opacity:0;transform-box:fill-box;transform-origin:center;fill:#f6c85f;stroke:#fff4;stroke-width:2}
       .le-weather-rain,.le-weather-snow{position:absolute;inset:-8% 0 0;overflow:hidden;opacity:0;transition:opacity .5s ease}
       .le-weather-particle{position:absolute;top:-12%;left:var(--particle-x);animation:le-weather-fall var(--particle-duration,1.3s) linear var(--particle-delay,0s) infinite;will-change:transform}
       .le-weather-rain .le-weather-particle{width:1.5px;height:clamp(15px,3.5vh,28px);border-radius:2px;background:linear-gradient(180deg,transparent,#e5f7ffcc);transform:rotate(13deg)}
@@ -102,30 +106,10 @@
       .le-weather-scene[data-weather="snow"] .le-weather-snow{opacity:var(--le-snow-opacity,.8)}
       .le-weather-scene[data-weather="fog"] .le-weather-fog{opacity:.9}
       .le-weather-scene[data-weather="storm"] .le-weather-lightning{animation:le-weather-flash 9s linear infinite}
-      .le-weather-scene[data-mode="play"] .le-weather-ball{opacity:1;animation:le-weather-ball-play 2.8s ease-in-out infinite}
-      .le-weather-scene[data-mode="play"] .le-weather-person{animation:le-weather-play 1.7s ease-in-out infinite}
-      .le-weather-scene[data-mode="rain"] .le-weather-prop--umbrella,.le-weather-scene[data-mode="rain"] .le-weather-prop--rain-joy{display:block;opacity:1}
-      .le-weather-scene[data-mode="rain"] .le-weather-person:nth-child(3){animation:le-weather-rain-joy 2.2s ease-in-out infinite}
-      .le-weather-scene[data-mode="heat"] .le-weather-prop--heat{display:block;opacity:1}
-      .le-weather-scene[data-mode="heat"] .le-weather-person{animation:le-weather-heat 3.8s ease-in-out infinite}
-      .le-weather-scene[data-mode="snow"] .le-weather-prop--snow{display:block;opacity:1}
-      .le-weather-scene[data-mode="snow"] .le-weather-person{animation:le-weather-shiver .22s linear infinite}
-      .le-weather-scene[data-mode="wind"] .le-weather-person{animation:le-weather-gust var(--le-gust-duration,1.6s) ease-in-out infinite alternate}
-      .le-weather-scene[data-mode="wind"] .le-weather-person:nth-child(2){animation-delay:-.7s}
-      .le-weather-scene[data-mode="wind"] .le-weather-person:nth-child(3){animation-delay:-1.1s}
-      .le-weather-scene[data-mode="wind"][data-gust="strong"] .le-weather-person--three{animation:le-weather-gust-lift .85s ease-in-out infinite alternate}
       .le-weather-scene[data-mode="rain"] .le-weather-landscape,.le-weather-scene[data-mode="wind"] .le-weather-landscape{filter:saturate(.86)}
       @keyframes le-weather-sun-turn{to{transform:rotate(360deg)}}
       @keyframes le-weather-time-glint{0%,100%{background-position:100% 0;opacity:.2}50%{background-position:0 0;opacity:.85}}
       @keyframes le-weather-cloud-drift{from{transform:translateX(0)}to{transform:translateX(var(--le-cloud-drift,13vw))}}
-      @keyframes le-weather-idle{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
-      @keyframes le-weather-play{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-10px) rotate(3deg)}}
-      @keyframes le-weather-rain-joy{0%,100%{transform:rotate(-3deg) translateY(0)}50%{transform:rotate(5deg) translateY(-5px)}}
-      @keyframes le-weather-heat{0%,100%{transform:rotate(1deg)}50%{transform:rotate(-2deg) translateY(1px)}}
-      @keyframes le-weather-shiver{0%,100%{transform:translateX(-1px) rotate(-1deg)}50%{transform:translateX(1px) rotate(1deg)}}
-      @keyframes le-weather-gust{from{transform:translateX(0) rotate(-3deg)}to{transform:translateX(var(--le-wind-drift,9px)) rotate(9deg)}}
-      @keyframes le-weather-gust-lift{from{transform:translate(0,0) rotate(-8deg)}to{transform:translate(var(--le-wind-drift,16px),-15px) rotate(18deg)}}
-      @keyframes le-weather-ball-play{0%,100%{transform:translate(0,0)}50%{transform:translate(32px,-24px)}}
       @keyframes le-weather-fall{to{transform:translate3d(var(--particle-drift,16px),115vh,0)}}
       @keyframes le-weather-snow-fall{0%{transform:translate3d(0,-8vh,0)}50%{transform:translate3d(var(--particle-drift,18px),48vh,0)}100%{transform:translate3d(calc(var(--particle-drift,18px) * -1),110vh,0)}}
       @keyframes le-weather-flash{0%,92%,94%,100%{opacity:0}92.5%{opacity:.22}93%{opacity:0}93.5%{opacity:.12}}
@@ -134,48 +118,6 @@
       @media(prefers-reduced-motion:reduce){.le-weather-atmosphere *,.le-weather-atmosphere *:before,.le-weather-atmosphere *:after{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
     `;
     document.head.appendChild(style);
-  }
-
-  function characterMarkup(person) {
-    const { id, x, y, shirt, trousers, skin } = person;
-    const umbrella = id !== 'three' ? `
-      <g class="le-weather-prop le-weather-prop--umbrella" transform="translate(0 -7)">
-        <path d="M-24 12 Q0 -12 24 12 Q15 7 8 13 Q0 7 -8 13 Q-15 7 -24 12Z" fill="${id === 'one' ? '#e77f72' : '#718fc7'}" stroke="#fff9" stroke-width="1.4"/>
-        <path d="M0 10 V35 Q0 42 6 38" fill="none" stroke="#f4e9d0" stroke-width="2.2" stroke-linecap="round"/>
-      </g>` : '';
-    const rainEnjoy = id === 'three' ? `
-      <g class="le-weather-prop le-weather-prop--rain-joy" fill="none" stroke="#3e4c61" stroke-width="5" stroke-linecap="round">
-        <path d="M-8 36 Q-25 22 -31 7 M8 36 Q25 22 31 7"/>
-        <path d="M-31 7 l-5 -5 M31 7 l5 -5" stroke="#e8b28d"/>
-      </g>` : '';
-    return `
-      <g class="le-weather-person le-weather-person--${id}" transform="translate(${x} ${y})">
-        <ellipse class="le-weather-shadow" cx="0" cy="106" rx="19" ry="5"/>
-        <g class="le-weather-character-base">
-          <circle class="le-weather-head" cx="0" cy="17" r="10" fill="${skin}"/>
-          <path d="M-10 15 Q-8 2 2 6 Q10 7 10 16 Q4 11 -1 12 Q-7 13 -10 15Z" fill="#493d3a"/>
-          <circle cx="-3" cy="18" r=".9" fill="#3a3030"/><circle cx="4" cy="18" r=".9" fill="#3a3030"/>
-          <path d="M-2 22 Q1 24 4 22" fill="none" stroke="#9e6257" stroke-width="1" stroke-linecap="round"/>
-          <path class="le-weather-body" d="M-10 30 Q0 25 10 30 L12 62 Q0 68 -12 62Z" fill="${shirt}"/>
-          <path class="le-weather-limbs" d="M-8 35 Q-18 45 -17 59 M8 35 Q18 45 17 59"/>
-          <path d="M-15 58 l-4 3 M15 58 l4 3" fill="none" stroke="${skin}" stroke-width="5" stroke-linecap="round"/>
-          <path d="M-6 62 L-9 96 M6 62 L10 96" fill="none" stroke="${trousers}" stroke-width="7" stroke-linecap="round"/>
-          <path d="M-9 96 l-6 4 M10 96 l7 4" fill="none" stroke="#34475f" stroke-width="5" stroke-linecap="round"/>
-        </g>
-        <g class="le-weather-prop le-weather-prop--snow">
-          <path d="M-14 30 Q0 20 14 30 L17 65 Q0 75 -17 65Z" fill="#f2f5f6" stroke="#a5c1d4" stroke-width="1.5"/>
-          <path d="M-13 33 Q0 43 13 33 L16 42 Q0 52 -16 42Z" fill="#d87875"/>
-          <path d="M-13 9 Q-15 -13 0 -14 Q15 -13 13 9Z" fill="#7894bd" stroke="#f4f8fc" stroke-width="1.5"/>
-          <path d="M-16 8 Q0 2 16 8" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
-        </g>
-        ${umbrella}
-        ${rainEnjoy}
-        <g class="le-weather-prop le-weather-prop--heat">
-          <path d="M-13 13 Q-19 4 -13 -4" stroke="#fff3c4" stroke-width="2" fill="none" stroke-linecap="round"/>
-          <path d="M12 33 Q24 25 19 12" stroke="#fff3c4" stroke-width="2" fill="none" stroke-linecap="round"/>
-          <path d="M13 28 L26 24 L31 39 L18 43Z" fill="#f4d28c" stroke="#fff7" stroke-width="1"/>
-        </g>
-      </g>`;
   }
 
   function createAtmosphere() {
@@ -213,10 +155,7 @@
           <path d="M0 287 Q110 267 202 288 T420 281" fill="none" stroke="#a5c99c" stroke-width="4" opacity=".65"/>
         </svg>
       </div>
-      <div class="le-weather-people"><svg viewBox="0 0 420 250" preserveAspectRatio="xMidYMax meet">
-        ${CHARACTER_POSITIONS.map(characterMarkup).join('')}
-        <circle class="le-weather-ball" cx="151" cy="211" r="8"/>
-      </svg></div>
+      <div class="le-weather-people" data-resident-host data-activity="calm"></div>
       <div class="le-weather-scene-caption">ONE LITTLE WORLD · CHANGING WITH THE WEATHER</div>`;
     return scene;
   }
@@ -332,7 +271,8 @@
     const pleasant = temperature !== null && temperature >= 17 && temperature <= 30 &&
       !rain && !snow && !fog && cloud <= 55 && wind < 28 && gusts < 40;
     let weather = snow ? 'snow' : thunder ? 'storm' : rain ? 'rain' : fog ? 'fog' : cloud >= 65 ? 'cloudy' : hot ? 'hot' : 'clear';
-    let mode = snow ? 'snow' : (rain || thunder) ? 'rain' : fastWind ? 'wind' : hot ? 'heat' : (evening && pleasant ? 'play' : 'calm');
+    const stargazing = night && !rain && !snow && !thunder && !fog && cloud <= 35 && !fastWind;
+    let mode = snow ? 'snow' : (rain || thunder) ? 'rain' : fastWind ? 'wind' : hot ? 'heat' : (evening && pleasant ? 'play' : stargazing ? 'stargaze' : 'calm');
     // A pleasant evening is the only time the trio plays together.
     return { phase, weather, mode, cloud, wind, gusts, temperature, gustLevel: gusts >= 65 ? 'strong' : 'normal' };
   }
@@ -366,6 +306,18 @@
 
     const scene = createAtmosphere();
     view.root.insertBefore(scene, view.root.firstChild);
+    const residentHost = scene.querySelector('[data-resident-host]');
+    let residentsDisposed = false;
+    ensureResidentLibrary().then(library => {
+      if (residentsDisposed || !isActive('weather') || !residentHost?.isConnected) return;
+      library.mount(residentHost);
+      // The forecast may finish before the separately loaded SVG library. Reapply
+      // the latest selected hour after mounting so the cast never falls back to calm.
+      if (forecast.length) renderSelected(selectedIndex);
+      else library.setActivity(residentHost, { mode: 'calm', gustLevel: 'normal' });
+    }).catch(error => {
+      console.warn('[LIVE // EARTH] The little residents are resting until their library is available.', error);
+    });
     const { body } = view;
     const status = el('p', 'le-sfv-status', 'Checking Location permission…');
     body.appendChild(status);
@@ -441,6 +393,7 @@
       icon.textContent = '🌤️';
       for (const node of Object.values(metricNodes)) node.textContent = '—';
       scene.dataset.weather = 'clear'; scene.dataset.phase = 'day'; scene.dataset.mode = 'calm';
+      window.LiveEarthResidentLibrary?.setActivity(residentHost, { mode: 'calm', gustLevel: 'normal' });
       scene.style.setProperty('--le-cloud-opacity', '.22');
       scene.style.setProperty('--le-rain-opacity', '.0');
       scene.style.setProperty('--le-snow-opacity', '.0');
@@ -459,6 +412,7 @@
       scene.dataset.weather = state.weather;
       scene.dataset.phase = state.phase;
       scene.dataset.mode = state.mode;
+      window.LiveEarthResidentLibrary?.setActivity(residentHost, state);
       scene.dataset.gust = state.gustLevel;
       scene.style.setProperty('--le-cloud-opacity', String(.12 + (Math.max(0, Math.min(100, state.cloud)) / 100) * .85));
       scene.style.setProperty('--le-rain-opacity', String(Math.min(.95, .42 + (number(item.precipitation) ?? 0) * .22)));
@@ -628,6 +582,8 @@
     else privacyState();
 
     return () => {
+      residentsDisposed = true;
+      window.LiveEarthResidentLibrary?.unmount(residentHost);
       if (pollTimer) clearInterval(pollTimer);
       pollTimer = 0;
       abortController?.abort(); abortController = null;
