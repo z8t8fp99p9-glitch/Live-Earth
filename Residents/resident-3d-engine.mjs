@@ -410,11 +410,11 @@ function addClothing(root, person, torso) {
     root.add(skirt);
     details.skirt = skirt;
     for (const x of [-0.15, 0.15]) {
-      const strap = box(root, COLORS.denimDark, [x, 1.30, 0.185], [0.075, 0.31, 0.05]);
+      const strap = capsule(root, COLORS.denim, [x, 1.30, 0.185], 0.034, 0.22, { roughness: 0.90 });
       strap.rotation.z = x * -0.28;
       sphere(root, COLORS.gold, [x, 1.225, 0.222], [0.028, 0.028, 0.018], { metalness: 0.25 });
     }
-    tube(root, [[-0.18, 1.32, 0.18], [0, 1.205, 0.21], [0.18, 1.32, 0.18]], COLORS.cream, 0.032);
+    tube(root, [[-0.17, 1.32, 0.18], [0, 1.225, 0.21], [0.17, 1.32, 0.18]], COLORS.cream, 0.024);
     tube(root, [[-0.31, 0.82, 0.12], [-0.2, 0.74, 0.20], [0, 0.72, 0.23], [0.2, 0.74, 0.20], [0.31, 0.82, 0.12]], COLORS.denimLight, 0.006, 18);
     for (const x of [-0.12, 0, 0.12]) tube(root, [[x, 0.85, 0.19], [x * 1.5, 0.67, 0.35], [x * 1.7, 0.52, 0.33]], COLORS.denimDark, 0.004, 9);
     const bag = box(root, COLORS.brown, [-0.36, 0.86, 0.18], [0.18, 0.19, 0.11]);
@@ -435,14 +435,17 @@ function addClothing(root, person, torso) {
       shape.lineTo(-0.190, 1.105);
       shape.closePath();
     }, { surfaceOffset: 0.008, depth: 0.020, bevel: 0.004, roughness: 0.90 });
-    sphere(root, COLORS.cream, [0, 1.30, -0.025], [0.22, 0.18, 0.15]);
-    tube(root, [[-0.17, 1.35, 0.205], [-0.09, 1.27, 0.225], [-0.12, 1.13, 0.23]], COLORS.navyLight, 0.018, 10);
-    tube(root, [[0.17, 1.35, 0.205], [0.09, 1.27, 0.225], [0.12, 1.13, 0.23]], COLORS.navyLight, 0.018, 10);
-    tube(root, [[0, 1.28, 0.25], [0, 0.90, 0.25]], 0xd8dce5, 0.008, 12);
+    // The hood lining stays behind the neck; the front remains one calm,
+    // fitted cream insert with a single zipper line and clean navy piping.
+    const hoodLining = new THREE.Mesh(new THREE.TorusGeometry(0.155, 0.032, 8, 28), mat(COLORS.cream, 0.92));
+    hoodLining.position.set(0, 1.315, -0.095);
+    hoodLining.rotation.x = Math.PI / 2;
+    root.add(hoodLining);
+    tube(root, [[-0.155, 1.30, 0.205], [-0.135, 1.16, 0.225], [-0.12, 1.04, 0.225]], COLORS.navyLight, 0.009, 12);
+    tube(root, [[0.155, 1.30, 0.205], [0.135, 1.16, 0.225], [0.12, 1.04, 0.225]], COLORS.navyLight, 0.009, 12);
+    tube(root, [[0, 1.265, 0.235], [0, 1.105, 0.235], [0, 0.955, 0.225]], 0xd3d5d9, 0.006, 14);
     sphere(root, COLORS.gold, [0.22, 1.16, 0.218], [0.065, 0.065, 0.025], { metalness: 0.18 });
     sphere(root, 0x389f96, [0.22, 1.16, 0.242], [0.044, 0.044, 0.014]);
-    tube(root, [[-0.09, 1.27, 0.23], [-0.07, 1.13, 0.25]], 0xd9d2c9, 0.008, 8);
-    tube(root, [[0.09, 1.27, 0.23], [0.07, 1.13, 0.25]], 0xd9d2c9, 0.008, 8);
   }
   return details;
 }
@@ -496,14 +499,62 @@ function createCharacter(person) {
 
 function createUmbrella(parent, color, heldInHand = false) {
   const group = new THREE.Group();
-  group.position.set(0, heldInHand ? 0.48 : 2.18, 0.03);
-  const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.36, 22, 14, 0, Math.PI * 2, 0, Math.PI / 2), mat(color, 0.45));
-  canopy.scale.y = 0.48;
+  group.position.set(0, heldInHand ? 0 : 2.18, 0.03);
+
+  // The hand is at the shaft's lower end. The canopy's crown points away from
+  // the palm, along local -Y, so the open underside faces the character/camera.
+  const canopyRadius = 0.36;
+  const canopyDepth = 0.48;
+  const canopyY = -0.68;
+  const canopyGeometry = geometry('resident-umbrella-canopy-32', () =>
+    new THREE.SphereGeometry(canopyRadius, 32, 18, 0, Math.PI * 2, 0, Math.PI / 2)
+  );
+  const canopyMaterial = new THREE.MeshStandardMaterial({
+    color,
+    roughness: 0.62,
+    metalness: 0,
+    side: THREE.DoubleSide
+  });
+  const canopy = new THREE.Mesh(canopyGeometry, canopyMaterial);
+  canopy.position.set(0, canopyY, 0);
+  canopy.scale.y = -canopyDepth;
+  canopy.castShadow = true;
   group.add(canopy);
-  cylinder(group, 0xf3e8d4, [0, -0.20, 0], 0.012, 0.012, 0.62, 9);
-  const hook = new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.011, 7, 14, Math.PI), mat(0xf3e8d4));
-  hook.position.set(0, -0.48, 0);
+
+  // A slender shaft reaches from the palm to the canopy crown; the hook sits
+  // below the grip rather than dangling from the canopy side of the hand.
+  cylinder(group, 0xe9dfcf, [0, -0.425, 0], 0.008, 0.009, 0.85, 10);
+  cylinder(group, 0x9a704e, [0, 0.035, 0], 0.015, 0.015, 0.11, 10);
+  const hook = new THREE.Mesh(new THREE.TorusGeometry(0.047, 0.010, 8, 16, Math.PI), mat(0xe9dfcf, 0.78));
+  hook.position.set(0, 0.105, 0);
   group.add(hook);
+
+  // Eight curved ribs make the underside legible from the low, front-facing
+  // Weather camera. They follow the dome rather than crossing it as straight bars.
+  const ribColor = color === 0xe77f72 ? 0xb75f58 : 0x526f9c;
+  for (let rib = 0; rib < 8; rib++) {
+    const angle = (rib / 8) * Math.PI * 2;
+    const points = [];
+    for (let step = 0; step <= 5; step++) {
+      const theta = 0.10 + (Math.PI / 2 - 0.10) * (step / 5);
+      const radial = canopyRadius * Math.sin(theta);
+      const y = canopyY - canopyRadius * canopyDepth * Math.cos(theta) + 0.007;
+      points.push([radial * Math.cos(angle), y, radial * Math.sin(angle)]);
+    }
+    tube(group, points, ribColor, 0.0045, 12);
+  }
+
+  const rim = new THREE.Mesh(
+    geometry('resident-umbrella-rim-32', () => new THREE.TorusGeometry(0.352, 0.008, 7, 32)),
+    mat(color === 0xe77f72 ? 0xc56a61 : 0x617eab, 0.72)
+  );
+  rim.position.set(0, canopyY, 0);
+  rim.rotation.x = Math.PI / 2;
+  group.add(rim);
+
+  const crown = sphere(group, color === 0xe77f72 ? 0xc96e64 : 0x6684b2,
+    [0, canopyY - canopyRadius * canopyDepth, 0], [0.035, 0.018, 0.035], { roughness: 0.68 });
+  crown.castShadow = false;
   group.visible = false;
   parent.add(group);
   return group;
@@ -759,14 +810,15 @@ function poseActor(actor, mode, time, index, state, playBeat) {
       right.elbow.rotation.x = -0.28;
       actor.head.rotation.y = Math.sin(time * 2.2) * 0.16;
     } else {
-      left.shoulder.rotation.z = -0.30;
-      // The right hand reaches up to the umbrella shaft; its parented prop
-      // follows every wrist/shoulder adjustment without drifting overhead.
-      right.shoulder.rotation.z = 2.05;
-      left.elbow.rotation.x = -0.38;
-      right.elbow.rotation.x = -0.32;
-      right.wrist.rotation.z = Math.sin(time * 1.4 + index) * 0.025;
-      actor.head.rotation.z = Math.sin(time * 1.15 + index) * 0.035;
+      left.shoulder.rotation.z = -0.18;
+      left.elbow.rotation.x = -0.30;
+      // The right arm rises mostly upward; a small Z bend keeps the elbow soft.
+      // The umbrella shaft extends along the forearm axis from the palm.
+      right.shoulder.rotation.z = 2.72;
+      right.elbow.rotation.z = -0.12;
+      right.elbow.rotation.x = -0.04;
+      right.wrist.rotation.z = Math.sin(time * 1.15 + index) * 0.012;
+      actor.head.rotation.z = Math.sin(time * 1.15 + index) * 0.025;
     }
   } else if (mode === 'snow') {
     actor.root.rotation.z = Math.sin(time * 14 + index) * 0.027;
