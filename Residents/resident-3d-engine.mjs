@@ -493,28 +493,30 @@ function easeActorPose(actor, dt) {
 }
 
 function getPlayBeat(time, actors) {
-  // A gentle three-way pass: each resident receives, pauses, then sends the
-  // ball onward. Positions come from the responsive actor layout, not fixed
-  // screen coordinates, so the interaction stays aligned on narrow screens.
-  const segmentDuration = 2.05;
-  const travelDuration = 1.48;
+  // Give each pass a clear contact beat, then a smooth flight and a quiet
+  // receiving pause. The actor positions remain responsive to the viewport.
+  const segmentDuration = 2.25;
+  const kickTime = 0.17;
+  const launchTime = 0.28;
+  const travelDuration = 1.40;
   const cycleDuration = segmentDuration * actors.length;
   const cycleTime = ((time % cycleDuration) + cycleDuration) % cycleDuration;
   const fromIndex = Math.floor(cycleTime / segmentDuration);
   const localTime = cycleTime - fromIndex * segmentDuration;
   const toIndex = (fromIndex + 1) % actors.length;
-  const progress = Math.min(1, Math.max(0, localTime / travelDuration));
+  const progress = Math.min(1, Math.max(0, (localTime - launchTime) / travelDuration));
   const eased = progress * progress * (3 - 2 * progress);
   const fromX = actors[fromIndex].baseX;
   const toX = actors[toIndex].baseX;
-  const kick = Math.max(0, 1 - Math.abs(localTime - 0.14) / 0.18);
-  const receive = Math.max(0, 1 - Math.abs(localTime - travelDuration) / 0.20);
+  const kick = Math.max(0, 1 - Math.abs(localTime - kickTime) / 0.15);
+  const receiveTime = launchTime + travelDuration;
+  const receive = Math.max(0, 1 - Math.abs(localTime - receiveTime) / 0.19);
 
   return {
     fromIndex,
     toIndex,
     ballX: fromX + (toX - fromX) * eased,
-    ballY: 0.145 + Math.sin(progress * Math.PI) * 0.065,
+    ballY: 0.112 + Math.sin(progress * Math.PI) * 0.048,
     kick,
     receive
   };
@@ -564,34 +566,37 @@ function poseActor(actor, mode, time, index, state, playBeat) {
   } else if (mode === 'play' || mode === 'walk') {
     walkCycle(actor, time, index, mode === 'play' ? 4.0 : 3.35, mode === 'play' ? 0.33 : 0.40, mode === 'play' ? 0.045 : 0.025);
     if (mode === 'play') {
-      // The boys turn toward the lady and wave inward; she answers with a
-      // small alternating hand gesture. Their timing is offset so this reads
-      // as a shared moment rather than three synchronized loops.
+      // Keep hands comfortably apart and close to the body so the trio reads
+      // as playing together, not holding hands. The walk-cycle X swing supplies
+      // the natural counter-balance while the elbows stay softly bent.
       const greeting = Math.sin(time * 2.7 + index * 1.55);
       if (isRed) {
-        actor.head.rotation.y = 0.22 + Math.sin(time * 1.8) * 0.10;
-        right.shoulder.rotation.z = 0.50 + Math.sin(time * 3.8) * 0.22;
-        right.elbow.rotation.x = -0.48 - Math.max(0, greeting) * 0.18;
-        right.wrist.rotation.z = Math.sin(time * 4.2) * 0.12;
+        actor.head.rotation.y = 0.18 + Math.sin(time * 1.8) * 0.08;
+        right.shoulder.rotation.z = 0.16 + Math.sin(time * 3.8) * 0.035;
+        right.elbow.rotation.x = -0.28 - Math.max(0, greeting) * 0.06;
+        left.shoulder.rotation.z = -0.12;
+        left.elbow.rotation.x = -0.22;
+        right.wrist.rotation.z = Math.sin(time * 4.2) * 0.08;
       }
       if (isLady) {
-        actor.head.rotation.y = Math.sin(time * 1.75 + 0.4) * 0.30;
-        actor.head.rotation.z = Math.sin(time * 2.2) * 0.055;
-        right.shoulder.rotation.z = 0.36 + Math.max(0, greeting) * 0.28;
-        right.elbow.rotation.x = -0.38;
-        left.shoulder.rotation.z = -0.34 - Math.max(0, -greeting) * 0.25;
-        left.elbow.rotation.x = -0.32;
+        actor.head.rotation.y = Math.sin(time * 1.75 + 0.4) * 0.24;
+        actor.head.rotation.z = Math.sin(time * 2.2) * 0.04;
+        right.shoulder.rotation.z = 0.15 + Math.max(0, greeting) * 0.035;
+        right.elbow.rotation.x = -0.25;
+        left.shoulder.rotation.z = -0.15 - Math.max(0, -greeting) * 0.035;
+        left.elbow.rotation.x = -0.24;
       }
       if (isBlue) {
-        actor.head.rotation.y = -0.22 - Math.sin(time * 1.7) * 0.08;
-        left.shoulder.rotation.z = -0.68 - Math.sin(time * 3.4 + 0.7) * 0.20;
-        left.elbow.rotation.x = -0.46;
-        left.wrist.rotation.z = Math.sin(time * 3.9 + 0.5) * 0.10;
+        actor.head.rotation.y = -0.18 - Math.sin(time * 1.7) * 0.07;
+        left.shoulder.rotation.z = -0.18 - Math.sin(time * 3.4 + 0.7) * 0.035;
+        left.elbow.rotation.x = -0.29;
+        right.shoulder.rotation.z = 0.12;
+        right.elbow.rotation.x = -0.22;
+        left.wrist.rotation.z = Math.sin(time * 3.9 + 0.5) * 0.08;
       }
 
-      // Keep the friendly group pose, but let each resident respond to the
-      // ball: Red is eager, the lady's touch is lighter, and Blue returns it
-      // with a small curious head tilt. The ball remains near foot level.
+      // Heads follow the ball. Receivers cushion it with the near-side foot;
+      // passers use the outgoing inside foot, each with a distinct soft touch.
       if (playBeat) {
         const lookX = Math.max(-0.17, Math.min(0.17, (playBeat.ballX - actor.baseX) * 0.14));
         actor.head.rotation.y = actor.head.rotation.y * 0.55 + lookX * 0.45;
@@ -599,20 +604,26 @@ function poseActor(actor, mode, time, index, state, playBeat) {
         const receiving = playBeat.toIndex === index;
         const touch = passing ? playBeat.kick : receiving ? playBeat.receive : 0;
         if (touch > 0) {
-          // The inside foot leads the pass: right foot for Red and the lady,
-          // left foot for Blue on the right.
-          const insideLeg = actor.legs[index === 2 ? 0 : 1];
+          const footIndex = receiving ? (index === 0 ? 1 : 0) : (index === 2 ? 0 : 1);
+          const insideLeg = actor.legs[footIndex];
           const personality = isRed ? 1 : isLady ? 0.72 : 0.88;
-          insideLeg.hip.rotation.x -= touch * 0.31 * personality;
-          insideLeg.knee.rotation.x = Math.max(insideLeg.knee.rotation.x, touch * 0.22 * personality);
-          insideLeg.ankle.rotation.x += touch * 0.15 * personality;
-          if (isRed) {
-            actor.root.position.y += touch * 0.024;
-            actor.head.rotation.z += touch * 0.035;
-          } else if (isLady) {
-            actor.root.rotation.z += touch * 0.026;
+          if (passing) {
+            insideLeg.hip.rotation.x -= touch * 0.34 * personality;
+            insideLeg.knee.rotation.x = Math.max(insideLeg.knee.rotation.x, touch * 0.24 * personality);
+            insideLeg.ankle.rotation.x += touch * 0.14 * personality;
           } else {
-            actor.head.rotation.z -= touch * 0.042;
+            insideLeg.hip.rotation.x += touch * 0.13 * personality;
+            insideLeg.knee.rotation.x = Math.max(insideLeg.knee.rotation.x, touch * 0.36 * personality);
+            insideLeg.ankle.rotation.x -= touch * 0.16 * personality;
+            actor.head.rotation.x += touch * 0.045;
+          }
+          if (isRed) {
+            actor.root.position.y += touch * (passing ? 0.022 : 0.008);
+            actor.head.rotation.z += touch * 0.03;
+          } else if (isLady) {
+            actor.root.rotation.z += touch * (passing ? 0.022 : -0.018);
+          } else {
+            actor.head.rotation.z -= touch * 0.035;
           }
         }
       }
