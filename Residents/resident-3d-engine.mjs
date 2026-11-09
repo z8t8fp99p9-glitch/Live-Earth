@@ -748,6 +748,10 @@ export function createResidents3D(canvas, roster, initialState = {}) {
     actors.forEach((actor, index) => {
       resetActor(actor);
       poseActor(actor, mode, elapsed, index, state, playBeat);
+      // Sample environment motion before any clothing or accessory reads.
+      // Keeping this binding at the top of the actor pass avoids a temporal
+      // dead-zone ReferenceError that would stop the entire render loop.
+      const environmentMotion = activityFramework.environment.sample(mode, elapsed, index, state);
 
       // Small secondary motions keep the trio expressive without making
       // them bounce continuously: head follow-through, relaxed wrists,
@@ -792,7 +796,6 @@ export function createResidents3D(canvas, roster, initialState = {}) {
       actor.face.cheeks.forEach((cheek, cheekIndex) => {
         cheek.scale.y = 0.031 + (joyful ? 0.003 : 0) + Math.sin(elapsed * 1.4 + index + cheekIndex) * 0.001;
       });
-      const environmentMotion = activityFramework.environment.sample(mode, elapsed, index, state);
       actor.hair.rotation.x = environmentMotion.hairSway;
       actor.accessories.kite.position.x = mode === 'kite' ? 0.65 + Math.sin(elapsed * 1.4) * 0.13 : 0.65;
       actor.accessories.fan.rotation.z = mode === 'heat' && actor.person.id === 'lady' ? Math.sin(elapsed * 8) * 0.40 : 0;
