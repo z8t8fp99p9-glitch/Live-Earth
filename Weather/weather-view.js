@@ -138,6 +138,16 @@
       .le-weather-range:focus-visible,.le-weather-hour:focus-visible,.le-weather-refresh:focus-visible{outline:2px solid #fff;outline-offset:3px}
       .le-weather-range-label{display:flex;justify-content:space-between;gap:8px;color:#e2eff7;font-size:9px}
       .le-weather-refresh{min-height:38px;padding:9px 14px;border:1px solid #dff4ff66;border-radius:999px;background:#17405c66;color:#fff;font:700 10px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;touch-action:manipulation}
+      .le-weather-resident-preview{display:grid;gap:6px;margin-top:8px;min-width:0}
+      .le-weather-resident-preview-heading{display:flex;align-items:baseline;justify-content:space-between;gap:8px;color:#edf7ff;font-size:8px;letter-spacing:.08em;text-transform:uppercase;text-shadow:0 1px 6px #10253acc}
+      .le-weather-resident-preview-note{color:#d8e8f2;font-size:8px;letter-spacing:0;text-transform:none}
+      .le-weather-preview-strip{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 5px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+      .le-weather-preview-strip::-webkit-scrollbar{display:none}
+      .le-weather-preview-button{flex:0 0 auto;min-height:27px;padding:6px 10px;border:1px solid #e5f4ff45;border-radius:999px;background:#0c294244;color:#edf7ff;font:650 9px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;white-space:nowrap;touch-action:manipulation}
+      .le-weather-preview-button[aria-pressed="true"]{border-color:#fff;background:#e7f7ff35;box-shadow:0 0 0 1px #fff3,0 0 12px #b8eaff55;color:#fff}
+      .le-weather-preview-button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+      .le-weather-preview-status{min-height:10px;color:#d8e8f2;font-size:8px;text-shadow:0 1px 6px #10253acc}
+      .le-weather-scene[data-resident-preview="true"] .le-weather-scene-caption:after{content:" · RESIDENT PREVIEW";color:#fff}
       .le-weather-scene-caption{position:absolute;left:12px;right:12px;bottom:2.5%;z-index:1;text-align:center;color:#f7fbffb8;font-size:8px;letter-spacing:.08em;text-shadow:0 1px 7px #18354c88;pointer-events:none}
       .le-weather-scene[data-phase="dawn"] .le-weather-sky{background:linear-gradient(180deg,#90b9d8,#e9c4aa 58%,#f3d4a8)}
       .le-weather-scene[data-phase="day"] .le-weather-sky{background:linear-gradient(180deg,#69b7e5,#c9e6e9 57%,#f2d8ad)}
@@ -371,7 +381,8 @@
       if (!mounted) throw new Error('The Residents library refused the Weather host.');
       residentHost.dataset.residentsMounted = 'true';
       // Reapply the latest selected forecast after the SVG has mounted.
-      if (forecast.length) renderSelected(selectedIndex);
+      if (residentPreviewMode) applyResidentPreview(residentPreviewMode);
+      else if (forecast.length) renderSelected(selectedIndex);
       else library.setActivity(residentHost, { mode: 'calm', gustLevel: 'normal' });
     }).catch(error => {
       if (!residentsDisposed) residentHost?.setAttribute('data-residents-error', 'true');
@@ -426,6 +437,94 @@
     refresh.classList.add('le-weather-refresh');
     actionRow.appendChild(refresh);
     timelineCard.appendChild(actionRow);
+
+    // These are visual scenario previews, not weather controls. They only
+    // change the illustrated scene and resident activity; forecast values,
+    // selected hour, Location permission and network requests remain untouched.
+    const residentPreview = el('section', 'le-weather-resident-preview');
+    residentPreview.setAttribute('aria-label', 'Preview resident activities');
+    const residentPreviewHeading = el('div', 'le-weather-resident-preview-heading');
+    residentPreviewHeading.append(
+      el('strong', '', 'Residents · Preview'),
+      el('span', 'le-weather-resident-preview-note', 'See the scene as it appears in Weather')
+    );
+    const residentPreviewStrip = el('div', 'le-weather-preview-strip');
+    residentPreviewStrip.setAttribute('role', 'group');
+    residentPreviewStrip.setAttribute('aria-label', 'Resident scene previews');
+    const residentPreviewStatus = el('div', 'le-weather-preview-status', 'Live forecast behaviour');
+    const residentPreviewButtons = new Map();
+    const residentPreviewOptions = [
+      { id: 'morning', label: 'Exercise', mode: 'morning', weather: 'clear', phase: 'dawn' },
+      { id: 'play', label: 'Evening play', mode: 'play', weather: 'clear', phase: 'evening' },
+      { id: 'rain', label: 'Rain', mode: 'rain', weather: 'rain', phase: 'day', particles: 'rain' },
+      { id: 'snow', label: 'Snow', mode: 'snow', weather: 'snow', phase: 'day', particles: 'snow' },
+      { id: 'heat', label: 'Heat', mode: 'heat', weather: 'hot', phase: 'day' },
+      { id: 'wind', label: 'Wind', mode: 'wind', weather: 'cloudy', phase: 'day', gustLevel: 'strong' },
+      { id: 'stargaze', label: 'Stargazing', mode: 'stargaze', weather: 'clear', phase: 'night' },
+      { id: 'walk', label: 'Walk', mode: 'walk', weather: 'clear', phase: 'day' },
+      { id: 'picnic', label: 'Picnic', mode: 'picnic', weather: 'clear', phase: 'day' },
+      { id: 'kite', label: 'Kite', mode: 'kite', weather: 'clear', phase: 'day' },
+      { id: 'garden', label: 'Garden', mode: 'garden', weather: 'clear', phase: 'day' },
+      { id: 'festival', label: 'Festival', mode: 'festival', weather: 'clear', phase: 'evening' },
+      { id: 'camping', label: 'Camping', mode: 'camping', weather: 'clear', phase: 'night' }
+    ];
+    let residentPreviewMode = null;
+    const previewWeather = {
+      rain: { precipitation: 2.8, rainChance: 90, snowfall: 0, windDirection: 270 },
+      snow: { precipitation: 0, rainChance: 0, snowfall: 0.9, windDirection: 255 }
+    };
+    function updateResidentPreviewButtons() {
+      for (const [id, node] of residentPreviewButtons) {
+        node.setAttribute('aria-pressed', String(id === (residentPreviewMode || 'live')));
+      }
+    }
+    function applyResidentPreview(id) {
+      const option = residentPreviewOptions.find(item => item.id === id);
+      if (!option) return false;
+      residentPreviewMode = id;
+      scene.dataset.residentPreview = 'true';
+      scene.dataset.weather = option.weather;
+      scene.dataset.phase = option.phase;
+      scene.dataset.mode = option.mode;
+      scene.dataset.gust = option.gustLevel || 'normal';
+      scene.style.setProperty('--le-cloud-opacity', option.weather === 'rain' ? '.9' : option.weather === 'snow' ? '.68' : option.weather === 'cloudy' ? '.78' : '.22');
+      scene.style.setProperty('--le-rain-opacity', option.particles === 'rain' ? '.82' : '0');
+      scene.style.setProperty('--le-snow-opacity', option.particles === 'snow' ? '.88' : '0');
+      scene.style.setProperty('--le-wind-drift', option.id === 'wind' ? '18px' : '0px');
+      scene.style.setProperty('--le-cloud-drift', option.id === 'wind' ? '110px' : '24px');
+      scene.style.setProperty('--le-cloud-duration', option.id === 'wind' ? '24s' : '62s');
+      scene.style.setProperty('--le-gust-duration', option.id === 'wind' ? '.9s' : '2.2s');
+      scene.querySelector('.le-weather-rain').replaceChildren();
+      scene.querySelector('.le-weather-snow').replaceChildren();
+      if (option.particles) createParticles(scene.querySelector(option.particles === 'rain' ? '.le-weather-rain' : '.le-weather-snow'), option.particles, previewWeather[option.particles]);
+      window.LiveEarthResidentLibrary?.setActivity(residentHost, {
+        mode: option.mode, weather: option.weather, phase: option.phase,
+        gustLevel: option.gustLevel || 'normal'
+      });
+      residentPreviewStatus.textContent = `Previewing ${option.label} · forecast data is unchanged`;
+      updateResidentPreviewButtons();
+      return true;
+    }
+    function restoreResidentForecast() {
+      residentPreviewMode = null;
+      delete scene.dataset.residentPreview;
+      updateResidentPreviewButtons();
+      residentPreviewStatus.textContent = forecast.length ? 'Live forecast behaviour' : 'Live forecast behaviour · waiting for weather';
+      if (forecast.length) renderSelected(selectedIndex);
+      else clearForecast();
+    }
+    for (const option of residentPreviewOptions) {
+      const previewButton = button(option.label, () => applyResidentPreview(option.id), 'le-weather-preview-button');
+      previewButton.setAttribute('aria-pressed', 'false');
+      residentPreviewButtons.set(option.id, previewButton);
+      residentPreviewStrip.appendChild(previewButton);
+    }
+    const livePreviewButton = button('Live forecast', restoreResidentForecast, 'le-weather-preview-button');
+    livePreviewButton.setAttribute('aria-pressed', 'true');
+    residentPreviewButtons.set('live', livePreviewButton);
+    residentPreviewStrip.appendChild(livePreviewButton);
+    residentPreview.append(residentPreviewHeading, residentPreviewStrip, residentPreviewStatus);
+    timelineCard.appendChild(residentPreview);
     attribution(body, [
       { text: 'Weather data by ' },
       { label: 'Open-Meteo.com', href: 'https://open-meteo.com/' },
@@ -459,10 +558,15 @@
       scene.style.setProperty('--le-snow-opacity', '.0');
       scene.querySelector('.le-weather-rain').replaceChildren();
       scene.querySelector('.le-weather-snow').replaceChildren();
+      if (residentPreviewMode) applyResidentPreview(residentPreviewMode);
     }
 
     function renderSelected(index) {
       if (!forecast.length) return;
+      residentPreviewMode = null;
+      delete scene.dataset.residentPreview;
+      updateResidentPreviewButtons();
+      residentPreviewStatus.textContent = 'Live forecast behaviour';
       selectedIndex = Math.max(0, Math.min(forecast.length - 1, Number(index) || 0));
       const item = forecast[selectedIndex];
       const state = visualState(item);

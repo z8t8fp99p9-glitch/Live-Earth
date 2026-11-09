@@ -20,3 +20,10 @@ Weather continues to mount/unmount the library through its existing lifecycle. O
 ## Offline and verification
 
 The three images are same-origin resources referenced from SVG `<image>` nodes. They use the existing service worker's bounded optional-resource cache, so successful online retrieval makes them reusable offline without changing the essential shell, cache identity or update manager. The focused Residents test now verifies all three sprite paths, the cast identities, activities and lifecycle.
+
+
+## Weather Residents Preview
+
+The Weather panel includes a normal, visible **Residents · Preview** strip. It lets anyone preview the same scene states used by the app: exercise, evening play, rain, snow, heat, wind, stargazing, walking, picnic, kite, garden, festival and camping. **Live forecast** returns the residents to automatic forecast-driven behaviour.
+
+Preview scenarios affect only the illustrated Weather scene and Residents activity. They do not alter forecast measurements, the selected forecast hour, Location permission, GPS, network requests or stored data. Selecting an actual forecast hour exits preview and returns control to the forecast. The preview remains usable while Location is OFF or the device is offline because it uses local illustrative values only.
