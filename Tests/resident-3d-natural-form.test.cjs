@@ -46,6 +46,6 @@ assert.ok(source.includes("powerPreference: 'low-power'"));
 assert.ok(source.includes("window.matchMedia?.('(prefers-reduced-motion: reduce)')"));
 assert.ok(source.includes('now - lastRender < 32'));
 assert.ok(source.includes('memory.quaternion.slerp(node.quaternion, alpha)'));
-assert.ok(source.includes('new Set([...materialCache.values(), ...skinMaterialCache.values()])'), 'Cached skin materials must survive renderer disposal/revisit');
+assert.ok(source.includes('new Set([...materialCache.values(), ...skinMaterialCache.values(), ...skinFaceMaterialCache.values()])'), 'All cached skin materials must survive renderer disposal/revisit');
 
 console.log('Residents natural-form sculpt, skin materials, face proportions, limb joins and festival paper checks passed.');

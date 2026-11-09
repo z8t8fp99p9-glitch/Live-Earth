@@ -21,6 +21,7 @@ const COLORS = {
 
 const materialCache = new Map();
 const skinMaterialCache = new Map();
+const skinFaceMaterialCache = new Map();
 const geometryCache = new Map();
 function mat(color, roughness = 0.84, metalness = 0) {
   const key = `${color}:${roughness}:${metalness}`;
@@ -37,6 +38,18 @@ function skinMat(color = COLORS.skin, roughness = 0.90) {
     }));
   }
   return skinMaterialCache.get(key);
+}
+// The face uses vertex-coloured skin so warmth is blended into the cheek
+// planes instead of sitting on top as two separate pink discs.
+function skinFaceMat(roughness = 0.90) {
+  const key = `vertex-skin:${roughness}`;
+  if (!skinFaceMaterialCache.has(key)) {
+    skinFaceMaterialCache.set(key, new THREE.MeshPhysicalMaterial({
+      color: 0xffffff, vertexColors: true, roughness, metalness: 0,
+      clearcoat: 0.035, clearcoatRoughness: 0.90
+    }));
+  }
+  return skinFaceMaterialCache.get(key);
 }
 function geometry(key, make) {
   if (!geometryCache.has(key)) geometryCache.set(key, make());
@@ -76,6 +89,24 @@ const residentHeadGeometry = geometry('resident-head-soft-jaw-32x24', () => {
     positions.setZ(i, positions.getZ(i) * (1 - lowerFace * 0.055));
   }
   positions.needsUpdate = true;
+  // Gentle vertex blush follows the cheek planes and fades into the base skin.
+  // It is intentionally low contrast so it reads as warmth beneath the skin,
+  // not makeup painted onto the surface.
+  const baseSkin = new THREE.Color(COLORS.skin);
+  const cheekWarmth = new THREE.Color(COLORS.cheek);
+  const vertexColors = [];
+  for (let i = 0; i < positions.count; i++) {
+    const x = positions.getX(i);
+    const y = positions.getY(i);
+    const z = positions.getZ(i);
+    const frontFacing = Math.max(0, Math.min(1, (z - 0.18) / 0.72));
+    const leftBlush = Math.exp(-1.55 * (((x + 0.43) / 0.28) ** 2 + ((y + 0.28) / 0.20) ** 2));
+    const rightBlush = Math.exp(-1.55 * (((x - 0.43) / 0.28) ** 2 + ((y + 0.28) / 0.20) ** 2));
+    const warmth = Math.max(leftBlush, rightBlush) * frontFacing * 0.14;
+    const color = baseSkin.clone().lerp(cheekWarmth, warmth);
+    vertexColors.push(color.r, color.g, color.b);
+  }
+  shape.setAttribute('color', new THREE.Float32BufferAttribute(vertexColors, 3));
   shape.computeVertexNormals();
   return shape;
 });
@@ -247,9 +278,7 @@ function createFace(head, person) {
     tube(brow, [[-0.048, 0, 0.005], [-0.018, 0.016, 0.022], [0.032, 0.004, 0.01]], COLORS.hairDark, 0.009, 9);
     brows.push(brow);
 
-    // Blush is diffused and smaller, sitting within the cheek plane.
-    const cheek = sphere(head, COLORS.cheek, [x * 1.92, -0.105, 0.232], [0.043, 0.021, 0.010], { roughness: 0.96 });
-    cheeks.push(cheek);
+    // Cheek warmth is vertex-blended into the head shell, not a separate mesh.
   }
   // A single sculpted bridge/tip gives the nose a continuous profile in side view.
   const nose = new THREE.Mesh(residentNoseGeometry, skinMat(0xe8ae94, 0.90));
@@ -372,10 +401,10 @@ function makeArm(root, side, sleeveColor, skinColor) {
   // Overlapping rounded capsules remove the visible ball-joint gaps while
   // retaining separate shoulder, elbow and wrist pivots for animation.
   capsule(shoulder, sleeveColor, [side * 0.018, -0.125, 0], 0.073, 0.17);
-  sphere(shoulder, sleeveColor, [side * 0.025, -0.235, 0], [0.070, 0.076, 0.074]);
+  sphere(shoulder, sleeveColor, [side * 0.025, -0.235, 0], [0.061, 0.064, 0.062]);
   const elbow = joint(shoulder, [side * 0.035, -0.245, 0]);
   capsule(elbow, sleeveColor, [0, -0.112, 0], 0.061, 0.15);
-  sphere(elbow, sleeveColor, [0, -0.218, 0], [0.059, 0.061, 0.061]);
+  sphere(elbow, sleeveColor, [0, -0.218, 0], [0.050, 0.052, 0.052]);
   const wrist = joint(elbow, [0, -0.225, 0]);
   const cuff = cylinder(wrist, sleeveColor, [0, 0.005, 0], 0.064, 0.069, 0.052, 18);
   // Cylinder's native Y axis follows the forearm; keep the cuff square to the wrist.
@@ -386,8 +415,8 @@ function makeArm(root, side, sleeveColor, skinColor) {
 function makeShoe(foot, person) {
   const isBoot = person.id === 'lady';
   const shoe = isBoot ? COLORS.boots : person.id === 'red' ? 0x5e6677 : 0x68758a;
-  sphere(foot, shoe, [0, 0.025, 0.055], [0.13, 0.073, 0.18], { roughness: 0.62 });
-  sphere(foot, isBoot ? COLORS.bootLight : 0xe6e7e9, [0, 0.052, 0.13], [0.105, 0.048, 0.105], { roughness: 0.66 });
+  sphere(foot, shoe, [0, 0.025, 0.055], [0.13, 0.073, 0.18], { roughness: 0.74 });
+  sphere(foot, isBoot ? COLORS.bootLight : 0xe6e7e9, [0, 0.052, 0.13], [0.105, 0.048, 0.105], { roughness: 0.74 });
   sphere(foot, COLORS.sole, [0, -0.035, 0.06], [0.135, 0.025, 0.19], { roughness: 0.82 });
   for (let i = 0; i < 3; i++) {
     const z = 0.01 + i * 0.035;
@@ -401,13 +430,13 @@ function makeShoe(foot, person) {
 function makeLeg(root, side, person) {
   const hip = joint(root, [side * 0.145, 0.665, 0]);
   capsule(hip, COLORS.pants, [0, -0.125, 0], 0.087, 0.16);
-  sphere(hip, COLORS.pants, [0, -0.232, 0], [0.082, 0.080, 0.084]);
+  sphere(hip, COLORS.pants, [0, -0.232, 0], [0.073, 0.070, 0.074]);
   const knee = joint(hip, [0, -0.25, 0]);
   const lowerLegColor = person.id === 'lady' ? COLORS.skin : COLORS.pants;
   capsule(knee, lowerLegColor, [0, -0.112, 0], person.id === 'lady' ? 0.070 : 0.074, 0.145, { skin: person.id === 'lady' });
-  sphere(knee, lowerLegColor, [0, -0.211, 0], [0.066, 0.067, 0.069], { skin: person.id === 'lady' });
+  sphere(knee, lowerLegColor, [0, -0.211, 0], [0.057, 0.058, 0.060], { skin: person.id === 'lady' });
   const ankle = joint(knee, [0, -0.235, 0]);
-  sphere(ankle, lowerLegColor, [0, -0.035, 0], [0.064, 0.069, 0.066], { skin: person.id === 'lady' });
+  sphere(ankle, lowerLegColor, [0, -0.035, 0], [0.057, 0.060, 0.058], { skin: person.id === 'lady' });
   const foot = joint(ankle, [0, -0.075, 0.04]);
   makeShoe(foot, person);
   return { hip, knee, ankle, foot };
@@ -509,8 +538,10 @@ function createCharacter(person) {
   // reads as one soft character rather than a floating head on a torso.
   capsule(root, COLORS.skin, [0, 1.385, -0.005], 0.101, 0.12, { skin: true });
   const head = joint(root, [0, 1.625, 0]);
-  head.scale.setScalar(0.985);
-  const headMesh = new THREE.Mesh(residentHeadGeometry, skinMat(COLORS.skin, 0.90));
+  // Keep the friendly chibi identity, but ease the head/body ratio slightly
+  // so the neck and shoulders read more like a small animated child.
+  head.scale.setScalar(0.965);
+  const headMesh = new THREE.Mesh(residentHeadGeometry, skinFaceMat(0.90));
   headMesh.scale.set(0.305, 0.34, 0.27);
   head.add(headMesh);
   const hair = addHair(head, person);
@@ -950,14 +981,14 @@ export function createResidents3D(canvas, roster, initialState = {}) {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.12;
 
-  scene.add(new THREE.HemisphereLight(0xfff7ed, 0x60756d, 1.85));
-  const key = new THREE.DirectionalLight(0xffefdf, 1.75);
+  scene.add(new THREE.HemisphereLight(0xfff7ed, 0x60756d, 1.55));
+  const key = new THREE.DirectionalLight(0xffefdf, 1.90);
   key.position.set(-3.2, 5.2, 6);
   scene.add(key);
-  const fill = new THREE.DirectionalLight(0xd4e5ff, 0.82);
+  const fill = new THREE.DirectionalLight(0xd4e5ff, 0.58);
   fill.position.set(4, 2.4, 4);
   scene.add(fill);
-  const rim = new THREE.DirectionalLight(0xffd6a6, 0.92);
+  const rim = new THREE.DirectionalLight(0xffd6a6, 0.78);
   rim.position.set(0, 3, -3);
   scene.add(rim);
 
@@ -1103,7 +1134,7 @@ export function createResidents3D(canvas, roster, initialState = {}) {
       cancelAnimationFrame(frame);
       observer?.disconnect();
       const sharedGeometries = new Set(geometryCache.values());
-      const sharedMaterials = new Set([...materialCache.values(), ...skinMaterialCache.values()]);
+      const sharedMaterials = new Set([...materialCache.values(), ...skinMaterialCache.values(), ...skinFaceMaterialCache.values()]);
       const geometries = new Set();
       const materials = new Set();
       scene.traverse(object => {
