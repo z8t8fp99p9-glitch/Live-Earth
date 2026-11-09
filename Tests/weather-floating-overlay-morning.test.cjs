@@ -24,6 +24,10 @@ assert.match(weather, /const dawn = hour >= 5 && hour <= 7;/, '05:00-07:00 local
 assert.doesNotMatch(weather, /number\(item\.isDay\) === 0 \|\| hour >= 20/, 'A sunrise is_day flag must not incorrectly keep 05:00 in night mode');
 assert.ok(weather.includes("import('./Residents/resident-library.js')"), 'Weather must continue loading the shared Residents library');
 assert.ok(weather.includes('LiveEarthResidentLibrary?.setActivity(residentHost, state)'), 'Selected forecast hour must drive resident activity');
+assert.match(weather, /status\.hidden = true;[\s\S]*setStatus\(status, '', 'success'\)/, 'Successful forecast must hide the verbose status paragraph');
+assert.ok(weather.includes("{ text: 'Weather data by ' }"), 'Weather attribution must be compact');
+assert.ok(weather.includes("{ label: 'Open-Meteo.com', href: 'https://open-meteo.com/' }"), 'Provider must remain credited with a link');
+assert.ok(weather.includes("{ label: 'CC BY 4.0', href: 'https://creativecommons.org/licenses/by/4.0/' }"), 'The data licence must remain credited with a link');
 
 const styleNodes = new Map();
 const fakeDocument = {
@@ -36,7 +40,7 @@ const sandbox = { window: {}, document: fakeDocument, console };
 vm.runInNewContext(residentSource, sandbox, { filename: 'Residents/resident-library.js' });
 const library = sandbox.window.LiveEarthResidentLibrary;
 assert.ok(library, 'Residents API must register');
-assert.equal(library.version, '1.1.1', 'The shared library version must advance after removing Weather-only layout rules');
+assert.equal(library.version, '1.2.0', 'The shared library version must advance after removing Weather-only layout rules');
 assert.equal(library.getRoster().length, 3, 'The app must retain exactly three neighbours');
 assert.ok(library.getActivityCatalog().morning, 'Morning park activity must be registered');
 
@@ -44,6 +48,10 @@ const markup = library.renderMarkup();
 assert.equal((markup.match(/class="le-weather-person le-weather-person--/g) || []).length, 3, 'Morning scene must retain exactly three residents');
 assert.equal((markup.match(/le-weather-prop--exercise/g) || []).length, 2, 'Only the first two residents should have exercise props');
 assert.ok(markup.includes('le-weather-prop--butterfly'), 'The third resident must have a butterfly to chase');
+const positionedAnchors = Array.from(markup.matchAll(/<g class="le-weather-person-anchor le-weather-person-anchor--(one|two|three)" transform="translate\((\d+) (\d+)\)" data-resident-id="(one|two|three)">\s*<g class="le-weather-person le-weather-person--(one|two|three)">/g));
+assert.equal(positionedAnchors.length, 3, 'Each resident must have a stationary position anchor and a separate animated child');
+assert.deepEqual(positionedAnchors.map(match => [match[1], match[2], match[3]]), [['one','92','116'],['two','210','122'],['three','328','116']], 'Each resident must retain its own designed scene position');
+assert.match(residentSource, /\.le-weather-person--two\{animation-delay:-1\.3s\}\.le-weather-person--three\{animation-delay:-2\.4s\}/, 'Idle animation staggering must use stable resident IDs after nesting');
 assert.doesNotMatch(residentSource, /\.le-sfv--weather/, 'Weather layout styles must not be owned by the reusable Residents library');
 
 for (const weatherState of ['clear', 'cloudy']) {

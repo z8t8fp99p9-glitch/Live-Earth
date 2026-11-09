@@ -84,7 +84,8 @@
       .le-sfv--weather .le-weather-range{min-height:20px}
       .le-sfv--weather .le-sfv-controls{margin-top:5px;gap:6px}
       .le-sfv--weather .le-weather-refresh{min-height:30px;padding:7px 11px;background:rgba(9,39,58,.14);font-size:9px}
-      .le-sfv--weather .le-sfv-attribution{margin-top:6px;font-size:8px;line-height:1.35;text-shadow:0 1px 5px #10253acc}
+      .le-sfv--weather .le-sfv-attribution{margin-top:6px;font-size:7px;line-height:1.3;text-align:right;opacity:.82;text-shadow:0 1px 5px #10253acc}
+      .le-sfv--weather .le-sfv-attribution a{color:#f4fbff;text-underline-offset:2px}
       @media(max-width:390px){.le-sfv--weather .le-weather-metric-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 9px}.le-sfv--weather .le-weather-hour{flex-basis:50px;min-height:57px}}
       .le-weather-atmosphere{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;isolation:isolate;background:linear-gradient(180deg,#8bc8e8 0%,#d8e8e8 47%,#e9d5ad 100%);transition:background 1.2s ease}
       .le-weather-sky{position:absolute;inset:0;background:linear-gradient(180deg,#6fb5df 0%,#c5e1e7 56%,#f2d8ae 100%);transition:background 1.5s ease,filter 1.5s ease}
@@ -404,9 +405,10 @@
     actionRow.appendChild(refresh);
     timelineCard.appendChild(actionRow);
     attribution(body, [
-      { text: 'Forecast model: ' },
-      { label: 'Open-Meteo', href: 'https://open-meteo.com/' },
-      { text: ' · CC BY 4.0. Weather estimates, refreshed online. Location is never requested by this view.' }
+      { text: 'Weather data by ' },
+      { label: 'Open-Meteo.com', href: 'https://open-meteo.com/' },
+      { text: ' · ' },
+      { label: 'CC BY 4.0', href: 'https://creativecommons.org/licenses/by/4.0/' }
     ]);
 
     let abortController = null;
@@ -497,6 +499,7 @@
     }
 
     function privacyState() {
+      status.hidden = false;
       abortController?.abort();
       clearForecast();
       summaryCard.querySelector('.le-sfv-copy').textContent = 'No weather request is made while Location is OFF. Coordinates are not saved by this view.';
@@ -505,10 +508,12 @@
       rangeSelected.textContent = 'Location is off';
     }
     function loadingState() {
+      status.hidden = false;
       setStatus(status, 'Location is ON · waiting for the shared Location Orb to provide a fresh position…');
       localTime.textContent = 'The Weather view never requests GPS by itself';
     }
     function offlineState() {
+      status.hidden = false;
       if (pollTimer) clearInterval(pollTimer);
       pollTimer = 0;
       abortController?.abort();
@@ -559,12 +564,15 @@
         selectedIndex = 0;
         buildTimeline();
         renderSelected(0);
-        const observed = data.current.time ? new Date(data.current.time).toLocaleString() : 'time not supplied';
-        setStatus(status, `Open-Meteo model update · ${observed}. Hourly values are forecasts, not local-station measurements.`, 'success');
+        // The successful forecast needs no large status paragraph. The compact
+        // provider attribution remains visible at the foot of the floating overlay.
+        status.hidden = true;
+        setStatus(status, '', 'success');
         summaryCard.querySelector('.le-sfv-copy').textContent = 'One landscape, changing with the forecast. Three little neighbours react to the conditions outside.';
       } catch (error) {
         if (error?.name === 'AbortError') return;
         if (isActive('weather') && window.liveEarthLocationAllowed?.() === true) {
+          status.hidden = false;
           clearForecast();
           summaryCard.querySelector('.le-sfv-copy').textContent = 'The forecast could not be refreshed. The scene is kept neutral until fresh data is available.';
           setStatus(status, `Weather could not be loaded: ${error?.message || 'connection unavailable'}.`, 'error');

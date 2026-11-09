@@ -31,7 +31,7 @@
 
   const STYLE_TEXT = `
     .le-weather-person{transform-box:fill-box;transform-origin:50% 100%;animation:le-weather-idle 4.5s ease-in-out infinite;transition:transform .65s ease}
-    .le-weather-person:nth-child(2){animation-delay:-1.3s}.le-weather-person:nth-child(3){animation-delay:-2.4s}
+    .le-weather-person--two{animation-delay:-1.3s}.le-weather-person--three{animation-delay:-2.4s}
     .le-weather-person .le-weather-shadow{fill:#173b4a33}
     .le-weather-person .le-weather-head{stroke:#704f43;stroke-width:1.15}
     .le-weather-person .le-weather-body{stroke:#263f5c;stroke-width:1.2;stroke-linejoin:round}
@@ -48,8 +48,8 @@
     .le-weather-people[data-activity="snow"] .le-weather-prop--snow{display:block;opacity:1}
     .le-weather-people[data-activity="snow"] .le-weather-person{animation:le-weather-shiver .22s linear infinite}
     .le-weather-people[data-activity="wind"] .le-weather-person{animation:le-weather-gust var(--le-gust-duration,1.6s) ease-in-out infinite alternate}
-    .le-weather-people[data-activity="wind"] .le-weather-person:nth-child(2){animation-delay:-.7s}
-    .le-weather-people[data-activity="wind"] .le-weather-person:nth-child(3){animation-delay:-1.1s}
+    .le-weather-people[data-activity="wind"] .le-weather-person--two{animation-delay:-.7s}
+    .le-weather-people[data-activity="wind"] .le-weather-person--three{animation-delay:-1.1s}
     .le-weather-people[data-activity="wind"][data-gust="strong"] .le-weather-person--three{animation:le-weather-gust-lift .85s ease-in-out infinite alternate}
     .le-weather-people[data-activity="stargaze"] .le-weather-prop--stargaze{display:block;opacity:1}
     .le-weather-people[data-activity="stargaze"] .le-weather-person{animation:le-weather-look-up 5s ease-in-out infinite}
@@ -141,7 +141,8 @@
         </g>
       </g>` : '';
     return `
-      <g class="le-weather-person le-weather-person--${id}" transform="translate(${x} ${y})" data-resident-id="${id}">
+      <g class="le-weather-person-anchor le-weather-person-anchor--${id}" transform="translate(${x} ${y})" data-resident-id="${id}">
+        <g class="le-weather-person le-weather-person--${id}">
         <ellipse class="le-weather-shadow" cx="0" cy="108" rx="20" ry="5"/>
         <g class="le-weather-character-base">
           <path d="M-7 92 L-9 101 M7 92 L10 101" fill="none" stroke="${skin}" stroke-width="7" stroke-linecap="round"/>
@@ -197,6 +198,7 @@
           <path d="M0 84 V112" stroke="#f4d59a" stroke-width="1.4"/>
           <circle cx="0" cy="108" r="4" fill="#ffd98b"/>
         </g>
+        </g>
       </g>`;
   }
 
@@ -246,7 +248,7 @@
   }
 
   const api = Object.freeze({
-    version: '1.1.1',
+    version: '1.2.0',
     getRoster: () => ROSTER,
     getActivityCatalog: () => ACTIVITY_CATALOG,
     renderMarkup,

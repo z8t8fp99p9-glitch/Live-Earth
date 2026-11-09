@@ -27,7 +27,7 @@ vm.runInNewContext(residentsSource, sandbox, { filename: 'Residents/resident-lib
 const library = sandbox.window.LiveEarthResidentLibrary;
 
 assert.ok(library, 'The shared Residents API must register on window');
-assert.equal(library.version, '1.1.1');
+assert.equal(library.version, '1.2.0');
 const roster = library.getRoster();
 assert.equal(roster.length, 3, 'The permanent cast must contain exactly three residents');
 assert.deepEqual(Array.from(roster, person => person.id), ['one', 'two', 'three']);
