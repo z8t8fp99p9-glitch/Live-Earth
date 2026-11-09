@@ -27,7 +27,13 @@ vm.runInNewContext(residentsSource, sandbox, { filename: 'Residents/resident-lib
 const library = sandbox.window.LiveEarthResidentLibrary;
 
 assert.ok(library, 'The shared Residents API must register on window');
-assert.equal(library.version, '1.2.0');
+
+assert.equal(library.version, '1.2.1');
+
+const staleWindow = { LiveEarthResidentLibrary: { version: '1.2.0', mount() {} } };
+vm.runInNewContext(residentsSource, { window: staleWindow }, { filename: 'Residents/resident-library.js' });
+assert.equal(staleWindow.LiveEarthResidentLibrary.version, '1.2.1', 'A newer library must replace a stale global already present in the WebView');
+
 const roster = library.getRoster();
 assert.equal(roster.length, 3, 'The permanent cast must contain exactly three residents');
 assert.deepEqual(Array.from(roster, person => person.id), ['one', 'two', 'three']);
@@ -71,8 +77,10 @@ library.unmount(host);
 assert.equal(host.children.length, 0, 'Unmount must remove the SVG content');
 assert.equal(host.dataset.residentsVersion, undefined, 'Unmount must clear resident ownership state');
 
-assert.ok(weatherSource.includes("import('./Residents/resident-library.js')"), 'Weather must dynamically load the separate reusable library without adding a blocking script tag');
+assert.ok(weatherSource.includes("./Residents/resident-library.js"), 'Weather must load the separate reusable Residents library from the same origin');
 assert.ok(weatherSource.includes('library.mount(residentHost)'), 'Weather must mount residents through the shared API');
+assert.ok(weatherSource.includes("view.root.appendChild(residentHost)"), 'Residents must be positioned in the foreground overlay above the scene');
+assert.ok(weatherSource.includes("residentHost.dataset.residentsMounted = 'true'"), 'Weather must mark a successful Residents mount');
 assert.ok(residentsSource.includes('.le-weather-people[data-activity=\"rain\"]'), 'Resident activity selectors must stay host-owned and reusable across views');
 assert.ok(weatherSource.includes('LiveEarthResidentLibrary?.setActivity(residentHost, state)'), 'Weather forecast selection must drive resident activity');
 assert.ok(weatherSource.includes('LiveEarthResidentLibrary?.unmount(residentHost)'), 'Weather cleanup must unmount residents');

@@ -12,14 +12,23 @@
   }
 
   const { mount, el, setStatus, button, card, attribution, isActive, globe } = runtime;
+  const RESIDENT_LIBRARY_VERSION = '1.2.1';
   let residentLibraryPromise = null;
 
   function ensureResidentLibrary() {
-    if (window.LiveEarthResidentLibrary?.mount) return Promise.resolve(window.LiveEarthResidentLibrary);
+    if (window.LiveEarthResidentLibrary?.version === RESIDENT_LIBRARY_VERSION && window.LiveEarthResidentLibrary?.mount) return Promise.resolve(window.LiveEarthResidentLibrary);
     if (residentLibraryPromise) return residentLibraryPromise;
-    residentLibraryPromise = import('./Residents/resident-library.js').then(() => {
-      if (window.LiveEarthResidentLibrary?.mount) return window.LiveEarthResidentLibrary;
-      throw new Error('The Residents library loaded without registering its API.');
+    residentLibraryPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = new URL('./Residents/resident-library.js', document.baseURI).href;
+      script.async = true;
+      script.onload = () => {
+        const library = window.LiveEarthResidentLibrary;
+        if (library?.version === RESIDENT_LIBRARY_VERSION && library?.mount) resolve(library);
+        else reject(new Error('The Residents script did not provide the required library version.'));
+      };
+      script.onerror = () => reject(new Error('The Residents script could not be loaded.'));
+      document.head.appendChild(script);
     }).catch(error => {
       residentLibraryPromise = null;
       throw error;
@@ -99,6 +108,10 @@
       .le-weather-landscape svg,.le-weather-people svg{display:block;width:100%;height:100%;overflow:visible}
       .le-weather-people{position:absolute;left:0;right:0;bottom:3%;height:43%;z-index:2;overflow:visible}
       .le-weather-people svg{overflow:visible}
+      .le-sfv--weather>.le-weather-resident-overlay{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 112px);height:clamp(168px,28vh,238px);z-index:5;overflow:visible;pointer-events:none}
+      .le-sfv--weather>.le-weather-resident-overlay svg{display:block;width:100%;height:100%;overflow:visible}
+      @media(max-height:720px){.le-sfv--weather>.le-weather-resident-overlay{bottom:calc(env(safe-area-inset-bottom) + 86px);height:clamp(142px,26vh,194px)}}
+      @media(orientation:landscape) and (max-height:520px){.le-sfv--weather>.le-weather-resident-overlay{bottom:calc(env(safe-area-inset-bottom) + 78px);height:42vh}}
       .le-weather-rain,.le-weather-snow{position:absolute;inset:-8% 0 0;overflow:hidden;opacity:0;transition:opacity .5s ease}
       .le-weather-particle{position:absolute;top:-12%;left:var(--particle-x);animation:le-weather-fall var(--particle-duration,1.3s) linear var(--particle-delay,0s) infinite;will-change:transform}
       .le-weather-rain .le-weather-particle{width:1.5px;height:clamp(15px,3.5vh,28px);border-radius:2px;background:linear-gradient(180deg,transparent,#e5f7ffcc);transform:rotate(13deg)}
@@ -345,15 +358,24 @@
     view.root.insertBefore(scene, view.root.firstChild);
     const residentHost = scene.querySelector('[data-resident-host]');
     let residentsDisposed = false;
+    if (residentHost) {
+      residentHost.classList.add('le-weather-resident-overlay');
+      residentHost.setAttribute('aria-hidden', 'true');
+      view.root.appendChild(residentHost);
+    } else {
+      console.error('[LIVE // EARTH] Weather could not create the Residents host.');
+    }
     ensureResidentLibrary().then(library => {
-      if (residentsDisposed || !isActive('weather') || !residentHost?.isConnected) return;
-      library.mount(residentHost);
-      // The forecast may finish before the separately loaded SVG library. Reapply
-      // the latest selected hour after mounting so the cast never falls back to calm.
+      if (residentsDisposed || !residentHost) return;
+      const mounted = library.mount(residentHost);
+      if (!mounted) throw new Error('The Residents library refused the Weather host.');
+      residentHost.dataset.residentsMounted = 'true';
+      // Reapply the latest selected forecast after the SVG has mounted.
       if (forecast.length) renderSelected(selectedIndex);
       else library.setActivity(residentHost, { mode: 'calm', gustLevel: 'normal' });
     }).catch(error => {
-      console.warn('[LIVE // EARTH] The little residents are resting until their library is available.', error);
+      if (!residentsDisposed) residentHost?.setAttribute('data-residents-error', 'true');
+      console.warn('[LIVE // EARTH] Residents could not mount in Weather.', error);
     });
     const { body } = view;
     const status = el('p', 'le-sfv-status', 'Checking Location permission…');
@@ -628,6 +650,7 @@
     return () => {
       residentsDisposed = true;
       window.LiveEarthResidentLibrary?.unmount(residentHost);
+      if (residentHost) delete residentHost.dataset.residentsMounted;
       if (pollTimer) clearInterval(pollTimer);
       pollTimer = 0;
       abortController?.abort(); abortController = null;

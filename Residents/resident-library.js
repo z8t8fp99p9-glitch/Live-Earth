@@ -6,6 +6,7 @@
   'use strict';
 
   const STYLE_ID = 'le-world-residents-library-style';
+  const VERSION = '1.2.1';
   const ROSTER = Object.freeze([
     Object.freeze({ id: 'one', displayName: 'Resident One', x: 92, y: 116, skin: '#f0bd99', shirt: '#e99568', shorts: '#405b86', hair: '#443331', accent: '#f3c36f', signature: 'little side tuft' }),
     Object.freeze({ id: 'two', displayName: 'Resident Two', x: 210, y: 122, skin: '#d89b7b', shirt: '#809fd8', shorts: '#584d86', hair: '#302d35', accent: '#f2a5a0', signature: 'round bob and hair clip' }),
@@ -248,7 +249,7 @@
   }
 
   const api = Object.freeze({
-    version: '1.2.0',
+    version: VERSION,
     getRoster: () => ROSTER,
     getActivityCatalog: () => ACTIVITY_CATALOG,
     renderMarkup,
@@ -257,5 +258,7 @@
     unmount
   });
 
-  if (!window.LiveEarthResidentLibrary) window.LiveEarthResidentLibrary = api;
+  if (!window.LiveEarthResidentLibrary || window.LiveEarthResidentLibrary.version !== VERSION) {
+    window.LiveEarthResidentLibrary = api;
+  }
 })();

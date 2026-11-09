@@ -22,7 +22,16 @@ assert.match(styles, /\.le-sfv--weather \.le-sfv-body>\.le-sfv-card:nth-of-type\
 assert.match(weather, /const night = hour >= 20 \|\| hour < 5;/, 'Night must follow the forecast local hour rather than is_day alone');
 assert.match(weather, /const dawn = hour >= 5 && hour <= 7;/, '05:00-07:00 local forecast must be treated as dawn');
 assert.doesNotMatch(weather, /number\(item\.isDay\) === 0 \|\| hour >= 20/, 'A sunrise is_day flag must not incorrectly keep 05:00 in night mode');
-assert.ok(weather.includes("import('./Residents/resident-library.js')"), 'Weather must continue loading the shared Residents library');
+
+assert.ok(weather.includes("RESIDENT_LIBRARY_VERSION = '1.2.1'"), 'Weather must reject a stale Residents global and require the matching library version');
+assert.match(weather, /script\.src = new URL\('\.\/Residents\/resident-library\.js', document\.baseURI\)\.href/, 'Weather must load Residents as a same-origin script for iOS WebView compatibility');
+assert.match(weather, /residentHost\.classList\.add\('le-weather-resident-overlay'\)/, 'Residents must be promoted into the dedicated foreground overlay');
+assert.match(weather, /view\.root\.appendChild\(residentHost\)/, 'The resident host must be a direct child of the Weather root');
+assert.doesNotMatch(weather, /!residentHost\?\.isConnected/, 'Residents mounting must not be silently skipped by a transient isConnected check');
+assert.match(weather, /residentHost\.dataset\.residentsMounted = 'true'/, 'Successful resident mounting must leave a testable lifecycle marker');
+assert.match(styles, /\.le-sfv--weather>\.le-weather-resident-overlay\{[^}]*z-index:5/, 'Residents must render in front of the landscape and information layer');
+
+assert.ok(weather.includes("./Residents/resident-library.js"), 'Weather must continue loading the shared Residents library');
 assert.ok(weather.includes('LiveEarthResidentLibrary?.setActivity(residentHost, state)'), 'Selected forecast hour must drive resident activity');
 assert.match(weather, /status\.hidden = true;[\s\S]*setStatus\(status, '', 'success'\)/, 'Successful forecast must hide the verbose status paragraph');
 assert.ok(weather.includes("{ text: 'Weather data by ' }"), 'Weather attribution must be compact');
@@ -40,7 +49,7 @@ const sandbox = { window: {}, document: fakeDocument, console };
 vm.runInNewContext(residentSource, sandbox, { filename: 'Residents/resident-library.js' });
 const library = sandbox.window.LiveEarthResidentLibrary;
 assert.ok(library, 'Residents API must register');
-assert.equal(library.version, '1.2.0', 'The shared library version must advance after removing Weather-only layout rules');
+assert.equal(library.version, '1.2.1', 'The shared library version must advance after removing Weather-only layout rules');
 assert.equal(library.getRoster().length, 3, 'The app must retain exactly three neighbours');
 assert.ok(library.getActivityCatalog().morning, 'Morning park activity must be registered');
 
