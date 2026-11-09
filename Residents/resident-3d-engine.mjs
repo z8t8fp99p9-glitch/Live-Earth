@@ -8,7 +8,7 @@ import { createResidentsActivityFramework } from './resident-activity-framework.
 const activityFramework = createResidentsActivityFramework();
 
 const COLORS = {
-  skin: 0xf0bd99, skinShade: 0xd99578, cheek: 0xe98981,
+  skin: 0xf0bd99, skinShade: 0xd99578, cheek: 0xe5a19a,
   hair: 0x49352f, hairLight: 0x735446, hairDark: 0x342927,
   red: 0xb84238, redDark: 0x87312d, redLight: 0xd45d51,
   denim: 0x537ca7, denimDark: 0x385e83, denimLight: 0x7399bd,
@@ -21,7 +21,7 @@ const COLORS = {
 
 const materialCache = new Map();
 const geometryCache = new Map();
-function mat(color, roughness = 0.72, metalness = 0) {
+function mat(color, roughness = 0.84, metalness = 0) {
   const key = `${color}:${roughness}:${metalness}`;
   if (!materialCache.has(key)) materialCache.set(key, new THREE.MeshStandardMaterial({ color, roughness, metalness }));
   return materialCache.get(key);
@@ -30,9 +30,42 @@ function geometry(key, make) {
   if (!geometryCache.has(key)) geometryCache.set(key, make());
   return geometryCache.get(key);
 }
-const sphereGeometry = geometry('sphere-26x18', () => new THREE.SphereGeometry(1, 26, 18));
+const sphereGeometry = geometry('sphere-32x24', () => new THREE.SphereGeometry(1, 32, 24));
+
+// A softly tapered jaw and fuller cheek plane give the head a more sculpted
+// silhouette than a plain ellipsoid while preserving the established scale.
+const residentHeadGeometry = geometry('resident-head-soft-jaw-32x24', () => {
+  const shape = new THREE.SphereGeometry(1, 32, 24);
+  const positions = shape.attributes.position;
+  for (let i = 0; i < positions.count; i++) {
+    const y = positions.getY(i);
+    const lowerFace = Math.max(0, -y - 0.02);
+    const jawTaper = 1 - lowerFace * 0.12;
+    const cheekFullness = 1 + 0.035 * Math.exp(-Math.pow((y + 0.10) / 0.28, 2));
+    positions.setX(i, positions.getX(i) * jawTaper * cheekFullness);
+    positions.setZ(i, positions.getZ(i) * (1 - lowerFace * 0.055));
+  }
+  positions.needsUpdate = true;
+  shape.computeVertexNormals();
+  return shape;
+});
+
+// A gentle shoulder-to-waist profile makes the body read as a volume instead
+// of a round ball. It remains normalized so existing breathing animation and
+// clothing anchors retain their original dimensions.
+const residentTorsoGeometry = geometry('resident-torso-tailored-36', () => new THREE.LatheGeometry([
+  new THREE.Vector2(0.00, -1.00),
+  new THREE.Vector2(0.58, -1.00),
+  new THREE.Vector2(0.78, -0.88),
+  new THREE.Vector2(0.94, -0.54),
+  new THREE.Vector2(1.00, -0.08),
+  new THREE.Vector2(0.96, 0.42),
+  new THREE.Vector2(0.78, 0.80),
+  new THREE.Vector2(0.52, 0.98),
+  new THREE.Vector2(0.00, 1.00)
+], 36));
 function sphere(parent, color, position, scale, options = {}) {
-  const mesh = new THREE.Mesh(sphereGeometry, mat(color, options.roughness ?? 0.72, options.metalness ?? 0));
+  const mesh = new THREE.Mesh(sphereGeometry, mat(color, options.roughness ?? 0.84, options.metalness ?? 0));
   mesh.position.set(...position);
   mesh.scale.set(...scale);
   mesh.castShadow = false;
@@ -42,8 +75,8 @@ function sphere(parent, color, position, scale, options = {}) {
 function capsule(parent, color, position, radius, length, options = {}) {
   const key = `capsule:${radius}:${length}`;
   const mesh = new THREE.Mesh(
-    geometry(key, () => new THREE.CapsuleGeometry(radius, length, 8, 12)),
-    mat(color, options.roughness ?? 0.76, options.metalness ?? 0)
+    geometry(key, () => new THREE.CapsuleGeometry(radius, length, 10, 16)),
+    mat(color, options.roughness ?? 0.86, options.metalness ?? 0)
   );
   mesh.position.set(...position);
   parent.add(mesh);
@@ -53,7 +86,7 @@ function capsule(parent, color, position, radius, length, options = {}) {
 function box(parent, color, position, scale, options = {}) {
   const key = `box:${scale.join(',')}`;
   const geo = geometry(key, () => new THREE.BoxGeometry(...scale));
-  const mesh = new THREE.Mesh(geo, mat(color, options.roughness ?? 0.74, options.metalness ?? 0));
+  const mesh = new THREE.Mesh(geo, mat(color, options.roughness ?? 0.88, options.metalness ?? 0));
   mesh.position.set(...position);
   parent.add(mesh);
   return mesh;
@@ -67,7 +100,7 @@ function cylinder(parent, color, position, radiusTop, radiusBottom, height, segm
 }
 function tube(parent, points, color, radius = 0.012, tubularSegments = 12) {
   const curve = new THREE.CatmullRomCurve3(points.map(point => new THREE.Vector3(...point)));
-  const mesh = new THREE.Mesh(new THREE.TubeGeometry(curve, tubularSegments, radius, 7, false), mat(color, 0.68));
+  const mesh = new THREE.Mesh(new THREE.TubeGeometry(curve, tubularSegments, radius, 7, false), mat(color, 0.86));
   parent.add(mesh);
   return mesh;
 }
@@ -83,37 +116,46 @@ function createFace(head, person) {
   const eyes = [];
   const brows = [];
   const cheeks = [];
-  // Soft ears with warm inner detail keep the silhouette readable at small scale.
+  // Ears now have a shallow inner bowl and a fine raised helix, so they sit
+  // naturally against the head rather than reading as separate round beads.
   for (const side of [-1, 1]) {
-    sphere(head, COLORS.skin, [side * 0.292, -0.015, 0.008], [0.075, 0.095, 0.075]);
-    sphere(head, COLORS.skinShade, [side * 0.303, -0.025, 0.064], [0.035, 0.052, 0.018]);
+    sphere(head, COLORS.skin, [side * 0.292, -0.015, 0.008], [0.069, 0.088, 0.073], { roughness: 0.88 });
+    sphere(head, COLORS.skinShade, [side * 0.300, -0.025, 0.061], [0.026, 0.043, 0.014], { roughness: 0.92 });
+    tube(head, [[side * 0.279, 0.035, 0.049], [side * 0.315, 0.015, 0.072], [side * 0.319, -0.040, 0.069], [side * 0.286, -0.075, 0.052]], COLORS.skinShade, 0.006, 10);
   }
   for (const x of [-0.105, 0.105]) {
     const eye = joint(head, [x, 0.035, 0.247]);
-    sphere(eye, COLORS.white, [0, 0, 0], [0.064, 0.079, 0.031], { roughness: 0.34 });
-    sphere(eye, COLORS.eye, [0.008, -0.004, 0.025], [0.034, 0.047, 0.018], { roughness: 0.28 });
-    sphere(eye, 0x241b19, [0.009, -0.007, 0.039], [0.018, 0.029, 0.009], { roughness: 0.24 });
-    sphere(eye, 0xffffff, [-0.006, 0.018, 0.047], [0.012, 0.015, 0.008], { roughness: 0.2 });
-    sphere(eye, 0xffffff, [0.022, -0.019, 0.043], [0.005, 0.006, 0.004], { roughness: 0.2 });
+    sphere(eye, COLORS.white, [0, 0, 0], [0.056, 0.068, 0.032], { roughness: 0.30 });
+    sphere(eye, COLORS.eye, [0.008, -0.004, 0.026], [0.030, 0.041, 0.019], { roughness: 0.26 });
+    sphere(eye, 0x241b19, [0.009, -0.007, 0.041], [0.016, 0.026, 0.010], { roughness: 0.22 });
+    sphere(eye, 0xffffff, [-0.006, 0.018, 0.050], [0.010, 0.013, 0.008], { roughness: 0.18 });
+    sphere(eye, 0xffffff, [0.022, -0.019, 0.045], [0.004, 0.005, 0.003], { roughness: 0.18 });
+    // A thin upper lid and a quieter lower rim integrate the eyeball into the face.
+    tube(eye, [[-0.052, 0.012, 0.012], [-0.030, 0.055, 0.019], [0.006, 0.068, 0.018], [0.040, 0.048, 0.015], [0.052, 0.012, 0.010]], COLORS.skinShade, 0.0055, 12);
+    tube(eye, [[-0.043, -0.035, 0.011], [0.000, -0.055, 0.013], [0.043, -0.034, 0.010]], 0xd99d83, 0.004, 9);
     eyes.push(eye);
 
-    // Brows have their own pivots, allowing subtle surprise, concentration and joy.
+    // Brows have independent pivots for subtle surprise, concentration and joy.
     const brow = joint(head, [x, 0.13, 0.25]);
-    tube(brow, [[-0.052, 0, 0.005], [-0.018, 0.018, 0.023], [0.035, 0.005, 0.01]], COLORS.hairDark, 0.011, 9);
+    tube(brow, [[-0.048, 0, 0.005], [-0.018, 0.016, 0.022], [0.032, 0.004, 0.01]], COLORS.hairDark, 0.009, 9);
     brows.push(brow);
 
-    const cheek = sphere(head, COLORS.cheek, [x * 1.95, -0.105, 0.235], [0.055, 0.031, 0.015], { roughness: 0.9 });
+    // Blush is diffused and smaller, sitting within the cheek plane.
+    const cheek = sphere(head, COLORS.cheek, [x * 1.92, -0.105, 0.232], [0.043, 0.021, 0.010], { roughness: 0.96 });
     cheeks.push(cheek);
   }
-  sphere(head, 0xe6a88c, [0, -0.045, 0.286], [0.034, 0.027, 0.031]);
-  sphere(head, 0xf2c2a5, [0, -0.026, 0.278], [0.021, 0.035, 0.022]);
-  sphere(head, 0xc98c77, [-0.012, -0.064, 0.302], [0.006, 0.004, 0.004]);
-  sphere(head, 0xc98c77, [0.012, -0.064, 0.302], [0.006, 0.004, 0.004]);
+  // A bridge, soft tip and tiny nostril shadows make the nose read in profile.
+  sphere(head, 0xe2a58d, [0, -0.025, 0.274], [0.023, 0.052, 0.035], { roughness: 0.90 });
+  sphere(head, 0xf0b79a, [0, -0.071, 0.296], [0.031, 0.025, 0.027], { roughness: 0.88 });
+  sphere(head, 0xf2c2a5, [-0.006, -0.063, 0.318], [0.010, 0.006, 0.004], { roughness: 0.94 });
+  for (const side of [-1, 1]) {
+    sphere(head, 0xb98070, [side * 0.014, -0.086, 0.309], [0.0045, 0.0032, 0.003], { roughness: 0.98 });
+  }
 
   // Gentle smile and lower-lip highlight remain the default expression.
   const smile = joint(head, [0, 0, 0]);
-  tube(smile, [[-0.052, -0.165, 0.255], [-0.026, -0.189, 0.276], [0.012, -0.192, 0.279], [0.052, -0.164, 0.255]], 0x965b50, 0.012, 12);
-  sphere(smile, 0xc98278, [0, -0.197, 0.268], [0.022, 0.007, 0.007]);
+  tube(smile, [[-0.050, -0.163, 0.254], [-0.025, -0.186, 0.275], [0.012, -0.188, 0.278], [0.050, -0.162, 0.254]], 0x925c52, 0.009, 14);
+  sphere(smile, 0xc98278, [0, -0.192, 0.269], [0.018, 0.005, 0.006], { roughness: 0.92 });
 
   // A small open-mouth smile appears only during joyful action beats.
   const openMouth = joint(head, [0, -0.174, 0.274]);
@@ -132,7 +174,7 @@ function createFace(head, person) {
 function addHair(head, person) {
   const hairRoot = joint(head, [0, 0, 0]);
   const base = person.id === 'blue' ? 0x493a35 : COLORS.hair;
-  sphere(hairRoot, base, [0, 0.155, -0.025], [0.326, 0.225, 0.29]);
+  sphere(hairRoot, base, [0, 0.155, -0.025], [0.326, 0.225, 0.29], { roughness: 0.94 });
   if (person.id === 'lady') {
     // Chestnut bob: layered side locks, curved fringe and soft highlights.
     for (const side of [-1, 1]) {
@@ -147,6 +189,9 @@ function addHair(head, person) {
       lock.rotation.z = (i - 2.5) * -0.09;
     }
     tube(hairRoot, [[-0.19, 0.12, 0.275], [-0.05, 0.19, 0.294], [0.09, 0.17, 0.29], [0.20, 0.10, 0.27]], 0x8a6651, 0.007, 14);
+    for (const side of [-1, 1]) {
+      tube(hairRoot, [[side * 0.12, 0.22, 0.235], [side * 0.19, 0.16, 0.265], [side * 0.25, 0.04, 0.20]], 0x6c4d3d, 0.006, 12);
+    }
   } else {
     // Distinct swept curls instead of a single helmet-like cap.
     for (let i = 0; i < 15; i++) {
@@ -163,22 +208,29 @@ function addHair(head, person) {
       tuft.rotation.z = -0.22 + i * 0.1;
     }
     tube(hairRoot, [[-0.20, 0.22, 0.245], [-0.08, 0.30, 0.27], [0.06, 0.30, 0.27], [0.18, 0.23, 0.24]], 0x785947, 0.006, 14);
+    // Fine curved strands catch the key light and connect the curls into a cap.
+    for (let i = 0; i < 5; i++) {
+      const x = -0.17 + i * 0.085;
+      const z = 0.238 - Math.abs(x) * 0.08;
+      tube(hairRoot, [[x - 0.025, 0.19, z], [x, 0.255 + Math.sin(i * 0.8) * 0.018, z + 0.025], [x + 0.025, 0.29, z - 0.005]], i % 2 ? 0x684d40 : 0x755645, 0.0045, 10);
+    }
   }
   return hairRoot;
 }
 
 function makeHand(parent, side, skinColor) {
   const hand = new THREE.Group();
-  sphere(hand, skinColor, [0, -0.035, 0.02], [0.073, 0.082, 0.052]);
-  // Four short, softly rounded fingers and a separate thumb make open-hand poses legible.
-  const fingerLengths = [0.052, 0.064, 0.059, 0.047];
+  sphere(hand, skinColor, [0, -0.035, 0.02], [0.073, 0.082, 0.052], { roughness: 0.88 });
+  // Individually rounded fingers and a tapered thumb make the hand read as a
+  // small articulated form while retaining the existing rig pivot.
+  const fingerLengths = [0.050, 0.061, 0.056, 0.045];
   for (let i = 0; i < 4; i++) {
-    const x = -0.047 + i * 0.031;
-    sphere(hand, skinColor, [x, -0.105 - (i === 1 ? 0.006 : 0), 0.022], [0.016, fingerLengths[i], 0.018], { segments: 14, rings: 10 });
-    sphere(hand, skinColor, [x, -0.145 - (i === 1 ? 0.006 : 0), 0.024], [0.014, 0.018, 0.016], { segments: 12, rings: 8 });
+    const x = -0.046 + i * 0.030;
+    const finger = capsule(hand, skinColor, [x, -0.104 - (i === 1 ? 0.005 : 0), 0.022], 0.013, fingerLengths[i], { roughness: 0.88 });
+    finger.rotation.z = (i - 1.5) * 0.035;
   }
-  const thumb = sphere(hand, skinColor, [side * 0.078, -0.055, 0.025], [0.022, 0.048, 0.02]);
-  thumb.rotation.z = side * -0.45;
+  const thumb = capsule(hand, skinColor, [side * 0.071, -0.064, 0.025], 0.018, 0.043, { roughness: 0.88 });
+  thumb.rotation.z = side * -0.48;
   parent.add(hand);
   return hand;
 }
@@ -202,9 +254,9 @@ function makeArm(root, side, sleeveColor, skinColor) {
 function makeShoe(foot, person) {
   const isBoot = person.id === 'lady';
   const shoe = isBoot ? COLORS.boots : person.id === 'red' ? 0x5e6677 : 0x68758a;
-  sphere(foot, shoe, [0, 0.025, 0.055], [0.13, 0.073, 0.18]);
-  sphere(foot, isBoot ? COLORS.bootLight : 0xe6e7e9, [0, 0.052, 0.13], [0.105, 0.048, 0.105]);
-  sphere(foot, COLORS.sole, [0, -0.035, 0.06], [0.135, 0.025, 0.19]);
+  sphere(foot, shoe, [0, 0.025, 0.055], [0.13, 0.073, 0.18], { roughness: 0.62 });
+  sphere(foot, isBoot ? COLORS.bootLight : 0xe6e7e9, [0, 0.052, 0.13], [0.105, 0.048, 0.105], { roughness: 0.66 });
+  sphere(foot, COLORS.sole, [0, -0.035, 0.06], [0.135, 0.025, 0.19], { roughness: 0.82 });
   for (let i = 0; i < 3; i++) {
     const z = 0.01 + i * 0.035;
     tube(foot, [[-0.035, 0.092, z], [0, 0.096, z + 0.01], [0.035, 0.092, z]], isBoot ? 0xc18c58 : 0xe9edf1, 0.006, 6);
@@ -284,13 +336,24 @@ function addClothing(root, person, torso) {
 function createCharacter(person) {
   const root = new THREE.Group();
   root.position.y = 0;
-  const shadow = new THREE.Mesh(geometry('ground-shadow', () => new THREE.CircleGeometry(0.34, 28)), new THREE.MeshBasicMaterial({ color: 0x173b4a, transparent: true, opacity: 0.15, depthWrite: false }));
+  const facingYaw = person.id === 'red' ? 0.085 : person.id === 'blue' ? -0.085 : 0;
+  root.rotation.y = facingYaw;
+  const shadow = new THREE.Mesh(geometry('ground-shadow', () => new THREE.CircleGeometry(0.34, 32)), new THREE.MeshBasicMaterial({ color: 0x183b39, transparent: true, opacity: 0.075, depthWrite: false }));
   shadow.rotation.x = -Math.PI / 2;
   shadow.position.y = 0.008;
+  shadow.scale.set(1.42, 0.72, 1);
   root.add(shadow);
+  const contactShadow = new THREE.Mesh(geometry('ground-contact-shadow', () => new THREE.CircleGeometry(0.19, 28)), new THREE.MeshBasicMaterial({ color: 0x12332f, transparent: true, opacity: 0.085, depthWrite: false }));
+  contactShadow.rotation.x = -Math.PI / 2;
+  contactShadow.position.y = 0.010;
+  contactShadow.scale.set(1.25, 0.78, 1);
+  root.add(contactShadow);
 
   const shirt = person.id === 'red' ? COLORS.red : person.id === 'lady' ? COLORS.cream : COLORS.navy;
-  const torso = sphere(root, shirt, [0, 1.04, 0], [0.305, 0.375, 0.215]);
+  const torso = new THREE.Mesh(residentTorsoGeometry, mat(shirt, 0.91));
+  torso.position.set(0, 1.04, 0);
+  torso.scale.set(0.305, 0.375, 0.215);
+  root.add(torso);
   const clothing = addClothing(root, person, torso);
   const sleeve = person.id === 'red' ? COLORS.red : person.id === 'lady' ? COLORS.cream : COLORS.blue;
   const arms = [makeArm(root, -1, sleeve, COLORS.skin), makeArm(root, 1, sleeve, COLORS.skin)];
@@ -299,7 +362,9 @@ function createCharacter(person) {
   // reads as one soft character rather than a floating head on a torso.
   capsule(root, COLORS.skin, [0, 1.385, -0.005], 0.105, 0.12);
   const head = joint(root, [0, 1.625, 0]);
-  sphere(head, COLORS.skin, [0, 0, 0], [0.305, 0.34, 0.27]);
+  const headMesh = new THREE.Mesh(residentHeadGeometry, mat(COLORS.skin, 0.88));
+  headMesh.scale.set(0.305, 0.34, 0.27);
+  head.add(headMesh);
   const hair = addHair(head, person);
   const face = createFace(head, person);
   const eyes = face.eyes;
@@ -312,7 +377,7 @@ function createCharacter(person) {
   }
 
   const accessories = createAccessories(root, person);
-  return { root, torso, head, hair, face, eyes, arms, legs, accessories, clothing, shadow, person, baseX: 0 };
+  return { root, torso, head, hair, face, eyes, arms, legs, accessories, clothing, shadow, contactShadow, person, facingYaw, baseX: 0 };
 }
 
 function createUmbrella(parent, color) {
@@ -428,7 +493,7 @@ function createAccessoriesVisibility(actors, props, mode) {
 }
 
 function resetActor(actor) {
-  actor.root.rotation.set(0, 0, 0);
+  actor.root.rotation.set(0, actor.facingYaw || 0, 0);
   actor.root.position.set(actor.baseX, 0, 0);
   actor.torso.scale.y = 0.375;
   actor.head.rotation.set(0, 0, 0);
@@ -666,8 +731,8 @@ function poseActor(actor, mode, time, index, state, playBeat) {
 export function createResidents3D(canvas, roster, initialState = {}) {
   const scene = new THREE.Scene();
   const camera = new THREE.OrthographicCamera(-2.2, 2.2, 1.16, -1.16, 0.1, 40);
-  camera.position.set(0, 1.14, 8);
-  camera.lookAt(0, 1.13, 0);
+  camera.position.set(0.16, 1.42, 8);
+  camera.lookAt(0, 1.12, 0);
 
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'low-power' });
   renderer.setClearColor(0x000000, 0);
@@ -677,13 +742,13 @@ export function createResidents3D(canvas, roster, initialState = {}) {
   renderer.toneMappingExposure = 1.12;
 
   scene.add(new THREE.HemisphereLight(0xfff7ed, 0x60756d, 1.85));
-  const key = new THREE.DirectionalLight(0xffefdf, 1.9);
+  const key = new THREE.DirectionalLight(0xffefdf, 1.75);
   key.position.set(-3.2, 5.2, 6);
   scene.add(key);
-  const fill = new THREE.DirectionalLight(0xd4e5ff, 0.72);
+  const fill = new THREE.DirectionalLight(0xd4e5ff, 0.82);
   fill.position.set(4, 2.4, 4);
   scene.add(fill);
-  const rim = new THREE.DirectionalLight(0xffd6a6, 1.0);
+  const rim = new THREE.DirectionalLight(0xffd6a6, 0.92);
   rim.position.set(0, 3, -3);
   scene.add(rim);
 
