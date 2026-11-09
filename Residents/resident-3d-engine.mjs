@@ -492,7 +492,35 @@ function easeActorPose(actor, dt) {
   });
 }
 
-function poseActor(actor, mode, time, index, state) {
+function getPlayBeat(time, actors) {
+  // A gentle three-way pass: each resident receives, pauses, then sends the
+  // ball onward. Positions come from the responsive actor layout, not fixed
+  // screen coordinates, so the interaction stays aligned on narrow screens.
+  const segmentDuration = 2.05;
+  const travelDuration = 1.48;
+  const cycleDuration = segmentDuration * actors.length;
+  const cycleTime = ((time % cycleDuration) + cycleDuration) % cycleDuration;
+  const fromIndex = Math.floor(cycleTime / segmentDuration);
+  const localTime = cycleTime - fromIndex * segmentDuration;
+  const toIndex = (fromIndex + 1) % actors.length;
+  const progress = Math.min(1, Math.max(0, localTime / travelDuration));
+  const eased = progress * progress * (3 - 2 * progress);
+  const fromX = actors[fromIndex].baseX;
+  const toX = actors[toIndex].baseX;
+  const kick = Math.max(0, 1 - Math.abs(localTime - 0.14) / 0.18);
+  const receive = Math.max(0, 1 - Math.abs(localTime - travelDuration) / 0.20);
+
+  return {
+    fromIndex,
+    toIndex,
+    ballX: fromX + (toX - fromX) * eased,
+    ballY: 0.145 + Math.sin(progress * Math.PI) * 0.065,
+    kick,
+    receive
+  };
+}
+
+function poseActor(actor, mode, time, index, state, playBeat) {
   const phase = time * 2.8 + index * 1.37;
   const wave = Math.sin(phase);
   const left = actor.arms[0];
@@ -534,7 +562,7 @@ function poseActor(actor, mode, time, index, state) {
       actor.head.rotation.z = -0.06;
     }
   } else if (mode === 'play' || mode === 'walk') {
-    walkCycle(actor, time, index, mode === 'play' ? 5.0 : 3.35, mode === 'play' ? 0.58 : 0.40, mode === 'play' ? 0.085 : 0.025);
+    walkCycle(actor, time, index, mode === 'play' ? 4.0 : 3.35, mode === 'play' ? 0.33 : 0.40, mode === 'play' ? 0.045 : 0.025);
     if (mode === 'play') {
       // The boys turn toward the lady and wave inward; she answers with a
       // small alternating hand gesture. Their timing is offset so this reads
@@ -559,6 +587,34 @@ function poseActor(actor, mode, time, index, state) {
         left.shoulder.rotation.z = -0.68 - Math.sin(time * 3.4 + 0.7) * 0.20;
         left.elbow.rotation.x = -0.46;
         left.wrist.rotation.z = Math.sin(time * 3.9 + 0.5) * 0.10;
+      }
+
+      // Keep the friendly group pose, but let each resident respond to the
+      // ball: Red is eager, the lady's touch is lighter, and Blue returns it
+      // with a small curious head tilt. The ball remains near foot level.
+      if (playBeat) {
+        const lookX = Math.max(-0.17, Math.min(0.17, (playBeat.ballX - actor.baseX) * 0.14));
+        actor.head.rotation.y = actor.head.rotation.y * 0.55 + lookX * 0.45;
+        const passing = playBeat.fromIndex === index;
+        const receiving = playBeat.toIndex === index;
+        const touch = passing ? playBeat.kick : receiving ? playBeat.receive : 0;
+        if (touch > 0) {
+          // The inside foot leads the pass: right foot for Red and the lady,
+          // left foot for Blue on the right.
+          const insideLeg = actor.legs[index === 2 ? 0 : 1];
+          const personality = isRed ? 1 : isLady ? 0.72 : 0.88;
+          insideLeg.hip.rotation.x -= touch * 0.31 * personality;
+          insideLeg.knee.rotation.x = Math.max(insideLeg.knee.rotation.x, touch * 0.22 * personality);
+          insideLeg.ankle.rotation.x += touch * 0.15 * personality;
+          if (isRed) {
+            actor.root.position.y += touch * 0.024;
+            actor.head.rotation.z += touch * 0.035;
+          } else if (isLady) {
+            actor.root.rotation.z += touch * 0.026;
+          } else {
+            actor.head.rotation.z -= touch * 0.042;
+          }
+        }
       }
     }
   } else if (mode === 'rain') {
@@ -741,10 +797,11 @@ export function createResidents3D(canvas, roster, initialState = {}) {
     const dt = Math.min(0.06, (now - (lastRender || now)) / 1000);
     lastRender = now;
     elapsed += dt * (reducedMotion ? 0.28 : 1);
+    const playBeat = mode === 'play' ? getPlayBeat(elapsed, actors) : null;
 
     actors.forEach((actor, index) => {
       resetActor(actor);
-      poseActor(actor, mode, elapsed, index, state);
+      poseActor(actor, mode, elapsed, index, state, playBeat);
 
       // Small secondary motions keep the trio expressive without making
       // them bounce continuously: head follow-through, relaxed wrists,
@@ -794,7 +851,9 @@ export function createResidents3D(canvas, roster, initialState = {}) {
       actor.accessories.fan.rotation.z = mode === 'heat' && actor.person.id === 'lady' ? Math.sin(elapsed * 8) * 0.40 : 0;
     });
 
-    props.ball.position.set(Math.sin(elapsed * 2.1) * 0.86, 0.20 + Math.abs(Math.sin(elapsed * 4.2)) * 0.42, 0.36);
+    if (playBeat) {
+      props.ball.position.set(playBeat.ballX, playBeat.ballY, 0.36);
+    }
     props.butterfly.position.set(0.1 + Math.sin(elapsed * 1.65) * 0.30, 2.05 + Math.sin(elapsed * 2.7) * 0.16, 0.48);
     props.butterfly.rotation.z = Math.sin(elapsed * 4) * 0.20;
     props.wingLeft.rotation.z = Math.sin(elapsed * 12) * 0.55;
