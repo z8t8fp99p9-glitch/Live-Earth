@@ -41,4 +41,11 @@ assert.ok(source.includes('renderer.forceContextLoss?.()'));
 assert.ok(source.includes('Shared primitive geometry/materials remain cached for the next Weather visit'), 'Shared Three.js resources must survive view unmount/remount');
 assert.ok(!source.includes('GLTFLoader') && !source.includes('https://'), 'No external model or network asset dependency may be added');
 
+
+assert.ok(source.includes('function capsule('), 'Smooth capsule geometry should blend limb segments');
+assert.ok(source.includes('new THREE.CapsuleGeometry'), 'Arms and legs should use rounded continuous geometry');
+assert.ok(source.includes('const lowerLegColor'), 'Lower legs should retain character-specific clothing/skin');
+assert.ok(source.includes('blended neck'), 'Head and torso should have a soft neck transition');
+assert.ok(source.includes('0xf2c2a5'), 'Face refinement should include subtle nose shaping');
+
 console.log('Residents 3D refinement: faces, rig joints, outfits, movement and mobile lifecycle checks passed.');

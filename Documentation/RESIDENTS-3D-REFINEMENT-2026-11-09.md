@@ -29,3 +29,8 @@ The primitive geometries and palette materials are shared module resources; per-
 ## Protected boundaries
 
 No Weather layout, forecast or Location behaviour, Residents preview controls, Global Orb, Home/Earth Engine, Moon, Sun, Stacks, service-worker build identity, update-manager build identity or database code is changed by this patch.
+
+
+## Refinement pass v134
+
+The next polish pass replaces visibly separated limb ellipsoids with overlapping rounded capsule segments while retaining independent shoulder, elbow, hip and knee pivots. It adds a blended neck transition, more subtle nose shaping, softer facial detail and gentler key/fill lighting. Hair motion is slightly more expressive while remaining restrained in calm weather. The established three identities, outfit palettes, preview modes, scene composition, and Weather layout remain unchanged.
