@@ -32,6 +32,24 @@ function geometry(key, make) {
 }
 const sphereGeometry = geometry('sphere-32x24', () => new THREE.SphereGeometry(1, 32, 24));
 
+// One continuous scalp shell replaces the clustered bead-like hair base.
+// The lower edge remains open so the forehead and side locks keep their shape.
+const residentHairCapGeometry = geometry('resident-hair-cap-40x28', () =>
+  new THREE.SphereGeometry(1, 40, 28, 0, Math.PI * 2, 0, 2.20)
+);
+
+// A thin, softly flared shell gives the pinafore skirt a real hem and inner
+// return instead of the flat cut edge of a simple cylinder.
+const residentSkirtGeometry = geometry('resident-skirt-soft-hem-40', () => new THREE.LatheGeometry([
+  new THREE.Vector2(0.255, 0.220),
+  new THREE.Vector2(0.265, 0.165),
+  new THREE.Vector2(0.305, -0.105),
+  new THREE.Vector2(0.415, -0.220),
+  new THREE.Vector2(0.405, -0.198),
+  new THREE.Vector2(0.292, -0.092),
+  new THREE.Vector2(0.252, 0.165)
+], 40));
+
 // A softly tapered jaw and fuller cheek plane give the head a more sculpted
 // silhouette than a plain ellipsoid while preserving the established scale.
 const residentHeadGeometry = geometry('resident-head-soft-jaw-32x24', () => {
@@ -104,6 +122,36 @@ function tube(parent, points, color, radius = 0.012, tubularSegments = 12) {
   parent.add(mesh);
   return mesh;
 }
+
+function curvedFabricPanel(parent, color, drawShape, options = {}) {
+  const shape = new THREE.Shape();
+  drawShape(shape);
+  const depth = options.depth ?? 0.032;
+  const bevel = options.bevel ?? 0.007;
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth,
+    bevelEnabled: true,
+    bevelSegments: 2,
+    steps: 1,
+    bevelSize: bevel,
+    bevelThickness: bevel * 0.7,
+    curveSegments: 16
+  });
+  const positions = geometry.attributes.position;
+  const maxWidth = options.maxWidth ?? 0.22;
+  const curvature = options.curvature ?? 0.04;
+  const baseZ = options.baseZ ?? 0.14;
+  for (let i = 0; i < positions.count; i++) {
+    const x = positions.getX(i);
+    const ratio = Math.min(1, Math.abs(x) / maxWidth);
+    positions.setZ(i, positions.getZ(i) + baseZ + curvature * (1 - ratio * ratio));
+  }
+  positions.needsUpdate = true;
+  geometry.computeVertexNormals();
+  const panel = new THREE.Mesh(geometry, mat(color, options.roughness ?? 0.9));
+  parent.add(panel);
+  return panel;
+}
 function joint(parent, position) {
   const group = new THREE.Group();
   group.position.set(...position);
@@ -124,6 +172,8 @@ function createFace(head, person) {
     tube(head, [[side * 0.279, 0.035, 0.049], [side * 0.315, 0.015, 0.072], [side * 0.319, -0.040, 0.069], [side * 0.286, -0.075, 0.052]], COLORS.skinShade, 0.006, 10);
   }
   for (const x of [-0.105, 0.105]) {
+    // A warm recessed socket creates a transition from cheek to eyelid.
+    sphere(head, 0xdba58d, [x, 0.035, 0.238], [0.067, 0.080, 0.018], { roughness: 0.96 });
     const eye = joint(head, [x, 0.035, 0.247]);
     sphere(eye, COLORS.white, [0, 0, 0], [0.056, 0.068, 0.032], { roughness: 0.30 });
     sphere(eye, COLORS.eye, [0.008, -0.004, 0.026], [0.030, 0.041, 0.019], { roughness: 0.26 });
@@ -174,45 +224,69 @@ function createFace(head, person) {
 function addHair(head, person) {
   const hairRoot = joint(head, [0, 0, 0]);
   const base = person.id === 'blue' ? 0x493a35 : COLORS.hair;
-  sphere(hairRoot, base, [0, 0.155, -0.025], [0.326, 0.225, 0.29], { roughness: 0.94 });
+  const cap = new THREE.Mesh(residentHairCapGeometry, mat(base, 0.94));
+  cap.position.set(0, 0.145, -0.025);
+  cap.scale.set(0.337, 0.245, 0.30);
+  hairRoot.add(cap);
+
+  // Keep every raised strand close to the curved surface of the cap. This
+  // avoids the detached, floating-lock look while retaining sculpted volume.
+  const hairSurfaceZ = (x, y, lift = 0.012) => {
+    const remaining = 1 - (x / 0.337) ** 2 - ((y - 0.145) / 0.245) ** 2;
+    return -0.025 + 0.30 * Math.sqrt(Math.max(0.035, remaining)) + lift;
+  };
+  const surfacePath = points => points.map(([x, y, lift = 0.012]) => [x, y, hairSurfaceZ(x, y, lift)]);
+
   if (person.id === 'lady') {
-    // Chestnut bob: layered side locks, curved fringe and soft highlights.
+    // A continuous chestnut bob: a smooth cap, two soft side panels and a
+    // swept fringe. The side locks overlap the cap instead of forming beads.
     for (const side of [-1, 1]) {
-      sphere(hairRoot, base, [side * 0.255, -0.045, -0.015], [0.105, 0.205, 0.13]);
-      sphere(hairRoot, 0x5b4035, [side * 0.268, -0.13, 0.035], [0.075, 0.105, 0.09]);
-      tube(hairRoot, [[side * 0.28, 0.16, 0.06], [side * 0.30, 0.0, 0.075], [side * 0.26, -0.15, 0.075]], 0x795847, 0.006, 10);
+      const sideLock = capsule(hairRoot, base, [side * 0.255, -0.055, 0.018], 0.082, 0.22, { roughness: 0.94 });
+      sideLock.rotation.z = side * -0.045;
+      tube(hairRoot, surfacePath([
+        [side * 0.275, 0.16, 0.012],
+        [side * 0.294, 0.045, 0.012],
+        [side * 0.276, -0.10, 0.012]
+      ]), 0x795847, 0.0065, 14);
     }
-    for (let i = 0; i < 6; i++) {
-      const x = -0.22 + i * 0.088;
-      const y = 0.205 + Math.sin(i * 0.85) * 0.025;
-      const lock = sphere(hairRoot, i % 3 === 0 ? 0x62483a : base, [x, y, 0.185], [0.105, 0.105, 0.115]);
-      lock.rotation.z = (i - 2.5) * -0.09;
-    }
-    tube(hairRoot, [[-0.19, 0.12, 0.275], [-0.05, 0.19, 0.294], [0.09, 0.17, 0.29], [0.20, 0.10, 0.27]], 0x8a6651, 0.007, 14);
+    tube(hairRoot, surfacePath([
+      [-0.245, 0.155, 0.018], [-0.19, 0.245, 0.020],
+      [-0.095, 0.278, 0.020], [0.015, 0.270, 0.020],
+      [0.14, 0.225, 0.020], [0.235, 0.145, 0.018]
+    ]), 0x5b4035, 0.026, 24);
+    tube(hairRoot, surfacePath([
+      [-0.16, 0.235, 0.026], [-0.10, 0.295, 0.026],
+      [0.005, 0.305, 0.026], [0.12, 0.260, 0.026]
+    ]), 0x8a6651, 0.0065, 18);
     for (const side of [-1, 1]) {
-      tube(hairRoot, [[side * 0.12, 0.22, 0.235], [side * 0.19, 0.16, 0.265], [side * 0.25, 0.04, 0.20]], 0x6c4d3d, 0.006, 12);
+      tube(hairRoot, surfacePath([
+        [side * 0.105, 0.235, 0.014],
+        [side * 0.178, 0.165, 0.014],
+        [side * 0.235, 0.055, 0.014]
+      ]), 0x6c4d3d, 0.0055, 12);
     }
   } else {
-    // Distinct swept curls instead of a single helmet-like cap.
-    for (let i = 0; i < 15; i++) {
-      const angle = (i / 15) * Math.PI * 2;
-      const radius = i % 4 === 0 ? 0.245 : 0.195;
-      const curl = sphere(hairRoot, i % 4 === 0 ? 0x62483c : base,
-        [Math.cos(angle) * radius, 0.19 + Math.sin(i * 2.1) * 0.035, Math.sin(angle) * 0.18 - 0.005],
-        [0.09, 0.105 + (i % 3) * 0.008, 0.085]);
-      curl.rotation.z = Math.cos(angle) * 0.24;
-    }
-    for (let i = 0; i < 5; i++) {
-      const x = -0.19 + i * 0.09;
-      const tuft = sphere(hairRoot, i % 2 ? base : 0x60483c, [x, 0.265 + Math.sin(i * 1.4) * 0.035, 0.178], [0.105, 0.085, 0.105]);
-      tuft.rotation.z = -0.22 + i * 0.1;
-    }
-    tube(hairRoot, [[-0.20, 0.22, 0.245], [-0.08, 0.30, 0.27], [0.06, 0.30, 0.27], [0.18, 0.23, 0.24]], 0x785947, 0.006, 14);
+    // The boys keep their signature tousled curls, now formed as a small
+    // number of connected raised locks over one continuous scalp surface.
+    const curlPaths = [
+      [[-0.275, 0.115, 0.014], [-0.245, 0.205, 0.014], [-0.175, 0.275, 0.014], [-0.095, 0.305, 0.014]],
+      [[-0.185, 0.205, 0.018], [-0.135, 0.285, 0.018], [-0.045, 0.335, 0.018], [0.045, 0.315, 0.018]],
+      [[-0.045, 0.205, 0.014], [0.025, 0.285, 0.014], [0.115, 0.295, 0.014], [0.195, 0.235, 0.014]],
+      [[0.135, 0.145, 0.014], [0.215, 0.195, 0.014], [0.270, 0.145, 0.014]],
+      [[-0.255, 0.040, 0.012], [-0.225, 0.115, 0.012], [-0.155, 0.165, 0.012]],
+      [[0.205, 0.045, 0.012], [0.245, 0.105, 0.012], [0.255, 0.155, 0.012]]
+    ];
+    curlPaths.forEach((points, index) => {
+      tube(hairRoot, surfacePath(points), index % 2 ? 0x60483c : 0x62483c, index < 4 ? 0.019 : 0.015, 18);
+    });
     // Fine curved strands catch the key light and connect the curls into a cap.
     for (let i = 0; i < 5; i++) {
       const x = -0.17 + i * 0.085;
-      const z = 0.238 - Math.abs(x) * 0.08;
-      tube(hairRoot, [[x - 0.025, 0.19, z], [x, 0.255 + Math.sin(i * 0.8) * 0.018, z + 0.025], [x + 0.025, 0.29, z - 0.005]], i % 2 ? 0x684d40 : 0x755645, 0.0045, 10);
+      tube(hairRoot, surfacePath([
+        [x - 0.025, 0.19, 0.008],
+        [x, 0.255 + Math.sin(i * 0.8) * 0.018, 0.010],
+        [x + 0.025, 0.29, 0.008]
+      ]), i % 2 ? 0x684d40 : 0x755645, 0.0045, 10);
     }
   }
   return hairRoot;
@@ -285,7 +359,6 @@ function addClothing(root, person, torso) {
   const details = {};
   if (person.id === 'red') {
     sphere(root, COLORS.redDark, [0, 1.27, -0.075], [0.255, 0.19, 0.16]);
-    sphere(root, COLORS.redLight, [0, 1.01, 0.195], [0.205, 0.09, 0.028]);
     // Kangaroo pocket, seams and soft drawstrings.
     const pocket = box(root, 0xa63a34, [0, 0.89, 0.208], [0.25, 0.13, 0.025]);
     pocket.rotation.x = -0.08;
@@ -296,9 +369,15 @@ function addClothing(root, person, torso) {
     }
     details.pocket = pocket;
   } else if (person.id === 'lady') {
-    // Cream blouse under a denim pinafore, curved hem and tiny brass buttons.
-    sphere(root, COLORS.denim, [0, 1.035, 0.135], [0.267, 0.285, 0.085]);
-    const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.255, 0.415, 0.44, 28, 2), mat(COLORS.denim, 0.86));
+    // Cream blouse under a shaped denim bib with a beveled cloth edge.
+    details.bib = curvedFabricPanel(root, COLORS.denim, shape => {
+      shape.moveTo(-0.215, 1.235);
+      shape.bezierCurveTo(-0.165, 1.315, 0.165, 1.315, 0.215, 1.235);
+      shape.lineTo(0.165, 0.925);
+      shape.bezierCurveTo(0.085, 0.875, -0.085, 0.875, -0.165, 0.925);
+      shape.closePath();
+    }, { baseZ: 0.135, maxWidth: 0.215, curvature: 0.052, depth: 0.032, roughness: 0.91 });
+    const skirt = new THREE.Mesh(residentSkirtGeometry, mat(COLORS.denim, 0.89));
     skirt.position.set(0, 0.665, 0);
     root.add(skirt);
     details.skirt = skirt;
@@ -317,11 +396,18 @@ function addClothing(root, person, torso) {
     sphere(root, COLORS.gold, [-0.36, 0.85, 0.252], [0.016, 0.016, 0.01]);
     tube(root, [[-0.28, 1.36, 0.21], [-0.23, 1.14, 0.24], [-0.31, 0.98, 0.23], [-0.36, 0.91, 0.22]], 0x9b704d, 0.022, 14);
   } else {
-    // Layered hoodie and blue jacket with zip, collar and earth badge.
-    sphere(root, COLORS.cream, [0, 1.055, 0.17], [0.245, 0.32, 0.095]);
-    sphere(root, COLORS.navy, [0, 1.04, 0.105], [0.31, 0.385, 0.125]);
+    // Layered jacket: the navy tailored torso carries a curved, beveled
+    // cream front insert, while the rear collar and zip retain their design.
+    details.frontPanel = curvedFabricPanel(root, COLORS.cream, shape => {
+      shape.moveTo(-0.175, 1.315);
+      shape.bezierCurveTo(-0.105, 1.365, 0.105, 1.365, 0.175, 1.315);
+      shape.lineTo(0.190, 1.105);
+      shape.lineTo(0.145, 0.925);
+      shape.bezierCurveTo(0.075, 0.865, -0.075, 0.865, -0.145, 0.925);
+      shape.lineTo(-0.190, 1.105);
+      shape.closePath();
+    }, { baseZ: 0.135, maxWidth: 0.19, curvature: 0.052, depth: 0.034, roughness: 0.90 });
     sphere(root, COLORS.cream, [0, 1.30, -0.025], [0.22, 0.18, 0.15]);
-    box(root, COLORS.cream, [0, 1.08, 0.229], [0.095, 0.30, 0.025]);
     tube(root, [[-0.17, 1.35, 0.205], [-0.09, 1.27, 0.225], [-0.12, 1.13, 0.23]], COLORS.navyLight, 0.018, 10);
     tube(root, [[0.17, 1.35, 0.205], [0.09, 1.27, 0.225], [0.12, 1.13, 0.23]], COLORS.navyLight, 0.018, 10);
     tube(root, [[0, 1.28, 0.25], [0, 0.90, 0.25]], 0xd8dce5, 0.008, 12);
