@@ -14,6 +14,7 @@
 
   const ACTIVITY_CATALOG = Object.freeze({
     calm: Object.freeze({ label: 'A quiet little moment', stage: 'weather-ready' }),
+    morning: Object.freeze({ label: 'Morning park exercise and a butterfly chase', stage: 'weather-ready' }),
     play: Object.freeze({ label: 'Playing together', stage: 'weather-ready' }),
     rain: Object.freeze({ label: 'Two umbrellas and one rain dancer', stage: 'weather-ready' }),
     snow: Object.freeze({ label: 'Bundled up and shivering', stage: 'weather-ready' }),
@@ -36,7 +37,7 @@
     .le-weather-person .le-weather-body{stroke:#263f5c;stroke-width:1.2;stroke-linejoin:round}
     .le-weather-person .le-weather-limbs{fill:none;stroke:#3e4c61;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
     .le-weather-prop{opacity:0;transition:opacity .35s ease;pointer-events:none}
-    .le-weather-prop--umbrella,.le-weather-prop--rain-joy,.le-weather-prop--heat,.le-weather-prop--snow,.le-weather-prop--stargaze,.le-weather-prop--kite,.le-weather-prop--picnic,.le-weather-prop--garden,.le-weather-prop--festival,.le-weather-prop--camping{display:none}
+    .le-weather-prop--umbrella,.le-weather-prop--rain-joy,.le-weather-prop--heat,.le-weather-prop--snow,.le-weather-prop--stargaze,.le-weather-prop--kite,.le-weather-prop--picnic,.le-weather-prop--garden,.le-weather-prop--festival,.le-weather-prop--camping,.le-weather-prop--exercise,.le-weather-prop--butterfly{display:none}
     .le-weather-ball{opacity:0;transform-box:fill-box;transform-origin:center;fill:#f6c85f;stroke:#fff8;stroke-width:2}
     .le-weather-people[data-activity="play"] .le-weather-ball{opacity:1;animation:le-weather-ball-play 2.8s ease-in-out infinite}
     .le-weather-people[data-activity="play"] .le-weather-person{animation:le-weather-play 1.7s ease-in-out infinite}
@@ -58,6 +59,37 @@
     .le-weather-people[data-activity="garden"] .le-weather-prop--garden{display:block;opacity:1}
     .le-weather-people[data-activity="festival"] .le-weather-prop--festival{display:block;opacity:1}
     .le-weather-people[data-activity="camping"] .le-weather-prop--camping{display:block;opacity:1}
+    .le-weather-people[data-activity="morning"] .le-weather-prop--exercise,.le-weather-people[data-activity="morning"] .le-weather-prop--butterfly{display:block;opacity:1}
+    .le-weather-people[data-activity="morning"] .le-weather-person--one .le-weather-character-base .le-weather-limbs,.le-weather-people[data-activity="morning"] .le-weather-person--two .le-weather-character-base .le-weather-limbs,.le-weather-people[data-activity="morning"] .le-weather-person--one .le-weather-default-hands,.le-weather-people[data-activity="morning"] .le-weather-person--two .le-weather-default-hands{opacity:0}
+    .le-weather-people[data-activity="morning"] .le-weather-person--one{animation:le-resident-morning-jump 1.55s ease-in-out infinite}
+    .le-weather-people[data-activity="morning"] .le-weather-person--two{animation:le-resident-morning-stretch 3.1s ease-in-out infinite}
+    .le-weather-people[data-activity="morning"] .le-weather-person--three{animation:le-resident-butterfly-chase 1.35s ease-in-out infinite}
+    .le-weather-people[data-activity="morning"] .le-weather-butterfly{transform-box:fill-box;transform-origin:center;animation:le-resident-butterfly-flight 1.25s ease-in-out infinite alternate}
+
+    /* Weather's information now floats directly over the scene: no panel fill,
+       no tile backgrounds and no opaque blur behind the forecast text. */
+    .le-sfv--weather .le-sfv-panel{padding-top:calc(env(safe-area-inset-top) + 18px)!important}
+    .le-sfv--weather .le-sfv-head{gap:8px;margin:0 0 2px;text-shadow:0 2px 14px #10253a99}
+    .le-sfv--weather .le-sfv-symbol{width:30px;min-width:30px;border:0;background:none;box-shadow:none;font-size:23px}
+    .le-sfv--weather .le-sfv-title{font-size:clamp(21px,5.8vw,25px);line-height:1.05}
+    .le-sfv--weather .le-sfv-subtitle{display:none}
+    .le-sfv--weather .le-sfv-pill{margin:0 0 5px 38px;padding:0;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;font-size:8px;letter-spacing:.085em;text-shadow:0 1px 8px #10253acc}
+    .le-sfv--weather .le-sfv-panel>.le-sfv-body{display:block;width:min(100%,760px);gap:0;padding-bottom:12px}
+    .le-sfv--weather .le-sfv-body>.le-sfv-status{margin:0 0 8px 38px;padding:0;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;color:#eef7ff;font-size:8px;line-height:1.35;text-shadow:0 1px 8px #10253acc}
+    .le-sfv--weather .le-sfv-body>.le-sfv-card:first-of-type{margin:0 0 12px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+    .le-sfv--weather .le-sfv-body>.le-sfv-card:first-of-type>h2,.le-sfv--weather .le-sfv-body>.le-sfv-card:first-of-type>.le-sfv-copy{display:none}
+    .le-sfv--weather .le-weather-now{align-items:center;gap:10px}
+    .le-sfv--weather .le-weather-condition-icon{width:34px;height:34px;min-width:34px;border:0;border-radius:0;background:none;box-shadow:none;font-size:29px}
+    .le-sfv--weather .le-weather-temp{font-size:clamp(44px,12vw,54px);line-height:.88;text-shadow:0 2px 16px #193c5d88}
+    .le-sfv--weather .le-weather-condition{margin-top:4px;font-size:11px}
+    .le-sfv--weather .le-weather-local-time{margin-top:2px;font-size:9px;color:#e6f1f8}
+    .le-sfv--weather .le-weather-metric-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px 12px;margin-top:9px;max-width:440px}
+    .le-sfv--weather .le-weather-metric{padding:0;border:0;border-radius:0;background:none;text-align:left}
+    .le-sfv--weather .le-weather-metric-label{font-size:7px;letter-spacing:.075em;color:#e0edf5}
+    .le-sfv--weather .le-weather-metric-value{margin-top:2px;font-size:11px;line-height:1.15}
+    .le-sfv--weather .le-sfv-body>.le-sfv-card:not(:first-of-type){margin-top:10px}
+    .le-sfv--weather .le-sfv-attribution{margin-top:8px;text-shadow:0 1px 5px #10253acc}
+
     @keyframes le-weather-idle{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
     @keyframes le-weather-play{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-10px) rotate(3deg)}}
     @keyframes le-weather-rain-joy{0%,100%{transform:rotate(-3deg) translateY(0)}50%{transform:rotate(5deg) translateY(-5px)}}
@@ -68,7 +100,12 @@
     @keyframes le-weather-ball-play{0%,100%{transform:translate(0,0)}50%{transform:translate(32px,-24px)}}
     @keyframes le-weather-look-up{0%,100%{transform:rotate(0)}50%{transform:rotate(-6deg) translateY(-3px)}}
     @keyframes le-resident-walk{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-4px) rotate(3deg)}}
-    @media(prefers-reduced-motion:reduce){.le-weather-person,.le-weather-ball{animation:none!important;transition:none!important}}
+    @keyframes le-resident-morning-jump{0%,100%{transform:translateY(0) rotate(-2deg)}25%{transform:translateY(-7px) rotate(2deg)}50%{transform:translateY(0) rotate(3deg)}75%{transform:translateY(-5px) rotate(-2deg)}}
+    @keyframes le-resident-morning-stretch{0%,100%{transform:rotate(0) translateY(0)}35%{transform:rotate(-5deg) translateY(-2px)}70%{transform:rotate(5deg) translateY(-2px)}}
+    @keyframes le-resident-butterfly-chase{0%,100%{transform:translateX(0) rotate(2deg)}50%{transform:translateX(7px) rotate(-5deg)}}
+    @keyframes le-resident-butterfly-flight{from{transform:translate(0,0) rotate(-9deg)}to{transform:translate(-13px,-12px) rotate(12deg)}}
+    @media(max-width:390px){.le-sfv--weather .le-weather-metric-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media(prefers-reduced-motion:reduce){.le-weather-person,.le-weather-ball,.le-weather-butterfly{animation:none!important;transition:none!important}}
   `;
 
   function installStyles() {
@@ -107,6 +144,26 @@
         <path d="M-9 45 Q-25 29 -34 7 M9 45 Q25 29 34 7"/>
         <path d="M-34 7 l-5 -5 M34 7 l5 -5" stroke="${skin}" stroke-width="5"/>
       </g>` : '';
+    const exercise = id === 'one' ? `
+      <g class="le-weather-prop le-weather-prop--exercise" fill="none" stroke="#3e4c61" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M-10 52 Q-18 41 -22 24 M10 52 Q18 41 22 24"/>
+        <path d="M-22 24 l-5 -5 M22 24 l5 -5" stroke="${skin}" stroke-width="5"/>
+        <path d="M-15 6 Q0 1 15 6" stroke="#f5d17c" stroke-width="4"/>
+      </g>` : id === 'two' ? `
+      <g class="le-weather-prop le-weather-prop--exercise" fill="none" stroke="#3e4c61" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M-10 52 Q-24 46 -27 29 M10 52 Q15 38 18 21"/>
+        <path d="M-27 29 l-4 -6 M18 21 l4 -7" stroke="${skin}" stroke-width="5"/>
+        <path d="M-16 7 Q0 0 16 7" stroke="#f2a5a0" stroke-width="4"/>
+      </g>` : '';
+    const butterfly = id === 'three' ? `
+      <g class="le-weather-prop le-weather-prop--butterfly" transform="translate(34 1)">
+        <g class="le-weather-butterfly">
+          <path d="M0 0 C-11 -20 -27 -13 -19 1 C-13 10 -5 7 0 1 C5 7 13 10 19 1 C27 -13 11 -20 0 0Z" fill="#f5a6cf" stroke="#fff5" stroke-width="1.4"/>
+          <path d="M0 -2 C-8 -15 -18 -12 -14 -2 C-10 4 -4 4 0 1 C4 4 10 4 14 -2 C18 -12 8 -15 0 -2Z" fill="#b9a5ed" opacity=".8"/>
+          <ellipse cx="0" cy="0" rx="1.8" ry="8" fill="#4d475d"/>
+          <path d="M-1 -7 Q-7 -15 -10 -12 M1 -7 Q7 -15 10 -12" fill="none" stroke="#4d475d" stroke-width="1.1" stroke-linecap="round"/>
+        </g>
+      </g>` : '';
     return `
       <g class="le-weather-person le-weather-person--${id}" transform="translate(${x} ${y})" data-resident-id="${id}">
         <ellipse class="le-weather-shadow" cx="0" cy="108" rx="20" ry="5"/>
@@ -116,7 +173,7 @@
           <path class="le-weather-body" d="M-13 48 Q0 40 13 48 L16 77 Q0 85 -16 77Z" fill="${shirt}"/>
           <path d="M-11 76 Q0 81 12 76 L12 87 Q0 91 -12 87Z" fill="${shorts}"/>
           <path class="le-weather-limbs" d="M-10 51 Q-20 63 -17 75 M10 51 Q20 63 17 75"/>
-          <path d="M-17 73 l-1 4 M17 73 l1 4" fill="none" stroke="${skin}" stroke-width="6" stroke-linecap="round"/>
+          <path class="le-weather-default-hands" d="M-17 73 l-1 4 M17 73 l1 4" fill="none" stroke="${skin}" stroke-width="6" stroke-linecap="round"/>
           <ellipse class="le-weather-head" cx="0" cy="20" rx="18" ry="20" fill="${skin}"/>
           ${hairMarkup(person)}
           <ellipse cx="-6" cy="22" rx="2.3" ry="3" fill="#342a2a"/><ellipse cx="6" cy="22" rx="2.3" ry="3" fill="#342a2a"/>
@@ -124,6 +181,7 @@
           <path d="M-3 33 Q0 36 4 32" fill="none" stroke="#9e6257" stroke-width="1.5" stroke-linecap="round"/>
           <path d="M-8 13 Q-4 10 -1 12 M4 12 Q7 10 9 13" fill="none" stroke="#493d3a" stroke-width="1.3" stroke-linecap="round"/>
         </g>
+        ${umbrella}${rainJoy}${exercise}${butterfly}
         <g class="le-weather-prop le-weather-prop--snow">
           <path d="M-16 47 Q0 39 16 47 L19 79 Q0 91 -19 79Z" fill="#f0f5f5" stroke="#a5c1d4" stroke-width="1.6"/>
           <path d="M-15 48 Q0 57 15 48 L17 58 Q0 67 -17 58Z" fill="#d87875"/>
@@ -131,7 +189,6 @@
           <path d="M-18 4 Q0 -2 18 4" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/>
           <circle cx="0" cy="-17" r="3" fill="#fff"/>
         </g>
-        ${umbrella}${rainJoy}
         <g class="le-weather-prop le-weather-prop--heat">
           <path d="M-16 17 Q-23 5 -16 -7" stroke="#fff3c4" stroke-width="2" fill="none" stroke-linecap="round"/>
           <path d="M15 38 Q26 26 20 12" stroke="#fff3c4" stroke-width="2" fill="none" stroke-linecap="round"/>
@@ -193,7 +250,13 @@
   function setActivity(host, state = {}) {
     if (!host) return false;
     const requested = String(state.mode || 'calm');
-    host.dataset.activity = Object.prototype.hasOwnProperty.call(ACTIVITY_CATALOG, requested) ? requested : 'calm';
+    const weather = String(state.weather || 'clear');
+    const weatherAllowsMorning = !['rain', 'storm', 'snow', 'fog', 'hot'].includes(weather);
+    // Weather marks the 05:00–07:00 local forecast as dawn. On a fair dawn,
+    // the neighbours start their park routine; severe weather modes still win.
+    const morning = requested === 'calm' && state.phase === 'dawn' && weatherAllowsMorning;
+    const activity = morning ? 'morning' : requested;
+    host.dataset.activity = Object.prototype.hasOwnProperty.call(ACTIVITY_CATALOG, activity) ? activity : 'calm';
     host.dataset.gust = state.gustLevel === 'strong' ? 'strong' : 'normal';
     return true;
   }
@@ -207,7 +270,7 @@
   }
 
   const api = Object.freeze({
-    version: '1.0.0',
+    version: '1.1.0',
     getRoster: () => ROSTER,
     getActivityCatalog: () => ACTIVITY_CATALOG,
     renderMarkup,
