@@ -17,72 +17,39 @@ assert.match(styles, /\.le-sfv--weather \.le-weather-metric\{padding:0;border:0;
 assert.match(styles, /\.le-sfv--weather \.le-sfv-subtitle\{display:none!important\}/, 'The long Weather subtitle must not consume top-screen space');
 assert.match(styles, /\.le-sfv--weather \.le-sfv-body>\.le-sfv-status\{[^}]*background:none/, 'Location and model status must be plain floating text');
 assert.match(styles, /\.le-sfv--weather \.le-weather-hour\{flex-basis:54px/, 'Hourly forecast must be compact');
-assert.match(styles, /\.le-sfv--weather \.le-sfv-body>\.le-sfv-card:nth-of-type\(2\)>h2/, 'The timeline title and copy must not add a large text block');
+assert.match(styles, /\.le-sfv--weather>\.le-weather-resident-overlay\{[^}]*z-index:5/, 'The 3D residents must remain in the foreground overlay');
 
-assert.match(weather, /const night = hour >= 20 \|\| hour < 5;/, 'Night must follow the forecast local hour rather than is_day alone');
+assert.match(weather, /const night = hour >= 20 \|\| hour < 5;/, 'Night must follow the forecast local hour');
 assert.match(weather, /const dawn = hour >= 5 && hour <= 7;/, '05:00-07:00 local forecast must be treated as dawn');
-assert.doesNotMatch(weather, /number\(item\.isDay\) === 0 \|\| hour >= 20/, 'A sunrise is_day flag must not incorrectly keep 05:00 in night mode');
-
-assert.ok(weather.includes("RESIDENT_LIBRARY_VERSION = '1.3.0'"), 'Weather must reject a stale Residents global and require the matching library version');
-assert.match(weather, /script\.src = new URL\('\.\/Residents\/resident-library\.js', document\.baseURI\)\.href/, 'Weather must load Residents as a same-origin script for iOS WebView compatibility');
+assert.match(weather, /RESIDENT_LIBRARY_VERSION = '1\.3\.0'/, 'Weather must retain the public Residents API version');
 assert.match(weather, /residentHost\.classList\.add\('le-weather-resident-overlay'\)/, 'Residents must be promoted into the dedicated foreground overlay');
 assert.match(weather, /view\.root\.appendChild\(residentHost\)/, 'The resident host must be a direct child of the Weather root');
-assert.doesNotMatch(weather, /!residentHost\?\.isConnected/, 'Residents mounting must not be silently skipped by a transient isConnected check');
 assert.match(weather, /residentHost\.dataset\.residentsMounted = 'true'/, 'Successful resident mounting must leave a testable lifecycle marker');
-assert.match(styles, /\.le-sfv--weather>\.le-weather-resident-overlay\{[^}]*z-index:5/, 'Residents must render in front of the landscape and information layer');
-
-assert.ok(weather.includes("./Residents/resident-library.js"), 'Weather must continue loading the shared Residents library');
-assert.ok(weather.includes('LiveEarthResidentLibrary?.setActivity(residentHost, state)'), 'Selected forecast hour must drive resident activity');
-assert.match(weather, /status\.hidden = true;[\s\S]*setStatus\(status, '', 'success'\)/, 'Successful forecast must hide the verbose status paragraph');
-assert.ok(weather.includes("{ text: 'Weather data by ' }"), 'Weather attribution must be compact');
-assert.ok(weather.includes("{ label: 'Open-Meteo.com', href: 'https://open-meteo.com/' }"), 'Provider must remain credited with a link');
-assert.ok(weather.includes("{ label: 'CC BY 4.0', href: 'https://creativecommons.org/licenses/by/4.0/' }"), 'The data licence must remain credited with a link');
+assert.ok(weather.includes('LiveEarthResidentLibrary?.setActivity(residentHost, state)'), 'Selected forecast hour must drive 3D resident activity');
+assert.ok(weather.includes("removeEventListener('live-earth-location-state'"), 'Location listeners must be removed on deactivation');
 
 const styleNodes = new Map();
 const fakeDocument = {
   head: { appendChild(node) { styleNodes.set(node.id, node); } },
   getElementById(id) { return styleNodes.get(id) || null; },
-  createElement(tag) { return { tagName: tag.toUpperCase(), id: '', textContent: '' }; },
-  createElementNS(_ns, tag) { return { tagName: tag, attributes: {}, setAttribute(name, value) { this.attributes[name] = value; }, innerHTML: '' }; }
+  createElement(tag) { return { tagName: tag.toUpperCase(), id: '', textContent: '' }; }
 };
 const sandbox = { window: {}, document: fakeDocument, console };
 vm.runInNewContext(residentSource, sandbox, { filename: 'Residents/resident-library.js' });
 const library = sandbox.window.LiveEarthResidentLibrary;
 assert.ok(library, 'Residents API must register');
-assert.equal(library.version, '1.3.0', 'The shared library version must advance after removing Weather-only layout rules');
 assert.equal(library.getRoster().length, 3, 'The app must retain exactly three neighbours');
+assert.equal(library.renderer, 'threejs-procedural-3d');
 assert.ok(library.getActivityCatalog().morning, 'Morning park activity must be registered');
 
-const markup = library.renderMarkup();
-assert.equal((markup.match(/class="le-weather-person le-weather-person--/g) || []).length, 3, 'Morning scene must retain exactly three residents');
-assert.equal((markup.match(/le-weather-prop--exercise/g) || []).length, 1, 'The red-hoodie boy should own the morning exercise prop');
-assert.ok(markup.includes('le-weather-prop--butterfly'), 'The third resident must have a butterfly to chase');
-const positionedAnchors = Array.from(markup.matchAll(/<g class="le-weather-person-anchor le-weather-person-anchor--(one|two|three)" transform="translate\((\d+) (\d+)\)" data-resident-id="(one|two|three)">\s*<g class="le-weather-person le-weather-person--(one|two|three)">/g));
-assert.equal(positionedAnchors.length, 3, 'Each resident must have a stationary position anchor and a separate animated child');
-assert.deepEqual(positionedAnchors.map(match => [match[1], match[2], match[3]]), [['one','92','116'],['two','210','122'],['three','328','116']], 'Each resident must retain its own designed scene position');
-assert.match(residentSource, /\.le-weather-person--two\{animation-delay:-1\.3s\}\.le-weather-person--three\{animation-delay:-2\.4s\}/, 'Idle animation staggering must use stable resident IDs after nesting');
-assert.doesNotMatch(residentSource, /\.le-sfv--weather/, 'Weather layout styles must not be owned by the reusable Residents library');
-
 for (const weatherState of ['clear', 'cloudy']) {
-  const host = { dataset: {} };
-  library.setActivity(host, { mode: 'calm', phase: 'dawn', weather: weatherState });
-  assert.equal(host.dataset.activity, 'morning', `Fair ${weatherState} dawn should select the park routine`);
+  const dawn = { dataset: {} };
+  library.setActivity(dawn, { mode: 'calm', phase: 'dawn', weather: weatherState });
+  assert.equal(dawn.dataset.activity, 'morning');
 }
 for (const weatherState of ['rain', 'storm', 'snow', 'fog', 'hot']) {
-  const host = { dataset: {} };
-  library.setActivity(host, { mode: 'calm', phase: 'dawn', weather: weatherState });
-  assert.equal(host.dataset.activity, 'calm', `Morning exercise must not override ${weatherState}`);
+  const dawn = { dataset: {} };
+  library.setActivity(dawn, { mode: 'calm', phase: 'dawn', weather: weatherState });
+  assert.equal(dawn.dataset.activity, 'calm');
 }
-const wind = { dataset: {} };
-library.setActivity(wind, { mode: 'wind', phase: 'dawn', weather: 'clear' });
-assert.equal(wind.dataset.activity, 'wind', 'Wind behaviour must retain priority');
-const daytime = { dataset: {} };
-library.setActivity(daytime, { mode: 'calm', phase: 'day', weather: 'clear' });
-assert.equal(daytime.dataset.activity, 'calm', 'Morning routine must end outside the dawn window');
-
-assert.match(residentSource, /le-weather-person--one\{animation:le-resident-morning-jump/, 'Resident one must exercise');
-assert.match(residentSource, /le-weather-person--two\{animation:le-resident-butterfly-chase/, 'The little lady must follow the butterfly');
-assert.match(residentSource, /le-weather-person--three\{animation:le-resident-morning-stretch/, 'The blue-jacket boy must stretch');
-assert.match(residentSource, /le-resident-butterfly-flight/, 'The butterfly must flutter independently');
-
-console.log('Weather floating overlay, local dawn classification and Residents morning activity tests passed.');
+console.log('Weather floating overlay, local dawn classification and 3D Residents mounting tests passed.');

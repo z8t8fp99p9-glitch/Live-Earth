@@ -24,8 +24,8 @@ This is the documentation front door. The three core project reference documents
 
 - `APP-AND-VIEW-ARCHITECTURE.md`
 - `STACKS-FEATURE-VIEWS.md`
-- [`WEATHER-LIVING-LANDSCAPE-2026-11-09.md`](WEATHER-LIVING-LANDSCAPE-2026-11-09.md) — one-scene 2D weather atmosphere, three-character behaviour and data/privacy contract.
-- [`RESIDENTS-LIBRARY-2026-11-09.md`](RESIDENTS-LIBRARY-2026-11-09.md) — shared three-resident identities, SVG artwork, activity API and cross-view reuse contract.
+- [`WEATHER-LIVING-LANDSCAPE-2026-11-09.md`](WEATHER-LIVING-LANDSCAPE-2026-11-09.md) — continuous forecast-driven Weather landscape with the procedural 3D Residents layer.
+- [`RESIDENTS-LIBRARY-2026-11-09.md`](RESIDENTS-LIBRARY-2026-11-09.md) — three stable resident identities, articulated Three.js mesh renderer, activity API and lifecycle.
 
 ## History
 
