@@ -66,4 +66,9 @@ assert.ok(source.includes('eye.rotation.y = inwardLook'), 'Characters should gla
 assert.ok(source.includes('const greeting = Math.sin(time * 2.7 + index * 1.55)'), 'Shared play should use staggered greeting gestures');
 assert.ok(source.includes('right.wrist.rotation.z = Math.sin(time * 4.2)'), 'Greeting gestures should articulate the wrist');
 
+
+assert.ok(source.split(/\r?\n/).includes('  const smile = joint(head, [0, 0, 0]);'), 'Default smile must remain executable code, not be swallowed by a line comment');
+assert.ok(!source.includes('expression.\\n  const smile'), 'No literal escaped newline may join the smile declaration to its comment');
+assert.ok(source.includes('const openMouth = joint(head'), 'The joyful mouth expression must remain present after the default smile');
+
 console.log('Residents 3D refinement: faces, rig joints, outfits, movement and mobile lifecycle checks passed.');

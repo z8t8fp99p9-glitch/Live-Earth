@@ -107,7 +107,8 @@ function createFace(head, person) {
   sphere(head, 0xc98c77, [-0.012, -0.064, 0.302], [0.006, 0.004, 0.004]);
   sphere(head, 0xc98c77, [0.012, -0.064, 0.302], [0.006, 0.004, 0.004]);
 
-  // Gentle smile and lower-lip highlight remain the default expression.\n  const smile = joint(head, [0, 0, 0]);
+  // Gentle smile and lower-lip highlight remain the default expression.
+  const smile = joint(head, [0, 0, 0]);
   tube(smile, [[-0.052, -0.165, 0.255], [-0.026, -0.189, 0.276], [0.012, -0.192, 0.279], [0.052, -0.164, 0.255]], 0x965b50, 0.012, 12);
   sphere(smile, 0xc98278, [0, -0.197, 0.268], [0.022, 0.007, 0.007]);
 
