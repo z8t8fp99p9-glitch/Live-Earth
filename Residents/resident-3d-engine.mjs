@@ -460,14 +460,16 @@ function easeActorPose(actor, dt) {
   ];
   const alpha = 1 - Math.exp(-Math.min(0.08, dt) * 11.5);
   if (!actor.poseMemory) actor.poseMemory = nodes.map(node => ({
-    rotation: node.rotation.clone(),
+    quaternion: node.quaternion.clone(),
     position: node.position.clone()
   }));
   nodes.forEach((node, index) => {
     const memory = actor.poseMemory[index];
-    memory.rotation.lerp(node.rotation, alpha);
+    // THREE.Euler has no lerp() method. Quaternion.slerp() is the supported,
+    // smooth interpolation path for articulated 3D rotations.
+    memory.quaternion.slerp(node.quaternion, alpha);
     memory.position.lerp(node.position, alpha);
-    node.rotation.copy(memory.rotation);
+    node.quaternion.copy(memory.quaternion);
     node.position.copy(memory.position);
   });
 }

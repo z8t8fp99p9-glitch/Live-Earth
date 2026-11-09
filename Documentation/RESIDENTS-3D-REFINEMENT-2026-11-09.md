@@ -39,3 +39,8 @@ The next polish pass replaces visibly separated limb ellipsoids with overlapping
 ## Refinement pass v135
 
 Activity changes now ease across articulated joints rather than snapping directly between target poses. Per-character secondary motion adds subtle head follow-through, relaxed wrist and foot movement, restrained torso counter-motion, wind-responsive dress sway and a small satchel swing. The preview activities, character identities, outfits, scene positions and Weather interface remain unchanged.
+
+
+## Hotfix v136 — pose interpolation
+
+The v135 activity-transition refinement used an unsupported Euler.lerp() call in Three.js, which could throw inside the animation loop and prevent the Residents renderer from drawing. The pose memory now stores quaternions and uses Quaternion.slerp(), while position continues to use Vector3.lerp(). This preserves the intended smooth transitions without changing character geometry, Weather UI, preview modes or other views.
