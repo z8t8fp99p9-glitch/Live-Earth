@@ -25,8 +25,6 @@ This is the documentation front door. The three core project reference documents
 - `APP-AND-VIEW-ARCHITECTURE.md`
 - `STACKS-FEATURE-VIEWS.md`
 - [`WEATHER-LIVING-LANDSCAPE-2026-11-09.md`](WEATHER-LIVING-LANDSCAPE-2026-11-09.md) — one-scene 2D weather atmosphere, three-character behaviour and data/privacy contract.
-- [`RESIDENTS-LIBRARY-2026-11-09.md`](RESIDENTS-LIBRARY-2026-11-09.md) — shared three-resident identities, 3D artwork, activity API and cross-view reuse contract.
-- [`RESIDENTS-3D-REFINEMENT-2026-11-09.md`](RESIDENTS-3D-REFINEMENT-2026-11-09.md) — refined faces, articulated hands/feet, clothing detail, movement cycles and mobile resource lifecycle.
 
 ## History
 

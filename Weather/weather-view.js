@@ -1,7 +1,7 @@
 /* LIVE // EARTH — Weather: one living 2D landscape, driven by forecast data.
-   The illustration never swaps scenes. Weather changes only its atmosphere,
-   particles and the behaviour of three small characters. Location remains owned
-   by the shared Location Orb; cyclones are deliberately outside this view. */
+   The illustration never swaps scenes. Weather changes only its atmosphere
+   and particles. Location remains owned by the shared Location Orb; cyclones
+   are deliberately outside this view. */
 (() => {
   'use strict';
 
@@ -12,33 +12,6 @@
   }
 
   const { mount, el, setStatus, button, card, attribution, isActive, globe } = runtime;
-  const RESIDENT_LIBRARY_VERSION = '1.3.0';
-  let residentLibraryPromise = null;
-
-  function ensureResidentLibrary() {
-    if (window.LiveEarthResidentLibrary?.version === RESIDENT_LIBRARY_VERSION && window.LiveEarthResidentLibrary?.mount) return Promise.resolve(window.LiveEarthResidentLibrary);
-    if (residentLibraryPromise) return residentLibraryPromise;
-    residentLibraryPromise = new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = new URL('./Residents/resident-library.js', document.baseURI).href;
-      script.async = true;
-      script.onload = () => {
-        const library = window.LiveEarthResidentLibrary;
-        if (library?.version === RESIDENT_LIBRARY_VERSION && library?.mount) resolve(library);
-        else reject(new Error('The Residents script did not provide the required library version.'));
-      };
-      script.onerror = () => reject(new Error('The Residents script could not be loaded.'));
-      document.head.appendChild(script);
-    }).catch(error => {
-      residentLibraryPromise = null;
-      throw error;
-    });
-    return residentLibraryPromise;
-  }
-
-  // Warm the shared library as soon as the Weather module is registered. The
-  // existing same-origin runtime cache retains it for subsequent offline visits.
-  ensureResidentLibrary().catch(error => console.warn('[LIVE // EARTH] Residents library will retry when Weather opens.', error));
   const STYLE_ID = 'le-weather-living-landscape-style';
   const MAX_FORECAST_HOURS = 18;
 
@@ -105,13 +78,7 @@
       .le-weather-cloud{position:absolute;width:clamp(145px,42vw,280px);height:auto;fill:#fff;filter:drop-shadow(0 8px 12px #456d8640);animation:le-weather-cloud-drift var(--le-cloud-duration,54s) linear infinite alternate}
       .le-weather-cloud--one{top:20%;left:-3%}.le-weather-cloud--two{top:1%;right:5%;width:clamp(125px,34vw,225px);opacity:.83;animation-duration:68s;animation-direction:alternate-reverse}.le-weather-cloud--three{top:48%;left:39%;width:clamp(110px,30vw,205px);opacity:.65;animation-duration:77s}
       .le-weather-landscape{position:absolute;left:0;right:0;bottom:0;width:100%;height:58%;overflow:visible}
-      .le-weather-landscape svg,.le-weather-people svg{display:block;width:100%;height:100%;overflow:visible}
-      .le-weather-people{position:absolute;left:0;right:0;bottom:3%;height:43%;z-index:2;overflow:visible}
-      .le-weather-people svg{overflow:visible}
-      .le-sfv--weather>.le-weather-resident-overlay{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 112px);height:clamp(168px,28vh,238px);z-index:5;overflow:visible;pointer-events:none}
-      .le-sfv--weather>.le-weather-resident-overlay svg{display:block;width:100%;height:100%;overflow:visible}
-      @media(max-height:720px){.le-sfv--weather>.le-weather-resident-overlay{bottom:calc(env(safe-area-inset-bottom) + 86px);height:clamp(142px,26vh,194px)}}
-      @media(orientation:landscape) and (max-height:520px){.le-sfv--weather>.le-weather-resident-overlay{bottom:calc(env(safe-area-inset-bottom) + 78px);height:42vh}}
+      .le-weather-landscape svg{display:block;width:100%;height:100%;overflow:visible}
       .le-weather-rain,.le-weather-snow{position:absolute;inset:-8% 0 0;overflow:hidden;opacity:0;transition:opacity .5s ease}
       .le-weather-particle{position:absolute;top:-12%;left:var(--particle-x);animation:le-weather-fall var(--particle-duration,1.3s) linear var(--particle-delay,0s) infinite;will-change:transform}
       .le-weather-rain .le-weather-particle{width:1.5px;height:clamp(15px,3.5vh,28px);border-radius:2px;background:linear-gradient(180deg,transparent,#e5f7ffcc);transform:rotate(13deg)}
@@ -138,16 +105,6 @@
       .le-weather-range:focus-visible,.le-weather-hour:focus-visible,.le-weather-refresh:focus-visible{outline:2px solid #fff;outline-offset:3px}
       .le-weather-range-label{display:flex;justify-content:space-between;gap:8px;color:#e2eff7;font-size:9px}
       .le-weather-refresh{min-height:38px;padding:9px 14px;border:1px solid #dff4ff66;border-radius:999px;background:#17405c66;color:#fff;font:700 10px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;touch-action:manipulation}
-      .le-weather-resident-preview{display:grid;gap:6px;margin-top:8px;min-width:0}
-      .le-weather-resident-preview-heading{display:flex;align-items:baseline;justify-content:space-between;gap:8px;color:#edf7ff;font-size:8px;letter-spacing:.08em;text-transform:uppercase;text-shadow:0 1px 6px #10253acc}
-      .le-weather-resident-preview-note{color:#d8e8f2;font-size:8px;letter-spacing:0;text-transform:none}
-      .le-weather-preview-strip{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 5px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-      .le-weather-preview-strip::-webkit-scrollbar{display:none}
-      .le-weather-preview-button{flex:0 0 auto;min-height:27px;padding:6px 10px;border:1px solid #e5f4ff45;border-radius:999px;background:#0c294244;color:#edf7ff;font:650 9px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;white-space:nowrap;touch-action:manipulation}
-      .le-weather-preview-button[aria-pressed="true"]{border-color:#fff;background:#e7f7ff35;box-shadow:0 0 0 1px #fff3,0 0 12px #b8eaff55;color:#fff}
-      .le-weather-preview-button:focus-visible{outline:2px solid #fff;outline-offset:3px}
-      .le-weather-preview-status{min-height:10px;color:#d8e8f2;font-size:8px;text-shadow:0 1px 6px #10253acc}
-      .le-weather-scene[data-resident-preview="true"] .le-weather-scene-caption:after{content:" · RESIDENT PREVIEW";color:#fff}
       .le-weather-scene-caption{position:absolute;left:12px;right:12px;bottom:2.5%;z-index:1;text-align:center;color:#f7fbffb8;font-size:8px;letter-spacing:.08em;text-shadow:0 1px 7px #18354c88;pointer-events:none}
       .le-weather-scene[data-phase="dawn"] .le-weather-sky{background:linear-gradient(180deg,#90b9d8,#e9c4aa 58%,#f3d4a8)}
       .le-weather-scene[data-phase="day"] .le-weather-sky{background:linear-gradient(180deg,#69b7e5,#c9e6e9 57%,#f2d8ad)}
@@ -174,7 +131,6 @@
       @keyframes le-weather-snow-fall{0%{transform:translate3d(0,-8vh,0)}50%{transform:translate3d(var(--particle-drift,18px),48vh,0)}100%{transform:translate3d(calc(var(--particle-drift,18px) * -1),110vh,0)}}
       @keyframes le-weather-flash{0%,92%,94%,100%{opacity:0}92.5%{opacity:.22}93%{opacity:0}93.5%{opacity:.12}}
       @media(max-width:390px){.le-weather-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.le-weather-hour{flex-basis:60px}}
-      @media(orientation:landscape) and (max-height:520px){.le-sfv--weather .le-sfv-head{margin-bottom:7px}.le-weather-landscape{height:67%}.le-weather-people{height:50%}.le-weather-now{gap:9px}.le-weather-condition-icon{width:46px;height:46px}.le-weather-temp{font-size:38px}}
       @media(prefers-reduced-motion:reduce){.le-weather-atmosphere *,.le-weather-atmosphere *:before,.le-weather-atmosphere *:after{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
     `;
     document.head.appendChild(style);
@@ -215,7 +171,6 @@
           <path d="M0 287 Q110 267 202 288 T420 281" fill="none" stroke="#a5c99c" stroke-width="4" opacity=".65"/>
         </svg>
       </div>
-      <div class="le-weather-people" data-resident-host data-activity="calm"></div>
       <div class="le-weather-scene-caption">ONE LITTLE WORLD · CHANGING WITH THE WEATHER</div>`;
     return scene;
   }
@@ -328,13 +283,10 @@
     const fog = isFog(item);
     const fastWind = gusts >= 48 || wind >= 35;
     const hot = temperature !== null && temperature >= 34;
-    const pleasant = temperature !== null && temperature >= 17 && temperature <= 30 &&
-      !rain && !snow && !fog && cloud <= 55 && wind < 28 && gusts < 40;
-    let weather = snow ? 'snow' : thunder ? 'storm' : rain ? 'rain' : fog ? 'fog' : cloud >= 65 ? 'cloudy' : hot ? 'hot' : 'clear';
-    const stargazing = night && !rain && !snow && !thunder && !fog && cloud <= 35 && !fastWind;
-    let mode = snow ? 'snow' : (rain || thunder) ? 'rain' : fastWind ? 'wind' : hot ? 'heat' : (evening && pleasant ? 'play' : stargazing ? 'stargaze' : 'calm');
-    // A pleasant evening is the only time the trio plays together.
-    return { phase, weather, mode, cloud, wind, gusts, temperature, gustLevel: gusts >= 65 ? 'strong' : 'normal' };
+    const weather = snow ? 'snow' : thunder ? 'storm' : rain ? 'rain' : fog ? 'fog' : cloud >= 65 ? 'cloudy' : hot ? 'hot' : 'clear';
+    // The mode only selects a subtle landscape treatment; no character system runs here.
+    const mode = (rain || thunder) ? 'rain' : fastWind ? 'wind' : 'calm';
+    return { phase, weather, mode, cloud, wind, gusts, temperature };
   }
 
   function createParticles(layer, kind, item) {
@@ -366,28 +318,6 @@
 
     const scene = createAtmosphere();
     view.root.insertBefore(scene, view.root.firstChild);
-    const residentHost = scene.querySelector('[data-resident-host]');
-    let residentsDisposed = false;
-    if (residentHost) {
-      residentHost.classList.add('le-weather-resident-overlay');
-      residentHost.setAttribute('aria-hidden', 'true');
-      view.root.appendChild(residentHost);
-    } else {
-      console.error('[LIVE // EARTH] Weather could not create the Residents host.');
-    }
-    ensureResidentLibrary().then(library => {
-      if (residentsDisposed || !residentHost) return;
-      const mounted = library.mount(residentHost);
-      if (!mounted) throw new Error('The Residents library refused the Weather host.');
-      residentHost.dataset.residentsMounted = 'true';
-      // Reapply the latest selected forecast after the SVG has mounted.
-      if (residentPreviewMode) applyResidentPreview(residentPreviewMode);
-      else if (forecast.length) renderSelected(selectedIndex);
-      else library.setActivity(residentHost, { mode: 'calm', gustLevel: 'normal' });
-    }).catch(error => {
-      if (!residentsDisposed) residentHost?.setAttribute('data-residents-error', 'true');
-      console.warn('[LIVE // EARTH] Residents could not mount in Weather.', error);
-    });
     const { body } = view;
     const status = el('p', 'le-sfv-status', 'Checking Location permission…');
     body.appendChild(status);
@@ -438,93 +368,6 @@
     actionRow.appendChild(refresh);
     timelineCard.appendChild(actionRow);
 
-    // These are visual scenario previews, not weather controls. They only
-    // change the illustrated scene and resident activity; forecast values,
-    // selected hour, Location permission and network requests remain untouched.
-    const residentPreview = el('section', 'le-weather-resident-preview');
-    residentPreview.setAttribute('aria-label', 'Preview resident activities');
-    const residentPreviewHeading = el('div', 'le-weather-resident-preview-heading');
-    residentPreviewHeading.append(
-      el('strong', '', 'Residents · Preview'),
-      el('span', 'le-weather-resident-preview-note', 'See the scene as it appears in Weather')
-    );
-    const residentPreviewStrip = el('div', 'le-weather-preview-strip');
-    residentPreviewStrip.setAttribute('role', 'group');
-    residentPreviewStrip.setAttribute('aria-label', 'Resident scene previews');
-    const residentPreviewStatus = el('div', 'le-weather-preview-status', 'Live forecast behaviour');
-    const residentPreviewButtons = new Map();
-    const residentPreviewOptions = [
-      { id: 'morning', label: 'Exercise', mode: 'morning', weather: 'clear', phase: 'dawn' },
-      { id: 'play', label: 'Evening play', mode: 'play', weather: 'clear', phase: 'evening' },
-      { id: 'rain', label: 'Rain', mode: 'rain', weather: 'rain', phase: 'day', particles: 'rain' },
-      { id: 'snow', label: 'Snow', mode: 'snow', weather: 'snow', phase: 'day', particles: 'snow' },
-      { id: 'heat', label: 'Heat', mode: 'heat', weather: 'hot', phase: 'day' },
-      { id: 'wind', label: 'Wind', mode: 'wind', weather: 'cloudy', phase: 'day', gustLevel: 'strong' },
-      { id: 'stargaze', label: 'Stargazing', mode: 'stargaze', weather: 'clear', phase: 'night' },
-      { id: 'walk', label: 'Walk', mode: 'walk', weather: 'clear', phase: 'day' },
-      { id: 'picnic', label: 'Picnic', mode: 'picnic', weather: 'clear', phase: 'day' },
-      { id: 'kite', label: 'Kite', mode: 'kite', weather: 'clear', phase: 'day' },
-      { id: 'garden', label: 'Garden', mode: 'garden', weather: 'clear', phase: 'day' },
-      { id: 'festival', label: 'Festival', mode: 'festival', weather: 'clear', phase: 'evening' },
-      { id: 'camping', label: 'Camping', mode: 'camping', weather: 'clear', phase: 'night' }
-    ];
-    let residentPreviewMode = null;
-    const previewWeather = {
-      rain: { precipitation: 2.8, rainChance: 90, snowfall: 0, windDirection: 270 },
-      snow: { precipitation: 0, rainChance: 0, snowfall: 0.9, windDirection: 255 }
-    };
-    function updateResidentPreviewButtons() {
-      for (const [id, node] of residentPreviewButtons) {
-        node.setAttribute('aria-pressed', String(id === (residentPreviewMode || 'live')));
-      }
-    }
-    function applyResidentPreview(id) {
-      const option = residentPreviewOptions.find(item => item.id === id);
-      if (!option) return false;
-      residentPreviewMode = id;
-      scene.dataset.residentPreview = 'true';
-      scene.dataset.weather = option.weather;
-      scene.dataset.phase = option.phase;
-      scene.dataset.mode = option.mode;
-      scene.dataset.gust = option.gustLevel || 'normal';
-      scene.style.setProperty('--le-cloud-opacity', option.weather === 'rain' ? '.9' : option.weather === 'snow' ? '.68' : option.weather === 'cloudy' ? '.78' : '.22');
-      scene.style.setProperty('--le-rain-opacity', option.particles === 'rain' ? '.82' : '0');
-      scene.style.setProperty('--le-snow-opacity', option.particles === 'snow' ? '.88' : '0');
-      scene.style.setProperty('--le-wind-drift', option.id === 'wind' ? '18px' : '0px');
-      scene.style.setProperty('--le-cloud-drift', option.id === 'wind' ? '110px' : '24px');
-      scene.style.setProperty('--le-cloud-duration', option.id === 'wind' ? '24s' : '62s');
-      scene.style.setProperty('--le-gust-duration', option.id === 'wind' ? '.9s' : '2.2s');
-      scene.querySelector('.le-weather-rain').replaceChildren();
-      scene.querySelector('.le-weather-snow').replaceChildren();
-      if (option.particles) createParticles(scene.querySelector(option.particles === 'rain' ? '.le-weather-rain' : '.le-weather-snow'), option.particles, previewWeather[option.particles]);
-      window.LiveEarthResidentLibrary?.setActivity(residentHost, {
-        mode: option.mode, weather: option.weather, phase: option.phase,
-        gustLevel: option.gustLevel || 'normal'
-      });
-      residentPreviewStatus.textContent = `Previewing ${option.label} · forecast data is unchanged`;
-      updateResidentPreviewButtons();
-      return true;
-    }
-    function restoreResidentForecast() {
-      residentPreviewMode = null;
-      delete scene.dataset.residentPreview;
-      updateResidentPreviewButtons();
-      residentPreviewStatus.textContent = forecast.length ? 'Live forecast behaviour' : 'Live forecast behaviour · waiting for weather';
-      if (forecast.length) renderSelected(selectedIndex);
-      else clearForecast();
-    }
-    for (const option of residentPreviewOptions) {
-      const previewButton = button(option.label, () => applyResidentPreview(option.id), 'le-weather-preview-button');
-      previewButton.setAttribute('aria-pressed', 'false');
-      residentPreviewButtons.set(option.id, previewButton);
-      residentPreviewStrip.appendChild(previewButton);
-    }
-    const livePreviewButton = button('Live forecast', restoreResidentForecast, 'le-weather-preview-button');
-    livePreviewButton.setAttribute('aria-pressed', 'true');
-    residentPreviewButtons.set('live', livePreviewButton);
-    residentPreviewStrip.appendChild(livePreviewButton);
-    residentPreview.append(residentPreviewHeading, residentPreviewStrip, residentPreviewStatus);
-    timelineCard.appendChild(residentPreview);
     attribution(body, [
       { text: 'Weather data by ' },
       { label: 'Open-Meteo.com', href: 'https://open-meteo.com/' },
@@ -552,21 +395,15 @@
       icon.textContent = '🌤️';
       for (const node of Object.values(metricNodes)) node.textContent = '—';
       scene.dataset.weather = 'clear'; scene.dataset.phase = 'day'; scene.dataset.mode = 'calm';
-      window.LiveEarthResidentLibrary?.setActivity(residentHost, { mode: 'calm', gustLevel: 'normal' });
       scene.style.setProperty('--le-cloud-opacity', '.22');
       scene.style.setProperty('--le-rain-opacity', '.0');
       scene.style.setProperty('--le-snow-opacity', '.0');
       scene.querySelector('.le-weather-rain').replaceChildren();
       scene.querySelector('.le-weather-snow').replaceChildren();
-      if (residentPreviewMode) applyResidentPreview(residentPreviewMode);
     }
 
     function renderSelected(index) {
       if (!forecast.length) return;
-      residentPreviewMode = null;
-      delete scene.dataset.residentPreview;
-      updateResidentPreviewButtons();
-      residentPreviewStatus.textContent = 'Live forecast behaviour';
       selectedIndex = Math.max(0, Math.min(forecast.length - 1, Number(index) || 0));
       const item = forecast[selectedIndex];
       const state = visualState(item);
@@ -576,8 +413,6 @@
       scene.dataset.weather = state.weather;
       scene.dataset.phase = state.phase;
       scene.dataset.mode = state.mode;
-      window.LiveEarthResidentLibrary?.setActivity(residentHost, state);
-      scene.dataset.gust = state.gustLevel;
       scene.style.setProperty('--le-cloud-opacity', String(.12 + (Math.max(0, Math.min(100, state.cloud)) / 100) * .85));
       scene.style.setProperty('--le-rain-opacity', String(Math.min(.95, .42 + (number(item.precipitation) ?? 0) * .22)));
       scene.style.setProperty('--le-snow-opacity', String(Math.min(.95, .45 + (number(item.snowfall) ?? 0) * .38)));
@@ -694,7 +529,7 @@
         // provider attribution remains visible at the foot of the floating overlay.
         status.hidden = true;
         setStatus(status, '', 'success');
-        summaryCard.querySelector('.le-sfv-copy').textContent = 'One landscape, changing with the forecast. Three little neighbours react to the conditions outside.';
+        summaryCard.querySelector('.le-sfv-copy').textContent = 'One landscape, changing with the forecast. Sky, clouds and precipitation respond to the conditions outside.';
       } catch (error) {
         if (error?.name === 'AbortError') return;
         if (isActive('weather') && window.liveEarthLocationAllowed?.() === true) {
@@ -752,9 +587,6 @@
     else privacyState();
 
     return () => {
-      residentsDisposed = true;
-      window.LiveEarthResidentLibrary?.unmount(residentHost);
-      if (residentHost) delete residentHost.dataset.residentsMounted;
       if (pollTimer) clearInterval(pollTimer);
       pollTimer = 0;
       abortController?.abort(); abortController = null;

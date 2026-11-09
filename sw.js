@@ -1,7 +1,7 @@
 /* LIVE // EARTH V127 — EarthEngine root-folder architecture. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v131-home-location-marker";
-const CACHE_NAME = "live-earth-shell-v131-home-location-marker";
+const BUILD_ID = "v132-residents-removed";
+const CACHE_NAME = "live-earth-shell-v132-residents-removed";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
@@ -450,9 +450,17 @@ self.addEventListener("install", event => {
 });
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
-    // The old weekly reader cache is obsolete. User IndexedDB and other
-    // bounded optional resources remain untouched.
+    // Remove retired Residents prototype data without clearing unrelated optional
+    // resources or user IndexedDB. The prototype used a dedicated CacheStorage
+    // namespace plus same-origin Residents paths in the bounded optional cache.
     await caches.delete("live-earth-weekly-reader-v1");
+    await caches.delete("live-earth-resident-prototype-v1");
+    const optionalCache = await caches.open(OPTIONAL_CACHE);
+    const optionalEntries = await optionalCache.keys();
+    await Promise.all(optionalEntries.filter(request => {
+      try { return new URL(request.url).pathname.includes("/Residents/"); }
+      catch (_) { return false; }
+    }).map(request => optionalCache.delete(request)));
     await self.clients.claim();
   })());
 });
