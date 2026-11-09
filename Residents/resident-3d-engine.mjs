@@ -78,6 +78,8 @@ function setVisible(object, visible) { object.visible = visible; }
 
 function createFace(head, person) {
   const eyes = [];
+  const brows = [];
+  const cheeks = [];
   // Soft ears with warm inner detail keep the silhouette readable at small scale.
   for (const side of [-1, 1]) {
     sphere(head, COLORS.skin, [side * 0.292, -0.015, 0.008], [0.075, 0.095, 0.075]);
@@ -91,22 +93,36 @@ function createFace(head, person) {
     sphere(eye, 0xffffff, [-0.006, 0.018, 0.047], [0.012, 0.015, 0.008], { roughness: 0.2 });
     sphere(eye, 0xffffff, [0.022, -0.019, 0.043], [0.005, 0.006, 0.004], { roughness: 0.2 });
     eyes.push(eye);
-    tube(head, [[x - 0.055, 0.13, 0.255], [x - 0.018, 0.15, 0.273], [x + 0.035, 0.135, 0.26]], COLORS.hairDark, 0.011, 9);
-    sphere(head, COLORS.cheek, [x * 1.95, -0.105, 0.235], [0.055, 0.031, 0.015], { roughness: 0.9 });
+
+    // Brows have their own pivots, allowing subtle surprise, concentration and joy.
+    const brow = joint(head, [x, 0.13, 0.25]);
+    tube(brow, [[-0.052, 0, 0.005], [-0.018, 0.018, 0.023], [0.035, 0.005, 0.01]], COLORS.hairDark, 0.011, 9);
+    brows.push(brow);
+
+    const cheek = sphere(head, COLORS.cheek, [x * 1.95, -0.105, 0.235], [0.055, 0.031, 0.015], { roughness: 0.9 });
+    cheeks.push(cheek);
   }
   sphere(head, 0xe6a88c, [0, -0.045, 0.286], [0.034, 0.027, 0.031]);
   sphere(head, 0xf2c2a5, [0, -0.026, 0.278], [0.021, 0.035, 0.022]);
   sphere(head, 0xc98c77, [-0.012, -0.064, 0.302], [0.006, 0.004, 0.004]);
   sphere(head, 0xc98c77, [0.012, -0.064, 0.302], [0.006, 0.004, 0.004]);
-  // Gentle smile and lower-lip highlight.
-  tube(head, [[-0.052, -0.165, 0.255], [-0.026, -0.189, 0.276], [0.012, -0.192, 0.279], [0.052, -0.164, 0.255]], 0x965b50, 0.012, 12);
-  sphere(head, 0xc98278, [0, -0.197, 0.268], [0.022, 0.007, 0.007]);
+
+  // Gentle smile and lower-lip highlight remain the default expression.\n  const smile = joint(head, [0, 0, 0]);
+  tube(smile, [[-0.052, -0.165, 0.255], [-0.026, -0.189, 0.276], [0.012, -0.192, 0.279], [0.052, -0.164, 0.255]], 0x965b50, 0.012, 12);
+  sphere(smile, 0xc98278, [0, -0.197, 0.268], [0.022, 0.007, 0.007]);
+
+  // A small open-mouth smile appears only during joyful action beats.
+  const openMouth = joint(head, [0, -0.174, 0.274]);
+  sphere(openMouth, 0x6f3738, [0, 0, 0], [0.039, 0.027, 0.012]);
+  sphere(openMouth, 0xd96f79, [0, -0.016, 0.009], [0.022, 0.008, 0.006]);
+  openMouth.visible = false;
+
   if (person.id === 'red' || person.id === 'lady') {
     for (const x of [-0.145, -0.115, 0.115, 0.145]) {
       sphere(head, 0xb86e5f, [x, -0.09 + (Math.abs(x) > 0.13 ? 0.012 : 0), 0.249], [0.006, 0.006, 0.004], { roughness: 0.95 });
     }
   }
-  return eyes;
+  return { eyes, brows, cheeks, smile, openMouth };
 }
 
 function addHair(head, person) {
@@ -281,7 +297,8 @@ function createCharacter(person) {
   const head = joint(root, [0, 1.625, 0]);
   sphere(head, COLORS.skin, [0, 0, 0], [0.305, 0.34, 0.27]);
   const hair = addHair(head, person);
-  const eyes = createFace(head, person);
+  const face = createFace(head, person);
+  const eyes = face.eyes;
 
   if (person.id === 'red') {
     const hood = new THREE.Mesh(new THREE.TorusGeometry(0.255, 0.065, 10, 28, Math.PI), mat(COLORS.redDark));
@@ -291,7 +308,7 @@ function createCharacter(person) {
   }
 
   const accessories = createAccessories(root, person);
-  return { root, torso, head, hair, eyes, arms, legs, accessories, clothing, shadow, person, baseX: 0 };
+  return { root, torso, head, hair, face, eyes, arms, legs, accessories, clothing, shadow, person, baseX: 0 };
 }
 
 function createUmbrella(parent, color) {
@@ -518,10 +535,30 @@ function poseActor(actor, mode, time, index, state) {
   } else if (mode === 'play' || mode === 'walk') {
     walkCycle(actor, time, index, mode === 'play' ? 5.0 : 3.35, mode === 'play' ? 0.58 : 0.40, mode === 'play' ? 0.085 : 0.025);
     if (mode === 'play') {
-      actor.head.rotation.y = Math.sin(time * 2.0 + index) * 0.22;
-      if (isRed) right.shoulder.rotation.z = 0.5 + Math.sin(time * 4.2) * 0.28;
-      if (isLady) actor.head.rotation.z = Math.sin(time * 3.2) * 0.06;
-      if (isBlue) left.shoulder.rotation.z = -0.7 + Math.sin(time * 3.1) * 0.18;
+      // The boys turn toward the lady and wave inward; she answers with a
+      // small alternating hand gesture. Their timing is offset so this reads
+      // as a shared moment rather than three synchronized loops.
+      const greeting = Math.sin(time * 2.7 + index * 1.55);
+      if (isRed) {
+        actor.head.rotation.y = 0.22 + Math.sin(time * 1.8) * 0.10;
+        right.shoulder.rotation.z = 0.50 + Math.sin(time * 3.8) * 0.22;
+        right.elbow.rotation.x = -0.48 - Math.max(0, greeting) * 0.18;
+        right.wrist.rotation.z = Math.sin(time * 4.2) * 0.12;
+      }
+      if (isLady) {
+        actor.head.rotation.y = Math.sin(time * 1.75 + 0.4) * 0.30;
+        actor.head.rotation.z = Math.sin(time * 2.2) * 0.055;
+        right.shoulder.rotation.z = 0.36 + Math.max(0, greeting) * 0.28;
+        right.elbow.rotation.x = -0.38;
+        left.shoulder.rotation.z = -0.34 - Math.max(0, -greeting) * 0.25;
+        left.elbow.rotation.x = -0.32;
+      }
+      if (isBlue) {
+        actor.head.rotation.y = -0.22 - Math.sin(time * 1.7) * 0.08;
+        left.shoulder.rotation.z = -0.68 - Math.sin(time * 3.4 + 0.7) * 0.20;
+        left.elbow.rotation.x = -0.46;
+        left.wrist.rotation.z = Math.sin(time * 3.9 + 0.5) * 0.10;
+      }
     }
   } else if (mode === 'rain') {
     if (isLady) {
@@ -729,7 +766,28 @@ export function createResidents3D(canvas, roster, initialState = {}) {
 
       const blinkPulse = Math.max(0, Math.sin((elapsed * 0.56 + index * 0.37) * Math.PI * 2));
       const blink = Math.pow(blinkPulse, 32);
-      actor.eyes.forEach(eye => { eye.scale.y = 1 - blink * 0.88; });
+      actor.eyes.forEach((eye, eyeIndex) => {
+        eye.scale.y = 1 - blink * 0.88;
+        // Tiny eye-line shifts help them look toward one another in shared play.
+        const inwardLook = mode === 'play' ? (index === 0 ? 0.07 : index === 2 ? -0.07 : Math.sin(elapsed * 1.2) * 0.035) : 0;
+        eye.rotation.y = inwardLook + Math.sin(elapsed * 0.48 + index + eyeIndex * 0.35) * 0.018;
+      });
+
+      const joyful = mode === 'play' || mode === 'festival' ||
+        (mode === 'morning' && (index === 0 || index === 1)) ||
+        (mode === 'rain' && index === 1);
+      const expressionBeat = Math.sin(elapsed * (mode === 'festival' ? 4.2 : 2.55) + index * 1.9);
+      const laughing = joyful && expressionBeat > (mode === 'festival' ? 0.82 : 0.91);
+      actor.face.openMouth.visible = laughing;
+      actor.face.smile.visible = !laughing;
+      actor.face.brows.forEach((brow, browIndex) => {
+        const side = browIndex === 0 ? -1 : 1;
+        const lift = mode === 'snow' ? -0.028 : mode === 'heat' ? -0.018 : joyful ? 0.045 + Math.max(0, expressionBeat) * 0.025 : mode === 'stargaze' ? 0.035 : 0;
+        brow.rotation.z = side * lift;
+      });
+      actor.face.cheeks.forEach((cheek, cheekIndex) => {
+        cheek.scale.y = 0.031 + (joyful ? 0.003 : 0) + Math.sin(elapsed * 1.4 + index + cheekIndex) * 0.001;
+      });
       actor.hair.rotation.x = Math.sin(elapsed * 1.45 + index * 2.15) * (mode === 'wind' ? 0.06 : 0.018);
       actor.accessories.kite.position.x = mode === 'kite' ? 0.65 + Math.sin(elapsed * 1.4) * 0.13 : 0.65;
       actor.accessories.fan.rotation.z = mode === 'heat' && actor.person.id === 'lady' ? Math.sin(elapsed * 8) * 0.40 : 0;

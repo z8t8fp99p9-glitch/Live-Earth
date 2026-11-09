@@ -58,4 +58,12 @@ assert.ok(source.includes('details.bag = bag'), 'The lady satchel should have an
 assert.ok(source.includes('memory.quaternion.slerp(node.quaternion, alpha)'), 'Pose smoothing must use supported quaternion interpolation');
 assert.ok(!source.includes('memory.rotation.lerp(node.rotation, alpha)'), 'Euler rotations must not call unsupported lerp()');
 
+
+assert.ok(source.includes('const brows = []'), 'Faces should include independently animated eyebrows');
+assert.ok(source.includes('const openMouth = joint(head'), 'Faces should include a joyful open-mouth expression');
+assert.ok(source.includes('actor.face.openMouth.visible = laughing'), 'Expressions should respond to joyful activity beats');
+assert.ok(source.includes('eye.rotation.y = inwardLook'), 'Characters should glance toward one another during play');
+assert.ok(source.includes('const greeting = Math.sin(time * 2.7 + index * 1.55)'), 'Shared play should use staggered greeting gestures');
+assert.ok(source.includes('right.wrist.rotation.z = Math.sin(time * 4.2)'), 'Greeting gestures should articulate the wrist');
+
 console.log('Residents 3D refinement: faces, rig joints, outfits, movement and mobile lifecycle checks passed.');

@@ -44,3 +44,8 @@ Activity changes now ease across articulated joints rather than snapping directl
 ## Hotfix v136 — pose interpolation
 
 The v135 activity-transition refinement used an unsupported Euler.lerp() call in Three.js, which could throw inside the animation loop and prevent the Residents renderer from drawing. The pose memory now stores quaternions and uses Quaternion.slerp(), while position continues to use Vector3.lerp(). This preserves the intended smooth transitions without changing character geometry, Weather UI, preview modes or other views.
+
+
+## Refinement pass v137 — expressions and shared play
+
+Faces now have independently animated brows and cheeks, plus a small open-mouth smile that appears on selected joyful beats. Eye direction shifts inward during shared play. In Evening Play, the boys greet toward the little lady and she answers with offset, alternating hand gestures; the three loops are deliberately out of phase so the action feels conversational rather than synchronized. Existing cast design, preview options, Weather layout, forecast and view boundaries remain unchanged.
