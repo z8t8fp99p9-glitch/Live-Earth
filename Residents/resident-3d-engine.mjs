@@ -1,40 +1,61 @@
-/* LIVE // EARTH — Procedural Residents 3D Engine
-   Small articulated mesh characters. No model downloads, video or extra renderer library. */
+/* LIVE // EARTH — Residents 3D Engine v1.1
+   Refined procedural character models with articulated limbs, expressive faces,
+   reusable materials and independent activity animation. Uses the app's existing
+   same-origin Three.js runtime; no external models, textures or added libraries. */
 import * as THREE from '../vendor/three.module.js';
 
 const COLORS = {
-  skin: 0xf0bd99, hair: 0x49352f, darkHair: 0x372d2d,
-  red: 0xb84238, redDark: 0x7e302d, denim: 0x537ca7,
-  blue: 0x536e9a, navy: 0x324b70, cream: 0xf1e8d9,
-  pants: 0x46536a, boots: 0x76513c, sole: 0xf3e9d9,
-  brown: 0x784f38, gold: 0xf0c66c
+  skin: 0xf0bd99, skinShade: 0xd99578, cheek: 0xe98981,
+  hair: 0x49352f, hairLight: 0x735446, hairDark: 0x342927,
+  red: 0xb84238, redDark: 0x87312d, redLight: 0xd45d51,
+  denim: 0x537ca7, denimDark: 0x385e83, denimLight: 0x7399bd,
+  blue: 0x536e9a, navy: 0x324b70, navyLight: 0x7189b1,
+  cream: 0xf1e8d9, creamShade: 0xd7c9b6,
+  pants: 0x46536a, pantsLight: 0x647087,
+  boots: 0x76513c, bootLight: 0x9b704d, sole: 0xf3e9d9,
+  brown: 0x784f38, gold: 0xf0c66c, eye: 0x4a3027, white: 0xfffdf7
 };
 
-function material(color, roughness = 0.78, metalness = 0) {
-  return new THREE.MeshStandardMaterial({ color, roughness, metalness });
+const materialCache = new Map();
+const geometryCache = new Map();
+function mat(color, roughness = 0.72, metalness = 0) {
+  const key = `${color}:${roughness}:${metalness}`;
+  if (!materialCache.has(key)) materialCache.set(key, new THREE.MeshStandardMaterial({ color, roughness, metalness }));
+  return materialCache.get(key);
 }
+function geometry(key, make) {
+  if (!geometryCache.has(key)) geometryCache.set(key, make());
+  return geometryCache.get(key);
+}
+const sphereGeometry = geometry('sphere-26x18', () => new THREE.SphereGeometry(1, 26, 18));
 function sphere(parent, color, position, scale, options = {}) {
-  const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, options.segments || 20, options.rings || 14), material(color, options.roughness ?? 0.8, options.metalness ?? 0));
+  const mesh = new THREE.Mesh(sphereGeometry, mat(color, options.roughness ?? 0.72, options.metalness ?? 0));
   mesh.position.set(...position);
   mesh.scale.set(...scale);
+  mesh.castShadow = false;
   parent.add(mesh);
   return mesh;
 }
-function box(parent, color, position, scale, radius = 0.06) {
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(...scale), material(color));
+function box(parent, color, position, scale, options = {}) {
+  const key = `box:${scale.join(',')}`;
+  const geo = geometry(key, () => new THREE.BoxGeometry(...scale));
+  const mesh = new THREE.Mesh(geo, mat(color, options.roughness ?? 0.74, options.metalness ?? 0));
   mesh.position.set(...position);
-  mesh.userData.rounding = radius;
   parent.add(mesh);
   return mesh;
 }
-function tube(parent, points, color, radius = 0.018) {
-  const curve = new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p)));
-  const mesh = new THREE.Mesh(new THREE.TubeGeometry(curve, 16, radius, 6, false), material(color));
+function cylinder(parent, color, position, radiusTop, radiusBottom, height, segments = 20) {
+  const key = `cyl:${radiusTop}:${radiusBottom}:${height}:${segments}`;
+  const mesh = new THREE.Mesh(geometry(key, () => new THREE.CylinderGeometry(radiusTop, radiusBottom, height, segments)), mat(color));
+  mesh.position.set(...position);
   parent.add(mesh);
   return mesh;
 }
-function segment(parent, color, start, length, width, depth = width) {
-  return sphere(parent, color, [0, -length / 2, 0], [width, length / 2, depth]);
+function tube(parent, points, color, radius = 0.012, tubularSegments = 12) {
+  const curve = new THREE.CatmullRomCurve3(points.map(point => new THREE.Vector3(...point)));
+  const mesh = new THREE.Mesh(new THREE.TubeGeometry(curve, tubularSegments, radius, 7, false), mat(color, 0.68));
+  parent.add(mesh);
+  return mesh;
 }
 function joint(parent, position) {
   const group = new THREE.Group();
@@ -42,83 +63,221 @@ function joint(parent, position) {
   parent.add(group);
   return group;
 }
+function setVisible(object, visible) { object.visible = visible; }
 
 function createFace(head, person) {
-  const eyeGroups = [];
+  const eyes = [];
+  // Soft ears with warm inner detail keep the silhouette readable at small scale.
+  for (const side of [-1, 1]) {
+    sphere(head, COLORS.skin, [side * 0.292, -0.015, 0.008], [0.075, 0.095, 0.075]);
+    sphere(head, COLORS.skinShade, [side * 0.303, -0.025, 0.064], [0.035, 0.052, 0.018]);
+  }
   for (const x of [-0.105, 0.105]) {
-    const eye = joint(head, [x, 0.025, 0.248]);
-    sphere(eye, 0xfffdf7, [0, 0, 0], [0.065, 0.083, 0.035], { segments: 16, rings: 12 });
-    sphere(eye, 0x4a3027, [0.008, -0.006, 0.031], [0.033, 0.047, 0.018], { segments: 14, rings: 10 });
-    sphere(eye, 0xffffff, [-0.005, 0.017, 0.047], [0.012, 0.016, 0.008], { segments: 10, rings: 8 });
-    eyeGroups.push(eye);
-    tube(head, [[x - 0.055, 0.13, 0.26], [x, 0.15, 0.275], [x + 0.05, 0.13, 0.26]], COLORS.darkHair, 0.012);
-    sphere(head, 0xe98981, [x * 1.9, -0.105, 0.235], [0.052, 0.028, 0.012], { segments: 12, rings: 8 });
+    const eye = joint(head, [x, 0.035, 0.247]);
+    sphere(eye, COLORS.white, [0, 0, 0], [0.064, 0.079, 0.031], { roughness: 0.34 });
+    sphere(eye, COLORS.eye, [0.008, -0.004, 0.025], [0.034, 0.047, 0.018], { roughness: 0.28 });
+    sphere(eye, 0x241b19, [0.009, -0.007, 0.039], [0.018, 0.029, 0.009], { roughness: 0.24 });
+    sphere(eye, 0xffffff, [-0.006, 0.018, 0.047], [0.012, 0.015, 0.008], { roughness: 0.2 });
+    sphere(eye, 0xffffff, [0.022, -0.019, 0.043], [0.005, 0.006, 0.004], { roughness: 0.2 });
+    eyes.push(eye);
+    tube(head, [[x - 0.055, 0.13, 0.255], [x - 0.018, 0.15, 0.273], [x + 0.035, 0.135, 0.26]], COLORS.hairDark, 0.011, 9);
+    sphere(head, COLORS.cheek, [x * 1.95, -0.105, 0.235], [0.055, 0.031, 0.015], { roughness: 0.9 });
   }
-  sphere(head, 0xe6a88c, [0, -0.04, 0.28], [0.035, 0.027, 0.03], { segments: 12, rings: 8 });
-  tube(head, [[-0.052, -0.17, 0.255], [-0.025, -0.195, 0.278], [0.015, -0.198, 0.28], [0.052, -0.17, 0.255]], 0x965b50, 0.012);
-  if (person.id === 'red') {
-    // Soft freckles, kept subtle at the small on-screen scale.
-    for (const x of [-0.14, -0.11, 0.11, 0.14]) sphere(head, 0xb86e5f, [x, -0.095, 0.252], [0.008, 0.008, 0.006], { segments: 8, rings: 6 });
+  sphere(head, 0xe6a88c, [0, -0.045, 0.286], [0.034, 0.027, 0.031]);
+  // Gentle smile and lower-lip highlight.
+  tube(head, [[-0.052, -0.165, 0.255], [-0.026, -0.189, 0.276], [0.012, -0.192, 0.279], [0.052, -0.164, 0.255]], 0x965b50, 0.012, 12);
+  sphere(head, 0xc98278, [0, -0.197, 0.268], [0.022, 0.007, 0.007]);
+  if (person.id === 'red' || person.id === 'lady') {
+    for (const x of [-0.145, -0.115, 0.115, 0.145]) {
+      sphere(head, 0xb86e5f, [x, -0.09 + (Math.abs(x) > 0.13 ? 0.012 : 0), 0.249], [0.006, 0.006, 0.004], { roughness: 0.95 });
+    }
   }
-  return eyeGroups;
+  return eyes;
 }
 
 function addHair(head, person) {
-  const hair = person.id === 'blue' ? 0x493a35 : 0x49352f;
-  sphere(head, hair, [0, 0.16, -0.015], [0.33, 0.235, 0.29]);
+  const hairRoot = joint(head, [0, 0, 0]);
+  const base = person.id === 'blue' ? 0x493a35 : COLORS.hair;
+  sphere(hairRoot, base, [0, 0.155, -0.025], [0.326, 0.225, 0.29]);
   if (person.id === 'lady') {
-    // Wavy chestnut bob, longer around the cheeks and nape.
-    for (let i = 0; i < 11; i++) {
-      const a = (i / 11) * Math.PI * 2;
-      sphere(head, hair, [Math.cos(a) * 0.275, -0.015 + Math.sin(a) * 0.035, Math.sin(a) * 0.16 - 0.015], [0.085, 0.19, 0.09], { segments: 14, rings: 10 });
+    // Chestnut bob: layered side locks, curved fringe and soft highlights.
+    for (const side of [-1, 1]) {
+      sphere(hairRoot, base, [side * 0.255, -0.045, -0.015], [0.105, 0.205, 0.13]);
+      sphere(hairRoot, 0x5b4035, [side * 0.268, -0.13, 0.035], [0.075, 0.105, 0.09]);
+      tube(hairRoot, [[side * 0.28, 0.16, 0.06], [side * 0.30, 0.0, 0.075], [side * 0.26, -0.15, 0.075]], 0x795847, 0.006, 10);
     }
-    for (let i = 0; i < 5; i++) sphere(head, 0x62483a, [-0.18 + i * 0.085, 0.22 + Math.sin(i) * 0.025, 0.19], [0.105, 0.09, 0.11], { segments: 14, rings: 10 });
+    for (let i = 0; i < 6; i++) {
+      const x = -0.22 + i * 0.088;
+      const y = 0.205 + Math.sin(i * 0.85) * 0.025;
+      const lock = sphere(hairRoot, i % 3 === 0 ? 0x62483a : base, [x, y, 0.185], [0.105, 0.105, 0.115]);
+      lock.rotation.z = (i - 2.5) * -0.09;
+    }
+    tube(hairRoot, [[-0.19, 0.12, 0.275], [-0.05, 0.19, 0.294], [0.09, 0.17, 0.29], [0.20, 0.10, 0.27]], 0x8a6651, 0.007, 14);
   } else {
-    // Separate tousled curls create a sculpted 3D hair silhouette.
-    for (let i = 0; i < 13; i++) {
-      const a = (i / 13) * Math.PI * 2;
-      const r = i % 3 === 0 ? 0.24 : 0.18;
-      sphere(head, i % 4 === 0 ? 0x62483c : hair,
-        [Math.cos(a) * r, 0.19 + Math.sin(i * 2.1) * 0.045, Math.sin(a) * 0.18],
-        [0.105, 0.11, 0.09], { segments: 12, rings: 9 });
+    // Distinct swept curls instead of a single helmet-like cap.
+    for (let i = 0; i < 15; i++) {
+      const angle = (i / 15) * Math.PI * 2;
+      const radius = i % 4 === 0 ? 0.245 : 0.195;
+      const curl = sphere(hairRoot, i % 4 === 0 ? 0x62483c : base,
+        [Math.cos(angle) * radius, 0.19 + Math.sin(i * 2.1) * 0.035, Math.sin(angle) * 0.18 - 0.005],
+        [0.09, 0.105 + (i % 3) * 0.008, 0.085]);
+      curl.rotation.z = Math.cos(angle) * 0.24;
     }
-    sphere(head, hair, [-0.12, 0.24, 0.19], [0.13, 0.12, 0.12]);
-    sphere(head, hair, [0.015, 0.29, 0.17], [0.14, 0.095, 0.12]);
-    sphere(head, 0x62483c, [0.15, 0.23, 0.16], [0.12, 0.09, 0.11]);
+    for (let i = 0; i < 5; i++) {
+      const x = -0.19 + i * 0.09;
+      const tuft = sphere(hairRoot, i % 2 ? base : 0x60483c, [x, 0.265 + Math.sin(i * 1.4) * 0.035, 0.178], [0.105, 0.085, 0.105]);
+      tuft.rotation.z = -0.22 + i * 0.1;
+    }
+    tube(hairRoot, [[-0.20, 0.22, 0.245], [-0.08, 0.30, 0.27], [0.06, 0.30, 0.27], [0.18, 0.23, 0.24]], 0x785947, 0.006, 14);
   }
+  return hairRoot;
+}
+
+function makeHand(parent, side, skinColor) {
+  const hand = new THREE.Group();
+  sphere(hand, skinColor, [0, -0.035, 0.02], [0.073, 0.082, 0.052]);
+  // Four short, softly rounded fingers and a separate thumb make open-hand poses legible.
+  const fingerLengths = [0.052, 0.064, 0.059, 0.047];
+  for (let i = 0; i < 4; i++) {
+    const x = -0.047 + i * 0.031;
+    sphere(hand, skinColor, [x, -0.105 - (i === 1 ? 0.006 : 0), 0.022], [0.016, fingerLengths[i], 0.018], { segments: 14, rings: 10 });
+    sphere(hand, skinColor, [x, -0.145 - (i === 1 ? 0.006 : 0), 0.024], [0.014, 0.018, 0.016], { segments: 12, rings: 8 });
+  }
+  const thumb = sphere(hand, skinColor, [side * 0.078, -0.055, 0.025], [0.022, 0.048, 0.02]);
+  thumb.rotation.z = side * -0.45;
+  parent.add(hand);
+  return hand;
 }
 
 function makeArm(root, side, sleeveColor, skinColor) {
-  const shoulder = joint(root, [side * 0.30, 1.24, 0]);
-  sphere(shoulder, sleeveColor, [side * 0.035, -0.10, 0], [0.115, 0.205, 0.12]);
-  const elbow = joint(shoulder, [side * 0.04, -0.27, 0]);
-  sphere(elbow, sleeveColor, [0, -0.12, 0], [0.082, 0.17, 0.085]);
-  const wrist = joint(elbow, [0, -0.25, 0]);
-  sphere(wrist, skinColor, [0, -0.045, 0.005], [0.067, 0.09, 0.068]);
-  return { shoulder, elbow, wrist };
+  const shoulder = joint(root, [side * 0.292, 1.265, 0]);
+  sphere(shoulder, sleeveColor, [side * 0.025, -0.105, 0], [0.108, 0.175, 0.112]);
+  const elbow = joint(shoulder, [side * 0.035, -0.245, 0]);
+  sphere(elbow, sleeveColor, [0, -0.108, 0], [0.078, 0.158, 0.082]);
+  const wrist = joint(elbow, [0, -0.225, 0]);
+  const cuff = cylinder(wrist, sleeveColor, [0, 0.005, 0], 0.071, 0.078, 0.075, 16);
+  cuff.rotation.z = Math.PI / 2;
+  const hand = makeHand(wrist, side, skinColor);
+  return { shoulder, elbow, wrist, hand };
 }
 
-function makeLeg(root, side, pantsColor, shoeColor, soleColor) {
-  const hip = joint(root, [side * 0.145, 0.58, 0]);
-  sphere(hip, pantsColor, [0, -0.14, 0], [0.125, 0.205, 0.14]);
-  const knee = joint(hip, [0, -0.27, 0]);
-  sphere(knee, pantsColor, [0, -0.14, 0], [0.105, 0.18, 0.115]);
-  sphere(knee, shoeColor, [0, -0.315, 0.055], [0.13, 0.085, 0.19]);
-  sphere(knee, soleColor, [0, -0.365, 0.06], [0.135, 0.025, 0.195]);
-  return { hip, knee };
+function makeShoe(foot, person) {
+  const isBoot = person.id === 'lady';
+  const shoe = isBoot ? COLORS.boots : person.id === 'red' ? 0x5e6677 : 0x68758a;
+  sphere(foot, shoe, [0, 0.025, 0.055], [0.13, 0.073, 0.18]);
+  sphere(foot, isBoot ? COLORS.bootLight : 0xe6e7e9, [0, 0.052, 0.13], [0.105, 0.048, 0.105]);
+  sphere(foot, COLORS.sole, [0, -0.035, 0.06], [0.135, 0.025, 0.19]);
+  for (let i = 0; i < 3; i++) {
+    const z = 0.01 + i * 0.035;
+    tube(foot, [[-0.035, 0.092, z], [0, 0.096, z + 0.01], [0.035, 0.092, z]], isBoot ? 0xc18c58 : 0xe9edf1, 0.006, 6);
+  }
+  if (isBoot) {
+    tube(foot, [[-0.085, 0.02, -0.03], [-0.087, 0.075, 0.015], [-0.08, 0.03, 0.065]], 0xc18c58, 0.008, 8);
+  }
+}
+
+function makeLeg(root, side, person) {
+  const hip = joint(root, [side * 0.145, 0.665, 0]);
+  sphere(hip, COLORS.pants, [0, -0.125, 0], [0.116, 0.17, 0.12]);
+  const knee = joint(hip, [0, -0.25, 0]);
+  sphere(knee, person.id === 'lady' ? COLORS.skin : COLORS.pants, [0, -0.11, 0], [0.095, 0.155, 0.105]);
+  const ankle = joint(knee, [0, -0.235, 0]);
+  sphere(ankle, person.id === 'lady' ? COLORS.skin : COLORS.pants, [0, -0.035, 0], [0.074, 0.085, 0.075]);
+  const foot = joint(ankle, [0, -0.075, 0.04]);
+  makeShoe(foot, person);
+  return { hip, knee, ankle, foot };
+}
+
+function addClothing(root, person, torso) {
+  const details = {};
+  if (person.id === 'red') {
+    sphere(root, COLORS.redDark, [0, 1.27, -0.075], [0.255, 0.19, 0.16]);
+    sphere(root, COLORS.redLight, [0, 1.01, 0.195], [0.205, 0.09, 0.028]);
+    // Kangaroo pocket, seams and soft drawstrings.
+    const pocket = box(root, 0xa63a34, [0, 0.89, 0.208], [0.25, 0.13, 0.025]);
+    pocket.rotation.x = -0.08;
+    tube(root, [[-0.12, 0.95, 0.22], [-0.11, 0.84, 0.22], [0.11, 0.84, 0.22], [0.12, 0.95, 0.22]], 0x7f2d2a, 0.006);
+    for (const x of [-0.07, 0.07]) {
+      tube(root, [[x, 1.31, 0.205], [x * 0.9, 1.12, 0.222], [x * 0.9, 1.02, 0.225]], 0xf4eadc, 0.009, 9);
+      sphere(root, COLORS.gold, [x * 0.9, 1.01, 0.225], [0.012, 0.018, 0.012]);
+    }
+    details.pocket = pocket;
+  } else if (person.id === 'lady') {
+    // Cream blouse under a denim pinafore, curved hem and tiny brass buttons.
+    sphere(root, COLORS.denim, [0, 1.035, 0.135], [0.267, 0.285, 0.085]);
+    const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.255, 0.415, 0.44, 28, 2), mat(COLORS.denim, 0.86));
+    skirt.position.set(0, 0.665, 0);
+    root.add(skirt);
+    details.skirt = skirt;
+    for (const x of [-0.15, 0.15]) {
+      const strap = box(root, COLORS.denimDark, [x, 1.30, 0.185], [0.075, 0.31, 0.05]);
+      strap.rotation.z = x * -0.28;
+      sphere(root, COLORS.gold, [x, 1.225, 0.222], [0.028, 0.028, 0.018], { metalness: 0.25 });
+    }
+    tube(root, [[-0.18, 1.32, 0.18], [0, 1.205, 0.21], [0.18, 1.32, 0.18]], COLORS.cream, 0.032);
+    tube(root, [[-0.31, 0.82, 0.12], [-0.2, 0.74, 0.20], [0, 0.72, 0.23], [0.2, 0.74, 0.20], [0.31, 0.82, 0.12]], COLORS.denimLight, 0.006, 18);
+    for (const x of [-0.12, 0, 0.12]) tube(root, [[x, 0.85, 0.19], [x * 1.5, 0.67, 0.35], [x * 1.7, 0.52, 0.33]], COLORS.denimDark, 0.004, 9);
+    const bag = box(root, COLORS.brown, [-0.36, 0.86, 0.18], [0.18, 0.19, 0.11]);
+    bag.rotation.z = -0.18;
+    box(root, COLORS.bootLight, [-0.36, 0.91, 0.238], [0.19, 0.07, 0.018]);
+    sphere(root, COLORS.gold, [-0.36, 0.85, 0.252], [0.016, 0.016, 0.01]);
+    tube(root, [[-0.28, 1.36, 0.21], [-0.23, 1.14, 0.24], [-0.31, 0.98, 0.23], [-0.36, 0.91, 0.22]], 0x9b704d, 0.022, 14);
+  } else {
+    // Layered hoodie and blue jacket with zip, collar and earth badge.
+    sphere(root, COLORS.cream, [0, 1.055, 0.17], [0.245, 0.32, 0.095]);
+    sphere(root, COLORS.navy, [0, 1.04, 0.105], [0.31, 0.385, 0.125]);
+    sphere(root, COLORS.cream, [0, 1.30, -0.025], [0.22, 0.18, 0.15]);
+    box(root, COLORS.cream, [0, 1.08, 0.229], [0.095, 0.30, 0.025]);
+    tube(root, [[-0.17, 1.35, 0.205], [-0.09, 1.27, 0.225], [-0.12, 1.13, 0.23]], COLORS.navyLight, 0.018, 10);
+    tube(root, [[0.17, 1.35, 0.205], [0.09, 1.27, 0.225], [0.12, 1.13, 0.23]], COLORS.navyLight, 0.018, 10);
+    tube(root, [[0, 1.28, 0.25], [0, 0.90, 0.25]], 0xd8dce5, 0.008, 12);
+    sphere(root, COLORS.gold, [0.22, 1.16, 0.218], [0.065, 0.065, 0.025], { metalness: 0.18 });
+    sphere(root, 0x389f96, [0.22, 1.16, 0.242], [0.044, 0.044, 0.014]);
+    tube(root, [[-0.09, 1.27, 0.23], [-0.07, 1.13, 0.25]], 0xd9d2c9, 0.008, 8);
+    tube(root, [[0.09, 1.27, 0.23], [0.07, 1.13, 0.25]], 0xd9d2c9, 0.008, 8);
+  }
+  return details;
+}
+
+function createCharacter(person) {
+  const root = new THREE.Group();
+  root.position.y = 0;
+  const shadow = new THREE.Mesh(geometry('ground-shadow', () => new THREE.CircleGeometry(0.34, 28)), new THREE.MeshBasicMaterial({ color: 0x173b4a, transparent: true, opacity: 0.15, depthWrite: false }));
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.y = 0.008;
+  root.add(shadow);
+
+  const shirt = person.id === 'red' ? COLORS.red : person.id === 'lady' ? COLORS.cream : COLORS.navy;
+  const torso = sphere(root, shirt, [0, 1.04, 0], [0.305, 0.375, 0.215]);
+  const clothing = addClothing(root, person, torso);
+  const sleeve = person.id === 'red' ? COLORS.red : person.id === 'lady' ? COLORS.cream : COLORS.blue;
+  const arms = [makeArm(root, -1, sleeve, COLORS.skin), makeArm(root, 1, sleeve, COLORS.skin)];
+  const legs = [makeLeg(root, -1, person), makeLeg(root, 1, person)];
+  const head = joint(root, [0, 1.625, 0]);
+  sphere(head, COLORS.skin, [0, 0, 0], [0.305, 0.34, 0.27]);
+  const hair = addHair(head, person);
+  const eyes = createFace(head, person);
+
+  if (person.id === 'red') {
+    const hood = new THREE.Mesh(new THREE.TorusGeometry(0.255, 0.065, 10, 28, Math.PI), mat(COLORS.redDark));
+    hood.position.set(0, -0.10, -0.075);
+    hood.rotation.z = Math.PI;
+    root.add(hood);
+  }
+
+  const accessories = createAccessories(root, person);
+  return { root, torso, head, hair, eyes, arms, legs, accessories, clothing, shadow, person, baseX: 0 };
 }
 
 function createUmbrella(parent, color) {
   const group = new THREE.Group();
-  group.position.set(0, 2.12, 0.02);
-  const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.38, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), material(color));
+  group.position.set(0, 2.18, 0.03);
+  const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.36, 22, 14, 0, Math.PI * 2, 0, Math.PI / 2), mat(color, 0.45));
   canopy.scale.y = 0.48;
   group.add(canopy);
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.65, 8), material(0xf3e8d4));
-  stem.position.y = -0.18;
-  group.add(stem);
-  const hook = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.012, 6, 12, Math.PI), material(0xf3e8d4));
-  hook.position.set(0, -0.5, 0);
+  cylinder(group, 0xf3e8d4, [0, -0.20, 0], 0.012, 0.012, 0.62, 9);
+  const hook = new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.011, 7, 14, Math.PI), mat(0xf3e8d4));
+  hook.position.set(0, -0.48, 0);
   group.add(hook);
   group.visible = false;
   parent.add(group);
@@ -128,137 +287,82 @@ function createUmbrella(parent, color) {
 function createAccessories(root, person) {
   const accessories = {};
   accessories.umbrella = createUmbrella(root, person.id === 'red' ? 0xe77f72 : 0x718fc7);
-  accessories.hat = sphere(root, 0x7894bd, [0, 1.91, 0], [0.31, 0.16, 0.29]);
-  accessories.hat.visible = false;
-  accessories.hatPom = sphere(root, 0xffffff, [0, 2.055, 0], [0.065, 0.06, 0.065]);
-  accessories.hatPom.visible = false;
-  accessories.scarf = sphere(root, 0xd87875, [0, 1.23, 0.03], [0.31, 0.10, 0.22]);
-  accessories.scarf.visible = false;
-  accessories.fan = box(root, 0xf1d18e, [0.43, 1.22, 0.06], [0.25, 0.22, 0.035]);
+  accessories.hat = sphere(root, 0x7894bd, [0, 2.01, -0.01], [0.315, 0.145, 0.29]);
+  accessories.hatPom = sphere(root, 0xffffff, [0, 2.145, -0.01], [0.055, 0.055, 0.055]);
+  accessories.scarf = sphere(root, 0xd87875, [0, 1.36, 0.03], [0.29, 0.085, 0.22]);
+  accessories.fan = new THREE.Group();
+  sphere(accessories.fan, 0x9c704d, [0, -0.10, 0], [0.018, 0.11, 0.018]);
+  const fanDisk = new THREE.Mesh(new THREE.CircleGeometry(0.12, 18), mat(0xf1d18e));
+  fanDisk.position.set(0, 0.045, 0.008);
+  accessories.fan.add(fanDisk);
+  for (let i = -2; i <= 2; i++) tube(accessories.fan, [[0, 0.045, 0.018], [i * 0.035, 0.10, 0.018]], 0xb78652, 0.004, 5);
+  accessories.fan.position.set(0.42, 1.31, 0.25);
   accessories.fan.visible = false;
+  root.add(accessories.fan);
+
   accessories.kite = new THREE.Group();
-  const kiteBody = new THREE.Mesh(new THREE.OctahedronGeometry(0.19, 0), material(0xe77f72));
-  kiteBody.scale.y = 1.25;
+  const kiteBody = new THREE.Mesh(new THREE.OctahedronGeometry(0.18, 0), mat(0xe77f72));
+  kiteBody.scale.y = 1.3;
   accessories.kite.add(kiteBody);
-  tube(accessories.kite, [[0, -0.2, 0], [0.06, -0.32, 0], [-0.04, -0.43, 0]], 0xffe2a1, 0.012);
-  accessories.kite.position.set(0.65, 2.15, -0.12);
+  tube(accessories.kite, [[0, -0.20, 0], [0.06, -0.32, 0], [-0.04, -0.43, 0]], 0xffe2a1, 0.011);
+  accessories.kite.position.set(0.65, 2.18, -0.12);
   accessories.kite.visible = false;
   root.add(accessories.kite);
+
   accessories.wateringCan = new THREE.Group();
-  sphere(accessories.wateringCan, 0x8cc8be, [0, 0, 0], [0.15, 0.11, 0.1]);
-  tube(accessories.wateringCan, [[0.08, 0, 0], [0.2, 0.02, 0], [0.27, 0.10, 0]], 0x8cc8be, 0.025);
-  accessories.wateringCan.position.set(0.36, 0.85, 0.12);
+  sphere(accessories.wateringCan, 0x8cc8be, [0, 0, 0], [0.14, 0.11, 0.10]);
+  tube(accessories.wateringCan, [[0.08, 0, 0], [0.18, 0.02, 0], [0.27, 0.10, 0]], 0x8cc8be, 0.022, 9);
+  accessories.wateringCan.position.set(0.37, 0.93, 0.18);
   accessories.wateringCan.visible = false;
   root.add(accessories.wateringCan);
+
+  accessories.umbrella.visible = false;
+  accessories.hat.visible = false;
+  accessories.hatPom.visible = false;
+  accessories.scarf.visible = false;
   return accessories;
-}
-
-function createCharacter(person) {
-  const root = new THREE.Group();
-  const parts = {};
-  parts.shadow = new THREE.Mesh(new THREE.CircleGeometry(0.36, 24), new THREE.MeshBasicMaterial({ color: 0x173b4a, transparent: true, opacity: 0.18, depthWrite: false }));
-  parts.shadow.rotation.x = -Math.PI / 2;
-  parts.shadow.position.y = 0.012;
-  root.add(parts.shadow);
-
-  const shirt = person.id === 'red' ? COLORS.red : person.id === 'lady' ? COLORS.cream : COLORS.blue;
-  const pants = COLORS.pants;
-  const torso = sphere(root, shirt, [0, 1.03, 0], [0.31, 0.40, 0.22]);
-  parts.torso = torso;
-  if (person.id === 'red') {
-    sphere(root, COLORS.redDark, [0, 1.28, -0.08], [0.25, 0.18, 0.16]);
-    tube(root, [[-0.09, 1.28, 0.20], [-0.08, 1.12, 0.225]], 0xf5eee1, 0.009);
-    tube(root, [[0.09, 1.28, 0.20], [0.08, 1.12, 0.225]], 0xf5eee1, 0.009);
-  } else if (person.id === 'lady') {
-    // Denim pinafore panel, skirt, shoulder straps and warm satchel.
-    sphere(root, COLORS.denim, [0, 1.03, 0.12], [0.27, 0.30, 0.09]);
-    const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.43, 0.42, 20, 1), material(COLORS.denim));
-    skirt.position.set(0, 0.67, 0);
-    root.add(skirt);
-    for (const x of [-0.15, 0.15]) {
-      const strap = box(root, 0x41678f, [x, 1.31, 0.18], [0.075, 0.33, 0.045]);
-      strap.rotation.z = x * -0.35;
-      sphere(root, COLORS.gold, [x, 1.24, 0.224], [0.026, 0.026, 0.018], { segments: 10, rings: 8 });
-    }
-    tube(root, [[-0.17, 1.32, 0.17], [0, 1.20, 0.20], [0.17, 1.32, 0.17]], COLORS.cream, 0.035);
-    const bag = box(root, COLORS.brown, [-0.36, 0.84, 0.16], [0.19, 0.18, 0.11]);
-    bag.rotation.z = -0.2;
-    tube(root, [[-0.27, 1.35, 0.19], [-0.24, 1.1, 0.22], [-0.36, 0.92, 0.2]], 0x9b704d, 0.025);
-  } else {
-    // Blue jacket over a light hoodie, plus a small Earth-colour badge.
-    sphere(root, COLORS.navy, [0, 1.02, 0.10], [0.31, 0.39, 0.14]);
-    sphere(root, COLORS.cream, [0, 1.10, 0.225], [0.12, 0.28, 0.035]);
-    tube(root, [[-0.035, 1.28, 0.26], [-0.035, 0.93, 0.26]], 0xf4eadd, 0.012);
-    sphere(root, 0xe2bb62, [0.22, 1.17, 0.23], [0.065, 0.065, 0.025]);
-    sphere(root, 0x389f96, [0.22, 1.17, 0.255], [0.044, 0.044, 0.014]);
-  }
-
-  parts.arms = [makeArm(root, -1, person.id === 'red' ? COLORS.red : person.id === 'lady' ? COLORS.cream : COLORS.navy, COLORS.skin),
-                makeArm(root, 1, person.id === 'red' ? COLORS.red : person.id === 'lady' ? COLORS.cream : COLORS.navy, COLORS.skin)];
-  parts.legs = [makeLeg(root, -1, pants, person.id === 'lady' ? COLORS.boots : 0x59616f, COLORS.sole),
-                makeLeg(root, 1, pants, person.id === 'lady' ? COLORS.boots : 0x59616f, COLORS.sole)];
-  if (person.id === 'lady') {
-    for (const leg of parts.legs) {
-      sphere(leg.knee, COLORS.boots, [0, -0.31, 0.045], [0.13, 0.09, 0.19]);
-      sphere(leg.knee, 0x9c6a43, [0, -0.29, 0.12], [0.085, 0.012, 0.015]);
-    }
-  }
-
-  const headPivot = joint(root, [0, 1.61, 0]);
-  parts.head = headPivot;
-  sphere(headPivot, COLORS.skin, [0, 0, 0], [0.31, 0.35, 0.275]);
-  addHair(headPivot, person);
-  parts.eyes = createFace(headPivot, person);
-  if (person.id === 'red') {
-    // Hood rim sits behind the neck without hiding the face.
-    const hood = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.07, 8, 20, Math.PI), material(COLORS.redDark));
-    hood.position.set(0, 1.48, -0.06); hood.rotation.z = Math.PI;
-    root.add(hood);
-  }
-  parts.accessories = createAccessories(root, person);
-  parts.baseY = 0;
-  parts.person = person;
-  return { root, ...parts };
 }
 
 function createPropScene(scene) {
   const props = {};
-  props.ball = sphere(scene, 0xf2c65f, [0, 0.26, 0.25], [0.12, 0.12, 0.12], { segments: 16, rings: 12 });
+  props.ball = sphere(scene, 0xf2c65f, [0, 0.22, 0.35], [0.105, 0.105, 0.105]);
   props.ball.visible = false;
   props.butterfly = new THREE.Group();
-  sphere(props.butterfly, 0xf6a3c9, [-0.08, 0, 0], [0.08, 0.12, 0.025]);
-  sphere(props.butterfly, 0xf6a3c9, [0.08, 0, 0], [0.08, 0.12, 0.025]);
-  sphere(props.butterfly, 0x4c465c, [0, 0, 0.025], [0.018, 0.095, 0.02]);
-  props.butterfly.position.set(0.15, 2.1, 0.4);
+  props.wingLeft = sphere(props.butterfly, 0xf6a3c9, [-0.075, 0, 0], [0.075, 0.115, 0.022]);
+  props.wingRight = sphere(props.butterfly, 0xf6a3c9, [0.075, 0, 0], [0.075, 0.115, 0.022]);
+  sphere(props.butterfly, 0x4c465c, [0, 0, 0.025], [0.014, 0.09, 0.018]);
+  props.butterfly.position.set(0.1, 2.05, 0.48);
   scene.add(props.butterfly);
   props.picnic = new THREE.Group();
-  const blanket = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.025, 0.62), material(0xc86f69));
-  blanket.position.set(0, 0.03, 0);
-  props.picnic.add(blanket);
-  sphere(props.picnic, 0xf2c75f, [-0.2, 0.12, 0], [0.09, 0.09, 0.09]);
-  sphere(props.picnic, 0x8ab9a6, [0.16, 0.12, 0.03], [0.11, 0.08, 0.09]);
-  props.picnic.position.set(0, 0, -0.2);
+  box(props.picnic, 0xc86f69, [0, 0.025, 0], [0.95, 0.025, 0.60]);
+  sphere(props.picnic, 0xf2c75f, [-0.2, 0.11, 0], [0.075, 0.075, 0.075]);
+  sphere(props.picnic, 0x8ab9a6, [0.16, 0.11, 0.03], [0.095, 0.075, 0.08]);
   props.picnic.visible = false;
   scene.add(props.picnic);
   props.tent = new THREE.Group();
-  const tent = new THREE.Mesh(new THREE.ConeGeometry(0.58, 0.8, 3), material(0x728ba7));
-  tent.rotation.y = Math.PI / 2; tent.position.set(0, 0.42, -0.1); props.tent.add(tent);
-  tube(props.tent, [[0, 0.02, 0.22], [0, 0.48, -0.1], [0, 0.02, -0.42]], 0xf1d8a8, 0.018);
-  props.tent.position.set(0, 0, -0.1); props.tent.visible = false; scene.add(props.tent);
+  const tent = new THREE.Mesh(new THREE.ConeGeometry(0.54, 0.78, 3), mat(0x728ba7));
+  tent.rotation.y = Math.PI / 2;
+  tent.position.set(0, 0.40, -0.10);
+  props.tent.add(tent);
+  tube(props.tent, [[0, 0.02, 0.22], [0, 0.47, -0.10], [0, 0.02, -0.42]], 0xf1d8a8, 0.016);
+  props.tent.visible = false;
+  scene.add(props.tent);
   props.fire = new THREE.Group();
-  sphere(props.fire, 0xffbd63, [0, 0.16, 0], [0.12, 0.22, 0.12]);
-  sphere(props.fire, 0xffe6a1, [0, 0.21, 0.05], [0.065, 0.14, 0.07]);
-  props.fire.position.set(0.72, 0, 0.1); props.fire.visible = false; scene.add(props.fire);
+  sphere(props.fire, 0xffbd63, [0, 0.14, 0], [0.10, 0.19, 0.10]);
+  sphere(props.fire, 0xffe6a1, [0, 0.18, 0.04], [0.055, 0.12, 0.06]);
+  props.fire.position.set(0.72, 0, 0.18);
+  props.fire.visible = false;
+  scene.add(props.fire);
   props.confetti = [];
-  for (let i = 0; i < 16; i++) {
-    const confetti = sphere(scene, [0xf1cf75,0xef8e83,0x8acfc0,0x9faee4][i % 4], [0, 0, 0], [0.025, 0.045, 0.018], { segments: 8, rings: 6 });
-    confetti.visible = false;
-    props.confetti.push(confetti);
+  for (let i = 0; i < 18; i++) {
+    const item = sphere(scene, [0xf1cf75, 0xef8e83, 0x8acfc0, 0x9faee4][i % 4], [0, 0, 0], [0.018, 0.032, 0.014], { segments: 10, rings: 8 });
+    item.visible = false;
+    props.confetti.push(item);
   }
   return props;
 }
 
-function setVisibleProps(actors, props, mode) {
+function createAccessoriesVisibility(actors, props, mode) {
   props.ball.visible = mode === 'play';
   props.butterfly.visible = mode === 'morning';
   props.picnic.visible = mode === 'picnic';
@@ -266,143 +370,233 @@ function setVisibleProps(actors, props, mode) {
   props.fire.visible = mode === 'camping';
   props.confetti.forEach(item => { item.visible = mode === 'festival'; });
   for (const actor of actors) {
-    const a = actor.accessories;
-    a.umbrella.visible = mode === 'rain' && actor.person.id !== 'lady';
-    a.hat.visible = mode === 'snow';
-    a.hatPom.visible = mode === 'snow';
-    a.scarf.visible = mode === 'snow';
-    a.fan.visible = mode === 'heat' && actor.person.id === 'lady';
-    a.kite.visible = mode === 'kite' && actor.person.id === 'blue';
-    a.wateringCan.visible = mode === 'garden' && actor.person.id === 'lady';
+    const accessories = actor.accessories;
+    accessories.umbrella.visible = mode === 'rain' && actor.person.id !== 'lady';
+    accessories.hat.visible = mode === 'snow';
+    accessories.hatPom.visible = mode === 'snow';
+    accessories.scarf.visible = mode === 'snow';
+    accessories.fan.visible = mode === 'heat' && actor.person.id === 'lady';
+    accessories.kite.visible = mode === 'kite' && actor.person.id === 'blue';
+    accessories.wateringCan.visible = mode === 'garden' && actor.person.id === 'lady';
   }
 }
 
-function basePose(actor) {
-  for (const arm of actor.arms) { arm.shoulder.rotation.set(0, 0, 0); arm.elbow.rotation.set(0, 0, 0); }
-  for (const leg of actor.legs) { leg.hip.rotation.set(0, 0, 0); leg.knee.rotation.set(0, 0, 0); }
+function resetActor(actor) {
   actor.root.rotation.set(0, 0, 0);
-  actor.root.position.y = 0;
-  actor.root.position.x = actor.baseX || 0;
+  actor.root.position.set(actor.baseX, 0, 0);
+  actor.torso.scale.y = 0.375;
   actor.head.rotation.set(0, 0, 0);
-  actor.torso.scale.y = actor.person.id === 'lady' ? 0.40 : 0.40;
+  actor.hair.rotation.set(0, 0, 0);
+  actor.accessories.umbrella.rotation.set(0, 0, 0);
+  actor.accessories.scarf.rotation.set(0, 0, 0);
+  actor.accessories.fan.rotation.set(0, 0, 0);
+  actor.accessories.kite.rotation.set(0, 0, 0);
+  actor.accessories.wateringCan.rotation.set(0, 0, 0);
+  actor.accessories.kite.position.set(0.65, 2.18, -0.12);
+  for (const arm of actor.arms) {
+    arm.shoulder.rotation.set(0, 0, 0);
+    arm.elbow.rotation.set(0, 0, 0);
+    arm.wrist.rotation.set(0, 0, 0);
+  }
+  for (const leg of actor.legs) {
+    leg.hip.rotation.set(0, 0, 0);
+    leg.knee.rotation.set(0, 0, 0);
+    leg.ankle.rotation.set(0, 0, 0);
+    leg.foot.rotation.set(0, 0, 0);
+  }
+}
+
+function walkCycle(actor, time, index, speed = 3.7, stride = 0.48, bounce = 0.035) {
+  const phase = time * speed + index * 1.25;
+  const swing = Math.sin(phase);
+  const lift = Math.max(0, Math.cos(phase));
+  actor.legs[0].hip.rotation.x = swing * stride;
+  actor.legs[1].hip.rotation.x = -swing * stride;
+  actor.legs[0].knee.rotation.x = lift * 0.48;
+  actor.legs[1].knee.rotation.x = Math.max(0, -Math.cos(phase)) * 0.48;
+  actor.legs[0].ankle.rotation.x = -actor.legs[0].knee.rotation.x * 0.62;
+  actor.legs[1].ankle.rotation.x = -actor.legs[1].knee.rotation.x * 0.62;
+  actor.arms[0].shoulder.rotation.x = -swing * 0.46;
+  actor.arms[1].shoulder.rotation.x = swing * 0.46;
+  actor.arms[0].elbow.rotation.x = 0.14 + lift * 0.12;
+  actor.arms[1].elbow.rotation.x = 0.14 + (1 - lift) * 0.12;
+  actor.root.position.y = bounce * Math.max(0, Math.sin(phase * 2));
+  actor.head.rotation.y = Math.sin(phase * 0.5) * 0.12;
+  actor.head.rotation.z = Math.sin(phase) * 0.025;
 }
 
 function poseActor(actor, mode, time, index, state) {
-  const phase = time * 2.8 + index * 1.35;
+  const phase = time * 2.8 + index * 1.37;
   const wave = Math.sin(phase);
-  const left = actor.arms[0], right = actor.arms[1];
+  const left = actor.arms[0];
+  const right = actor.arms[1];
+  const isRed = actor.person.id === 'red';
+  const isLady = actor.person.id === 'lady';
+  const isBlue = actor.person.id === 'blue';
+
   if (mode === 'calm') {
-    actor.torso.scale.y = 0.40 + Math.sin(time * 2.1 + index) * 0.012;
-    actor.head.rotation.z = Math.sin(time * 0.8 + index * 1.7) * 0.035;
-    left.shoulder.rotation.z = -0.05 + wave * 0.025;
-    right.shoulder.rotation.z = 0.05 - wave * 0.025;
+    actor.torso.scale.y = 0.375 + Math.sin(time * 1.8 + index) * 0.012;
+    actor.root.position.x = actor.baseX + Math.sin(time * 0.34 + index * 1.8) * 0.018;
+    actor.head.rotation.y = Math.sin(time * 0.62 + index * 1.5) * 0.13;
+    actor.head.rotation.z = Math.sin(time * 0.82 + index * 1.7) * 0.026;
+    actor.hair.rotation.z = Math.sin(time * 1.0 + index) * 0.012;
+    left.shoulder.rotation.z = -0.045 + wave * 0.018;
+    right.shoulder.rotation.z = 0.045 - wave * 0.018;
   } else if (mode === 'morning') {
-    if (actor.person.id === 'red') {
-      actor.root.position.y = Math.max(0, Math.sin(time * 7) * 0.14 + 0.06);
-      left.shoulder.rotation.z = -0.8 + Math.sin(time * 7) * 0.18;
-      right.shoulder.rotation.z = 0.8 - Math.sin(time * 7) * 0.18;
-      actor.legs[0].hip.rotation.x = wave * 0.5;
-      actor.legs[1].hip.rotation.x = -wave * 0.5;
-    } else if (actor.person.id === 'lady') {
-      actor.root.position.x = actor.baseX + Math.sin(time * 1.7) * 0.07;
-      actor.head.rotation.y = Math.sin(time * 1.8) * 0.35;
-      right.shoulder.rotation.z = 1.0 + Math.sin(time * 3) * 0.18;
-      left.shoulder.rotation.z = -0.45;
-      actor.legs[0].hip.rotation.x = Math.max(0, wave) * 0.45;
-      actor.legs[1].hip.rotation.x = -Math.max(0, -wave) * 0.45;
+    if (isRed) {
+      const jump = Math.max(0, Math.sin(time * 6.4 + index));
+      actor.root.position.y = jump * 0.15;
+      left.shoulder.rotation.z = -0.72 - jump * 0.22;
+      right.shoulder.rotation.z = 0.72 + jump * 0.22;
+      actor.legs[0].hip.rotation.x = wave * 0.43;
+      actor.legs[1].hip.rotation.x = -wave * 0.43;
+      actor.legs[0].knee.rotation.x = Math.max(0, wave) * 0.18;
+      actor.legs[1].knee.rotation.x = Math.max(0, -wave) * 0.18;
+    } else if (isLady) {
+      walkCycle(actor, time, index, 3.2, 0.35, 0.026);
+      actor.root.position.x = actor.baseX + Math.sin(time * 1.55) * 0.075;
+      actor.head.rotation.y = Math.sin(time * 1.8) * 0.34;
+      right.shoulder.rotation.z = 0.86 + Math.sin(time * 3.0) * 0.16;
+      right.elbow.rotation.x = -0.55;
+      left.shoulder.rotation.z = -0.28;
     } else {
-      actor.root.rotation.z = Math.sin(time * 1.7) * 0.09;
-      left.shoulder.rotation.z = -1.35;
-      right.shoulder.rotation.z = 0.28;
-      actor.head.rotation.z = -0.08;
+      actor.root.rotation.z = Math.sin(time * 1.55) * 0.075;
+      left.shoulder.rotation.z = -1.25 + Math.sin(time * 2.4) * 0.08;
+      right.shoulder.rotation.z = 0.26;
+      right.elbow.rotation.x = -0.4;
+      actor.head.rotation.z = -0.06;
     }
   } else if (mode === 'play' || mode === 'walk') {
-    const speed = mode === 'play' ? 5.6 : 3.8;
-    actor.root.position.y = Math.abs(Math.sin(time * speed + index)) * (mode === 'play' ? 0.09 : 0.035);
-    actor.legs[0].hip.rotation.x = Math.sin(time * speed + index) * 0.48;
-    actor.legs[1].hip.rotation.x = -Math.sin(time * speed + index) * 0.48;
-    left.shoulder.rotation.x = -actor.legs[0].hip.rotation.x * 0.72;
-    right.shoulder.rotation.x = -actor.legs[1].hip.rotation.x * 0.72;
-    if (mode === 'play') actor.head.rotation.y = Math.sin(time * 2.4 + index) * 0.22;
+    walkCycle(actor, time, index, mode === 'play' ? 5.0 : 3.35, mode === 'play' ? 0.58 : 0.40, mode === 'play' ? 0.085 : 0.025);
+    if (mode === 'play') {
+      actor.head.rotation.y = Math.sin(time * 2.0 + index) * 0.22;
+      if (isRed) right.shoulder.rotation.z = 0.5 + Math.sin(time * 4.2) * 0.28;
+      if (isLady) actor.head.rotation.z = Math.sin(time * 3.2) * 0.06;
+      if (isBlue) left.shoulder.rotation.z = -0.7 + Math.sin(time * 3.1) * 0.18;
+    }
   } else if (mode === 'rain') {
-    if (actor.person.id === 'lady') {
-      left.shoulder.rotation.z = -0.95 + Math.sin(time * 3.2) * 0.2;
-      right.shoulder.rotation.z = 0.95 - Math.sin(time * 3.2) * 0.2;
+    if (isLady) {
       actor.root.rotation.z = Math.sin(time * 2.8) * 0.12;
-      actor.root.position.y = Math.max(0, Math.sin(time * 5) * 0.055);
+      actor.root.position.y = Math.max(0, Math.sin(time * 5.0) * 0.065);
+      left.shoulder.rotation.z = -0.78 + Math.sin(time * 3.2) * 0.2;
+      right.shoulder.rotation.z = 0.78 - Math.sin(time * 3.2) * 0.2;
+      left.elbow.rotation.x = -0.28;
+      right.elbow.rotation.x = -0.28;
+      actor.head.rotation.y = Math.sin(time * 2.2) * 0.16;
     } else {
-      left.shoulder.rotation.z = -0.22;
-      right.shoulder.rotation.z = 0.22;
-      actor.head.rotation.z = Math.sin(time * 1.3 + index) * 0.04;
+      left.shoulder.rotation.z = -0.42;
+      right.shoulder.rotation.z = 0.42;
+      left.elbow.rotation.x = -0.45;
+      right.elbow.rotation.x = -0.45;
+      actor.head.rotation.z = Math.sin(time * 1.15 + index) * 0.035;
+      actor.accessories.umbrella.rotation.z = Math.sin(time * 1.4 + index) * 0.035;
     }
   } else if (mode === 'snow') {
-    actor.root.rotation.z = Math.sin(time * 19 + index) * 0.035;
-    actor.head.rotation.z = Math.sin(time * 17 + index) * 0.025;
-    left.shoulder.rotation.z = -0.32 + Math.sin(time * 4 + index) * 0.08;
-    right.shoulder.rotation.z = 0.32 - Math.sin(time * 4 + index) * 0.08;
+    actor.root.rotation.z = Math.sin(time * 14 + index) * 0.027;
+    actor.head.rotation.z = Math.sin(time * 13 + index) * 0.022;
+    left.shoulder.rotation.z = -0.52 + Math.sin(time * 4 + index) * 0.06;
+    right.shoulder.rotation.z = 0.52 - Math.sin(time * 4 + index) * 0.06;
+    left.elbow.rotation.x = -0.4;
+    right.elbow.rotation.x = -0.4;
+    actor.legs[0].knee.rotation.x = Math.max(0, wave) * 0.08;
+    actor.legs[1].knee.rotation.x = Math.max(0, -wave) * 0.08;
+    actor.accessories.scarf.rotation.z = Math.sin(time * 5 + index) * 0.06;
   } else if (mode === 'heat') {
-    left.shoulder.rotation.z = -0.2;
-    right.shoulder.rotation.z = actor.person.id === 'lady' ? 0.85 + Math.sin(time * 7) * 0.1 : 0.12;
-    actor.head.rotation.z = Math.sin(time * 1.5 + index) * 0.035;
+    if (isLady) {
+      right.shoulder.rotation.z = 0.82 + Math.sin(time * 6.5) * 0.12;
+      right.elbow.rotation.x = -0.25;
+      actor.accessories.fan.rotation.z = Math.sin(time * 7.8) * 0.36;
+    } else {
+      right.shoulder.rotation.z = 0.82;
+      right.elbow.rotation.x = -0.7 + Math.sin(time * 3.8) * 0.12;
+      actor.head.rotation.z = Math.sin(time * 1.5 + index) * 0.035;
+    }
+    actor.torso.scale.y = 0.375 + Math.sin(time * 2.4 + index) * 0.012;
+    left.shoulder.rotation.z = -0.12;
   } else if (mode === 'wind') {
-    const gust = state.gustLevel === 'strong' ? 1 : 0.45;
-    actor.root.rotation.z = -0.18 * gust;
-    actor.root.position.x = actor.baseX + Math.sin(time * 2.2 + index) * 0.10 * gust;
-    left.shoulder.rotation.z = -0.85 * gust;
-    right.shoulder.rotation.z = 0.35 * gust;
-    if (actor.person.id === 'blue' && state.gustLevel === 'strong') actor.root.position.y = Math.max(0, Math.sin(time * 4) * 0.10);
+    const gust = state.gustLevel === 'strong' ? 1 : 0.5;
+    actor.root.rotation.z = -0.17 * gust + Math.sin(time * 2.1 + index) * 0.025;
+    actor.root.position.x = actor.baseX + Math.sin(time * 2.2 + index) * 0.075 * gust;
+    left.shoulder.rotation.z = -0.72 * gust;
+    right.shoulder.rotation.z = 0.34 * gust;
+    actor.hair.rotation.z = -0.10 * gust + Math.sin(time * 4.0 + index) * 0.055;
+    if (isBlue && state.gustLevel === 'strong') actor.root.position.y = Math.max(0, Math.sin(time * 4) * 0.085);
   } else if (mode === 'stargaze') {
-    actor.head.rotation.x = -0.24;
-    actor.head.rotation.z = Math.sin(time * 0.5 + index) * 0.035;
-    left.shoulder.rotation.z = -0.1;
-    right.shoulder.rotation.z = 0.1;
+    actor.head.rotation.x = -0.22;
+    actor.head.rotation.y = Math.sin(time * 0.42 + index) * 0.08;
+    actor.head.rotation.z = Math.sin(time * 0.5 + index) * 0.025;
+    left.shoulder.rotation.z = -0.08;
+    right.shoulder.rotation.z = 0.08;
   } else if (mode === 'kite') {
-    left.shoulder.rotation.z = -0.9;
-    right.shoulder.rotation.z = 0.55;
-    actor.head.rotation.y = -0.22 + Math.sin(time * 1.5) * 0.08;
-    actor.accessories.kite.position.y = 2.12 + Math.sin(time * 2.2) * 0.13;
+    if (isBlue) {
+      left.shoulder.rotation.z = -0.92;
+      right.shoulder.rotation.z = 0.60;
+      left.elbow.rotation.x = -0.35;
+      right.elbow.rotation.x = -0.48;
+      actor.head.rotation.y = -0.22 + Math.sin(time * 1.5) * 0.08;
+      actor.accessories.kite.position.y = 2.18 + Math.sin(time * 2.2) * 0.13;
+      actor.accessories.kite.rotation.z = Math.sin(time * 1.8) * 0.12;
+    } else {
+      actor.head.rotation.y = isRed ? 0.32 : -0.28;
+      actor.head.rotation.x = -0.12;
+    }
   } else if (mode === 'garden') {
-    right.shoulder.rotation.z = 0.85 + Math.sin(time * 3.4) * 0.14;
-    actor.head.rotation.x = 0.14;
+    if (isLady) {
+      right.shoulder.rotation.z = 0.83 + Math.sin(time * 3.4) * 0.14;
+      right.elbow.rotation.x = -0.6;
+      actor.head.rotation.x = 0.13;
+      actor.accessories.wateringCan.rotation.z = Math.sin(time * 2.8) * 0.08;
+    } else {
+      actor.head.rotation.y = isRed ? 0.24 : -0.2;
+      left.shoulder.rotation.z = -0.12 + Math.sin(time * 1.3 + index) * 0.08;
+    }
   } else if (mode === 'festival') {
-    actor.root.position.y = Math.max(0, Math.sin(time * 6 + index) * 0.12);
-    actor.root.rotation.z = Math.sin(time * 3.2 + index) * 0.13;
-    left.shoulder.rotation.z = -1.0 + Math.sin(time * 5 + index) * 0.2;
-    right.shoulder.rotation.z = 1.0 - Math.sin(time * 5 + index) * 0.2;
-    actor.legs[0].hip.rotation.x = wave * 0.35;
-    actor.legs[1].hip.rotation.x = -wave * 0.35;
-  } else if (mode === 'picnic') {
-    actor.root.rotation.x = -0.10;
-    actor.head.rotation.x = 0.12;
-    left.shoulder.rotation.z = -0.22;
-    right.shoulder.rotation.z = 0.22;
-  } else if (mode === 'camping') {
-    actor.head.rotation.x = -0.12;
-    left.shoulder.rotation.z = -0.18;
-    right.shoulder.rotation.z = 0.18;
+    const beat = time * 4.7 + index * 1.65;
+    actor.root.position.y = Math.max(0, Math.sin(beat) * 0.12);
+    actor.root.rotation.z = Math.sin(beat * 0.56) * 0.12;
+    left.shoulder.rotation.z = -0.92 + Math.sin(beat) * 0.19;
+    right.shoulder.rotation.z = 0.92 - Math.sin(beat + 0.7) * 0.19;
+    left.elbow.rotation.x = -0.35;
+    right.elbow.rotation.x = -0.35;
+    actor.legs[0].hip.rotation.x = Math.sin(beat) * 0.34;
+    actor.legs[1].hip.rotation.x = -Math.sin(beat) * 0.34;
+    actor.head.rotation.y = Math.sin(beat * 0.5) * 0.14;
+  } else if (mode === 'picnic' || mode === 'camping') {
+    actor.root.position.y = -0.12 + Math.sin(time * 1.4 + index) * 0.012;
+    actor.legs[0].hip.rotation.x = 0.75;
+    actor.legs[1].hip.rotation.x = 0.75;
+    actor.legs[0].knee.rotation.x = -0.92;
+    actor.legs[1].knee.rotation.x = -0.92;
+    actor.head.rotation.x = 0.1;
+    left.shoulder.rotation.z = -0.2;
+    right.shoulder.rotation.z = 0.2 + Math.sin(time * 1.6 + index) * 0.05;
+    if (mode === 'camping') actor.head.rotation.y = Math.sin(time * 0.8 + index) * 0.12;
   }
 }
 
 export function createResidents3D(canvas, roster, initialState = {}) {
   const scene = new THREE.Scene();
-  const camera = new THREE.OrthographicCamera(-2.2, 2.2, 1.15, -1.15, 0.1, 40);
-  camera.position.set(0, 1.1, 8);
-  camera.lookAt(0, 1.03, 0);
+  const camera = new THREE.OrthographicCamera(-2.2, 2.2, 1.16, -1.16, 0.1, 40);
+  camera.position.set(0, 1.14, 8);
+  camera.lookAt(0, 1.13, 0);
 
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'low-power' });
   renderer.setClearColor(0x000000, 0);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.4));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.08;
+  renderer.toneMappingExposure = 1.12;
 
-  scene.add(new THREE.HemisphereLight(0xfff2dc, 0x48665d, 2.15));
-  const key = new THREE.DirectionalLight(0xffe7cf, 2.0);
-  key.position.set(-3.5, 5, 6); scene.add(key);
-  const fill = new THREE.DirectionalLight(0xb9dcff, 0.75);
-  fill.position.set(4, 2, 4); scene.add(fill);
-  const rim = new THREE.DirectionalLight(0xffd7a1, 1.2);
-  rim.position.set(0, 3, -3); scene.add(rim);
+  scene.add(new THREE.HemisphereLight(0xfff4e6, 0x53695f, 2.05));
+  const key = new THREE.DirectionalLight(0xffead8, 2.25);
+  key.position.set(-3.2, 5.2, 6);
+  scene.add(key);
+  const fill = new THREE.DirectionalLight(0xc5ddff, 0.85);
+  fill.position.set(4, 2.4, 4);
+  scene.add(fill);
+  const rim = new THREE.DirectionalLight(0xffd6a6, 1.0);
+  rim.position.set(0, 3, -3);
+  scene.add(rim);
 
   const actors = roster.map(person => createCharacter(person));
   actors.forEach(actor => scene.add(actor.root));
@@ -413,15 +607,18 @@ export function createResidents3D(canvas, roster, initialState = {}) {
   let frame = 0;
   let lastRender = 0;
   let elapsed = 0;
-  let width = 0, height = 0;
+  let width = 0;
+  let height = 0;
   const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
+
   const resize = () => {
     if (!alive) return;
     const rect = canvas.getBoundingClientRect();
     const w = Math.max(1, Math.round(rect.width));
     const h = Math.max(1, Math.round(rect.height));
     if (w === width && h === height) return;
-    width = w; height = h;
+    width = w;
+    height = h;
     const aspect = w / h;
     const halfHeight = 1.16;
     camera.left = -halfHeight * aspect;
@@ -429,7 +626,7 @@ export function createResidents3D(canvas, roster, initialState = {}) {
     camera.top = halfHeight;
     camera.bottom = -halfHeight;
     camera.updateProjectionMatrix();
-    const spacing = Math.min(1.28, Math.max(0.50, aspect * 0.70));
+    const spacing = Math.min(1.34, Math.max(0.53, aspect * 0.71));
     actors[0].baseX = -spacing;
     actors[1].baseX = 0;
     actors[2].baseX = spacing;
@@ -443,7 +640,7 @@ export function createResidents3D(canvas, roster, initialState = {}) {
   function setActivity(nextState = {}) {
     mode = String(nextState.mode || 'calm');
     state = { ...nextState };
-    setVisibleProps(actors, props, mode);
+    createAccessoriesVisibility(actors, props, mode);
     return true;
   }
   setActivity(state);
@@ -452,28 +649,34 @@ export function createResidents3D(canvas, roster, initialState = {}) {
     if (!alive) return;
     frame = requestAnimationFrame(animate);
     if (document.hidden) return;
-    // 30 fps is ample for the small scene and lowers mobile GPU/battery cost.
+    // A 30 fps ceiling limits GPU cost on iPhone while keeping limb motion fluid.
     if (now - lastRender < 32) return;
     const dt = Math.min(0.06, (now - (lastRender || now)) / 1000);
     lastRender = now;
-    elapsed += dt * (reducedMotion ? 0.32 : 1);
-    actors.forEach((actor, i) => {
-      basePose(actor);
-      poseActor(actor, mode, elapsed, i, state);
-      const blinkPulse = Math.max(0, Math.sin((elapsed * 0.62 + i * 0.31) * Math.PI * 2));
-      const blink = Math.pow(blinkPulse, 34);
-      actor.eyes.forEach(eye => { eye.scale.y = Math.max(0.12, 1 - blink * 0.9); });
+    elapsed += dt * (reducedMotion ? 0.28 : 1);
+
+    actors.forEach((actor, index) => {
+      resetActor(actor);
+      poseActor(actor, mode, elapsed, index, state);
+      const blinkPulse = Math.max(0, Math.sin((elapsed * 0.56 + index * 0.37) * Math.PI * 2));
+      const blink = Math.pow(blinkPulse, 32);
+      actor.eyes.forEach(eye => { eye.scale.y = 1 - blink * 0.88; });
+      actor.hair.rotation.x = Math.sin(elapsed * 1.3 + index * 2) * (mode === 'wind' ? 0.045 : 0.012);
       actor.accessories.kite.position.x = mode === 'kite' ? 0.65 + Math.sin(elapsed * 1.4) * 0.13 : 0.65;
+      actor.accessories.fan.rotation.z = mode === 'heat' && actor.person.id === 'lady' ? Math.sin(elapsed * 8) * 0.40 : 0;
     });
-    props.ball.position.set(Math.sin(elapsed * 2.1) * 0.85, 0.24 + Math.abs(Math.sin(elapsed * 4.2)) * 0.45, 0.2);
-    props.butterfly.position.set(0.15 + Math.sin(elapsed * 1.6) * 0.28, 2.05 + Math.sin(elapsed * 2.7) * 0.17, 0.42);
-    props.butterfly.rotation.z = Math.sin(elapsed * 4) * 0.25;
+
+    props.ball.position.set(Math.sin(elapsed * 2.1) * 0.86, 0.20 + Math.abs(Math.sin(elapsed * 4.2)) * 0.42, 0.36);
+    props.butterfly.position.set(0.1 + Math.sin(elapsed * 1.65) * 0.30, 2.05 + Math.sin(elapsed * 2.7) * 0.16, 0.48);
+    props.butterfly.rotation.z = Math.sin(elapsed * 4) * 0.20;
+    props.wingLeft.rotation.z = Math.sin(elapsed * 12) * 0.55;
+    props.wingRight.rotation.z = -Math.sin(elapsed * 12) * 0.55;
     props.picnic.rotation.y = Math.sin(elapsed * 0.4) * 0.025;
     props.fire.scale.y = 1 + Math.sin(elapsed * 7) * 0.12;
-    props.confetti.forEach((item, i) => {
-      item.position.set(Math.sin(elapsed * 0.7 + i * 1.9) * (0.45 + i % 3 * 0.22),
-        1.05 + ((elapsed * 0.45 + i * 0.19) % 1.15), 0.15 - (i % 3) * 0.12);
-      item.rotation.z = elapsed * (i % 2 ? 1.8 : -1.5);
+    props.confetti.forEach((item, index) => {
+      item.position.set(Math.sin(elapsed * 0.7 + index * 1.9) * (0.45 + (index % 3) * 0.22),
+        1.0 + ((elapsed * 0.45 + index * 0.19) % 1.2), 0.28 - (index % 3) * 0.12);
+      item.rotation.z = elapsed * (index % 2 ? 1.8 : -1.5);
     });
     renderer.render(scene, camera);
   }
@@ -486,13 +689,20 @@ export function createResidents3D(canvas, roster, initialState = {}) {
       alive = false;
       cancelAnimationFrame(frame);
       observer?.disconnect();
+      const sharedGeometries = new Set(geometryCache.values());
+      const sharedMaterials = new Set(materialCache.values());
+      const geometries = new Set();
+      const materials = new Set();
       scene.traverse(object => {
-        if (object.geometry) object.geometry.dispose();
+        if (object.geometry && !sharedGeometries.has(object.geometry)) geometries.add(object.geometry);
         if (object.material) {
-          const materials = Array.isArray(object.material) ? object.material : [object.material];
-          materials.forEach(item => item.dispose());
+          const list = Array.isArray(object.material) ? object.material : [object.material];
+          list.forEach(item => { if (!sharedMaterials.has(item)) materials.add(item); });
         }
       });
+      // Shared primitive geometry/materials remain cached for the next Weather visit.
+      geometries.forEach(item => item.dispose());
+      materials.forEach(item => item.dispose());
       renderer.dispose();
       renderer.forceContextLoss?.();
     }
