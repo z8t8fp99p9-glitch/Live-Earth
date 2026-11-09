@@ -6,8 +6,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 const residentsSource = read('Residents/resident-library.js');
-const weatherPath = path.join(root, 'Weather', 'weather-view.js');
-const weatherSource = fs.existsSync(weatherPath) ? fs.readFileSync(weatherPath, 'utf8') : null;
+const weatherSource = read('Weather/weather-view.js');
 
 const styleNodes = new Map();
 const fakeDocument = {
@@ -28,7 +27,7 @@ vm.runInNewContext(residentsSource, sandbox, { filename: 'Residents/resident-lib
 const library = sandbox.window.LiveEarthResidentLibrary;
 
 assert.ok(library, 'The shared Residents API must register on window');
-assert.equal(library.version, '1.1.0');
+assert.equal(library.version, '1.1.1');
 const roster = library.getRoster();
 assert.equal(roster.length, 3, 'The permanent cast must contain exactly three residents');
 assert.deepEqual(Array.from(roster, person => person.id), ['one', 'two', 'three']);
@@ -47,8 +46,7 @@ assert.equal((markup.match(/le-weather-prop--umbrella/g) || []).length, 2, 'Only
 assert.ok(markup.includes('le-weather-prop--rain-joy'), 'Resident three must have the rain-enjoying pose');
 assert.ok(markup.includes('le-weather-prop--snow') && markup.includes('le-weather-prop--heat'), 'Snow and heat props must be part of the shared artwork');
 assert.ok(markup.includes('le-weather-prop--stargaze'), 'The cast must include a quiet stargazing pose');
-assert.ok(markup.includes('le-weather-prop--butterfly'), 'The third resident must have a butterfly prop');
-assert.ok(markup.includes('le-weather-prop--exercise'), 'The first two residents must have exercise poses');
+assert.ok(markup.includes('le-weather-prop--exercise') && markup.includes('le-weather-prop--butterfly'), 'The morning park scene must include exercise and butterfly props');
 
 const host = {
   dataset: {},
@@ -61,7 +59,7 @@ assert.equal(host.children.length, 1, 'Mount should add one SVG root');
 assert.equal(host.children[0].attributes.viewBox, '0 0 420 250');
 assert.equal(host.dataset.residentsVersion, '1');
 
-for (const mode of ['play', 'rain', 'snow', 'heat', 'wind', 'stargaze', 'walk', 'picnic', 'kite', 'garden', 'festival', 'camping']) {
+for (const mode of ['morning', 'play', 'rain', 'snow', 'heat', 'wind', 'stargaze', 'walk', 'picnic', 'kite', 'garden', 'festival', 'camping']) {
   assert.equal(library.setActivity(host, { mode, gustLevel: 'normal' }), true);
   assert.equal(host.dataset.activity, mode, `Host should select ${mode}`);
 }
@@ -73,14 +71,12 @@ library.unmount(host);
 assert.equal(host.children.length, 0, 'Unmount must remove the SVG content');
 assert.equal(host.dataset.residentsVersion, undefined, 'Unmount must clear resident ownership state');
 
-if (weatherSource) {
-  assert.ok(weatherSource.includes("import('./Residents/resident-library.js')"), 'Weather must dynamically load the separate reusable library without adding a blocking script tag');
-  assert.ok(weatherSource.includes('library.mount(residentHost)'), 'Weather must mount residents through the shared API');
-  assert.ok(weatherSource.includes('LiveEarthResidentLibrary?.setActivity(residentHost, state)'), 'Weather forecast selection must drive resident activity');
-  assert.ok(weatherSource.includes('LiveEarthResidentLibrary?.unmount(residentHost)'), 'Weather cleanup must unmount residents');
-  assert.ok(!weatherSource.includes('function characterMarkup('), 'Weather must not define duplicate resident artwork');
-  assert.ok(!weatherSource.includes('CHARACTER_POSITIONS'), 'Weather must not own a second resident roster');
-}
+assert.ok(weatherSource.includes("import('./Residents/resident-library.js')"), 'Weather must dynamically load the separate reusable library without adding a blocking script tag');
+assert.ok(weatherSource.includes('library.mount(residentHost)'), 'Weather must mount residents through the shared API');
 assert.ok(residentsSource.includes('.le-weather-people[data-activity=\"rain\"]'), 'Resident activity selectors must stay host-owned and reusable across views');
+assert.ok(weatherSource.includes('LiveEarthResidentLibrary?.setActivity(residentHost, state)'), 'Weather forecast selection must drive resident activity');
+assert.ok(weatherSource.includes('LiveEarthResidentLibrary?.unmount(residentHost)'), 'Weather cleanup must unmount residents');
+assert.ok(!weatherSource.includes('function characterMarkup('), 'Weather must not define duplicate resident artwork');
+assert.ok(!weatherSource.includes('CHARACTER_POSITIONS'), 'Weather must not own a second resident roster');
 
 console.log('Shared Residents roster, SVG mount, reusable activities and Weather integration tests passed.');

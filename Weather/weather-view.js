@@ -50,6 +50,42 @@
       .le-sfv--weather .le-sfv-status{border-color:#e7f7ff44;background:#102f4d55;color:#f2f9ff;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
       .le-sfv--weather .le-sfv-attribution{color:#e2edf5;text-shadow:0 1px 4px #10253acc}
       .le-sfv--weather .le-sfv-attribution a{color:#fff;text-decoration-thickness:1px}
+      /* Compact, transparent Weather overlay. All forecast text floats over the scene. */
+      .le-sfv--weather .le-sfv-panel{padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 128px)!important;background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+      .le-sfv--weather .le-sfv-head{gap:8px;margin:0 0 2px;text-shadow:0 2px 14px #10253a99}
+      .le-sfv--weather .le-sfv-symbol{width:32px;min-width:32px;border:0;background:none;box-shadow:none;font-size:24px}
+      .le-sfv--weather .le-sfv-title{font-size:clamp(21px,5.8vw,25px);line-height:1.05}
+      .le-sfv--weather .le-sfv-subtitle{display:none!important}
+      .le-sfv--weather .le-sfv-pill{margin:0 0 6px 40px;padding:0;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;font-size:8px;letter-spacing:.085em;text-shadow:0 1px 8px #10253acc}
+      .le-sfv--weather .le-sfv-panel>.le-sfv-body{display:flex;flex-direction:column;gap:0;width:min(100%,760px);padding:0 0 10px;position:relative}
+      .le-sfv--weather .le-sfv-body>.le-sfv-status{order:0;margin:0 0 7px 40px;padding:0;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;color:#eef7ff;font-size:8px;line-height:1.35;text-shadow:0 1px 8px #10253acc}
+      .le-sfv--weather .le-sfv-body>.le-sfv-card{border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;padding:0!important}
+      .le-sfv--weather .le-sfv-body>.le-sfv-card:first-of-type{order:1;margin:0 0 8px}
+      .le-sfv--weather .le-sfv-body>.le-sfv-card:first-of-type>h2,.le-sfv--weather .le-sfv-body>.le-sfv-card:first-of-type>.le-sfv-copy{display:none!important}
+      .le-sfv--weather .le-weather-now{align-items:center;gap:10px}
+      .le-sfv--weather .le-weather-condition-icon{width:34px;height:34px;min-width:34px;border:0;border-radius:0;background:none;box-shadow:none;font-size:28px}
+      .le-sfv--weather .le-weather-temp{font-size:clamp(44px,12vw,54px);line-height:.88;text-shadow:0 2px 16px #193c5d88}
+      .le-sfv--weather .le-weather-condition{margin-top:4px;font-size:11px}
+      .le-sfv--weather .le-weather-local-time{margin-top:2px;font-size:9px;color:#e6f1f8}
+      .le-sfv--weather .le-weather-metric-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px 12px;margin-top:9px;max-width:440px}
+      .le-sfv--weather .le-weather-metric{padding:0;border:0;border-radius:0;background:none;text-align:left}
+      .le-sfv--weather .le-weather-metric-label{font-size:7px;letter-spacing:.075em;color:#e0edf5}
+      .le-sfv--weather .le-weather-metric-value{margin-top:2px;font-size:11px;line-height:1.15}
+      .le-sfv--weather .le-sfv-body>.le-sfv-card:nth-of-type(2){order:2;margin-top:8px}
+      .le-sfv--weather .le-sfv-body>.le-sfv-card:nth-of-type(2)>h2,.le-sfv--weather .le-sfv-body>.le-sfv-card:nth-of-type(2)>.le-sfv-copy{display:none!important}
+      .le-sfv--weather .le-weather-timeline{gap:5px;padding-bottom:0}
+      .le-sfv--weather .le-weather-hour-strip{gap:6px;padding:1px 1px 6px}
+      .le-sfv--weather .le-weather-hour{flex-basis:54px;min-height:60px;padding:5px 4px;border-radius:12px;background:rgba(7,29,47,.16);border-color:#e5f4ff35;gap:3px}
+      .le-sfv--weather .le-weather-hour[aria-pressed="true"]{background:rgba(225,247,255,.18);box-shadow:0 0 0 1px #fff3,0 0 14px #b8eaff55}
+      .le-sfv--weather .le-weather-hour-icon{font-size:15px}
+      .le-sfv--weather .le-weather-hour-temp{font-size:12px}
+      .le-sfv--weather .le-weather-hour-time{font-size:8px}
+      .le-sfv--weather .le-weather-range-label{font-size:8px}
+      .le-sfv--weather .le-weather-range{min-height:20px}
+      .le-sfv--weather .le-sfv-controls{margin-top:5px;gap:6px}
+      .le-sfv--weather .le-weather-refresh{min-height:30px;padding:7px 11px;background:rgba(9,39,58,.14);font-size:9px}
+      .le-sfv--weather .le-sfv-attribution{margin-top:6px;font-size:8px;line-height:1.35;text-shadow:0 1px 5px #10253acc}
+      @media(max-width:390px){.le-sfv--weather .le-weather-metric-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 9px}.le-sfv--weather .le-weather-hour{flex-basis:50px;min-height:57px}}
       .le-weather-atmosphere{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;isolation:isolate;background:linear-gradient(180deg,#8bc8e8 0%,#d8e8e8 47%,#e9d5ad 100%);transition:background 1.2s ease}
       .le-weather-sky{position:absolute;inset:0;background:linear-gradient(180deg,#6fb5df 0%,#c5e1e7 56%,#f2d8ae 100%);transition:background 1.5s ease,filter 1.5s ease}
       .le-weather-sun{position:absolute;top:13%;right:14%;width:clamp(58px,16vw,104px);aspect-ratio:1;border-radius:50%;opacity:.88;background:radial-gradient(circle,#fffde7 0 24%,#ffe6a0 44%,#ffdb7b99 61%,transparent 72%);filter:drop-shadow(0 0 25px #ffe9a8aa);transition:opacity 1s ease,transform 1.5s ease}
@@ -259,8 +295,8 @@
     const cloud = number(item.cloudCover) ?? 0;
     const hour = hourOf(item.time);
     const evening = hour >= 16 && hour <= 19;
-    const night = number(item.isDay) === 0 || hour >= 20 || hour < 5;
-    const dawn = !night && (hour >= 5 && hour <= 7);
+    const night = hour >= 20 || hour < 5;
+    const dawn = hour >= 5 && hour <= 7;
     const phase = night ? 'night' : dawn ? 'dawn' : evening ? 'evening' : 'day';
     const snow = isSnow(item);
     const rain = isRain(item);

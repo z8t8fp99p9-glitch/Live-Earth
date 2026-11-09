@@ -66,29 +66,6 @@
     .le-weather-people[data-activity="morning"] .le-weather-person--three{animation:le-resident-butterfly-chase 1.35s ease-in-out infinite}
     .le-weather-people[data-activity="morning"] .le-weather-butterfly{transform-box:fill-box;transform-origin:center;animation:le-resident-butterfly-flight 1.25s ease-in-out infinite alternate}
 
-    /* Weather's information now floats directly over the scene: no panel fill,
-       no tile backgrounds and no opaque blur behind the forecast text. */
-    .le-sfv--weather .le-sfv-panel{padding-top:calc(env(safe-area-inset-top) + 18px)!important}
-    .le-sfv--weather .le-sfv-head{gap:8px;margin:0 0 2px;text-shadow:0 2px 14px #10253a99}
-    .le-sfv--weather .le-sfv-symbol{width:30px;min-width:30px;border:0;background:none;box-shadow:none;font-size:23px}
-    .le-sfv--weather .le-sfv-title{font-size:clamp(21px,5.8vw,25px);line-height:1.05}
-    .le-sfv--weather .le-sfv-subtitle{display:none}
-    .le-sfv--weather .le-sfv-pill{margin:0 0 5px 38px;padding:0;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;font-size:8px;letter-spacing:.085em;text-shadow:0 1px 8px #10253acc}
-    .le-sfv--weather .le-sfv-panel>.le-sfv-body{display:block;width:min(100%,760px);gap:0;padding-bottom:12px}
-    .le-sfv--weather .le-sfv-body>.le-sfv-status{margin:0 0 8px 38px;padding:0;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;color:#eef7ff;font-size:8px;line-height:1.35;text-shadow:0 1px 8px #10253acc}
-    .le-sfv--weather .le-sfv-body>.le-sfv-card:first-of-type{margin:0 0 12px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
-    .le-sfv--weather .le-sfv-body>.le-sfv-card:first-of-type>h2,.le-sfv--weather .le-sfv-body>.le-sfv-card:first-of-type>.le-sfv-copy{display:none}
-    .le-sfv--weather .le-weather-now{align-items:center;gap:10px}
-    .le-sfv--weather .le-weather-condition-icon{width:34px;height:34px;min-width:34px;border:0;border-radius:0;background:none;box-shadow:none;font-size:29px}
-    .le-sfv--weather .le-weather-temp{font-size:clamp(44px,12vw,54px);line-height:.88;text-shadow:0 2px 16px #193c5d88}
-    .le-sfv--weather .le-weather-condition{margin-top:4px;font-size:11px}
-    .le-sfv--weather .le-weather-local-time{margin-top:2px;font-size:9px;color:#e6f1f8}
-    .le-sfv--weather .le-weather-metric-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px 12px;margin-top:9px;max-width:440px}
-    .le-sfv--weather .le-weather-metric{padding:0;border:0;border-radius:0;background:none;text-align:left}
-    .le-sfv--weather .le-weather-metric-label{font-size:7px;letter-spacing:.075em;color:#e0edf5}
-    .le-sfv--weather .le-weather-metric-value{margin-top:2px;font-size:11px;line-height:1.15}
-    .le-sfv--weather .le-sfv-body>.le-sfv-card:not(:first-of-type){margin-top:10px}
-    .le-sfv--weather .le-sfv-attribution{margin-top:8px;text-shadow:0 1px 5px #10253acc}
 
     @keyframes le-weather-idle{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
     @keyframes le-weather-play{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-10px) rotate(3deg)}}
@@ -104,7 +81,6 @@
     @keyframes le-resident-morning-stretch{0%,100%{transform:rotate(0) translateY(0)}35%{transform:rotate(-5deg) translateY(-2px)}70%{transform:rotate(5deg) translateY(-2px)}}
     @keyframes le-resident-butterfly-chase{0%,100%{transform:translateX(0) rotate(2deg)}50%{transform:translateX(7px) rotate(-5deg)}}
     @keyframes le-resident-butterfly-flight{from{transform:translate(0,0) rotate(-9deg)}to{transform:translate(-13px,-12px) rotate(12deg)}}
-    @media(max-width:390px){.le-sfv--weather .le-weather-metric-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media(prefers-reduced-motion:reduce){.le-weather-person,.le-weather-ball,.le-weather-butterfly{animation:none!important;transition:none!important}}
   `;
 
@@ -270,7 +246,7 @@
   }
 
   const api = Object.freeze({
-    version: '1.1.0',
+    version: '1.1.1',
     getRoster: () => ROSTER,
     getActivityCatalog: () => ACTIVITY_CATALOG,
     renderMarkup,

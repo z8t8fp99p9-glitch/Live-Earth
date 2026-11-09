@@ -4,45 +4,68 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const libraryPath = path.join(root, 'Residents', 'resident-library.js');
-const source = fs.readFileSync(libraryPath, 'utf8');
-const context = { window: {} };
-vm.runInNewContext(source, context, { filename: 'resident-library.js' });
+const weather = fs.readFileSync(path.join(root, 'Weather/weather-view.js'), 'utf8');
+const residentSource = fs.readFileSync(path.join(root, 'Residents/resident-library.js'), 'utf8');
 
-const library = context.window.LiveEarthResidentLibrary;
-assert.ok(library, 'The shared Residents API must register');
-assert.equal(library.version, '1.1.0', 'The Residents library version must advance');
-assert.ok(library.getActivityCatalog().morning, 'Morning park activity must be catalogued');
+const stylesStart = weather.indexOf('style.textContent = `');
+const stylesEnd = weather.indexOf('document.head.appendChild(style)', stylesStart);
+assert.ok(stylesStart >= 0 && stylesEnd > stylesStart, 'Weather must own an installable style block');
+const styles = weather.slice(stylesStart, stylesEnd);
+assert.match(styles, /\.le-sfv--weather \.le-sfv-panel\{[^}]*background:transparent!important/, 'Weather view must have no opaque panel background');
+assert.match(styles, /\.le-sfv--weather \.le-sfv-body>\.le-sfv-card\{border:0!important;border-radius:0!important;background:transparent!important/, 'Forecast cards must float without boxed backgrounds');
+assert.match(styles, /\.le-sfv--weather \.le-weather-metric\{padding:0;border:0;border-radius:0;background:none/, 'Metrics must not render as individual tiles');
+assert.match(styles, /\.le-sfv--weather \.le-sfv-subtitle\{display:none!important\}/, 'The long Weather subtitle must not consume top-screen space');
+assert.match(styles, /\.le-sfv--weather \.le-sfv-body>\.le-sfv-status\{[^}]*background:none/, 'Location and model status must be plain floating text');
+assert.match(styles, /\.le-sfv--weather \.le-weather-hour\{flex-basis:54px/, 'Hourly forecast must be compact');
+assert.match(styles, /\.le-sfv--weather \.le-sfv-body>\.le-sfv-card:nth-of-type\(2\)>h2/, 'The timeline title and copy must not add a large text block');
 
-const dawnHost = { dataset: {} };
-library.setActivity(dawnHost, { mode: 'calm', phase: 'dawn', weather: 'clear' });
-assert.equal(dawnHost.dataset.activity, 'morning', 'A fair local dawn must start the morning park activity');
+assert.match(weather, /const night = hour >= 20 \|\| hour < 5;/, 'Night must follow the forecast local hour rather than is_day alone');
+assert.match(weather, /const dawn = hour >= 5 && hour <= 7;/, '05:00-07:00 local forecast must be treated as dawn');
+assert.doesNotMatch(weather, /number\(item\.isDay\) === 0 \|\| hour >= 20/, 'A sunrise is_day flag must not incorrectly keep 05:00 in night mode');
+assert.ok(weather.includes("import('./Residents/resident-library.js')"), 'Weather must continue loading the shared Residents library');
+assert.ok(weather.includes('LiveEarthResidentLibrary?.setActivity(residentHost, state)'), 'Selected forecast hour must drive resident activity');
 
-const cloudyDawnHost = { dataset: {} };
-library.setActivity(cloudyDawnHost, { mode: 'calm', phase: 'dawn', weather: 'cloudy' });
-assert.equal(cloudyDawnHost.dataset.activity, 'morning', 'A fair cloudy dawn may still be suitable for exercise');
+const styleNodes = new Map();
+const fakeDocument = {
+  head: { appendChild(node) { styleNodes.set(node.id, node); } },
+  getElementById(id) { return styleNodes.get(id) || null; },
+  createElement(tag) { return { tagName: tag.toUpperCase(), id: '', textContent: '' }; },
+  createElementNS(_ns, tag) { return { tagName: tag, attributes: {}, setAttribute(name, value) { this.attributes[name] = value; }, innerHTML: '' }; }
+};
+const sandbox = { window: {}, document: fakeDocument, console };
+vm.runInNewContext(residentSource, sandbox, { filename: 'Residents/resident-library.js' });
+const library = sandbox.window.LiveEarthResidentLibrary;
+assert.ok(library, 'Residents API must register');
+assert.equal(library.version, '1.1.1', 'The shared library version must advance after removing Weather-only layout rules');
+assert.equal(library.getRoster().length, 3, 'The app must retain exactly three neighbours');
+assert.ok(library.getActivityCatalog().morning, 'Morning park activity must be registered');
 
-for (const weather of ['rain', 'storm', 'snow', 'fog', 'hot']) {
+const markup = library.renderMarkup();
+assert.equal((markup.match(/class="le-weather-person le-weather-person--/g) || []).length, 3, 'Morning scene must retain exactly three residents');
+assert.equal((markup.match(/le-weather-prop--exercise/g) || []).length, 2, 'Only the first two residents should have exercise props');
+assert.ok(markup.includes('le-weather-prop--butterfly'), 'The third resident must have a butterfly to chase');
+assert.doesNotMatch(residentSource, /\.le-sfv--weather/, 'Weather layout styles must not be owned by the reusable Residents library');
+
+for (const weatherState of ['clear', 'cloudy']) {
   const host = { dataset: {} };
-  library.setActivity(host, { mode: 'calm', phase: 'dawn', weather });
-  assert.equal(host.dataset.activity, 'calm', `Morning exercise must not override ${weather} conditions`);
+  library.setActivity(host, { mode: 'calm', phase: 'dawn', weather: weatherState });
+  assert.equal(host.dataset.activity, 'morning', `Fair ${weatherState} dawn should select the park routine`);
 }
+for (const weatherState of ['rain', 'storm', 'snow', 'fog', 'hot']) {
+  const host = { dataset: {} };
+  library.setActivity(host, { mode: 'calm', phase: 'dawn', weather: weatherState });
+  assert.equal(host.dataset.activity, 'calm', `Morning exercise must not override ${weatherState}`);
+}
+const wind = { dataset: {} };
+library.setActivity(wind, { mode: 'wind', phase: 'dawn', weather: 'clear' });
+assert.equal(wind.dataset.activity, 'wind', 'Wind behaviour must retain priority');
+const daytime = { dataset: {} };
+library.setActivity(daytime, { mode: 'calm', phase: 'day', weather: 'clear' });
+assert.equal(daytime.dataset.activity, 'calm', 'Morning routine must end outside the dawn window');
 
-const rainHost = { dataset: {} };
-library.setActivity(rainHost, { mode: 'rain', phase: 'dawn', weather: 'rain' });
-assert.equal(rainHost.dataset.activity, 'rain', 'Weather activity must keep priority over morning exercise');
+assert.match(residentSource, /le-weather-person--one\{animation:le-resident-morning-jump/, 'Resident one must exercise');
+assert.match(residentSource, /le-weather-person--two\{animation:le-resident-morning-stretch/, 'Resident two must stretch');
+assert.match(residentSource, /le-weather-person--three\{animation:le-resident-butterfly-chase/, 'Resident three must chase the butterfly');
+assert.match(residentSource, /le-resident-butterfly-flight/, 'The butterfly must flutter independently');
 
-const daytimeHost = { dataset: {} };
-library.setActivity(daytimeHost, { mode: 'calm', phase: 'day', weather: 'clear' });
-assert.equal(daytimeHost.dataset.activity, 'calm', 'The park routine must end outside the dawn window');
-
-assert.match(source, /le-weather-person--one\{animation:le-resident-morning-jump/, 'Resident one must animate a morning exercise');
-assert.match(source, /le-weather-person--two\{animation:le-resident-morning-stretch/, 'Resident two must animate a morning stretch');
-assert.match(source, /le-weather-person--three\{animation:le-resident-butterfly-chase/, 'Resident three must chase the butterfly');
-assert.match(source, /le-weather-prop--butterfly/, 'The third resident must own a butterfly prop');
-assert.match(source, /le-resident-butterfly-flight/, 'The butterfly must have its own flutter animation');
-assert.match(source, /\.le-sfv--weather \.le-sfv-body>\.le-sfv-card:first-of-type\{[^}]*background:transparent/, 'The top forecast card must become a transparent floating overlay');
-assert.match(source, /\.le-sfv--weather \.le-weather-metric\{padding:0;border:0;border-radius:0;background:none/, 'Weather metrics must lose their individual tile backgrounds');
-assert.match(source, /\.le-sfv--weather \.le-sfv-subtitle\{display:none\}/, 'The long Weather subtitle must no longer occupy the top of the scene');
-
-console.log('Weather floating information overlay and morning Residents activity tests passed.');
+console.log('Weather floating overlay, local dawn classification and Residents morning activity tests passed.');
