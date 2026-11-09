@@ -42,7 +42,7 @@ assert.ok(source.includes('function capsule('));
 assert.ok(source.includes('new THREE.CapsuleGeometry'));
 assert.ok(source.includes('const lowerLegColor'));
 assert.ok(source.includes('blended neck'));
-assert.ok(source.includes('0xf2c2a5'));
+assert.ok(source.includes('skin: 0xf0bd99'), 'Face and neck geometry must use the current shared skin palette');
 assert.ok(source.includes('function easeActorPose('));
 assert.ok(source.includes('memory.quaternion.slerp(node.quaternion, alpha)'));
 assert.ok(source.includes('actor.arms[0].wrist.rotation.x'));

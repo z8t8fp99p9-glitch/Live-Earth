@@ -261,7 +261,7 @@ function createFace(head, person) {
     sphere(head, 0xdba58d, [x, 0.035, 0.238], [0.067, 0.080, 0.018], { roughness: 0.96 });
     const eye = joint(head, [x, 0.035, 0.247]);
     sphere(eye, COLORS.white, [0, 0, 0], [0.054, 0.063, 0.030], { roughness: 0.28 });
-    sphere(eye, 0x573d31, [0.008, -0.004, 0.026], [0.028, 0.038, 0.018], { roughness: 0.24 });
+    sphere(eye, COLORS.eye, [0.008, -0.004, 0.026], [0.028, 0.038, 0.018], { roughness: 0.24 });
     const limbalRing = new THREE.Mesh(geometry('resident-eye-limbal-ring-24', () => new THREE.TorusGeometry(0.029, 0.0026, 6, 24)), mat(0x34241f, 0.48));
     limbalRing.position.set(0.008, -0.004, 0.042);
     eye.add(limbalRing);
