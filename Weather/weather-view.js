@@ -1,8 +1,7 @@
-/* LIVE // EARTH — Weather: Japanese art-led 2D immersive view.
-   Design language: expressive editorial typography + full-screen atmosphere +
-   Japanese minimalist art (ink-wash mountains, woodblock colour, maple foliage).
-   Runtime contract: uses only an already-enabled fresh Location fix; no GPS request,
-   no second globe, no WebGL/3D, no external art dependency. */
+/* LIVE // EARTH — Weather: live Japanese ink drawing, 2D.
+   Design: expressive English editorial typography + quiet washi-paper ground +
+   a weather-generated Japanese landscape. No photographic wallpaper, no 3D,
+   no runtime image generation and no automatic geolocation request. */
 (() => {
   'use strict';
 
@@ -13,828 +12,353 @@
   }
 
   const { mount, el, isActive, globe } = runtime;
-  const STYLE_ID = 'le-weather-japanese-editorial-2d-style';
+  const STYLE_ID = 'le-weather-live-ink-style';
   const API_ROOT = 'https://api.open-meteo.com/v1/forecast';
   const REFRESH_MS = 15 * 60 * 1000;
-  const MAX_PARTICLES = 22;
+  const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function addStyles() {
     document.getElementById(STYLE_ID)?.remove();
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
-      .le-sfv--weather {
-        position:absolute!important; inset:0!important; width:100%!important; height:100%!important;
-        max-width:none!important; overflow:hidden!important; padding:0!important; margin:0!important;
-        border:0!important; border-radius:0!important; background:#0d282b!important;
-        isolation:isolate; pointer-events:none;
-      }
-      .le-sfv--weather > .le-sfv-panel { display:none!important; }
-      .le-weather-screen {
-        --le-weather-ink:#f7f5ee; --le-weather-muted:#d3ddd8; --le-weather-line:#f4f3e94d;
-        --le-weather-glass:rgba(10,34,35,.48); --le-weather-accent:#cf493e;
-        position:absolute; inset:0; z-index:1; overflow-x:hidden; overflow-y:auto;
-        overscroll-behavior:contain; -webkit-overflow-scrolling:touch; scrollbar-width:none;
-        color:var(--le-weather-ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-        background:#10282b; pointer-events:auto; isolation:isolate;
-      }
+      .le-sfv--weather{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;overflow:hidden!important;padding:0!important;margin:0!important;border:0!important;border-radius:0!important;background:#f1eee5!important;isolation:isolate;pointer-events:none}
+      .le-sfv--weather>.le-sfv-panel{display:none!important}
+      .le-weather-screen{--paper:#f1eee5;--paper-deep:#e8e3d7;--ink:#202923;--muted:#68736c;--accent:#b84437;position:absolute;inset:0;z-index:1;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;color:var(--ink);background:radial-gradient(ellipse at 76% 45%,rgba(202,211,194,.30),transparent 42%),linear-gradient(160deg,var(--paper),var(--paper-deep));font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;pointer-events:auto;isolation:isolate}
       .le-weather-screen::-webkit-scrollbar{display:none}
-      .le-weather-art-fallback{background:linear-gradient(160deg,#12343a,#466a69 52%,#0b292c)}
-      .le-weather-art{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:#102c30}
-      .le-weather-art-picture{position:absolute;inset:0;display:block}
-      .le-weather-art-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:54% 48%;transform:scale(1.015);filter:saturate(.92) contrast(1.08) brightness(.78);transition:filter 1.5s ease,transform 8s ease;will-change:filter}
-      .le-weather-art-wash{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(3,19,23,.24) 0%,rgba(3,19,23,.10) 28%,rgba(3,18,22,.28) 57%,rgba(2,14,18,.72) 100%),linear-gradient(90deg,rgba(2,18,22,.62) 0%,rgba(2,18,22,.20) 56%,rgba(2,18,22,.02) 100%);transition:background 1.4s ease}
-      .le-weather-art-light{position:absolute;inset:-8%;z-index:1;pointer-events:none;background:radial-gradient(ellipse at 72% 27%,rgba(255,226,177,.22),transparent 38%);opacity:.7;transition:opacity 1.5s ease,background 1.5s ease}
-      .le-weather-rain,.le-weather-snow{position:absolute;inset:0;z-index:3;overflow:hidden;opacity:0;transition:opacity .8s ease}
-      .le-weather-particle{position:absolute;top:-12%;left:var(--particle-x);pointer-events:none;will-change:transform;animation:le-weather-fall var(--particle-duration,1.6s) linear var(--particle-delay,0s) infinite}
-      .le-weather-rain .le-weather-particle{width:1.25px;height:clamp(15px,3.6vh,28px);border-radius:2px;background:linear-gradient(180deg,transparent,#e7f6f3d8);transform:rotate(13deg);filter:drop-shadow(0 0 2px #d9f4f2aa)}
-      .le-weather-snow .le-weather-particle{width:var(--particle-size,4px);height:var(--particle-size,4px);border-radius:50%;background:#f8fbf6;box-shadow:0 0 7px #fff9;animation-name:le-weather-snow-fall;animation-duration:var(--particle-duration,5s)}
-      .le-weather-fog{position:absolute;inset:35% -14% 0;z-index:2;opacity:0;pointer-events:none;background:linear-gradient(180deg,transparent 0%,rgba(222,233,226,.05) 18%,rgba(215,227,219,.38) 58%,rgba(215,227,219,.17) 100%);filter:blur(13px);transition:opacity 1.2s ease}
-      .le-weather-lightning{position:absolute;inset:0;z-index:4;opacity:0;background:rgba(230,243,247,.72);mix-blend-mode:screen;pointer-events:none}
-      .le-weather-ripples{position:absolute;inset:56% 0 0;z-index:2;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .8s ease}
-      .le-weather-ripple{position:absolute;left:var(--ripple-x);top:var(--ripple-y);width:var(--ripple-size);aspect-ratio:1;border:1px solid rgba(224,245,239,.42);border-radius:50%;transform:scale(.15);opacity:0;animation:le-weather-ripple 3.4s ease-out var(--ripple-delay) infinite}
-      .le-weather-dew-drops{position:absolute;inset:0;z-index:3;pointer-events:none;opacity:0;transition:opacity .7s ease}
-      .le-weather-dew-drop{position:absolute;top:var(--drop-y);left:var(--drop-x);width:4px;height:7px;border-radius:65% 35% 65% 35%;transform:rotate(35deg);background:linear-gradient(145deg,#f5ffffcc,#9bc8d588 62%,#e9ffffaa);box-shadow:0 0 5px #d9f7ff88}
-      .le-weather-leaf-motion{position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none}
-      .le-weather-live-leaf{position:absolute;left:var(--leaf-x);top:var(--leaf-y);width:var(--leaf-size);height:auto;opacity:var(--leaf-opacity,.62);filter:drop-shadow(0 2px 5px #061a1c66);transform-origin:70% 50%;animation:le-weather-leaf-drift var(--leaf-duration,12s) ease-in-out var(--leaf-delay,0s) infinite alternate}
-      .le-weather-live-leaf path{fill:#b83a35;stroke:#5e2428;stroke-width:1.1;stroke-linejoin:round}
-      .le-weather-live-leaf line{stroke:#ed8d74;stroke-width:1;opacity:.7}
-      .le-weather-screen[data-weather="clear"] .le-weather-art-image{filter:saturate(1.08) contrast(1.03) brightness(.98)}
-      .le-weather-screen[data-weather="cloudy"] .le-weather-art-image{filter:saturate(.78) contrast(1.04) brightness(.84)}
-      .le-weather-screen[data-weather="rain"] .le-weather-art-image{filter:saturate(.88) contrast(1.10) brightness(.72)}
-      .le-weather-screen[data-weather="storm"] .le-weather-art-image{filter:saturate(.72) contrast(1.16) brightness(.58)}
-      .le-weather-screen[data-weather="snow"] .le-weather-art-image{filter:saturate(.48) contrast(1.02) brightness(1.04)}
-      .le-weather-screen[data-weather="fog"] .le-weather-art-image{filter:saturate(.62) contrast(.94) brightness(.94)}
-      .le-weather-screen[data-weather="hot"] .le-weather-art-image{filter:saturate(1.18) contrast(1.02) brightness(1.08)}
-      .le-weather-screen[data-phase="dawn"] .le-weather-art-light{background:radial-gradient(ellipse at 68% 38%,rgba(255,188,135,.30),transparent 44%);opacity:.95}
-      .le-weather-screen[data-phase="evening"] .le-weather-art-light{background:radial-gradient(ellipse at 74% 35%,rgba(255,140,100,.25),transparent 46%);opacity:.9}
-      .le-weather-screen[data-phase="night"] .le-weather-art-image{filter:saturate(.65) brightness(.48) contrast(1.08)}
-      .le-weather-screen[data-phase="night"] .le-weather-art-light{background:radial-gradient(ellipse at 76% 34%,rgba(137,171,220,.16),transparent 42%);opacity:.72}
-      .le-weather-screen[data-weather="rain"] .le-weather-rain,.le-weather-screen[data-weather="storm"] .le-weather-rain{opacity:var(--le-rain-opacity,.65)}
-      .le-weather-screen[data-weather="snow"] .le-weather-snow{opacity:var(--le-snow-opacity,.72)}
-      .le-weather-screen[data-weather="fog"] .le-weather-fog{opacity:.92}
-      .le-weather-screen[data-weather="rain"] .le-weather-ripples,.le-weather-screen[data-weather="storm"] .le-weather-ripples{opacity:var(--le-rain-opacity,.65)}
-      .le-weather-screen[data-weather="rain"] .le-weather-dew-drops,.le-weather-screen[data-weather="storm"] .le-weather-dew-drops{opacity:.92}
-      .le-weather-screen[data-weather="storm"] .le-weather-lightning{animation:le-weather-flash 11s linear infinite}
-      .le-weather-screen[data-weather="rain"] .le-weather-art-wash,.le-weather-screen[data-weather="storm"] .le-weather-art-wash{background:linear-gradient(180deg,rgba(4,18,25,.48),rgba(6,23,29,.22) 35%,rgba(3,17,23,.74) 100%),linear-gradient(90deg,rgba(3,17,23,.66),transparent 84%)}
-      .le-weather-screen[data-phase="dawn"] .le-weather-art-wash{background:linear-gradient(180deg,rgba(26,39,43,.14),rgba(30,34,35,.04) 38%,rgba(4,22,25,.72) 100%),linear-gradient(90deg,rgba(5,22,25,.36),transparent 80%)}
-      .le-weather-screen[data-phase="evening"] .le-weather-art-wash{background:linear-gradient(180deg,rgba(38,23,35,.30),rgba(20,24,32,.14) 38%,rgba(4,20,24,.80) 100%),linear-gradient(90deg,rgba(5,20,26,.42),transparent 84%)}
-      .le-weather-screen[data-phase="night"] .le-weather-art-wash{background:linear-gradient(180deg,rgba(3,9,24,.54),rgba(4,15,29,.25) 38%,rgba(2,10,21,.86) 100%),linear-gradient(90deg,rgba(3,11,22,.58),transparent 82%)}
-      .le-weather-content{position:relative;z-index:2;width:min(100%,760px);margin:0 auto;padding:calc(env(safe-area-inset-top) + 18px) clamp(20px,5.2vw,36px) calc(env(safe-area-inset-bottom) + 192px)}
-      .le-weather-topbar{display:flex;justify-content:space-between;align-items:center;gap:14px;min-height:34px;text-shadow:0 2px 16px #061b1d99}
-      .le-weather-brand{font-size:12px;font-weight:780;letter-spacing:.19em;white-space:nowrap}
-      .le-weather-brand span{font-weight:400;opacity:.78}
-      .le-weather-location{display:flex;align-items:center;gap:7px;color:#e9efea;font-size:11px;letter-spacing:.035em;min-width:0}
-      .le-weather-location svg{width:13px;height:16px;flex:0 0 auto;opacity:.9}
-      .le-weather-date-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:40px}
-      .le-weather-date{color:#e4e9e3;font-size:9px;font-weight:700;letter-spacing:.25em;text-transform:uppercase;text-shadow:0 2px 18px #061a1d}
-      .le-weather-art-mark{width:36px;height:36px;flex:0 0 auto;opacity:.78;filter:drop-shadow(0 2px 9px #061a1d99)}
-      .le-weather-art-mark circle{fill:none;stroke:#d45b4d;stroke-width:1.3}
-      .le-weather-art-mark path{fill:none;stroke:#e8e3d5;stroke-width:1.1;stroke-linecap:round;stroke-linejoin:round}
-      .le-weather-art-mark .mark-leaf{fill:#bd4a40;stroke:none}
-      .le-weather-hero{position:relative;margin-top:15px;max-width:540px;text-shadow:0 3px 22px rgba(0,15,20,.42)}
-      .le-weather-headline{margin:0;max-width:520px;font-family:Georgia,"Times New Roman",serif;font-size:clamp(44px,12vw,76px);font-weight:400;line-height:.91;letter-spacing:-.055em;text-wrap:balance}
-      .le-weather-headline em{font-weight:400;color:#fff;font-style:italic}
-      .le-weather-headline::after{content:"";display:block;width:38px;height:2px;background:var(--le-weather-accent);margin:18px 0 15px;box-shadow:0 0 12px #d44a3e55}
-      .le-weather-temperature-row{display:flex;align-items:center;gap:17px}
-      .le-weather-temperature{font-family:Georgia,"Times New Roman",serif;font-size:clamp(86px,22vw,124px);font-weight:400;letter-spacing:-.09em;line-height:.83;white-space:nowrap}
-      .le-weather-temperature sup{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:.31em;vertical-align:top;letter-spacing:-.02em;margin-left:5px}
-      .le-weather-condition{border-left:1px solid rgba(245,246,239,.48);padding:4px 0 5px 16px;min-width:0}
-      .le-weather-condition-icon{width:42px;height:36px;display:block;margin-bottom:5px;color:#f4f5ee}
-      .le-weather-condition-name{font-family:Georgia,"Times New Roman",serif;font-size:17px;line-height:1.15}
-      .le-weather-feels{margin-top:5px;color:#d1dbd8;font-size:12px}
-      .le-weather-poetry{margin:20px 0 0 2px;max-width:380px;color:#e4e8df;font-family:Georgia,"Times New Roman",serif;font-size:15px;font-style:italic;line-height:1.5}
-      .le-weather-data-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:28px;padding:15px 8px;border:1px solid rgba(222,242,234,.22);border-radius:17px;background:linear-gradient(130deg,rgba(230,246,236,.16),rgba(14,46,47,.42) 44%,rgba(4,25,28,.60));box-shadow:inset 0 1px rgba(255,255,255,.18),0 12px 34px rgba(0,10,16,.14);backdrop-filter:blur(13px) saturate(1.12);-webkit-backdrop-filter:blur(13px) saturate(1.12)}
-      .le-weather-stat{min-width:0;padding:0 9px;border-right:1px solid rgba(232,244,235,.23)}.le-weather-stat:last-child{border-right:0}
-      .le-weather-stat-label{display:block;color:#d0ddd6;font-size:8px;letter-spacing:.13em;text-transform:uppercase;white-space:nowrap}
-      .le-weather-stat-value{display:block;margin-top:7px;color:#fff;font-size:clamp(12px,3.3vw,17px);font-weight:680;line-height:1.1;white-space:nowrap}
-      .le-weather-section-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:27px 2px 12px}
-      .le-weather-section-title{margin:0;color:#eef1e9;font-size:9px;font-weight:760;letter-spacing:.22em;text-transform:uppercase}
-      .le-weather-section-note{color:#d0ddd7;font-size:9px;letter-spacing:.08em;text-transform:uppercase}
-      .le-weather-hourly{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(52px,1fr);gap:3px;overflow-x:auto;padding:5px 0 9px;scrollbar-width:none;overscroll-behavior-x:contain}
+      .le-weather-screen:before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.23;background-image:repeating-linear-gradient(7deg,transparent 0 11px,rgba(78,68,51,.035) 12px,transparent 13px),repeating-linear-gradient(93deg,transparent 0 17px,rgba(78,68,51,.025) 18px,transparent 19px);mix-blend-mode:multiply}
+      .le-weather-screen[data-phase="night"]{--paper:#202a2a;--paper-deep:#152223;--ink:#f0eee5;--muted:#bdc8bf;--accent:#d36b55;background:radial-gradient(ellipse at 77% 47%,rgba(74,103,98,.28),transparent 45%),linear-gradient(160deg,var(--paper),var(--paper-deep))}
+      .le-weather-screen[data-weather="rain"],.le-weather-screen[data-weather="storm"],.le-weather-screen[data-weather="fog"]{--paper:#e8e9df;--paper-deep:#d7dfd7}
+      .le-weather-screen[data-phase="night"][data-weather="rain"],.le-weather-screen[data-phase="night"][data-weather="storm"],.le-weather-screen[data-phase="night"][data-weather="fog"]{--paper:#1b272b;--paper-deep:#101c21}
+      .le-weather-content{position:relative;z-index:2;width:min(100%,760px);margin:0 auto;padding:calc(env(safe-area-inset-top) + 17px) clamp(20px,5vw,34px) calc(env(safe-area-inset-bottom) + 214px)}
+      .le-weather-topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:31px}
+      .le-weather-brand{font-size:11px;font-weight:800;letter-spacing:.2em;white-space:nowrap}.le-weather-brand span{font-weight:400;opacity:.65}
+      .le-weather-place{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:10px;letter-spacing:.04em;white-space:nowrap}
+      .le-weather-place svg{width:12px;height:15px;flex:0 0 auto}
+      .le-weather-date-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:31px}
+      .le-weather-date{color:var(--muted);font-size:8px;font-weight:750;letter-spacing:.22em;text-transform:uppercase}
+      .le-weather-mode{display:flex;align-items:center;gap:5px;min-height:27px;padding:3px 8px;border:1px solid rgba(52,65,56,.22);border-radius:999px;background:rgba(255,255,255,.43);color:var(--muted);font-size:7px;font-weight:800;letter-spacing:.10em;white-space:nowrap}
+      .le-weather-mode select{max-width:105px;border:0;outline:0;background:transparent;color:var(--ink);font:750 8px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.035em;appearance:none;-webkit-appearance:none;padding:4px 13px 4px 2px;background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);background-position:calc(100% - 5px) 50%,calc(100% - 1px) 50%;background-size:4px 4px;background-repeat:no-repeat}
+      .le-weather-mode option{background:var(--paper);color:var(--ink)}
+      .le-weather-screen[data-preview="true"] .le-weather-mode{border-color:rgba(184,68,55,.42);color:var(--accent)}
+      .le-weather-hero{position:relative;z-index:2;max-width:520px;margin-top:15px}
+      .le-weather-headline{max-width:510px;margin:0;font-family:Georgia,"Times New Roman",serif;font-size:clamp(43px,11vw,70px);font-weight:400;line-height:.91;letter-spacing:-.055em;text-wrap:balance;color:var(--ink)}
+      .le-weather-headline em{font-style:italic;font-weight:400;color:var(--ink)}
+      .le-weather-headline:after{content:"";display:block;width:34px;height:2px;margin:15px 0 13px;background:var(--accent)}
+      .le-weather-temperature-row{display:flex;align-items:center;gap:14px}
+      .le-weather-temperature{font-family:Georgia,"Times New Roman",serif;font-size:clamp(78px,21vw,116px);font-weight:400;letter-spacing:-.095em;line-height:.82;white-space:nowrap;color:var(--ink)}
+      .le-weather-temperature sup{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:.27em;vertical-align:top;letter-spacing:0;margin-left:5px}
+      .le-weather-condition{min-width:0;padding:3px 0 4px 14px;border-left:1px solid color-mix(in srgb,var(--ink) 38%,transparent)}
+      .le-weather-condition-icon{display:block;width:34px;height:31px;margin-bottom:4px;color:var(--ink)}
+      .le-weather-condition-name{font-family:Georgia,"Times New Roman",serif;font-size:16px;line-height:1.15}
+      .le-weather-feels{margin-top:4px;color:var(--muted);font-size:10px}
+      .le-weather-art-stage{position:relative;z-index:1;height:clamp(190px,35vh,310px);margin:-2px -14px 0;pointer-events:none}
+      .le-weather-art-canvas{display:block;width:100%;height:100%;touch-action:none}
+      .le-weather-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin-top:0;padding:12px 0;border-top:1px solid color-mix(in srgb,var(--ink) 20%,transparent);border-bottom:1px solid color-mix(in srgb,var(--ink) 20%,transparent)}
+      .le-weather-stat{min-width:0;padding:0 10px;border-right:1px solid color-mix(in srgb,var(--ink) 17%,transparent)}.le-weather-stat:first-child{padding-left:2px}.le-weather-stat:last-child{border-right:0}
+      .le-weather-stat-label{display:block;color:var(--muted);font-size:7px;font-weight:750;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
+      .le-weather-stat-value{display:block;margin-top:6px;color:var(--ink);font-size:clamp(12px,3.5vw,15px);font-weight:730;white-space:nowrap}
+      .le-weather-hourly-section{position:relative;z-index:2;margin-top:19px}
+      .le-weather-section-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 1px 9px}
+      .le-weather-section-title{margin:0;color:var(--muted);font-size:8px;font-weight:800;letter-spacing:.2em}
+      .le-weather-section-note{color:var(--muted);font-size:7px;letter-spacing:.09em}
+      .le-weather-hourly{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(45px,1fr);gap:2px;overflow-x:auto;padding:5px 0 7px;scrollbar-width:none;overscroll-behavior-x:contain}
       .le-weather-hourly::-webkit-scrollbar{display:none}
-      .le-weather-hour{display:grid;justify-items:center;align-content:start;gap:8px;min-width:0;padding:9px 3px 7px;border-top:1px solid rgba(238,245,237,.25);color:#f2f4ee;text-align:center}
-      .le-weather-hour-time{font-size:9px;color:#d7e1da;white-space:nowrap}
-      .le-weather-hour-icon{width:24px;height:24px;color:#f1f2eb}
-      .le-weather-hour-temp{font-size:15px;font-weight:680;white-space:nowrap}
-      .le-weather-hour-rain{font-size:8px;color:#9bd8e3;white-space:nowrap}
-      .le-weather-curve{display:block;width:100%;height:38px;margin-top:-2px;overflow:visible;opacity:.92}
-      .le-weather-curve path{fill:none;stroke:#e9eee5;stroke-width:1.55;vector-effect:non-scaling-stroke}
-      .le-weather-curve circle{fill:#f1f2eb;stroke:#25464a;stroke-width:1.2;vector-effect:non-scaling-stroke}
-      .le-weather-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px}
-      .le-weather-metric{min-width:0;padding:12px 10px 13px;border:1px solid rgba(226,242,232,.18);border-radius:13px;background:linear-gradient(145deg,rgba(229,246,236,.14),rgba(8,32,34,.58));box-shadow:inset 0 1px rgba(255,255,255,.12);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-      .le-weather-metric-label{display:block;color:#c9d8d0;font-size:8px;letter-spacing:.13em;text-transform:uppercase}
-      .le-weather-metric-value{display:block;margin-top:7px;color:#fff;font-size:16px;font-weight:690;line-height:1.1;overflow-wrap:anywhere}
-      .le-weather-metric-note{display:block;margin-top:4px;color:#c0d0c9;font-size:9px;line-height:1.3}
-      .le-weather-status{margin:16px 2px 0;color:#d0ded5;font-size:10px;line-height:1.55;text-shadow:0 1px 10px #071c1d}
-      .le-weather-status:empty{display:none}
-      .le-weather-attribution{margin:22px 2px 0;color:#c0d0c7;font-size:8px;line-height:1.5;opacity:.78}
-      .le-weather-screen[data-weather="rain"] .le-weather-rain,.le-weather-screen[data-weather="storm"] .le-weather-rain{display:block}
-      @keyframes le-weather-fall{to{transform:translate3d(var(--particle-drift,12px),112vh,0)}}
-      @keyframes le-weather-snow-fall{0%{transform:translate3d(0,-8vh,0)}50%{transform:translate3d(var(--particle-drift,14px),50vh,0)}100%{transform:translate3d(calc(var(--particle-drift,14px) * -1),112vh,0)}}
-      @keyframes le-weather-flash{0%,91%,94%,100%{opacity:0}92%{opacity:.16}92.6%{opacity:0}93.2%{opacity:.10}}
-      @keyframes le-weather-ripple{0%{transform:scale(.18);opacity:.72}100%{transform:scale(1);opacity:0}}
-      @keyframes le-weather-leaf-drift{0%{transform:translate3d(0,0,0) rotate(-4deg)}100%{transform:translate3d(var(--leaf-drift,18px),var(--leaf-rise,-5px),0) rotate(8deg)}}
-      @keyframes le-weather-drop-release{0%{transform:translateY(0) scale(.9);opacity:.9}70%{opacity:.8}100%{transform:translateY(20px) scale(.72);opacity:0}}
-      .le-weather-date-tools{display:flex;align-items:center;gap:8px;min-width:0}
-      .le-weather-source{display:inline-flex;align-items:center;min-height:25px;padding:4px 7px;border:1px solid rgba(238,246,238,.30);border-radius:999px;color:#f5eee4;background:rgba(8,30,32,.44);font-size:7px;font-weight:800;letter-spacing:.12em;white-space:nowrap}
-      .le-weather-screen[data-preview="false"] .le-weather-source{border-color:rgba(139,224,190,.45);color:#b9f0d2}
-      .le-weather-test-picker{display:flex;align-items:center;gap:5px;padding:3px 6px 3px 8px;border:1px solid rgba(238,246,238,.27);border-radius:999px;background:rgba(6,27,29,.50);color:#e7eee7;font-size:7px;font-weight:750;letter-spacing:.12em;white-space:nowrap;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-      .le-weather-test-picker select{max-width:94px;border:0;outline:0;background:transparent;color:#fff;font:700 8px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.05em;appearance:none;-webkit-appearance:none;padding:4px 13px 4px 2px;background-image:linear-gradient(45deg,transparent 50%,#e9eee6 50%),linear-gradient(135deg,#e9eee6 50%,transparent 50%);background-position:calc(100% - 5px) 50%,calc(100% - 1px) 50%;background-size:4px 4px,4px 4px;background-repeat:no-repeat}
-      .le-weather-test-picker option{background:#173638;color:#fff}
-      .le-weather-screen[data-preview="true"] .le-weather-test-picker{border-color:rgba(222,173,112,.55)}
-      .le-weather-content{padding-bottom:calc(env(safe-area-inset-bottom) + 224px)}
-      @media(min-width:700px){.le-weather-content{padding-top:28px;padding-bottom:calc(env(safe-area-inset-bottom) + 176px);width:min(100%,900px)}.le-weather-date-row{margin-top:30px}.le-weather-headline{font-size:clamp(58px,8vw,86px)}.le-weather-temperature{font-size:116px}.le-weather-data-strip{max-width:100%}.le-weather-hourly{grid-auto-columns:minmax(68px,1fr)}.le-weather-metrics{max-width:100%}}
-      @media(max-width:430px){.le-weather-content{padding-left:17px;padding-right:17px;padding-bottom:calc(env(safe-area-inset-bottom) + 236px)}.le-weather-date-row{margin-top:24px;align-items:flex-start}.le-weather-date{font-size:8px;letter-spacing:.19em;padding-top:6px}.le-weather-date-tools{gap:5px}.le-weather-art-mark{display:none}.le-weather-source{font-size:6px;min-height:23px;padding:3px 6px}.le-weather-test-picker{padding:2px 5px 2px 7px;font-size:6px}.le-weather-test-picker select{max-width:75px;font-size:7px}.le-weather-hero{margin-top:8px}.le-weather-headline{font-size:clamp(43px,12vw,52px);line-height:.88}.le-weather-headline::after{margin:12px 0 10px}.le-weather-temperature{font-size:clamp(72px,20vw,82px)}.le-weather-temperature-row{gap:13px}.le-weather-condition{padding-left:12px}.le-weather-condition-icon{width:35px;height:31px;margin-bottom:3px}.le-weather-condition-name{font-size:15px}.le-weather-feels{font-size:11px}.le-weather-poetry{font-size:13px;margin-top:12px;line-height:1.35}.le-weather-data-strip{margin-top:18px;padding:11px 3px;border-radius:14px}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:6px;letter-spacing:.07em}.le-weather-stat-value{font-size:clamp(10px,3vw,12px);margin-top:6px}.le-weather-section-head{margin:18px 2px 8px}.le-weather-hourly{grid-auto-columns:minmax(48px,1fr);gap:2px;padding:3px 0 6px}.le-weather-hour{gap:5px;padding:7px 2px 5px}.le-weather-hour-time{font-size:8px}.le-weather-hour-icon{width:20px;height:20px}.le-weather-hour-temp{font-size:13px}.le-weather-hour-rain{font-size:7px}.le-weather-curve{height:29px}.le-weather-metrics{margin-top:10px;gap:6px}.le-weather-metric{padding:9px 7px 10px;border-radius:11px}.le-weather-metric-label{font-size:6px;letter-spacing:.08em}.le-weather-metric-value{font-size:14px;margin-top:5px}.le-weather-metric-note{font-size:8px}}
-      @media(orientation:landscape) and (min-width:760px) and (min-height:500px){
+      .le-weather-hour{display:grid;justify-items:center;align-content:start;gap:6px;min-width:0;padding:8px 2px 5px;border-top:1px solid color-mix(in srgb,var(--ink) 20%,transparent);text-align:center;color:var(--ink)}
+      .le-weather-hour-time{font-size:8px;color:var(--muted);white-space:nowrap}.le-weather-hour-icon{width:19px;height:19px;color:var(--ink)}.le-weather-hour-temp{font-size:13px;font-weight:750;white-space:nowrap}.le-weather-hour-rain{font-size:7px;color:#668b8a;white-space:nowrap}
+      .le-weather-curve{display:block;width:100%;height:26px;margin-top:0;overflow:visible}.le-weather-curve path{fill:none;stroke:var(--ink);stroke-width:1.3;opacity:.72;vector-effect:non-scaling-stroke}.le-weather-curve circle{fill:var(--accent);stroke:var(--paper);stroke-width:1.1;vector-effect:non-scaling-stroke}
+      .le-weather-status{min-height:15px;margin:12px 1px 0;color:var(--muted);font-size:8px;line-height:1.45}.le-weather-status:empty{display:none}
+      .le-weather-screen[data-weather="rain"],.le-weather-screen[data-weather="storm"]{--accent:#4e8285}.le-weather-screen[data-weather="snow"]{--accent:#718c9e}.le-weather-screen[data-weather="hot"]{--accent:#bd6945}
+      .le-weather-attribution{margin:13px 1px 0;color:var(--muted);font-size:7px;line-height:1.4;opacity:.78}
+      @media(min-width:600px) and (orientation:portrait){.le-weather-content{width:min(100%,760px);padding-left:clamp(32px,7vw,60px);padding-right:clamp(32px,7vw,60px)}.le-weather-headline{font-size:clamp(64px,9vw,88px)}.le-weather-temperature{font-size:126px}.le-weather-art-stage{height:clamp(240px,38vh,360px)}}
+      @media(orientation:landscape) and (min-width:650px){
         .le-weather-screen{overflow-y:auto}
-        .le-weather-art-image{object-position:50% 50%;transform:scale(1.005)}
-        .le-weather-content{width:min(100%,1380px);padding:calc(env(safe-area-inset-top) + 16px) clamp(24px,4vw,58px) calc(env(safe-area-inset-bottom) + 152px);display:grid;grid-template-columns:minmax(0,1.04fr) minmax(0,.96fr);grid-template-areas:"top top" "date date" "hero summary" "hours metrics" "status status" "credit credit";column-gap:clamp(22px,4vw,64px);row-gap:8px;align-items:center}
-        .le-weather-topbar{grid-area:top}.le-weather-date-row{grid-area:date;margin-top:13px}.le-weather-hero{grid-area:hero;margin-top:5px;max-width:620px}.le-weather-data-strip{grid-area:summary;margin:0;max-width:none;align-self:center;padding:16px 10px}.le-weather-hourly-section{grid-area:hours;min-width:0}.le-weather-metrics{grid-area:metrics;margin:0;max-width:none;grid-template-columns:repeat(3,minmax(0,1fr));align-self:center}.le-weather-status{grid-area:status;margin-top:4px}.le-weather-attribution{grid-area:credit;margin-top:4px}.le-weather-date-tools{gap:10px}.le-weather-headline{font-size:clamp(48px,5.7vw,78px);line-height:.91}.le-weather-headline::after{margin:13px 0 11px}.le-weather-temperature{font-size:clamp(82px,9vw,116px)}.le-weather-poetry{margin-top:12px;font-size:14px}.le-weather-section-head{margin:7px 2px 8px}.le-weather-hourly{grid-auto-columns:minmax(0,1fr);overflow:visible}.le-weather-hour{gap:5px;padding:7px 1px 4px}.le-weather-hour-time{font-size:8px}.le-weather-hour-icon{width:19px;height:19px}.le-weather-hour-temp{font-size:13px}.le-weather-hour-rain{font-size:7px}.le-weather-curve{height:26px}.le-weather-metric{padding:11px 8px}.le-weather-metric-value{font-size:14px}
+        .le-weather-content{width:min(100%,1240px);min-height:100%;padding:calc(env(safe-area-inset-top) + 12px) clamp(24px,4vw,56px) calc(env(safe-area-inset-bottom) + 150px);display:grid;grid-template-columns:minmax(260px,.88fr) minmax(340px,1.12fr);grid-template-areas:"top top" "date date" "hero art" "summary art" "hours hours" "status status" "credit credit";column-gap:clamp(20px,4vw,58px);row-gap:7px;align-content:start;align-items:center}
+        .le-weather-topbar{grid-area:top}.le-weather-date-row{grid-area:date;margin-top:10px}.le-weather-hero{grid-area:hero;margin-top:5px;align-self:center}.le-weather-art-stage{grid-area:art;height:clamp(210px,49vh,430px);margin:0 -8px;align-self:stretch}.le-weather-summary{grid-area:summary;margin:0;align-self:start}.le-weather-hourly-section{grid-area:hours;margin-top:8px}.le-weather-status{grid-area:status;margin-top:0}.le-weather-attribution{grid-area:credit;margin-top:0}.le-weather-headline{font-size:clamp(45px,5vw,76px)}.le-weather-temperature{font-size:clamp(82px,8vw,112px)}.le-weather-hourly{grid-auto-columns:minmax(0,1fr);overflow:visible}.le-weather-hour{gap:4px}.le-weather-summary{max-width:540px}
       }
-      @media(orientation:landscape) and (max-height:499px){.le-weather-content{padding-top:calc(env(safe-area-inset-top) + 9px);padding-bottom:calc(env(safe-area-inset-bottom) + 190px)}.le-weather-date-row{margin-top:12px}.le-weather-hero{margin-top:4px}.le-weather-headline{font-size:40px}.le-weather-temperature{font-size:72px}.le-weather-data-strip{margin-top:12px;padding:10px 5px}.le-weather-section-head{margin-top:13px}.le-weather-hour{gap:4px;padding:6px 2px}.le-weather-curve{height:25px}}
+      @media(max-width:390px){.le-weather-content{padding-left:16px;padding-right:16px;padding-bottom:calc(env(safe-area-inset-bottom) + 226px)}.le-weather-date-row{margin-top:24px}.le-weather-headline{font-size:clamp(40px,11.3vw,48px)}.le-weather-temperature{font-size:clamp(72px,20vw,82px)}.le-weather-art-stage{height:clamp(174px,31vh,230px);margin-left:-9px;margin-right:-9px}.le-weather-summary{padding:10px 0}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:6px;letter-spacing:.08em}.le-weather-stat-value{font-size:11px}.le-weather-hourly-section{margin-top:16px}}
+      @media(orientation:landscape) and (max-height:520px){.le-weather-content{padding-top:calc(env(safe-area-inset-top) + 8px);padding-bottom:calc(env(safe-area-inset-bottom) + 146px);row-gap:4px}.le-weather-date-row{margin-top:5px}.le-weather-headline{font-size:clamp(36px,5vw,52px)}.le-weather-headline:after{margin:9px 0 9px}.le-weather-temperature{font-size:clamp(68px,8vw,82px)}.le-weather-art-stage{height:clamp(145px,38vh,210px)}.le-weather-hourly-section{margin-top:4px}}
       @media(prefers-reduced-motion:reduce){.le-weather-screen *,.le-weather-screen *:before,.le-weather-screen *:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
-      @media(prefers-reduced-transparency:reduce){.le-weather-data-strip,.le-weather-metric,.le-weather-test-picker{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(7,25,28,.92)}}
-      @media(prefers-reduced-motion:reduce){.le-weather-screen *,.le-weather-screen *:before,.le-weather-screen *:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
-      @media(prefers-reduced-transparency:reduce){.le-weather-data-strip,.le-weather-metric{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(7,25,28,.92)}}
+      @media(prefers-reduced-transparency:reduce){.le-weather-mode{background:var(--paper)}}
     `;
     document.head.appendChild(style);
   }
 
-  function createArt() {
-    const art = el('div', 'le-weather-art');
-    art.setAttribute('aria-hidden', 'true');
-    art.innerHTML = `
-      <picture class="le-weather-art-picture">
-        <source media="(orientation: landscape) and (min-width: 760px)" srcset="./Weather/Assets/weather-scene-landscape.webp" type="image/webp">
-        <img class="le-weather-art-image" src="./Weather/Assets/weather-scene.webp" alt="" decoding="async" fetchpriority="high">
-      </picture>
-      <div class="le-weather-art-wash"></div>
-      <div class="le-weather-art-light"></div>
-      <div class="le-weather-leaf-motion"></div>
-      <div class="le-weather-dew-drops">
-        <span class="le-weather-dew-drop" style="--drop-x:77%;--drop-y:22%"></span>
-        <span class="le-weather-dew-drop" style="--drop-x:83%;--drop-y:28%"></span>
-        <span class="le-weather-dew-drop" style="--drop-x:89%;--drop-y:19%"></span>
-        <span class="le-weather-dew-drop" style="--drop-x:71%;--drop-y:31%"></span>
-      </div>
-      <div class="le-weather-ripples">
-        <span class="le-weather-ripple" style="--ripple-x:12%;--ripple-y:35%;--ripple-size:42px;--ripple-delay:-.8s"></span>
-        <span class="le-weather-ripple" style="--ripple-x:48%;--ripple-y:66%;--ripple-size:66px;--ripple-delay:-2.1s"></span>
-        <span class="le-weather-ripple" style="--ripple-x:83%;--ripple-y:43%;--ripple-size:50px;--ripple-delay:-1.4s"></span>
-      </div>
-      <div class="le-weather-fog"></div>
-      <div class="le-weather-rain"></div>
-      <div class="le-weather-snow"></div>
-      <div class="le-weather-lightning"></div>
-    `;
-    const image = art.querySelector('.le-weather-art-image');
-    image?.addEventListener('error', () => {
-      art.classList.add('le-weather-art-fallback');
-    }, { once: true });
-    return art;
-  }
-
-  function number(value) {
-    if (value === null || value === undefined || value === '') return null;
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  function hourOf(time) {
-    const match = /T(\d{2}):/.exec(String(time || ''));
-    return match ? Number(match[1]) : 12;
-  }
-  function isSnow(item) {
-    return number(item.snowfall) > 0 || [71,73,75,77,85,86].includes(number(item.weather_code));
-  }
-  function isRain(item) {
-    return number(item.rain) > 0 || number(item.showers) > 0 || number(item.precipitation) > 0 ||
-      [51,53,55,56,57,61,63,65,66,67,80,81,82].includes(number(item.weather_code));
-  }
-  function isFog(item) { return [45,48].includes(number(item.weather_code)); }
-  function visualState(item) {
-    const temperature = number(item.feelsLike) ?? number(item.temperature);
-    const wind = number(item.wind) ?? 0;
-    const gusts = number(item.gusts) ?? wind;
-    const cloud = number(item.cloudCover) ?? 0;
-    const hour = hourOf(item.time);
-    const isDay = number(item.isDay);
-    const evening = hour >= 16 && hour <= 19;
-    const night = isDay === 0 || (isDay === null && (hour >= 20 || hour < 5));
-    const dawn = !night && hour >= 5 && hour <= 7;
-    const phase = night ? 'night' : dawn ? 'dawn' : evening ? 'evening' : 'day';
-    const snow = isSnow(item);
-    const rain = isRain(item);
-    const thunder = [95,96,99].includes(number(item.weather_code));
-    const fog = isFog(item);
-    const actualTemperature = number(item.temperature) ?? temperature;
-    const hot = actualTemperature !== null && actualTemperature >= 34;
-    const weather = snow ? 'snow' : thunder ? 'storm' : rain ? 'rain' : fog ? 'fog' : cloud >= 65 ? 'cloudy' : hot ? 'hot' : 'clear';
-    return { phase, weather, cloud, wind, gusts };
-  }
-  function conditionLabel(code) {
-    const value = number(code);
-    if (value === 0) return 'Clear sky';
-    if (value === 1) return 'Mainly clear';
-    if (value === 2) return 'Partly cloudy';
-    if (value === 3) return 'Overcast';
-    if (value === 45 || value === 48) return 'Fog';
-    if ([51,53,55,56,57].includes(value)) return 'Drizzle';
-    if ([61,63,65,66,67,80,81,82].includes(value)) return 'Rain';
-    if ([71,73,75,77,85,86].includes(value)) return 'Snow';
-    if ([95,96,99].includes(value)) return 'Thunderstorm';
-    return 'Current conditions';
-  }
+  const number = value => value === null || value === undefined || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
+  const hourOf = value => { const match = /T(\d{2}):/.exec(String(value || '')); return match ? Number(match[1]) : new Date().getHours(); };
+  const isSnow = code => [71,73,75,77,85,86].includes(Number(code));
+  const isRain = code => [51,53,55,56,57,61,63,65,66,67,80,81,82].includes(Number(code));
+  const isFog = code => [45,48].includes(Number(code));
   function conditionKind(code) {
-    const value = number(code);
-    if ([95,96,99].includes(value)) return 'storm';
-    if ([71,73,75,77,85,86].includes(value)) return 'snow';
-    if ([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(value)) return 'rain';
-    if ([45,48].includes(value)) return 'fog';
-    if (value === 1 || value === 2 || value === 3) return 'cloudy';
+    const n = Number(code);
+    if ([95,96,99].includes(n)) return 'storm';
+    if (isSnow(n)) return 'snow';
+    if (isRain(n)) return 'rain';
+    if (isFog(n)) return 'fog';
+    if ([2,3].includes(n)) return 'cloudy';
     return 'clear';
   }
-  function compass(degrees) {
-    const value = number(degrees);
-    if (value === null) return '—';
-    return ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(value / 22.5) % 16];
+  function visualState(current) {
+    const hour = hourOf(current.time);
+    const night = Number(current.is_day) === 0;
+    const phase = night ? 'night' : hour < 7 ? 'dawn' : hour >= 17 && hour < 20 ? 'evening' : 'day';
+    const code = Number(current.weather_code);
+    const wind = number(current.wind_speed_10m) ?? 0;
+    let weather = conditionKind(code);
+    if (weather === 'clear' && wind >= 30) weather = 'wind';
+    if (number(current.temperature_2m) >= 35 && weather === 'clear') weather = 'hot';
+    return { weather, phase, wind, direction: number(current.wind_direction_10m) ?? 270, precipitation: number(current.precipitation) ?? 0, snowfall: number(current.snowfall) ?? 0, cloud: number(current.cloud_cover) ?? 0 };
   }
-  function formatHour(value, isFirst) {
-    if (isFirst) return 'NOW';
-    const match = /T(\d{2}):/.exec(String(value || ''));
-    if (!match) return '—';
-    const hour = Number(match[1]);
-    return `${String(hour % 12 || 12).padStart(2,'0')}${hour < 12 ? 'a' : 'p'}`;
-  }
-  function formatDateTime(value) {
-    const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(String(value || ''));
-    if (!match) return 'LOCAL WEATHER';
-    const [,year,month,day,hour,minute] = match;
-    // Open-Meteo returns the forecast location's local wall-clock time. Build
-    // the weekday from its calendar date without shifting it to device timezone.
-    const date = new Date(Date.UTC(Number(year), Number(month)-1, Number(day)));
-    const label = date.toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric', timeZone:'UTC' });
-    const h = Number(hour);
-    return `${label} · ${String(h % 12 || 12).padStart(2,'0')}:${minute} ${h < 12 ? 'AM' : 'PM'}`;
+  function conditionLabel(code, kind) {
+    if (kind === 'wind') return 'Windy';
+    if (kind === 'hot') return 'Clear and warm';
+    const n = Number(code);
+    if (n === 0) return 'Clear sky';
+    if (n === 1) return 'Mainly clear';
+    if (n === 2) return 'Partly cloudy';
+    if (n === 3) return 'Overcast';
+    if ([45,48].includes(n)) return 'Fog';
+    if ([51,53,55,56,57].includes(n)) return 'Drizzle';
+    if ([61,63,65,66,67,80,81,82].includes(n)) return 'Rain';
+    if ([71,73,75,77,85,86].includes(n)) return 'Snow';
+    if ([95,96,99].includes(n)) return 'Thunderstorm';
+    return 'Current conditions';
   }
   function headlineFor(kind, phase) {
-    const options = {
-      clear: phase === 'night' ? 'A clear night' : 'A bright day',
-      cloudy: phase === 'night' ? 'Clouds drift softly' : 'A quiet sky',
-      rain: phase === 'night' ? 'Rain after dark' : 'A rainy morning',
-      storm: phase === 'night' ? 'Storm after dark' : 'A storm is passing',
-      snow: phase === 'night' ? 'Snow beneath the moon' : 'A softer kind of snow',
-      fog: phase === 'night' ? 'A misty night' : 'A world in mist',
-      hot: 'Under a warm sun'
+    const phrases = {
+      clear: phase === 'night' ? 'A quiet night' : 'A bright day',
+      cloudy: 'Clouds in motion', rain: phase === 'night' ? 'Rain after dark' : 'A rainy day',
+      storm: 'A storm is passing', snow: 'A softer kind of snow', fog: 'A world in mist',
+      wind: 'A day in motion', hot: 'Under a warm sun'
     };
-    const phrase = options[kind] || 'Weather, in the moment';
-    return phase === 'evening' && kind === 'rain' ? 'Rain in the evening' : phrase;
+    return phrases[kind] || 'Weather, in the moment';
   }
-  function sceneNote(kind, temperature) {
-    const notes = {
-      clear: 'A little room for sunlight. Take the long way home.',
-      cloudy: 'A quiet sky, changing gently through the day.',
-      rain: 'A quiet day beneath the clouds. Carry an umbrella.',
-      storm: 'Storm conditions nearby. Take care outdoors.',
-      snow: 'A slower day under falling snow. Wrap up warmly.',
-      fog: 'A softened horizon. Take extra care while travelling.',
-      hot: 'Strong warmth through the day. Stay hydrated.'
-    };
-    if (kind === 'hot' && temperature !== null && temperature >= 40) return 'Very high temperatures. Avoid prolonged time in direct sun.';
-    return notes[kind] || 'A closer look at the sky above you.';
+  function compass(value) {
+    const n = number(value); if (n === null) return '—';
+    return ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(n / 22.5) % 16];
   }
-  function createParticles(layer, kind, item) {
-    layer.replaceChildren();
-    const amount = number(kind === 'rain' ? item.precipitation : item.snowfall) ?? 0;
-    const windDirection = number(item.windDirection) ?? 270;
-    const directionalDrift = -Math.sin(windDirection * Math.PI / 180) * 16;
-    const base = kind === 'rain'
-      ? Math.round(Math.min(MAX_PARTICLES, Math.max(5, amount * 4)))
-      : Math.round(Math.min(MAX_PARTICLES, Math.max(7, amount * 13 + 5)));
-    const count = Math.max(0, Math.min(MAX_PARTICLES, base));
-    for (let i = 0; i < count; i++) {
-      const particle = el('span', 'le-weather-particle');
-      particle.style.setProperty('--particle-x', `${(i * 37 + 7) % 100}%`);
-      particle.style.setProperty('--particle-delay', `${-((i * 17) % 31) / 10}s`);
-      particle.style.setProperty('--particle-duration', kind === 'rain'
-        ? `${Math.max(.75, 2.0 - amount * .06)}s`
-        : `${4.4 + (i % 5) * .65}s`);
-      particle.style.setProperty('--particle-drift', `${Math.round(directionalDrift + ((i * 11) % 13) - 6)}px`);
-      if (kind === 'snow') particle.style.setProperty('--particle-size', `${3 + (i % 3)}px`);
-      layer.appendChild(particle);
-    }
+  function formatLocalTime(value) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(String(value || ''));
+    if (!match) return deviceClock();
+    const [,year,month,day,hour,minute] = match;
+    const date = new Date(Date.UTC(Number(year),Number(month)-1,Number(day)));
+    const dayLabel = new Intl.DateTimeFormat(undefined,{weekday:'long',month:'short',day:'numeric',timeZone:'UTC'}).format(date);
+    const h = Number(hour);
+    return `${dayLabel} · ${String(h % 12 || 12).padStart(2,'0')}:${minute} ${h < 12 ? 'AM' : 'PM'}`;
   }
-  function renderWindLeaves(screen, windSpeed, windDirection) {
-    const layer = screen.querySelector('.le-weather-leaf-motion');
-    if (!layer) return;
-    layer.replaceChildren();
-    const speed = Math.max(0, number(windSpeed) ?? 0);
-    if (speed < 5 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const count = Math.min(4, Math.max(1, Math.ceil(speed / 12)));
-    const direction = number(windDirection) ?? 270;
-    const drift = Math.max(-34, Math.min(34, -Math.sin(direction * Math.PI / 180) * (8 + speed * .72)));
-    for (let index = 0; index < count; index++) {
-      const leaf = el('span', 'le-weather-live-leaf');
-      const x = 63 + ((index * 17) % 28);
-      const y = 13 + ((index * 19) % 34);
-      leaf.style.setProperty('--leaf-x', `${x}%`);
-      leaf.style.setProperty('--leaf-y', `${y}%`);
-      leaf.style.setProperty('--leaf-size', `${15 + ((index * 7) % 13)}px`);
-      leaf.style.setProperty('--leaf-duration', `${Math.max(4.5, 16 - speed * .35 + index * .8)}s`);
-      leaf.style.setProperty('--leaf-delay', `${-index * 1.7}s`);
-      leaf.style.setProperty('--leaf-drift', `${Math.round(drift + (index % 2 ? 8 : -7))}px`);
-      leaf.style.setProperty('--leaf-rise', `${index % 2 ? -7 : 5}px`);
-      leaf.innerHTML = '<svg viewBox="0 0 64 42" aria-hidden="true"><path d="M3 21C13 17 17 8 23 2c2 8 7 11 12 10 0-5 3-8 8-11-1 7 2 11 7 13 4-2 8-2 11 0-7 4-9 8-8 13-7-2-12 0-15 6-5-7-10-8-16-6-2 5-6 8-13 10 2-8 0-12-6-16Z"/><line x1="5" y1="21" x2="58" y2="21"/><line x1="23" y1="21" x2="28" y2="6"/><line x1="36" y1="21" x2="48" y2="12"/><line x1="41" y1="21" x2="43" y2="34"/></svg>';
-      layer.appendChild(leaf);
-    }
+  function deviceClock() {
+    const now = new Date();
+    return new Intl.DateTimeFormat(undefined,{weekday:'long',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(now);
   }
-
-  function iconMarkup(kind) {
-    const common = 'fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
-    const paths = {
-      clear: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/>',
-      cloudy: '<path d="M7 18h10a4 4 0 0 0 .4-8 6 6 0 0 0-11.5 1.7A3.2 3.2 0 0 0 7 18Z"/>',
-      rain: '<path d="M7 15h10a4 4 0 0 0 .4-8 6 6 0 0 0-11.5 1.7A3.2 3.2 0 0 0 7 15Z"/><path d="m8 18-1 3m6-3-1 3m6-3-1 3"/>',
-      snow: '<path d="M7 14h10a4 4 0 0 0 .4-8A6 6 0 0 0 6 7.7 3.2 3.2 0 0 0 7 14Z"/><path d="M8 17v4m-2-2h4m5-2v4m-2-2h4"/>',
-      storm: '<path d="M7 14h10a4 4 0 0 0 .4-8A6 6 0 0 0 6 7.7 3.2 3.2 0 0 0 7 14Z"/><path d="m13 15-3 4h3l-1 3 4-5h-3l1-2"/>',
-      fog: '<path d="M4 10h16M2 14h18M5 18h14"/><path d="M7 6h10"/>'
-    };
-    const body = paths[kind] || paths.cloudy;
-    return `<svg viewBox="0 0 24 24" aria-hidden="true" ${common}>${body}</svg>`;
-  }
-
   function localWallTime(date) {
-    const pad = value => String(value).padStart(2, '0');
+    const pad = n => String(n).padStart(2,'0');
     return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
-  function deviceDateTime() {
-    const now = new Date();
-    const day = new Intl.DateTimeFormat(undefined, { weekday:'long', day:'numeric', month:'short' }).format(now);
-    const time = new Intl.DateTimeFormat(undefined, { hour:'2-digit', minute:'2-digit', hour12:true }).format(now);
-    return `${day} · ${time}`;
-  }
-  function makePreviewData(kind) {
-    const presets = {
-      clear:  { temp:27, feels:29, code:0, cloud:6, rain:0, snow:0, wind:6, direction:315, humidity:51, pressure:1012, high:28, low:17, chance:0, uv:5, visibility:12000, hours:[28,28,28,28,26,25], codes:[0,0,0,0,1,1], chances:[0,0,0,0,0,0] },
-      cloudy: { temp:22, feels:23, code:3, cloud:88, rain:0, snow:0, wind:9, direction:250, humidity:67, pressure:1015, high:24, low:18, chance:12, uv:3, visibility:9000, hours:[22,22,21,22,23,22], codes:[3,3,2,3,2,2], chances:[5,8,8,10,12,8] },
-      rain:   { temp:17, feels:15, code:63, cloud:96, rain:2.8, snow:0, wind:6, direction:247, humidity:88, pressure:1008, high:17, low:12, chance:80, uv:1, visibility:6000, hours:[17,16,16,18,19,19], codes:[61,61,63,61,61,80], chances:[80,85,82,75,60,42] },
-      storm:  { temp:15, feels:11, code:95, cloud:100, rain:6.2, snow:0, wind:38, direction:290, humidity:94, pressure:994, high:17, low:13, chance:100, uv:0, visibility:2500, hours:[15,14,15,16,16,17], codes:[95,95,96,95,80,61], chances:[100,100,95,90,75,50] },
-      snow:   { temp:1, feels:-4, code:73, cloud:94, rain:0, snow:.8, wind:18, direction:30, humidity:91, pressure:1004, high:2, low:-3, chance:75, uv:1, visibility:5000, hours:[1,0,0,1,2,1], codes:[71,73,73,71,71,77], chances:[72,75,80,78,65,55] },
-      fog:    { temp:8, feels:7, code:45, cloud:100, rain:0, snow:0, wind:3, direction:160, humidity:99, pressure:1018, high:11, low:6, chance:5, uv:1, visibility:350, hours:[8,8,9,10,10,11], codes:[45,45,45,48,45,3], chances:[5,5,3,4,2,0] }
+  function sampleData(kind) {
+    const samples = {
+      clear:[27,29,0,5,51,6,315,28,17,0,0], cloudy:[22,23,3,88,67,9,250,24,18,15,0],
+      rain:[17,15,63,96,88,6,247,17,12,80,2.8], storm:[15,11,95,100,94,38,290,17,13,100,6.2],
+      snow:[1,-4,73,94,91,18,30,2,-3,75,.8], fog:[8,7,45,100,99,3,160,11,6,5,0],
+      wind:[21,20,0,22,48,36,290,24,16,8,0], night:[18,17,0,4,63,4,15,21,15,0,0], hot:[38,40,0,2,27,8,90,40,26,0,0]
     };
-    const preset = presets[kind] || presets.clear;
-    const now = new Date();
-    now.setMinutes(0,0,0);
-    const times = preset.hours.map((_, index) => { const date = new Date(now); date.setHours(now.getHours()+index); return localWallTime(date); });
-    const isDay = kind === 'night' ? 0 : (now.getHours() >= 6 && now.getHours() < 19 ? 1 : 0);
+    const [temp,feels,code,cloud,humidity,wind,direction,high,low,chance,precip]=samples[kind] || samples.clear;
+    const start = new Date(); start.setMinutes(0,0,0);
+    const hours = Array.from({length:6},(_,i)=>{const d=new Date(start);d.setHours(d.getHours()+i);return localWallTime(d);});
+    const temps = Array.from({length:6},(_,i)=>Math.round(temp + (i===0?0:Math.sin(i*.85)*1.6 + (kind==='hot'?-i*.3:i*.2))));
+    const codes = temps.map((_,i)=>kind==='night' ? 0 : (kind==='rain' && i>3 ? 61 : code));
+    const isNight = kind === 'night' || (kind === 'auto' && new Date().getHours() < 6);
     return {
-      current: {
-        time: localWallTime(new Date()), temperature_2m:preset.temp, apparent_temperature:preset.feels,
-        is_day:isDay, precipitation:preset.rain+preset.snow, rain:preset.rain, showers:0,
-        snowfall:preset.snow, weather_code:preset.code, cloud_cover:preset.cloud,
-        pressure_msl:preset.pressure, wind_speed_10m:preset.wind, wind_direction_10m:preset.direction,
-        wind_gusts_10m:preset.wind*1.45, relative_humidity_2m:preset.humidity
-      },
-      hourly: {
-        time:times, temperature_2m:preset.hours, precipitation_probability:preset.chances,
-        weather_code:preset.codes, visibility:preset.hours.map(()=>preset.visibility),
-        uv_index:preset.hours.map(()=>preset.uv)
-      },
-      daily: { temperature_2m_max:[preset.high], temperature_2m_min:[preset.low], precipitation_probability_max:[preset.chance], uv_index_max:[preset.uv] }
+      current:{time:localWallTime(new Date()),temperature_2m:temp,apparent_temperature:feels,is_day:isNight?0:(new Date().getHours()>=6&&new Date().getHours()<19?1:0),precipitation:precip,rain:precip,snowfall:kind==='snow'?precip:0,weather_code:code,cloud_cover:cloud,wind_speed_10m:wind,wind_direction_10m:direction,wind_gusts_10m:wind*1.4},
+      hourly:{time:hours,temperature_2m:temps,weather_code:codes,precipitation_probability:temps.map(()=>chance)},
+      daily:{temperature_2m_max:[high],temperature_2m_min:[low],precipitation_probability_max:[chance]}
     };
+  }
+  function svgIcon(kind) {
+    const paths = {
+      clear:'<circle cx="12" cy="12" r="4"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1m11.4 11.4 2.1 2.1M1 12h3m16 0h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
+      cloudy:'<path d="M6 18h11a4 4 0 0 0 .3-8A6 6 0 0 0 6 8a5 5 0 0 0 0 10Z"/>',
+      rain:'<path d="M6 15h11a4 4 0 0 0 .3-8A6 6 0 0 0 6 5a5 5 0 0 0 0 10Zm1 3-1 3m7-3-1 3m7-3-1 3"/>',
+      storm:'<path d="M6 14h11a4 4 0 0 0 .3-8A6 6 0 0 0 6 4a5 5 0 0 0 0 10Z M13 14l-3 5h3l-1 4 5-7h-3l1-2"/>',
+      snow:'<path d="M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7M9 4l3 2 3-2m-6 16 3-2 3 2"/>',
+      fog:'<path d="M3 8h18M1 12h22M4 16h16M7 20h10"/>',
+      wind:'<path d="M2 8h13a3 3 0 1 0-3-3M1 12h18a3 3 0 1 1-3 3M3 17h9"/>'
+    };
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[kind] || paths.clear}</svg>`;
+  }
+  function renderHourly(screen,data) {
+    const container=screen.querySelector('#le-weather-hourly');
+    const times=data?.hourly?.time;
+    if(!container||!Array.isArray(times)||!times.length){if(container)container.textContent='Hourly forecast unavailable';return;}
+    const now=String(data.current?.time||''); let start=times.findIndex(t=>t>=now); if(start<0)start=0;
+    const fragment=document.createDocumentFragment(), values=[];
+    for(let i=start;i<Math.min(times.length,start+6);i++){
+      const temp=number(data.hourly.temperature_2m?.[i]); const code=data.hourly.weather_code?.[i]; const chance=number(data.hourly.precipitation_probability?.[i]); const kind=conditionKind(code);
+      values.push(temp);
+      const item=el('div','le-weather-hour');
+      const tm=times[i].match(/T(\d{2}):/);const hh=tm?Number(tm[1]):0;
+      item.append(el('span','le-weather-hour-time',i===start?'NOW':`${String(hh%12||12).padStart(2,'0')}${hh<12?'a':'p'}`));
+      const icon=el('span','le-weather-hour-icon');icon.innerHTML=svgIcon(kind);item.append(icon);
+      item.append(el('strong','le-weather-hour-temp',temp===null?'—':`${Math.round(temp)}°`));
+      item.append(el('span','le-weather-hour-rain',chance===null?'':`${Math.round(chance)}% rain`));
+      fragment.append(item);
+    }
+    container.replaceChildren(fragment);
+    const valid=values.filter(v=>v!==null); const svg=screen.querySelector('#le-weather-curve');
+    if(svg&&valid.length>1){const min=Math.min(...valid),max=Math.max(...valid),span=Math.max(1,max-min);const pts=valid.map((v,i)=>({x:i/(valid.length-1)*320,y:22-(v-min)/span*15}));const d=pts.map((p,i)=>`${i?'L':'M'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');svg.innerHTML=`<path d="${d}"/>${pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2"/>`).join('')}`;}
+  }
+  function setText(root,id,value){const node=root.querySelector(`#${id}`);if(node)node.textContent=value==null||value===''?'—':String(value);}
+  function setTemp(root,value){const node=root.querySelector('#le-weather-temperature');if(!node)return;node.replaceChildren(document.createTextNode(value==null?'—':String(Math.round(value))));if(value!=null){const sup=document.createElement('sup');sup.textContent='°';node.append(sup);}}
+  function paintData(screen,data,preview=false){
+    const c=data.current||{},d=data.daily||{};const state=visualState(c);
+    screen.dataset.weather=state.weather;screen.dataset.phase=state.phase;screen.dataset.preview=String(preview);screen.dataset.hasdata='true';
+    setText(screen,'le-weather-place-text',preview?'LOCATION PREVIEW':'YOUR LOCATION');
+    setText(screen,'le-weather-date',formatLocalTime(c.time));
+    setText(screen,'le-weather-headline',headlineFor(state.weather,state.phase));
+    const title=screen.querySelector('#le-weather-headline');if(title){const words=headlineFor(state.weather,state.phase).split(' ');const cut=Math.max(1,Math.ceil(words.length*.58));title.replaceChildren(document.createTextNode(words.slice(0,cut).join(' ')),document.createElement('br'));const em=document.createElement('em');em.textContent=words.slice(cut).join(' ');title.append(em);}
+    setTemp(screen,number(c.temperature_2m));setText(screen,'le-weather-condition',conditionLabel(c.weather_code,state.weather));
+    setText(screen,'le-weather-feels',number(c.apparent_temperature)==null?'':`Feels like ${Math.round(c.apparent_temperature)}°`);
+    const icon=screen.querySelector('#le-weather-condition-icon');if(icon)icon.innerHTML=svgIcon(state.weather);
+    setText(screen,'le-weather-highlow',`${number(d.temperature_2m_max?.[0])==null?'—':Math.round(d.temperature_2m_max[0])+'°'} / ${number(d.temperature_2m_min?.[0])==null?'—':Math.round(d.temperature_2m_min[0])+'°'}`);
+    setText(screen,'le-weather-rainchance',number(d.precipitation_probability_max?.[0])==null?'—':`${Math.round(d.precipitation_probability_max[0])}%`);
+    setText(screen,'le-weather-wind',number(c.wind_speed_10m)==null?'—':`${compass(c.wind_direction_10m)} ${Math.round(c.wind_speed_10m)} km/h`);
+    renderHourly(screen,data);
+    screen.__weatherState=state;
+    screen.__weatherCurrent=c;
+    setText(screen,'le-weather-status',preview?'SAMPLE DATA · Choose AUTO to return to live weather when Location is enabled.':'');
+  }
+  function resetToSample(screen,kind='clear',message='Location is off. Showing a clearly labelled sample scene.'){
+    paintData(screen,sampleData(kind),true);setText(screen,'le-weather-status',message);
   }
 
-  function makeScreen() {
-    const screen = el('div', 'le-weather-screen');
-    screen.dataset.weather = 'clear';
-    screen.dataset.phase = 'day';
-    screen.innerHTML = `
+  // Deterministic 2D Japanese ink drawing. The scene is redrawn locally from
+  // live weather state: no wallpaper, no image download, no WebGL or AI call.
+  function makePainter(canvas){
+    let ctx=null;try{ctx=canvas.getContext('2d',{alpha:true});}catch(_){ctx=null;}if(!ctx)return {setState(){},stop(){}};
+    let width=0,height=0,dpr=1,raf=0,last=0,elapsed=0,state={weather:'clear',phase:'day',wind:4,direction:270,precipitation:0,snowfall:0,cloud:12};
+    let snowLoad=0;
+    const reduced=reducedMotion();
+    const resize=()=>{const rect=canvas.getBoundingClientRect();width=Math.max(1,rect.width);height=Math.max(1,rect.height);dpr=Math.min(window.devicePixelRatio||1,1.5);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);};
+    const palette=()=>state.phase==='night'?{ink:'#d9e0d8',soft:'#9baea6',ridge:'#536b64',water:'#627d78',accent:'#c66d5d',paper:'#dce1d5'}:{ink:'#27332d',soft:'#68796e',ridge:'#87998b',water:'#9aaea0',accent:'#b84437',paper:'#dbe0d2'};
+    const line=(points,color,alpha=1,widthPx=1.3)=>{ctx.save();ctx.strokeStyle=color;ctx.globalAlpha=alpha;ctx.lineWidth=widthPx;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();ctx.restore();};
+    const wash=(x,y,w,h,color,alpha)=>{ctx.save();ctx.globalAlpha=alpha;const g=ctx.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.5,color);g.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=g;ctx.fillRect(x,y,w,h);ctx.restore();};
+    function drawSky(p,t){
+      const {ink,soft,accent}=p;const night=state.phase==='night';
+      const sx=width*(state.phase==='evening'?.78:.76),sy=height*.18,r=Math.min(width,height)*.065;
+      ctx.save();ctx.globalAlpha=state.weather==='storm'?.38:state.weather==='fog'?.34:.56;ctx.fillStyle=night?'#dfe3d6':accent;ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.fill();
+      if(night){ctx.globalCompositeOperation='destination-out';ctx.beginPath();ctx.arc(sx+r*.36,sy-r*.22,r*.84,0,Math.PI*2);ctx.fill();ctx.globalCompositeOperation='source-over';}
+      ctx.globalAlpha=.23;ctx.strokeStyle=ink;ctx.lineWidth=.7;for(let i=0;i<4;i++){ctx.beginPath();ctx.ellipse(sx,sy,r*(.56+i*.13),r*(.62+i*.09),-.2,0,Math.PI*2);ctx.stroke();}ctx.restore();
+      const cloudCount=state.cloud>72?4:state.cloud>32?2:1;
+      for(let i=0;i<cloudCount;i++){const x=width*(.48+i*.12)+Math.sin(t*.12+i)*Math.max(2,state.wind*.45);const y=height*(.22+i*.065);const s=Math.min(width,height)*(.035+i*.004);ctx.save();ctx.globalAlpha=.16+state.cloud/550;ctx.strokeStyle=soft;ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(x,y,s,.95,2.7);ctx.arc(x+s*.85,y-s*.12,s*.78,Math.PI,Math.PI*1.98);ctx.arc(x+s*1.65,y,s,.45,2.4);ctx.stroke();ctx.restore();}
+    }
+    function drawMountains(p,t){
+      const {ink,soft,ridge}=p;const y=height*.61;const peaks=[[-.06,.12],[.13,.26],[.32,.06],[.48,.22],[.67,.02],[.84,.18],[1.06,.04]];
+      for(let layer=0;layer<3;layer++){
+        const offset=layer*height*.075;ctx.save();ctx.beginPath();ctx.moveTo(0,y+offset);
+        peaks.forEach(([x,h],i)=>{const px=x*width,py=y-h*height+offset+Math.sin(t*.08+i)*.7;ctx.quadraticCurveTo(px-width*.045,py+height*.09,px,py);});
+        ctx.lineTo(width,y+offset+height*.13);ctx.lineTo(0,y+offset+height*.13);ctx.closePath();ctx.globalAlpha=.10+layer*.045;ctx.fillStyle=layer===0?soft:ridge;ctx.fill();
+        ctx.globalAlpha=.22-layer*.035;ctx.strokeStyle=ink;ctx.lineWidth=1.05;ctx.stroke();ctx.restore();
+      }
+      for(let i=0;i<3;i++){const yy=y+height*(.035+i*.055)+Math.sin(t*.12+i)*1.8;wash(width*.18,yy,width*.83,height*.055,p.paper,.12+ (state.weather==='fog'?.22:0));}
+    }
+    function drawWater(p,t){
+      const {ink,water,soft}=p;const top=height*.77;ctx.save();const grad=ctx.createLinearGradient(0,top,0,height);grad.addColorStop(0,water+'30');grad.addColorStop(1,water+'05');ctx.fillStyle=grad;ctx.fillRect(0,top,width,height-top);ctx.restore();
+      for(let row=0;row<9;row++){const y=top+(height-top)*row/9;const wave=Math.sin(t*.6+row)*Math.min(5,state.wind*.12);const alpha=.22-row*.014;line([[width*.08,y],[width*.24,y+wave],[width*.45,y-wave*.5],[width*.68,y+wave*.4],[width*.92,y]],soft,alpha,.7);}
+      if(state.weather==='rain'||state.weather==='storm'){
+        const rainScale=Math.min(1,state.precipitation/5);for(let i=0;i<Math.round(4+rainScale*11);i++){const x=((i*79+Math.floor(t*13)*17)%Math.max(1,Math.round(width)));const y=top+((i*31+Math.floor(t*18)*7)%Math.max(1,Math.round(height-top)));const pulse=(t*2+i)%1;ctx.save();ctx.globalAlpha=.34*(1-pulse);ctx.strokeStyle=soft;ctx.lineWidth=.8;ctx.beginPath();ctx.ellipse(x,y,4+pulse*12,1+pulse*3,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
+      }
+    }
+    function drawPagoda(p){
+      const {ink,soft}=p;const x=width*.79,y=height*.63,s=Math.min(width,height)*.16;ctx.save();ctx.translate(x,y);ctx.scale(s/100,s/100);ctx.strokeStyle=ink;ctx.globalAlpha=.68;ctx.lineWidth=2.3;ctx.lineJoin='round';ctx.lineCap='round';
+      const roof=(yy,half)=>{ctx.beginPath();ctx.moveTo(-half,yy+7);ctx.quadraticCurveTo(-half*.25,yy-7,0,yy-15);ctx.quadraticCurveTo(half*.25,yy-7,half,yy+7);ctx.lineTo(half*.76,yy+8);ctx.stroke();};
+      roof(0,42);line([[-30,9],[-30,43],[30,9],[30,43]],ink,.62,1.8);roof(48,55);line([[-39,56],[-39,92],[39,56],[39,92]],ink,.58,2);line([[-47,95],[47,95]],ink,.58,2);line([[0,-15],[0,-30]],ink,.65,2);ctx.restore();
+    }
+    function drawBambooAndLeaves(p,t){
+      const {ink,accent,soft}=p;const x0=width*.90,y0=height*.12;const gust=Math.min(1,state.wind/55);const dir=Math.sin(state.direction*Math.PI/180);const sway=reduced?0:Math.sin(t*(.6+gust*.8))*gust*9;
+      ctx.save();ctx.strokeStyle=ink;ctx.globalAlpha=.62;ctx.lineWidth=2.1;ctx.beginPath();ctx.moveTo(x0+width*.13,y0-height*.1);ctx.quadraticCurveTo(x0+width*.015+sway,y0+height*.18,x0-width*.08+sway,y0+height*.39);ctx.stroke();
+      const leaves=[];for(let i=0;i<7;i++){const bx=x0+width*(.09-i*.022)+sway*(i/7);const by=y0+height*(i*.047);const side=i%2?1:-1;leaves.push({x:bx,y:by,side,i});ctx.save();ctx.translate(bx,by);ctx.rotate(side*(.45+sway*.006));ctx.fillStyle=i%3===0?accent:ink;ctx.globalAlpha=.48;ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(side*13,-8,side*27,-2);ctx.quadraticCurveTo(side*15,8,0,0);ctx.fill();ctx.strokeStyle=soft;ctx.lineWidth=.55;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(side*24,-2);ctx.stroke();ctx.restore();}
+      if(state.weather==='snow'&&snowLoad>0){ctx.strokeStyle='#fff';ctx.globalAlpha=Math.min(.9,snowLoad);ctx.lineWidth=2.3;for(let i=0;i<leaves.length;i++){const l=leaves[i];ctx.beginPath();ctx.moveTo(l.x,l.y-2);ctx.quadraticCurveTo(l.x+l.side*8,l.y-9,l.x+l.side*16,l.y-5);ctx.stroke();}}
+      if((state.weather==='rain'||state.weather==='storm')&&state.precipitation>.1){for(let i=0;i<leaves.length;i++){const l=leaves[i];const phase=(t*.32+i*.21)%1;const px=l.x+l.side*25;const py=l.y-2;ctx.save();ctx.fillStyle='#6d9ba0';ctx.globalAlpha=.35+.5*(1-phase);ctx.beginPath();ctx.ellipse(px,py+phase*18,1.7,3.1,0,0,Math.PI*2);ctx.fill();ctx.restore();}}
+      if(gust>.35&&!reduced){for(let i=0;i<Math.min(3,Math.floor(gust*4));i++){const xx=(width*(.62+i*.09)+((t*state.wind*2+i*87)%(width*.34)));const yy=height*(.42+(i%2)*.17+Math.sin(t+i)*.025);ctx.save();ctx.translate(xx,yy);ctx.rotate(dir*.5+Math.sin(t*1.2+i)*.4);ctx.fillStyle=accent;ctx.globalAlpha=.58;ctx.beginPath();ctx.moveTo(-8,0);ctx.quadraticCurveTo(0,-7,10,-1);ctx.quadraticCurveTo(2,7,-8,0);ctx.fill();ctx.restore();}}
+      ctx.restore();
+    }
+    function drawSnow(p,t){if(state.weather!=='snow'){snowLoad=Math.max(0,snowLoad-.0015);return;}const {soft}=p;const amount=Math.max(.12,Math.min(1,state.snowfall/2));snowLoad=reduced?Math.max(snowLoad,amount*.32):Math.min(.92,snowLoad+amount*.00055);const count=Math.round(12+amount*22);for(let i=0;i<count;i++){const x=((i*83+Math.sin(t*.3+i)*13)%width+width)%width;const y=((i*47+t*(4+(i%4)*1.2))%height*.78);ctx.save();ctx.globalAlpha=.45+(i%3)*.12;ctx.fillStyle=soft;ctx.beginPath();ctx.arc(x,y,1+(i%3)*.45,0,Math.PI*2);ctx.fill();ctx.restore();}}
+    function drawRain(p,t){if(state.weather!=='rain'&&state.weather!=='storm')return;const {soft,ink}=p;const intensity=Math.min(1,Math.max(.18,state.precipitation/6));const count=Math.round(16+intensity*22);for(let i=0;i<count;i++){const x=((i*73+t*(state.wind*.8+9))%width+width)%width;const y=((i*49+t*(90+intensity*90))%height*.86);line([[x,y],[x-2+Math.sin(state.direction*Math.PI/180)*6,y+8+intensity*7]],soft,.23+intensity*.18,.65);}
+      for(let i=0;i<5;i++){const x=width*(.12+i*.19);const y=height*(.75+(i%2)*.12);const phase=(t*.55+i*.27)%1;ctx.save();ctx.globalAlpha=.32*(1-phase);ctx.strokeStyle=ink;ctx.lineWidth=.75;ctx.beginPath();ctx.ellipse(x,y,4+phase*15,1.5+phase*3,0,0,Math.PI*2);ctx.stroke();ctx.restore();}}
+    function drawWindLines(p,t){if(state.wind<18)return;const {soft}=p;const alpha=Math.min(.30,state.wind/180);for(let i=0;i<4;i++){const y=height*(.38+i*.095)+Math.sin(t*.55+i)*3;ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=soft;ctx.lineWidth=.9;ctx.beginPath();ctx.moveTo(width*(.10+i*.03),y);ctx.bezierCurveTo(width*.35,y-5,width*.56,y+6,width*.88,y-3);ctx.stroke();ctx.restore();}}
+    function drawFog(p,t){if(state.weather!=='fog'&&state.cloud<85)return;const {paper,soft}=p;for(let i=0;i<3;i++){const y=height*(.49+i*.075)+Math.sin(t*.15+i)*7;const g=ctx.createLinearGradient(0,y,width,y);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.48,state.weather==='fog'?'rgba(238,238,224,.34)':'rgba(238,238,224,.15)');g.addColorStop(1,'rgba(255,255,255,0)');ctx.save();ctx.fillStyle=g;ctx.fillRect(0,y-9,width,19);ctx.restore();}}
+    function draw(){const p=palette();const t=elapsed;ctx.clearRect(0,0,width,height);drawSky(p,t);drawMountains(p,t);drawWater(p,t);drawPagoda(p);drawBambooAndLeaves(p,t);drawWindLines(p,t);drawRain(p,t);drawSnow(p,t);drawFog(p,t);}
+    function loop(now){raf=0;if(!canvas.isConnected||!isActive('weather')||document.hidden)return;if(now-last>=42){const delta=Math.min(.08,(now-last)/1000||.04);elapsed+=delta;last=now;draw();}raf=requestAnimationFrame(loop);}
+    function onVisibility(){if(document.hidden){if(raf)cancelAnimationFrame(raf);raf=0;}else if(!reduced&&!raf){last=0;raf=requestAnimationFrame(loop);}}
+    document.addEventListener('visibilitychange',onVisibility);
+    function setState(next){state=next||state;if(reduced){draw();return;}if(!raf)raf=requestAnimationFrame(loop);}
+    resize();draw();if(!reduced)raf=requestAnimationFrame(loop);
+    window.addEventListener('resize',resize,{passive:true});
+    const observer=typeof ResizeObserver==='function'?new ResizeObserver(()=>{resize();draw();}):null;observer?.observe(canvas);
+    return {setState,stop(){if(raf)cancelAnimationFrame(raf);raf=0;observer?.disconnect();window.removeEventListener('resize',resize);document.removeEventListener('visibilitychange',onVisibility);}};
+  }
+
+  function makeScreen(){
+    const screen=el('div','le-weather-screen');screen.dataset.weather='clear';screen.dataset.phase='day';screen.dataset.preview='true';
+    screen.innerHTML=`
       <div class="le-weather-content">
-        <header class="le-weather-topbar">
-          <div class="le-weather-brand">LIVE <span>//</span> EARTH</div>
-          <div class="le-weather-location"><svg viewBox="0 0 18 22" fill="none" aria-hidden="true"><path d="M9 20s7-7 7-12a7 7 0 1 0-14 0c0 5 7 12 7 12Z" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="8" r="2.2" stroke="currentColor" stroke-width="1.5"/></svg><span id="le-weather-place">YOUR LOCATION</span></div>
-        </header>
-        <div class="le-weather-date-row">
-          <div class="le-weather-date" id="le-weather-date">LOCAL CONDITIONS</div>
-          <div class="le-weather-date-tools">
-            <span class="le-weather-source" id="le-weather-source" aria-live="polite">PREVIEW</span>
-            <label class="le-weather-test-picker" for="le-weather-mode-select">
-              <span>SCENE</span>
-              <select id="le-weather-mode-select" aria-label="Choose live weather or a test weather scene">
-                <option value="auto">AUTO · LIVE</option>
-                <option value="clear">CLEAR</option>
-                <option value="cloudy">CLOUDY</option>
-                <option value="rain">RAIN</option>
-                <option value="storm">STORM</option>
-                <option value="snow">SNOW</option>
-                <option value="fog">FOG</option>
-                <option value="night">NIGHT</option>
-              </select>
-            </label>
-            <svg class="le-weather-art-mark" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="15.5"/><path d="M9 27c8-5 12-11 17-20M16 22c-2-4-5-6-8-6m13-1c3 0 6 1 9 4m-13 7c2 2 3 4 3 7"/><path class="mark-leaf" d="M8 15c4-1 7 1 8 5-4 1-7-1-8-5Zm13-2c1-4 4-6 8-6 0 4-3 7-8 6Zm3 10c3-3 7-3 10-1-2 4-6 5-10 1Z"/></svg>
-          </div>
-        </div>
-        <section class="le-weather-hero" aria-label="Current weather">
-          <h1 class="le-weather-headline" id="le-weather-headline">A quiet day<br><em>under open skies.</em></h1>
-          <div class="le-weather-temperature-row">
-            <div class="le-weather-temperature" id="le-weather-temperature">—<sup>°</sup></div>
-            <div class="le-weather-condition"><span class="le-weather-condition-icon" id="le-weather-condition-icon"></span><div class="le-weather-condition-name" id="le-weather-condition">Waiting for weather</div><div class="le-weather-feels" id="le-weather-feels">Location is off</div></div>
-          </div>
-          <p class="le-weather-poetry" id="le-weather-poetry">Switch on the Location Orb to reveal the sky above you.</p>
-        </section>
-        <section class="le-weather-data-strip" aria-label="Today's summary">
-          <div class="le-weather-stat"><span class="le-weather-stat-label">HIGH / LOW</span><strong class="le-weather-stat-value" id="le-weather-highlow">— / —</strong></div>
-          <div class="le-weather-stat"><span class="le-weather-stat-label">RAIN CHANCE</span><strong class="le-weather-stat-value" id="le-weather-rainchance">—</strong></div>
-          <div class="le-weather-stat"><span class="le-weather-stat-label">WIND</span><strong class="le-weather-stat-value" id="le-weather-wind">—</strong></div>
-          <div class="le-weather-stat"><span class="le-weather-stat-label">HUMIDITY</span><strong class="le-weather-stat-value" id="le-weather-humidity">—</strong></div>
-        </section>
-        <section class="le-weather-hourly-section" aria-label="Hourly forecast">
-          <div class="le-weather-section-head"><h2 class="le-weather-section-title">THE HOURS AHEAD</h2><span class="le-weather-section-note">HOURLY FORECAST</span></div>
-          <div class="le-weather-hourly" id="le-weather-hourly"><div class="le-weather-hour"><span class="le-weather-hour-time">—</span><span class="le-weather-hour-icon">·</span><strong class="le-weather-hour-temp">—</strong></div></div>
-          <svg class="le-weather-curve" id="le-weather-curve" viewBox="0 0 320 38" preserveAspectRatio="none" aria-hidden="true"><path d="M0 25Q80 5 160 21T320 14"/><circle cx="0" cy="25" r="2.3"/><circle cx="160" cy="21" r="2.3"/><circle cx="320" cy="14" r="2.3"/></svg>
-        </section>
-        <section class="le-weather-metrics" aria-label="More weather details">
-          <div class="le-weather-metric"><span class="le-weather-metric-label">UV INDEX</span><strong class="le-weather-metric-value" id="le-weather-uv">—</strong><span class="le-weather-metric-note" id="le-weather-uv-note">Not available</span></div>
-          <div class="le-weather-metric"><span class="le-weather-metric-label">PRESSURE</span><strong class="le-weather-metric-value" id="le-weather-pressure">—</strong><span class="le-weather-metric-note">hPa</span></div>
-          <div class="le-weather-metric"><span class="le-weather-metric-label">VISIBILITY</span><strong class="le-weather-metric-value" id="le-weather-visibility">—</strong><span class="le-weather-metric-note">km</span></div>
-        </section>
-        <p class="le-weather-status" id="le-weather-status" aria-live="polite">Switch on the Location Orb to reveal your local forecast.</p>
-        <p class="le-weather-attribution">Forecast data: Open-Meteo · Art direction: Japanese ink-wash and woodblock-inspired 2D landscape</p>
+        <header class="le-weather-topbar"><div class="le-weather-brand">LIVE <span>//</span> EARTH</div><div class="le-weather-place"><svg viewBox="0 0 18 22" fill="none" aria-hidden="true"><path d="M9 20s7-7 7-12a7 7 0 1 0-14 0c0 5 7 12 7 12Z" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="8" r="2.2" stroke="currentColor" stroke-width="1.5"/></svg><span id="le-weather-place-text">LOCATION PREVIEW</span></div></header>
+        <div class="le-weather-date-row"><div class="le-weather-date" id="le-weather-date">LOCAL TIME</div><label class="le-weather-mode"><span>SCENE</span><select id="le-weather-mode-select" aria-label="Weather scene preview"><option value="auto">AUTO</option><option value="clear">CLEAR</option><option value="cloudy">CLOUDY</option><option value="rain">RAIN</option><option value="storm">STORM</option><option value="snow">SNOW</option><option value="fog">FOG</option><option value="wind">WIND</option><option value="night">NIGHT</option><option value="hot">HOT</option></select></label></div>
+        <section class="le-weather-hero" aria-label="Current weather"><h1 class="le-weather-headline" id="le-weather-headline">A quiet sky.</h1><div class="le-weather-temperature-row"><div class="le-weather-temperature" id="le-weather-temperature">—</div><div class="le-weather-condition"><span class="le-weather-condition-icon" id="le-weather-condition-icon"></span><div class="le-weather-condition-name" id="le-weather-condition">Weather preview</div><div class="le-weather-feels" id="le-weather-feels">Sample values</div></div></div></section>
+        <div class="le-weather-art-stage" aria-hidden="true"><canvas class="le-weather-art-canvas" id="le-weather-art-canvas"></canvas></div>
+        <section class="le-weather-summary" aria-label="Important weather details"><div class="le-weather-stat"><span class="le-weather-stat-label">HIGH / LOW</span><strong class="le-weather-stat-value" id="le-weather-highlow">—</strong></div><div class="le-weather-stat"><span class="le-weather-stat-label">RAIN CHANCE</span><strong class="le-weather-stat-value" id="le-weather-rainchance">—</strong></div><div class="le-weather-stat"><span class="le-weather-stat-label">WIND</span><strong class="le-weather-stat-value" id="le-weather-wind">—</strong></div></section>
+        <section class="le-weather-hourly-section" aria-label="Hourly forecast"><div class="le-weather-section-head"><h2 class="le-weather-section-title">THE HOURS AHEAD</h2><span class="le-weather-section-note">NEXT 6 HOURS</span></div><div class="le-weather-hourly" id="le-weather-hourly"></div><svg class="le-weather-curve" id="le-weather-curve" viewBox="0 0 320 26" preserveAspectRatio="none" aria-hidden="true"></svg></section>
+        <p class="le-weather-status" id="le-weather-status" aria-live="polite"></p>
+        <p class="le-weather-attribution">Weather data: Open-Meteo · Japanese ink drawing generated locally from live conditions</p>
       </div>`;
-    screen.prepend(createArt());
     return screen;
   }
 
-  function setText(screen, id, value) {
-    const node = screen.querySelector(`#${id}`);
-    if (node) node.textContent = value === null || value === undefined || value === '' ? '—' : String(value);
-  }
-  function setTemperature(screen, value) {
-    const node = screen.querySelector('#le-weather-temperature');
-    if (!node) return;
-    node.replaceChildren(document.createTextNode(value === null ? '—' : String(Math.round(value))));
-    if (value !== null) {
-      const degree = document.createElement('sup');
-      degree.textContent = '°';
-      node.appendChild(degree);
+  function activateWeather(){
+    const view=mount('weather');if(!view)return;
+    addStyles();const screen=makeScreen();view.panel.remove();view.root.replaceChildren(screen);
+    const canvas=screen.querySelector('#le-weather-art-canvas');const painter=makePainter(canvas);
+    let abortController=null,pollTimer=0,refreshTimer=0,clockTimer=0,disposed=false,requestSerial=0,lastFetch=0,manualPreview=false;
+    const selector=screen.querySelector('#le-weather-mode-select');
+    const handleModeChange=()=>chooseMode(selector.value);
+    const stopPolling=()=>{if(pollTimer)clearInterval(pollTimer);pollTimer=0;};
+    function paint(data,preview=false){
+      const c=data.current||{};const code=Number(c.weather_code);if(!Number.isFinite(code))throw new Error('Weather source returned unusable conditions.');
+      paintData(screen,data,preview);painter.setState(screen.__weatherState);lastFetch=Date.now();
     }
-  }
-  function uvLabel(value) {
-    const n = number(value);
-    if (n === null) return 'Not available';
-    if (n < 3) return 'Low';
-    if (n < 6) return 'Moderate';
-    if (n < 8) return 'High';
-    if (n < 11) return 'Very high';
-    return 'Extreme';
-  }
-  function updateCurve(screen, values) {
-    const svg = screen.querySelector('#le-weather-curve');
-    const safe = values.map(number).filter(value => value !== null);
-    if (!svg || safe.length < 2) return;
-    const min = Math.min(...safe), max = Math.max(...safe), span = Math.max(1, max - min);
-    const points = safe.map((value, index) => ({
-      x: (index / Math.max(1, safe.length - 1)) * 320,
-      y: 29 - ((value - min) / span) * 22
-    }));
-    const path = points.map((point, index) => `${index ? 'L' : 'M'}${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' ');
-    svg.innerHTML = `<path d="${path}"/>${points.map(point => `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="2.2"/>`).join('')}`;
-  }
-  function renderHourly(screen, data, currentTime) {
-    const container = screen.querySelector('#le-weather-hourly');
-    const times = data?.hourly?.time;
-    if (!container || !Array.isArray(times) || !times.length) {
-      if (container) container.textContent = 'Hourly forecast unavailable';
-      return;
+    function showPreview(kind='clear',message='SAMPLE SCENE · Turn on Location for your live forecast.'){
+      const data=sampleData(kind);paint(data,true);setText(screen,'le-weather-status',message);screen.dataset.preview='true';setText(screen,'le-weather-place-text','LOCATION PREVIEW');
     }
-    let start = times.findIndex(value => value >= currentTime);
-    if (start < 0) start = 0;
-    const end = Math.min(times.length, start + 6);
-    const fragment = document.createDocumentFragment();
-    const temperatures = [];
-    for (let index = start; index < end; index++) {
-      const temperature = number(data.hourly.temperature_2m?.[index]);
-      const code = data.hourly.weather_code?.[index];
-      const chance = number(data.hourly.precipitation_probability?.[index]);
-      const kind = conditionKind(code);
-      temperatures.push(temperature);
-      const item = el('div', 'le-weather-hour');
-      item.appendChild(el('span', 'le-weather-hour-time', formatHour(times[index], index === start)));
-      const icon = el('span', 'le-weather-hour-icon');
-      icon.innerHTML = iconMarkup(kind);
-      item.appendChild(icon);
-      item.appendChild(el('strong', 'le-weather-hour-temp', temperature === null ? '—' : `${Math.round(temperature)}°`));
-      item.appendChild(el('span', 'le-weather-hour-rain', chance === null ? ' ' : `${Math.round(chance)}% rain`));
-      fragment.appendChild(item);
+    function showLocationOff(){showPreview('clear','SAMPLE SCENE · Location is off. Choose a weather mode to explore, or turn on Location for live data.');}
+    async function fetchLive(){
+      if(disposed||!isActive('weather')||manualPreview)return;
+      if(window.liveEarthLocationAllowed?.()!==true){showLocationOff();return;}
+      if(navigator.onLine===false){showPreview('clear','OFFLINE · Showing sample art, not live conditions.');return;}
+      const point=globe()?.getLocation?.();const lat=Number(point?.latitude),lon=Number(point?.longitude);
+      if(!Number.isFinite(lat)||lat < -90||lat>90||!Number.isFinite(lon)||lon < -180||lon>180){showLocationOff();return;}
+      abortController?.abort();const controller=new AbortController();abortController=controller;const serial=++requestSerial;
+      const query=new URLSearchParams({latitude:String(lat),longitude:String(lon),current:'temperature_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m,relative_humidity_2m',hourly:'temperature_2m,precipitation_probability,weather_code',daily:'temperature_2m_max,temperature_2m_min,precipitation_probability_max',forecast_days:'1',timezone:'auto',wind_speed_unit:'kmh',temperature_unit:'celsius',precipitation_unit:'mm'});
+      try{const response=await fetch(`${API_ROOT}?${query}`,{mode:'cors',credentials:'omit',cache:'no-store',signal:controller.signal});if(!response.ok)throw new Error(`Weather source returned ${response.status}.`);const data=await response.json();if(disposed||!isActive('weather')||serial!==requestSerial||window.liveEarthLocationAllowed?.()!==true)return;paint(data,false);setText(screen,'le-weather-place-text','YOUR LOCATION');}
+      catch(error){if(error?.name!=='AbortError'&&!disposed&&isActive('weather')&&window.liveEarthLocationAllowed?.()===true)showPreview('clear','LIVE DATA UNAVAILABLE · Showing a labelled sample scene.');}
+      finally{if(abortController===controller)abortController=null;}
     }
-    container.replaceChildren(fragment);
-    updateCurve(screen, temperatures);
-  }
-  function paintCurrentWeather(screen, data, isPreview = false) {
-    const current = data.current;
-    const daily = data.daily || {};
-    const state = visualState({
-      time: current.time,
-      temperature: current.temperature_2m,
-      feelsLike: current.apparent_temperature,
-      isDay: current.is_day,
-      precipitation: current.precipitation,
-      rain: current.rain,
-      showers: current.showers,
-      snowfall: current.snowfall,
-      weather_code: current.weather_code,
-      cloudCover: current.cloud_cover,
-      wind: current.wind_speed_10m,
-      windDirection: current.wind_direction_10m,
-      gusts: current.wind_gusts_10m
-    });
-    screen.dataset.weather = state.weather;
-    screen.dataset.phase = state.phase;
-    screen.dataset.preview = String(Boolean(isPreview));
-    screen.dataset.weatherUnavailable = 'false';
-    setText(screen, 'le-weather-source', isPreview ? 'PREVIEW · SAMPLE' : 'LIVE WEATHER');
-    setText(screen, 'le-weather-place', isPreview ? 'SAMPLE SCENE' : 'YOUR LOCATION');
-    const rainAmount = Math.max(number(current.precipitation) ?? 0, number(current.rain) ?? 0, number(current.showers) ?? 0);
-    screen.style.setProperty('--le-rain-opacity', String(Math.min(.94, .28 + rainAmount * .22)));
-    screen.style.setProperty('--le-snow-opacity', String(Math.min(.86, .32 + (number(current.snowfall) ?? 0) * .30)));
-    renderWindLeaves(screen, current.wind_speed_10m, current.wind_direction_10m);
-    const rainLayer = screen.querySelector('.le-weather-rain');
-    const snowLayer = screen.querySelector('.le-weather-snow');
-    createParticles(rainLayer, 'rain', { precipitation: current.precipitation, windDirection: current.wind_direction_10m });
-    createParticles(snowLayer, 'snow', { snowfall: current.snowfall, windDirection: current.wind_direction_10m });
-
-    const condition = conditionLabel(current.weather_code);
-    const headline = headlineFor(state.weather, state.phase);
-    const titleNode = screen.querySelector('#le-weather-headline');
-    if (titleNode) {
-      const parts = headline.split(' ');
-      const splitAt = Math.max(1, Math.ceil(parts.length * .55));
-      titleNode.replaceChildren(document.createTextNode(parts.slice(0, splitAt).join(' ')));
-      titleNode.appendChild(document.createElement('br'));
-      const emphasis = document.createElement('em');
-      emphasis.textContent = parts.slice(splitAt).join(' ');
-      titleNode.appendChild(emphasis);
+    function pollForFix(){stopPolling();let remaining=24;pollTimer=window.setInterval(()=>{if(disposed||!isActive('weather')){stopPolling();return;}if(window.liveEarthLocationAllowed?.()!==true){stopPolling();showLocationOff();return;}const p=globe()?.getLocation?.();if(p&&Number.isFinite(Number(p.latitude))&&Number.isFinite(Number(p.longitude))){stopPolling();fetchLive();return;}if(--remaining<=0){stopPolling();showLocationOff();}},500);}
+    function chooseMode(mode){
+      manualPreview=mode!=='auto';if(mode==='auto'){if(window.liveEarthLocationAllowed?.()===true)fetchLive();else showLocationOff();return;}
+      stopPolling();requestSerial++;abortController?.abort();abortController=null;showPreview(mode,`PREVIEW · ${mode.toUpperCase()} WEATHER — sample values only.`);
     }
-    setText(screen, 'le-weather-date', formatDateTime(current.time));
-    setTemperature(screen, number(current.temperature_2m));
-    setText(screen, 'le-weather-condition', condition);
-    setText(screen, 'le-weather-feels', number(current.apparent_temperature) === null ? 'Feels like —' : `Feels like ${Math.round(number(current.apparent_temperature))}°`);
-    setText(screen, 'le-weather-poetry', sceneNote(state.weather, number(current.temperature_2m)));
-    const icon = screen.querySelector('#le-weather-condition-icon');
-    if (icon) icon.innerHTML = iconMarkup(conditionKind(current.weather_code));
-
-    const high = number(daily.temperature_2m_max?.[0]);
-    const low = number(daily.temperature_2m_min?.[0]);
-    const rainChance = number(daily.precipitation_probability_max?.[0]);
-    const wind = number(current.wind_speed_10m);
-    const humidity = number(current.relative_humidity_2m);
-    setText(screen, 'le-weather-highlow', `${high === null ? '—' : `${Math.round(high)}°`} / ${low === null ? '—' : `${Math.round(low)}°`}`);
-    setText(screen, 'le-weather-rainchance', rainChance === null ? '—' : `${Math.round(rainChance)}%`);
-    setText(screen, 'le-weather-wind', wind === null ? '—' : `${compass(current.wind_direction_10m)} ${Math.round(wind)} km/h`);
-    setText(screen, 'le-weather-humidity', humidity === null ? '—' : `${Math.round(humidity)}%`);
-
-    const hourlyTimes = data.hourly?.time || [];
-    let currentHourIndex = hourlyTimes.findIndex(value => value >= current.time);
-    if (currentHourIndex < 0) currentHourIndex = 0;
-    const uv = number(data.hourly?.uv_index?.[currentHourIndex]) ?? number(daily.uv_index_max?.[0]);
-    const pressure = number(current.pressure_msl);
-    const visibility = number(data.hourly?.visibility?.[currentHourIndex]);
-    setText(screen, 'le-weather-uv', uv === null ? '—' : uv.toFixed(0));
-    setText(screen, 'le-weather-uv-note', uvLabel(uv));
-    setText(screen, 'le-weather-pressure', pressure === null ? '—' : Math.round(pressure));
-    setText(screen, 'le-weather-visibility', visibility === null ? '—' : (visibility / 1000).toFixed(1));
-    renderHourly(screen, data, current.time);
-    setText(screen, 'le-weather-status', '');
+    function onLocationState(event){if(!isActive('weather'))return;if(event.detail?.enabled===true&&window.liveEarthLocationAllowed?.()===true&&!manualPreview)pollForFix();else if(window.liveEarthLocationAllowed?.()!==true&&!manualPreview)showLocationOff();}
+    function onLocationStop(){stopPolling();requestSerial++;abortController?.abort();abortController=null;if(!manualPreview)showLocationOff();}
+    function onOnline(){if(!manualPreview&&window.liveEarthLocationAllowed?.()===true)fetchLive();}
+    function onOffline(){stopPolling();requestSerial++;abortController?.abort();abortController=null;if(!manualPreview)showPreview('clear','OFFLINE · Showing a labelled sample scene, not live weather.');}
+    function onVisibility(){if(!document.hidden&&!manualPreview&&window.liveEarthLocationAllowed?.()===true&&Date.now()-lastFetch>REFRESH_MS)fetchLive();}
+    function updateLocalClock(){if(!screen.isConnected)return;setText(screen,'le-weather-date',deviceClock());}
+    selector.addEventListener('change',handleModeChange);
+    window.addEventListener('live-earth-location-state',onLocationState);window.addEventListener('live-earth-location-stop',onLocationStop);window.addEventListener('online',onOnline);window.addEventListener('offline',onOffline);document.addEventListener('visibilitychange',onVisibility);
+    refreshTimer=window.setInterval(()=>{if(!disposed&&!document.hidden&&!manualPreview&&window.liveEarthLocationAllowed?.()===true)fetchLive();},REFRESH_MS);
+    clockTimer=window.setInterval(updateLocalClock,30000);updateLocalClock();
+    if(window.liveEarthLocationAllowed?.()===true)pollForFix();else showLocationOff();
+    return()=>{disposed=true;requestSerial++;stopPolling();if(refreshTimer)clearInterval(refreshTimer);if(clockTimer)clearInterval(clockTimer);abortController?.abort();abortController=null;painter.stop();selector.removeEventListener('change',handleModeChange);window.removeEventListener('live-earth-location-state',onLocationState);window.removeEventListener('live-earth-location-stop',onLocationStop);window.removeEventListener('online',onOnline);window.removeEventListener('offline',onOffline);document.removeEventListener('visibilitychange',onVisibility);screen.remove();document.getElementById(STYLE_ID)?.remove();};
   }
 
-  function resetWeather(screen, message, keepArtwork = true) {
-    setTemperature(screen, null);
-    for (const id of ['le-weather-condition','le-weather-feels','le-weather-highlow','le-weather-rainchance','le-weather-wind','le-weather-humidity','le-weather-uv','le-weather-pressure','le-weather-visibility']) setText(screen, id, '—');
-    setText(screen, 'le-weather-date', deviceDateTime());
-    screen.dataset.preview = 'false';
-    screen.dataset.weatherUnavailable = 'true';
-    setText(screen, 'le-weather-source', 'NO LIVE DATA');
-    setText(screen, 'le-weather-headline', 'A quiet day under open skies.');
-    setText(screen, 'le-weather-poetry', 'The artwork stays with you while live conditions are unavailable.');
-    setText(screen, 'le-weather-uv-note', 'Not available');
-    setText(screen, 'le-weather-condition', 'Weather unavailable');
-    setText(screen, 'le-weather-feels', 'No live reading');
-    setText(screen, 'le-weather-status', message);
-    const hourly = screen.querySelector('#le-weather-hourly');
-    if (hourly) hourly.replaceChildren(el('div', 'le-weather-hour', 'Hourly forecast unavailable'));
-    if (keepArtwork) {
-      screen.dataset.weather = 'clear';
-      screen.dataset.phase = 'day';
-      screen.querySelector('.le-weather-rain')?.replaceChildren();
-      screen.querySelector('.le-weather-snow')?.replaceChildren();
-    }
-  }
-
-  function activateWeather() {
-    const view = mount('weather');
-    if (!view) return;
-    addStyles();
-    const screen = makeScreen();
-    view.panel.remove();
-    view.root.replaceChildren(screen);
-
-    let abortController = null;
-    let pollTimer = 0;
-    let refreshTimer = 0;
-    let disposed = false;
-    let requestSerial = 0;
-    let lastSuccessfulFetch = 0;
-    let previewMode = 'clear';
-    let previewManual = false;
-    let clockTimer = 0;
-
-    function stopPolling() {
-      if (pollTimer) clearInterval(pollTimer);
-      pollTimer = 0;
-    }
-    function clearVisualWeather(message) {
-      requestSerial++;
-      abortController?.abort();
-      abortController = null;
-      resetWeather(screen, message || 'Switch on the Location Orb to reveal your local forecast.');
-    }
-    function paintCurrent(currentData, isPreview = false) {
-      if (!currentData?.current || !Number.isFinite(Number(currentData.current.weather_code))) {
-        throw new Error('The weather source did not return usable current conditions.');
-      }
-      paintCurrentWeather(screen, currentData, isPreview);
-      lastSuccessfulFetch = Date.now();
-    }
-    function applyPreview(kind, manual = true) {
-      stopPolling();
-      requestSerial++;
-      abortController?.abort();
-      abortController = null;
-      previewMode = kind;
-      previewManual = manual;
-      screen.querySelector('#le-weather-mode-select').value = kind;
-      setText(screen, 'le-weather-place', 'SAMPLE SCENE');
-      paintCurrent(makePreviewData(kind), true);
-      setText(screen, 'le-weather-status', 'PREVIEW MODE · Sample values for visual testing. Switch to AUTO · LIVE for your enabled Location forecast.');
-    }
-    function updateLocalClock() {
-      setText(screen, 'le-weather-date', deviceDateTime());
-    }
-    function selectLiveMode() {
-      const hasLocation = window.liveEarthLocationAllowed?.() === true;
-      if (!hasLocation) {
-        screen.querySelector('#le-weather-mode-select').value = previewMode || 'clear';
-        setText(screen, 'le-weather-status', 'Location is OFF. Choose a test scene, or switch on the Location Orb for live weather.');
-        return;
-      }
-      previewMode = '';
-      previewManual = false;
-      screen.querySelector('#le-weather-mode-select').value = 'auto';
-      readExistingLocation();
-    }
-    function waitingForLocation() {
-      stopPolling();
-      let remaining = 24;
-      pollTimer = window.setInterval(() => {
-        if (disposed || !isActive('weather')) { stopPolling(); return; }
-        if (window.liveEarthLocationAllowed?.() !== true) {
-          stopPolling(); clearVisualWeather('Location is OFF. Switch on the Location Orb to see local weather.'); return;
-        }
-        const point = globe()?.getLocation?.();
-        if (point && Number.isFinite(Number(point.latitude)) && Number.isFinite(Number(point.longitude))) {
-          stopPolling(); readExistingLocation(); return;
-        }
-        remaining--;
-        if (remaining <= 0) { stopPolling(); clearVisualWeather('Waiting for a fresh Location fix. The Location Orb remains in control.'); }
-      }, 500);
-    }
-    async function readExistingLocation() {
-      if (disposed || !isActive('weather')) return;
-      if (window.liveEarthLocationAllowed?.() !== true) {
-        clearVisualWeather('Location is OFF. Switch on the Location Orb to see local weather.'); return;
-      }
-      if (navigator.onLine === false) {
-        resetWeather(screen, 'You are offline. Live conditions are not presented as current.'); return;
-      }
-      const point = globe()?.getLocation?.();
-      const latitude = Number(point?.latitude), longitude = Number(point?.longitude);
-      if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 ||
-          !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
-        waitingForLocation(); return;
-      }
-      abortController?.abort();
-      const controller = new AbortController();
-      abortController = controller;
-      const serial = ++requestSerial;
-      const query = new URLSearchParams({
-        latitude: String(latitude), longitude: String(longitude),
-        current: 'temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m',
-        hourly: 'temperature_2m,precipitation_probability,weather_code,visibility,uv_index',
-        daily: 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max',
-        forecast_days: '1', timezone: 'auto', wind_speed_unit: 'kmh', temperature_unit: 'celsius', precipitation_unit: 'mm'
-      });
-      try {
-        const response = await fetch(`${API_ROOT}?${query.toString()}`, {
-          mode: 'cors', credentials: 'omit', cache: 'no-store', signal: controller.signal
-        });
-        if (!response.ok) throw new Error(`Weather source returned ${response.status}.`);
-        const data = await response.json();
-        if (disposed || !isActive('weather') || serial !== requestSerial ||
-            window.liveEarthLocationAllowed?.() !== true) return;
-        paintCurrent(data);
-      } catch (error) {
-        if (error?.name !== 'AbortError' && !disposed && isActive('weather') &&
-            window.liveEarthLocationAllowed?.() === true) {
-          resetWeather(screen, 'The weather service is unavailable right now. The artwork remains available.');
-        }
-      } finally {
-        if (abortController === controller) abortController = null;
-      }
-    }
-    function onLocationState(event) {
-      if (!isActive('weather')) return;
-      if (event.detail?.enabled === true && window.liveEarthLocationAllowed?.() === true) {
-        if (!previewManual) {
-          screen.querySelector('#le-weather-mode-select').value = 'auto';
-          screen.dataset.preview = 'false';
-          setText(screen, 'le-weather-source', 'LIVE WEATHER');
-          setText(screen, 'le-weather-place', 'YOUR LOCATION');
-          setText(screen, 'le-weather-status', 'Location is on · waiting for a fresh position.');
-          waitingForLocation();
-        }
-      } else {
-        stopPolling();
-        if (screen.querySelector('#le-weather-mode-select')?.value === 'auto') applyPreview('clear', false);
-      }
-    }
-    function onLocationStop() {
-      stopPolling();
-      if (screen.querySelector('#le-weather-mode-select')?.value === 'auto') applyPreview('clear', false);
-    }
-    function onOnline() {
-      if (screen.querySelector('#le-weather-mode-select')?.value === 'auto' && window.liveEarthLocationAllowed?.() === true) readExistingLocation();
-    }
-    function onOffline() {
-      stopPolling();
-      abortController?.abort();
-      abortController = null;
-      if (screen.querySelector('#le-weather-mode-select')?.value === 'auto') {
-        resetWeather(screen, 'You are offline. Live conditions are not presented as current.');
-        screen.dataset.weatherUnavailable = 'true';
-      }
-    }
-    function onVisibility() {
-      if (!document.hidden && window.liveEarthLocationAllowed?.() === true &&
-          screen.querySelector('#le-weather-mode-select')?.value === 'auto' && Date.now() - lastSuccessfulFetch > REFRESH_MS) readExistingLocation();
-    }
-    function onSceneModeChange(event) {
-      const mode = event.target?.value || 'auto';
-      if (mode === 'auto') { selectLiveMode(); return; }
-      applyPreview(mode);
-    }
-
-    screen.querySelector('#le-weather-mode-select')?.addEventListener('change', onSceneModeChange);
-    window.addEventListener('live-earth-location-state', onLocationState);
-    window.addEventListener('live-earth-location-stop', onLocationStop);
-    window.addEventListener('online', onOnline);
-    window.addEventListener('offline', onOffline);
-    document.addEventListener('visibilitychange', onVisibility);
-    refreshTimer = window.setInterval(() => {
-      if (!disposed && isActive('weather') && !document.hidden &&
-          screen.querySelector('#le-weather-mode-select')?.value === 'auto' && window.liveEarthLocationAllowed?.() === true) readExistingLocation();
-    }, REFRESH_MS);
-    clockTimer = window.setInterval(updateLocalClock, 30000);
-
-    if (window.liveEarthLocationAllowed?.() === true) {
-      screen.querySelector('#le-weather-mode-select').value = 'auto';
-      screen.dataset.preview = 'false';
-      setText(screen, 'le-weather-source', 'LIVE WEATHER');
-      setText(screen, 'le-weather-date', deviceDateTime());
-      waitingForLocation();
-    } else {
-      applyPreview('clear', false);
-    }
-
-    return () => {
-      disposed = true;
-      requestSerial++;
-      stopPolling();
-      if (refreshTimer) clearInterval(refreshTimer);
-      refreshTimer = 0;
-      if (clockTimer) clearInterval(clockTimer);
-      clockTimer = 0;
-      abortController?.abort();
-      abortController = null;
-      window.removeEventListener('live-earth-location-state', onLocationState);
-      window.removeEventListener('live-earth-location-stop', onLocationStop);
-      window.removeEventListener('online', onOnline);
-      window.removeEventListener('offline', onOffline);
-      document.removeEventListener('visibilitychange', onVisibility);
-      screen.querySelector('#le-weather-mode-select')?.removeEventListener('change', onSceneModeChange);
-      screen.remove();
-      document.getElementById(STYLE_ID)?.remove();
-    };
-  }
-
-  runtime.registerFeature('weather', activateWeather);
+  runtime.registerFeature('weather',activateWeather);
 })();
