@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#142a31">
+  <meta name="description" content="LIVE // EARTH Living Topography — immersive weather-world visual prototype.">
+  <title>LIVE // EARTH — Living Topography</title>
+  <style>
+    :root{color-scheme:dark;--ink:#eef7ee;--muted:#bfd2ca;--line:#e8fff04a;--glass:#17353b88;--mint:#b5e4d2;--amber:#f3d8a1}
+    *{box-sizing:border-box}
+    html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#172f35;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    body{overscroll-behavior:none;touch-action:pan-y}
+    #world{position:fixed;inset:0;z-index:0;width:100%;height:100%;display:block;outline:none}
+    .sky-wash{position:fixed;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(21,49,61,.27),transparent 29%,transparent 66%,rgba(7,23,26,.25));transition:background 1.4s ease}
+    .grain{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.07;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.88' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.32'/%3E%3C/svg%3E");mix-blend-mode:soft-light}
+    .topbar{position:fixed;z-index:5;top:calc(env(safe-area-inset-top) + 18px);left:18px;right:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;pointer-events:none}
+    .brand{display:flex;align-items:center;gap:10px;text-shadow:0 2px 20px #06161999}
+    .brand-mark{width:29px;height:29px;border:1px solid #e5fff277;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#d5f0df35,#12343c55);box-shadow:inset 0 1px 5px #fff3,0 5px 22px #061b1d55}
+    .brand-mark:before{content:"";width:12px;height:17px;border:1.5px solid #d9f6e8;border-radius:70% 35% 65% 35%;transform:rotate(35deg);box-shadow:0 0 12px #b8e7ce55}
+    .brand-name{font-size:10px;font-weight:800;letter-spacing:.22em}.brand-sub{font-size:8px;color:#d5e9df;letter-spacing:.15em;margin-top:3px}
+    .prototype-tag{border:1px solid #edfff04d;border-radius:999px;padding:7px 10px;background:#102a2d66;color:#e5f4e9;font-size:8px;font-weight:700;letter-spacing:.13em;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:inset 0 1px #fff2}
+    .weather-readout{position:fixed;z-index:5;left:22px;top:calc(env(safe-area-inset-top) + 75px);max-width:220px;text-shadow:0 3px 22px #061a1e9c;pointer-events:none}
+    .weather-readout .eyebrow{font-size:8px;letter-spacing:.18em;color:#d5e7dc;font-weight:700}
+    .temperature{font-size:clamp(47px,12vw,70px);font-weight:300;letter-spacing:-.085em;line-height:.95;margin-top:7px}
+    .condition{font-size:12px;font-weight:600;margin-top:6px;color:#f2f8ef}
+    .readout-note{font-size:9px;color:#d9e8dc;margin-top:5px}
+    .readout-rule{width:58px;height:1px;background:linear-gradient(90deg,#e4f8e7aa,transparent);margin:12px 0 9px}
+    .weather-detail{font-size:9px;line-height:1.55;color:#e2eee4}
+    .scene-depth-label{position:fixed;z-index:4;top:47%;left:50%;transform:translate(-50%,-50%);font-size:8px;letter-spacing:.2em;color:#eff9eb77;text-shadow:0 2px 12px #08252c;pointer-events:none;white-space:nowrap}
+    .bottom-ui{position:fixed;z-index:6;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);display:grid;gap:9px;pointer-events:none}
+    .morphism-shelf{pointer-events:auto;position:relative;padding:13px 14px 12px;border:1px solid #e6fff05b;border-radius:22px 22px 16px 16px;background:linear-gradient(145deg,rgba(231,255,240,.18),rgba(25,61,62,.48) 34%,rgba(9,31,36,.71));box-shadow:inset 0 1px 1px #fff7,inset 0 -1px #05191b88,0 18px 48px #051d20a6;backdrop-filter:blur(19px) saturate(1.28);-webkit-backdrop-filter:blur(19px) saturate(1.28);overflow:hidden}
+    .morphism-shelf:before{content:"";position:absolute;left:8%;right:8%;top:0;height:1px;background:linear-gradient(90deg,transparent,#effff0bc,transparent);opacity:.8}
+    .morphism-shelf:after{content:"";position:absolute;right:-37px;top:-58px;width:150px;height:120px;border-radius:50%;border:1px solid #edfff02c;box-shadow:0 0 0 8px #edfff00a,0 0 0 17px #edfff008;transform:rotate(-20deg);pointer-events:none}
+    .shelf-head{display:flex;align-items:center;justify-content:space-between;gap:8px;position:relative;z-index:1}
+    .shelf-title{font-size:8px;font-weight:800;letter-spacing:.17em;color:#e6f7e9}
+    .shelf-mode{font-size:7px;color:#c3dfcf;letter-spacing:.1em;text-transform:uppercase}
+    .forecast-line{display:flex;align-items:stretch;gap:0;margin-top:10px;position:relative;z-index:1}
+    .forecast-point{flex:1;min-width:0;position:relative;text-align:center;padding:6px 2px 2px;border-top:1px solid #eafff03c;color:#e4f1e7}
+    .forecast-point:before{content:"";position:absolute;top:-3px;left:50%;width:5px;height:5px;border:1px solid #f0fff0;border-radius:50%;background:#b9ddc8;box-shadow:0 0 10px #b8e8cf66;transform:translateX(-50%)}
+    .forecast-point strong{display:block;font-size:10px;font-weight:650;margin-top:3px}.forecast-point small{display:block;font-size:7px;color:#d0e2d5;margin-top:5px}
+    .shelf-foot{display:flex;justify-content:space-between;gap:10px;margin-top:10px;padding-top:8px;border-top:1px solid #effff022;position:relative;z-index:1;color:#bdd7c8;font-size:7px;letter-spacing:.07em}
+    .morphism-controls{pointer-events:auto;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+    .morph-button{min-height:32px;border:1px solid #e8fff05b;border-radius:999px;padding:7px 11px;background:linear-gradient(145deg,#d7f2e32a,#173b3d70);color:#edf8ed;font-size:9px;font-weight:650;letter-spacing:.04em;box-shadow:inset 0 1px #fff3,0 4px 12px #06191b55;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:background .45s ease,border-color .45s ease,transform .45s ease;touch-action:manipulation}
+    .morph-button[aria-pressed="true"]{background:linear-gradient(145deg,#d8f3e68a,#3e766cbb);border-color:#f1fff0a6;color:#102c2b;box-shadow:inset 0 1px #fff9,0 0 18px #c7f2dc2c}
+    .morph-button:active{transform:scale(.96)}.morph-button:focus-visible{outline:2px solid #f1fff0;outline-offset:3px}
+    .footnote{position:fixed;z-index:6;left:14px;right:14px;bottom:calc(env(safe-area-inset-bottom) + 174px);text-align:center;color:#eff9efa3;font-size:7px;letter-spacing:.1em;text-shadow:0 1px 8px #082027;pointer-events:none}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media(min-width:700px){.topbar{left:30px;right:30px}.weather-readout{left:34px;top:110px}.bottom-ui{left:50%;right:auto;width:min(620px,calc(100% - 36px));transform:translateX(-50%);bottom:20px}.footnote{bottom:178px}.temperature{font-size:76px}}
+    @media(max-height:690px){.weather-readout{top:calc(env(safe-area-inset-top) + 61px)}.temperature{font-size:46px}.bottom-ui{gap:6px}.morphism-shelf{padding:10px 12px}.forecast-line{margin-top:7px}.shelf-foot{margin-top:7px;padding-top:6px}.footnote{bottom:157px}}
+    @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+  </style>
+</head>
+<body>
+  <canvas id="world" aria-label="Immersive three-dimensional landscape with mountains, forests, a river and floating clouds"></canvas>
+  <div class="sky-wash" aria-hidden="true"></div><div class="grain" aria-hidden="true"></div>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"></span><div><div class="brand-name">LIVE // EARTH</div><div class="brand-sub">LIVING TOPOGRAPHY</div></div></div>
+    <span class="prototype-tag">VISUAL PROTOTYPE · STAGE 0</span>
+  </header>
+  <section class="weather-readout" aria-label="Prototype weather state">
+    <div class="eyebrow">WEATHER WORLD</div>
+    <div class="temperature" id="temperature">24°</div>
+    <div class="condition" id="condition">Partly clouded</div>
+    <div class="readout-note">Illustrative scene state</div>
+    <div class="readout-rule"></div>
+    <div class="weather-detail" id="weatherDetail">Terrain Morphism<br>Immersive world preview</div>
+  </section>
+  <div class="scene-depth-label" aria-hidden="true">ATMOSPHERE · TERRAIN · WATER</div>
+  <div class="footnote">SIMULATED CONDITIONS · NOT CONNECTED TO LIVE WEATHER DATA</div>
+  <main class="bottom-ui">
+    <section class="morphism-shelf" aria-label="Contour Morphism forecast concept">
+      <div class="shelf-head"><span class="shelf-title">CONTOUR FORECAST</span><span class="shelf-mode" id="morphLabel">Fluid layers · 18h concept</span></div>
+      <div class="forecast-line" aria-label="Illustrative forecast timeline">
+        <div class="forecast-point"><small>NOW</small><strong>24°</strong></div>
+        <div class="forecast-point"><small>+3H</small><strong>25°</strong></div>
+        <div class="forecast-point"><small>+6H</small><strong>26°</strong></div>
+        <div class="forecast-point"><small>+9H</small><strong>23°</strong></div>
+        <div class="forecast-point"><small>+12H</small><strong>21°</strong></div>
+        <div class="forecast-point"><small>+18H</small><strong>20°</strong></div>
+      </div>
+      <div class="shelf-foot"><span>RAISED CONTOURS · OPTICAL DEPTH</span><span>INSTRUMENT DETAIL</span></div>
+    </section>
+    <nav class="morphism-controls" aria-label="Prototype weather controls">
+      <button class="morph-button" data-weather="clear" aria-pressed="true">Clear</button>
+      <button class="morph-button" data-weather="cloudy" aria-pressed="false">Cloud</button>
+      <button class="morph-button" data-weather="rain" aria-pressed="false">Rain</button>
+      <button class="morph-button" data-weather="snow" aria-pressed="false">Snow</button>
+      <button class="morph-button" data-weather="fog" aria-pressed="false">Fog</button>
+    </nav>
+  </main>
+  <script type="module" src="./living-topography.js"></script>
+</body>
+</html>
