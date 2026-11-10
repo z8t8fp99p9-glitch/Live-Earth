@@ -95,100 +95,163 @@
       }
       @media(max-width:430px){.le-weather-content{padding-left:17px;padding-right:17px;padding-bottom:calc(env(safe-area-inset-bottom) + 278px)}.le-weather-date-row{margin-top:24px;align-items:flex-start}.le-weather-headline{font-size:clamp(42px,11.5vw,52px)}.le-weather-temperature{font-size:clamp(74px,20vw,86px)}.le-weather-art-stage{height:clamp(158px,21vh,180px);margin-left:-9px;margin-right:-9px}.le-weather-summary{padding:10px 0}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:6px;letter-spacing:.08em}.le-weather-stat-value{font-size:11px}.le-weather-hourly-section{margin-top:2px}.le-weather-hourly{gap:1px;padding:6px 0}.le-weather-hour{gap:6px;padding:8px 1px 5px}.le-weather-hour-time{font-size:8px}.le-weather-hour-icon{width:21px;height:21px}.le-weather-hour-temp{font-size:clamp(21px,6vw,25px)}.le-weather-hour-rain{font-size:7px}.le-weather-curve{height:28px}.le-weather-studio{padding:11px 10px 9px;border-radius:14px}.le-weather-studio-title{font-size:18px}.le-weather-studio-canvas{height:clamp(138px,18vh,155px)}}
       @media(orientation:landscape) and (max-height:520px){.le-weather-content{padding-top:calc(env(safe-area-inset-top) + 8px);padding-bottom:calc(env(safe-area-inset-bottom) + 150px)}.le-weather-date-row{margin-top:5px}.le-weather-dashboard{margin-top:7px;column-gap:22px;row-gap:7px}.le-weather-headline{font-size:clamp(36px,4.6vw,48px)}.le-weather-headline:after{margin:10px 0 10px}.le-weather-temperature{font-size:clamp(66px,7vw,80px)}.le-weather-art-stage{height:clamp(130px,31vh,175px)}.le-weather-studio{padding:9px 11px}.le-weather-studio-canvas{height:clamp(118px,21vh,150px)}.le-weather-studio-title{font-size:18px}.le-weather-hourly{padding:4px 0}.le-weather-hour{gap:4px;padding:6px 1px}.le-weather-hour-temp{font-size:22px}.le-weather-hourly-section{margin:0}}
-      /* Portrait fit: the landscape rises behind the lower hero, as in the
-         approved reference. Its height is preserved; overlap saves a full row. */
+      /* Portrait reference composition: contained landscape + framed Live Art card.
+         Both artwork viewports use the agreed 15% screen-height scale. */
       @media (orientation:portrait) {
         .le-weather-content {
           padding-top:calc(env(safe-area-inset-top) + 0px);
           padding-bottom:var(--le-weather-dock-clearance,calc(env(safe-area-inset-bottom) + 112px));
         }
-
-        .le-weather-date-row {
-          margin-top:clamp(12px,1.5dvh,15px);
-        }
-
+        .le-weather-date-row { margin-top:clamp(12px,1.5dvh,15px); }
         .le-weather-dashboard {
           margin-top:clamp(6px,.75dvh,7px);
           row-gap:clamp(5px,.7dvh,6px);
         }
-
         .le-weather-art-stage {
-          height:clamp(140px,17.5dvh,154px);
-          margin-top:clamp(-86px,-9.4dvh,-76px);
+          position:relative;
+          box-sizing:border-box;
+          width:100vw;
+          height:15dvh;
+          min-height:0;
+          max-height:none;
+          margin-left:calc(50% - 50vw);
+          margin-right:calc(50% - 50vw);
+          overflow:hidden;
         }
-
-        .le-weather-summary {
-          padding:8px 0;
+        .le-weather-art-canvas {
+          position:absolute;
+          top:50%;
+          left:50%;
+          width:min(100%,45dvh);
+          height:auto;
+          aspect-ratio:3 / 1;
+          transform:translate(-50%,-50%);
         }
+        .le-weather-summary { padding:8px 0; }
 
+        /* The painting fills one framed card; all copy floats above the canvas. */
         .le-weather-studio {
-          padding:10px 11px 8px;
-          border-radius:14px;
+          box-sizing:border-box;
+          position:relative;
+          width:100vw;
+          height:15dvh;
+          min-height:0;
+          max-height:none;
+          margin-left:calc(50% - 50vw);
+          margin-right:calc(50% - 50vw);
+          padding:0;
+          display:block;
+          overflow:hidden;
+          border:1px solid color-mix(in srgb,var(--ink) 18%,transparent);
+          border-radius:16px;
+          background:linear-gradient(145deg,rgba(255,255,255,.34),rgba(214,218,204,.18));
+          box-shadow:0 5px 18px rgba(41,48,40,.055),inset 0 1px rgba(255,255,255,.6);
         }
-
-        .le-weather-studio-head {
-          margin-bottom:3px;
-        }
-
         .le-weather-studio-canvas {
-          height:clamp(82px,10.2dvh,90px);
+          position:absolute;
+          top:50%;
+          left:50%;
+          display:block;
+          width:min(100%,45dvh);
+          height:auto;
+          aspect-ratio:3 / 1;
+          max-width:100%;
+          min-height:0;
+          transform:translate(-50%,-50%);
+          border-radius:0;
+          background:linear-gradient(180deg,rgba(233,231,218,.08),rgba(233,231,218,.01));
+          touch-action:none;
         }
-
+        .le-weather-studio-head {
+          position:absolute;
+          z-index:2;
+          top:9px;
+          left:11px;
+          right:11px;
+          display:flex;
+          align-items:flex-start;
+          justify-content:space-between;
+          gap:8px;
+          margin:0;
+          pointer-events:none;
+          text-shadow:0 1px 8px rgba(245,243,231,.82);
+        }
+        .le-weather-studio-head > div { min-width:0; }
+        .le-weather-studio-kicker {
+          display:block;
+          font-size:6px;
+          line-height:1.1;
+          letter-spacing:.16em;
+        }
+        .le-weather-studio-title {
+          margin:3px 0 0;
+          font-size:clamp(14px,3.8vw,18px);
+          line-height:1.02;
+          white-space:nowrap;
+          overflow:hidden;
+          text-overflow:ellipsis;
+        }
+        .le-weather-studio-state {
+          flex:0 0 auto;
+          padding-top:1px;
+          font-size:6px;
+          line-height:1.1;
+          letter-spacing:.12em;
+          white-space:nowrap;
+          text-shadow:0 1px 8px rgba(245,243,231,.9);
+        }
         .le-weather-studio-foot {
-          margin-top:5px;
+          position:absolute;
+          z-index:2;
+          left:11px;
+          right:11px;
+          bottom:8px;
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:8px;
+          margin:0;
           font-size:7px;
+          line-height:1.1;
+          text-shadow:0 1px 8px rgba(245,243,231,.9);
         }
-
-        .le-weather-hourly-section {
-          margin-top:0;
+        .le-weather-studio-foot > span {
+          min-width:0;
+          overflow:hidden;
+          text-overflow:ellipsis;
+          white-space:nowrap;
         }
-
-        .le-weather-section-head {
-          margin-bottom:4px;
+        .le-weather-art-replay {
+          flex:0 0 auto;
+          min-height:23px;
+          padding:4px 10px;
+          font-size:7px;
+          line-height:1;
+          pointer-events:auto;
+          backdrop-filter:blur(8px);
+          -webkit-backdrop-filter:blur(8px);
+          background:rgba(255,255,255,.52);
         }
-
+        .le-weather-hourly-section { margin-top:0; }
+        .le-weather-section-head { margin-bottom:4px; }
         .le-weather-hourly {
           gap:0;
           padding:4px 0 2px;
           border-top:1px solid color-mix(in srgb,var(--ink) 20%,transparent);
         }
-
         .le-weather-hour {
           gap:3px;
           padding:5px 1px 3px;
           border-top:0;
           border-right:1px solid color-mix(in srgb,var(--ink) 15%,transparent);
         }
-
-        .le-weather-hour:last-child {
-          border-right:0;
-        }
-
-        .le-weather-hour-time {
-          font-size:8px;
-        }
-
-        .le-weather-hour-icon {
-          width:19px;
-          height:19px;
-        }
-
-        .le-weather-hour-temp {
-          font-size:clamp(22px,5.8vw,24px);
-        }
-
-        .le-weather-hour-rain {
-          font-size:6.5px;
-        }
-
-        .le-weather-curve {
-          display:none;
-        }
-
-        /* Keep notices and attribution available to assistive technology,
-           without placing duplicate footer rows under the fixed Orb dock. */
-        .le-weather-status,
-        .le-weather-attribution {
+        .le-weather-hour:last-child { border-right:0; }
+        .le-weather-hour-time { font-size:8px; }
+        .le-weather-hour-icon { width:19px; height:19px; }
+        .le-weather-hour-temp { font-size:clamp(22px,5.8vw,24px); }
+        .le-weather-hour-rain { font-size:6.5px; }
+        .le-weather-curve { display:none; }
+        .le-weather-status,.le-weather-attribution {
           position:absolute!important;
           width:1px!important;
           height:1px!important;
@@ -199,49 +262,6 @@
           clip-path:inset(50%)!important;
           white-space:nowrap!important;
           border:0!important;
-        }
-      }
-
-      /* Short portrait screens compress the art slightly; tall screens gain
-         space. Neither rule changes the fixed three-Orb dock. */
-      @media (orientation:portrait) and (max-height:760px) {
-        .le-weather-date-row {
-          margin-top:11px;
-        }
-
-        .le-weather-dashboard {
-          margin-top:5px;
-          row-gap:5px;
-        }
-
-        .le-weather-art-stage {
-          height:clamp(124px,16dvh,140px);
-          margin-top:clamp(-80px,-9dvh,-68px);
-        }
-
-        .le-weather-studio-canvas {
-          height:clamp(74px,9.5dvh,82px);
-        }
-
-        .le-weather-hourly {
-          padding-top:3px;
-          padding-bottom:2px;
-        }
-
-        .le-weather-hour {
-          padding-top:4px;
-          padding-bottom:2px;
-        }
-      }
-
-      @media (orientation:portrait) and (min-height:960px) {
-        .le-weather-art-stage {
-          height:clamp(150px,17.5dvh,168px);
-          margin-top:clamp(-100px,-9.4dvh,-86px);
-        }
-
-        .le-weather-studio-canvas {
-          height:clamp(90px,10.5dvh,104px);
         }
       }
 
@@ -658,38 +678,26 @@
     addStyles();const screen=makeScreen();view.panel.remove();view.root.replaceChildren(screen);
 
     const weatherDock = document.getElementById('le-feature-dock');
-
     function syncDockClearance() {
-      if (!weatherDock || weatherDock.hidden ||
-          getComputedStyle(weatherDock).display === 'none') {
+      if (!weatherDock || weatherDock.hidden || getComputedStyle(weatherDock).display === 'none') {
         screen.style.removeProperty('--le-weather-dock-clearance');
         return;
       }
-
       const dockRect = weatherDock.getBoundingClientRect();
       const screenRect = screen.getBoundingClientRect();
-
-      if (!(dockRect.width > 0) || !(dockRect.height > 0) ||
-          !Number.isFinite(dockRect.top)) {
+      if (!(dockRect.width > 0) || !(dockRect.height > 0) || !Number.isFinite(dockRect.top)) {
         screen.style.removeProperty('--le-weather-dock-clearance');
         return;
       }
-
-      // Read-only measurement: do not set any dock styles or alter its position.
       const clearance = Math.ceil(Math.max(0, screenRect.bottom - dockRect.top) + 12);
       screen.style.setProperty('--le-weather-dock-clearance', `${clearance}px`);
     }
-
-    const weatherDockObserver =
-      weatherDock && typeof ResizeObserver === 'function'
-        ? new ResizeObserver(syncDockClearance)
-        : null;
-
+    const weatherDockObserver = weatherDock && typeof ResizeObserver === 'function'
+      ? new ResizeObserver(syncDockClearance) : null;
     weatherDockObserver?.observe(weatherDock);
     window.addEventListener('resize', syncDockClearance, { passive:true });
     window.addEventListener('orientationchange', syncDockClearance, { passive:true });
     syncDockClearance();
-
     const canvas=screen.querySelector('#le-weather-art-canvas');const painter=makePainter(canvas);const studioCanvas=screen.querySelector('#le-weather-studio-canvas');const studioState=screen.querySelector('#le-weather-studio-state');const studioTitle=screen.querySelector('#le-weather-studio-title');const studioCaption=screen.querySelector('#le-weather-studio-caption');const studioPainter=makeArtStudioPainter(studioCanvas,meta=>{if(studioState)studioState.textContent=meta.complete?'FINISHED':`DRAWING · ${String(meta.count).padStart(2,'0')} / ${meta.total}`;if(meta.title&&studioTitle)studioTitle.textContent=meta.title;});const replayButton=screen.querySelector('#le-weather-art-replay');const handleReplay=()=>studioPainter.replay();replayButton?.addEventListener('click',handleReplay);
     let abortController=null,pollTimer=0,refreshTimer=0,clockTimer=0,disposed=false,requestSerial=0,lastFetch=0,manualPreview=false;
     const selector=screen.querySelector('#le-weather-mode-select');
