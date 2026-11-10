@@ -41,6 +41,7 @@
       .le-weather-screen::-webkit-scrollbar{display:none}
       .le-weather-art-fallback{background:linear-gradient(160deg,#12343a,#466a69 52%,#0b292c)}
       .le-weather-art{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:#102c30}
+      .le-weather-art-picture{position:absolute;inset:0;display:block}
       .le-weather-art-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:54% 48%;transform:scale(1.015);filter:saturate(.92) contrast(1.08) brightness(.78);transition:filter 1.5s ease,transform 8s ease;will-change:filter}
       .le-weather-art-wash{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(3,19,23,.24) 0%,rgba(3,19,23,.10) 28%,rgba(3,18,22,.28) 57%,rgba(2,14,18,.72) 100%),linear-gradient(90deg,rgba(2,18,22,.62) 0%,rgba(2,18,22,.20) 56%,rgba(2,18,22,.02) 100%);transition:background 1.4s ease}
       .le-weather-art-light{position:absolute;inset:-8%;z-index:1;pointer-events:none;background:radial-gradient(ellipse at 72% 27%,rgba(255,226,177,.22),transparent 38%);opacity:.7;transition:opacity 1.5s ease,background 1.5s ease}
@@ -135,9 +136,25 @@
       @keyframes le-weather-ripple{0%{transform:scale(.18);opacity:.72}100%{transform:scale(1);opacity:0}}
       @keyframes le-weather-leaf-drift{0%{transform:translate3d(0,0,0) rotate(-4deg)}100%{transform:translate3d(var(--leaf-drift,18px),var(--leaf-rise,-5px),0) rotate(8deg)}}
       @keyframes le-weather-drop-release{0%{transform:translateY(0) scale(.9);opacity:.9}70%{opacity:.8}100%{transform:translateY(20px) scale(.72);opacity:0}}
-      @media(min-width:700px){.le-weather-content{padding-top:32px;padding-bottom:150px}.le-weather-date-row{margin-top:52px}.le-weather-headline{font-size:clamp(68px,8vw,104px)}.le-weather-temperature{font-size:136px}.le-weather-data-strip{max-width:680px}.le-weather-hourly{grid-auto-columns:minmax(68px,1fr)}.le-weather-metrics{max-width:680px}}
-      @media(max-width:390px){.le-weather-content{padding-left:17px;padding-right:17px}.le-weather-date-row{margin-top:31px}.le-weather-data-strip{padding:13px 4px}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:7px;letter-spacing:.09em}.le-weather-stat-value{font-size:12px}.le-weather-headline{font-size:clamp(41px,11.5vw,54px)}.le-weather-poetry{font-size:14px}.le-weather-metric{padding:10px 8px}}
-      @media(orientation:landscape) and (max-height:520px){.le-weather-content{padding-top:calc(env(safe-area-inset-top) + 12px);padding-bottom:calc(env(safe-area-inset-bottom) + 105px)}.le-weather-date-row{margin-top:18px}.le-weather-headline{font-size:42px}.le-weather-temperature{font-size:72px}.le-weather-data-strip{margin-top:15px}.le-weather-section-head{margin-top:16px}}
+      .le-weather-date-tools{display:flex;align-items:center;gap:8px;min-width:0}
+      .le-weather-source{display:inline-flex;align-items:center;min-height:25px;padding:4px 7px;border:1px solid rgba(238,246,238,.30);border-radius:999px;color:#f5eee4;background:rgba(8,30,32,.44);font-size:7px;font-weight:800;letter-spacing:.12em;white-space:nowrap}
+      .le-weather-screen[data-preview="false"] .le-weather-source{border-color:rgba(139,224,190,.45);color:#b9f0d2}
+      .le-weather-test-picker{display:flex;align-items:center;gap:5px;padding:3px 6px 3px 8px;border:1px solid rgba(238,246,238,.27);border-radius:999px;background:rgba(6,27,29,.50);color:#e7eee7;font-size:7px;font-weight:750;letter-spacing:.12em;white-space:nowrap;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+      .le-weather-test-picker select{max-width:94px;border:0;outline:0;background:transparent;color:#fff;font:700 8px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.05em;appearance:none;-webkit-appearance:none;padding:4px 13px 4px 2px;background-image:linear-gradient(45deg,transparent 50%,#e9eee6 50%),linear-gradient(135deg,#e9eee6 50%,transparent 50%);background-position:calc(100% - 5px) 50%,calc(100% - 1px) 50%;background-size:4px 4px,4px 4px;background-repeat:no-repeat}
+      .le-weather-test-picker option{background:#173638;color:#fff}
+      .le-weather-screen[data-preview="true"] .le-weather-test-picker{border-color:rgba(222,173,112,.55)}
+      .le-weather-content{padding-bottom:calc(env(safe-area-inset-bottom) + 224px)}
+      @media(min-width:700px){.le-weather-content{padding-top:28px;padding-bottom:calc(env(safe-area-inset-bottom) + 176px);width:min(100%,900px)}.le-weather-date-row{margin-top:30px}.le-weather-headline{font-size:clamp(58px,8vw,86px)}.le-weather-temperature{font-size:116px}.le-weather-data-strip{max-width:100%}.le-weather-hourly{grid-auto-columns:minmax(68px,1fr)}.le-weather-metrics{max-width:100%}}
+      @media(max-width:430px){.le-weather-content{padding-left:17px;padding-right:17px;padding-bottom:calc(env(safe-area-inset-bottom) + 236px)}.le-weather-date-row{margin-top:24px;align-items:flex-start}.le-weather-date{font-size:8px;letter-spacing:.19em;padding-top:6px}.le-weather-date-tools{gap:5px}.le-weather-art-mark{display:none}.le-weather-source{font-size:6px;min-height:23px;padding:3px 6px}.le-weather-test-picker{padding:2px 5px 2px 7px;font-size:6px}.le-weather-test-picker select{max-width:75px;font-size:7px}.le-weather-hero{margin-top:8px}.le-weather-headline{font-size:clamp(43px,12vw,52px);line-height:.88}.le-weather-headline::after{margin:12px 0 10px}.le-weather-temperature{font-size:clamp(72px,20vw,82px)}.le-weather-temperature-row{gap:13px}.le-weather-condition{padding-left:12px}.le-weather-condition-icon{width:35px;height:31px;margin-bottom:3px}.le-weather-condition-name{font-size:15px}.le-weather-feels{font-size:11px}.le-weather-poetry{font-size:13px;margin-top:12px;line-height:1.35}.le-weather-data-strip{margin-top:18px;padding:11px 3px;border-radius:14px}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:6px;letter-spacing:.07em}.le-weather-stat-value{font-size:clamp(10px,3vw,12px);margin-top:6px}.le-weather-section-head{margin:18px 2px 8px}.le-weather-hourly{grid-auto-columns:minmax(48px,1fr);gap:2px;padding:3px 0 6px}.le-weather-hour{gap:5px;padding:7px 2px 5px}.le-weather-hour-time{font-size:8px}.le-weather-hour-icon{width:20px;height:20px}.le-weather-hour-temp{font-size:13px}.le-weather-hour-rain{font-size:7px}.le-weather-curve{height:29px}.le-weather-metrics{margin-top:10px;gap:6px}.le-weather-metric{padding:9px 7px 10px;border-radius:11px}.le-weather-metric-label{font-size:6px;letter-spacing:.08em}.le-weather-metric-value{font-size:14px;margin-top:5px}.le-weather-metric-note{font-size:8px}}
+      @media(orientation:landscape) and (min-width:760px) and (min-height:500px){
+        .le-weather-screen{overflow-y:auto}
+        .le-weather-art-image{object-position:50% 50%;transform:scale(1.005)}
+        .le-weather-content{width:min(100%,1380px);padding:calc(env(safe-area-inset-top) + 16px) clamp(24px,4vw,58px) calc(env(safe-area-inset-bottom) + 152px);display:grid;grid-template-columns:minmax(0,1.04fr) minmax(0,.96fr);grid-template-areas:"top top" "date date" "hero summary" "hours metrics" "status status" "credit credit";column-gap:clamp(22px,4vw,64px);row-gap:8px;align-items:center}
+        .le-weather-topbar{grid-area:top}.le-weather-date-row{grid-area:date;margin-top:13px}.le-weather-hero{grid-area:hero;margin-top:5px;max-width:620px}.le-weather-data-strip{grid-area:summary;margin:0;max-width:none;align-self:center;padding:16px 10px}.le-weather-hourly-section{grid-area:hours;min-width:0}.le-weather-metrics{grid-area:metrics;margin:0;max-width:none;grid-template-columns:repeat(3,minmax(0,1fr));align-self:center}.le-weather-status{grid-area:status;margin-top:4px}.le-weather-attribution{grid-area:credit;margin-top:4px}.le-weather-date-tools{gap:10px}.le-weather-headline{font-size:clamp(48px,5.7vw,78px);line-height:.91}.le-weather-headline::after{margin:13px 0 11px}.le-weather-temperature{font-size:clamp(82px,9vw,116px)}.le-weather-poetry{margin-top:12px;font-size:14px}.le-weather-section-head{margin:7px 2px 8px}.le-weather-hourly{grid-auto-columns:minmax(0,1fr);overflow:visible}.le-weather-hour{gap:5px;padding:7px 1px 4px}.le-weather-hour-time{font-size:8px}.le-weather-hour-icon{width:19px;height:19px}.le-weather-hour-temp{font-size:13px}.le-weather-hour-rain{font-size:7px}.le-weather-curve{height:26px}.le-weather-metric{padding:11px 8px}.le-weather-metric-value{font-size:14px}
+      }
+      @media(orientation:landscape) and (max-height:499px){.le-weather-content{padding-top:calc(env(safe-area-inset-top) + 9px);padding-bottom:calc(env(safe-area-inset-bottom) + 190px)}.le-weather-date-row{margin-top:12px}.le-weather-hero{margin-top:4px}.le-weather-headline{font-size:40px}.le-weather-temperature{font-size:72px}.le-weather-data-strip{margin-top:12px;padding:10px 5px}.le-weather-section-head{margin-top:13px}.le-weather-hour{gap:4px;padding:6px 2px}.le-weather-curve{height:25px}}
+      @media(prefers-reduced-motion:reduce){.le-weather-screen *,.le-weather-screen *:before,.le-weather-screen *:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+      @media(prefers-reduced-transparency:reduce){.le-weather-data-strip,.le-weather-metric,.le-weather-test-picker{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(7,25,28,.92)}}
       @media(prefers-reduced-motion:reduce){.le-weather-screen *,.le-weather-screen *:before,.le-weather-screen *:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
       @media(prefers-reduced-transparency:reduce){.le-weather-data-strip,.le-weather-metric{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(7,25,28,.92)}}
     `;
@@ -148,7 +165,10 @@
     const art = el('div', 'le-weather-art');
     art.setAttribute('aria-hidden', 'true');
     art.innerHTML = `
-      <img class="le-weather-art-image" src="./Weather/Assets/weather-scene.webp" alt="" decoding="async" fetchpriority="high">
+      <picture class="le-weather-art-picture">
+        <source media="(orientation: landscape) and (min-width: 760px)" srcset="./Weather/Assets/weather-scene-landscape.webp" type="image/webp">
+        <img class="le-weather-art-image" src="./Weather/Assets/weather-scene.webp" alt="" decoding="async" fetchpriority="high">
+      </picture>
       <div class="le-weather-art-wash"></div>
       <div class="le-weather-art-light"></div>
       <div class="le-weather-leaf-motion"></div>
@@ -343,6 +363,47 @@
     return `<svg viewBox="0 0 24 24" aria-hidden="true" ${common}>${body}</svg>`;
   }
 
+  function localWallTime(date) {
+    const pad = value => String(value).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+  function deviceDateTime() {
+    const now = new Date();
+    const day = new Intl.DateTimeFormat(undefined, { weekday:'long', day:'numeric', month:'short' }).format(now);
+    const time = new Intl.DateTimeFormat(undefined, { hour:'2-digit', minute:'2-digit', hour12:true }).format(now);
+    return `${day} · ${time}`;
+  }
+  function makePreviewData(kind) {
+    const presets = {
+      clear:  { temp:27, feels:29, code:0, cloud:6, rain:0, snow:0, wind:6, direction:315, humidity:51, pressure:1012, high:28, low:17, chance:0, uv:5, visibility:12000, hours:[28,28,28,28,26,25], codes:[0,0,0,0,1,1], chances:[0,0,0,0,0,0] },
+      cloudy: { temp:22, feels:23, code:3, cloud:88, rain:0, snow:0, wind:9, direction:250, humidity:67, pressure:1015, high:24, low:18, chance:12, uv:3, visibility:9000, hours:[22,22,21,22,23,22], codes:[3,3,2,3,2,2], chances:[5,8,8,10,12,8] },
+      rain:   { temp:17, feels:15, code:63, cloud:96, rain:2.8, snow:0, wind:6, direction:247, humidity:88, pressure:1008, high:17, low:12, chance:80, uv:1, visibility:6000, hours:[17,16,16,18,19,19], codes:[61,61,63,61,61,80], chances:[80,85,82,75,60,42] },
+      storm:  { temp:15, feels:11, code:95, cloud:100, rain:6.2, snow:0, wind:38, direction:290, humidity:94, pressure:994, high:17, low:13, chance:100, uv:0, visibility:2500, hours:[15,14,15,16,16,17], codes:[95,95,96,95,80,61], chances:[100,100,95,90,75,50] },
+      snow:   { temp:1, feels:-4, code:73, cloud:94, rain:0, snow:.8, wind:18, direction:30, humidity:91, pressure:1004, high:2, low:-3, chance:75, uv:1, visibility:5000, hours:[1,0,0,1,2,1], codes:[71,73,73,71,71,77], chances:[72,75,80,78,65,55] },
+      fog:    { temp:8, feels:7, code:45, cloud:100, rain:0, snow:0, wind:3, direction:160, humidity:99, pressure:1018, high:11, low:6, chance:5, uv:1, visibility:350, hours:[8,8,9,10,10,11], codes:[45,45,45,48,45,3], chances:[5,5,3,4,2,0] }
+    };
+    const preset = presets[kind] || presets.clear;
+    const now = new Date();
+    now.setMinutes(0,0,0);
+    const times = preset.hours.map((_, index) => { const date = new Date(now); date.setHours(now.getHours()+index); return localWallTime(date); });
+    const isDay = kind === 'night' ? 0 : (now.getHours() >= 6 && now.getHours() < 19 ? 1 : 0);
+    return {
+      current: {
+        time: localWallTime(new Date()), temperature_2m:preset.temp, apparent_temperature:preset.feels,
+        is_day:isDay, precipitation:preset.rain+preset.snow, rain:preset.rain, showers:0,
+        snowfall:preset.snow, weather_code:preset.code, cloud_cover:preset.cloud,
+        pressure_msl:preset.pressure, wind_speed_10m:preset.wind, wind_direction_10m:preset.direction,
+        wind_gusts_10m:preset.wind*1.45, relative_humidity_2m:preset.humidity
+      },
+      hourly: {
+        time:times, temperature_2m:preset.hours, precipitation_probability:preset.chances,
+        weather_code:preset.codes, visibility:preset.hours.map(()=>preset.visibility),
+        uv_index:preset.hours.map(()=>preset.uv)
+      },
+      daily: { temperature_2m_max:[preset.high], temperature_2m_min:[preset.low], precipitation_probability_max:[preset.chance], uv_index_max:[preset.uv] }
+    };
+  }
+
   function makeScreen() {
     const screen = el('div', 'le-weather-screen');
     screen.dataset.weather = 'clear';
@@ -355,7 +416,23 @@
         </header>
         <div class="le-weather-date-row">
           <div class="le-weather-date" id="le-weather-date">LOCAL CONDITIONS</div>
-          <svg class="le-weather-art-mark" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="15.5"/><path d="M9 27c8-5 12-11 17-20M16 22c-2-4-5-6-8-6m13-1c3 0 6 1 9 4m-13 7c2 2 3 4 3 7"/><path class="mark-leaf" d="M8 15c4-1 7 1 8 5-4 1-7-1-8-5Zm13-2c1-4 4-6 8-6 0 4-3 7-8 6Zm3 10c3-3 7-3 10-1-2 4-6 5-10 1Z"/></svg>
+          <div class="le-weather-date-tools">
+            <span class="le-weather-source" id="le-weather-source" aria-live="polite">PREVIEW</span>
+            <label class="le-weather-test-picker" for="le-weather-mode-select">
+              <span>SCENE</span>
+              <select id="le-weather-mode-select" aria-label="Choose live weather or a test weather scene">
+                <option value="auto">AUTO · LIVE</option>
+                <option value="clear">CLEAR</option>
+                <option value="cloudy">CLOUDY</option>
+                <option value="rain">RAIN</option>
+                <option value="storm">STORM</option>
+                <option value="snow">SNOW</option>
+                <option value="fog">FOG</option>
+                <option value="night">NIGHT</option>
+              </select>
+            </label>
+            <svg class="le-weather-art-mark" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="15.5"/><path d="M9 27c8-5 12-11 17-20M16 22c-2-4-5-6-8-6m13-1c3 0 6 1 9 4m-13 7c2 2 3 4 3 7"/><path class="mark-leaf" d="M8 15c4-1 7 1 8 5-4 1-7-1-8-5Zm13-2c1-4 4-6 8-6 0 4-3 7-8 6Zm3 10c3-3 7-3 10-1-2 4-6 5-10 1Z"/></svg>
+          </div>
         </div>
         <section class="le-weather-hero" aria-label="Current weather">
           <h1 class="le-weather-headline" id="le-weather-headline">A quiet day<br><em>under open skies.</em></h1>
@@ -371,7 +448,7 @@
           <div class="le-weather-stat"><span class="le-weather-stat-label">WIND</span><strong class="le-weather-stat-value" id="le-weather-wind">—</strong></div>
           <div class="le-weather-stat"><span class="le-weather-stat-label">HUMIDITY</span><strong class="le-weather-stat-value" id="le-weather-humidity">—</strong></div>
         </section>
-        <section aria-label="Hourly forecast">
+        <section class="le-weather-hourly-section" aria-label="Hourly forecast">
           <div class="le-weather-section-head"><h2 class="le-weather-section-title">THE HOURS AHEAD</h2><span class="le-weather-section-note">HOURLY FORECAST</span></div>
           <div class="le-weather-hourly" id="le-weather-hourly"><div class="le-weather-hour"><span class="le-weather-hour-time">—</span><span class="le-weather-hour-icon">·</span><strong class="le-weather-hour-temp">—</strong></div></div>
           <svg class="le-weather-curve" id="le-weather-curve" viewBox="0 0 320 38" preserveAspectRatio="none" aria-hidden="true"><path d="M0 25Q80 5 160 21T320 14"/><circle cx="0" cy="25" r="2.3"/><circle cx="160" cy="21" r="2.3"/><circle cx="320" cy="14" r="2.3"/></svg>
@@ -453,7 +530,7 @@
     container.replaceChildren(fragment);
     updateCurve(screen, temperatures);
   }
-  function paintCurrentWeather(screen, data) {
+  function paintCurrentWeather(screen, data, isPreview = false) {
     const current = data.current;
     const daily = data.daily || {};
     const state = visualState({
@@ -473,6 +550,10 @@
     });
     screen.dataset.weather = state.weather;
     screen.dataset.phase = state.phase;
+    screen.dataset.preview = String(Boolean(isPreview));
+    screen.dataset.weatherUnavailable = 'false';
+    setText(screen, 'le-weather-source', isPreview ? 'PREVIEW · SAMPLE' : 'LIVE WEATHER');
+    setText(screen, 'le-weather-place', isPreview ? 'SAMPLE SCENE' : 'YOUR LOCATION');
     const rainAmount = Math.max(number(current.precipitation) ?? 0, number(current.rain) ?? 0, number(current.showers) ?? 0);
     screen.style.setProperty('--le-rain-opacity', String(Math.min(.94, .28 + rainAmount * .22)));
     screen.style.setProperty('--le-snow-opacity', String(Math.min(.86, .32 + (number(current.snowfall) ?? 0) * .30)));
@@ -529,7 +610,10 @@
   function resetWeather(screen, message, keepArtwork = true) {
     setTemperature(screen, null);
     for (const id of ['le-weather-condition','le-weather-feels','le-weather-highlow','le-weather-rainchance','le-weather-wind','le-weather-humidity','le-weather-uv','le-weather-pressure','le-weather-visibility']) setText(screen, id, '—');
-    setText(screen, 'le-weather-date', 'LOCAL WEATHER');
+    setText(screen, 'le-weather-date', deviceDateTime());
+    screen.dataset.preview = 'false';
+    screen.dataset.weatherUnavailable = 'true';
+    setText(screen, 'le-weather-source', 'NO LIVE DATA');
     setText(screen, 'le-weather-headline', 'A quiet day under open skies.');
     setText(screen, 'le-weather-poetry', 'The artwork stays with you while live conditions are unavailable.');
     setText(screen, 'le-weather-uv-note', 'Not available');
@@ -560,6 +644,9 @@
     let disposed = false;
     let requestSerial = 0;
     let lastSuccessfulFetch = 0;
+    let previewMode = 'clear';
+    let previewManual = false;
+    let clockTimer = 0;
 
     function stopPolling() {
       if (pollTimer) clearInterval(pollTimer);
@@ -571,12 +658,39 @@
       abortController = null;
       resetWeather(screen, message || 'Switch on the Location Orb to reveal your local forecast.');
     }
-    function paintCurrent(currentData) {
+    function paintCurrent(currentData, isPreview = false) {
       if (!currentData?.current || !Number.isFinite(Number(currentData.current.weather_code))) {
         throw new Error('The weather source did not return usable current conditions.');
       }
-      paintCurrentWeather(screen, currentData);
+      paintCurrentWeather(screen, currentData, isPreview);
       lastSuccessfulFetch = Date.now();
+    }
+    function applyPreview(kind, manual = true) {
+      stopPolling();
+      requestSerial++;
+      abortController?.abort();
+      abortController = null;
+      previewMode = kind;
+      previewManual = manual;
+      screen.querySelector('#le-weather-mode-select').value = kind;
+      setText(screen, 'le-weather-place', 'SAMPLE SCENE');
+      paintCurrent(makePreviewData(kind), true);
+      setText(screen, 'le-weather-status', 'PREVIEW MODE · Sample values for visual testing. Switch to AUTO · LIVE for your enabled Location forecast.');
+    }
+    function updateLocalClock() {
+      setText(screen, 'le-weather-date', deviceDateTime());
+    }
+    function selectLiveMode() {
+      const hasLocation = window.liveEarthLocationAllowed?.() === true;
+      if (!hasLocation) {
+        screen.querySelector('#le-weather-mode-select').value = previewMode || 'clear';
+        setText(screen, 'le-weather-status', 'Location is OFF. Choose a test scene, or switch on the Location Orb for live weather.');
+        return;
+      }
+      previewMode = '';
+      previewManual = false;
+      screen.querySelector('#le-weather-mode-select').value = 'auto';
+      readExistingLocation();
     }
     function waitingForLocation() {
       stopPolling();
@@ -639,37 +753,67 @@
     }
     function onLocationState(event) {
       if (!isActive('weather')) return;
-      if (event.detail?.enabled === true && window.liveEarthLocationAllowed?.() === true) waitingForLocation();
-      else { stopPolling(); clearVisualWeather('Location is OFF. Switch on the Location Orb to see local weather.'); }
+      if (event.detail?.enabled === true && window.liveEarthLocationAllowed?.() === true) {
+        if (!previewManual) {
+          screen.querySelector('#le-weather-mode-select').value = 'auto';
+          screen.dataset.preview = 'false';
+          setText(screen, 'le-weather-source', 'LIVE WEATHER');
+          setText(screen, 'le-weather-place', 'YOUR LOCATION');
+          setText(screen, 'le-weather-status', 'Location is on · waiting for a fresh position.');
+          waitingForLocation();
+        }
+      } else {
+        stopPolling();
+        if (screen.querySelector('#le-weather-mode-select')?.value === 'auto') applyPreview('clear', false);
+      }
     }
     function onLocationStop() {
       stopPolling();
-      clearVisualWeather('Location has been turned off. No location data is being requested.');
+      if (screen.querySelector('#le-weather-mode-select')?.value === 'auto') applyPreview('clear', false);
     }
     function onOnline() {
-      if (window.liveEarthLocationAllowed?.() === true) readExistingLocation();
+      if (screen.querySelector('#le-weather-mode-select')?.value === 'auto' && window.liveEarthLocationAllowed?.() === true) readExistingLocation();
     }
     function onOffline() {
       stopPolling();
       abortController?.abort();
       abortController = null;
-      resetWeather(screen, 'You are offline. Live conditions are not presented as current.');
+      if (screen.querySelector('#le-weather-mode-select')?.value === 'auto') {
+        resetWeather(screen, 'You are offline. Live conditions are not presented as current.');
+        screen.dataset.weatherUnavailable = 'true';
+      }
     }
     function onVisibility() {
-      if (!document.hidden && window.liveEarthLocationAllowed?.() === true && Date.now() - lastSuccessfulFetch > REFRESH_MS) readExistingLocation();
+      if (!document.hidden && window.liveEarthLocationAllowed?.() === true &&
+          screen.querySelector('#le-weather-mode-select')?.value === 'auto' && Date.now() - lastSuccessfulFetch > REFRESH_MS) readExistingLocation();
+    }
+    function onSceneModeChange(event) {
+      const mode = event.target?.value || 'auto';
+      if (mode === 'auto') { selectLiveMode(); return; }
+      applyPreview(mode);
     }
 
+    screen.querySelector('#le-weather-mode-select')?.addEventListener('change', onSceneModeChange);
     window.addEventListener('live-earth-location-state', onLocationState);
     window.addEventListener('live-earth-location-stop', onLocationStop);
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
     document.addEventListener('visibilitychange', onVisibility);
     refreshTimer = window.setInterval(() => {
-      if (!disposed && isActive('weather') && !document.hidden && window.liveEarthLocationAllowed?.() === true) readExistingLocation();
+      if (!disposed && isActive('weather') && !document.hidden &&
+          screen.querySelector('#le-weather-mode-select')?.value === 'auto' && window.liveEarthLocationAllowed?.() === true) readExistingLocation();
     }, REFRESH_MS);
+    clockTimer = window.setInterval(updateLocalClock, 30000);
 
-    if (window.liveEarthLocationAllowed?.() === true) waitingForLocation();
-    else resetWeather(screen, 'Switch on the Location Orb to reveal your local forecast.');
+    if (window.liveEarthLocationAllowed?.() === true) {
+      screen.querySelector('#le-weather-mode-select').value = 'auto';
+      screen.dataset.preview = 'false';
+      setText(screen, 'le-weather-source', 'LIVE WEATHER');
+      setText(screen, 'le-weather-date', deviceDateTime());
+      waitingForLocation();
+    } else {
+      applyPreview('clear', false);
+    }
 
     return () => {
       disposed = true;
@@ -677,6 +821,8 @@
       stopPolling();
       if (refreshTimer) clearInterval(refreshTimer);
       refreshTimer = 0;
+      if (clockTimer) clearInterval(clockTimer);
+      clockTimer = 0;
       abortController?.abort();
       abortController = null;
       window.removeEventListener('live-earth-location-state', onLocationState);
@@ -684,6 +830,7 @@
       window.removeEventListener('online', onOnline);
       window.removeEventListener('offline', onOffline);
       document.removeEventListener('visibilitychange', onVisibility);
+      screen.querySelector('#le-weather-mode-select')?.removeEventListener('change', onSceneModeChange);
       screen.remove();
       document.getElementById(STYLE_ID)?.remove();
     };
