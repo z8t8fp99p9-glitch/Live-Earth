@@ -96,6 +96,64 @@
       @media(max-width:430px){.le-weather-content{padding-left:17px;padding-right:17px;padding-bottom:calc(env(safe-area-inset-bottom) + 278px)}.le-weather-date-row{margin-top:24px;align-items:flex-start}.le-weather-headline{font-size:clamp(42px,11.5vw,52px)}.le-weather-temperature{font-size:clamp(74px,20vw,86px)}.le-weather-art-stage{height:clamp(158px,21vh,180px);margin-left:-9px;margin-right:-9px}.le-weather-summary{padding:10px 0}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:6px;letter-spacing:.08em}.le-weather-stat-value{font-size:11px}.le-weather-hourly-section{margin-top:2px}.le-weather-hourly{gap:1px;padding:6px 0}.le-weather-hour{gap:6px;padding:8px 1px 5px}.le-weather-hour-time{font-size:8px}.le-weather-hour-icon{width:21px;height:21px}.le-weather-hour-temp{font-size:clamp(21px,6vw,25px)}.le-weather-hour-rain{font-size:7px}.le-weather-curve{height:28px}.le-weather-studio{padding:11px 10px 9px;border-radius:14px}.le-weather-studio-title{font-size:18px}.le-weather-studio-canvas{height:clamp(138px,18vh,155px)}}
       @media(orientation:landscape) and (max-height:520px){.le-weather-content{padding-top:calc(env(safe-area-inset-top) + 8px);padding-bottom:calc(env(safe-area-inset-bottom) + 150px)}.le-weather-date-row{margin-top:5px}.le-weather-dashboard{margin-top:7px;column-gap:22px;row-gap:7px}.le-weather-headline{font-size:clamp(36px,4.6vw,48px)}.le-weather-headline:after{margin:10px 0 10px}.le-weather-temperature{font-size:clamp(66px,7vw,80px)}.le-weather-art-stage{height:clamp(130px,31vh,175px)}.le-weather-studio{padding:9px 11px}.le-weather-studio-canvas{height:clamp(118px,21vh,150px)}.le-weather-studio-title{font-size:18px}.le-weather-hourly{padding:4px 0}.le-weather-hour{gap:4px;padding:6px 1px}.le-weather-hour-temp{font-size:22px}.le-weather-hourly-section{margin:0}}
       @media(prefers-reduced-motion:reduce){.le-weather-screen *,.le-weather-screen *:before,.le-weather-screen *:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+
+      /* Portrait composition: compact the weather art so the full editorial
+         sequence can sit above the existing fixed three-Orb dock. */
+      @media (orientation:portrait) {
+        .le-weather-content {
+          padding-top:calc(env(safe-area-inset-top) + clamp(8px,1.2dvh,11px));
+          padding-bottom:var(--le-weather-dock-clearance,calc(env(safe-area-inset-bottom) + 112px));
+        }
+        .le-weather-date-row { margin-top:clamp(16px,2.15dvh,19px); }
+        .le-weather-dashboard {
+          margin-top:clamp(8px,1dvh,10px);
+          row-gap:clamp(7px,.9dvh,9px);
+        }
+        .le-weather-headline:after { margin:10px 0 8px; }
+        .le-weather-art-stage { height:clamp(96px,12.2dvh,112px); }
+        .le-weather-summary { padding:8px 0; }
+        .le-weather-studio { padding:9px 9px 7px; border-radius:14px; }
+        .le-weather-studio-head { margin-bottom:3px; }
+        .le-weather-studio-canvas { height:clamp(76px,10.3dvh,94px); }
+        .le-weather-studio-foot { margin-top:5px; font-size:7px; }
+        .le-weather-hourly-section { margin-top:1px; }
+        .le-weather-section-head { margin-bottom:5px; }
+        .le-weather-hourly {
+          gap:0;
+          padding:4px 0 3px;
+          border-top:1px solid color-mix(in srgb,var(--ink) 20%,transparent);
+        }
+        .le-weather-hour {
+          gap:4px;
+          padding:6px 1px 4px;
+          border-top:0;
+          border-right:1px solid color-mix(in srgb,var(--ink) 15%,transparent);
+        }
+        .le-weather-hour:last-child { border-right:0; }
+        .le-weather-hour-time { font-size:8px; }
+        .le-weather-hour-icon { width:18px; height:18px; }
+        .le-weather-hour-temp { font-size:clamp(21px,5.8vw,24px); }
+        .le-weather-hour-rain { font-size:7px; }
+        .le-weather-curve { display:none; }
+        .le-weather-status { min-height:0; margin-top:7px; }
+        .le-weather-attribution { margin-top:6px; }
+      }
+
+      /* Short portrait displays compress both art stages; tall displays gain
+         a little breathing room. Neither rule touches the Orb dock. */
+      @media (orientation:portrait) and (max-height:760px) {
+        .le-weather-date-row { margin-top:14px; }
+        .le-weather-dashboard { margin-top:7px; row-gap:6px; }
+        .le-weather-temperature { font-size:clamp(68px,18vw,78px); }
+        .le-weather-art-stage { height:clamp(84px,11.8dvh,96px); }
+        .le-weather-studio-canvas { height:clamp(66px,9.2dvh,76px); }
+      }
+
+      @media (orientation:portrait) and (min-height:960px) {
+        .le-weather-art-stage { height:clamp(112px,12.6dvh,132px); }
+        .le-weather-studio-canvas { height:clamp(96px,10.5dvh,112px); }
+      }
+
       @media(prefers-reduced-transparency:reduce){.le-weather-mode{background:var(--paper)}}
     `;
     document.head.appendChild(style);
@@ -506,6 +564,40 @@
   function activateWeather(){
     const view=mount('weather');if(!view)return;
     addStyles();const screen=makeScreen();view.panel.remove();view.root.replaceChildren(screen);
+
+    const weatherDock = document.getElementById('le-feature-dock');
+
+    function syncDockClearance() {
+      if (!weatherDock || weatherDock.hidden ||
+          getComputedStyle(weatherDock).display === 'none') {
+        screen.style.removeProperty('--le-weather-dock-clearance');
+        return;
+      }
+
+      const dockRect = weatherDock.getBoundingClientRect();
+      const screenRect = screen.getBoundingClientRect();
+
+      if (!(dockRect.width > 0) || !(dockRect.height > 0) ||
+          !Number.isFinite(dockRect.top)) {
+        screen.style.removeProperty('--le-weather-dock-clearance');
+        return;
+      }
+
+      // Read the dock's actual occupied bottom area; never move or resize it.
+      const clearance = Math.ceil(Math.max(0, screenRect.bottom - dockRect.top) + 12);
+      screen.style.setProperty('--le-weather-dock-clearance', `${clearance}px`);
+    }
+
+    const weatherDockObserver =
+      weatherDock && typeof ResizeObserver === 'function'
+        ? new ResizeObserver(syncDockClearance)
+        : null;
+
+    weatherDockObserver?.observe(weatherDock);
+    window.addEventListener('resize', syncDockClearance, { passive:true });
+    window.addEventListener('orientationchange', syncDockClearance, { passive:true });
+    syncDockClearance();
+
     const canvas=screen.querySelector('#le-weather-art-canvas');const painter=makePainter(canvas);const studioCanvas=screen.querySelector('#le-weather-studio-canvas');const studioState=screen.querySelector('#le-weather-studio-state');const studioTitle=screen.querySelector('#le-weather-studio-title');const studioCaption=screen.querySelector('#le-weather-studio-caption');const studioPainter=makeArtStudioPainter(studioCanvas,meta=>{if(studioState)studioState.textContent=meta.complete?'FINISHED':`DRAWING · ${String(meta.count).padStart(2,'0')} / ${meta.total}`;if(meta.title&&studioTitle)studioTitle.textContent=meta.title;});const replayButton=screen.querySelector('#le-weather-art-replay');const handleReplay=()=>studioPainter.replay();replayButton?.addEventListener('click',handleReplay);
     let abortController=null,pollTimer=0,refreshTimer=0,clockTimer=0,disposed=false,requestSerial=0,lastFetch=0,manualPreview=false;
     const selector=screen.querySelector('#le-weather-mode-select');
@@ -548,7 +640,7 @@
     refreshTimer=window.setInterval(()=>{if(!disposed&&!document.hidden&&!manualPreview&&window.liveEarthLocationAllowed?.()===true)fetchLive();},REFRESH_MS);
     clockTimer=window.setInterval(updateLocalClock,30000);updateLocalClock();
     if(window.liveEarthLocationAllowed?.()===true)pollForFix();else showLocationOff();
-    return()=>{disposed=true;requestSerial++;stopPolling();if(refreshTimer)clearInterval(refreshTimer);if(clockTimer)clearInterval(clockTimer);abortController?.abort();abortController=null;painter.stop();studioPainter.stop();replayButton?.removeEventListener('click',handleReplay);selector.removeEventListener('change',handleModeChange);window.removeEventListener('live-earth-location-state',onLocationState);window.removeEventListener('live-earth-location-stop',onLocationStop);window.removeEventListener('online',onOnline);window.removeEventListener('offline',onOffline);document.removeEventListener('visibilitychange',onVisibility);screen.remove();document.getElementById(STYLE_ID)?.remove();};
+    return () => {disposed=true;requestSerial++;stopPolling();if(refreshTimer)clearInterval(refreshTimer);if(clockTimer)clearInterval(clockTimer);abortController?.abort();abortController=null;painter.stop();studioPainter.stop();replayButton?.removeEventListener('click',handleReplay);selector.removeEventListener('change',handleModeChange);window.removeEventListener('live-earth-location-state',onLocationState);window.removeEventListener('live-earth-location-stop',onLocationStop);window.removeEventListener('online',onOnline);window.removeEventListener('offline',onOffline);document.removeEventListener('visibilitychange',onVisibility);weatherDockObserver?.disconnect();window.removeEventListener('resize',syncDockClearance);window.removeEventListener('orientationchange',syncDockClearance);screen.remove();document.getElementById(STYLE_ID)?.remove();};
   }
 
   runtime.registerFeature('weather',activateWeather);
