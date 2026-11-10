@@ -95,8 +95,8 @@
       }
       @media(max-width:430px){.le-weather-content{padding-left:17px;padding-right:17px;padding-bottom:calc(env(safe-area-inset-bottom) + 278px)}.le-weather-date-row{margin-top:24px;align-items:flex-start}.le-weather-headline{font-size:clamp(42px,11.5vw,52px)}.le-weather-temperature{font-size:clamp(74px,20vw,86px)}.le-weather-art-stage{height:clamp(158px,21vh,180px);margin-left:-9px;margin-right:-9px}.le-weather-summary{padding:10px 0}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:6px;letter-spacing:.08em}.le-weather-stat-value{font-size:11px}.le-weather-hourly-section{margin-top:2px}.le-weather-hourly{gap:1px;padding:6px 0}.le-weather-hour{gap:6px;padding:8px 1px 5px}.le-weather-hour-time{font-size:8px}.le-weather-hour-icon{width:21px;height:21px}.le-weather-hour-temp{font-size:clamp(21px,6vw,25px)}.le-weather-hour-rain{font-size:7px}.le-weather-curve{height:28px}.le-weather-studio{padding:11px 10px 9px;border-radius:14px}.le-weather-studio-title{font-size:18px}.le-weather-studio-canvas{height:clamp(138px,18vh,155px)}}
       @media(orientation:landscape) and (max-height:520px){.le-weather-content{padding-top:calc(env(safe-area-inset-top) + 8px);padding-bottom:calc(env(safe-area-inset-bottom) + 150px)}.le-weather-date-row{margin-top:5px}.le-weather-dashboard{margin-top:7px;column-gap:22px;row-gap:7px}.le-weather-headline{font-size:clamp(36px,4.6vw,48px)}.le-weather-headline:after{margin:10px 0 10px}.le-weather-temperature{font-size:clamp(66px,7vw,80px)}.le-weather-art-stage{height:clamp(130px,31vh,175px)}.le-weather-studio{padding:9px 11px}.le-weather-studio-canvas{height:clamp(118px,21vh,150px)}.le-weather-studio-title{font-size:18px}.le-weather-hourly{padding:4px 0}.le-weather-hour{gap:4px;padding:6px 1px}.le-weather-hour-temp{font-size:22px}.le-weather-hourly-section{margin:0}}
-      /* Portrait reference composition: contained landscape + framed Live Art card.
-         Both artwork viewports use the agreed 15% screen-height scale. */
+      /* Portrait reference composition: two proportional 4:1 illustrations.
+         Weather readings and Live Art controls float above their artwork. */
       @media (orientation:portrait) {
         .le-weather-content {
           padding-top:calc(env(safe-area-inset-top) + 0px);
@@ -104,8 +104,28 @@
         }
         .le-weather-date-row { margin-top:clamp(12px,1.5dvh,15px); }
         .le-weather-dashboard {
+          grid-template-areas:"headline" "scene" "summary" "studio" "hours";
           margin-top:clamp(6px,.75dvh,7px);
           row-gap:clamp(5px,.7dvh,6px);
+        }
+        .le-weather-hero { display:contents; }
+        .le-weather-headline {
+          grid-area:headline;
+          position:relative;
+          z-index:3;
+          margin:0;
+        }
+        .le-weather-temperature-row {
+          grid-area:scene;
+          position:relative;
+          z-index:3;
+          align-self:start;
+          justify-self:start;
+          width:min(100%,60dvh);
+          max-width:100%;
+          justify-self:center;
+          margin:8px 0 0;
+          pointer-events:none;
         }
         .le-weather-art-stage {
           position:relative;
@@ -122,9 +142,9 @@
           position:absolute;
           top:50%;
           left:50%;
-          width:min(100%,45dvh);
+          width:min(100%,60dvh);
           height:auto;
-          aspect-ratio:3 / 1;
+          aspect-ratio:4 / 1;
           transform:translate(-50%,-50%);
         }
         .le-weather-summary { padding:8px 0; }
@@ -152,9 +172,9 @@
           top:50%;
           left:50%;
           display:block;
-          width:min(100%,45dvh);
+          width:min(100%,60dvh);
           height:auto;
-          aspect-ratio:3 / 1;
+          aspect-ratio:4 / 1;
           max-width:100%;
           min-height:0;
           transform:translate(-50%,-50%);
