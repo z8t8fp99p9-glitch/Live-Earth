@@ -11,10 +11,10 @@ assert.ok(source.includes("window.removeEventListener('live-earth-location-state
 assert.ok(source.includes("window.removeEventListener('offline', onOffline)"));
 assert.ok(source.includes('screen.dataset.weather = state.weather'));
 assert.ok(source.includes('screen.dataset.phase = state.phase'));
-assert.ok(source.includes("const rainLayer = screen.querySelector('.le-weather-rain')"));
 assert.ok(source.includes("createParticles(rainLayer, 'rain'"));
 assert.ok(source.includes("createParticles(snowLayer, 'snow'"));
+assert.ok(source.includes('renderWindLeaves(screen, current.wind_speed_10m, current.wind_direction_10m)'));
 assert.ok(source.includes('REFRESH_MS = 15 * 60 * 1000'));
-assert.ok(source.includes('document.removeEventListener(\'visibilitychange\', onVisibility)'));
+assert.ok(source.includes("document.removeEventListener('visibilitychange', onVisibility)"));
 assert.ok(!source.includes('navigator.geolocation'));
-console.log('Weather lifecycle, Location privacy, online/offline refresh and cleanup checks passed.');
+console.log('Weather lifecycle, Location privacy, online/offline refresh, wind response and cleanup checks passed.');

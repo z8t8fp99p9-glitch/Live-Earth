@@ -39,44 +39,58 @@
         background:#10282b; pointer-events:auto; isolation:isolate;
       }
       .le-weather-screen::-webkit-scrollbar{display:none}
-      .le-weather-art{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none;background:linear-gradient(180deg,#12363b,#183c3c 53%,#09282a)}
-      .le-weather-art svg{display:block;width:100%;height:100%;min-height:100%;object-fit:cover}
-      .le-weather-art-wash{position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,24,28,.34) 0%,rgba(5,25,29,.12) 27%,rgba(5,25,28,.26) 57%,rgba(4,22,24,.75) 100%),linear-gradient(90deg,rgba(4,24,27,.60),transparent 78%);transition:background 1.4s ease}
-      .le-weather-sun-disk{fill:var(--le-art-sun,#c9473d);opacity:.9;transition:fill 1.3s ease,opacity 1.3s ease}
-      .le-weather-moon-disk{fill:#e6e7df;opacity:0;transition:opacity 1.2s ease}
-      .le-weather-maple{fill:var(--le-art-maple,#c8443b);stroke:#671e24;stroke-width:.8;stroke-linejoin:round;transition:fill 1.2s ease}
-      .le-weather-ink-ridge{fill:var(--le-art-ridge,#263f3d);transition:fill 1.2s ease}
-      .le-weather-pagoda{fill:var(--le-art-building,#142b2d);stroke:var(--le-art-line,#d7d2c2);stroke-width:1.1;stroke-linejoin:round;transition:fill 1.2s ease,stroke 1.2s ease}
-      .le-weather-water{fill:var(--le-art-water,#244c4a);transition:fill 1.2s ease}
-      .le-weather-rain,.le-weather-snow{position:absolute;inset:0;overflow:hidden;opacity:0;transition:opacity .8s ease}
+      .le-weather-art-fallback{background:linear-gradient(160deg,#12343a,#466a69 52%,#0b292c)}
+      .le-weather-art{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:#102c30}
+      .le-weather-art-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:54% 48%;transform:scale(1.015);filter:saturate(.92) contrast(1.08) brightness(.78);transition:filter 1.5s ease,transform 8s ease;will-change:filter}
+      .le-weather-art-wash{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(3,19,23,.24) 0%,rgba(3,19,23,.10) 28%,rgba(3,18,22,.28) 57%,rgba(2,14,18,.72) 100%),linear-gradient(90deg,rgba(2,18,22,.62) 0%,rgba(2,18,22,.20) 56%,rgba(2,18,22,.02) 100%);transition:background 1.4s ease}
+      .le-weather-art-light{position:absolute;inset:-8%;z-index:1;pointer-events:none;background:radial-gradient(ellipse at 72% 27%,rgba(255,226,177,.22),transparent 38%);opacity:.7;transition:opacity 1.5s ease,background 1.5s ease}
+      .le-weather-rain,.le-weather-snow{position:absolute;inset:0;z-index:3;overflow:hidden;opacity:0;transition:opacity .8s ease}
       .le-weather-particle{position:absolute;top:-12%;left:var(--particle-x);pointer-events:none;will-change:transform;animation:le-weather-fall var(--particle-duration,1.6s) linear var(--particle-delay,0s) infinite}
-      .le-weather-rain .le-weather-particle{width:1.2px;height:clamp(13px,3vh,23px);border-radius:2px;background:linear-gradient(180deg,transparent,#e7f6f3c9);transform:rotate(13deg)}
+      .le-weather-rain .le-weather-particle{width:1.25px;height:clamp(15px,3.6vh,28px);border-radius:2px;background:linear-gradient(180deg,transparent,#e7f6f3d8);transform:rotate(13deg);filter:drop-shadow(0 0 2px #d9f4f2aa)}
       .le-weather-snow .le-weather-particle{width:var(--particle-size,4px);height:var(--particle-size,4px);border-radius:50%;background:#f8fbf6;box-shadow:0 0 7px #fff9;animation-name:le-weather-snow-fall;animation-duration:var(--particle-duration,5s)}
-      .le-weather-fog{position:absolute;inset:42% -14% 0;opacity:0;pointer-events:none;background:linear-gradient(180deg,transparent 0%,rgba(222,233,226,.05) 18%,rgba(215,227,219,.36) 58%,rgba(215,227,219,.14) 100%);filter:blur(13px);transition:opacity 1.2s ease}
-      .le-weather-lightning{position:absolute;inset:0;opacity:0;background:rgba(230,243,247,.72);mix-blend-mode:screen;pointer-events:none}
-      .le-weather-screen[data-weather="rain"],.le-weather-screen[data-weather="storm"]{--le-art-sun:#bd4941;--le-art-maple:#a93637;--le-art-ridge:#233d3d;--le-art-building:#112a2c;--le-art-water:#163f41}
-      .le-weather-screen[data-weather="snow"]{--le-art-sun:#d5d4c8;--le-art-maple:#8e4550;--le-art-ridge:#7c9293;--le-art-building:#344b50;--le-art-water:#819b9c}
-      .le-weather-screen[data-weather="fog"]{--le-art-sun:#c8c9bd;--le-art-maple:#98605a;--le-art-ridge:#718783;--le-art-building:#334b4a;--le-art-water:#5d7d79}
-      .le-weather-screen[data-weather="cloudy"]{--le-art-sun:#c3bca9;--le-art-maple:#ab5047;--le-art-ridge:#425b54;--le-art-building:#1b3938;--le-art-water:#315a55}
-      .le-weather-screen[data-weather="hot"]{--le-art-sun:#d69a57;--le-art-maple:#b84e37;--le-art-ridge:#66594b;--le-art-building:#493c34;--le-art-water:#536d63}
-      .le-weather-screen[data-phase="night"]{--le-art-sun:#d7d3bd;--le-art-maple:#7c3945;--le-art-ridge:#182b32;--le-art-building:#101d27;--le-art-water:#102b35}
-      .le-weather-screen[data-phase="night"] .le-weather-sun-disk{opacity:0}
-      .le-weather-screen[data-phase="night"] .le-weather-moon-disk{opacity:.92}
+      .le-weather-fog{position:absolute;inset:35% -14% 0;z-index:2;opacity:0;pointer-events:none;background:linear-gradient(180deg,transparent 0%,rgba(222,233,226,.05) 18%,rgba(215,227,219,.38) 58%,rgba(215,227,219,.17) 100%);filter:blur(13px);transition:opacity 1.2s ease}
+      .le-weather-lightning{position:absolute;inset:0;z-index:4;opacity:0;background:rgba(230,243,247,.72);mix-blend-mode:screen;pointer-events:none}
+      .le-weather-ripples{position:absolute;inset:56% 0 0;z-index:2;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .8s ease}
+      .le-weather-ripple{position:absolute;left:var(--ripple-x);top:var(--ripple-y);width:var(--ripple-size);aspect-ratio:1;border:1px solid rgba(224,245,239,.42);border-radius:50%;transform:scale(.15);opacity:0;animation:le-weather-ripple 3.4s ease-out var(--ripple-delay) infinite}
+      .le-weather-dew-drops{position:absolute;inset:0;z-index:3;pointer-events:none;opacity:0;transition:opacity .7s ease}
+      .le-weather-dew-drop{position:absolute;top:var(--drop-y);left:var(--drop-x);width:4px;height:7px;border-radius:65% 35% 65% 35%;transform:rotate(35deg);background:linear-gradient(145deg,#f5ffffcc,#9bc8d588 62%,#e9ffffaa);box-shadow:0 0 5px #d9f7ff88}
+      .le-weather-leaf-motion{position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none}
+      .le-weather-live-leaf{position:absolute;left:var(--leaf-x);top:var(--leaf-y);width:var(--leaf-size);height:auto;opacity:var(--leaf-opacity,.62);filter:drop-shadow(0 2px 5px #061a1c66);transform-origin:70% 50%;animation:le-weather-leaf-drift var(--leaf-duration,12s) ease-in-out var(--leaf-delay,0s) infinite alternate}
+      .le-weather-live-leaf path{fill:#b83a35;stroke:#5e2428;stroke-width:1.1;stroke-linejoin:round}
+      .le-weather-live-leaf line{stroke:#ed8d74;stroke-width:1;opacity:.7}
+      .le-weather-screen[data-weather="clear"] .le-weather-art-image{filter:saturate(1.08) contrast(1.03) brightness(.98)}
+      .le-weather-screen[data-weather="cloudy"] .le-weather-art-image{filter:saturate(.78) contrast(1.04) brightness(.84)}
+      .le-weather-screen[data-weather="rain"] .le-weather-art-image{filter:saturate(.88) contrast(1.10) brightness(.72)}
+      .le-weather-screen[data-weather="storm"] .le-weather-art-image{filter:saturate(.72) contrast(1.16) brightness(.58)}
+      .le-weather-screen[data-weather="snow"] .le-weather-art-image{filter:saturate(.48) contrast(1.02) brightness(1.04)}
+      .le-weather-screen[data-weather="fog"] .le-weather-art-image{filter:saturate(.62) contrast(.94) brightness(.94)}
+      .le-weather-screen[data-weather="hot"] .le-weather-art-image{filter:saturate(1.18) contrast(1.02) brightness(1.08)}
+      .le-weather-screen[data-phase="dawn"] .le-weather-art-light{background:radial-gradient(ellipse at 68% 38%,rgba(255,188,135,.30),transparent 44%);opacity:.95}
+      .le-weather-screen[data-phase="evening"] .le-weather-art-light{background:radial-gradient(ellipse at 74% 35%,rgba(255,140,100,.25),transparent 46%);opacity:.9}
+      .le-weather-screen[data-phase="night"] .le-weather-art-image{filter:saturate(.65) brightness(.48) contrast(1.08)}
+      .le-weather-screen[data-phase="night"] .le-weather-art-light{background:radial-gradient(ellipse at 76% 34%,rgba(137,171,220,.16),transparent 42%);opacity:.72}
       .le-weather-screen[data-weather="rain"] .le-weather-rain,.le-weather-screen[data-weather="storm"] .le-weather-rain{opacity:var(--le-rain-opacity,.65)}
       .le-weather-screen[data-weather="snow"] .le-weather-snow{opacity:var(--le-snow-opacity,.72)}
       .le-weather-screen[data-weather="fog"] .le-weather-fog{opacity:.92}
+      .le-weather-screen[data-weather="rain"] .le-weather-ripples,.le-weather-screen[data-weather="storm"] .le-weather-ripples{opacity:var(--le-rain-opacity,.65)}
+      .le-weather-screen[data-weather="rain"] .le-weather-dew-drops,.le-weather-screen[data-weather="storm"] .le-weather-dew-drops{opacity:.92}
       .le-weather-screen[data-weather="storm"] .le-weather-lightning{animation:le-weather-flash 11s linear infinite}
-      .le-weather-screen[data-weather="rain"] .le-weather-art-wash,.le-weather-screen[data-weather="storm"] .le-weather-art-wash{background:linear-gradient(180deg,rgba(4,18,25,.52),rgba(6,23,29,.26) 35%,rgba(3,17,23,.76) 100%),linear-gradient(90deg,rgba(3,17,23,.69),transparent 84%)}
+      .le-weather-screen[data-weather="rain"] .le-weather-art-wash,.le-weather-screen[data-weather="storm"] .le-weather-art-wash{background:linear-gradient(180deg,rgba(4,18,25,.48),rgba(6,23,29,.22) 35%,rgba(3,17,23,.74) 100%),linear-gradient(90deg,rgba(3,17,23,.66),transparent 84%)}
       .le-weather-screen[data-phase="dawn"] .le-weather-art-wash{background:linear-gradient(180deg,rgba(26,39,43,.14),rgba(30,34,35,.04) 38%,rgba(4,22,25,.72) 100%),linear-gradient(90deg,rgba(5,22,25,.36),transparent 80%)}
       .le-weather-screen[data-phase="evening"] .le-weather-art-wash{background:linear-gradient(180deg,rgba(38,23,35,.30),rgba(20,24,32,.14) 38%,rgba(4,20,24,.80) 100%),linear-gradient(90deg,rgba(5,20,26,.42),transparent 84%)}
       .le-weather-screen[data-phase="night"] .le-weather-art-wash{background:linear-gradient(180deg,rgba(3,9,24,.54),rgba(4,15,29,.25) 38%,rgba(2,10,21,.86) 100%),linear-gradient(90deg,rgba(3,11,22,.58),transparent 82%)}
-      .le-weather-content{position:relative;z-index:2;width:min(100%,760px);margin:0 auto;padding:calc(env(safe-area-inset-top) + 18px) clamp(20px,5.2vw,36px) calc(env(safe-area-inset-bottom) + 118px)}
+      .le-weather-content{position:relative;z-index:2;width:min(100%,760px);margin:0 auto;padding:calc(env(safe-area-inset-top) + 18px) clamp(20px,5.2vw,36px) calc(env(safe-area-inset-bottom) + 192px)}
       .le-weather-topbar{display:flex;justify-content:space-between;align-items:center;gap:14px;min-height:34px;text-shadow:0 2px 16px #061b1d99}
       .le-weather-brand{font-size:12px;font-weight:780;letter-spacing:.19em;white-space:nowrap}
       .le-weather-brand span{font-weight:400;opacity:.78}
       .le-weather-location{display:flex;align-items:center;gap:7px;color:#e9efea;font-size:11px;letter-spacing:.035em;min-width:0}
       .le-weather-location svg{width:13px;height:16px;flex:0 0 auto;opacity:.9}
-      .le-weather-date{margin-top:40px;color:#e4e9e3;font-size:9px;font-weight:700;letter-spacing:.25em;text-transform:uppercase;text-shadow:0 2px 18px #061a1d}
+      .le-weather-date-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:40px}
+      .le-weather-date{color:#e4e9e3;font-size:9px;font-weight:700;letter-spacing:.25em;text-transform:uppercase;text-shadow:0 2px 18px #061a1d}
+      .le-weather-art-mark{width:36px;height:36px;flex:0 0 auto;opacity:.78;filter:drop-shadow(0 2px 9px #061a1d99)}
+      .le-weather-art-mark circle{fill:none;stroke:#d45b4d;stroke-width:1.3}
+      .le-weather-art-mark path{fill:none;stroke:#e8e3d5;stroke-width:1.1;stroke-linecap:round;stroke-linejoin:round}
+      .le-weather-art-mark .mark-leaf{fill:#bd4a40;stroke:none}
       .le-weather-hero{position:relative;margin-top:15px;max-width:540px;text-shadow:0 3px 22px rgba(0,15,20,.42)}
       .le-weather-headline{margin:0;max-width:520px;font-family:Georgia,"Times New Roman",serif;font-size:clamp(44px,12vw,76px);font-weight:400;line-height:.91;letter-spacing:-.055em;text-wrap:balance}
       .le-weather-headline em{font-weight:400;color:#fff;font-style:italic}
@@ -118,9 +132,12 @@
       @keyframes le-weather-fall{to{transform:translate3d(var(--particle-drift,12px),112vh,0)}}
       @keyframes le-weather-snow-fall{0%{transform:translate3d(0,-8vh,0)}50%{transform:translate3d(var(--particle-drift,14px),50vh,0)}100%{transform:translate3d(calc(var(--particle-drift,14px) * -1),112vh,0)}}
       @keyframes le-weather-flash{0%,91%,94%,100%{opacity:0}92%{opacity:.16}92.6%{opacity:0}93.2%{opacity:.10}}
-      @media(min-width:700px){.le-weather-content{padding-top:32px;padding-bottom:34px}.le-weather-date{margin-top:52px}.le-weather-headline{font-size:clamp(68px,8vw,104px)}.le-weather-temperature{font-size:136px}.le-weather-data-strip{max-width:680px}.le-weather-hourly{grid-auto-columns:minmax(68px,1fr)}.le-weather-metrics{max-width:680px}}
-      @media(max-width:390px){.le-weather-content{padding-left:17px;padding-right:17px}.le-weather-date{margin-top:31px}.le-weather-data-strip{padding:13px 4px}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:7px;letter-spacing:.09em}.le-weather-stat-value{font-size:12px}.le-weather-headline{font-size:clamp(41px,11.5vw,54px)}.le-weather-poetry{font-size:14px}.le-weather-metric{padding:10px 8px}}
-      @media(orientation:landscape) and (max-height:520px){.le-weather-content{padding-top:calc(env(safe-area-inset-top) + 12px);padding-bottom:calc(env(safe-area-inset-bottom) + 105px)}.le-weather-date{margin-top:18px}.le-weather-headline{font-size:42px}.le-weather-temperature{font-size:72px}.le-weather-data-strip{margin-top:15px}.le-weather-section-head{margin-top:16px}}
+      @keyframes le-weather-ripple{0%{transform:scale(.18);opacity:.72}100%{transform:scale(1);opacity:0}}
+      @keyframes le-weather-leaf-drift{0%{transform:translate3d(0,0,0) rotate(-4deg)}100%{transform:translate3d(var(--leaf-drift,18px),var(--leaf-rise,-5px),0) rotate(8deg)}}
+      @keyframes le-weather-drop-release{0%{transform:translateY(0) scale(.9);opacity:.9}70%{opacity:.8}100%{transform:translateY(20px) scale(.72);opacity:0}}
+      @media(min-width:700px){.le-weather-content{padding-top:32px;padding-bottom:150px}.le-weather-date-row{margin-top:52px}.le-weather-headline{font-size:clamp(68px,8vw,104px)}.le-weather-temperature{font-size:136px}.le-weather-data-strip{max-width:680px}.le-weather-hourly{grid-auto-columns:minmax(68px,1fr)}.le-weather-metrics{max-width:680px}}
+      @media(max-width:390px){.le-weather-content{padding-left:17px;padding-right:17px}.le-weather-date-row{margin-top:31px}.le-weather-data-strip{padding:13px 4px}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:7px;letter-spacing:.09em}.le-weather-stat-value{font-size:12px}.le-weather-headline{font-size:clamp(41px,11.5vw,54px)}.le-weather-poetry{font-size:14px}.le-weather-metric{padding:10px 8px}}
+      @media(orientation:landscape) and (max-height:520px){.le-weather-content{padding-top:calc(env(safe-area-inset-top) + 12px);padding-bottom:calc(env(safe-area-inset-bottom) + 105px)}.le-weather-date-row{margin-top:18px}.le-weather-headline{font-size:42px}.le-weather-temperature{font-size:72px}.le-weather-data-strip{margin-top:15px}.le-weather-section-head{margin-top:16px}}
       @media(prefers-reduced-motion:reduce){.le-weather-screen *,.le-weather-screen *:before,.le-weather-screen *:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
       @media(prefers-reduced-transparency:reduce){.le-weather-data-strip,.le-weather-metric{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(7,25,28,.92)}}
     `;
@@ -131,56 +148,30 @@
     const art = el('div', 'le-weather-art');
     art.setAttribute('aria-hidden', 'true');
     art.innerHTML = `
-      <svg viewBox="0 0 430 820" preserveAspectRatio="xMidYMid slice" role="presentation">
-        <defs>
-          <linearGradient id="le-weather-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#35545a"/><stop offset=".48" stop-color="#94aaa3"/><stop offset="1" stop-color="#d3d0bd"/></linearGradient>
-          <linearGradient id="le-weather-water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#527c78"/><stop offset=".42" stop-color="#244f50"/><stop offset="1" stop-color="#102d31"/></linearGradient>
-          <linearGradient id="le-weather-mist" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e6e4d7" stop-opacity="0"/><stop offset=".48" stop-color="#e6e4d7" stop-opacity=".64"/><stop offset="1" stop-color="#e6e4d7" stop-opacity="0"/></linearGradient>
-          <linearGradient id="le-weather-ink" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#243c3b"/><stop offset="1" stop-color="#0e292d"/></linearGradient>
-          <pattern id="le-weather-paper-grain" width="19" height="19" patternUnits="userSpaceOnUse"><path d="M2 5l3-.4M11 14l2-.3M16 3l1.4-.2" stroke="#f2ead9" stroke-opacity=".10" stroke-width=".7"/></pattern>
-        </defs>
-        <rect width="430" height="820" fill="url(#le-weather-sky)"/>
-        <circle class="le-weather-sun-disk" cx="336" cy="190" r="61"/>
-        <circle class="le-weather-moon-disk" cx="336" cy="190" r="42"/>
-        <g opacity=".24" fill="none" stroke="#f4f0e4" stroke-width="1.2"><path d="M280 189c24-7 43-7 70-1M297 202c20-5 36-5 57-1M315 174c16-3 28-2 39 1"/></g>
-        <path class="le-weather-ink-ridge" opacity=".38" d="M0 370L42 316 74 336 111 272 148 326 183 245 215 305 259 247 292 301 333 228 371 295 430 251V540H0Z"/>
-        <path class="le-weather-ink-ridge" opacity=".72" d="M0 426L51 372 91 398 142 325 174 366 219 300 258 356 303 314 341 363 389 315 430 350V564H0Z"/>
-        <path d="M0 462c56-25 99-14 144-32 49-21 84-4 123-16 63-21 105-4 163-25v172H0Z" fill="#bac3b4" opacity=".28"/>
-        <path d="M0 493c53-17 107-12 151-21 48-9 98-3 139-18 55-20 92-5 140-24v109H0Z" fill="url(#le-weather-mist)" opacity=".72"/>
-        <g class="le-weather-pagoda" transform="translate(294 366)">
-          <path d="M55 20L84 4 112 20 106 25H62Z"/><path d="M60 24H107V31H60Z"/>
-          <path d="M70 31V76H98V31" fill="none" stroke-width="3"/><path d="M63 77H105V83H63Z"/>
-          <path d="M42 84L84 64 127 84 119 90H51Z"/><path d="M48 90H120V96H48Z"/>
-          <path d="M58 96V143H110V96" fill="none" stroke-width="3.2"/><path d="M50 143H119V150H50Z"/>
-          <path d="M28 153L84 128 141 153 133 160H36Z"/><path d="M36 160H134V168H36Z"/>
-          <path d="M72 168V204H96V168" fill="none" stroke-width="3"/><path d="M65 205H103V212H65Z"/>
-          <path d="M84 4V-10M79-7H89" fill="none" stroke-width="2"/>
-          <g fill="#e6b47a" stroke="none" opacity=".9"><rect x="72" y="108" width="8" height="19" rx="2"/><rect x="91" y="108" width="8" height="19" rx="2"/><rect x="76" y="43" width="6" height="17" rx="2"/><rect x="91" y="43" width="6" height="17" rx="2"/></g>
-        </g>
-        <g class="le-weather-ink-ridge" opacity=".9">
-          <path d="M0 500q34-34 67-5 28-46 61-12 32-43 62-9 37-42 73-8 34-39 71-6 33-39 69-7v165H0Z"/>
-          <path d="M0 538q34-20 74 1 32-27 65 0 39-30 77 0 40-24 77 2 44-27 84 0 28-16 53-3v126H0Z" fill="#183b3a"/>
-        </g>
-        <g fill="none" stroke="#d4d1be" stroke-width="2" stroke-linecap="round" opacity=".30"><path d="M18 470q44-14 88-2t91-5 102 1 111-9"/><path d="M31 486q40-11 78-4t77-2 78 2 126-8"/><path d="M0 516q49-10 95-3t95 0 93-4 147-5"/></g>
-        <rect y="553" width="430" height="267" fill="url(#le-weather-water)"/>
-        <path d="M0 556q66 13 127 0t125 0 178-1" fill="none" stroke="#d0d4c2" stroke-opacity=".45" stroke-width="2"/>
-        <g fill="none" stroke="#b6c9bc" stroke-linecap="round" opacity=".34"><path d="M0 588q59 8 114 0t106 1 104-2 106 0"/><path d="M25 621q52 7 103 1t105-1 92 2 90-2"/><path d="M0 671q61-7 125 2t123-1 182-2"/><path d="M30 733q70-7 131 2t124-2 139 0"/></g>
-        <g fill="none" stroke="#e2d9c6" stroke-width="1.5" opacity=".38"><ellipse cx="91" cy="628" rx="23" ry="4"/><ellipse cx="91" cy="628" rx="39" ry="7"/><ellipse cx="333" cy="689" rx="27" ry="5"/><ellipse cx="333" cy="689" rx="43" ry="9"/><ellipse cx="219" cy="765" rx="32" ry="6"/></g>
-        <g class="le-weather-maple">
-          <path d="M345 0c-9 32-21 52-39 75-15-15-30-19-47-17 7 13 17 20 33 25-23 5-39 17-51 33 21 1 39-4 55-17-5 21-2 40 10 57 9-20 11-38 7-57 16 16 35 23 57 22-11-17-27-29-48-34 21-7 34-20 41-39-20 2-37 9-51 24 5-26 14-49 33-72Z"/>
-          <path d="M420 46c-13 28-26 46-44 63-13-12-26-15-41-12 7 11 16 16 30 19-20 5-34 15-44 28 18 1 33-3 47-14-4 18-1 34 9 48 8-17 10-32 7-48 14 14 30 20 49 19-10-15-23-25-42-29 18-6 29-17 35-33-17 2-31 8-44 21 5-21 14-41 38-62Z"/>
-          <path d="M304 35q28 36 68 67M367 70q-16 19-24 40" fill="none" stroke="#67313a" stroke-width="2"/>
-        </g>
-        <g class="le-weather-maple" opacity=".74" transform="translate(0 280) scale(.54)"><path d="M55 0c-6 24-15 39-29 57C14 46 2 43-11 46-5 56 3 62 16 65-2 70-15 80-24 92-8 93 6 89 18 79 14 96 17 111 26 124 33 109 35 95 32 80 44 92 59 98 76 97 67 84 55 75 40 72 56 67 68 57 74 43 58 45 44 51 34 64 39 43 48 25 55 0Z"/></g>
-        <g fill="none" stroke="#e8e0cf" stroke-width="1.3" opacity=".28"><path d="M45 352q18-33 37-42M84 310q21 15 39 41M365 295q16-19 29-44M383 276q20 7 32 26"/></g>
-        <rect width="430" height="820" fill="url(#le-weather-paper-grain)" opacity=".75"/>
-      </svg>
+      <img class="le-weather-art-image" src="./Weather/Assets/weather-scene.webp" alt="" decoding="async" fetchpriority="high">
       <div class="le-weather-art-wash"></div>
+      <div class="le-weather-art-light"></div>
+      <div class="le-weather-leaf-motion"></div>
+      <div class="le-weather-dew-drops">
+        <span class="le-weather-dew-drop" style="--drop-x:77%;--drop-y:22%"></span>
+        <span class="le-weather-dew-drop" style="--drop-x:83%;--drop-y:28%"></span>
+        <span class="le-weather-dew-drop" style="--drop-x:89%;--drop-y:19%"></span>
+        <span class="le-weather-dew-drop" style="--drop-x:71%;--drop-y:31%"></span>
+      </div>
+      <div class="le-weather-ripples">
+        <span class="le-weather-ripple" style="--ripple-x:12%;--ripple-y:35%;--ripple-size:42px;--ripple-delay:-.8s"></span>
+        <span class="le-weather-ripple" style="--ripple-x:48%;--ripple-y:66%;--ripple-size:66px;--ripple-delay:-2.1s"></span>
+        <span class="le-weather-ripple" style="--ripple-x:83%;--ripple-y:43%;--ripple-size:50px;--ripple-delay:-1.4s"></span>
+      </div>
       <div class="le-weather-fog"></div>
       <div class="le-weather-rain"></div>
       <div class="le-weather-snow"></div>
       <div class="le-weather-lightning"></div>
     `;
+    const image = art.querySelector('.le-weather-art-image');
+    image?.addEventListener('error', () => {
+      art.classList.add('le-weather-art-fallback');
+    }, { once: true });
     return art;
   }
 
@@ -313,6 +304,31 @@
       layer.appendChild(particle);
     }
   }
+  function renderWindLeaves(screen, windSpeed, windDirection) {
+    const layer = screen.querySelector('.le-weather-leaf-motion');
+    if (!layer) return;
+    layer.replaceChildren();
+    const speed = Math.max(0, number(windSpeed) ?? 0);
+    if (speed < 5 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const count = Math.min(4, Math.max(1, Math.ceil(speed / 12)));
+    const direction = number(windDirection) ?? 270;
+    const drift = Math.max(-34, Math.min(34, -Math.sin(direction * Math.PI / 180) * (8 + speed * .72)));
+    for (let index = 0; index < count; index++) {
+      const leaf = el('span', 'le-weather-live-leaf');
+      const x = 63 + ((index * 17) % 28);
+      const y = 13 + ((index * 19) % 34);
+      leaf.style.setProperty('--leaf-x', `${x}%`);
+      leaf.style.setProperty('--leaf-y', `${y}%`);
+      leaf.style.setProperty('--leaf-size', `${15 + ((index * 7) % 13)}px`);
+      leaf.style.setProperty('--leaf-duration', `${Math.max(4.5, 16 - speed * .35 + index * .8)}s`);
+      leaf.style.setProperty('--leaf-delay', `${-index * 1.7}s`);
+      leaf.style.setProperty('--leaf-drift', `${Math.round(drift + (index % 2 ? 8 : -7))}px`);
+      leaf.style.setProperty('--leaf-rise', `${index % 2 ? -7 : 5}px`);
+      leaf.innerHTML = '<svg viewBox="0 0 64 42" aria-hidden="true"><path d="M3 21C13 17 17 8 23 2c2 8 7 11 12 10 0-5 3-8 8-11-1 7 2 11 7 13 4-2 8-2 11 0-7 4-9 8-8 13-7-2-12 0-15 6-5-7-10-8-16-6-2 5-6 8-13 10 2-8 0-12-6-16Z"/><line x1="5" y1="21" x2="58" y2="21"/><line x1="23" y1="21" x2="28" y2="6"/><line x1="36" y1="21" x2="48" y2="12"/><line x1="41" y1="21" x2="43" y2="34"/></svg>';
+      layer.appendChild(leaf);
+    }
+  }
+
   function iconMarkup(kind) {
     const common = 'fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
     const paths = {
@@ -337,7 +353,10 @@
           <div class="le-weather-brand">LIVE <span>//</span> EARTH</div>
           <div class="le-weather-location"><svg viewBox="0 0 18 22" fill="none" aria-hidden="true"><path d="M9 20s7-7 7-12a7 7 0 1 0-14 0c0 5 7 12 7 12Z" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="8" r="2.2" stroke="currentColor" stroke-width="1.5"/></svg><span id="le-weather-place">YOUR LOCATION</span></div>
         </header>
-        <div class="le-weather-date" id="le-weather-date">LOCAL CONDITIONS</div>
+        <div class="le-weather-date-row">
+          <div class="le-weather-date" id="le-weather-date">LOCAL CONDITIONS</div>
+          <svg class="le-weather-art-mark" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="15.5"/><path d="M9 27c8-5 12-11 17-20M16 22c-2-4-5-6-8-6m13-1c3 0 6 1 9 4m-13 7c2 2 3 4 3 7"/><path class="mark-leaf" d="M8 15c4-1 7 1 8 5-4 1-7-1-8-5Zm13-2c1-4 4-6 8-6 0 4-3 7-8 6Zm3 10c3-3 7-3 10-1-2 4-6 5-10 1Z"/></svg>
+        </div>
         <section class="le-weather-hero" aria-label="Current weather">
           <h1 class="le-weather-headline" id="le-weather-headline">A quiet day<br><em>under open skies.</em></h1>
           <div class="le-weather-temperature-row">
@@ -454,8 +473,10 @@
     });
     screen.dataset.weather = state.weather;
     screen.dataset.phase = state.phase;
-    screen.style.setProperty('--le-rain-opacity', String(Math.min(.88, .35 + (number(current.precipitation) ?? 0) * .16)));
-    screen.style.setProperty('--le-snow-opacity', String(Math.min(.82, .38 + (number(current.snowfall) ?? 0) * .28)));
+    const rainAmount = Math.max(number(current.precipitation) ?? 0, number(current.rain) ?? 0, number(current.showers) ?? 0);
+    screen.style.setProperty('--le-rain-opacity', String(Math.min(.94, .28 + rainAmount * .22)));
+    screen.style.setProperty('--le-snow-opacity', String(Math.min(.86, .32 + (number(current.snowfall) ?? 0) * .30)));
+    renderWindLeaves(screen, current.wind_speed_10m, current.wind_direction_10m);
     const rainLayer = screen.querySelector('.le-weather-rain');
     const snowLayer = screen.querySelector('.le-weather-snow');
     createParticles(rainLayer, 'rain', { precipitation: current.precipitation, windDirection: current.wind_direction_10m });
