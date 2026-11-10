@@ -1,8 +1,7 @@
-/* LIVE // EARTH — Weather foundation, rebuilt cleanly.
-   Visible scene scope for this stage: continuous terrain, low mountain forms,
-   and one naturally winding river. No forecast UI, location reads, clouds,
-   vegetation, decorative props, ocean, or weather effects are created here.
-   The existing shared Stacks runtime and Global three-Orb dock remain the host. */
+/* LIVE // EARTH — Living Weather Background
+   A single illustrated landscape that changes atmosphere with fresh local weather.
+   No 3D scene, no terrain meshes, no weather dashboard or text controls.
+   The shared Global Orb dock remains owned by the app shell. */
 (() => {
   'use strict';
 
@@ -12,475 +11,379 @@
     return;
   }
 
-  const { mount, el } = runtime;
-  const WEATHER_SCRIPT_URL = document.currentScript?.src || new URL('./Weather/weather-view.js', document.baseURI).href;
-  const THREE_MODULE_URL = new URL('../vendor/three.module.js', WEATHER_SCRIPT_URL).href;
-  const STYLE_ID = 'le-weather-foundation-style';
-  const LEGACY_STYLE_ID = 'le-weather-living-topography-style';
+  const { mount, el, globe } = runtime;
+  const STYLE_ID = 'le-weather-immersive-background-style';
+  const SCRIPT_ID = 'le-weather-background-stage';
+  const API_ROOT = 'https://api.open-meteo.com/v1/forecast';
 
   function installStyles() {
-    document.getElementById(LEGACY_STYLE_ID)?.remove();
     document.getElementById(STYLE_ID)?.remove();
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
       .le-sfv--weather {
-        position: absolute !important;
-        inset: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        max-width: none !important;
-        overflow: hidden !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        border: 0 !important;
-        border-radius: 0 !important;
-        background: #91bdc9 !important;
-        isolation: isolate;
-        pointer-events: none;
+        position:absolute!important; inset:0!important;
+        width:100%!important; height:100%!important;
+        max-width:none!important; overflow:hidden!important;
+        padding:0!important; margin:0!important; border:0!important;
+        border-radius:0!important; background:#9bbbc9!important;
+        isolation:isolate; pointer-events:none;
       }
-      .le-sfv--weather > .le-weather-foundation-stage {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background: linear-gradient(180deg, #91bdc9 0%, #a8cbd0 48%, #789b83 100%);
+      .le-sfv--weather > .le-weather-immersive {
+        position:absolute; inset:0; width:100%; height:100%;
+        overflow:hidden; isolation:isolate;
+        background:linear-gradient(180deg,#8ec4e6 0%,#c4e0e7 53%,#e6d7c5 100%);
+        transition:background 1.8s ease;
       }
-      .le-sfv--weather .le-weather-foundation-canvas {
-        position: absolute;
-        inset: 0;
-        display: block;
-        width: 100%;
-        height: 100%;
-        outline: none;
+      .le-weather-immersive svg {
+        position:absolute; inset:0; width:100%; height:100%;
+        display:block; overflow:hidden;
+      }
+      .le-weather-immersive .le-weather-sky-art {
+        z-index:0; pointer-events:none;
+      }
+      .le-weather-immersive .le-weather-land-art {
+        z-index:1; pointer-events:none;
+      }
+      .le-weather-immersive .le-weather-wide-art { display:none; }
+      @media (orientation: landscape) {
+        .le-weather-immersive .le-weather-portrait-art { display:none; }
+        .le-weather-immersive .le-weather-wide-art { display:block; }
+      }
+      .le-weather-immersive .le-weather-atmosphere {
+        z-index:2; pointer-events:none; opacity:0;
+        transition:opacity 1.2s ease;
+      }
+      .le-weather-immersive .le-weather-sun,
+      .le-weather-immersive .le-weather-moon,
+      .le-weather-immersive .le-weather-clouds,
+      .le-weather-immersive .le-weather-stars { transition:opacity 1.4s ease; }
+      .le-weather-immersive .le-weather-sun { opacity:1; }
+      .le-weather-immersive .le-weather-moon,
+      .le-weather-immersive .le-weather-stars { opacity:0; }
+      .le-weather-immersive .le-weather-clouds { opacity:0; }
+      .le-weather-immersive .le-weather-cloud { fill:#fffdf7; }
+      .le-weather-immersive .le-weather-land-tint { opacity:0; transition:opacity 1.4s ease; }
+      .le-weather-immersive[data-condition="neutral"] .le-weather-sun { opacity:.18; }
+      .le-weather-immersive .le-weather-rain,
+      .le-weather-immersive .le-weather-snow { opacity:0; }
+      .le-weather-immersive .le-weather-rain line {
+        stroke:#d9f1fb; stroke-width:2.2; stroke-linecap:round;
+        animation:le-weather-rainfall .72s linear infinite;
+      }
+      .le-weather-immersive .le-weather-snow circle {
+        fill:#fff; animation:le-weather-snowfall 5s ease-in-out infinite;
+      }
+      .le-weather-immersive .le-weather-river {
+        stroke-dasharray:18 12;
+        animation:le-weather-riverflow 12s linear infinite;
+      }
+      .le-weather-immersive[data-motion="reduced"] .le-weather-rain line,
+      .le-weather-immersive[data-motion="reduced"] .le-weather-snow circle,
+      .le-weather-immersive[data-motion="reduced"] .le-weather-river { animation:none!important; }
+      .le-weather-immersive[data-phase="night"] {
+        background:linear-gradient(180deg,#102b4a 0%,#274c6b 48%,#617b82 100%);
+      }
+      .le-weather-immersive[data-phase="dawn"] {
+        background:linear-gradient(180deg,#879fbd 0%,#e8bcae 46%,#f2d8b9 100%);
+      }
+      .le-weather-immersive[data-phase="day"] {
+        background:linear-gradient(180deg,#75b8e7 0%,#b8e1e8 52%,#f2e4ce 100%);
+      }
+      .le-weather-immersive[data-phase="evening"] {
+        background:linear-gradient(180deg,#405d87 0%,#dc9a84 53%,#f1c79b 100%);
+      }
+      .le-weather-immersive[data-condition="cloudy"] .le-weather-clouds,
+      .le-weather-immersive[data-condition="overcast"] .le-weather-clouds { opacity:.92; }
+      .le-weather-immersive[data-condition="partly-cloudy"] .le-weather-clouds { opacity:.54; }
+      .le-weather-immersive[data-condition="rain"] .le-weather-clouds,
+      .le-weather-immersive[data-condition="storm"] .le-weather-clouds,
+      .le-weather-immersive[data-condition="snow"] .le-weather-clouds,
+      .le-weather-immersive[data-condition="fog"] .le-weather-clouds { opacity:.95; }
+      .le-weather-immersive[data-condition="rain"] .le-weather-rain,
+      .le-weather-immersive[data-condition="storm"] .le-weather-rain { opacity:.8; }
+      .le-weather-immersive[data-condition="snow"] .le-weather-snow { opacity:.9; }
+      .le-weather-immersive[data-condition="fog"] .le-weather-atmosphere { opacity:.48; }
+      .le-weather-immersive[data-condition="storm"] .le-weather-atmosphere { opacity:.2; }
+      .le-weather-immersive[data-condition="storm"] .le-weather-sun { opacity:0; }
+      .le-weather-immersive[data-phase="night"] .le-weather-sun { opacity:0; }
+      .le-weather-immersive[data-phase="night"] .le-weather-moon,
+      .le-weather-immersive[data-phase="night"] .le-weather-stars { opacity:.9; }
+      .le-weather-immersive[data-phase="dawn"] .le-weather-sun { opacity:.65; }
+      .le-weather-immersive[data-phase="evening"] .le-weather-sun { opacity:.78; }
+      .le-weather-immersive[data-condition="overcast"] .le-weather-sun,
+      .le-weather-immersive[data-condition="rain"] .le-weather-sun,
+      .le-weather-immersive[data-condition="snow"] .le-weather-sun,
+      .le-weather-immersive[data-condition="fog"] .le-weather-sun { opacity:.12; }
+      .le-weather-immersive[data-condition="storm"] {
+        background:linear-gradient(180deg,#26374c 0%,#536a79 55%,#77827b 100%);
+      }
+      .le-weather-immersive[data-condition="fog"] {
+        background:linear-gradient(180deg,#a9bdc2 0%,#c8d2cb 56%,#b7bda9 100%);
+      }
+      .le-weather-immersive[data-condition="snow"] {
+        background:linear-gradient(180deg,#8daec7 0%,#d6e2e5 55%,#e8e5d8 100%);
+      }
+      .le-weather-immersive[data-phase="night"] .le-weather-land-tint { opacity:.46; }
+      .le-weather-immersive[data-condition="rain"] .le-weather-land-tint,
+      .le-weather-immersive[data-condition="storm"] .le-weather-land-tint { opacity:.23; }
+      .le-weather-immersive[data-condition="fog"] .le-weather-land-tint { opacity:.16; }
+      @keyframes le-weather-rainfall {
+        from { transform:translateY(-12px); opacity:.12; }
+        30% { opacity:.8; } to { transform:translateY(26px); opacity:0; }
+      }
+      @keyframes le-weather-snowfall {
+        0%,100% { transform:translate(0,-8px); opacity:.2; }
+        50% { transform:translate(12px,18px); opacity:.9; }
+      }
+      @keyframes le-weather-riverflow { to { stroke-dashoffset:-180; } }
+      @media (prefers-reduced-motion: reduce) {
+        .le-weather-immersive *, .le-weather-immersive *::before,
+        .le-weather-immersive *::after { animation:none!important; transition:none!important; }
       }
     `;
     document.head.appendChild(style);
   }
 
-  function clamp(value, min, max) {
-    return Math.max(min, Math.min(max, value));
+  function weatherState(data) {
+    const current = data?.current || {};
+    const code = Number(current.weather_code);
+    const cloud = Number(current.cloud_cover);
+    const isDay = Number(current.is_day) === 1;
+    if (!data?.current || !Number.isFinite(code)) return { condition: 'neutral', phase: 'day' };
+    let condition = 'clear';
+
+    if ([95, 96, 99].includes(code)) condition = 'storm';
+    else if ([71, 73, 75, 77, 85, 86].includes(code)) condition = 'snow';
+    else if ([45, 48].includes(code)) condition = 'fog';
+    else if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)) condition = 'rain';
+    else if ([3].includes(code) || (Number.isFinite(cloud) && cloud >= 85)) condition = 'overcast';
+    else if ([1, 2].includes(code) || (Number.isFinite(cloud) && cloud >= 25)) condition = 'partly-cloudy';
+
+    let phase = 'day';
+    if (!isDay) phase = 'night';
+    else {
+      const hour = Number(String(current.time || '').slice(11, 13));
+      if (Number.isFinite(hour) && hour >= 5 && hour < 8) phase = 'dawn';
+      else if (Number.isFinite(hour) && hour >= 17 && hour < 20) phase = 'evening';
+    }
+    return { condition, phase };
   }
 
-  function smoothstep(edge0, edge1, value) {
-    const t = clamp((value - edge0) / (edge1 - edge0), 0, 1);
-    return t * t * (3 - 2 * t);
+  function makeArtwork(stage) {
+    stage.innerHTML = `
+      <svg class="le-weather-sky-art le-weather-portrait-art" viewBox="0 0 1000 1600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs>
+          <radialGradient id="le-weather-sun-glow"><stop stop-color="#fff8d5" stop-opacity=".92"/><stop offset="1" stop-color="#fff8d5" stop-opacity="0"/></radialGradient>
+          <linearGradient id="le-weather-cloud-shade" x2="0" y2="1"><stop stop-color="#fff" stop-opacity=".98"/><stop offset="1" stop-color="#e6e8ef" stop-opacity=".8"/></linearGradient>
+          <linearGradient id="le-weather-river-fill" x2="0" y2="1"><stop stop-color="#8bd1d0"/><stop offset=".48" stop-color="#62b7bd"/><stop offset="1" stop-color="#438f9c"/></linearGradient>
+          <linearGradient id="le-weather-hill-a" x2="0" y2="1"><stop stop-color="#b6c6a4"/><stop offset="1" stop-color="#718d7b"/></linearGradient>
+          <linearGradient id="le-weather-hill-b" x2="0" y2="1"><stop stop-color="#a9b6b0"/><stop offset="1" stop-color="#748c91"/></linearGradient>
+          <linearGradient id="le-weather-hill-c" x2="0" y2="1"><stop stop-color="#8ba6a1"/><stop offset="1" stop-color="#557e78"/></linearGradient>
+          <linearGradient id="le-weather-front" x2="0" y2="1"><stop stop-color="#72917b"/><stop offset="1" stop-color="#3e6e62"/></linearGradient>
+          <filter id="le-weather-soft"><feGaussianBlur stdDeviation="30"/></filter>
+        </defs>
+        <g class="le-weather-stars" fill="#fff">
+          <circle cx="105" cy="130" r="2.5"/><circle cx="240" cy="210" r="2"/><circle cx="420" cy="115" r="2.3"/>
+          <circle cx="640" cy="185" r="2"/><circle cx="830" cy="100" r="2.6"/><circle cx="920" cy="280" r="1.8"/>
+          <circle cx="710" cy="330" r="1.6"/><circle cx="330" cy="330" r="1.7"/>
+        </g>
+        <g class="le-weather-sun">
+          <circle cx="785" cy="410" r="170" fill="url(#le-weather-sun-glow)" filter="url(#le-weather-soft)"/>
+          <circle cx="785" cy="410" r="45" fill="#fff4cf"/>
+        </g>
+        <g class="le-weather-moon">
+          <circle cx="785" cy="410" r="48" fill="#edf0e9"/>
+          <circle cx="805" cy="392" r="45" fill="#24445f"/>
+        </g>
+        <g class="le-weather-clouds" fill="url(#le-weather-cloud-shade)">
+          <path class="le-weather-cloud" d="M-60 500 C-55 455 -15 430 30 445 C42 392 105 370 145 402 C185 365 255 385 266 435 C320 438 344 470 332 510 Z"/>
+          <path class="le-weather-cloud" d="M360 330 C365 280 410 252 455 270 C470 210 545 190 585 230 C630 190 700 220 706 274 C760 278 785 312 770 350 Z"/>
+          <path class="le-weather-cloud" d="M690 560 C700 520 742 500 778 515 C800 470 855 466 882 500 C925 475 980 500 985 545 C1020 550 1030 580 1015 608 Z"/>
+          <path class="le-weather-cloud" d="M80 710 C90 675 130 660 160 674 C180 632 230 630 258 662 C300 640 345 665 346 700 L360 730 L60 730 Z"/>
+        </g>
+        <g class="le-weather-rain" stroke="#e4f4fa" stroke-width="3" stroke-linecap="round">
+          <path d="M80 560l-22 56M150 550l-22 56M220 570l-22 56M420 440l-22 56M500 445l-22 56M580 455l-22 56M760 650l-22 56M850 640l-22 56M940 650l-22 56"/>
+        </g>
+        <g class="le-weather-snow" fill="#fff">
+          <circle cx="130" cy="550" r="5"/><circle cx="260" cy="610" r="4"/><circle cx="430" cy="520" r="5"/>
+          <circle cx="590" cy="590" r="4"/><circle cx="760" cy="520" r="5"/><circle cx="900" cy="610" r="4"/>
+        </g>
+      </svg>
+      <svg class="le-weather-land-art le-weather-portrait-art" viewBox="0 0 1000 1600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs>
+          <linearGradient id="le-weather-river-fill-2" x2="0" y2="1"><stop stop-color="#a6d8d1"/><stop offset=".5" stop-color="#69bfc0"/><stop offset="1" stop-color="#378d98"/></linearGradient>
+          <linearGradient id="le-weather-far-hills" x2="0" y2="1"><stop stop-color="#c6c9b2"/><stop offset="1" stop-color="#a2b49d"/></linearGradient>
+          <linearGradient id="le-weather-mid-hills" x2="0" y2="1"><stop stop-color="#9eb49b"/><stop offset="1" stop-color="#6e967f"/></linearGradient>
+          <linearGradient id="le-weather-near-hills" x2="0" y2="1"><stop stop-color="#779b7c"/><stop offset="1" stop-color="#456f64"/></linearGradient>
+        </defs>
+        <path d="M0 760 C120 690 220 720 330 680 C455 635 570 690 675 650 C805 600 900 660 1000 610 L1000 1600 L0 1600Z" fill="url(#le-weather-far-hills)"/>
+        <path d="M0 850 C130 760 240 785 350 755 C470 720 590 790 700 740 C830 680 915 760 1000 710 L1000 1600 L0 1600Z" fill="url(#le-weather-mid-hills)"/>
+        <path d="M0 1000 C105 910 225 940 345 900 C470 855 580 925 700 875 C835 820 915 900 1000 850 L1000 1600 L0 1600Z" fill="url(#le-weather-near-hills)"/>
+        <path d="M0 1210 C160 1110 250 1155 380 1110 C500 1065 640 1145 760 1090 C865 1040 945 1090 1000 1050 L1000 1600 L0 1600Z" fill="#64866d"/>
+        <path d="M-30 1010 C160 930 205 1000 325 970 C420 946 440 900 535 912 C640 924 640 1015 745 1020 C850 1024 875 960 1030 1000 L1030 1058 C875 1020 850 1080 745 1076 C620 1072 622 985 535 980 C455 975 430 1020 330 1032 C205 1050 150 1000 -30 1075Z" fill="url(#le-weather-river-fill-2)" opacity=".98"/>
+        <path d="M-30 1045 C150 975 205 1030 325 1005 C425 982 445 936 535 946 C632 958 650 1040 745 1045 C850 1050 890 990 1030 1032" fill="none" stroke="#d5f2e8" stroke-opacity=".7" stroke-width="5" stroke-linecap="round"/>
+        <path d="M0 1250 C160 1180 245 1210 360 1178 C500 1140 620 1215 745 1168 C860 1125 930 1175 1000 1140 L1000 1600 L0 1600Z" fill="#4d786a" opacity=".7"/>
+        <path d="M0 0H1000V1600H0Z" class="le-weather-land-tint" fill="#081b32" opacity="0"/>
+      </svg>
+      <svg class="le-weather-sky-art le-weather-wide-art" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs>
+          <radialGradient id="le-weather-sun-glow-wide"><stop stop-color="#fff8d5" stop-opacity=".92"/><stop offset="1" stop-color="#fff8d5" stop-opacity="0"/></radialGradient>
+          <linearGradient id="le-weather-cloud-shade-wide" x2="0" y2="1"><stop stop-color="#fff" stop-opacity=".98"/><stop offset="1" stop-color="#e6e8ef" stop-opacity=".8"/></linearGradient>
+        </defs>
+        <g class="le-weather-stars" fill="#fff">
+          <circle cx="130" cy="120" r="2.5"/><circle cx="360" cy="210" r="2"/><circle cx="620" cy="115" r="2.3"/>
+          <circle cx="910" cy="180" r="2"/><circle cx="1240" cy="100" r="2.6"/><circle cx="1480" cy="250" r="1.8"/>
+        </g>
+        <g class="le-weather-sun">
+          <circle cx="1260" cy="300" r="190" fill="url(#le-weather-sun-glow-wide)"/>
+          <circle cx="1260" cy="300" r="48" fill="#fff4cf"/>
+        </g>
+        <g class="le-weather-moon">
+          <circle cx="1260" cy="300" r="50" fill="#edf0e9"/>
+          <circle cx="1282" cy="280" r="47" fill="#24445f"/>
+        </g>
+        <g class="le-weather-clouds" fill="url(#le-weather-cloud-shade-wide)">
+          <path class="le-weather-cloud" d="M-40 370 C-20 320 35 300 80 320 C100 250 180 225 235 270 C285 230 365 260 370 320 C435 325 460 360 445 400Z"/>
+          <path class="le-weather-cloud" d="M500 250 C515 195 575 175 625 195 C650 125 735 110 780 155 C830 110 915 140 925 205 C990 205 1020 245 1000 285Z"/>
+          <path class="le-weather-cloud" d="M1040 420 C1050 370 1110 350 1150 370 C1170 315 1245 300 1280 340 C1335 305 1405 335 1410 390 C1475 395 1500 430 1480 465Z"/>
+          <path class="le-weather-cloud" d="M1350 210 C1360 175 1400 160 1430 175 C1450 135 1500 135 1525 165 C1565 150 1605 175 1610 210Z"/>
+        </g>
+        <g class="le-weather-rain" stroke="#e4f4fa" stroke-width="3" stroke-linecap="round">
+          <path d="M80 420l-25 65M160 415l-25 65M240 430l-25 65M550 330l-25 65M650 335l-25 65M750 340l-25 65M1110 500l-25 65M1210 490l-25 65M1310 500l-25 65M1450 480l-25 65"/>
+        </g>
+        <g class="le-weather-snow" fill="#fff">
+          <circle cx="130" cy="480" r="5"/><circle cx="300" cy="500" r="4"/><circle cx="590" cy="420" r="5"/>
+          <circle cx="820" cy="470" r="4"/><circle cx="1120" cy="560" r="5"/><circle cx="1430" cy="510" r="4"/>
+        </g>
+      </svg>
+      <svg class="le-weather-land-art le-weather-wide-art" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs>
+          <linearGradient id="le-weather-wide-far" x2="0" y2="1"><stop stop-color="#c8cdb8"/><stop offset="1" stop-color="#9cae9a"/></linearGradient>
+          <linearGradient id="le-weather-wide-mid" x2="0" y2="1"><stop stop-color="#a7b99c"/><stop offset="1" stop-color="#718e7b"/></linearGradient>
+          <linearGradient id="le-weather-wide-near" x2="0" y2="1"><stop stop-color="#7d9c7c"/><stop offset="1" stop-color="#496f63"/></linearGradient>
+          <linearGradient id="le-weather-wide-river" x2="0" y2="1"><stop stop-color="#a6d8d1"/><stop offset=".5" stop-color="#69bfc0"/><stop offset="1" stop-color="#378d98"/></linearGradient>
+        </defs>
+        <path d="M0 455 C120 410 210 430 315 385 C435 335 535 400 650 370 C765 335 860 390 970 360 C1085 330 1190 370 1300 345 C1420 320 1510 350 1600 315 L1600 900H0Z" fill="url(#le-weather-wide-far)"/>
+        <path d="M0 550 C120 490 235 525 350 475 C470 425 570 500 690 460 C810 420 915 490 1030 445 C1150 400 1270 470 1385 425 C1480 390 1540 430 1600 405 L1600 900H0Z" fill="url(#le-weather-wide-mid)"/>
+        <path d="M0 650 C120 585 250 625 370 570 C500 515 610 600 730 550 C860 500 965 585 1085 530 C1210 480 1330 560 1450 510 C1520 480 1570 500 1600 490 L1600 900H0Z" fill="url(#le-weather-wide-near)"/>
+        <path d="M-30 700 C150 635 255 710 405 660 C540 615 615 550 735 570 C865 590 875 700 1015 705 C1150 710 1200 635 1350 655 C1450 670 1510 700 1630 670 L1630 900H-30Z" fill="#66866f" opacity=".9"/>
+        <path d="M790 480 C820 530 930 555 900 605 C870 660 770 670 810 720 C850 770 1010 760 1040 810 C1070 850 1190 870 1320 930 L1400 930 C1270 840 1170 805 1140 765 C1100 710 940 720 920 680 C900 640 1000 615 985 565 C970 520 870 505 850 465Z" fill="url(#le-weather-wide-river)"/>
+        <path d="M830 500 C860 545 950 570 925 610 C900 650 820 675 850 715 C890 760 1035 760 1070 815 C1100 855 1210 880 1335 930" fill="none" stroke="#d5f2e8" stroke-opacity=".72" stroke-width="5" stroke-linecap="round"/>
+        <path d="M-20 0H1620V920H-20Z" class="le-weather-land-tint" fill="#081b32" opacity="0"/>
+      </svg>
+      <svg class="le-weather-atmosphere" viewBox="0 0 1000 1600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs><linearGradient id="le-weather-fog-gradient" x2="0" y2="1"><stop stop-color="#eef4ef" stop-opacity=".05"/><stop offset=".55" stop-color="#f2f4ed" stop-opacity=".72"/><stop offset="1" stop-color="#e4e9df" stop-opacity=".12"/></linearGradient></defs>
+        <path d="M0 580 Q250 520 500 590 T1000 570V1120Q750 1050 500 1120T0 1100Z" fill="url(#le-weather-fog-gradient)"/>
+      </svg>`;
   }
 
-  function gaussian(x, z, cx, cz, sx, sz, height) {
-    const dx = (x - cx) / sx;
-    const dz = (z - cz) / sz;
-    return height * Math.exp(-0.5 * (dx * dx + dz * dz));
-  }
-
-  function weatherViewportProfile(width, height) {
-    const safeWidth = Math.max(1, Number(width) || 1);
-    const safeHeight = Math.max(1, Number(height) || 1);
-    const aspect = safeWidth / safeHeight;
-    const portrait = aspect < 0.90;
-    const shortLandscape = !portrait && safeHeight < 520;
-    const tablet = Math.min(safeWidth, safeHeight) >= 700;
-    return {
-      aspect,
-      portrait,
-      shortLandscape,
-      tablet,
-      fov: portrait ? (tablet ? 41 : 43) : shortLandscape ? 45 : 42,
-      lookY: portrait ? 1.45 : 1.55,
-      lookZ: portrait ? -3.6 : -2.0,
-      rise: portrait ? (tablet ? 16.2 : 15.0) : shortLandscape ? 18.5 : 17.0,
-      depth: portrait ? 39.0 : shortLandscape ? 39.0 : 38.0,
-      yaw: portrait ? 0.0 : 0.10
-    };
-  }
-
-  async function createTerrainRiver(host) {
-    const THREE = await import(THREE_MODULE_URL);
-    if (!host.isConnected) return { dispose() {} };
-
-    const canvas = el('canvas', 'le-weather-foundation-canvas');
-    canvas.setAttribute('aria-hidden', 'true');
-    host.appendChild(canvas);
-
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const deviceMemory = Number(navigator.deviceMemory || 8);
-    const lowMemory = deviceMemory <= 4;
-    let renderer;
-    try {
-      renderer = new THREE.WebGLRenderer({
-        canvas,
-        antialias: !lowMemory,
-        alpha: false,
-        powerPreference: 'high-performance'
-      });
-    } catch (error) {
-      console.error('[LIVE // EARTH] Terrain renderer could not start.', error);
-      return { dispose() { canvas.remove(); } };
-    }
-
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#9bc2cc');
-
-    const camera = new THREE.PerspectiveCamera(43, 1, 0.1, 240);
-
-    // Neutral natural light only; there are no visible sky objects or weather FX.
-    const hemisphere = new THREE.HemisphereLight('#eaf4ef', '#526d52', 1.55);
-    scene.add(hemisphere);
-    const sunlight = new THREE.DirectionalLight('#fff0d6', 2.05);
-    sunlight.position.set(-15, 22, 16);
-    sunlight.castShadow = true;
-    sunlight.shadow.bias = -0.0002;
-    sunlight.shadow.normalBias = 0.025;
-    sunlight.shadow.mapSize.set(lowMemory ? 512 : 1024, lowMemory ? 512 : 1024);
-    sunlight.shadow.camera.left = -36;
-    sunlight.shadow.camera.right = 36;
-    sunlight.shadow.camera.top = 38;
-    sunlight.shadow.camera.bottom = -38;
-    scene.add(sunlight);
-
-    const terrainGroup = new THREE.Group();
-    scene.add(terrainGroup);
-
-    // A broad continuous landform. Its far edge is gently irregular, not a platform.
-    const MAP_W = 64;
-    const BACK_Z = -32;
-    const FRONT_Z = 38;
-    const GRID_X = lowMemory ? 112 : 168;
-    const GRID_Z = lowMemory ? 150 : 224;
-    const HALF_W = MAP_W / 2;
-
-    // The river guide is shared by the valley cut and the visible water ribbon.
-    // Coordinates progress from the mountain headwaters toward the near foreground.
-    const riverGuide = [
-      [-1.6, -31.0], [-0.9, -27.0], [0.7, -23.0], [3.1, -19.0],
-      [4.7, -15.0], [4.0, -11.0], [1.6, -7.0], [-1.2, -3.0],
-      [-3.2, 1.0], [-3.5, 5.0], [-1.6, 9.0], [1.1, 13.0],
-      [2.5, 18.0], [1.8, 23.0], [0.0, 28.0], [-0.8, 34.0], [0.2, 39.0]
-    ];
-
-    function riverCenterX(z) {
-      if (z <= riverGuide[0][1]) return riverGuide[0][0];
-      const last = riverGuide.length - 1;
-      if (z >= riverGuide[last][1]) return riverGuide[last][0];
-      for (let i = 0; i < last; i++) {
-        const a = riverGuide[i];
-        const b = riverGuide[i + 1];
-        if (z >= a[1] && z <= b[1]) {
-          const t = smoothstep(a[1], b[1], z);
-          return a[0] + (b[0] - a[0]) * t;
-        }
-      }
-      return 0;
-    }
-
-    const mountainPeaks = [
-      { x: -21.0, z: -20.0, sx: 4.8, sz: 5.8, h: 2.55 },
-      { x: -14.0, z: -22.5, sx: 4.2, sz: 5.2, h: 3.35 },
-      { x: -6.0, z: -19.7, sx: 4.3, sz: 5.1, h: 3.75 },
-      { x: 3.0, z: -21.0, sx: 4.1, sz: 5.2, h: 3.30 },
-      { x: 12.5, z: -18.6, sx: 4.8, sz: 5.9, h: 2.85 },
-      { x: 21.0, z: -21.3, sx: 5.0, sz: 5.8, h: 2.25 }
-    ];
-
-    function rawTerrainHeight(x, z) {
-      const broadRolling =
-        0.42 +
-        0.17 * Math.sin(x * 0.19 + z * 0.075) +
-        0.14 * Math.cos(z * 0.21 - x * 0.13) +
-        0.075 * Math.sin((x + z) * 0.48) * Math.cos(x * 0.31);
-
-      const ridgeCenter = -2.2 + 0.19 * (z + 18) + 1.1 * Math.sin(z * 0.16);
-      const connectedRidge =
-        0.92 * Math.exp(-((x - ridgeCenter) ** 2) / (2 * 4.4 * 4.4)) *
-        smoothstep(-30, -24, z) * (1 - smoothstep(-6, 1, z));
-
-      let peaks = 0;
-      for (const peak of mountainPeaks) {
-        peaks += gaussian(x, z, peak.x, peak.z, peak.sx, peak.sz, peak.h);
-      }
-
-      const foothills =
-        gaussian(x, z, -21, -5, 8.5, 11.0, 1.05) +
-        gaussian(x, z, 15, -5.5, 9.0, 10.5, 0.95) +
-        gaussian(x, z, -4, 4, 12.0, 13.0, 0.50) +
-        gaussian(x, z, 18, 13, 10.0, 12.0, 0.34);
-
-      const softDetail =
-        0.055 * Math.sin(x * 0.76 + z * 0.57) +
-        0.040 * Math.cos(z * 0.83 - x * 0.42);
-
-      return Math.max(0.10, broadRolling + connectedRidge + peaks + foothills + softDetail);
-    }
-
-    function terrainHeightAt(x, z) {
-      const distance = x - riverCenterX(z);
-      const broadValley = 0.50 * Math.exp(-(distance * distance) / (2 * 1.45 * 1.45));
-      const channelBed = 0.13 * Math.exp(-(distance * distance) / (2 * 0.50 * 0.50));
-      return Math.max(0.06, rawTerrainHeight(x, z) - broadValley - channelBed);
-    }
-
-    const terrainPositions = [];
-    const terrainColors = [];
-    const terrainIndices = [];
-    const grassLow = new THREE.Color('#527b55');
-    const grassMid = new THREE.Color('#789565');
-    const meadow = new THREE.Color('#98a675');
-    const warmStone = new THREE.Color('#a47c58');
-    const highStone = new THREE.Color('#b69a78');
-    const vertexColor = new THREE.Color();
-
-    for (let iz = 0; iz <= GRID_Z; iz++) {
-      const v = iz / GRID_Z;
-      for (let ix = 0; ix <= GRID_X; ix++) {
-        const u = ix / GRID_X;
-        const x = -HALF_W + u * MAP_W;
-        const backEdge = BACK_Z + 1.35 * Math.sin(x * 0.115) + 0.62 * Math.sin(x * 0.31 + 0.8);
-        const z = backEdge + v * (FRONT_Z - backEdge);
-        const y = terrainHeightAt(x, z);
-
-        vertexColor.copy(grassLow).lerp(grassMid, smoothstep(0.25, 1.35, y) * 0.9);
-        vertexColor.lerp(meadow, smoothstep(0.9, 2.3, y) * 0.42);
-        vertexColor.lerp(warmStone, smoothstep(2.1, 3.45, y) * 0.72);
-        vertexColor.lerp(highStone, smoothstep(3.15, 4.25, y) * 0.62);
-        const grain = 0.965 + 0.035 * Math.sin(x * 0.44 + z * 0.35) * Math.cos(z * 0.39 - x * 0.24);
-        vertexColor.multiplyScalar(grain);
-
-        terrainPositions.push(x, y, z);
-        terrainColors.push(vertexColor.r, vertexColor.g, vertexColor.b);
-
-        if (ix < GRID_X && iz < GRID_Z) {
-          const a = iz * (GRID_X + 1) + ix;
-          const b = (iz + 1) * (GRID_X + 1) + ix;
-          const c = a + 1;
-          const d = b + 1;
-          terrainIndices.push(a, b, c, c, b, d);
-        }
-      }
-    }
-
-    const terrainGeometry = new THREE.BufferGeometry();
-    terrainGeometry.setAttribute('position', new THREE.Float32BufferAttribute(terrainPositions, 3));
-    terrainGeometry.setAttribute('color', new THREE.Float32BufferAttribute(terrainColors, 3));
-    terrainGeometry.setIndex(terrainIndices);
-    terrainGeometry.computeVertexNormals();
-    const terrainMaterial = new THREE.MeshStandardMaterial({
-      vertexColors: true,
-      roughness: 0.96,
-      metalness: 0.0
-    });
-    const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
-    terrain.castShadow = true;
-    terrain.receiveShadow = true;
-    terrainGroup.add(terrain);
-
-    // A single continuous, smooth ribbon follows the carved valley.
-    const riverPoints = riverGuide.map(([x, z]) => new THREE.Vector3(x, terrainHeightAt(x, z) + 0.035, z));
-    const riverCurve = new THREE.CatmullRomCurve3(riverPoints, false, 'centripetal', 0.42);
-    const RIVER_SEGMENTS = lowMemory ? 176 : 280;
-    const RIVER_ROWS = RIVER_SEGMENTS + 1;
-    const riverPositions = [];
-    const riverColors = [];
-    const riverUvs = [];
-    const riverIndices = [];
-    const deepWater = new THREE.Color('#287f8e');
-    const midWater = new THREE.Color('#3ca5ad');
-    const shallowWater = new THREE.Color('#83d0c4');
-    const waterColor = new THREE.Color();
-
-    for (let i = 0; i <= RIVER_SEGMENTS; i++) {
-      const t = i / RIVER_SEGMENTS;
-      const point = riverCurve.getPoint(t);
-      const tangent = riverCurve.getTangent(t);
-      const sideX = -tangent.z;
-      const sideZ = tangent.x;
-      const sideLength = Math.hypot(sideX, sideZ) || 1;
-      const nx = sideX / sideLength;
-      const nz = sideZ / sideLength;
-      const widening = smoothstep(0.02, 0.46, t) * (1 - smoothstep(0.86, 1.0, t));
-      const halfWidth = 0.48 + 0.30 * widening + 0.075 * Math.sin(t * Math.PI * 5.0);
-
-      for (let cross = 0; cross < 3; cross++) {
-        const across = cross - 1;
-        const x = point.x + nx * halfWidth * across;
-        const z = point.z + nz * halfWidth * across;
-        const y = terrainHeightAt(x, z) + 0.065;
-        riverPositions.push(x, y, z);
-        riverUvs.push(t * 3.4, (across + 1) * 0.5);
-
-        if (cross === 1) waterColor.copy(deepWater).lerp(midWater, 0.22);
-        else waterColor.copy(midWater).lerp(shallowWater, 0.62);
-        riverColors.push(waterColor.r, waterColor.g, waterColor.b);
-      }
-
-      if (i < RIVER_SEGMENTS) {
-        const row = i * 3;
-        const next = row + 3;
-        riverIndices.push(
-          row, row + 1, next,
-          row + 1, next + 1, next,
-          row + 1, row + 2, next + 1,
-          row + 2, next + 2, next + 1
-        );
-      }
-    }
-
-    const riverGeometry = new THREE.BufferGeometry();
-    riverGeometry.setAttribute('position', new THREE.Float32BufferAttribute(riverPositions, 3));
-    riverGeometry.setAttribute('color', new THREE.Float32BufferAttribute(riverColors, 3));
-    riverGeometry.setAttribute('uv', new THREE.Float32BufferAttribute(riverUvs, 2));
-    riverGeometry.setIndex(riverIndices);
-    riverGeometry.computeVertexNormals();
-
-    const riverMaterial = new THREE.MeshPhysicalMaterial({
-      vertexColors: true,
-      roughness: 0.19,
-      metalness: 0.035,
-      clearcoat: 0.92,
-      clearcoatRoughness: 0.13,
-      side: THREE.DoubleSide
-    });
-    const river = new THREE.Mesh(riverGeometry, riverMaterial);
-    river.receiveShadow = true;
-    terrainGroup.add(river);
-
-    // Only a restrained surface movement on the river itself; no additional FX.
-    const riverBasePositions = new Float32Array(riverPositions);
-    const riverPositionAttribute = riverGeometry.attributes.position;
-    const resize = () => {
-      if (disposed) return;
-      const rect = host.getBoundingClientRect();
-      const width = Math.max(1, Math.round(rect.width || host.clientWidth || innerWidth));
-      const height = Math.max(1, Math.round(rect.height || host.clientHeight || innerHeight));
-      const profile = weatherViewportProfile(width, height);
-      camera.fov = profile.fov;
-      camera.aspect = profile.aspect;
-      camera.updateProjectionMatrix();
-      const target = new THREE.Vector3(0, profile.lookY, profile.lookZ);
-      const horizontal = Math.sqrt(Math.max(0, 1 - Math.pow(profile.rise / Math.hypot(profile.rise, profile.depth), 2)));
-      const distance = Math.hypot(profile.rise, profile.depth);
-      camera.position.set(
-        target.x + Math.sin(profile.yaw) * distance * horizontal,
-        target.y + profile.rise,
-        target.z + Math.cos(profile.yaw) * distance * horizontal
-      );
-      camera.lookAt(target);
-
-      const dprCap = lowMemory ? 1.0 : 1.35;
-      const pixelBudget = Math.sqrt(1900000 / Math.max(1, width * height));
-      renderer.setPixelRatio(Math.max(0.8, Math.min(window.devicePixelRatio || 1, dprCap, pixelBudget)));
-      renderer.setSize(width, height, false);
-      if (reducedMotion) renderer.render(scene, camera);
-    };
-
-    let animationFrame = 0;
-    let disposed = false;
-    let lastFrame = 0;
-    let elapsed = 0;
-    const resizeObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(resize) : null;
-    resizeObserver?.observe(host);
-    window.addEventListener('resize', resize, { passive: true });
-    window.addEventListener('orientationchange', resize, { passive: true });
-    window.visualViewport?.addEventListener('resize', resize, { passive: true });
-
-    function render(now = 0) {
-      if (disposed || document.hidden || !host.isConnected) return;
-      if (!reducedMotion) animationFrame = requestAnimationFrame(render);
-      if (now - lastFrame < 1000 / 30) return;
-      const delta = Math.min((now - (lastFrame || now)) / 1000 || 0.016, 0.045);
-      lastFrame = now;
-      elapsed += delta;
-      if (!reducedMotion) {
-        const positions = riverPositionAttribute.array;
-        for (let i = 0; i < riverBasePositions.length; i += 3) {
-          const rowT = Math.floor(i / 9) / RIVER_SEGMENTS;
-          const cross = (i % 9) / 3;
-          const ripple = Math.sin(elapsed * 1.45 - rowT * 17.0 + cross * 0.7) * 0.008;
-          positions[i + 1] = riverBasePositions[i + 1] + ripple;
-        }
-        riverPositionAttribute.needsUpdate = true;
-      }
-      renderer.render(scene, camera);
-    }
-
-    function onVisibility() {
-      if (document.hidden) {
-        if (animationFrame) cancelAnimationFrame(animationFrame);
-        animationFrame = 0;
-      } else if (!reducedMotion && !animationFrame && !disposed) {
-        lastFrame = 0;
-        animationFrame = requestAnimationFrame(render);
-      }
-    }
-    document.addEventListener('visibilitychange', onVisibility);
-
-    resize();
-    if (reducedMotion) renderer.render(scene, camera);
-    else animationFrame = requestAnimationFrame(render);
-
-    function dispose() {
-      if (disposed) return;
-      disposed = true;
-      if (animationFrame) cancelAnimationFrame(animationFrame);
-      resizeObserver?.disconnect();
-      window.removeEventListener('resize', resize);
-      window.removeEventListener('orientationchange', resize);
-      window.visualViewport?.removeEventListener('resize', resize);
-      document.removeEventListener('visibilitychange', onVisibility);
-      terrainGeometry.dispose();
-      terrainMaterial.dispose();
-      riverGeometry.dispose();
-      riverMaterial.dispose();
-      renderer.dispose();
-      renderer.forceContextLoss?.();
-      canvas.remove();
-    }
-
-    return { dispose };
+  function classifyAndPaint(stage, data) {
+    const { condition, phase } = weatherState(data);
+    stage.dataset.condition = condition;
+    stage.dataset.phase = phase;
   }
 
   function activateWeather() {
     const view = mount('weather');
     if (!view) return;
-
     installStyles();
-    // Remove the former Weather header, pill, status, data and controls entirely.
-    // The three Global Orbs are owned by the shared shell and are not touched.
     view.panel.remove();
     view.root.replaceChildren();
-    const stage = el('div', 'le-weather-foundation-stage');
+
+    const stage = el('div', 'le-weather-immersive');
+    stage.id = SCRIPT_ID;
     stage.setAttribute('aria-hidden', 'true');
+    stage.dataset.condition = 'neutral';
+    stage.dataset.phase = 'day';
+    makeArtwork(stage);
     view.root.appendChild(stage);
 
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion) stage.dataset.motion = 'reduced';
+
+    let controller = null;
     let disposed = false;
-    let engine = null;
-    const enginePromise = createTerrainRiver(stage).then(instance => {
-      if (disposed) {
-        instance.dispose?.();
-        return null;
+    let requestSerial = 0;
+
+    function clearWeather() {
+      requestSerial++;
+      controller?.abort();
+      controller = null;
+      stage.dataset.condition = 'neutral';
+      stage.dataset.phase = 'day';
+    }
+
+    async function refreshWeather() {
+      if (disposed) return;
+      if (window.liveEarthLocationAllowed?.() !== true) {
+        clearWeather();
+        return;
       }
-      engine = instance;
-      return instance;
-    }).catch(error => {
-      console.error('[LIVE // EARTH] Terrain and river scene failed to initialize.', error);
-      return null;
-    });
+      const point = globe()?.getLocation?.();
+      const latitude = Number(point?.latitude);
+      const longitude = Number(point?.longitude);
+      if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 ||
+          !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+        clearWeather();
+        return;
+      }
+      if (navigator.onLine === false) {
+        clearWeather();
+        return;
+      }
+
+      const serial = ++requestSerial;
+      controller?.abort();
+      controller = new AbortController();
+      const params = new URLSearchParams({
+        latitude: String(latitude),
+        longitude: String(longitude),
+        current: 'weather_code,cloud_cover,is_day',
+        timezone: 'auto'
+      });
+      try {
+        const response = await fetch(`${API_ROOT}?${params.toString()}`, {
+          signal: controller.signal,
+          cache: 'no-store',
+          headers: { Accept: 'application/json' }
+        });
+        if (!response.ok) throw new Error(`Weather source returned ${response.status}`);
+        const data = await response.json();
+        if (disposed || serial !== requestSerial || window.liveEarthLocationAllowed?.() !== true) return;
+        classifyAndPaint(stage, data);
+      } catch (error) {
+        if (error?.name !== 'AbortError') {
+          clearWeather();
+          console.warn('[LIVE // EARTH] Weather background could not refresh.', error);
+        }
+      }
+    }
+
+    const onLocationState = event => {
+      if (event.detail?.enabled === true && event.detail?.status === 'active') refreshWeather();
+      else if (event.detail?.enabled === false && event.detail?.status !== 'pending') clearWeather();
+    };
+    const onLocationStop = clearWeather;
+    const onOnline = () => refreshWeather();
+    const onOffline = clearWeather;
+    window.addEventListener('live-earth-location-state', onLocationState);
+    window.addEventListener('live-earth-location-stop', onLocationStop);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    if (window.liveEarthLocationAllowed?.() === true) refreshWeather();
 
     return () => {
       disposed = true;
-      if (engine) engine.dispose?.();
-      else enginePromise.then(instance => instance?.dispose?.());
+      requestSerial++;
+      controller?.abort();
+      window.removeEventListener('live-earth-location-state', onLocationState);
+      window.removeEventListener('live-earth-location-stop', onLocationStop);
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+      stage.remove();
     };
   }
 
-  // Foundation stage intentionally does not call liveEarthLocationAllowed() or
-  // request Open-Meteo data. Those integrations are deferred until the base world
-  // is approved. No browser Geolocation API, storage, or network request is used.
   runtime.registerFeature('weather', activateWeather);
 })();

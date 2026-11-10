@@ -1,31 +1,20 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '..', 'Weather/weather-view.js'), 'utf8');
-
-const match = source.match(/function weatherViewportProfile\(width, height\) \{[\s\S]*?\n  \}/);
-assert.ok(match, 'Responsive camera profile must exist');
-const profile = vm.runInNewContext(`(${match[0]})`);
-const sizes = [
-  ['compact portrait', 320, 568], ['iPhone portrait', 393, 852], ['large portrait', 430, 932],
-  ['phone landscape', 844, 390], ['tablet portrait', 820, 1180], ['tablet landscape', 1180, 820],
-  ['desktop', 1440, 900]
-];
-const results = sizes.map(([name, width, height]) => ({ name, ...profile(width, height) }));
-for (const p of results) {
-  assert.ok(Number.isFinite(p.aspect) && p.aspect > 0, `${p.name} must have a valid aspect`);
-  assert.ok(p.fov >= 40 && p.fov <= 46, `${p.name} must use a bounded camera FOV`);
-  assert.ok(p.rise > 0 && p.depth > 0, `${p.name} must have a stable three-quarter camera`);
-  assert.equal(p.scaleX, undefined, `${p.name} must not stretch the terrain horizontally`);
-  assert.equal(p.scaleZ, undefined, `${p.name} must not stretch the terrain in depth`);
-}
-assert.ok(results[0].portrait && results[1].portrait && results[2].portrait, 'Phone portrait sizes must share the portrait composition');
-assert.ok(!results[3].portrait && !results[5].portrait, 'Landscape devices must use a landscape camera profile');
-assert.ok(results[1].fov > results[5].fov, 'Portrait must reserve a broader vertical field than tablet landscape');
-assert.ok(results[4].tablet, 'Tablet portrait must be recognized independently');
-assert.ok(source.includes("scene.background = new THREE.Color('#9bc2cc')"), 'The sky must remain a plain clear background in this foundation stage');
-assert.ok(!/addCloud\(|cloudFamily|CloudGeometry/i.test(source), 'No clouds may appear in the initial foundation scene');
-assert.ok(!/new THREE\.Points|new THREE\.InstancedMesh/i.test(source), 'No particles or decorative instancing may appear');
-
-console.log('Portrait-first terrain camera, adaptive viewports, clear sky backdrop and no-extra-object composition checks passed.');
+const artViews = (source.match(/viewBox="0 0 1000 1600"/g) || []).length;
+assert.ok(artViews >= 3, 'Sky, land and atmospheric artwork should share one adaptive viewBox');
+assert.ok(source.includes('preserveAspectRatio="xMidYMid slice"'), 'Artwork must crop to fill rather than stretch');
+assert.ok(source.includes('viewBox="0 0 1600 900"'), 'Landscape devices must receive a purpose-composed wide scene');
+assert.ok(source.includes('@media (orientation: landscape)'), 'Orientation must switch between portrait and landscape compositions');
+assert.ok(source.includes('le-weather-portrait-art') && source.includes('le-weather-wide-art'), 'Both responsive compositions must remain available');
+assert.ok(source.includes('background:linear-gradient(180deg,#75b8e7 0%,#b8e1e8 52%,#f2e4ce 100%)'));
+assert.ok(source.includes('[data-phase="night"]'));
+assert.ok(source.includes('[data-phase="dawn"]'));
+assert.ok(source.includes('[data-phase="evening"]'));
+assert.ok(source.includes('[data-condition="cloudy"]'));
+assert.ok(source.includes('[data-condition="rain"]'));
+assert.ok(source.includes('[data-condition="snow"]'));
+assert.ok(source.includes('prefers-reduced-motion: reduce'));
+assert.ok(!/camera\.aspect|scale\.set\(|scaleX|scaleZ/.test(source), 'The landscape must not be stretched by a 3D camera or mesh');
+console.log('Adaptive landscape cropping, day phases and weather atmosphere checks passed.');
