@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');
 const s=fs.readFileSync(path.join(__dirname,'..','Weather/weather-view.js'),'utf8');
-assert.ok(s.includes('id="le-weather-art-canvas"'));assert.ok(s.includes('Japanese ink drawing generated locally'));
+assert.ok(s.includes('id="le-weather-art-canvas"'));assert.ok(s.includes('LIVE ART · PAINTING THE WEATHER'));assert.ok(s.includes('function makeArtStudioPainter(canvas,onProgress)'));
 assert.ok(s.includes('ctx.quadraticCurveTo'));assert.ok(s.includes('ctx.bezierCurveTo'));
 assert.ok(s.includes('snowLoad'));assert.ok(s.includes('phase===\'night\''));
 assert.ok(s.includes("state.weather==='rain'||state.weather==='storm'"));assert.ok(s.includes("state.weather==='snow'"));

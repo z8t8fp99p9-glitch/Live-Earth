@@ -1,0 +1,10 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const s=fs.readFileSync(path.join(__dirname,'..','Weather/weather-view.js'),'utf8');
+assert.ok(s.includes('font-family:Georgia,"Times New Roman",serif;font-size:clamp(24px,5.8vw,34px)'));
+assert.ok(s.includes('font-size:clamp(23px,2.8vw,31px)'));
+assert.ok(s.includes('NEXT 6 HOURS'));
+assert.ok(s.includes('for(let i=start;i<Math.min(times.length,start+6);i++)'));
+assert.ok(s.includes('le-weather-temperature'));
+console.log('Large editorial current temperature and six-hour forecast typography checks passed.');

@@ -24,13 +24,13 @@
     style.textContent = `
       .le-sfv--weather{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;overflow:hidden!important;padding:0!important;margin:0!important;border:0!important;border-radius:0!important;background:#f1eee5!important;isolation:isolate;pointer-events:none}
       .le-sfv--weather>.le-sfv-panel{display:none!important}
-      .le-weather-screen{--paper:#f1eee5;--paper-deep:#e8e3d7;--ink:#202923;--muted:#68736c;--accent:#b84437;position:absolute;inset:0;z-index:1;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;color:var(--ink);background:radial-gradient(ellipse at 76% 45%,rgba(202,211,194,.30),transparent 42%),linear-gradient(160deg,var(--paper),var(--paper-deep));font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;pointer-events:auto;isolation:isolate}
+      .le-weather-screen{box-sizing:border-box;--paper:#f1eee5;--paper-deep:#e8e3d7;--ink:#202923;--muted:#68736c;--accent:#b84437;position:absolute;inset:0;z-index:1;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;color:var(--ink);background:radial-gradient(ellipse at 76% 45%,rgba(202,211,194,.30),transparent 42%),linear-gradient(160deg,var(--paper),var(--paper-deep));font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;pointer-events:auto;isolation:isolate}
       .le-weather-screen::-webkit-scrollbar{display:none}
       .le-weather-screen:before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.23;background-image:repeating-linear-gradient(7deg,transparent 0 11px,rgba(78,68,51,.035) 12px,transparent 13px),repeating-linear-gradient(93deg,transparent 0 17px,rgba(78,68,51,.025) 18px,transparent 19px);mix-blend-mode:multiply}
       .le-weather-screen[data-phase="night"]{--paper:#202a2a;--paper-deep:#152223;--ink:#f0eee5;--muted:#bdc8bf;--accent:#d36b55;background:radial-gradient(ellipse at 77% 47%,rgba(74,103,98,.28),transparent 45%),linear-gradient(160deg,var(--paper),var(--paper-deep))}
       .le-weather-screen[data-weather="rain"],.le-weather-screen[data-weather="storm"],.le-weather-screen[data-weather="fog"]{--paper:#e8e9df;--paper-deep:#d7dfd7}
       .le-weather-screen[data-phase="night"][data-weather="rain"],.le-weather-screen[data-phase="night"][data-weather="storm"],.le-weather-screen[data-phase="night"][data-weather="fog"]{--paper:#1b272b;--paper-deep:#101c21}
-      .le-weather-content{position:relative;z-index:2;width:min(100%,760px);margin:0 auto;padding:calc(env(safe-area-inset-top) + 17px) clamp(20px,5vw,34px) calc(env(safe-area-inset-bottom) + 214px)}
+      .le-weather-content{box-sizing:border-box;position:relative;z-index:2;width:min(100%,760px);margin:0 auto;padding:calc(env(safe-area-inset-top) + 17px) clamp(20px,5vw,34px) calc(env(safe-area-inset-bottom) + 264px)}
       .le-weather-topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:31px}
       .le-weather-brand{font-size:11px;font-weight:800;letter-spacing:.2em;white-space:nowrap}.le-weather-brand span{font-weight:400;opacity:.65}
       .le-weather-place{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:10px;letter-spacing:.04em;white-space:nowrap}
@@ -52,32 +52,49 @@
       .le-weather-condition-icon{display:block;width:34px;height:31px;margin-bottom:4px;color:var(--ink)}
       .le-weather-condition-name{font-family:Georgia,"Times New Roman",serif;font-size:16px;line-height:1.15}
       .le-weather-feels{margin-top:4px;color:var(--muted);font-size:10px}
-      .le-weather-art-stage{position:relative;z-index:1;height:clamp(190px,35vh,310px);margin:-2px -14px 0;pointer-events:none}
+      .le-weather-dashboard{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"hero" "scene" "summary" "studio" "hours";row-gap:12px;align-items:start;margin-top:14px}
+      .le-weather-forecast-column,.le-weather-art-column{display:contents}
+      .le-weather-hero{grid-area:hero;position:relative;z-index:2;max-width:520px;margin:0}
+      .le-weather-art-stage{grid-area:scene;position:relative;z-index:1;height:clamp(190px,30vh,260px);margin:0 -10px;pointer-events:none;overflow:hidden}
       .le-weather-art-canvas{display:block;width:100%;height:100%;touch-action:none}
-      .le-weather-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin-top:0;padding:12px 0;border-top:1px solid color-mix(in srgb,var(--ink) 20%,transparent);border-bottom:1px solid color-mix(in srgb,var(--ink) 20%,transparent)}
+      .le-weather-summary{grid-area:summary;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:0;padding:12px 0;border-top:1px solid color-mix(in srgb,var(--ink) 20%,transparent);border-bottom:1px solid color-mix(in srgb,var(--ink) 20%,transparent)}
       .le-weather-stat{min-width:0;padding:0 10px;border-right:1px solid color-mix(in srgb,var(--ink) 17%,transparent)}.le-weather-stat:first-child{padding-left:2px}.le-weather-stat:last-child{border-right:0}
       .le-weather-stat-label{display:block;color:var(--muted);font-size:7px;font-weight:750;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
       .le-weather-stat-value{display:block;margin-top:6px;color:var(--ink);font-size:clamp(12px,3.5vw,15px);font-weight:730;white-space:nowrap}
-      .le-weather-hourly-section{position:relative;z-index:2;margin-top:19px}
-      .le-weather-section-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 1px 9px}
-      .le-weather-section-title{margin:0;color:var(--muted);font-size:8px;font-weight:800;letter-spacing:.2em}
-      .le-weather-section-note{color:var(--muted);font-size:7px;letter-spacing:.09em}
-      .le-weather-hourly{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(45px,1fr);gap:2px;overflow-x:auto;padding:5px 0 7px;scrollbar-width:none;overscroll-behavior-x:contain}
+      .le-weather-hourly-section{grid-area:hours;position:relative;z-index:2;margin:5px 0 0}
+      .le-weather-section-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 1px 10px}
+      .le-weather-section-title{margin:0;color:var(--muted);font-size:9px;font-weight:800;letter-spacing:.2em}
+      .le-weather-section-note{color:var(--muted);font-size:8px;letter-spacing:.09em}
+      .le-weather-hourly{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px;overflow-x:auto;padding:8px 0 7px;scrollbar-width:none;overscroll-behavior-x:contain}
       .le-weather-hourly::-webkit-scrollbar{display:none}
-      .le-weather-hour{display:grid;justify-items:center;align-content:start;gap:6px;min-width:0;padding:8px 2px 5px;border-top:1px solid color-mix(in srgb,var(--ink) 20%,transparent);text-align:center;color:var(--ink)}
-      .le-weather-hour-time{font-size:8px;color:var(--muted);white-space:nowrap}.le-weather-hour-icon{width:19px;height:19px;color:var(--ink)}.le-weather-hour-temp{font-size:13px;font-weight:750;white-space:nowrap}.le-weather-hour-rain{font-size:7px;color:#668b8a;white-space:nowrap}
-      .le-weather-curve{display:block;width:100%;height:26px;margin-top:0;overflow:visible}.le-weather-curve path{fill:none;stroke:var(--ink);stroke-width:1.3;opacity:.72;vector-effect:non-scaling-stroke}.le-weather-curve circle{fill:var(--accent);stroke:var(--paper);stroke-width:1.1;vector-effect:non-scaling-stroke}
+      .le-weather-hour{display:grid;justify-items:center;align-content:start;gap:7px;min-width:0;padding:10px 2px 7px;border-top:1px solid color-mix(in srgb,var(--ink) 20%,transparent);text-align:center;color:var(--ink)}
+      .le-weather-hour-time{font-size:9px;color:var(--muted);white-space:nowrap}.le-weather-hour-icon{width:25px;height:25px;color:var(--ink)}.le-weather-hour-temp{font-family:Georgia,"Times New Roman",serif;font-size:clamp(24px,5.8vw,34px);font-weight:400;letter-spacing:-.045em;white-space:nowrap;line-height:1}.le-weather-hour-rain{font-size:8px;color:#668b8a;white-space:nowrap}
+      .le-weather-curve{display:block;width:100%;height:32px;margin-top:0;overflow:visible}.le-weather-curve path{fill:none;stroke:var(--ink);stroke-width:1.3;opacity:.72;vector-effect:non-scaling-stroke}.le-weather-curve circle{fill:var(--accent);stroke:var(--paper);stroke-width:1.1;vector-effect:non-scaling-stroke}
+      .le-weather-studio{grid-area:studio;position:relative;min-width:0;overflow:hidden;border:1px solid color-mix(in srgb,var(--ink) 16%,transparent);border-radius:17px;background:linear-gradient(145deg,rgba(255,255,255,.40),rgba(214,218,204,.20));box-shadow:0 8px 26px rgba(41,48,40,.06),inset 0 1px rgba(255,255,255,.68);padding:13px 13px 10px}
+      .le-weather-studio-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:5px}
+      .le-weather-studio-kicker{display:block;color:var(--muted);font-size:7px;font-weight:850;letter-spacing:.20em;text-transform:uppercase}
+      .le-weather-studio-title{margin:4px 0 0;font-family:Georgia,"Times New Roman",serif;font-size:20px;font-weight:400;line-height:1.05;letter-spacing:-.025em;color:var(--ink)}
+      .le-weather-studio-state{flex:0 0 auto;color:var(--accent);font-size:7px;font-weight:850;letter-spacing:.13em;text-align:right;white-space:nowrap;padding-top:2px}
+      .le-weather-studio-canvas{display:block;width:100%;height:clamp(180px,28vh,245px);border-radius:10px;background:radial-gradient(ellipse at 50% 46%,rgba(255,255,255,.48),rgba(231,229,215,.12) 72%);touch-action:none}
+      .le-weather-studio-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px;color:var(--muted);font-size:8px;letter-spacing:.03em}
+      .le-weather-art-replay{appearance:none;border:1px solid color-mix(in srgb,var(--ink) 22%,transparent);border-radius:999px;padding:5px 9px;background:rgba(255,255,255,.34);color:var(--ink);font:750 7px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.12em;cursor:pointer}
+      .le-weather-art-replay:active{transform:scale(.97)}
       .le-weather-status{min-height:15px;margin:12px 1px 0;color:var(--muted);font-size:8px;line-height:1.45}.le-weather-status:empty{display:none}
       .le-weather-screen[data-weather="rain"],.le-weather-screen[data-weather="storm"]{--accent:#4e8285}.le-weather-screen[data-weather="snow"]{--accent:#718c9e}.le-weather-screen[data-weather="hot"]{--accent:#bd6945}
       .le-weather-attribution{margin:13px 1px 0;color:var(--muted);font-size:7px;line-height:1.4;opacity:.78}
-      @media(min-width:600px) and (orientation:portrait){.le-weather-content{width:min(100%,760px);padding-left:clamp(32px,7vw,60px);padding-right:clamp(32px,7vw,60px)}.le-weather-headline{font-size:clamp(64px,9vw,88px)}.le-weather-temperature{font-size:126px}.le-weather-art-stage{height:clamp(240px,38vh,360px)}}
+      @media(min-width:600px) and (orientation:portrait){.le-weather-content{width:min(100%,760px);padding-left:clamp(32px,7vw,60px);padding-right:clamp(32px,7vw,60px)}.le-weather-headline{font-size:clamp(64px,9vw,88px)}.le-weather-temperature{font-size:126px}.le-weather-art-stage{height:clamp(240px,34vh,320px)}.le-weather-studio-canvas{height:clamp(210px,30vh,280px)}}
       @media(orientation:landscape) and (min-width:650px){
         .le-weather-screen{overflow-y:auto}
-        .le-weather-content{width:min(100%,1240px);min-height:100%;padding:calc(env(safe-area-inset-top) + 12px) clamp(24px,4vw,56px) calc(env(safe-area-inset-bottom) + 150px);display:grid;grid-template-columns:minmax(260px,.88fr) minmax(340px,1.12fr);grid-template-areas:"top top" "date date" "hero art" "summary art" "hours hours" "status status" "credit credit";column-gap:clamp(20px,4vw,58px);row-gap:7px;align-content:start;align-items:center}
-        .le-weather-topbar{grid-area:top}.le-weather-date-row{grid-area:date;margin-top:10px}.le-weather-hero{grid-area:hero;margin-top:5px;align-self:center}.le-weather-art-stage{grid-area:art;height:clamp(210px,49vh,430px);margin:0 -8px;align-self:stretch}.le-weather-summary{grid-area:summary;margin:0;align-self:start}.le-weather-hourly-section{grid-area:hours;margin-top:8px}.le-weather-status{grid-area:status;margin-top:0}.le-weather-attribution{grid-area:credit;margin-top:0}.le-weather-headline{font-size:clamp(45px,5vw,76px)}.le-weather-temperature{font-size:clamp(82px,8vw,112px)}.le-weather-hourly{grid-auto-columns:minmax(0,1fr);overflow:visible}.le-weather-hour{gap:4px}.le-weather-summary{max-width:540px}
+        .le-weather-content{width:min(100%,1380px);min-height:100%;padding:calc(env(safe-area-inset-top) + 12px) clamp(24px,4vw,56px) calc(env(safe-area-inset-bottom) + 160px)}
+        .le-weather-dashboard{grid-template-columns:minmax(280px,.88fr) minmax(380px,1.12fr);grid-template-areas:"hero scene" "summary studio" "hours studio";column-gap:clamp(24px,4vw,54px);row-gap:12px;margin-top:16px}
+        .le-weather-headline{font-size:clamp(46px,5vw,72px)}.le-weather-temperature{font-size:clamp(82px,8vw,110px)}
+        .le-weather-art-stage{height:clamp(190px,32vh,270px);margin:0;align-self:stretch}
+        .le-weather-summary{align-self:start;padding:13px 0}.le-weather-hourly-section{margin:0;align-self:start}
+        .le-weather-hourly{grid-auto-columns:minmax(0,1fr);overflow:visible;gap:3px}.le-weather-hour{gap:7px;padding:10px 1px 5px}.le-weather-hour-temp{font-size:clamp(23px,2.8vw,31px)}.le-weather-hour-time{font-size:9px}.le-weather-hour-icon{width:23px;height:23px}
+        .le-weather-studio{align-self:stretch;padding:15px 16px 12px}.le-weather-studio-canvas{height:clamp(190px,26vh,218px)}.le-weather-studio-title{font-size:23px}
       }
-      @media(max-width:390px){.le-weather-content{padding-left:16px;padding-right:16px;padding-bottom:calc(env(safe-area-inset-bottom) + 226px)}.le-weather-date-row{margin-top:24px}.le-weather-headline{font-size:clamp(40px,11.3vw,48px)}.le-weather-temperature{font-size:clamp(72px,20vw,82px)}.le-weather-art-stage{height:clamp(174px,31vh,230px);margin-left:-9px;margin-right:-9px}.le-weather-summary{padding:10px 0}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:6px;letter-spacing:.08em}.le-weather-stat-value{font-size:11px}.le-weather-hourly-section{margin-top:16px}}
-      @media(orientation:landscape) and (max-height:520px){.le-weather-content{padding-top:calc(env(safe-area-inset-top) + 8px);padding-bottom:calc(env(safe-area-inset-bottom) + 146px);row-gap:4px}.le-weather-date-row{margin-top:5px}.le-weather-headline{font-size:clamp(36px,5vw,52px)}.le-weather-headline:after{margin:9px 0 9px}.le-weather-temperature{font-size:clamp(68px,8vw,82px)}.le-weather-art-stage{height:clamp(145px,38vh,210px)}.le-weather-hourly-section{margin-top:4px}}
+      @media(max-width:430px){.le-weather-content{padding-left:17px;padding-right:17px;padding-bottom:calc(env(safe-area-inset-bottom) + 278px)}.le-weather-date-row{margin-top:24px;align-items:flex-start}.le-weather-headline{font-size:clamp(42px,11.5vw,52px)}.le-weather-temperature{font-size:clamp(74px,20vw,86px)}.le-weather-art-stage{height:clamp(158px,21vh,180px);margin-left:-9px;margin-right:-9px}.le-weather-summary{padding:10px 0}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:6px;letter-spacing:.08em}.le-weather-stat-value{font-size:11px}.le-weather-hourly-section{margin-top:2px}.le-weather-hourly{gap:1px;padding:6px 0}.le-weather-hour{gap:6px;padding:8px 1px 5px}.le-weather-hour-time{font-size:8px}.le-weather-hour-icon{width:21px;height:21px}.le-weather-hour-temp{font-size:clamp(21px,6vw,25px)}.le-weather-hour-rain{font-size:7px}.le-weather-curve{height:28px}.le-weather-studio{padding:11px 10px 9px;border-radius:14px}.le-weather-studio-title{font-size:18px}.le-weather-studio-canvas{height:clamp(138px,18vh,155px)}}
+      @media(orientation:landscape) and (max-height:520px){.le-weather-content{padding-top:calc(env(safe-area-inset-top) + 8px);padding-bottom:calc(env(safe-area-inset-bottom) + 150px)}.le-weather-date-row{margin-top:5px}.le-weather-dashboard{margin-top:7px;column-gap:22px;row-gap:7px}.le-weather-headline{font-size:clamp(36px,4.6vw,48px)}.le-weather-headline:after{margin:10px 0 10px}.le-weather-temperature{font-size:clamp(66px,7vw,80px)}.le-weather-art-stage{height:clamp(130px,31vh,175px)}.le-weather-studio{padding:9px 11px}.le-weather-studio-canvas{height:clamp(118px,21vh,150px)}.le-weather-studio-title{font-size:18px}.le-weather-hourly{padding:4px 0}.le-weather-hour{gap:4px;padding:6px 1px}.le-weather-hour-temp{font-size:22px}.le-weather-hourly-section{margin:0}}
       @media(prefers-reduced-motion:reduce){.le-weather-screen *,.le-weather-screen *:before,.le-weather-screen *:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
       @media(prefers-reduced-transparency:reduce){.le-weather-mode{background:var(--paper)}}
     `;
@@ -162,8 +179,8 @@
       wind:[21,20,0,22,48,36,290,24,16,8,0], night:[18,17,0,4,63,4,15,21,15,0,0], hot:[38,40,0,2,27,8,90,40,26,0,0]
     };
     const [temp,feels,code,cloud,humidity,wind,direction,high,low,chance,precip]=samples[kind] || samples.clear;
-    const start = new Date(); start.setMinutes(0,0,0);
-    const hours = Array.from({length:6},(_,i)=>{const d=new Date(start);d.setHours(d.getHours()+i);return localWallTime(d);});
+    const now = new Date();
+    const hours = Array.from({length:6},(_,i)=>{const d=new Date(now);if(i===0)return localWallTime(d);d.setMinutes(0,0,0);d.setHours(d.getHours()+i);return localWallTime(d);});
     const temps = Array.from({length:6},(_,i)=>Math.round(temp + (i===0?0:Math.sin(i*.85)*1.6 + (kind==='hot'?-i*.3:i*.2))));
     const codes = temps.map((_,i)=>kind==='night' ? 0 : (kind==='rain' && i>3 ? 61 : code));
     const isNight = kind === 'night' || (kind === 'auto' && new Date().getHours() < 6);
@@ -297,18 +314,191 @@
     return {setState,stop(){if(raf)cancelAnimationFrame(raf);raf=0;observer?.disconnect();window.removeEventListener('resize',resize);document.removeEventListener('visibilitychange',onVisibility);}};
   }
 
+  // Initial, original weather-matched art studies. The registry is data-driven:
+  // additional studies can be added by ID and condition tags without changing the renderer.
+  const JAPANESE_ART_LIBRARY = [
+    { id:'clear-pine-001', weather:['clear','hot'], title:'Red Sun over Pine Ridge', caption:'A red sun, distant peaks and a windswept pine', motif:'pine' },
+    { id:'cloud-willow-001', weather:['cloudy'], title:'Clouds over the Willow', caption:'Soft cloud banks above a quiet river', motif:'willow' },
+    { id:'rain-willow-001', weather:['rain'], title:'Willow in the Rain', caption:'Rain strokes fall into a still mountain pond', motif:'willow' },
+    { id:'storm-wave-001', weather:['storm'], title:'Waves beneath the Storm', caption:'A storm crest rendered in sweeping ink', motif:'waves' },
+    { id:'snow-pine-001', weather:['snow'], title:'Snow on the Pine Branches', caption:'White ink gathers on winter branches', motif:'snow' },
+    { id:'fog-temple-001', weather:['fog'], title:'Temple in the Mist', caption:'A distant roof emerging through pale ink wash', motif:'temple' },
+    { id:'wind-bamboo-001', weather:['wind'], title:'Bamboo in the Wind', caption:'Long leaves bend with the passing wind', motif:'bamboo' },
+    { id:'night-moon-001', weather:['night'], title:'Moon over the Quiet Ridge', caption:'A crescent above layered mountain silhouettes', motif:'moon' }
+  ];
+
+  function makeArtStudyStrokes(state) {
+    const kind=state.phase==='night'?'night':(state.weather==='hot'?'clear':state.weather);
+    const study=JAPANESE_ART_LIBRARY.find(item=>item.weather.includes(kind)) || JAPANESE_ART_LIBRARY[0];
+    const strokes=[];
+    const add=(points,tone='ink',weight=1.7,alpha=.78,kind='line')=>strokes.push({points,tone,weight,alpha,kind});
+    const sample=(fn,count=22)=>Array.from({length:count+1},(_,i)=>fn(i/count));
+    const quad=(a,c,b,n=18)=>sample(t=>[(1-t)*(1-t)*a[0]+2*(1-t)*t*c[0]+t*t*b[0],(1-t)*(1-t)*a[1]+2*(1-t)*t*c[1]+t*t*b[1]],n);
+    const cubic=(a,c1,c2,b,n=24)=>sample(t=>{const u=1-t;return [u*u*u*a[0]+3*u*u*t*c1[0]+3*u*t*t*c2[0]+t*t*t*b[0],u*u*u*a[1]+3*u*u*t*c1[1]+3*u*t*t*c2[1]+t*t*t*b[1]];},n);
+    const paper=state.phase==='night'?'#d8ddd2':'#344239';
+    // A quiet red sun / moon is the signature mark in every composition.
+    if(state.phase==='night'||study.motif==='moon'){
+      add(sample(t=>{const a=-Math.PI*.48+t*Math.PI*1.45;return [.74+Math.cos(a)*.095,.22+Math.sin(a)*.095]},36),'accent',2.2,.92);
+      add(sample(t=>{const a=Math.PI*.1+t*Math.PI*1.18;return [.755+Math.cos(a)*.078,.205+Math.sin(a)*.078]},28),'soft',.8,.42);
+    } else {
+      add(sample(t=>[.74+Math.cos(t*Math.PI*2)*.093,.22+Math.sin(t*Math.PI*2)*.093],42),'accent',2.6,.88);
+      add([[.65,.22],[.66,.20],[.68,.19],[.70,.19]],'accent',.8,.34);
+    }
+    // Broad, translucent ink washes establish the paper-and-pigment depth first.
+    add(cubic([-.08,.66],[.16,.50],[.27,.55],[.43,.65]),'ridge',8.5,.16,'wash');
+    add(cubic([.24,.69],[.43,.55],[.62,.58],[.82,.68]),'soft',7.2,.13,'wash');
+    add(cubic([-.02,.78],[.23,.69],[.48,.73],[.71,.80]),'ridge',9.5,.12,'wash');
+    // Distant mountain contours, painted in several separate passes.
+    add(cubic([-.03,.66],[.13,.54],[.20,.57],[.33,.64]),'soft',1.35,.46);
+    add(cubic([.20,.67],[.39,.50],[.48,.54],[.61,.64]),'ink',2.0,.68);
+    add(cubic([.50,.67],[.66,.56],[.75,.54],[1.04,.65]),'soft',1.2,.42);
+    add(cubic([.04,.73],[.26,.64],[.48,.69],[.68,.73]),'soft',1.0,.30);
+    // Foreground ridge / riverbank.
+    add(cubic([-.04,.83],[.22,.72],[.40,.77],[.60,.82]),'ink',1.7,.54);
+    add(cubic([.48,.84],[.68,.74],[.84,.76],[1.04,.80]),'soft',1.4,.46);
+    // A pine trunk and deliberate branch strokes.
+    add(cubic([.82,.86],[.80,.68],[.84,.52],[.79,.34]),'ink',3.1,.88);
+    for(let i=0;i<6;i++){
+      const y=.40+i*.062, reach=.11+(i%3)*.025, sway=(i%2?1:-1)*.025;
+      add(cubic([.80,y],[.80+reach*.12,y-.015],[.80+reach*.65,y+.025],[.80+reach+sway,y+.01]),'ink',1.55,.76);
+      add(cubic([.80,y+.005],[.80-reach*.20,y-.025],[.80-reach*.60,y+.025],[.80-reach,y+.02]),'soft',1.2,.68);
+      for(let j=0;j<4;j++){
+        const bx=.80+(j-1.5)*reach*.48, by=y+(j%2?-.018:.018);
+        add(cubic([bx,by],[bx+.018,by-.025],[bx+.035,by-.017],[bx+.05,by-.028]),j%3===0?'accent':'ink',.8,.65);
+      }
+      for(let j=0;j<5;j++){
+        const bx=.80+(j-2)*reach*.30, by=y+(j%2?-.012:.013);
+        add(cubic([bx,by],[bx-.006,by-.018],[bx-.025,by-.027],[bx-.039,by-.033]),'ink',.8,.50);
+        add(cubic([bx,by],[bx+.006,by-.018],[bx+.026,by-.025],[bx+.040,by-.030]),'soft',.7,.46);
+      }
+    }
+    // Small Japanese roof / pavilion silhouette, drawn as separate brush lines.
+    const roofY=.71,rx=.60;
+    add(cubic([rx-.105,roofY+.03],[rx-.055,roofY-.012],[rx+.045,roofY-.012],[rx+.105,roofY+.03]),'ink',1.8,.78);
+    add([[rx-.105,roofY+.03],[rx+.105,roofY+.03]],'ink',1.2,.76);
+    add([[rx-.072,roofY+.035],[rx-.072,roofY+.14],[rx+.072,roofY+.14],[rx+.072,roofY+.035]],'ink',1.25,.68);
+    add(cubic([rx-.09,roofY+.14],[rx,roofY+.11],[rx+.09,roofY+.14],[rx+.12,roofY+.16]),'ink',1.1,.70);
+    // Weather-specific motifs make the library selection visible, not just metadata.
+    if(kind==='rain'||kind==='storm'){
+      // Rain-cloud scallops, falling brush strokes and repeated water rings.
+      add(cubic([.20,.30],[.24,.25],[.29,.27],[.31,.30]),'soft',1.5,.66);
+      add(cubic([.31,.30],[.34,.25],[.40,.25],[.43,.30]),'soft',1.5,.66);
+      // Drooping willow tassels: long, tapered, individually painted strokes.
+      if(kind==='rain'){
+        add(cubic([.17,.34],[.15,.48],[.20,.55],[.18,.67]),'ink',1.8,.65);
+        add(cubic([.20,.33],[.23,.48],[.20,.57],[.25,.70]),'soft',1.2,.68);
+        for(let i=0;i<9;i++){const x=.15+(i%3)*.035,y=.43+Math.floor(i/3)*.07;add(cubic([x,y],[x-.018,y+.045],[x-.010,y+.075],[x-.024,y+.12]),i%3?'ink':'soft',.8,.62);}
+      }
+      for(let i=0;i<11;i++){const x=.19+(i%6)*.105,y=.34+Math.floor(i/6)*.045;add([[x,y],[x-.012,y+.045],[x-.02,y+.075]],'soft',.9,.48);}
+      for(let i=0;i<5;i++){
+        const x=.16+i*.16,y=.88+(i%2)*.035;
+        add(sample(t=>[x+Math.cos(t*Math.PI*2)*(.012+t*.025),y+Math.sin(t*Math.PI*2)*(.004+t*.008)],16),'water',.9,.52);
+      }
+      if(kind==='storm'){
+        add(cubic([.10,.24],[.24,.14],[.40,.17],[.52,.25]),'ink',2.1,.72);
+        add([[.49,.30],[.46,.38],[.51,.37],[.47,.46]],'accent',2.0,.82);
+        // Large crashing wave and curling foam, built as layered brush arcs.
+        add(cubic([.02,.82],[.16,.66],[.28,.67],[.38,.82]),'water',10,.20,'wash');
+        add(cubic([.04,.80],[.18,.65],[.28,.66],[.40,.80]),'ink',2.8,.82);
+        add(cubic([.23,.84],[.32,.72],[.44,.74],[.52,.85]),'soft',5.5,.20,'wash');
+        add(cubic([.28,.79],[.38,.70],[.48,.76],[.53,.83]),'ink',1.9,.74);
+        for(let i=0;i<8;i++){const x=.12+i*.045,y=.73-(i%3)*.025;add(cubic([x,y],[x+.018,y-.025],[x+.035,y-.018],[x+.044,y-.035]),'paper',.9,.82);}
+      }
+    } else if(kind==='snow'){
+      for(let i=0;i<9;i++){
+        const x=.16+(i%3)*.28,y=.24+Math.floor(i/3)*.16;
+        add([[x-.012,y],[x+.012,y]],'soft',1.0,.70);add([[x,y-.012],[x,y+.012]],'soft',1.0,.70);
+        add([[x-.008,y-.008],[x+.008,y+.008]],'soft',.75,.58);
+      }
+      for(let i=0;i<6;i++){const x=.78+(i-2.5)*.035,y=.45+i*.045;add([[x-.018,y],[x+.016,y-.006],[x+.035,y+.002]],'paper',2.2,.86);}
+    } else if(kind==='fog'){
+      for(let i=0;i<5;i++)add(cubic([.03,.47+i*.065],[.24,.42+i*.065],[.62,.52+i*.065],[.98,.46+i*.065]),'wash',6.5,.18,'wash');
+    } else if(kind==='wind'||kind==='bamboo'){
+      for(let i=0;i<7;i++){const x=.20+i*.11,y=.40+(i%3)*.06;add(cubic([x,y],[x+.06,y-.07],[x+.13,y+.04],[x+.22,y-.03]),'soft',1.15,.62);}
+      for(let i=0;i<8;i++){const x=.82+(i%2)*.018,y=.29+i*.036;add(cubic([x,y],[x+.07,y-.01],[x+.12,y-.05],[x+.16,y-.02]),i%3?'ink':'accent',1.0,.72);}
+    } else if(kind==='cloudy'){
+      for(let i=0;i<4;i++)add(cubic([.08,.30+i*.055],[.20,.25+i*.055],[.31,.35+i*.055],[.45,.30+i*.055]),'soft',1.7,.55);
+    } else if(kind==='night'){
+      for(let i=0;i<9;i++){const x=.13+(i*37%70)/100,y=.18+(i*23%32)/100;add([[x-.006,y],[x+.006,y]],'soft',.9,.68);add([[x,y-.006],[x,y+.006]],'soft',.9,.68);}
+    } else {
+      add(cubic([.13,.34],[.24,.28],[.33,.30],[.43,.34]),'soft',1.25,.48);
+    }
+    // A few short water / ground lines anchor the composition.
+    for(let i=0;i<5;i++)add(cubic([.10,.90+i*.012],[.28,.88+i*.012],[.48,.92+i*.012],[.66,.89+i*.012]),'water',.85,.42);
+    return {study,strokes,paper};
+  }
+
+  function makeArtStudioPainter(canvas,onProgress){
+    let ctx=null;try{ctx=canvas.getContext('2d',{alpha:true});}catch(_){ctx=null;}
+    if(!ctx)return {setState(){},replay(){},stop(){}};
+    let width=0,height=0,dpr=1,raf=0,replayTimer=0,startAt=0,elapsed=0,last=0,current=null,study=null,strokes=[],paper='#f1eee5',complete=false;
+    const reduced=reducedMotion();
+    const resize=()=>{const rect=canvas.getBoundingClientRect();width=Math.max(1,rect.width);height=Math.max(1,rect.height);dpr=Math.min(window.devicePixelRatio||1,1.5);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);drawFrame(1);};
+    const colors=()=>({ink:current?.phase==='night'?'#dce4dc':'#26312b',soft:current?.phase==='night'?'#9eaea2':'#718074',water:current?.phase==='night'?'#87a2a0':'#789a98',accent:current?.phase==='night'?'#cb7868':'#bb4438',paper:current?.phase==='night'?'#26332f':'#f3efe5'});
+    function strokeOne(stroke,portion){
+      if(!stroke.points||stroke.points.length<2||portion<=0)return;
+      const palette=colors();const tone=stroke.tone==='accent'?palette.accent:stroke.tone==='soft'?palette.soft:stroke.tone==='ridge'?palette.ridge:stroke.tone==='water'?palette.water:stroke.tone==='paper'?palette.paper:palette.ink;
+      const points=stroke.points;const scaled=points.map(pt=>[pt[0]*width,pt[1]*height]);
+      const total=scaled.length-1,visible=Math.max(1,Math.min(total,Math.ceil(total*portion)));
+      const isWash=stroke.kind==='wash';
+      ctx.save();ctx.globalAlpha=stroke.alpha??.75;ctx.strokeStyle=tone;ctx.lineWidth=isWash?Math.max(5,Math.min(34,stroke.weight*Math.min(width,height)/70)):Math.max(.7,Math.min(12,stroke.weight*Math.min(width,height)/180));ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(scaled[0][0],scaled[0][1]);
+      for(let i=1;i<=visible;i++){
+        const index=Math.min(i,scaled.length-1);let x=scaled[index][0],y=scaled[index][1];
+        if(i===visible&&portion<1){const fraction=total*portion-Math.floor(total*portion);const next=scaled[Math.min(index+1,scaled.length-1)];x=scaled[index][0]+(next[0]-scaled[index][0])*fraction;y=scaled[index][1]+(next[1]-scaled[index][1])*fraction;}
+        ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+      // A restrained dry-brush echo gives the marks an ink-on-paper edge.
+      if(!isWash&&stroke.weight>1.2){ctx.globalAlpha=(stroke.alpha??.75)*.17;ctx.lineWidth=Math.max(.4,ctx.lineWidth*.45);ctx.translate(.65,-.45);ctx.stroke();}
+      ctx.restore();
+    }
+    function drawFrame(progress){
+      const palette=colors();ctx.clearRect(0,0,width,height);ctx.fillStyle=palette.paper;ctx.fillRect(0,0,width,height);
+      // Washed red sun, completed early as a soft pigment mark.
+      ctx.save();ctx.globalAlpha=.12;ctx.fillStyle=palette.accent;ctx.beginPath();ctx.arc(width*.74,height*.22,Math.min(width,height)*.105,0,Math.PI*2);ctx.fill();ctx.restore();
+      const units=Math.max(0,Math.min(1,progress))*strokes.length;const done=Math.floor(units);const partial=units-done;
+      for(let i=0;i<done;i++)strokeOne(strokes[i],1);
+      if(done<strokes.length&&partial>0)strokeOne(strokes[done],partial);
+      if(progress>=1){ctx.save();ctx.globalAlpha=.08;ctx.fillStyle=palette.soft;for(let i=0;i<7;i++){ctx.beginPath();ctx.ellipse(width*(.08+i*.14),height*(.17+(i%3)*.21),width*.025,height*.008,(i%2)*.2,0,Math.PI*2);ctx.fill();}ctx.restore();}
+      if(typeof onProgress==='function')onProgress({title:study?.title||'Ink study',count:Math.min(strokes.length,done+(partial>0?1:0)),total:strokes.length,complete:progress>=1});
+    }
+    function stopLoop(){if(raf)cancelAnimationFrame(raf);raf=0;if(replayTimer)clearTimeout(replayTimer);replayTimer=0;}
+    function frame(now){raf=0;if(!canvas.isConnected||!isActive('weather')||document.hidden)return;const progress=Math.min(1,(now-startAt)/Math.max(12000,Math.min(22000,strokes.length*300)));drawFrame(progress);if(progress<1){raf=requestAnimationFrame(frame);}else{complete=true;replayTimer=window.setTimeout(()=>startDrawing(),11500);}}
+    function startDrawing(){stopLoop();if(!current)return;startAt=performance.now();complete=false;last=0;drawFrame(0);if(reduced){drawFrame(1);complete=true;return;}raf=requestAnimationFrame(frame);}
+    function choose(next){current=next||current;const built=makeArtStudyStrokes(current||{weather:'clear',phase:'day'});study=built.study;strokes=built.strokes;paper=built.paper;startDrawing();}
+    function setState(next){const changed=!current||current.weather!==next.weather||current.phase!==next.phase||Math.abs((current.wind||0)-(next.wind||0))>8;current=next||current;if(changed){choose(current);} }
+    function replay(){if(current)startDrawing();}
+    function onVisibility(){if(document.hidden)stopLoop();else if(current&&!complete)startDrawing();}
+    document.addEventListener('visibilitychange',onVisibility);
+    window.addEventListener('resize',resize,{passive:true});
+    const observer=typeof ResizeObserver==='function'?new ResizeObserver(()=>{resize();}):null;observer?.observe(canvas);
+    resize();
+    return {setState,replay,stop(){stopLoop();observer?.disconnect();window.removeEventListener('resize',resize);document.removeEventListener('visibilitychange',onVisibility);}};
+  }
+
   function makeScreen(){
     const screen=el('div','le-weather-screen');screen.dataset.weather='clear';screen.dataset.phase='day';screen.dataset.preview='true';
     screen.innerHTML=`
       <div class="le-weather-content">
         <header class="le-weather-topbar"><div class="le-weather-brand">LIVE <span>//</span> EARTH</div><div class="le-weather-place"><svg viewBox="0 0 18 22" fill="none" aria-hidden="true"><path d="M9 20s7-7 7-12a7 7 0 1 0-14 0c0 5 7 12 7 12Z" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="8" r="2.2" stroke="currentColor" stroke-width="1.5"/></svg><span id="le-weather-place-text">LOCATION PREVIEW</span></div></header>
         <div class="le-weather-date-row"><div class="le-weather-date" id="le-weather-date">LOCAL TIME</div><label class="le-weather-mode"><span>SCENE</span><select id="le-weather-mode-select" aria-label="Weather scene preview"><option value="auto">AUTO</option><option value="clear">CLEAR</option><option value="cloudy">CLOUDY</option><option value="rain">RAIN</option><option value="storm">STORM</option><option value="snow">SNOW</option><option value="fog">FOG</option><option value="wind">WIND</option><option value="night">NIGHT</option><option value="hot">HOT</option></select></label></div>
-        <section class="le-weather-hero" aria-label="Current weather"><h1 class="le-weather-headline" id="le-weather-headline">A quiet sky.</h1><div class="le-weather-temperature-row"><div class="le-weather-temperature" id="le-weather-temperature">—</div><div class="le-weather-condition"><span class="le-weather-condition-icon" id="le-weather-condition-icon"></span><div class="le-weather-condition-name" id="le-weather-condition">Weather preview</div><div class="le-weather-feels" id="le-weather-feels">Sample values</div></div></div></section>
-        <div class="le-weather-art-stage" aria-hidden="true"><canvas class="le-weather-art-canvas" id="le-weather-art-canvas"></canvas></div>
-        <section class="le-weather-summary" aria-label="Important weather details"><div class="le-weather-stat"><span class="le-weather-stat-label">HIGH / LOW</span><strong class="le-weather-stat-value" id="le-weather-highlow">—</strong></div><div class="le-weather-stat"><span class="le-weather-stat-label">RAIN CHANCE</span><strong class="le-weather-stat-value" id="le-weather-rainchance">—</strong></div><div class="le-weather-stat"><span class="le-weather-stat-label">WIND</span><strong class="le-weather-stat-value" id="le-weather-wind">—</strong></div></section>
-        <section class="le-weather-hourly-section" aria-label="Hourly forecast"><div class="le-weather-section-head"><h2 class="le-weather-section-title">THE HOURS AHEAD</h2><span class="le-weather-section-note">NEXT 6 HOURS</span></div><div class="le-weather-hourly" id="le-weather-hourly"></div><svg class="le-weather-curve" id="le-weather-curve" viewBox="0 0 320 26" preserveAspectRatio="none" aria-hidden="true"></svg></section>
+        <div class="le-weather-dashboard">
+          <div class="le-weather-forecast-column">
+            <section class="le-weather-hero" aria-label="Current weather"><h1 class="le-weather-headline" id="le-weather-headline">A quiet sky.</h1><div class="le-weather-temperature-row"><div class="le-weather-temperature" id="le-weather-temperature">—</div><div class="le-weather-condition"><span class="le-weather-condition-icon" id="le-weather-condition-icon"></span><div class="le-weather-condition-name" id="le-weather-condition">Weather preview</div><div class="le-weather-feels" id="le-weather-feels">Sample values</div></div></div></section>
+            <section class="le-weather-summary" aria-label="Important weather details"><div class="le-weather-stat"><span class="le-weather-stat-label">HIGH / LOW</span><strong class="le-weather-stat-value" id="le-weather-highlow">—</strong></div><div class="le-weather-stat"><span class="le-weather-stat-label">RAIN CHANCE</span><strong class="le-weather-stat-value" id="le-weather-rainchance">—</strong></div><div class="le-weather-stat"><span class="le-weather-stat-label">WIND</span><strong class="le-weather-stat-value" id="le-weather-wind">—</strong></div></section>
+            <section class="le-weather-hourly-section" aria-label="Hourly forecast"><div class="le-weather-section-head"><h2 class="le-weather-section-title">THE HOURS AHEAD</h2><span class="le-weather-section-note">NEXT 6 HOURS</span></div><div class="le-weather-hourly" id="le-weather-hourly"></div><svg class="le-weather-curve" id="le-weather-curve" viewBox="0 0 320 26" preserveAspectRatio="none" aria-hidden="true"></svg></section>
+          </div>
+          <div class="le-weather-art-column">
+            <div class="le-weather-art-stage" aria-label="Live weather illustration"><canvas class="le-weather-art-canvas" id="le-weather-art-canvas"></canvas></div>
+            <section class="le-weather-studio" aria-label="Live Japanese art studio">
+              <div class="le-weather-studio-head"><div><span class="le-weather-studio-kicker">LIVE ART · PAINTING THE WEATHER</span><h2 class="le-weather-studio-title" id="le-weather-studio-title">Red Sun over Pine Ridge</h2></div><span class="le-weather-studio-state" id="le-weather-studio-state" role="status">PREPARING</span></div>
+              <canvas class="le-weather-studio-canvas" id="le-weather-studio-canvas" aria-label="Japanese ink artwork being drawn stroke by stroke"></canvas>
+              <div class="le-weather-studio-foot"><span id="le-weather-studio-caption">Original Japanese ink study · Weather matched</span><button class="le-weather-art-replay" id="le-weather-art-replay" type="button">REPLAY ↻</button></div>
+            </section>
+          </div>
+        </div>
         <p class="le-weather-status" id="le-weather-status" aria-live="polite"></p>
-        <p class="le-weather-attribution">Weather data: Open-Meteo · Japanese ink drawing generated locally from live conditions</p>
+        <p class="le-weather-attribution">Weather data: Open-Meteo · Ink art is drawn locally from a weather-matched library</p>
       </div>`;
     return screen;
   }
@@ -316,14 +506,15 @@
   function activateWeather(){
     const view=mount('weather');if(!view)return;
     addStyles();const screen=makeScreen();view.panel.remove();view.root.replaceChildren(screen);
-    const canvas=screen.querySelector('#le-weather-art-canvas');const painter=makePainter(canvas);
+    const canvas=screen.querySelector('#le-weather-art-canvas');const painter=makePainter(canvas);const studioCanvas=screen.querySelector('#le-weather-studio-canvas');const studioState=screen.querySelector('#le-weather-studio-state');const studioTitle=screen.querySelector('#le-weather-studio-title');const studioCaption=screen.querySelector('#le-weather-studio-caption');const studioPainter=makeArtStudioPainter(studioCanvas,meta=>{if(studioState)studioState.textContent=meta.complete?'FINISHED':`DRAWING · ${String(meta.count).padStart(2,'0')} / ${meta.total}`;if(meta.title&&studioTitle)studioTitle.textContent=meta.title;});const replayButton=screen.querySelector('#le-weather-art-replay');const handleReplay=()=>studioPainter.replay();replayButton?.addEventListener('click',handleReplay);
     let abortController=null,pollTimer=0,refreshTimer=0,clockTimer=0,disposed=false,requestSerial=0,lastFetch=0,manualPreview=false;
     const selector=screen.querySelector('#le-weather-mode-select');
     const handleModeChange=()=>chooseMode(selector.value);
     const stopPolling=()=>{if(pollTimer)clearInterval(pollTimer);pollTimer=0;};
     function paint(data,preview=false){
       const c=data.current||{};const code=Number(c.weather_code);if(!Number.isFinite(code))throw new Error('Weather source returned unusable conditions.');
-      paintData(screen,data,preview);painter.setState(screen.__weatherState);lastFetch=Date.now();
+      paintData(screen,data,preview);painter.setState(screen.__weatherState);studioPainter.setState(screen.__weatherState);lastFetch=Date.now();
+      const artKind=screen.__weatherState.phase==='night'?'night':screen.__weatherState.weather;const artRecord=JAPANESE_ART_LIBRARY.find(item=>item.weather.includes(artKind))||JAPANESE_ART_LIBRARY[0];if(studioCaption)studioCaption.textContent=`${artRecord.caption} · ${preview?'Sample scene':'Live weather matched'}`;
     }
     function showPreview(kind='clear',message='SAMPLE SCENE · Turn on Location for your live forecast.'){
       const data=sampleData(kind);paint(data,true);setText(screen,'le-weather-status',message);screen.dataset.preview='true';setText(screen,'le-weather-place-text','LOCATION PREVIEW');
@@ -357,7 +548,7 @@
     refreshTimer=window.setInterval(()=>{if(!disposed&&!document.hidden&&!manualPreview&&window.liveEarthLocationAllowed?.()===true)fetchLive();},REFRESH_MS);
     clockTimer=window.setInterval(updateLocalClock,30000);updateLocalClock();
     if(window.liveEarthLocationAllowed?.()===true)pollForFix();else showLocationOff();
-    return()=>{disposed=true;requestSerial++;stopPolling();if(refreshTimer)clearInterval(refreshTimer);if(clockTimer)clearInterval(clockTimer);abortController?.abort();abortController=null;painter.stop();selector.removeEventListener('change',handleModeChange);window.removeEventListener('live-earth-location-state',onLocationState);window.removeEventListener('live-earth-location-stop',onLocationStop);window.removeEventListener('online',onOnline);window.removeEventListener('offline',onOffline);document.removeEventListener('visibilitychange',onVisibility);screen.remove();document.getElementById(STYLE_ID)?.remove();};
+    return()=>{disposed=true;requestSerial++;stopPolling();if(refreshTimer)clearInterval(refreshTimer);if(clockTimer)clearInterval(clockTimer);abortController?.abort();abortController=null;painter.stop();studioPainter.stop();replayButton?.removeEventListener('click',handleReplay);selector.removeEventListener('change',handleModeChange);window.removeEventListener('live-earth-location-state',onLocationState);window.removeEventListener('live-earth-location-stop',onLocationStop);window.removeEventListener('online',onOnline);window.removeEventListener('offline',onOffline);document.removeEventListener('visibilitychange',onVisibility);screen.remove();document.getElementById(STYLE_ID)?.remove();};
   }
 
   runtime.registerFeature('weather',activateWeather);

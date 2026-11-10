@@ -1,0 +1,18 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const s=fs.readFileSync(path.join(__dirname,'..','Weather/weather-view.js'),'utf8');
+assert.ok(s.includes('const JAPANESE_ART_LIBRARY = ['));
+for(const id of ['clear-pine-001','cloud-willow-001','rain-willow-001','storm-wave-001','snow-pine-001','fog-temple-001','wind-bamboo-001','night-moon-001']) assert.ok(s.includes(id),`Missing art study ${id}`);
+assert.ok(s.includes('function makeArtStudyStrokes(state)'));
+assert.ok(s.includes('function makeArtStudioPainter(canvas,onProgress)'));
+assert.ok(s.includes('id="le-weather-studio-canvas"'));
+assert.ok(s.includes('LIVE ART · PAINTING THE WEATHER'));
+assert.ok(s.includes('DRAWING · ${String(meta.count).padStart(2,\'0\')} / ${meta.total}'));
+assert.ok(s.includes('id="le-weather-art-replay"'));
+assert.ok(s.includes('studioPainter.setState(screen.__weatherState)'));
+assert.ok(s.includes('studioPainter.stop()'));
+assert.ok(s.includes('requestAnimationFrame(frame)'));
+assert.ok(s.includes('strokeOne(strokes[i],1)'));
+assert.ok(!/weather-scene\.webp|weather-scene-landscape\.webp|<picture|<img/.test(s));
+console.log('Weather-matched art registry, stroke-by-stroke studio, replay control and lifecycle cleanup checks passed.');
