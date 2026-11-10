@@ -9,7 +9,7 @@ assert.ok(start >= 0 && end > start, 'Weather state helpers must exist');
 const helpers = source.slice(start, end);
 const api = vm.runInNewContext(`(() => { ${helpers}; return { visualState }; })()`);
 const cases = [
-  [{time:'2026-11-10T12:00',temperature:23,feelsLike:24,isDay:1,weather_code:0,cloudCover:5,wind:4,gusts:6}, 'clear', 'day'],
+  [{time:'2026-11-10T08:00',temperature:23,feelsLike:24,isDay:1,weather_code:0,cloudCover:5,wind:4,gusts:6}, 'clear', 'day'],
   [{time:'2026-11-10T06:00',temperature:19,isDay:1,weather_code:1,cloudCover:10}, 'clear', 'dawn'],
   [{time:'2026-11-10T18:00',temperature:22,isDay:1,weather_code:2,cloudCover:40}, 'clear', 'evening'],
   [{time:'2026-11-10T23:00',temperature:18,isDay:0,weather_code:0,cloudCover:0}, 'clear', 'night'],
@@ -25,4 +25,4 @@ for (const [item, weather, phase] of cases) {
   assert.equal(actual.weather, weather);
   assert.equal(actual.phase, phase);
 }
-console.log('Weather-to-background state mapping passed for clear, cloudy, rain, storm, snow, fog, hot and day phases.');
+console.log('Weather-to-art state mapping passed for clear, cloudy, rain, storm, snow, fog, hot and day phases.');
