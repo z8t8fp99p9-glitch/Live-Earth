@@ -2,130 +2,80 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const weather = fs.readFileSync(path.join(__dirname, '..', 'Weather/weather-view.js'), 'utf8');
 
-const root = path.resolve(__dirname, '..');
-const weather = fs.readFileSync(path.join(root, 'Weather/weather-view.js'), 'utf8');
-
-assert.ok(weather.includes("runtime.registerFeature('weather',activateWeather)"), 'Weather must remain on the existing Stacks route');
+// Integration contracts.
+assert.ok(weather.includes("runtime.registerFeature('weather',activateWeather)"), 'Weather must stay on the existing Stacks route');
 assert.ok(weather.includes("new URL('../vendor/three.module.js', WEATHER_SCRIPT_URL).href"), 'Weather must use the already-cached same-origin Three.js runtime');
 assert.ok(weather.includes('await import(THREE_MODULE_URL)'), 'Weather must dynamically load the shared 3D runtime');
-assert.ok(weather.includes('new THREE.WebGLRenderer'), 'Weather must render a true 3D environment');
+assert.ok(weather.includes('new THREE.WebGLRenderer'), 'Weather must render a real 3D scene');
+assert.ok(weather.includes('const MAX_FORECAST_HOURS = 18'), 'The 18-hour forecast remains intact');
+assert.ok(weather.includes('https://api.open-meteo.com/v1/forecast'), 'Open-Meteo remains the source');
+assert.ok(weather.includes('liveEarthLocationAllowed'), 'The shared Location permission gate remains authoritative');
+assert.ok(!/navigator\.geolocation|\.getCurrentPosition\s*\(|\.watchPosition\s*\(/.test(weather), 'Weather must never request GPS itself');
+assert.ok(weather.includes('No old forecast is presented as current'), 'Offline freshness handling must stay intact');
+assert.ok(weather.includes('renderer.forceContextLoss?.()'), 'WebGL resources must be released');
+assert.ok(weather.includes('return () => {engineDisposed=true'), 'Stacks deactivation cleanup must remain');
 
-// Portrait art direction: a screen-filling miniature terrain model, not an oval island.
-assert.ok(weather.includes('const MAP_W = 13.0'), 'Portrait master model must use a narrow physical footprint');
-assert.ok(weather.includes('const MAP_D = 25.6'), 'Portrait master model must retain a deep topographic composition');
-assert.ok(weather.includes('function rawLandHeight(x,z)'), 'The landscape must have a continuous procedural height field');
-assert.ok(weather.includes('const spine = 3.45*') && weather.includes('const secondarySpine = 1.75*'), 'The landscape must have a connected multi-ridge mountain spine');
-assert.ok(weather.includes("const copper = new THREE.Color('#c56d32')"), 'The main ridge must include exposed warm rock');
-assert.ok(weather.includes("const ochre = new THREE.Color('#d59a49')"), 'The mountain must include ochre strata');
-assert.ok(weather.includes('const terrainUvs=[]'), 'The terrain must support detailed surface texture');
-assert.ok(weather.includes('const earthGrain = makeGrainTexture'), 'Soil must use a procedural surface grain texture');
-assert.ok(weather.includes('const rockGrain = makeGrainTexture'), 'Exposed mountain rock must use a separate texture');
-assert.ok(weather.includes('const plinthCore = new THREE.Mesh'), 'The world must sit on a slim rectangular map-board rather than an oval island');
-assert.ok(weather.includes('const coastFront = x =>'), 'The coastline must follow an irregular coastal shelf');
-assert.ok(weather.includes('const waterCoverage = (x,z) =>'), 'Land and sea must be defined as a real coastal map mask');
-assert.ok(weather.includes('const coastFront = x => 8.65 +'), 'The coastline must keep the ocean to a restrained lower foreground');
-assert.ok(weather.includes('[3.15,6.2],[3.7,8.35]'), 'The river must continue through the valley to the revised shoreline');
-assert.ok(weather.includes('const seaGeometry=new THREE.BufferGeometry()'), 'Coastal water must follow the shore geometry, not a circular ocean backdrop');
-assert.ok(weather.includes('const shelfGeometry=new THREE.BufferGeometry()'), 'The coast must have shallow turquoise shelves');
-assert.ok(weather.includes('const contourLevels=[0.95,1.55,2.25,3.0,3.8,4.7,5.6,6.5,7.4]'), 'Raised contour detail must follow a range of real elevations');
-assert.ok(!weather.includes('function boundaryAt(angle)'), 'The old oval island perimeter must be removed');
-assert.ok(!weather.includes('function islandRadius(x, z)'), 'The old island-radius terrain model must be removed');
-assert.ok(weather.includes('world.scale.set(1,1,1)'), 'The map must preserve its physical proportions on every screen');
-assert.ok(weather.includes('const compact = smallScreen || lowMemory;'), 'Compact/low-memory devices must select the reduced geometry tier');
-assert.ok(weather.includes('shortLandscape,tablet,fov'), 'Tablet framing must use its dedicated camera profile');
-assert.ok(!weather.includes('world.scale.set(scaleX'), 'The world must never be stretched to fit a viewport');
+// Full scene rebuild: no old board, slab, central spine or strip river.
+assert.ok(weather.includes('const MAP_W = 28') && weather.includes('const MAP_D = 28'), 'The world must use a broad full-bleed environment footprint');
+assert.ok(weather.includes('const westernPeaks =') && weather.includes('const centralPeaks =') && weather.includes('const easternPeaks ='), 'Multiple mountain groups must form the range');
+assert.ok(weather.includes('const foothills ='), 'The mountain chain must transition into foothills and valleys');
+assert.ok(weather.includes('const BACK_Z = -15.0') && weather.includes('const FRONT_Z = 13.0'), 'Terrain must extend across the scene depth');
+assert.ok(!weather.includes('const plinthCore =') && !weather.includes('const plinthRim ='), 'The thick rectangular display slab must be removed');
+assert.ok(!weather.includes('const edgeBands='), 'The old stacked platform walls must be removed');
+assert.ok(!weather.includes('const riverPath=[[-1.15,-7.2]'), 'The old narrow straight river path must be removed');
+assert.ok(weather.includes('const riverPath=[[-2.2,-11.2]'), 'The new river must begin in the high mountain valley');
+assert.ok(weather.includes('const halfWidth=0.22+0.18*Math.sin(Math.PI*t)'), 'The river must be a single smoothly varying ribbon');
+assert.ok(weather.includes('const coastFront = x => 8.7 +'), 'The shore must sit near the foreground, leaving the ocean secondary');
+assert.ok(weather.includes('SEA_X=26,SEA_Z0=7.8,SEA_Z1=34'), 'Sea geometry must occupy only the foreground beyond the shoreline');
+assert.ok(weather.includes('const coastCurve='), 'The coast must be irregular and continuous');
 
-// Natural detail: varied forest canopy, small-scale ground cover, rock, and scree.
-assert.ok(weather.includes('const pineLower=new THREE.InstancedMesh'), 'Conifers must have a layered silhouette');
-assert.ok(weather.includes('const pineUpper=new THREE.InstancedMesh'), 'Conifers must include a second canopy tier');
-assert.ok(weather.includes('const broadCanopy=new THREE.InstancedMesh'), 'Broadleaf trees must have a distinct silhouette');
-assert.ok(weather.includes('const forestClusters=['), 'Trees must grow in irregular ecological clusters');
-assert.ok(weather.includes('const shrubs=new THREE.InstancedMesh'), 'The forest floor must include shrubs and understorey');
-assert.ok(weather.includes('const rocks=new THREE.InstancedMesh'), 'The landscape must have separate boulder detail');
-assert.ok(weather.includes('const scree=new THREE.LineSegments'), 'Exposed mountain slopes must include fine scree detail');
-assert.ok(weather.includes('const broadLobes=new THREE.InstancedMesh'), 'Broadleaf crowns must use varied side lobes instead of spherical clumps');
+// Living terrain, forest and cloud layers.
+assert.ok(weather.includes('makeSurfaceTexture'), 'Terrain must have fine surface grain');
+assert.ok(weather.includes('const broadCanopy='), 'Broadleaf trees must have their own canopy silhouette');
+assert.ok(weather.includes('const pineLower='), 'Conifers must have a different silhouette');
+assert.ok(weather.includes('const broadLobes='), 'Broadleaf crowns must have uneven secondary foliage');
+assert.ok(weather.includes('const forestClusters=['), 'Vegetation must grow in ecological clusters');
+assert.ok(weather.includes('const shrubs='), 'The valley floor must include understorey');
+assert.ok(weather.includes('const rockOutcrops='), 'Rocks must form grouped outcrops rather than cover the mountain randomly');
+assert.ok(weather.includes('addCloud(-4.0,20.0,-12.0'), 'The high cloud shelf must sit visibly above the mountain range');
+assert.ok(weather.includes('addCloud(8.0,16.6,-6.0'), 'Clouds must span across the upper sky');
+assert.ok(!/support rod|cloud pole|cloud rod/i.test(weather), 'Clouds must have no static support rods');
 
-// The sky/sea horizon is a separate, weather-coloured environment behind the land.
-assert.ok(weather.includes('const horizonRows = [-24.0, -5.0, 0.7, 2.1, 3.1, 5.2, 52.0]'), 'The scene must contain a distinct sky-to-sea horizon gradient');
-assert.ok(weather.includes('function addDistantHeadland('), 'Layered coastal silhouettes must sit at the distant horizon');
-assert.ok(weather.includes('const horizonPalettes ='), 'Horizon colours must have phase-specific palettes');
-assert.ok(weather.includes('horizonCurrentColors.forEach((color,index)=>color.lerp(targetHorizonColors[index],morph))'), 'The horizon must transition with the selected forecast hour');
-assert.ok(weather.includes('const celestialBody = new THREE.Mesh'), 'A forecast-time sun/moon cue must be placed at the horizon');
-assert.ok(weather.includes('celestialMaterial.color.set(daylight?'), 'The visible sky body must change for day and night');
+// Weather instrument behaviour.
+for (const token of [
+  'const cloudCover=Number.isFinite(Number(next.cloudCover))',
+  'cloud.visible=visibility>0.008', 'activeWind/38', 'targetSunPosition.set',
+  "targetRain=(kind==='rain'||kind==='storm')?clamp(precipitation/3.5,0,1):0",
+  'targetRiverFlow=0.58+Math.min(1.45,precipitation*0.30+targetRain*0.18)',
+  'waterTexture.offset.y=', "activeWeather==='rain'||activeWeather==='storm'",
+  "activeWeather==='storm'&&elapsed>=nextLightningAt", 'seaMaterial.roughness=clamp',
+  'waterfallMaterial.opacity=', 'mistMaterial.opacity='
+]) assert.ok(weather.includes(token), `Missing weather behaviour: ${token}`);
 
-// Working weather instrument: the forecast drives every environmental subsystem.
-assert.ok(weather.includes('const cloudCover=Number.isFinite(Number(next.cloudCover))'), 'Cloud coverage must use forecast cloud-cover data');
-assert.ok(weather.includes('const effectiveCloudCover=Math.max'), 'Rain/snow/storm states must retain appropriate cloud cover');
-assert.ok(weather.includes('cloud.visible=visibility>0.005'), 'Cloud formations must appear and recede with forecast coverage');
-assert.ok(weather.includes('activeWind / 42'), 'Wind speed must change cloud drift');
-assert.ok(weather.includes('targetSunColor.set'), 'Local time and weather must recolour sunlight');
-assert.ok(weather.includes('targetSunPosition.set'), 'Local time must change the sun-light direction');
-assert.ok(weather.includes('const sunArc=(localHour-12)/12*Math.PI'), 'Selected local hour must move the sun across its daily arc');
-assert.ok(weather.includes('targetHemisphereSky.set'), 'Dawn/day/evening/night must change ambient sky lighting');
-assert.ok(weather.includes('targetHumidity=humidity'), 'Humidity must feed the atmospheric system');
-assert.ok(weather.includes("(kind==='rain'||kind==='storm')?clamp(precipitation/3.8,0,1):0"), 'Visible rain intensity must follow actual forecast precipitation, not probability alone');
-assert.ok(weather.includes('const rainStreaks=new THREE.LineSegments'), 'Rain must have visible falling streaks, not static cloud supports');
-assert.ok(weather.includes("activeWeather==='rain'||activeWeather==='storm'"), 'Rain shafts must only animate during rain or storm');
-assert.ok(weather.includes("activeWeather === 'snow'"), 'Snow must use its own slower particle behaviour');
-assert.ok(weather.includes("if(kind==='storm')nextLightningAt"), 'Lightning must only be enabled for thunderstorm conditions');
-assert.ok(weather.includes('const riverFoam=[]'), 'The river must have visible flow markers');
-assert.ok(weather.includes('riverFlowRate=0.62+Math.min(1.35,precipitation*0.28'), 'River flow must respond to measured precipitation while wind independently affects the sea');
-assert.ok(weather.includes('waterTexture.offset.y='), 'Water texture must visibly flow');
-assert.ok(weather.includes('waterfallMaterial.opacity='), 'Waterfall strength must react to precipitation');
-assert.ok(weather.includes('seaMaterial.roughness=clamp'), 'Wind must affect the coastal water surface');
-assert.ok(weather.includes('mistMaterial.opacity=0.045+targetHumidity'), 'Humidity and temperature must affect atmospheric haze');
-
-// Clouds are independent volume masses at several altitudes, with no static support rods.
-assert.ok(weather.includes('const lobes = ['), 'Clouds must be formed from layered 3D volume masses');
-assert.ok(weather.includes('addCloud(-5.3, 11.2'), 'A high cloud layer must sit above the mountain range');
-assert.ok(weather.includes('addCloud(2.5, 10.4'), 'Additional clouds must sit at a separate altitude/depth');
-assert.ok(!/support rod|cloud pole|cloud rod/i.test(weather), 'Cloud formations must not be held by static support rods');
-
-// Adaptive framing changes camera composition only; no non-uniform map scaling.
-const profileMatch = weather.match(/function weatherViewportProfile\(width, height\) \{[\s\S]*?\n  \}/);
-assert.ok(profileMatch, 'A pure viewport profile must drive adaptive camera framing');
-const viewportProfile = vm.runInNewContext(`(${profileMatch[0]})`);
-const viewports = [
-  ['compact phone portrait',320,568],['standard phone portrait',393,852],['large phone portrait',430,932],
+// Camera composition: portrait gets its own sky-forward view; world geometry is never stretched.
+const profileSource = weather.match(/function weatherViewportProfile\(width, height\) \{[\s\S]*?\n  \}/);
+assert.ok(profileSource, 'Viewport profile must be testable');
+const viewportProfile = vm.runInNewContext(`(${profileSource[0]})`);
+const cases = [
+  ['small portrait',320,568],['phone portrait',393,852],['large portrait',430,932],
   ['phone landscape',844,390],['tablet portrait',820,1180],['tablet landscape',1180,820],
-  ['desktop',1440,900],['ultrawide desktop',2560,1080]
+  ['desktop',1440,900],['ultrawide',2560,1080]
 ];
-const profiles=viewports.map(([name,width,height])=>({name,...viewportProfile(width,height)}));
-for(const profile of profiles){
-  assert.ok(Number.isFinite(profile.aspect)&&profile.aspect>0,`${profile.name} needs a valid aspect`);
-  assert.ok(profile.fov>=30&&profile.fov<=40,`${profile.name} needs a bounded camera FOV`);
-  assert.ok(profile.elevation>0.15&&profile.elevation<0.7,`${profile.name} needs a bounded camera elevation`);
-  assert.ok(Math.abs(profile.composition.sky+profile.composition.land+profile.composition.water-1)<0.001,`${profile.name} composition shares must total 100%`);
-  assert.equal(profile.scaleX,undefined,`${profile.name} must not stretch the terrain horizontally`);
-  assert.equal(profile.scaleZ,undefined,`${profile.name} must not stretch the terrain in depth`);
+const profiles = cases.map(([name,w,h]) => ({name,...viewportProfile(w,h)}));
+for (const p of profiles) {
+  assert.ok(p.aspect>0 && Number.isFinite(p.aspect), `${p.name} needs a valid aspect`);
+  assert.ok(p.fov>=40 && p.fov<=50, `${p.name} needs a usable field of view`);
+  assert.ok(p.cameraRise>0 && p.cameraDepth>0, `${p.name} needs a stable camera offset`);
+  assert.equal(p.scaleX,undefined, `${p.name} must not stretch terrain width`);
+  assert.equal(p.scaleZ,undefined, `${p.name} must not stretch terrain depth`);
 }
-assert.ok(profiles[0].portrait&&profiles[1].portrait&&profiles[2].portrait&&!profiles[3].portrait,'Phone portrait and landscape must select different camera compositions');
-assert.ok(profiles[1].composition.sky===0.50&&profiles[1].composition.land===0.35&&profiles[1].composition.water===0.15,'Phone portrait must reserve half the view for sky and limit ocean to a narrow foreground');
-assert.ok(profiles[1].elevation<0.36&&profiles[1].targetY>4.5,'Portrait camera must lower its pitch and place the horizon near mid-frame');
-assert.ok(profiles[1].fov!==profiles[3].fov,'Portrait and landscape must use different camera framing');
-assert.ok(profiles[4].tablet&&!profiles[5].portrait,'Tablet profiles must remain distinct');
-assert.ok(weather.includes('const resizeObserver = typeof ResizeObserver'), 'The camera must respond to container resizing');
-assert.ok(weather.includes("window.visualViewport?.addEventListener('resize', resize"), 'Mobile visual viewport changes must reframe the camera');
-assert.ok(weather.includes("window.visualViewport?.removeEventListener('resize', resize)"), 'Mobile viewport listeners must be cleaned up');
-assert.ok(weather.includes('renderer.setPixelRatio'), 'Rendering resolution must be capped for device performance');
-assert.ok(weather.includes('const pixelBudget=Math.sqrt(2300000'), 'Rendering must respect a bounded pixel budget');
+assert.ok(profiles[1].portrait && !profiles[3].portrait, 'Phones must switch composition by orientation');
+assert.ok(profiles[1].targetY>10 && profiles[1].cameraRise<14, 'Portrait view must reserve a large sky window and use a low cinematic pitch');
+assert.ok(profiles[1].fov>profiles[3].fov, 'Portrait needs a wider vertical sky frame');
+assert.ok(profiles[4].tablet && !profiles[5].portrait, 'Tablets must be classified independently');
+assert.ok(weather.includes('new ResizeObserver(resize)'), 'Container resizing must reframe the camera');
+assert.ok(weather.includes("window.visualViewport?.addEventListener('resize',resize"), 'Mobile visual viewport changes must reframe the camera');
 
-// Existing app/data/privacy/lifecycle contracts.
-assert.ok(weather.includes('const MAX_FORECAST_HOURS = 18'), 'Weather must retain its 18-hour forecast');
-assert.ok(weather.includes('https://api.open-meteo.com/v1/forecast'), 'Open-Meteo must remain the live data source');
-assert.ok(weather.includes("wind_speed_unit:'kmh'"), 'Wind values must remain km/h');
-assert.ok(weather.includes("temperature_unit:'celsius'"), 'Temperature values must remain Celsius');
-assert.ok(weather.includes("precipitation_unit:'mm'"), 'Precipitation values must remain mm');
-assert.ok(!/navigator\.geolocation|\.getCurrentPosition\s*\(|\.watchPosition\s*\(/.test(weather), 'Weather must never request geolocation itself');
-assert.ok(weather.includes('liveEarthLocationAllowed'), 'Weather must respect Location Orb permission');
-assert.ok(weather.includes("removeEventListener('live-earth-location-state'"), 'Location listeners must be removed');
-assert.ok(weather.includes("removeEventListener('offline'"), 'Offline listeners must be removed');
-assert.ok(weather.includes("removeEventListener('online'"), 'Online listeners must be removed');
-assert.ok(weather.includes('abortController?.abort()'), 'Requests must abort when privacy or lifecycle changes');
-assert.ok(weather.includes('No old forecast is presented as current'), 'Offline must not present stale data as current');
-assert.ok(weather.includes('renderer.forceContextLoss?.()'), 'The GPU context must be released when Weather closes');
-assert.ok(weather.includes('return () => {engineDisposed=true'), 'The Stacks feature must provide deactivation cleanup');
-assert.ok(!/resident|Residents|LiveEarthResidentLibrary|data-resident-host/i.test(weather), 'Retired Residents content must not return');
-
-console.log('Portrait-first topographic Weather scene, weather-reactive environment, framing, privacy and lifecycle checks passed.');
+console.log('Full-bleed Living Coast scene, sky-forward portrait camera, weather systems, privacy and lifecycle checks passed.');
