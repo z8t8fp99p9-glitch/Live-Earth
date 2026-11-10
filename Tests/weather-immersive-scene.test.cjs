@@ -15,7 +15,7 @@ assert.ok(weather.includes('new THREE.WebGLRenderer'), 'Weather must render a tr
 assert.ok(weather.includes('const MAP_W = 13.0'), 'Portrait master model must use a narrow physical footprint');
 assert.ok(weather.includes('const MAP_D = 25.6'), 'Portrait master model must retain a deep topographic composition');
 assert.ok(weather.includes('function rawLandHeight(x,z)'), 'The landscape must have a continuous procedural height field');
-assert.ok(weather.includes('const spine = 4.2*'), 'The landscape must have a dominant raised mountain spine');
+assert.ok(weather.includes('const spine = 3.45*') && weather.includes('const secondarySpine = 1.75*'), 'The landscape must have a connected multi-ridge mountain spine');
 assert.ok(weather.includes("const copper = new THREE.Color('#c56d32')"), 'The main ridge must include exposed warm rock');
 assert.ok(weather.includes("const ochre = new THREE.Color('#d59a49')"), 'The mountain must include ochre strata');
 assert.ok(weather.includes('const terrainUvs=[]'), 'The terrain must support detailed surface texture');
@@ -42,6 +42,15 @@ assert.ok(weather.includes('const forestClusters=['), 'Trees must grow in irregu
 assert.ok(weather.includes('const shrubs=new THREE.InstancedMesh'), 'The forest floor must include shrubs and understorey');
 assert.ok(weather.includes('const rocks=new THREE.InstancedMesh'), 'The landscape must have separate boulder detail');
 assert.ok(weather.includes('const scree=new THREE.LineSegments'), 'Exposed mountain slopes must include fine scree detail');
+assert.ok(weather.includes('const broadLobes=new THREE.InstancedMesh'), 'Broadleaf crowns must use varied side lobes instead of spherical clumps');
+
+// The sky/sea horizon is a separate, weather-coloured environment behind the land.
+assert.ok(weather.includes('const horizonRows = [-24.0, -5.0, 0.7, 2.1, 3.1, 5.2, 42.0]'), 'The scene must contain a distinct sky-to-sea horizon gradient');
+assert.ok(weather.includes('function addDistantHeadland('), 'Layered coastal silhouettes must sit at the distant horizon');
+assert.ok(weather.includes('const horizonPalettes ='), 'Horizon colours must have phase-specific palettes');
+assert.ok(weather.includes('horizonCurrentColors.forEach((color,index)=>color.lerp(targetHorizonColors[index],morph))'), 'The horizon must transition with the selected forecast hour');
+assert.ok(weather.includes('const celestialBody = new THREE.Mesh'), 'A forecast-time sun/moon cue must be placed at the horizon');
+assert.ok(weather.includes('celestialMaterial.color.set(daylight?'), 'The visible sky body must change for day and night');
 
 // Working weather instrument: the forecast drives every environmental subsystem.
 assert.ok(weather.includes('const cloudCover=Number.isFinite(Number(next.cloudCover))'), 'Cloud coverage must use forecast cloud-cover data');
@@ -53,13 +62,13 @@ assert.ok(weather.includes('targetSunPosition.set'), 'Local time must change the
 assert.ok(weather.includes('const sunArc=(localHour-12)/12*Math.PI'), 'Selected local hour must move the sun across its daily arc');
 assert.ok(weather.includes('targetHemisphereSky.set'), 'Dawn/day/evening/night must change ambient sky lighting');
 assert.ok(weather.includes('targetHumidity=humidity'), 'Humidity must feed the atmospheric system');
-assert.ok(weather.includes("?clamp(Math.max(precipitation/3.8,rainChance/100*0.72)"), 'Precipitation and probability must influence rain intensity');
+assert.ok(weather.includes("(kind==='rain'||kind==='storm')?clamp(precipitation/3.8,0,1):0"), 'Visible rain intensity must follow actual forecast precipitation, not probability alone');
 assert.ok(weather.includes('const rainStreaks=new THREE.LineSegments'), 'Rain must have visible falling streaks, not static cloud supports');
 assert.ok(weather.includes("activeWeather==='rain'||activeWeather==='storm'"), 'Rain shafts must only animate during rain or storm');
 assert.ok(weather.includes("activeWeather === 'snow'"), 'Snow must use its own slower particle behaviour');
 assert.ok(weather.includes("if(kind==='storm')nextLightningAt"), 'Lightning must only be enabled for thunderstorm conditions');
 assert.ok(weather.includes('const riverFoam=[]'), 'The river must have visible flow markers');
-assert.ok(weather.includes('const riverFlowRate=') || weather.includes('riverFlowRate=0.62+'), 'River flow must respond to wind and precipitation');
+assert.ok(weather.includes('riverFlowRate=0.62+Math.min(1.35,precipitation*0.28'), 'River flow must respond to measured precipitation while wind independently affects the sea');
 assert.ok(weather.includes('waterTexture.offset.y='), 'Water texture must visibly flow');
 assert.ok(weather.includes('waterfallMaterial.opacity='), 'Waterfall strength must react to precipitation');
 assert.ok(weather.includes('seaMaterial.roughness=clamp'), 'Wind must affect the coastal water surface');

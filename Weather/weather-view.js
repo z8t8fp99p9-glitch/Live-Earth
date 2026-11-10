@@ -1,4 +1,4 @@
-/* LIVE // EARTH — Weather: immersive Living Topography.
+/* LIVE // EARTH — Weather: Living Coast / horizon-led Living Topography.
    Main Weather is a designed miniature 3D world driven by the user's actual
    enabled-location forecast. Weather owns no geolocation permission and stores
    no coordinates. The separate Earth Engine remains the geographic Explorer. */
@@ -227,11 +227,11 @@
       shortLandscape,
       tablet,
       // The model keeps one physical aspect ratio. Only its camera composition changes.
-      fov: portrait ? (tablet ? 33 : 31) : shortLandscape ? 39 : 35,
-      targetY: portrait ? 3.1 : 2.7,
-      targetZ: portrait ? 0.0 : -0.5,
+      fov: portrait ? (tablet ? 34 : 32) : shortLandscape ? 39 : 35,
+      targetY: portrait ? 2.55 : 2.45,
+      targetZ: portrait ? -0.65 : -0.8,
       cameraYaw: portrait ? 0.015 : 0.22,
-      elevation: portrait ? 0.53 : shortLandscape ? 0.48 : 0.58
+      elevation: portrait ? 0.46 : shortLandscape ? 0.44 : 0.53
     };
   }
 
@@ -312,6 +312,63 @@
     const world = new THREE.Group();
     scene.add(world);
 
+    // A distinct atmospheric horizon separates the weather sky from distant sea.
+    // The board remains in front; distant coastal headlands sit between sea and sky.
+    const horizonRows = [-24.0, -5.0, 0.7, 2.1, 3.1, 5.2, 42.0];
+    const initialHorizonPalette = ['#124b61','#1c6d7d','#397f8a','#98b9b6','#d6e6df','#8fc0d2','#4d7899'];
+    const horizonPositions = [], horizonColors = [], horizonIndices = [];
+    for (let row=0; row<horizonRows.length; row++) {
+      const y = horizonRows[row];
+      horizonPositions.push(-48,y,-13.42, 48,y,-13.42);
+      const color = new THREE.Color(initialHorizonPalette[row]);
+      horizonColors.push(color.r,color.g,color.b,color.r,color.g,color.b);
+      if (row < horizonRows.length-1) {
+        const a=row*2,b=a+1,c=a+2,d=a+3;
+        horizonIndices.push(a,c,b,b,c,d);
+      }
+    }
+    const horizonGeometry = new THREE.BufferGeometry();
+    horizonGeometry.setAttribute('position',new THREE.Float32BufferAttribute(horizonPositions,3));
+    horizonGeometry.setAttribute('color',new THREE.Float32BufferAttribute(horizonColors,3));
+    horizonGeometry.setIndex(horizonIndices);
+    horizonGeometry.computeVertexNormals();
+    const horizonMaterial = new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.DoubleSide,depthWrite:false,fog:false});
+    const horizonBackdrop = new THREE.Mesh(horizonGeometry,horizonMaterial);
+    horizonBackdrop.renderOrder = -82;
+    world.add(horizonBackdrop);
+    const horizonColorAttribute = horizonGeometry.attributes.color;
+    const horizonCurrentColors = initialHorizonPalette.map(value=>new THREE.Color(value));
+    let horizonTargetColors = initialHorizonPalette.map(value=>new THREE.Color(value));
+
+    const horizonLayerMaterials = [];
+    function addDistantHeadland(z, baseY, amplitude, opacity, peaks, color) {
+      const segments=150, positions=[], indices=[];
+      for(let i=0;i<=segments;i++){
+        const x=-48+(i/segments)*96;
+        let crest=baseY + 0.18*Math.sin(x*0.21+z*0.08) + 0.10*Math.sin(x*0.47-z*0.03);
+        for(const peak of peaks) crest += peak.height*Math.exp(-((x-peak.x)**2)/(2*peak.width*peak.width));
+        crest += amplitude*0.12*Math.max(0,Math.sin(x*0.32+z*0.06));
+        positions.push(x,baseY-7,z,x,crest,z);
+        if(i<segments){const a=i*2,b=a+1,c=a+2,d=a+3;indices.push(a,b,c,b,d,c);}
+      }
+      const geometry=new THREE.BufferGeometry();
+      geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+      geometry.setIndex(indices); geometry.computeVertexNormals();
+      const material=new THREE.MeshBasicMaterial({color,transparent:true,opacity,side:THREE.DoubleSide,depthWrite:false,fog:false});
+      const ridge=new THREE.Mesh(geometry,material); ridge.renderOrder=-72+horizonLayerMaterials.length;
+      world.add(ridge); horizonLayerMaterials.push(material); return ridge;
+    }
+    addDistantHeadland(-14.18,0.18,2.7,0.62,[{x:-29,width:8,height:2.4},{x:-13,width:5,height:1.6},{x:12,width:8,height:2.5},{x:31,width:6,height:1.8}],'#718d88');
+    addDistantHeadland(-13.92,0.22,2.1,0.78,[{x:-36,width:5,height:1.45},{x:-20,width:7,height:2.35},{x:3,width:6,height:1.55},{x:25,width:8,height:2.1}],'#587b73');
+    addDistantHeadland(-13.62,0.10,1.5,0.94,[{x:-31,width:7,height:1.2},{x:-7,width:5,height:1.4},{x:17,width:7,height:1.25},{x:37,width:5,height:0.95}],'#3f6558');
+
+    const celestialMaterial = new THREE.MeshBasicMaterial({color:'#fff0c8',transparent:true,opacity:0.94,depthWrite:false,fog:false});
+    const celestialHaloMaterial = new THREE.MeshBasicMaterial({color:'#fff0c8',transparent:true,opacity:0.18,depthWrite:false,fog:false});
+    const celestialBody = new THREE.Mesh(new THREE.SphereGeometry(0.56,24,16),celestialMaterial);
+    const celestialHalo = new THREE.Mesh(new THREE.SphereGeometry(1.18,24,16),celestialHaloMaterial);
+    celestialBody.position.set(-4.8,5.6,-13.34); celestialHalo.position.copy(celestialBody.position);
+    world.add(celestialHalo,celestialBody);
+
     // LIVING TOPOGRAPHY — the reference is a detailed terrain model on a screen-sized
     // rectangular surface, not a round floating island. The model keeps fixed proportions.
     const MAP_W = 13.0;
@@ -323,8 +380,11 @@
     const GRID_Z = compact ? 208 : 272;
 
     const clamp01 = value => Math.max(0, Math.min(1, value));
-    const coastFront = x => 7.65 + 0.92*Math.sin(x*0.24) + 0.42*Math.sin(x*0.61+0.5);
-    const coastEast = z => 5.52 + 0.30*Math.sin(z*0.28) + 0.16*Math.sin(z*0.67);
+    const coastFront = x => 7.35 + 0.86*Math.sin(x*0.24) + 0.46*Math.sin(x*0.61+0.5)
+      + 0.58*Math.exp(-((x+4.1)**2)/2.1) - 0.42*Math.exp(-((x-2.7)**2)/1.55)
+      + 0.22*Math.sin(x*1.08+0.7);
+    const coastEast = z => 5.35 + 0.34*Math.sin(z*0.28) + 0.20*Math.sin(z*0.67)
+      + 0.36*Math.exp(-((z-4.2)**2)/5.5) - 0.28*Math.exp(-((z+2.8)**2)/3.0);
     const waterCoverage = (x,z) => Math.max(
       smooth(coastFront(x)-1.12, coastFront(x)+0.46, z),
       smooth(coastEast(z)-0.70, coastEast(z)+0.52, x) * smooth(-4.1,-1.2,z)
@@ -337,17 +397,21 @@
       const wz = z + 0.24*Math.sin(x*0.37) + 0.12*Math.cos(x*0.81-z*0.23);
       const spineX = -2.15 + 0.31*(wz+5.2) + 0.42*Math.sin(wz*0.29);
       const spineDist = wx-spineX;
-      const spine = 4.2*Math.exp(-(spineDist*spineDist)/5.8)*smooth(-12,-5.5,wz)*smooth(2.7,7.6,wz);
+      const spine = 3.45*Math.exp(-(spineDist*spineDist)/7.1)*smooth(-12,-5.5,wz)*smooth(2.7,7.6,wz);
+      const secondarySpineX = 3.55 + 0.22*(wz+4.0) + 0.38*Math.sin(wz*0.25+1.2);
+      const secondarySpine = 1.75*Math.exp(-((wx-secondarySpineX)**2)/3.6)*smooth(-10,-4.5,wz)*smooth(1.8,6.0,wz);
       const peaks =
-        gaussian(wx,wz,-3.15,-6.9,2.0,3.0,6.25) +
-        gaussian(wx,wz,-1.0,-8.1,2.1,2.8,8.9) +
-        gaussian(wx,wz,1.5,-6.0,2.15,3.0,6.1) +
-        gaussian(wx,wz,-5.6,-4.6,1.8,2.7,4.4) +
-        gaussian(wx,wz,4.2,-3.4,2.0,3.4,3.6);
+        gaussian(wx,wz,-3.55,-7.0,2.45,3.1,6.6) +
+        gaussian(wx,wz,-0.8,-8.2,2.5,3.0,8.1) +
+        gaussian(wx,wz,2.05,-6.1,2.5,3.1,6.4) +
+        gaussian(wx,wz,-5.7,-4.4,2.05,2.9,4.8) +
+        gaussian(wx,wz,4.65,-3.5,2.15,3.6,4.15) +
+        gaussian(wx,wz,-4.9,-1.4,2.5,3.8,2.5) +
+        gaussian(wx,wz,4.2,-0.6,2.6,3.5,2.2);
       const shoulders =
-        gaussian(wx,wz,-6.0,-0.5,3.4,4.0,1.45) +
-        gaussian(wx,wz,4.8,0.1,3.7,4.5,1.15) +
-        gaussian(wx,wz,-1.1,2.5,5.1,3.7,0.8);
+        gaussian(wx,wz,-6.0,-0.5,3.4,4.0,1.55) +
+        gaussian(wx,wz,4.8,0.1,3.7,4.5,1.35) +
+        gaussian(wx,wz,-1.1,2.5,5.1,3.7,0.95);
       const foldedNoise =
         0.22*Math.sin(wx*1.38+wz*0.44) +
         0.17*Math.cos(wz*1.56-wx*0.36) +
@@ -355,7 +419,7 @@
         0.08*Math.cos(wx*3.2+wz*2.6);
       const sharpRidge = Math.pow(Math.max(0,Math.sin(wx*1.15+wz*0.72)),7)*0.72*smooth(2.9,5.6,peaks+spine);
       const alpineDetail = (0.24*Math.sin(wx*2.65+wz*1.72)*Math.cos(wz*2.9-wx*0.62)+0.13*Math.sin((wx-wz)*3.4))*smooth(2.4,5.2,peaks+spine);
-      return Math.max(0.22,0.48+peaks+spine+shoulders+foldedNoise+sharpRidge+alpineDetail);
+      return Math.max(0.22,0.48+peaks+spine+secondarySpine+shoulders+foldedNoise+sharpRidge+alpineDetail);
     }
     function heightAt(x,z) {
       const sea = waterCoverage(x,z);
@@ -367,18 +431,18 @@
 
     // The miniature world sits on a slim beveled map-board, visible only at its edge.
     const plinthCore = new THREE.Mesh(
-      new THREE.BoxGeometry(MAP_W+0.55,0.82,MAP_D+0.55),
-      new THREE.MeshStandardMaterial({color:'#293c3b',roughness:0.78,metalness:0.18})
+      new THREE.BoxGeometry(MAP_W+0.42,0.46,MAP_D+0.42),
+      new THREE.MeshStandardMaterial({color:'#203c40',roughness:0.82,metalness:0.10})
     );
-    plinthCore.position.set(0,-0.66,0);
+    plinthCore.position.set(0,-0.48,0);
     plinthCore.castShadow = true;
     plinthCore.receiveShadow = true;
     world.add(plinthCore);
     const plinthRim = new THREE.Mesh(
-      new THREE.BoxGeometry(MAP_W+0.22,0.18,MAP_D+0.22),
-      new THREE.MeshStandardMaterial({color:'#c28e5a',roughness:0.7,metalness:0.12})
+      new THREE.BoxGeometry(MAP_W+0.18,0.075,MAP_D+0.18),
+      new THREE.MeshStandardMaterial({color:'#6f796c',roughness:0.78,metalness:0.08})
     );
-    plinthRim.position.set(0,-0.20,0);
+    plinthRim.position.set(0,-0.19,0);
     plinthRim.castShadow = true;
     plinthRim.receiveShadow = true;
     world.add(plinthRim);
@@ -477,7 +541,7 @@
       Array.from({length:GRID_X+1},(_,ix)=>({x:HALF_W-(ix/GRID_X)*MAP_W,z:HALF_D})),
       Array.from({length:GRID_Z+1},(_,iz)=>({x:-HALF_W,z:HALF_D-(iz/GRID_Z)*MAP_D}))
     ];
-    const edgeBands=[{top:0,bottom:0.30,color:'#d8b27d'},{top:0.30,bottom:0.68,color:'#906348'},{top:0.68,bottom:1,color:'#344b47'}];
+    const edgeBands=[{top:0,bottom:0.20,color:'#c8a77c'},{top:0.20,bottom:0.56,color:'#765f4c'},{top:0.56,bottom:1,color:'#314b49'}];
     for(const band of edgeBands){
       const edgePositions=[];
       for(const edge of mapEdges){
@@ -495,12 +559,13 @@
       edgeMesh.castShadow=true;edgeMesh.receiveShadow=true;world.add(edgeMesh);
     }
 
-    // Distinct exposed strata on the board edges — no continuous oval island cliff.
+    // Keep the front edge slim: the land, not a thick stack of platform boxes,
+    // should be the visual subject of the coastal world.
     const frontStrata=[];
-    for(let layer=0;layer<3;layer++){
-      const y=-0.04-layer*0.17;
-      const mat=new THREE.MeshStandardMaterial({color:['#caa16e','#846044','#42534d'][layer],roughness:0.92,metalness:0.04});
-      const strip=new THREE.Mesh(new THREE.BoxGeometry(MAP_W+0.34- layer*0.12,0.16,MAP_D+0.34-layer*0.12),mat);
+    for(let layer=0;layer<2;layer++){
+      const y=-0.10-layer*0.085;
+      const mat=new THREE.MeshStandardMaterial({color:['#8d765e','#344b49'][layer],roughness:0.94,metalness:0.03});
+      const strip=new THREE.Mesh(new THREE.BoxGeometry(MAP_W+0.25-layer*0.08,0.065,MAP_D+0.25-layer*0.08),mat);
       strip.position.set(0,y,0);
       strip.castShadow=true; strip.receiveShadow=true;
       world.add(strip); frontStrata.push(strip);
@@ -683,9 +748,10 @@
     const pineUpperGeometry=new THREE.ConeGeometry(0.49,1.24,10,2);
     const pineLower=new THREE.InstancedMesh(pineLowerGeometry,new THREE.MeshStandardMaterial({color:'#285c3c',roughness:0.95}),trunkCount);
     const pineUpper=new THREE.InstancedMesh(pineUpperGeometry,new THREE.MeshStandardMaterial({color:'#3a7448',roughness:0.95}),trunkCount);
-    const broadGeometry=new THREE.IcosahedronGeometry(0.72,2);
-    const broadCanopy=new THREE.InstancedMesh(broadGeometry,new THREE.MeshStandardMaterial({color:'#4b8550',roughness:0.97}),trunkCount);
-    const broadTop=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.48,1),new THREE.MeshStandardMaterial({color:'#63965b',roughness:0.97}),trunkCount);
+    const broadGeometry=new THREE.IcosahedronGeometry(0.72,1);
+    const broadCanopy=new THREE.InstancedMesh(broadGeometry,new THREE.MeshStandardMaterial({color:'#3f7448',roughness:0.98,flatShading:true}),trunkCount);
+    const broadTop=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.48,1),new THREE.MeshStandardMaterial({color:'#68975b',roughness:0.98,flatShading:true}),trunkCount);
+    const broadLobes=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.39,1),new THREE.MeshStandardMaterial({color:'#53844c',roughness:0.98,flatShading:true}),trunkCount);
     const shrubCount=lowMemory?145:smallScreen?220:330;
     const shrubGeometry=new THREE.IcosahedronGeometry(0.24,1);
     const shrubs=new THREE.InstancedMesh(shrubGeometry,new THREE.MeshStandardMaterial({color:'#8eaa63',roughness:1,flatShading:true}),shrubCount);
@@ -715,18 +781,21 @@
         dummy.position.set(x,raw+1.57*scale,z); dummy.scale.set(0.73*scale,0.82*scale,0.73*scale); dummy.updateMatrix(); pineUpper.setMatrixAt(treeIndex,dummy.matrix);
         pineLower.setColorAt(treeIndex,new THREE.Color().setHSL(0.34+seedRandom()*0.05,0.42,0.19+seedRandom()*0.10));
         pineUpper.setColorAt(treeIndex,new THREE.Color().setHSL(0.34+seedRandom()*0.05,0.38,0.24+seedRandom()*0.12));
-        broadCanopy.setMatrixAt(treeIndex,new THREE.Matrix4().makeScale(0,0,0)); broadTop.setMatrixAt(treeIndex,new THREE.Matrix4().makeScale(0,0,0));
+        broadCanopy.setMatrixAt(treeIndex,new THREE.Matrix4().makeScale(0,0,0)); broadTop.setMatrixAt(treeIndex,new THREE.Matrix4().makeScale(0,0,0)); broadLobes.setMatrixAt(treeIndex,new THREE.Matrix4().makeScale(0,0,0));
       }else{
         dummy.position.set(x,raw+1.13*scale,z); dummy.rotation.set(seedRandom()*0.18,yaw,seedRandom()*0.15); dummy.scale.set(scale,scale*(0.75+seedRandom()*0.28),scale*0.92); dummy.updateMatrix(); broadCanopy.setMatrixAt(treeIndex,dummy.matrix);
         dummy.position.set(x-0.16*scale,raw+1.62*scale,z+0.09*scale); dummy.scale.set(0.65*scale,0.66*scale,0.65*scale); dummy.updateMatrix(); broadTop.setMatrixAt(treeIndex,dummy.matrix);
-        broadCanopy.setColorAt(treeIndex,new THREE.Color().setHSL(0.30+seedRandom()*0.07,0.34+seedRandom()*0.18,0.22+seedRandom()*0.11));
-        broadTop.setColorAt(treeIndex,new THREE.Color().setHSL(0.31+seedRandom()*0.07,0.34+seedRandom()*0.15,0.28+seedRandom()*0.12));
+        broadCanopy.setColorAt(treeIndex,new THREE.Color().setHSL(0.30+seedRandom()*0.07,0.38+seedRandom()*0.18,0.20+seedRandom()*0.10));
+        broadTop.setColorAt(treeIndex,new THREE.Color().setHSL(0.31+seedRandom()*0.07,0.38+seedRandom()*0.15,0.27+seedRandom()*0.11));
+        dummy.position.set(x+Math.cos(yaw)*0.39*scale,raw+1.04*scale,z+Math.sin(yaw)*0.39*scale);
+        dummy.rotation.set(seedRandom()*0.20,yaw+1.7,seedRandom()*0.16); dummy.scale.set(0.58*scale,0.62*scale,0.58*scale); dummy.updateMatrix(); broadLobes.setMatrixAt(treeIndex,dummy.matrix);
+        broadLobes.setColorAt(treeIndex,new THREE.Color().setHSL(0.29+seedRandom()*0.08,0.36+seedRandom()*0.16,0.22+seedRandom()*0.11));
         pineLower.setMatrixAt(treeIndex,new THREE.Matrix4().makeScale(0,0,0)); pineUpper.setMatrixAt(treeIndex,new THREE.Matrix4().makeScale(0,0,0));
       }
       treeTypes.push({x,z,pine,scale,yaw}); treeIndex++;
     }
     trunks.count=pineLower.count=pineUpper.count=broadCanopy.count=broadTop.count=treeIndex;
-    for(const mesh of [trunks,pineLower,pineUpper,broadCanopy,broadTop]){mesh.instanceMatrix.needsUpdate=true;mesh.castShadow=true;mesh.receiveShadow=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;world.add(mesh);}
+    for(const mesh of [trunks,pineLower,pineUpper,broadCanopy,broadTop,broadLobes]){mesh.instanceMatrix.needsUpdate=true;mesh.castShadow=true;mesh.receiveShadow=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;world.add(mesh);}
 
     let shrubIndex=0;
     for(let attempt=0;attempt<shrubCount*22&&shrubIndex<shrubCount;attempt++){
@@ -868,6 +937,18 @@
       evening: ['#8a8499', '#b68d83'],
       night: ['#182b42', '#405460']
     };
+    const horizonPalettes = {
+      dawn:['#24596a','#477e86','#91aaa6','#f0c2a6','#e2ad9e','#b68088','#617286'],
+      day:['#15556b','#267989','#6fa2a5','#d5e8df','#a4d0df','#7ab3d1','#4d7898'],
+      evening:['#173e55','#365e70','#8e7b84','#e2a181','#c89091','#78617c','#3c4d69'],
+      night:['#081b30','#102c43','#263f53','#465b6c','#2b435d','#1a324e','#0e223c']
+    };
+    const horizonLayerPalettes = {
+      dawn:['#7f8e89','#677a73','#4e6257'],
+      day:['#718f89','#55786e','#3d6253'],
+      evening:['#776d73','#635a5e','#4b4b4c'],
+      night:['#33495a','#263e4d','#1b303d']
+    };
     let activeWeather = 'neutral';
     let activePhase = 'day';
     let activeWind = 0;
@@ -876,6 +957,8 @@
     let targetSky = new THREE.Color(targetLook.sky);
     let targetFog = new THREE.Color(targetLook.fog);
     let targetCloudColor = new THREE.Color(targetLook.cloudColor);
+    let targetHorizonColors = horizonPalettes.day.map(value=>new THREE.Color(value));
+    let horizonLayerTargets = horizonLayerPalettes.day.map(value=>new THREE.Color(value));
     let targetSunColor = new THREE.Color('#fff1d6');
     let targetHemisphereSky = new THREE.Color('#f4f7ed');
     let targetHemisphereGround = new THREE.Color('#344d43');
@@ -905,8 +988,9 @@
       const snowAmount=Math.max(0,Number(next.snowfall)||0);
       const localHour=Number.isFinite(Number(next.localHour))?clamp(Number(next.localHour),0,23):12;
       targetHumidity=humidity;
-      targetRainIntensity=(kind==='rain'||kind==='storm')?clamp(Math.max(precipitation/3.8,rainChance/100*0.72),0,1):0;
-      riverFlowRate=0.62+Math.min(1.35,precipitation*0.22*(kind==='snow'?0.18:1)+activeWind*0.012+targetRainIntensity*0.22);
+      targetRainIntensity=(kind==='rain'||kind==='storm')?clamp(precipitation/3.8,0,1):0;
+      // Wind roughens the coast; measured precipitation, not wind speed, feeds stream response.
+      riverFlowRate=0.62+Math.min(1.35,precipitation*0.28*(kind==='snow'?0.18:1)+targetRainIntensity*0.24);
       targetHeatHaze=Number.isFinite(Number(next.temperature))?clamp((Number(next.temperature)-27)/18,0,1):0;
       mistMaterial.opacity=0.045+targetHumidity*0.10+targetHeatHaze*0.12;
 
@@ -924,12 +1008,35 @@
       targetSky.set(baseSky);
       targetFog.set(phase==='night'&&kind==='clear'?phaseLooks.night[1]:look.fog);
       targetCloudColor.set(look.cloudColor);
+      targetHorizonColors = horizonPalettes[phase].map(value=>new THREE.Color(value));
+      horizonLayerTargets = horizonLayerPalettes[phase].map(value=>new THREE.Color(value));
+      const weatherHorizonTint = kind==='storm'?'#53616c':kind==='rain'?'#70818a':kind==='cloudy'?'#829497':kind==='fog'?'#b6c4bf':null;
+      if(weatherHorizonTint){
+        const tint=new THREE.Color(weatherHorizonTint),strength=kind==='storm'?0.58:kind==='rain'?0.36:kind==='cloudy'?0.24:0.42;
+        targetHorizonColors=targetHorizonColors.map(color=>color.clone().lerp(tint,strength));
+        horizonLayerTargets=horizonLayerTargets.map(color=>color.clone().lerp(tint,strength*0.8));
+      }
+      if(kind==='hot')targetHorizonColors=targetHorizonColors.map(color=>color.clone().lerp(new THREE.Color('#d6ae86'),0.20));
+      const horizonAttribute=horizonGeometry.attributes.color;
+      for(let row=0;row<horizonCurrentColors.length;row++){
+        const color=horizonCurrentColors[row];
+        for(let side=0;side<2;side++){const offset=(row*2+side)*3;horizonAttribute.array[offset]=color.r;horizonAttribute.array[offset+1]=color.g;horizonAttribute.array[offset+2]=color.b;}
+      }
+      horizonAttribute.needsUpdate=true;
       if(phase==='dawn'){targetSunColor.set('#ffbd91');targetHemisphereSky.set('#f3c5aa');targetHemisphereGround.set('#725a55');targetSunPosition.set(-15,7,8);}
       else if(phase==='evening'){targetSunColor.set('#ff9e70');targetHemisphereSky.set('#d3a18f');targetHemisphereGround.set('#4f4745');targetSunPosition.set(12,8,5);}
       else if(phase==='night'){targetSunColor.set('#91bce1');targetHemisphereSky.set('#607c9e');targetHemisphereGround.set('#182c39');targetSunPosition.set(-4,4,-12);}
       else{targetSunColor.set(kind==='hot'?'#fff0cc':'#fff1d6');targetHemisphereSky.set('#dcefe9');targetHemisphereGround.set('#344d43');}
       const sunArc=(localHour-12)/12*Math.PI;
       targetSunPosition.set(-Math.sin(sunArc)*13,3+Math.max(0,Math.cos(sunArc))*18,10);
+      const daylight=phase!=='night';
+      celestialMaterial.color.set(daylight?'#fff0c8':'#d5e5f8');
+      celestialHaloMaterial.color.set(daylight?'#ffe3ad':'#94c7ef');
+      celestialMaterial.opacity=daylight?(kind==='storm'?0.22:kind==='rain'?0.42:0.92):0.72;
+      celestialHaloMaterial.opacity=daylight?(kind==='storm'?0.04:0.13):0.08;
+      const sunX=-Math.sin(sunArc)*10.8;
+      const sunY=3.35+Math.max(0,Math.cos(sunArc))*5.6;
+      celestialBody.position.set(sunX,sunY,-13.34); celestialHalo.position.copy(celestialBody.position);
       particleMaterial.size=kind==='rain'||kind==='storm'?0.045:0.075;
       particleMaterial.color.set(kind==='rain'||kind==='storm'?'#c5e7f1':'#f7fff9');
       particleMaterial.opacity=look.particles;
@@ -950,6 +1057,11 @@
       if(reducedMotion){
         scene.background=targetSky.clone();scene.fog=new THREE.FogExp2(targetFog,look.density);
         sun.intensity=look.light;sun.color.copy(targetSunColor);hemisphere.color.copy(targetHemisphereSky);hemisphere.groundColor.copy(targetHemisphereGround);
+        horizonCurrentColors.forEach((color,index)=>color.copy(targetHorizonColors[index]));
+        horizonLayerMaterials.forEach((material,index)=>material.color.copy(horizonLayerTargets[index]));
+        const horizonAttribute=horizonGeometry.attributes.color;
+        for(let row=0;row<horizonCurrentColors.length;row++)for(let side=0;side<2;side++){const offset=(row*2+side)*3,color=horizonCurrentColors[row];horizonAttribute.array[offset]=color.r;horizonAttribute.array[offset+1]=color.g;horizonAttribute.array[offset+2]=color.b;}
+        horizonAttribute.needsUpdate=true;
         cloudMaterial.color.copy(targetCloudColor);cloudMaterial.opacity=look.cloud;
         cloudInstances.forEach(cloud=>cloud.scale.setScalar((cloud.userData.targetScale||1)*(cloud.userData.targetVisibility??1)));
         renderer.render(scene,camera);
@@ -1013,6 +1125,11 @@
       scene.fog.density = lerp(scene.fog.density, targetLook.density, morph);
       sun.intensity = lerp(sun.intensity, targetLook.light, morph);
       sun.color.lerp(targetSunColor,morph);
+      horizonCurrentColors.forEach((color,index)=>color.lerp(targetHorizonColors[index],morph));
+      horizonLayerMaterials.forEach((material,index)=>material.color.lerp(horizonLayerTargets[index],morph));
+      const horizonAttribute=horizonGeometry.attributes.color;
+      for(let row=0;row<horizonCurrentColors.length;row++)for(let side=0;side<2;side++){const offset=(row*2+side)*3,color=horizonCurrentColors[row];horizonAttribute.array[offset]=color.r;horizonAttribute.array[offset+1]=color.g;horizonAttribute.array[offset+2]=color.b;}
+      horizonAttribute.needsUpdate=true;
       sun.position.lerp(targetSunPosition,morph);
       hemisphere.color.lerp(targetHemisphereSky,morph);
       hemisphere.groundColor.lerp(targetHemisphereGround,morph);
