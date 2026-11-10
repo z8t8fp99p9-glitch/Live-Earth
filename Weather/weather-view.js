@@ -221,17 +221,25 @@
     const portrait = aspect < 0.86;
     const shortLandscape = !portrait && safeHeight < 520;
     const tablet = Math.min(safeWidth, safeHeight) >= 700;
+    // Portrait art direction: roughly half sky, a generous central land corridor,
+    // and a restrained coastal foreground. These are framing targets, not pixel masks.
+    const composition = portrait
+      ? { sky: 0.50, land: 0.35, water: 0.15 }
+      : { sky: 0.42, land: 0.38, water: 0.20 };
     return {
       aspect,
       portrait,
       shortLandscape,
       tablet,
-      // The model keeps one physical aspect ratio. Only its camera composition changes.
+      composition,
+      // The model keeps one physical aspect ratio. The lower camera pitch opens
+      // the sky window; a higher look target holds the mountain/coast transition
+      // near the visual midpoint without flattening or stretching the terrain.
       fov: portrait ? (tablet ? 34 : 32) : shortLandscape ? 39 : 35,
-      targetY: portrait ? 2.55 : 2.45,
-      targetZ: portrait ? -0.65 : -0.8,
+      targetY: portrait ? 5.2 : 2.45,
+      targetZ: portrait ? -0.8 : -0.8,
       cameraYaw: portrait ? 0.015 : 0.22,
-      elevation: portrait ? 0.46 : shortLandscape ? 0.44 : 0.53
+      elevation: portrait ? (tablet ? 0.33 : 0.31) : shortLandscape ? 0.44 : 0.53
     };
   }
 
@@ -312,9 +320,10 @@
     const world = new THREE.Group();
     scene.add(world);
 
-    // A distinct atmospheric horizon separates the weather sky from distant sea.
-    // The board remains in front; distant coastal headlands sit between sea and sky.
-    const horizonRows = [-24.0, -5.0, 0.7, 2.1, 3.1, 5.2, 42.0];
+    // A distinct atmospheric horizon separates the expanded weather sky from the coast.
+    // The portrait camera gives the sky roughly half the composition; land stays central
+    // and only a narrow, animated sea band occupies the lower foreground.
+    const horizonRows = [-24.0, -5.0, 0.7, 2.1, 3.1, 5.2, 52.0];
     const initialHorizonPalette = ['#124b61','#1c6d7d','#397f8a','#98b9b6','#d6e6df','#8fc0d2','#4d7899'];
     const horizonPositions = [], horizonColors = [], horizonIndices = [];
     for (let row=0; row<horizonRows.length; row++) {
@@ -380,10 +389,12 @@
     const GRID_Z = compact ? 208 : 272;
 
     const clamp01 = value => Math.max(0, Math.min(1, value));
-    const coastFront = x => 7.35 + 0.86*Math.sin(x*0.24) + 0.46*Math.sin(x*0.61+0.5)
-      + 0.58*Math.exp(-((x+4.1)**2)/2.1) - 0.42*Math.exp(-((x-2.7)**2)/1.55)
-      + 0.22*Math.sin(x*1.08+0.7);
-    const coastEast = z => 5.35 + 0.34*Math.sin(z*0.28) + 0.20*Math.sin(z*0.67)
+    // Push the main shoreline forward so the ocean reads as a coastal foreground,
+    // not the subject of the Weather view. Coves remain irregular along the edge.
+    const coastFront = x => 8.65 + 0.76*Math.sin(x*0.24) + 0.40*Math.sin(x*0.61+0.5)
+      + 0.48*Math.exp(-((x+4.1)**2)/2.1) - 0.36*Math.exp(-((x-2.7)**2)/1.55)
+      + 0.18*Math.sin(x*1.08+0.7);
+    const coastEast = z => 5.75 + 0.30*Math.sin(z*0.28) + 0.18*Math.sin(z*0.67)
       + 0.36*Math.exp(-((z-4.2)**2)/5.5) - 0.28*Math.exp(-((z+2.8)**2)/3.0);
     const waterCoverage = (x,z) => Math.max(
       smooth(coastFront(x)-1.12, coastFront(x)+0.46, z),
@@ -685,7 +696,7 @@
     // The river begins high in the mountain valley, winds through forest clearings,
     // and drops over a real coastal lip into the sea. Its surface carries a flow texture.
     const riverPoints=[];
-    const riverPath=[[-1.15,-7.2],[-0.8,-5.0],[0.35,-3.2],[1.8,-1.1],[1.55,1.1],[2.45,3.25],[3.15,5.4],[3.7,7.05]];
+    const riverPath=[[-1.15,-7.2],[-0.8,-5.0],[0.35,-3.2],[1.8,-1.1],[1.55,1.1],[2.45,3.25],[3.15,6.2],[3.7,8.35]];
     for(let i=0;i<riverPath.length;i++){
       const [x,z]=riverPath[i];
       riverPoints.push(new THREE.Vector3(x,heightAt(x,z)+0.14,z));

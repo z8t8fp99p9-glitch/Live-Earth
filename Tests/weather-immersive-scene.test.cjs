@@ -24,6 +24,8 @@ assert.ok(weather.includes('const rockGrain = makeGrainTexture'), 'Exposed mount
 assert.ok(weather.includes('const plinthCore = new THREE.Mesh'), 'The world must sit on a slim rectangular map-board rather than an oval island');
 assert.ok(weather.includes('const coastFront = x =>'), 'The coastline must follow an irregular coastal shelf');
 assert.ok(weather.includes('const waterCoverage = (x,z) =>'), 'Land and sea must be defined as a real coastal map mask');
+assert.ok(weather.includes('const coastFront = x => 8.65 +'), 'The coastline must keep the ocean to a restrained lower foreground');
+assert.ok(weather.includes('[3.15,6.2],[3.7,8.35]'), 'The river must continue through the valley to the revised shoreline');
 assert.ok(weather.includes('const seaGeometry=new THREE.BufferGeometry()'), 'Coastal water must follow the shore geometry, not a circular ocean backdrop');
 assert.ok(weather.includes('const shelfGeometry=new THREE.BufferGeometry()'), 'The coast must have shallow turquoise shelves');
 assert.ok(weather.includes('const contourLevels=[0.95,1.55,2.25,3.0,3.8,4.7,5.6,6.5,7.4]'), 'Raised contour detail must follow a range of real elevations');
@@ -45,7 +47,7 @@ assert.ok(weather.includes('const scree=new THREE.LineSegments'), 'Exposed mount
 assert.ok(weather.includes('const broadLobes=new THREE.InstancedMesh'), 'Broadleaf crowns must use varied side lobes instead of spherical clumps');
 
 // The sky/sea horizon is a separate, weather-coloured environment behind the land.
-assert.ok(weather.includes('const horizonRows = [-24.0, -5.0, 0.7, 2.1, 3.1, 5.2, 42.0]'), 'The scene must contain a distinct sky-to-sea horizon gradient');
+assert.ok(weather.includes('const horizonRows = [-24.0, -5.0, 0.7, 2.1, 3.1, 5.2, 52.0]'), 'The scene must contain a distinct sky-to-sea horizon gradient');
 assert.ok(weather.includes('function addDistantHeadland('), 'Layered coastal silhouettes must sit at the distant horizon');
 assert.ok(weather.includes('const horizonPalettes ='), 'Horizon colours must have phase-specific palettes');
 assert.ok(weather.includes('horizonCurrentColors.forEach((color,index)=>color.lerp(targetHorizonColors[index],morph))'), 'The horizon must transition with the selected forecast hour');
@@ -93,12 +95,15 @@ const profiles=viewports.map(([name,width,height])=>({name,...viewportProfile(wi
 for(const profile of profiles){
   assert.ok(Number.isFinite(profile.aspect)&&profile.aspect>0,`${profile.name} needs a valid aspect`);
   assert.ok(profile.fov>=30&&profile.fov<=40,`${profile.name} needs a bounded camera FOV`);
-  assert.ok(profile.elevation>0.4&&profile.elevation<0.7,`${profile.name} needs a consistent three-quarter view`);
+  assert.ok(profile.elevation>0.15&&profile.elevation<0.7,`${profile.name} needs a bounded camera elevation`);
+  assert.ok(Math.abs(profile.composition.sky+profile.composition.land+profile.composition.water-1)<0.001,`${profile.name} composition shares must total 100%`);
   assert.equal(profile.scaleX,undefined,`${profile.name} must not stretch the terrain horizontally`);
   assert.equal(profile.scaleZ,undefined,`${profile.name} must not stretch the terrain in depth`);
 }
 assert.ok(profiles[0].portrait&&profiles[1].portrait&&profiles[2].portrait&&!profiles[3].portrait,'Phone portrait and landscape must select different camera compositions');
-assert.ok(profiles[0].fov!==profiles[3].fov,'Portrait and landscape must use different camera framing');
+assert.ok(profiles[1].composition.sky===0.50&&profiles[1].composition.land===0.35&&profiles[1].composition.water===0.15,'Phone portrait must reserve half the view for sky and limit ocean to a narrow foreground');
+assert.ok(profiles[1].elevation<0.36&&profiles[1].targetY>4.5,'Portrait camera must lower its pitch and place the horizon near mid-frame');
+assert.ok(profiles[1].fov!==profiles[3].fov,'Portrait and landscape must use different camera framing');
 assert.ok(profiles[4].tablet&&!profiles[5].portrait,'Tablet profiles must remain distinct');
 assert.ok(weather.includes('const resizeObserver = typeof ResizeObserver'), 'The camera must respond to container resizing');
 assert.ok(weather.includes("window.visualViewport?.addEventListener('resize', resize"), 'Mobile visual viewport changes must reframe the camera');
