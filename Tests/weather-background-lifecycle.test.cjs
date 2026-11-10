@@ -1,0 +1,17 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const source = fs.readFileSync(path.join(__dirname, '..', 'Weather/weather-view.js'), 'utf8');
+assert.ok(source.includes("window.addEventListener('live-earth-location-state', onLocationState)"));
+assert.ok(source.includes("window.addEventListener('live-earth-location-stop', onLocationStop)"));
+assert.ok(source.includes("window.addEventListener('online', onOnline)"));
+assert.ok(source.includes("window.addEventListener('offline', onOffline)"));
+assert.ok(source.includes('abortController?.abort()'));
+assert.ok(source.includes('window.removeEventListener(\'live-earth-location-state\', onLocationState)'));
+assert.ok(source.includes('window.removeEventListener(\'offline\', onOffline)'));
+assert.ok(source.includes('scene.dataset.weather = state.weather'));
+assert.ok(source.includes('scene.dataset.phase = state.phase'));
+assert.ok(source.includes('scene.style.setProperty(\'--le-cloud-drift\''));
+assert.ok(source.includes('createParticles(scene.querySelector(\'.le-weather-rain\')'));
+assert.ok(source.includes('createParticles(scene.querySelector(\'.le-weather-snow\')'));
+console.log('Background weather response, Location gate, offline clearing and cleanup checks passed.');
