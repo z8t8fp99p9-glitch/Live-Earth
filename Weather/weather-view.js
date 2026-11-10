@@ -1026,7 +1026,7 @@
     window.addEventListener('live-earth-location-state',locationEventHandler);window.addEventListener('offline',networkOfflineHandler);window.addEventListener('online',networkOnlineHandler);
     if(window.liveEarthLocationAllowed?.()===true){loadingState();waitForExistingFix();}else privacyState();
 
-    return ()=>{engineDisposed=true;if(pollTimer)clearInterval(pollTimer);pollTimer=0;abortController?.abort();abortController=null;if(locationEventHandler)window.removeEventListener('live-earth-location-state',locationEventHandler);if(networkOfflineHandler)window.removeEventListener('offline',networkOfflineHandler);if(networkOnlineHandler)window.removeEventListener('online',networkOnlineHandler);if(engine)engine.dispose?.();else enginePromise?.then(instance=>instance?.dispose?.());};
+    return () => {engineDisposed=true;if(pollTimer)clearInterval(pollTimer);pollTimer=0;abortController?.abort();abortController=null;if(locationEventHandler)window.removeEventListener('live-earth-location-state',locationEventHandler);if(networkOfflineHandler)window.removeEventListener('offline',networkOfflineHandler);if(networkOnlineHandler)window.removeEventListener('online',networkOnlineHandler);if(engine)engine.dispose?.();else enginePromise?.then(instance=>instance?.dispose?.());};
   }
 
   runtime.registerFeature('weather',activateWeather);
