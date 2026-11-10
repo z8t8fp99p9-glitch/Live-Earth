@@ -59,7 +59,7 @@ class InstancedMesh extends Mesh {
 }
 class Light extends Object3D {constructor(color,intensity=1){super();this.color=new Color(color);this.intensity=intensity;this.shadow={bias:0,normalBias:0,camera:{},mapSize:{set(){}}};this.groundColor=new Color('#334433');}}
 class Camera extends Object3D {constructor(fov=35){super();this.fov=fov;this.aspect=1;}updateProjectionMatrix(){}lookAt(){}}
-class Texture {constructor(){this.wrapS=0;this.wrapT=0;this.repeat={set(){}};this.offset={x:0,y:0};this.colorSpace='';this.anisotropy=1;}}
+class Texture {constructor(){this.wrapS=0;this.wrapT=0;this.repeat={set(){}};this.offset={x:0,y:0};this.colorSpace='';this.anisotropy=1;this.disposed=false;}dispose(){this.disposed=true;}}
 class Curve {
   constructor(points=[]){this.points=points;}
   getPoint(t){const n=this.points.length-1;const p=Math.max(0,Math.min(n,t*n));const i=Math.min(n-1,Math.floor(p));const a=this.points[i]||new Vector3();const b=this.points[i+1]||a;const f=p-i;return new Vector3(a.x+(b.x-a.x)*f,a.y+(b.y-a.y)*f,a.z+(b.z-a.z)*f);}
@@ -87,7 +87,7 @@ const THREE_TEST = {
 const fakeCanvas = () => {
   const ctx={
     createImageData(w,h){return {data:new Uint8ClampedArray(w*h*4)};},putImageData(){},
-    createLinearGradient(){return {addColorStop(){}};},fillRect(){},beginPath(){},moveTo(){},lineTo(){},stroke(){}
+    createLinearGradient(){return {addColorStop(){}};},fillRect(){},beginPath(){},moveTo(){},lineTo(){},bezierCurveTo(){},stroke(){}
   };
   return {width:0,height:0,getContext(){return ctx;},setAttribute(){},remove(){},style:{}};
 };

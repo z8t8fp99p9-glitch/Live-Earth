@@ -25,10 +25,10 @@ assert.ok(weather.includes('const BACK_Z = -15.0') && weather.includes('const FR
 assert.ok(!weather.includes('const plinthCore =') && !weather.includes('const plinthRim ='), 'The thick rectangular display slab must be removed');
 assert.ok(!weather.includes('const edgeBands='), 'The old stacked platform walls must be removed');
 assert.ok(!weather.includes('const riverPath=[[-1.15,-7.2]'), 'The old narrow straight river path must be removed');
-assert.ok(weather.includes('const riverPath=[[-2.2,-11.2]'), 'The new river must begin in the high mountain valley');
-assert.ok(weather.includes('const halfWidth=0.22+0.18*Math.sin(Math.PI*t)'), 'The river must be a single smoothly varying ribbon');
+assert.ok(weather.includes('const riverPath=[[-2.8,-12.1]'), 'The river must begin at the mountain headwaters and meander toward the coast');
+assert.ok(weather.includes('const halfWidth=0.18+0.42*smooth(0.0,0.28,t)'), 'The river must widen naturally through the valley and estuary');
 assert.ok(weather.includes('const coastFront = x => 8.7 +'), 'The shore must sit near the foreground, leaving the ocean secondary');
-assert.ok(weather.includes('SEA_X=26,SEA_Z0=7.8,SEA_Z1=34'), 'Sea geometry must occupy only the foreground beyond the shoreline');
+assert.ok(weather.includes('SEA_X=36,SEA_Z0=7.6,SEA_Z1=52'), 'Sea geometry must occupy only the foreground beyond the shoreline');
 assert.ok(weather.includes('const coastCurve='), 'The coast must be irregular and continuous');
 
 // Living terrain, forest and cloud layers.
@@ -39,9 +39,19 @@ assert.ok(weather.includes('const broadLobes='), 'Broadleaf crowns must have une
 assert.ok(weather.includes('const forestClusters=['), 'Vegetation must grow in ecological clusters');
 assert.ok(weather.includes('const shrubs='), 'The valley floor must include understorey');
 assert.ok(weather.includes('const rockOutcrops='), 'Rocks must form grouped outcrops rather than cover the mountain randomly');
-assert.ok(weather.includes('addCloud(-4.0,20.0,-12.0'), 'The high cloud shelf must sit visibly above the mountain range');
-assert.ok(weather.includes('addCloud(8.0,16.6,-6.0'), 'Clouds must span across the upper sky');
+assert.ok(weather.includes('addCloud(-5.0,24.2,-12.4'), 'The high cloud shelf must sit visibly above the mountain range');
+assert.ok(weather.includes('addCloud(7.8,22.0,-7.4'), 'Clouds must span across the upper sky above the mountain silhouette');
 assert.ok(!/support rod|cloud pole|cloud rod/i.test(weather), 'Clouds must have no static support rods');
+
+// Detail refinement: independent summits, sharper exposed ridges, and river-specific flow texture.
+assert.ok(weather.includes('const ridgeTeeth=0.48*Math.pow'), 'Mountain ridges must have broken, non-rounded crest detail');
+assert.ok(weather.includes('const peakMask=clamp(') && weather.includes('gaussian(x,z,-7.1,-9.2'), 'Copper/ochre rock colour must span the full mountain chain');
+assert.ok(weather.includes('const rockCapacity=lowMemory?72:118'), 'Mountain outcrops need enough varied fractured rock detail');
+assert.ok(weather.includes('new THREE.DodecahedronGeometry(0.42,0)'), 'Rock clusters must use angular fractured silhouettes');
+assert.ok(weather.includes('const riverTexture=new THREE.CanvasTexture(riverCanvas)'), 'River needs a dedicated, non-striped flowing-water material');
+assert.ok(weather.includes('riverTexture.repeat.set(1.25,1.0)'), 'River texture must not tile into repeated cross-channel bars');
+assert.ok(weather.includes('const riverPath=[[-2.8,-12.1]'), 'The forest corridor must share the river headwater path');
+assert.ok(weather.includes('textures.forEach(texture=>texture.dispose())'), 'Procedural textures must be released with the Weather view');
 
 // Weather instrument behaviour.
 for (const token of [
@@ -49,7 +59,7 @@ for (const token of [
   'cloud.visible=visibility>0.008', 'activeWind/38', 'targetSunPosition.set',
   "targetRain=(kind==='rain'||kind==='storm')?clamp(precipitation/3.5,0,1):0",
   'targetRiverFlow=0.58+Math.min(1.45,precipitation*0.30+targetRain*0.18)',
-  'waterTexture.offset.y=', "activeWeather==='rain'||activeWeather==='storm'",
+  'waterTexture.offset.y=', 'riverTexture.offset.x=', "activeWeather==='rain'||activeWeather==='storm'",
   "activeWeather==='storm'&&elapsed>=nextLightningAt", 'seaMaterial.roughness=clamp',
   'waterfallMaterial.opacity=', 'mistMaterial.opacity='
 ]) assert.ok(weather.includes(token), `Missing weather behaviour: ${token}`);

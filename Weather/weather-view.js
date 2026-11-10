@@ -225,10 +225,10 @@
       aspect, portrait, shortLandscape, tablet,
       // Portrait is the authored master: broad sky, layered land and a narrow sea foreground.
       fov: portrait ? (tablet ? 46 : 49) : shortLandscape ? 43 : 46,
-      targetY: portrait ? 11.0 : 8.2,
-      targetZ: portrait ? -4.0 : -2.0,
-      cameraRise: portrait ? (tablet ? 13.0 : 12.0) : shortLandscape ? 17.0 : 15.0,
-      cameraDepth: portrait ? 40.0 : shortLandscape ? 38.0 : 35.0,
+      targetY: portrait ? 11.3 : 8.4,
+      targetZ: portrait ? -4.2 : -2.1,
+      cameraRise: portrait ? (tablet ? 13.0 : 12.2) : shortLandscape ? 17.0 : 15.0,
+      cameraDepth: portrait ? 41.0 : shortLandscape ? 38.0 : 35.0,
       yaw: portrait ? 0.0 : 0.12
     };
   }
@@ -324,34 +324,45 @@
     const coastFront = x => 8.7 + 0.92*Math.sin(x*0.18+0.25) + 0.48*Math.sin(x*0.43-0.8)
       + 0.68*Math.exp(-((x+5.1)**2)/4.2) - 0.52*Math.exp(-((x-4.2)**2)/2.7)
       + 0.22*Math.sin(x*0.93);
-    const riverCenterX = z => -1.25 + 0.85*Math.sin(z*0.27) + 0.20*z + 0.24*Math.sin(z*0.69);
+    const riverPath=[[-2.8,-12.1],[-2.5,-10.0],[-1.2,-8.0],[-0.3,-6.1],[-0.9,-4.2],[0.55,-2.2],[2.25,-0.25],[1.55,1.95],[3.05,4.2],[4.25,6.65],[4.95,8.65]];
+    const riverCenterX = z => {
+      for(let i=0;i<riverPath.length-1;i++){
+        const a=riverPath[i],b=riverPath[i+1];
+        if(z<=b[1]){const t=clamp((z-a[1])/(b[1]-a[1]),0,1);return lerp(a[0],b[0],t);}
+      }
+      return riverPath[riverPath.length-1][0];
+    };
 
     function rawLandHeight(x,z) {
       const wx = x + 0.28*Math.sin(z*0.36) + 0.12*Math.sin(z*0.92+x*0.28);
       const wz = z + 0.24*Math.sin(x*0.31) + 0.11*Math.cos(x*0.77-z*0.24);
-      // Three connected mountain groups with separate shoulders: not one triangular slab.
+      // Three distinct alpine groups now have narrow summit profiles and broken shoulders.
       const westernPeaks =
-        gaussian(wx,wz,-9.0,-8.2,2.0,3.1,4.4) +
-        gaussian(wx,wz,-6.4,-10.2,1.85,2.4,6.4) +
-        gaussian(wx,wz,-3.9,-8.1,2.0,2.8,4.2);
+        gaussian(wx,wz,-10.4,-8.6,1.45,2.35,6.0) +
+        gaussian(wx,wz,-7.2,-10.5,1.12,1.90,8.35) +
+        gaussian(wx,wz,-4.25,-8.45,1.42,2.15,6.35);
       const centralPeaks =
-        gaussian(wx,wz,-1.4,-10.5,1.9,2.5,7.4) +
-        gaussian(wx,wz,1.8,-8.0,1.9,2.8,5.8) +
-        gaussian(wx,wz,4.3,-10.0,2.1,2.5,6.4);
+        gaussian(wx,wz,-1.55,-10.8,1.16,1.92,8.95) +
+        gaussian(wx,wz,1.55,-8.55,1.42,2.15,7.15) +
+        gaussian(wx,wz,4.55,-10.35,1.24,1.95,8.15);
       const easternPeaks =
-        gaussian(wx,wz,8.1,-8.7,2.4,3.3,5.6) +
-        gaussian(wx,wz,10.2,-11.5,1.8,2.3,4.9);
-      const mainSpineX = -1.0 + 0.45*Math.sin(wz*0.29) + 0.18*wz;
-      const spine = 1.1*Math.exp(-((wx-mainSpineX)**2)/2.4)*smooth(-14,-8,wz)*(1-smooth(-5,-0.8,wz));
-      const shoulderRidge = 0.65*Math.exp(-((wx-(6.5+0.24*wz))**2)/2.8)*smooth(-13,-7,wz)*(1-smooth(-4,0,wz));
+        gaussian(wx,wz,7.85,-8.95,1.58,2.35,7.05) +
+        gaussian(wx,wz,10.75,-11.2,1.18,1.85,7.65);
+      const peakMass=westernPeaks+centralPeaks+easternPeaks;
+      const mainSpineX=-0.75+0.40*Math.sin(wz*0.29)+0.13*wz;
+      const spine=1.38*Math.exp(-((wx-mainSpineX)**2)/2.55)*smooth(-14,-8.2,wz)*(1-smooth(-4.8,-0.65,wz));
+      const shoulderRidge=0.92*Math.exp(-((wx-(6.2+0.22*wz))**2)/3.25)*smooth(-13,-7,wz)*(1-smooth(-4,0.1,wz));
       const foothills =
-        gaussian(wx,wz,-9.0,-1.0,4.8,4.8,2.7) +
-        gaussian(wx,wz,-3.8,0.5,4.4,4.9,2.0) +
-        gaussian(wx,wz,4.5,0.0,4.8,4.5,2.5) +
-        gaussian(wx,wz,9.0,1.3,3.8,4.1,2.2);
-      const folded = 0.28*Math.sin(wx*0.76+wz*0.38)+0.20*Math.cos(wz*0.91-wx*0.24)+0.11*Math.sin((wx+wz)*1.55);
-      const alpine = (0.24*Math.sin(wx*2.0+wz*1.33)*Math.cos(wz*2.2-wx*0.55)+0.10*Math.sin((wx-wz)*3.1))*smooth(2.8,6.0,westernPeaks+centralPeaks+easternPeaks+spine);
-      return Math.max(0.16,0.32+westernPeaks+centralPeaks+easternPeaks+spine+shoulderRidge+foothills+folded+alpine);
+        gaussian(wx,wz,-9.0,-1.0,4.8,4.8,2.55) +
+        gaussian(wx,wz,-3.8,0.5,4.4,4.9,1.95) +
+        gaussian(wx,wz,4.5,0.0,4.8,4.5,2.35) +
+        gaussian(wx,wz,9.0,1.3,3.8,4.1,2.05);
+      const folded=0.24*Math.sin(wx*0.76+wz*0.38)+0.18*Math.cos(wz*0.91-wx*0.24)+0.13*Math.sin((wx+wz)*1.55);
+      const mountainMask=smooth(2.8,6.0,peakMass+spine);
+      const alpine=(0.29*Math.sin(wx*2.05+wz*1.37)*Math.cos(wz*2.25-wx*0.58)+0.13*Math.sin((wx-wz)*3.25))*mountainMask;
+      const ridgeTeeth=0.48*Math.pow(Math.max(0,Math.sin(wx*1.48+wz*0.82+0.42)),8)*smooth(3.4,7.0,peakMass+spine);
+      const brokenFaces=0.10*Math.sin(wx*3.35+wz*2.05)*Math.sin(wz*2.8-wx*0.62)*mountainMask;
+      return clamp(0.30+peakMass+spine+shoulderRidge+foothills+folded+alpine+ridgeTeeth+brokenFaces,0.16,9.92);
     }
     function heightAt(x,z) {
       const raw = rawLandHeight(x,z);
@@ -405,13 +416,16 @@
       for(let ix=0;ix<=GRID_X;ix++){
         const x=-HALF_W+(ix/GRID_X)*MAP_W;
         const y=heightAt(x,z), raw=rawLandHeight(x,z), wet=waterCoverage(x,z);
-        const peakMask=clamp(gaussian(x,z,-0.5,-9.6,7.8,4.2,1),0,1);
-        const rockBand=smooth(4.4,7.0,raw);
+        const peakMask=clamp(
+          gaussian(x,z,-7.1,-9.2,4.8,4.0,0.92)+
+          gaussian(x,z,0.5,-9.7,4.9,4.2,1.0)+
+          gaussian(x,z,7.8,-9.0,4.3,4.0,0.88),0,1);
+        const rockBand=smooth(4.0,6.7,raw);
         const grain=0.965+0.035*Math.sin(x*1.9+z*1.3)*Math.cos(z*2.1-x*0.7);
         vColor.copy(deepForest).lerp(meadow,smooth(0.25,2.7,raw)*0.90);
         vColor.lerp(sunlitGrass,smooth(1.7,4.0,raw)*0.27);
-        vColor.lerp(copperRock,rockBand*peakMask*0.78);
-        vColor.lerp(ochreRock,smooth(5.6,8.5,raw)*peakMask*0.28);
+        vColor.lerp(copperRock,rockBand*peakMask*0.92);
+        vColor.lerp(ochreRock,smooth(5.2,8.3,raw)*peakMask*0.36);
         vColor.lerp(weatheredStone,smooth(7.4,9.2,raw)*0.52);
         vColor.lerp(summitStone,smooth(9.0,10.4,raw)*0.68);
         vColor.lerp(snowCap,smooth(10.2,11.2,raw)*0.78);
@@ -455,7 +469,7 @@
     addDistantRidge(-15.9,0.8,[{x:-20,w:6,h:1.8},{x:-2,w:5,h:2.1},{x:16,w:7,h:1.8}],'#54766f',0.52);
 
     // An irregular coastal sea fills only the foreground beyond the natural shore.
-    const SEA_X=26,SEA_Z0=7.8,SEA_Z1=34,SEA_NX=132,SEA_NZ=94;
+    const SEA_X=36,SEA_Z0=7.6,SEA_Z1=52,SEA_NX=156,SEA_NZ=126;
     const seaPositions=[],seaUvs=[],seaIndices=[];
     for(let iz=0;iz<=SEA_NZ;iz++){
       const z=SEA_Z0+(iz/SEA_NZ)*(SEA_Z1-SEA_Z0);
@@ -504,23 +518,33 @@
     }
 
     // River ribbon: one continuous water surface, with banks and a real drop to the coast.
-    const riverPath=[[-2.2,-11.2],[-1.5,-8.9],[-0.7,-6.3],[0.3,-4.1],[1.6,-1.5],[1.0,1.1],[2.4,3.6],[3.4,6.4],[4.0,9.15]];
     const riverPoints=riverPath.map(([x,z])=>new THREE.Vector3(x,heightAt(x,z)+0.16,z));
     const riverCurve=new THREE.CatmullRomCurve3(riverPoints,false,'centripetal',0.35);
     const riverPositions=[],riverUvs=[],riverIndices=[];
     const riverSegments=320;
     for(let i=0;i<=riverSegments;i++){
       const t=i/riverSegments,p=riverCurve.getPoint(t),tangent=riverCurve.getTangent(t),side=new THREE.Vector3(-tangent.z,0,tangent.x).normalize();
-      const halfWidth=0.22+0.18*Math.sin(Math.PI*t)+0.06*Math.sin(t*6.2);
+      const halfWidth=0.18+0.42*smooth(0.0,0.28,t)+0.12*Math.sin(Math.PI*t)+0.035*Math.sin(t*8.4);
       for(let edge=0;edge<2;edge++){const sign=edge===0?-1:1,x=p.x+side.x*halfWidth*sign,z=p.z+side.z*halfWidth*sign;riverPositions.push(x,heightAt(x,z)+0.18,z);riverUvs.push(t,edge);}
       if(i<riverSegments){const a=i*2;riverIndices.push(a,a+1,a+2,a+1,a+3,a+2);}
     }
     const riverGeometry=new THREE.BufferGeometry();riverGeometry.setAttribute('position',new THREE.Float32BufferAttribute(riverPositions,3));riverGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(riverUvs,2));riverGeometry.setIndex(riverIndices);riverGeometry.computeVertexNormals();
-    const riverMaterial=new THREE.MeshPhysicalMaterial({color:'#8be3dc',map:waterTexture,roughness:0.12,metalness:0.08,clearcoat:1,clearcoatRoughness:0.07,side:THREE.DoubleSide,transparent:true,opacity:0.94});
+    const riverCanvas=document.createElement('canvas');riverCanvas.width=512;riverCanvas.height=256;
+    const riverCtx=riverCanvas.getContext('2d');
+    const riverGradient=riverCtx.createLinearGradient(0,0,0,256);
+    riverGradient.addColorStop(0,'#247b87');riverGradient.addColorStop(0.18,'#49b8b5');riverGradient.addColorStop(0.52,'#8be0d2');riverGradient.addColorStop(0.82,'#4db2b1');riverGradient.addColorStop(1,'#216c7d');
+    riverCtx.fillStyle=riverGradient;riverCtx.fillRect(0,0,512,256);
+    for(let i=0;i<150;i++){
+      const x=seedRandom()*512,y=seedRandom()*256,len=18+seedRandom()*115,curve=(seedRandom()-0.5)*12;
+      riverCtx.strokeStyle=seedRandom()<0.65?'rgba(226,255,244,.22)':'rgba(5,82,99,.16)';
+      riverCtx.lineWidth=0.35+seedRandom()*1.35;riverCtx.beginPath();riverCtx.moveTo(x,y);riverCtx.bezierCurveTo(x+len*0.32,y+curve,x+len*0.68,y-curve,x+len,y+curve*0.25);riverCtx.stroke();
+    }
+    const riverTexture=new THREE.CanvasTexture(riverCanvas);riverTexture.wrapS=riverTexture.wrapT=THREE.RepeatWrapping;riverTexture.repeat.set(1.25,1.0);riverTexture.colorSpace=THREE.SRGBColorSpace;riverTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+    const riverMaterial=new THREE.MeshPhysicalMaterial({color:'#e0fbf2',map:riverTexture,roughness:0.11,metalness:0.05,clearcoat:1,clearcoatRoughness:0.06,side:THREE.DoubleSide,transparent:true,opacity:0.96});
     const river=new THREE.Mesh(riverGeometry,riverMaterial);river.receiveShadow=true;world.add(river);
     const riverBankMaterial=new THREE.MeshStandardMaterial({color:'#8f866c',roughness:1});
     const riverLeftPoints=[],riverRightPoints=[];
-    for(let i=0;i<=100;i++){const t=i/100,p=riverCurve.getPoint(t),tan=riverCurve.getTangent(t),side=new THREE.Vector3(-tan.z,0,tan.x).normalize(),w=0.38+0.18*Math.sin(Math.PI*t);riverLeftPoints.push(new THREE.Vector3(p.x-side.x*w,heightAt(p.x-side.x*w,p.z-side.z*w)+0.035,p.z-side.z*w));riverRightPoints.push(new THREE.Vector3(p.x+side.x*w,heightAt(p.x+side.x*w,p.z+side.z*w)+0.035,p.z+side.z*w));}
+    for(let i=0;i<=100;i++){const t=i/100,p=riverCurve.getPoint(t),tan=riverCurve.getTangent(t),side=new THREE.Vector3(-tan.z,0,tan.x).normalize(),w=0.18+0.42*smooth(0.0,0.28,t)+0.12*Math.sin(Math.PI*t)+0.16;riverLeftPoints.push(new THREE.Vector3(p.x-side.x*w,heightAt(p.x-side.x*w,p.z-side.z*w)+0.035,p.z-side.z*w));riverRightPoints.push(new THREE.Vector3(p.x+side.x*w,heightAt(p.x+side.x*w,p.z+side.z*w)+0.035,p.z+side.z*w));}
     const bankLeft=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(riverLeftPoints),140,0.055,5,false),riverBankMaterial);
     const bankRight=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(riverRightPoints),140,0.055,5,false),riverBankMaterial);world.add(bankLeft,bankRight);
     const waterfallTop=riverCurve.getPoint(1);
@@ -529,7 +553,7 @@
     const waterfallMaterial=new THREE.MeshPhysicalMaterial({color:'#d9ffff',map:waterTexture,transparent:true,opacity:0.78,roughness:0.08,metalness:0.02,clearcoat:1,side:THREE.DoubleSide,depthWrite:false});
     const waterfall=new THREE.Mesh(waterfallGeometry,waterfallMaterial);
     const waterfallBaseY=waterfallDrop*0.5;
-    waterfall.position.set(waterfallTop.x,waterfallBaseY,coastFront(waterfallTop.x)+0.20);
+    waterfall.position.set(waterfallTop.x,waterfallBaseY,waterfallTop.z+0.56);
     world.add(waterfall);
     const waterfallPool=new THREE.Mesh(new THREE.CircleGeometry(0.9,48),new THREE.MeshPhysicalMaterial({color:'#54c3c7',roughness:0.13,metalness:0.12,clearcoat:1,transparent:true,opacity:0.84}));
     waterfallPool.rotation.x=-Math.PI/2;waterfallPool.position.set(waterfallTop.x,0.075,waterfall.position.z+0.5);world.add(waterfallPool);
@@ -600,17 +624,17 @@
     shrubs.count=shrubIndex;shrubs.instanceMatrix.needsUpdate=true;if(shrubs.instanceColor)shrubs.instanceColor.needsUpdate=true;shrubs.castShadow=true;world.add(shrubs);
 
     // Rock outcrops are placed in coherent cliff/slope groups instead of random stones everywhere.
-    const rockCapacity=lowMemory?55:92;
-    const rockGeometry=new THREE.DodecahedronGeometry(0.34,1);
+    const rockCapacity=lowMemory?72:118;
+    const rockGeometry=new THREE.DodecahedronGeometry(0.42,0);
     const rockMaterial=new THREE.MeshStandardMaterial({color:'#91745a',map:rockTexture,roughness:0.98,flatShading:true});
     const rockOutcrops=new THREE.InstancedMesh(rockGeometry,rockMaterial,rockCapacity);
-    const outcropZones=[[-11,-7,2.2,3.0],[-7,-11,2.4,2.4],[0,-8,3.0,3.0],[7,-9,2.4,3.5],[11,5,1.6,2.0]];
+    const outcropZones=[[-11,-7.4,2.0,2.7],[-7.2,-10.5,1.9,2.1],[-1.5,-10.7,2.0,2.1],[4.5,-10.3,2.1,2.2],[8.4,-8.8,2.0,2.6],[11,4.9,1.6,1.9]];
     let rockIndex=0;
     for(let attempt=0;attempt<rockCapacity*30&&rockIndex<rockCapacity;attempt++){
       const zone=outcropZones[Math.floor(seedRandom()*outcropZones.length)];
       const x=zone[0]+(seedRandom()-0.5)*zone[2]*2,z=zone[1]+(seedRandom()-0.5)*zone[3]*2,raw=rawLandHeight(x,z);
       if(raw<3.0||waterCoverage(x,z)>0.1||seedRandom()<0.40)continue;
-      const scale=0.25+seedRandom()*0.55;
+      const scale=0.34+seedRandom()*0.72;
       dummy.position.set(x,raw+0.10*scale,z);dummy.rotation.set(seedRandom()*0.45,seedRandom()*Math.PI,seedRandom()*0.45);dummy.scale.set(scale*1.15,scale*0.72,scale);dummy.updateMatrix();
       rockOutcrops.setMatrixAt(rockIndex,dummy.matrix);rockOutcrops.setColorAt(rockIndex,new THREE.Color().setHSL(0.075+seedRandom()*0.06,0.16+seedRandom()*0.12,0.34+seedRandom()*0.17));rockIndex++;
     }
@@ -626,20 +650,25 @@
         [0,0,0,1.28,0.58,0.84],[-0.93,-0.02,0.03,0.88,0.58,0.72],[0.92,-0.03,-0.02,0.94,0.60,0.78],
         [-0.55,0.40,0,0.78,0.65,0.72],[0.38,0.45,-0.04,0.84,0.72,0.76],[0.02,0.58,0.06,0.78,0.72,0.76],
         [-1.28,0.14,-0.03,0.55,0.46,0.52],[1.26,0.16,0.08,0.56,0.48,0.54],
-        [-0.18,-0.18,0.52,0.76,0.46,0.58],[0.58,-0.18,-0.42,0.70,0.46,0.58]
+        [-0.18,-0.18,0.52,0.76,0.46,0.58],[0.58,-0.18,-0.42,0.70,0.46,0.58],
+        [-0.62,0.73,0.14,0.58,0.60,0.60],[0.72,0.68,-0.10,0.62,0.61,0.63],
+        [0.02,0.82,-0.34,0.66,0.62,0.66]
       ];
       for(let i=0;i<puffs.length;i++){
         const p=puffs[i],mesh=new THREE.Mesh(cloudGeometry,cloudMaterial);
-        mesh.position.set(p[0]*scale,p[1]*scale,p[2]*scale);mesh.scale.set(p[3]*scale,p[4]*scale,p[5]*scale);mesh.castShadow=i<6;group.add(mesh);
+        mesh.position.set(p[0]*scale,p[1]*scale,p[2]*scale);mesh.scale.set(p[3]*scale,p[4]*scale,p[5]*scale);mesh.castShadow=i<8;mesh.receiveShadow=i<8;group.add(mesh);
       }
       world.add(group);cloudFamilies.push(group);
     }
-    addCloud(-9.0,17.0,-8.0,1.65,0.070,0.2);
-    addCloud(-4.0,20.0,-12.0,2.05,-0.055,1.1);
-    addCloud(2.0,18.2,-9.0,1.82,0.060,2.0);
-    addCloud(8.0,16.6,-6.0,1.55,-0.050,2.8);
-    addCloud(-7.0,15.1,1.0,1.24,0.045,3.4);
-    addCloud(5.0,16.0,2.6,1.32,-0.038,4.2);
+    // High cloud shelf stays above the tallest ridges in the portrait camera frustum.
+    addCloud(-10.0,22.0,-8.5,1.82,0.070,0.2);
+    addCloud(-5.0,24.2,-12.4,2.18,-0.055,1.1);
+    addCloud(1.0,22.8,-10.2,1.98,0.060,2.0);
+    addCloud(7.8,22.0,-7.4,1.88,-0.050,2.8);
+    addCloud(-8.2,20.2,0.4,1.45,0.045,3.4);
+    addCloud(4.8,20.8,1.8,1.55,-0.038,4.2);
+    addCloud(10.8,24.5,-13.8,1.72,0.052,5.0);
+    addCloud(-1.8,25.5,-16.0,1.90,-0.044,5.7);
 
     // Mountain mist is a soft horizontal atmospheric veil, not a cloud support.
     const mistMaterial=new THREE.MeshBasicMaterial({color:'#e5f1e9',transparent:true,opacity:0.12,depthWrite:false,side:THREE.DoubleSide});
@@ -852,7 +881,9 @@
       });
       waterTexture.offset.x=(waterTexture.offset.x+delta*(0.010+activeWind*0.00028))%1;
       waterTexture.offset.y=(waterTexture.offset.y-delta*(0.025+targetRiverFlow*0.018))%1;
-      riverMaterial.opacity=0.88+0.08*(0.5+0.5*Math.sin(elapsed*1.5*targetRiverFlow));
+      // River UV.x follows the current downstream, so this texture moves along the channel.
+      riverTexture.offset.x=(riverTexture.offset.x-delta*(0.045+targetRiverFlow*0.065))%1;
+      riverMaterial.opacity=0.90+0.08*(0.5+0.5*Math.sin(elapsed*1.5*targetRiverFlow));
       waterfall.position.y=waterfallBaseY+Math.sin(elapsed*1.8)*0.02;
       waterfall.scale.x=1+targetRain*0.15;
       waterfallMist.material.opacity=lerp(waterfallMist.material.opacity,0.10+targetHumidity*0.12+targetRain*0.16,0.05);
@@ -874,12 +905,12 @@
       resizeObserver?.disconnect();
       window.removeEventListener('resize',resize);window.removeEventListener('orientationchange',resize);
       window.visualViewport?.removeEventListener('resize',resize);document.removeEventListener('visibilitychange',onVisibility);
-      const geometries=new Set(),materials=new Set();
+      const geometries=new Set(),materials=new Set(),textures=new Set([soilTexture,rockTexture,waterTexture,riverTexture]);
       scene.traverse(object=>{
         if(object.geometry)geometries.add(object.geometry);
         if(object.material){if(Array.isArray(object.material))object.material.forEach(material=>materials.add(material));else materials.add(object.material);}
       });
-      geometries.forEach(geometry=>geometry.dispose());materials.forEach(material=>material.dispose());
+      geometries.forEach(geometry=>geometry.dispose());materials.forEach(material=>material.dispose());textures.forEach(texture=>texture.dispose());
       renderer.dispose();renderer.forceContextLoss?.();canvas.remove();
     }
     return {setState,dispose};
