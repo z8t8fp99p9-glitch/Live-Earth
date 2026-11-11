@@ -17,12 +17,20 @@ assert.ok(source.includes('font-size:clamp(9px,1.05vw,11px)'));
 assert.ok(source.includes('grid-template-columns:minmax(218px,.42fr) minmax(0,1fr);'));
 assert.ok(source.includes('grid-template-areas:"forecast artwork"'));
 assert.ok(source.includes('font-size:clamp(22px,2.8vw,31px)'));
-assert.ok(source.includes('The painting receives the remaining ~70% of the usable width.'));
+assert.ok(source.includes('white-space:normal;\n          overflow:visible;\n          text-overflow:clip;'));
+assert.ok(source.includes('Live Art keeps the same 10:7 frame in both orientations.'));
 assert.ok(source.includes('function drawMinimalLandscape(p,t)'));
-assert.ok(source.includes('const compactLandscape=window.innerWidth>window.innerHeight&&width<560;'));
+assert.ok(source.includes('--le-weather-landscape-height:clamp(190px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,126px) - 80px),292px);'));
+assert.ok(source.includes('width:min(100%,calc((var(--le-weather-landscape-height) - 20px) * 1.428571));'));
+assert.ok(source.includes('place-items:center;'));
+assert.ok(source.includes('justify-self:center;'));
+assert.ok(source.includes('align-self:center;'));
+assert.ok(source.includes('drawMinimalLandscape(p,t);'));
+assert.ok(!source.includes('const compactLandscape='));
 
 // The portrait full-card 10:7 Live Art remains independent of landscape treatment.
 assert.ok(source.includes('aspect-ratio:10 / 7;'));
+assert.ok(source.includes('width:min(100%,calc((var(--le-weather-landscape-height) - 20px) * 1.428571));'));
 assert.ok(source.includes('width:min(95vw,760px);'));
 assert.ok(source.includes('grid-template-areas:"headline" "scene" "summary" "studio";'));
 
@@ -34,7 +42,8 @@ assert.ok(!/weatherDock\.style\.(?:bottom|top|left|right|transform|width|height)
 assert.ok(!source.includes('le-weather-hourly'));
 assert.ok(!source.includes('hourly:'));
 
-assert.ok(editor.includes('Landscape gives Live Art the larger feature column with a compact Weather overview.'));
-assert.ok(design.includes('approximately 30%') && design.includes('approximately 70%'));
+assert.ok(editor.includes('centres the 10:7 Live Art frame in the available feature area.'));
+assert.ok(editor.includes('Portrait begins below the top safe area with extra breathing room.'));
+assert.ok(design.includes('about 42%') && design.includes('about 58%'));
 
-console.log('Weather landscape safe areas, increased masthead type, Live Art priority, compact scene and protected portrait/dock contracts passed.');
+console.log('Weather Japanese landscape consistency, centred 10:7 Live Art, safe areas, large weather readings and protected portrait/dock contracts passed.');

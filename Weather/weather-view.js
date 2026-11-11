@@ -129,14 +129,15 @@
           column-gap:clamp(15px,2vw,23px);
           row-gap:0;
           align-items:stretch;
-          height:clamp(190px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,126px) - 80px),292px);
+          --le-weather-landscape-height:clamp(190px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,126px) - 80px),292px);
+          height:var(--le-weather-landscape-height);
           margin-top:clamp(7px,1.5vh,11px);
         }
         .le-weather-forecast-column {
           grid-area:forecast;
           display:grid;
           grid-template-columns:minmax(0,1fr);
-          grid-template-rows:auto minmax(58px,1fr) auto;
+          grid-template-rows:auto minmax(82px,1fr) auto;
           grid-template-areas:"hero" "scene" "summary";
           row-gap:6px;
           min-width:0;
@@ -148,6 +149,7 @@
           grid-template-columns:minmax(0,1fr);
           grid-template-rows:minmax(0,1fr);
           grid-template-areas:"studio";
+          place-items:center;
           min-width:0;
           min-height:0;
         }
@@ -162,7 +164,7 @@
         }
         .le-weather-headline {
           max-width:100%;
-          font-size:clamp(31px,4.4vw,42px);
+          font-size:clamp(34px,4.8vw,46px);
           line-height:.89;
           letter-spacing:-.06em;
         }
@@ -203,11 +205,11 @@
           gap:8px;
           max-width:calc(100% - 18px);
         }
-        .le-weather-temperature { font-size:clamp(53px,6.1vw,66px); }
-        .le-weather-condition { padding:2px 0 2px 9px; }
-        .le-weather-condition-icon { width:27px;height:25px;margin-bottom:2px; }
-        .le-weather-condition-name { font-size:13px; }
-        .le-weather-feels { margin-top:3px;font-size:9px; }
+        .le-weather-temperature { font-size:clamp(58px,6.8vw,72px); }
+        .le-weather-condition { padding:2px 0 2px 10px; }
+        .le-weather-condition-icon { width:30px;height:28px;margin-bottom:3px; }
+        .le-weather-condition-name { font-size:15px; }
+        .le-weather-feels { margin-top:3px;font-size:10px; }
         .le-weather-summary {
           grid-area:summary;
           align-self:end;
@@ -216,19 +218,23 @@
         }
         .le-weather-stat { padding:0 4px; }
         .le-weather-stat:first-child { padding-left:1px; }
-        .le-weather-stat-label { font-size:7px;letter-spacing:.04em; }
-        .le-weather-stat-value { margin-top:4px;font-size:clamp(13px,1.55vw,16px); }
+        .le-weather-stat-label { font-size:8px;letter-spacing:.055em; }
+        .le-weather-stat-value { margin-top:4px;font-size:clamp(14px,1.7vw,17px); }
 
-        /* The painting receives the remaining ~70% of the usable width. */
+        /* Live Art keeps the same 10:7 frame in both orientations.
+           Its width follows the available height; the art column centres it on both axes. */
         .le-weather-studio {
           grid-area:studio;
           box-sizing:border-box;
           position:relative;
           display:block;
-          width:100%;
-          height:100%;
+          width:min(100%,calc((var(--le-weather-landscape-height) - 20px) * 1.428571));
+          height:auto;
+          aspect-ratio:10 / 7;
           min-height:0;
-          max-height:none;
+          max-height:100%;
+          justify-self:center;
+          align-self:center;
           margin:0;
           padding:0;
           overflow:hidden;
@@ -277,7 +283,7 @@
           pointer-events:none;
           text-shadow:0 1px 10px rgba(245,243,231,.94);
         }
-        .le-weather-studio-head > div { min-width:0; }
+        .le-weather-studio-head > div { min-width:0;flex:1 1 auto; }
         .le-weather-studio-kicker {
           display:block;
           font-size:clamp(8px,.9vw,10px);
@@ -288,9 +294,11 @@
           margin:6px 0 0;
           font-size:clamp(22px,2.8vw,31px);
           line-height:1.02;
-          white-space:nowrap;
-          overflow:hidden;
-          text-overflow:ellipsis;
+          max-width:100%;
+          white-space:normal;
+          overflow:visible;
+          text-overflow:clip;
+          text-wrap:balance;
         }
         .le-weather-studio-state {
           flex:0 0 auto;
@@ -358,12 +366,14 @@
         .le-weather-place { grid-column:2;grid-row:1;font-size:9px; }
         .le-weather-mode { grid-column:2;grid-row:2;min-height:32px;padding:3px 9px; }
         .le-weather-dashboard {
-          height:clamp(178px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,126px) - 94px),260px);
+          --le-weather-landscape-height:clamp(178px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,126px) - 94px),260px);
+          height:var(--le-weather-landscape-height);
         }
       }
       @media (orientation:landscape) and (max-height:390px) {
         .le-weather-dashboard {
-          height:clamp(168px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,116px) - 72px),238px);
+          --le-weather-landscape-height:clamp(168px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,116px) - 72px),238px);
+          height:var(--le-weather-landscape-height);
         }
         .le-weather-content { padding-top:calc(env(safe-area-inset-top) + 6px); }
         .le-weather-topbar { min-height:34px; }
@@ -375,20 +385,20 @@
         .le-weather-temperature { font-size:clamp(49px,5.8vw,60px); }
         .le-weather-studio-title { font-size:clamp(20px,2.5vw,26px); }
       }
-      @media(max-width:430px){.le-weather-content{padding-left:17px;padding-right:17px;padding-bottom:calc(env(safe-area-inset-bottom) + 278px)}.le-weather-date-row{margin-top:24px;align-items:flex-start}.le-weather-headline{font-size:clamp(42px,11.5vw,52px)}.le-weather-temperature{font-size:clamp(74px,20vw,86px)}.le-weather-art-stage{height:clamp(158px,21vh,180px);margin-left:-9px;margin-right:-9px}.le-weather-summary{padding:10px 0}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:6px;letter-spacing:.08em}.le-weather-stat-value{font-size:11px}.le-weather-studio{padding:11px 10px 9px;border-radius:14px}.le-weather-studio-title{font-size:18px}.le-weather-studio-canvas{height:clamp(138px,18vh,155px)}}
+      @media(max-width:430px){.le-weather-content{padding-left:17px;padding-right:17px;padding-bottom:calc(env(safe-area-inset-bottom) + 278px)}.le-weather-date-row{margin-top:24px;align-items:flex-start}.le-weather-headline{font-size:clamp(42px,11.5vw,52px)}.le-weather-temperature{font-size:clamp(74px,20vw,86px)}.le-weather-art-stage{height:clamp(168px,20dvh,192px);min-height:168px;max-height:192px;margin-left:-9px;margin-right:-9px}.le-weather-summary{padding:10px 0}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:6px;letter-spacing:.08em}.le-weather-stat-value{font-size:11px}.le-weather-studio{padding:11px 10px 9px;border-radius:14px}.le-weather-studio-title{font-size:18px}.le-weather-studio-canvas{height:clamp(138px,18vh,155px)}}
 
       /* Portrait composition: the weather readings and artwork form one scene.
          Live Art is a full-card painting with its controls layered above it. */
       @media (orientation:portrait) {
         .le-weather-content {
-          padding-top:calc(env(safe-area-inset-top) + 0px);
+          padding-top:calc(env(safe-area-inset-top) + clamp(20px,2.4dvh,28px));
           padding-bottom:var(--le-weather-dock-clearance,calc(env(safe-area-inset-bottom) + 112px));
         }
-        .le-weather-topbar { row-gap:clamp(15px,1.8dvh,21px); }
+        .le-weather-topbar { row-gap:clamp(16px,1.9dvh,22px); }
         .le-weather-dashboard {
           grid-template-areas:"headline" "scene" "summary" "studio";
-          margin-top:clamp(4px,.55dvh,6px);
-          row-gap:clamp(5px,.65dvh,7px);
+          margin-top:clamp(8px,.9dvh,11px);
+          row-gap:clamp(7px,.8dvh,9px);
         }
         .le-weather-hero { display:contents; }
         .le-weather-headline {
@@ -403,9 +413,9 @@
           isolation:isolate;
           box-sizing:border-box;
           width:100vw;
-          height:15dvh;
-          min-height:118px;
-          max-height:154px;
+          height:clamp(168px,20dvh,192px);
+          min-height:168px;
+          max-height:192px;
           margin-left:calc(50% - 50vw);
           margin-right:calc(50% - 50vw);
           overflow:hidden;
@@ -437,7 +447,9 @@
         .le-weather-condition-icon { width:36px;height:34px;margin-bottom:3px; }
         .le-weather-condition-name { font-size:17px; }
         .le-weather-feels { font-size:10px; }
-        .le-weather-summary { padding:8px 0; }
+        .le-weather-summary { padding:10px 0; }
+        .le-weather-stat-label { font-size:7.5px;letter-spacing:.10em; }
+        .le-weather-stat-value { margin-top:5px;font-size:14px; }
 
         /* The painting reaches every edge of its inset card; copy is overlay UI. */
         .le-weather-studio {
@@ -710,7 +722,7 @@
       ctx.save();ctx.globalAlpha=state.weather==='storm'?.42:state.weather==='fog'?.38:.68;ctx.fillStyle=night?'#dfe3d6':accent;ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.fill();
       if(night){ctx.globalCompositeOperation='destination-out';ctx.beginPath();ctx.arc(sx+r*.36,sy-r*.22,r*.84,0,Math.PI*2);ctx.fill();ctx.globalCompositeOperation='source-over';}
       ctx.globalAlpha=night?.48:.23;ctx.strokeStyle=ink;ctx.lineWidth=.7;for(let i=0;i<4;i++){ctx.beginPath();ctx.ellipse(sx,sy,r*(.56+i*.13),r*(.62+i*.09),-.2,0,Math.PI*2);ctx.stroke();}ctx.restore();
-      const cloudCount=state.cloud>72?4:state.cloud>32?2:1;
+      const cloudCount=state.cloud>72?2:state.cloud>32?1:0;
       for(let i=0;i<cloudCount;i++){const x=width*(.48+i*.12)+Math.sin(t*.12+i)*Math.max(2,state.wind*.45);const y=height*(.25+i*.075);const s=Math.min(width,height)*(.045+i*.006);ctx.save();ctx.globalAlpha=(.25+state.cloud/440)*(night?1.28:1);ctx.strokeStyle=soft;ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(x,y,s,.95,2.7);ctx.arc(x+s*.85,y-s*.12,s*.78,Math.PI,Math.PI*1.98);ctx.arc(x+s*1.65,y,s,.45,2.4);ctx.stroke();ctx.restore();}
     }
     function drawMountains(p,t){
@@ -848,51 +860,83 @@
       if(gust>.35&&!reduced){for(let i=0;i<Math.min(3,Math.floor(gust*4));i++){const xx=(width*(.62+i*.09)+((t*state.wind*2+i*87)%(width*.34)));const yy=height*(.42+(i%2)*.17+Math.sin(t+i)*.025);ctx.save();ctx.translate(xx,yy);ctx.rotate(dir*.5+Math.sin(t*1.2+i)*.4);ctx.fillStyle=accent;ctx.globalAlpha=.58;ctx.beginPath();ctx.moveTo(-8,0);ctx.quadraticCurveTo(0,-7,10,-1);ctx.quadraticCurveTo(2,7,-8,0);ctx.fill();ctx.restore();}}
       ctx.restore();
     }
-    function drawSnow(p,t){if(state.weather!=='snow'){snowLoad=Math.max(0,snowLoad-.0015);return;}const {soft}=p;const amount=Math.max(.12,Math.min(1,state.snowfall/2));snowLoad=reduced?Math.max(snowLoad,amount*.32):Math.min(.92,snowLoad+amount*.00055);const count=Math.round(12+amount*22);for(let i=0;i<count;i++){const x=((i*83+Math.sin(t*.3+i)*13)%width+width)%width;const y=((i*47+t*(4+(i%4)*1.2))%height*.78);ctx.save();ctx.globalAlpha=.45+(i%3)*.12;ctx.fillStyle=soft;ctx.beginPath();ctx.arc(x,y,1+(i%3)*.45,0,Math.PI*2);ctx.fill();ctx.restore();}}
-    function drawRain(p,t){if(state.weather!=='rain'&&state.weather!=='storm')return;const {soft,ink}=p;const intensity=Math.min(1,Math.max(.18,state.precipitation/6));const count=Math.round(16+intensity*22);for(let i=0;i<count;i++){const x=((i*73+t*(state.wind*.8+9))%width+width)%width;const y=((i*49+t*(90+intensity*90))%height*.86);line([[x,y],[x-2+Math.sin(state.direction*Math.PI/180)*6,y+8+intensity*7]],soft,.23+intensity*.18,.65);}
+    function drawSnow(p,t){if(state.weather!=='snow'){snowLoad=Math.max(0,snowLoad-.0015);return;}const {soft}=p;const amount=Math.max(.12,Math.min(1,state.snowfall/2));snowLoad=reduced?Math.max(snowLoad,amount*.32):Math.min(.92,snowLoad+amount*.00055);const count=Math.round(7+amount*9);for(let i=0;i<count;i++){const x=((i*83+Math.sin(t*.3+i)*13)%width+width)%width;const y=((i*47+t*(4+(i%4)*1.2))%height*.78);ctx.save();ctx.globalAlpha=.45+(i%3)*.12;ctx.fillStyle=soft;ctx.beginPath();ctx.arc(x,y,1+(i%3)*.45,0,Math.PI*2);ctx.fill();ctx.restore();}}
+    function drawRain(p,t){if(state.weather!=='rain'&&state.weather!=='storm')return;const {soft,ink}=p;const intensity=Math.min(1,Math.max(.18,state.precipitation/6));const count=Math.round(9+intensity*9);for(let i=0;i<count;i++){const x=((i*73+t*(state.wind*.8+9))%width+width)%width;const y=((i*49+t*(90+intensity*90))%height*.86);line([[x,y],[x-2+Math.sin(state.direction*Math.PI/180)*6,y+8+intensity*7]],soft,.23+intensity*.18,.65);}
       for(let i=0;i<5;i++){const x=width*(.12+i*.19);const y=height*(.75+(i%2)*.12);const phase=(t*.55+i*.27)%1;ctx.save();ctx.globalAlpha=.32*(1-phase);ctx.strokeStyle=ink;ctx.lineWidth=.75;ctx.beginPath();ctx.ellipse(x,y,4+phase*15,1.5+phase*3,0,0,Math.PI*2);ctx.stroke();ctx.restore();}}
     function drawWindLines(p,t){if(state.wind<18)return;const {soft}=p;const alpha=Math.min(.30,state.wind/180);for(let i=0;i<4;i++){const y=height*(.38+i*.095)+Math.sin(t*.55+i)*3;ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=soft;ctx.lineWidth=.9;ctx.beginPath();ctx.moveTo(width*(.10+i*.03),y);ctx.bezierCurveTo(width*.35,y-5,width*.56,y+6,width*.88,y-3);ctx.stroke();ctx.restore();}}
     function drawFog(p,t){if(state.weather!=='fog'&&state.cloud<85)return;const {paper,soft}=p;for(let i=0;i<3;i++){const y=height*(.49+i*.075)+Math.sin(t*.15+i)*7;const g=ctx.createLinearGradient(0,y,width,y);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.48,state.weather==='fog'?'rgba(238,238,224,.34)':'rgba(238,238,224,.15)');g.addColorStop(1,'rgba(255,255,255,0)');ctx.save();ctx.fillStyle=g;ctx.fillRect(0,y-9,width,19);ctx.restore();}}
     function drawMinimalLandscape(p,t){
       const night=state.phase==='night';
-      const horizon=height*.68;
+      const horizon=height*.76;
       drawSky(p,t);
+
+      // Two quiet ink-wash ridges: a distant range and one nearer shoulder.
       ctx.save();
-      const far=ctx.createLinearGradient(0,height*.28,0,height*.84);
-      far.addColorStop(0,night?'#6e8578':'#c7cec4');
-      far.addColorStop(1,night?'#40574d':'#e2e4da');
-      ctx.fillStyle=far;
-      ctx.globalAlpha=.72;
+      const farGradient=ctx.createLinearGradient(0,height*.34,0,height*.78);
+      farGradient.addColorStop(0,night?'rgba(112,139,126,.42)':'rgba(166,178,165,.36)');
+      farGradient.addColorStop(1,night?'rgba(76,101,88,.24)':'rgba(205,211,199,.20)');
+      ctx.fillStyle=farGradient;
       ctx.beginPath();
       ctx.moveTo(0,height*.72);
-      ctx.quadraticCurveTo(width*.18,height*.48,width*.34,height*.64);
-      ctx.quadraticCurveTo(width*.54,height*.38,width*.72,height*.62);
-      ctx.quadraticCurveTo(width*.86,height*.51,width,height*.65);
-      ctx.lineTo(width,height);
-      ctx.lineTo(0,height);
+      ctx.quadraticCurveTo(width*.14,height*.60,width*.28,height*.66);
+      ctx.quadraticCurveTo(width*.45,height*.47,width*.59,height*.62);
+      ctx.quadraticCurveTo(width*.75,height*.53,width*.88,height*.63);
+      ctx.quadraticCurveTo(width*.95,height*.60,width,height*.65);
+      ctx.lineTo(width,height*.83);
+      ctx.lineTo(0,height*.83);
       ctx.closePath();
       ctx.fill();
-      ctx.globalAlpha=night?.48:.34;
+
+      ctx.globalAlpha=night?.45:.30;
       ctx.strokeStyle=night?'#dbe6dc':'#718176';
-      ctx.lineWidth=1;
+      ctx.lineWidth=.9;
       ctx.beginPath();
-      ctx.moveTo(0,height*.73);
-      ctx.quadraticCurveTo(width*.20,height*.54,width*.37,height*.68);
-      ctx.quadraticCurveTo(width*.58,height*.46,width*.76,height*.66);
-      ctx.quadraticCurveTo(width*.89,height*.56,width,height*.68);
+      ctx.moveTo(0,height*.72);
+      ctx.quadraticCurveTo(width*.14,height*.60,width*.28,height*.66);
+      ctx.quadraticCurveTo(width*.45,height*.47,width*.59,height*.62);
+      ctx.quadraticCurveTo(width*.75,height*.53,width*.88,height*.63);
+      ctx.quadraticCurveTo(width*.95,height*.60,width,height*.65);
       ctx.stroke();
+
+      const nearGradient=ctx.createLinearGradient(0,height*.62,0,height*.88);
+      nearGradient.addColorStop(0,night?'rgba(75,99,86,.48)':'rgba(131,151,136,.28)');
+      nearGradient.addColorStop(1,night?'rgba(49,70,60,.24)':'rgba(183,196,181,.12)');
+      ctx.globalAlpha=1;
+      ctx.fillStyle=nearGradient;
+      ctx.beginPath();
+      ctx.moveTo(0,height*.79);
+      ctx.quadraticCurveTo(width*.20,height*.68,width*.38,height*.77);
+      ctx.quadraticCurveTo(width*.55,height*.66,width*.70,height*.76);
+      ctx.quadraticCurveTo(width*.86,height*.69,width,height*.77);
+      ctx.lineTo(width,height*.88);
+      ctx.lineTo(0,height*.88);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha=night?.34:.23;
+      ctx.strokeStyle=night?'#dbe6dc':'#6f8175';
+      ctx.lineWidth=.8;
+      ctx.beginPath();
+      ctx.moveTo(0,height*.79);
+      ctx.quadraticCurveTo(width*.20,height*.68,width*.38,height*.77);
+      ctx.quadraticCurveTo(width*.55,height*.66,width*.70,height*.76);
+      ctx.quadraticCurveTo(width*.86,height*.69,width,height*.77);
+      ctx.stroke();
+
+      // A very light veil separates the ridges from the water without adding clutter.
+      wash(width*.025,height*.70,width*.95,height*.055,night?'#c7d4c8':p.paper,night?.14:.22);
       const water=ctx.createLinearGradient(0,horizon,0,height);
-      water.addColorStop(0,night?'rgba(116,151,139,.34)':'rgba(142,161,148,.24)');
+      water.addColorStop(0,night?'rgba(116,151,139,.32)':'rgba(142,161,148,.22)');
       water.addColorStop(1,'rgba(255,255,255,.015)');
       ctx.fillStyle=water;
       ctx.globalAlpha=1;
       ctx.fillRect(0,horizon,width,height-horizon);
       for(let i=0;i<4;i++){
         const y=horizon+(height-horizon)*(i+1)/5;
-        const wave=Math.sin(t*.45+i)*Math.min(2.2,state.wind*.06);
-        line([[width*.04,y],[width*.34,y+wave],[width*.63,y-wave*.35],[width*.96,y]],p.soft,.25-i*.035,.65);
+        const wave=Math.sin(t*.38+i)*Math.min(1.8,state.wind*.045);
+        line([[width*.08,y],[width*.34,y+wave],[width*.62,y-wave*.3],[width*.92,y]],p.soft,.22-i*.03,.6);
       }
       ctx.restore();
+
       if(state.weather==='rain'||state.weather==='storm')drawRain(p,t);
       else if(state.weather==='snow')drawSnow(p,t);
       else if(state.weather==='fog')drawFog(p,t);
@@ -900,9 +944,9 @@
     }
     function draw(){
       const p=palette();const t=elapsed;ctx.clearRect(0,0,width,height);
-      const compactLandscape=window.innerWidth>window.innerHeight&&width<560;
-      if(compactLandscape){drawMinimalLandscape(p,t);return;}
-      drawSky(p,t);drawMountains(p,t);drawWater(p,t);drawPagoda(p);drawPagodaReflection(p);drawBambooAndLeaves(p,t);drawWindLines(p,t);drawRain(p,t);drawSnow(p,t);drawFog(p,t);
+      // One restrained Japanese weather landscape is shared by portrait and landscape.
+      // The detailed, expressive interpretation belongs to the separate Live Art canvas.
+      drawMinimalLandscape(p,t);
     }
     function loop(now){raf=0;if(!canvas.isConnected||!isActive('weather')||document.hidden)return;if(now-last>=42){const delta=Math.min(.08,(now-last)/1000||.04);elapsed+=delta;last=now;draw();}raf=requestAnimationFrame(loop);}
     function onVisibility(){if(document.hidden){if(raf)cancelAnimationFrame(raf);raf=0;}else if(!reduced&&!raf){last=0;raf=requestAnimationFrame(loop);}}

@@ -12,9 +12,18 @@ assert.ok(source.includes('grid-template-columns:minmax(218px,.42fr) minmax(0,1f
 assert.ok(source.includes('grid-template-areas:"forecast artwork";'));
 assert.ok(source.includes('grid-area:forecast;'));
 assert.ok(source.includes('grid-area:artwork;'));
-assert.ok(source.includes('grid-template-rows:auto minmax(58px,1fr) auto;'));
+assert.ok(source.includes('grid-template-rows:auto minmax(82px,1fr) auto;'));
 assert.ok(source.includes('grid-template-areas:"hero" "scene" "summary";'));
 assert.ok(source.includes('height:100%;'));
+assert.ok(source.includes('--le-weather-landscape-height:clamp(190px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,126px) - 80px),292px);'));
+assert.ok(source.includes('width:min(100%,calc((var(--le-weather-landscape-height) - 20px) * 1.428571));'));
+assert.ok(source.includes('aspect-ratio:10 / 7;'));
+assert.ok(source.includes('place-items:center;'));
+assert.ok(source.includes('justify-self:center;'));
+assert.ok(source.includes('align-self:center;'));
+assert.ok(source.includes('font-size:clamp(58px,6.8vw,72px)'));
+assert.ok(source.includes('font-size:clamp(14px,1.7vw,17px)'));
+assert.ok(source.includes('white-space:normal;\n          overflow:visible;\n          text-overflow:clip;'));
 assert.ok(source.includes('var(--le-weather-dock-clearance'));
 
 const dashboard = source.indexOf('<div class="le-weather-dashboard">');
@@ -34,7 +43,8 @@ assert.ok(source.includes('grid-template-columns:minmax(218px,.42fr) minmax(0,1f
 assert.ok(source.includes('font-size:clamp(12px,1.35vw,14px)'));
 assert.ok(source.includes('font-size:clamp(22px,2.8vw,31px)'));
 assert.ok(source.includes('function drawMinimalLandscape(p,t)'));
-assert.ok(source.includes('const compactLandscape=window.innerWidth>window.innerHeight&&width<560;'));
+assert.ok(source.includes('drawMinimalLandscape(p,t);'));
+assert.ok(!source.includes('const compactLandscape='));
 assert.ok(!source.includes('le-weather-hourly'));
 assert.ok(!source.includes('NEXT 6 HOURS'));
 assert.ok(!source.includes('hourly:'));
@@ -45,4 +55,4 @@ assert.ok(source.includes('function syncDockClearance()'));
 assert.ok(!/#le-feature-dock\s*\{/.test(source));
 assert.ok(!/weatherDock\.style\.(?:bottom|top|left|right|transform|width|height)/.test(source));
 
-console.log('Weather compact overview, Live Art priority, notched-safe masthead and locked Orb dock contracts passed.');
+console.log('Weather 42/58 overview, centred 10:7 Live Art, shared minimalist scene, notched-safe masthead and locked Orb dock contracts passed.');

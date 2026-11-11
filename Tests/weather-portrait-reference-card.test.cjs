@@ -13,7 +13,9 @@ assert.ok(source.includes('height:100%;'));
 assert.ok(source.includes('.le-weather-temperature-row {\n          position:absolute;'));
 assert.ok(source.includes('<div class="le-weather-temperature-row">'));
 assert.ok(source.includes('<div class="le-weather-art-stage" aria-label="Live weather illustration"><canvas class="le-weather-art-canvas" id="le-weather-art-canvas"></canvas><div class="le-weather-temperature-row">'));
-assert.ok(source.includes('height:15dvh;'));
+assert.ok(source.includes('height:clamp(168px,20dvh,192px);'));
+assert.ok(source.includes('padding-top:calc(env(safe-area-inset-top) + clamp(20px,2.4dvh,28px));'));
+assert.ok(source.includes('drawMinimalLandscape(p,t);'));
 assert.ok(source.includes('width:100vw;'));
 assert.ok(!source.includes('aspect-ratio:4 / 1;'));
 

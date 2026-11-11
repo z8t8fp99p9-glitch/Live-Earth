@@ -14,7 +14,7 @@ for (const selector of [
 ]) assert.ok(tool.includes(selector), `Missing Weather editor selector: ${selector}`);
 
 assert.ok(tool.includes('The temperature and condition are layered inside the full Weather scene'));
-assert.ok(tool.includes('Landscape gives Live Art the larger feature column with a compact Weather overview.'));
+assert.ok(tool.includes('Landscape uses a balanced Weather column and centres the 10:7 Live Art frame in the available feature area.'));
 assert.ok(tool.includes('no artificial canvas sizing overrides'));
 assert.ok(tool.includes('.le-weather-forecast-column'));
 assert.ok(tool.includes('.le-weather-art-column'));
@@ -25,6 +25,10 @@ assert.ok(!tool.includes('aspect-ratio:3 / 1'));
 assert.ok(!tool.includes('aspect-ratio:2.5 / 1'));
 assert.ok(!tool.includes('aspect-ratio:3 / 1'));
 assert.ok(weather.includes('.le-weather-temperature-row {\n          position:absolute;'));
+assert.ok(weather.includes('padding-top:calc(env(safe-area-inset-top) + clamp(20px,2.4dvh,28px));'));
+assert.ok(weather.includes('aspect-ratio:10 / 7;'));
+assert.ok(weather.includes('drawMinimalLandscape(p,t);'));
+assert.ok(weather.includes('place-items:center;'));
 assert.ok(weather.includes('<div class="le-weather-temperature-row">'));
 assert.ok(tool.includes('Copy layout details'));
 assert.ok(tool.includes('Export JSON'));

@@ -91,7 +91,7 @@ select,input[type=number]{padding:6px 8px;width:100%;min-width:0}input[type=chec
     <button id="exportBtn" type="button">Export JSON</button>
   </div>
   <div id="selectionInfo">Select an element from the list, or tap an element in the preview.</div>
-  <div class="note">Drag an element to move it. Drag a corner to resize. The temperature and condition are layered inside the full Weather scene; the Live Art painting fills its complete card with text and controls floating above it. Landscape gives Live Art the larger feature column with a compact Weather overview. The preview uses production CSS in both orientations, with no artificial canvas sizing overrides. Use “Scroll preview” to scroll the app, then return to Edit mode.</div>
+  <div class="note">Drag an element to move it. Drag a corner to resize. The temperature and condition are layered inside the full Weather scene; the Live Art painting fills its complete card with text and controls floating above it. Landscape uses a balanced Weather column and centres the 10:7 Live Art frame in the available feature area. Portrait begins below the top safe area with extra breathing room. The preview uses production CSS in both orientations, with no artificial canvas sizing overrides. Use “Scroll preview” to scroll the app, then return to Edit mode.</div>
 </section>
 <button id="showControlsBtn" type="button">Show editor</button>
 <script>
@@ -116,8 +116,8 @@ const configs=[
  ['Scene selector','.le-weather-mode'],
  ['Scene selector control','#le-weather-mode-select'],
  ['Dashboard layout','.le-weather-dashboard'],
- ['Weather overview · compact column','.le-weather-forecast-column'],
- ['Live Art · feature column','.le-weather-art-column'],
+ ['Weather overview · editorial column','.le-weather-forecast-column'],
+ ['Live Art · centred feature area','.le-weather-art-column'],
  ['Headline','.le-weather-headline'],
  ['Temperature + condition group','.le-weather-temperature-row'],
  ['Temperature value','.le-weather-temperature'],
@@ -164,7 +164,7 @@ function makeRecord(el){
 }
 function installPreviewRatios(){
  // Keep the embedded preview on the exact production CSS for both orientations.
- // Deliberately inject no sizing overrides: the safe-area-aware landscape art-priority split is production CSS.
+ // Deliberately inject no sizing overrides: the safe-area-aware centred 10:7 Live Art composition is production CSS.
  doc.getElementById('le-weather-layout-editor-preview')?.remove();
 }
 function connect(){
