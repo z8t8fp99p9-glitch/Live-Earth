@@ -17,6 +17,11 @@ assert.ok(source.includes('grid-area:forecast;'));
 assert.ok(source.includes('grid-area:artwork;'));
 assert.ok(source.includes('grid-template-rows:minmax(0,1fr) auto;'));
 assert.ok(source.includes('grid-template-areas:"scene" "summary";'));
+assert.ok(source.includes('padding-bottom:clamp(22px,7vh,30px);'));
+assert.ok(source.includes('function drawLandscapeWeatherScene(p,t)'));
+assert.ok(source.includes('const compact=Math.max(0,Math.min(1,(1.82-aspect)/.48));'));
+assert.ok(source.includes('ctx.scale(zoomX,zoomY);'));
+assert.ok(source.includes("window.matchMedia('(orientation:landscape) and (min-width:650px)').matches"));
 assert.ok(source.includes('position:absolute;\n          z-index:4;\n          top:0;\n          left:0;\n          right:0;'));
 assert.ok(source.includes('top:clamp(90px,20vh,102px);'));
 assert.ok(source.includes('min-height:120px;'));
@@ -70,4 +75,4 @@ assert.ok(source.includes('function syncDockClearance()'));
 assert.ok(!/#le-feature-dock\s*\{/.test(source));
 assert.ok(!/weatherDock\.style\.(?:bottom|top|left|right|transform|width|height)/.test(source));
 
-console.log('Weather 36/64 overview, centred 10:7 Live Art, shared minimalist scene, notched-safe masthead and locked Orb dock contracts passed.');
+console.log('Weather 36/64 overview, portrait-inspired landscape scene, clear summary/dock boundary, centred 10:7 Live Art and locked Orb dock contracts passed.');

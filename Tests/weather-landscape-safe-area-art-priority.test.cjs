@@ -20,6 +20,7 @@ const landscapeEnd = source.indexOf('@media (orientation:landscape) and (min-wid
 const landscapeCss = source.slice(landscapeStart, landscapeEnd);
 assert.ok(landscapeCss.includes('grid-template-rows:minmax(0,1fr) auto;'));
 assert.ok(landscapeCss.includes('grid-template-areas:"scene" "summary";'));
+assert.ok(landscapeCss.includes('padding-bottom:clamp(22px,7vh,30px);'));
 assert.ok(landscapeCss.includes('top:clamp(90px,20vh,102px);'));
 assert.ok(landscapeCss.includes('position:absolute;\n          z-index:4;\n          top:0;'));
 assert.ok(landscapeCss.includes('min-height:120px;'));
@@ -29,6 +30,10 @@ assert.ok(source.includes('font-size:clamp(22px,2.8vw,31px)'));
 assert.ok(source.includes('white-space:normal;\n          overflow:visible;\n          text-overflow:clip;'));
 assert.ok(source.includes('Live Art keeps the same 10:7 frame in both orientations.'));
 assert.ok(source.includes('function drawMinimalLandscape(p,t)'));
+assert.ok(source.includes('function drawLandscapeWeatherScene(p,t)'));
+assert.ok(source.includes('const zoomX=1.045+compact*.055;'));
+assert.ok(source.includes('const zoomY=1.055+compact*.065;'));
+assert.ok(source.includes("if(window.matchMedia('(orientation:landscape) and (min-width:650px)').matches){"));
 assert.ok(source.includes('--le-weather-landscape-height:clamp(240px,calc(100svh - env(safe-area-inset-top) - max(78px,calc(var(--le-weather-dock-clearance,116px) - 30px)) - 42px),420px);'));
 assert.ok(source.includes('--le-weather-landscape-height:clamp(220px,calc(100svh - env(safe-area-inset-top) - max(82px,calc(var(--le-weather-dock-clearance,116px) - 22px)) - 44px),320px);'));
 assert.ok(source.includes('--le-weather-landscape-height:clamp(196px,calc(100svh - env(safe-area-inset-top) - max(78px,calc(var(--le-weather-dock-clearance,108px) - 16px)) - 48px),288px);'));
@@ -66,4 +71,4 @@ assert.ok(design.includes('about 36%') && design.includes('about 64%'));
 assert.ok(design.includes('controlled dock-clearance overlap'));
 assert.ok(editor.includes('about 36% to Weather and 64% to Live Art'));
 
-console.log('Weather Japanese landscape consistency, centred 10:7 Live Art, safe areas, large weather readings and protected portrait/dock contracts passed.');
+console.log('Weather Japanese landscape consistency, portrait-inspired left scene, unobscured summary, centred 10:7 Live Art and protected portrait/dock contracts passed.');

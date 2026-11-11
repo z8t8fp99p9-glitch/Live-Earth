@@ -16,6 +16,8 @@ for (const selector of [
 assert.ok(tool.includes('The temperature and condition are layered inside the full Weather scene'));
 assert.ok(tool.includes('Landscape gives about 36% to Weather and 64% to Live Art, centres the 10:7 Live Art frame in the available feature area, enlarged to the largest rectangle that fits the available width and height.'));
 assert.ok(tool.includes('no artificial canvas sizing overrides'));
+assert.ok(tool.includes('The landscape Weather canvas uses a restrained aspect-aware zoom of the same portrait-approved painter; Portrait retains its original composition.'));
+assert.ok(tool.includes('The three Weather summary values stay above the Orb dock while only the Live Art card may flow toward it.'));
 assert.ok(tool.includes('.le-weather-forecast-column'));
 assert.ok(tool.includes('.le-weather-art-column'));
 assert.ok(!tool.includes('height:15dvh!important'));

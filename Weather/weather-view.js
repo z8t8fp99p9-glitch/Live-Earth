@@ -135,12 +135,15 @@
         }
         .le-weather-forecast-column {
           grid-area:forecast;
+          box-sizing:border-box;
           position:relative;
           display:grid;
           grid-template-columns:minmax(0,1fr);
           grid-template-rows:minmax(0,1fr) auto;
           grid-template-areas:"scene" "summary";
           row-gap:6px;
+          /* The Live Art card may flow toward the Orb row; forecast values must not. */
+          padding-bottom:clamp(22px,7vh,30px);
           min-width:0;
           min-height:0;
         }
@@ -1033,11 +1036,33 @@
       else if(state.weather==='fog')drawFog(p,t);
       else if(state.weather==='wind')drawWindLines(p,t);
     }
+    function drawLandscapeWeatherScene(p,t){
+      // Portrait is the visual master. In the narrower landscape forecast column,
+      // enlarge that same mountain / sun / foreground language slightly so it
+      // retains the depth and visual presence of the portrait composition.
+      // This function is called only by the landscape branch below.
+      const aspect=width/Math.max(1,height);
+      const compact=Math.max(0,Math.min(1,(1.82-aspect)/.48));
+      const zoomX=1.045+compact*.055;
+      const zoomY=1.055+compact*.065;
+      const anchorX=width*.50,anchorY=height*.64;
+      ctx.save();
+      ctx.translate(anchorX,anchorY);
+      ctx.scale(zoomX,zoomY);
+      ctx.translate(-anchorX,-anchorY);
+      drawMinimalLandscape(p,t);
+      ctx.restore();
+    }
     function draw(){
       const p=palette();const t=elapsed;ctx.clearRect(0,0,width,height);
-      // One restrained Japanese weather landscape is shared by portrait and landscape.
+      // Portrait keeps the original painter and exact composition. Only the
+      // landscape forecast column receives the aspect-aware portrait-inspired crop.
+      if(window.matchMedia('(orientation:landscape) and (min-width:650px)').matches){
+        drawLandscapeWeatherScene(p,t);
+      }else{
+        drawMinimalLandscape(p,t);
+      }
       // The detailed, expressive interpretation belongs to the separate Live Art canvas.
-      drawMinimalLandscape(p,t);
     }
     function loop(now){raf=0;if(!canvas.isConnected||!isActive('weather')||document.hidden)return;if(now-last>=42){const delta=Math.min(.08,(now-last)/1000||.04);elapsed+=delta;last=now;draw();}raf=requestAnimationFrame(loop);}
     function onVisibility(){if(document.hidden){if(raf)cancelAnimationFrame(raf);raf=0;}else if(!reduced&&!raf){last=0;raf=requestAnimationFrame(loop);}}
