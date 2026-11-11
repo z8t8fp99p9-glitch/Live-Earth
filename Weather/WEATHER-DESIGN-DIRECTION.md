@@ -34,14 +34,14 @@ Japanese influence is visual artwork only. Do not add Japanese-language interfac
 
 ## Landscape composition — centred Live Art frame
 
-- Use a balanced asymmetric safe-width split: the Weather overview uses about 42% and the Live Art feature area about 58% (`minmax(248px,.72fr) minmax(0,1fr)` before the shared gutter). The card itself does not stretch to fill that area; its 10:7 frame is centred within the feature column and scaled from the usable vertical space.
-- Live Art keeps the same **10:7 width-to-height ratio in both orientations**. In landscape, calculate its width from the usable dashboard height, then reduce it slightly to leave balanced top and bottom breathing room, and centre it horizontally and vertically inside the Live Art feature area rather than pinning it to the top edge.
+- Use a balanced asymmetric safe-width split: the Weather overview uses about 36% and the Live Art feature area about 64% (`minmax(210px,.56fr) minmax(0,1fr)` before the shared gutter). The card itself does not stretch to fill that area; its 10:7 frame is centred within the feature column and scaled from the usable vertical space.
+- Live Art keeps the same **10:7 width-to-height ratio in both orientations**. In landscape, calculate its width from the full usable dashboard height using the largest 10:7 rectangle that fits both the feature-column width and landscape height, then centre it horizontally and vertically inside the Live Art feature area.
 - Keep the masthead on one landscape row: brand, date/time, location and scene selector. Respect both `safe-area-inset-left` and `safe-area-inset-right`, and increase label sizes so the notch and rounded corners cannot obscure them.
 - The left Weather column is intentionally quiet: a concise headline, temperature and condition overlaid in one minimalist Canvas 2D weather scene, and only high/low, rain chance and wind.
 - Use the exact same minimalist Weather illustration language in portrait and landscape. Do not switch between a minimal landscape and a detailed one based on orientation or canvas width.
 - The right Live Art column owns the visual emphasis. Its canvas fills the large card; title/status float over the top and caption/Replay float over the bottom, with larger legible controls.
 - Keep the shared Orb dock centred and untouched. Use the existing measured dock-clearance variable for content spacing; never style, resize or reposition the dock from Weather.
-- Use responsive height limits and allow natural scrolling on shorter landscape viewports. Never crop content beneath the shared dock.
+- Use responsive height limits and allow natural scrolling on shorter landscape viewports. On roomy landscape screens, the painting area may borrow a small, controlled dock-clearance overlap so the art can flow slightly toward the Orb row; the shared dock remains in the foreground, with its geometry, hit targets and behaviour untouched.
 
 ## Illustration and Live Art behaviour
 
@@ -70,5 +70,5 @@ Changes are limited to `Weather/weather-view.js`, `Tools/WEATHER-LAYOUT-EDITOR.h
 ## Orientation-specific composition (11 November 2026)
 
 - **Portrait:** begin the content 20–28 px below the top safe area. Keep the editorial weather story vertically stacked. Live Art is centered at 95% of the viewport width and uses a 10:7 width-to-height ratio (height is 70% of width). The painting fills the card; title, status, caption and Replay remain overlaid.
-- **Landscape:** use a 42/58 Weather/Live Art feature-area split. Live Art itself remains 10:7 and is centred within its area, scaled down to fit the usable height between the masthead and dock. The masthead respects both horizontal safe-area insets.
+- **Landscape:** use an approximately 36/64 Weather/Live Art feature-area split. Live Art itself remains 10:7 and is centred within its area, scaled down to fit the usable height between the masthead and dock. The masthead respects both horizontal safe-area insets.
 - The shared Orb dock remains owned and positioned by the existing global controller in both orientations. Weather only measures its bounds to reserve clearance.

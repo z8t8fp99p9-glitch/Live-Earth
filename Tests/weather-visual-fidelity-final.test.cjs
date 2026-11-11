@@ -34,11 +34,11 @@ assert.ok(source.includes('height:var(--le-weather-scene-height,clamp(24dvh,30dv
 
 // 10:7 is the one Live Art ratio in both orientations; landscape frame is centred, not stretched.
 assert.ok(source.includes('aspect-ratio:10 / 7;'));
-assert.ok(source.includes('width:min(100%,calc((var(--le-weather-landscape-height) - 18px) * 1.428571));'));
+assert.ok(source.includes('width:min(100%,calc(var(--le-weather-landscape-height) * 1.428571));'));
 assert.ok(source.includes('place-items:center;'));
 assert.ok(source.includes('justify-self:center;'));
 assert.ok(source.includes('align-self:center;'));
-assert.ok(source.includes('grid-template-columns:minmax(248px,.72fr) minmax(0,1fr);'));
+assert.ok(source.includes('grid-template-columns:minmax(210px,.56fr) minmax(0,1fr);'));
 
 // Orb controller remains read-only and Hours Ahead stays removed.
 assert.ok(source.includes('function syncDockClearance()'));
@@ -47,6 +47,6 @@ assert.ok(!/#le-feature-dock\s*\{/.test(source));
 assert.ok(!/weatherDock\.style\.(?:bottom|top|left|right|transform|width|height)/.test(source));
 assert.ok(!source.includes('le-weather-hourly'));
 assert.ok(!source.includes('hourly:'));
-assert.ok(design.includes('about 42%') && design.includes('about 58%'));
-assert.ok(editor.includes('centres the 10:7 Live Art frame in the available feature area.'));
+assert.ok(design.includes('about 36%') && design.includes('about 64%'));
+assert.ok(editor.includes('centres the 10:7 Live Art frame in the available feature area, enlarged to the largest rectangle'));
 console.log('Final Japanese Weather art hierarchy, 10:7 layouts, prominent readings, dock safety and no-hourly contract passed.');

@@ -28,8 +28,8 @@ assert.ok(source.includes('padding-top:calc(env(safe-area-inset-top) + clamp(20p
 assert.ok(source.includes('height:var(--le-weather-scene-height,clamp(24dvh,30dvh,38dvh));'));
 
 // Landscape preserves the 10:7 art ratio and centres it in the available feature area.
-assert.ok(source.includes('--le-weather-landscape-height:clamp(210px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,116px) - 58px),300px);'));
-assert.ok(source.includes('width:min(100%,calc((var(--le-weather-landscape-height) - 18px) * 1.428571));'));
+assert.ok(source.includes('--le-weather-landscape-height:clamp(240px,calc(100svh - env(safe-area-inset-top) - max(78px,calc(var(--le-weather-dock-clearance,116px) - 30px)) - 42px),420px);'));
+assert.ok(source.includes('width:min(100%,calc(var(--le-weather-landscape-height) * 1.428571));'));
 assert.ok(source.includes('aspect-ratio:10 / 7;'));
 assert.ok(source.includes('place-items:center;'));
 assert.ok(source.includes('justify-self:center;'));

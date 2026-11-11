@@ -8,13 +8,13 @@ const design = fs.readFileSync(path.join(__dirname, '..', 'Weather', 'WEATHER-DE
 
 // The landscape masthead is one row with all four labels placed inside both physical safe areas.
 assert.ok(source.includes('grid-template-columns:minmax(0,1fr) auto auto auto;'));
-assert.ok(source.includes('padding-left:max(env(safe-area-inset-left),clamp(40px,5.8vw,64px))'));
-assert.ok(source.includes('padding-right:max(env(safe-area-inset-right),clamp(40px,5.8vw,64px))'));
+assert.ok(source.includes('padding-left:max(env(safe-area-inset-left),clamp(26px,3.4vw,42px))'));
+assert.ok(source.includes('padding-right:max(env(safe-area-inset-right),clamp(26px,3.4vw,42px))'));
 assert.ok(source.includes('font-size:clamp(12px,1.35vw,14px)'));
 assert.ok(source.includes('font-size:clamp(9px,1.05vw,11px)'));
 
 // Both paintings remain substantial; landscape Weather readings are layered over its full scene.
-assert.ok(source.includes('grid-template-columns:minmax(248px,.72fr) minmax(0,1fr);'));
+assert.ok(source.includes('grid-template-columns:minmax(210px,.56fr) minmax(0,1fr);'));
 const landscapeStart = source.indexOf('@media (orientation:landscape) and (min-width:650px) {');
 const landscapeEnd = source.indexOf('@media (orientation:landscape) and (min-width:650px) and (max-width:820px)', landscapeStart);
 const landscapeCss = source.slice(landscapeStart, landscapeEnd);
@@ -29,8 +29,10 @@ assert.ok(source.includes('font-size:clamp(22px,2.8vw,31px)'));
 assert.ok(source.includes('white-space:normal;\n          overflow:visible;\n          text-overflow:clip;'));
 assert.ok(source.includes('Live Art keeps the same 10:7 frame in both orientations.'));
 assert.ok(source.includes('function drawMinimalLandscape(p,t)'));
-assert.ok(source.includes('--le-weather-landscape-height:clamp(210px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,116px) - 58px),300px);'));
-assert.ok(source.includes('width:min(100%,calc((var(--le-weather-landscape-height) - 18px) * 1.428571));'));
+assert.ok(source.includes('--le-weather-landscape-height:clamp(240px,calc(100svh - env(safe-area-inset-top) - max(78px,calc(var(--le-weather-dock-clearance,116px) - 30px)) - 42px),420px);'));
+assert.ok(source.includes('--le-weather-landscape-height:clamp(220px,calc(100svh - env(safe-area-inset-top) - max(82px,calc(var(--le-weather-dock-clearance,116px) - 22px)) - 44px),320px);'));
+assert.ok(source.includes('--le-weather-landscape-height:clamp(196px,calc(100svh - env(safe-area-inset-top) - max(78px,calc(var(--le-weather-dock-clearance,108px) - 16px)) - 48px),288px);'));
+assert.ok(source.includes('width:min(100%,calc(var(--le-weather-landscape-height) * 1.428571));'));
 assert.ok(source.includes('place-items:center;'));
 assert.ok(source.includes('justify-self:center;'));
 assert.ok(source.includes('align-self:center;'));
@@ -39,7 +41,7 @@ assert.ok(!source.includes('const compactLandscape='));
 
 // The portrait full-card 10:7 Live Art remains independent of landscape treatment.
 assert.ok(source.includes('aspect-ratio:10 / 7;'));
-assert.ok(source.includes('width:min(100%,calc((var(--le-weather-landscape-height) - 18px) * 1.428571));'));
+assert.ok(source.includes('width:min(100%,calc(var(--le-weather-landscape-height) * 1.428571));'));
 assert.ok(source.includes('width:min(90vw,760px,max(260px,calc((100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,112px) - 360px) * 1.428571)));'));
 assert.ok(source.includes('grid-template-areas:"scene" "summary" "studio";'));
 const portraitStart = source.indexOf('/* Portrait composition:');
@@ -58,8 +60,10 @@ assert.ok(!/weatherDock\.style\.(?:bottom|top|left|right|transform|width|height)
 assert.ok(!source.includes('le-weather-hourly'));
 assert.ok(!source.includes('hourly:'));
 
-assert.ok(editor.includes('centres the 10:7 Live Art frame in the available feature area.'));
+assert.ok(editor.includes('largest rectangle that fits the available width and height'));
 assert.ok(editor.includes('Portrait begins below the top safe area with extra breathing room.'));
-assert.ok(design.includes('about 42%') && design.includes('about 58%'));
+assert.ok(design.includes('about 36%') && design.includes('about 64%'));
+assert.ok(design.includes('controlled dock-clearance overlap'));
+assert.ok(editor.includes('about 36% to Weather and 64% to Live Art'));
 
 console.log('Weather Japanese landscape consistency, centred 10:7 Live Art, safe areas, large weather readings and protected portrait/dock contracts passed.');

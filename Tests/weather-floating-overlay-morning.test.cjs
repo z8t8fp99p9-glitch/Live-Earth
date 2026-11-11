@@ -9,7 +9,7 @@ assert.ok(s.includes('calc(env(safe-area-inset-bottom) + 278px)'));
 assert.ok(s.includes('view.panel.remove()'));
 assert.ok(s.includes('view.root.replaceChildren(screen)'));
 assert.ok(s.includes('grid-template-areas:"hero" "scene" "summary" "studio"'));
-assert.ok(s.includes('grid-template-columns:minmax(248px,.72fr) minmax(0,1fr);'));
+assert.ok(s.includes('grid-template-columns:minmax(210px,.56fr) minmax(0,1fr);'));
 assert.ok(s.includes('padding-top:calc(env(safe-area-inset-top) + clamp(20px,2.4dvh,28px));'));
 assert.ok(s.includes('drawMinimalLandscape(p,t);'));
 assert.ok(s.includes('aspect-ratio:10 / 7;'));
