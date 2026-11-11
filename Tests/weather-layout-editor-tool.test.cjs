@@ -13,8 +13,14 @@ for (const selector of [
   '.le-weather-studio-head','.le-weather-studio-canvas','.le-weather-studio-foot',
 ]) assert.ok(tool.includes(selector), `Missing Weather editor selector: ${selector}`);
 
-assert.ok(tool.includes('aspect-ratio:2.5 / 1'));
-assert.ok(tool.includes('aspect-ratio:3 / 1'));
+assert.ok(tool.includes('height:15dvh!important'));
+assert.ok(tool.includes('height:clamp(150px,19dvh,184px)!important'));
+assert.ok(tool.includes('aspect-ratio:auto!important'));
+assert.ok(tool.includes('The temperature and condition are layered inside the full Weather scene'));
+assert.ok(!tool.includes('aspect-ratio:2.5 / 1'));
+assert.ok(!tool.includes('aspect-ratio:3 / 1'));
+assert.ok(weather.includes('.le-weather-temperature-row {\n          position:absolute;'));
+assert.ok(weather.includes('<div class="le-weather-temperature-row">'));
 assert.ok(tool.includes('Copy layout details'));
 assert.ok(tool.includes('Export JSON'));
 assert.ok(tool.includes('Scroll preview'));
@@ -28,4 +34,4 @@ assert.ok(!weather.includes('le-weather-hourly'));
 assert.ok(weather.includes("document.getElementById('le-feature-dock')"));
 assert.ok(!/weatherDock\\.style\\.(?:bottom|top|left|right|transform|width|height)/.test(weather));
 
-console.log('Weather Layout Editor coverage, preview ratios, export and non-destructive contract passed.');
+console.log('Weather Layout Editor production-matched full-canvas preview, export and non-destructive contract passed.');

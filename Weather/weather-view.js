@@ -45,7 +45,7 @@
       .le-weather-headline{max-width:510px;margin:0;font-family:"Bodoni 72",Didot,"Bodoni MT",Georgia,"Times New Roman",serif;font-size:clamp(43px,11vw,70px);font-weight:400;line-height:.91;letter-spacing:-.055em;text-wrap:balance;color:var(--ink)}
       .le-weather-headline em{font-style:italic;font-weight:400;color:var(--ink)}
       .le-weather-headline:after{content:"";display:block;width:34px;height:2px;margin:15px 0 13px;background:var(--accent)}
-      .le-weather-temperature-row{display:flex;align-items:center;gap:14px}
+      .le-weather-temperature-row{position:absolute;top:clamp(8px,2vh,18px);left:clamp(12px,2vw,24px);z-index:3;display:flex;align-items:flex-start;gap:14px;max-width:calc(100% - 24px);margin:0;pointer-events:none}
       .le-weather-temperature{font-family:"Bodoni 72",Didot,"Bodoni MT",Georgia,"Times New Roman",serif;font-size:clamp(78px,21vw,116px);font-weight:400;letter-spacing:-.095em;line-height:.82;white-space:nowrap;color:var(--ink)}
       .le-weather-temperature sup{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:.27em;vertical-align:top;letter-spacing:0;margin-left:5px}
       .le-weather-condition{min-width:0;padding:3px 0 4px 14px;border-left:1px solid color-mix(in srgb,var(--ink) 38%,transparent)}
@@ -86,18 +86,18 @@
       }
       @media(max-width:430px){.le-weather-content{padding-left:17px;padding-right:17px;padding-bottom:calc(env(safe-area-inset-bottom) + 278px)}.le-weather-date-row{margin-top:24px;align-items:flex-start}.le-weather-headline{font-size:clamp(42px,11.5vw,52px)}.le-weather-temperature{font-size:clamp(74px,20vw,86px)}.le-weather-art-stage{height:clamp(158px,21vh,180px);margin-left:-9px;margin-right:-9px}.le-weather-summary{padding:10px 0}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:6px;letter-spacing:.08em}.le-weather-stat-value{font-size:11px}.le-weather-studio{padding:11px 10px 9px;border-radius:14px}.le-weather-studio-title{font-size:18px}.le-weather-studio-canvas{height:clamp(138px,18vh,155px)}}
       @media(orientation:landscape) and (max-height:520px){.le-weather-content{padding-top:calc(env(safe-area-inset-top) + 8px);padding-bottom:calc(env(safe-area-inset-bottom) + 150px)}.le-weather-date-row{margin-top:5px}.le-weather-dashboard{margin-top:7px;column-gap:22px;row-gap:7px}.le-weather-headline{font-size:clamp(36px,4.6vw,48px)}.le-weather-headline:after{margin:10px 0 10px}.le-weather-temperature{font-size:clamp(66px,7vw,80px)}.le-weather-art-stage{height:clamp(130px,31vh,175px)}.le-weather-studio{padding:9px 11px}.le-weather-studio-canvas{height:clamp(118px,21vh,150px)}.le-weather-studio-title{font-size:18px}}
-      /* Portrait reference composition: two proportional 4:1 illustrations.
-         Weather readings and Live Art controls float above their artwork. */
+      /* Portrait composition: the weather readings and artwork form one scene.
+         Live Art is a full-card painting with its controls layered above it. */
       @media (orientation:portrait) {
         .le-weather-content {
           padding-top:calc(env(safe-area-inset-top) + 0px);
           padding-bottom:var(--le-weather-dock-clearance,calc(env(safe-area-inset-bottom) + 112px));
         }
-        .le-weather-date-row { margin-top:clamp(12px,1.5dvh,15px); }
+        .le-weather-date-row { margin-top:clamp(10px,1.25dvh,13px); }
         .le-weather-dashboard {
           grid-template-areas:"headline" "scene" "summary" "studio";
-          margin-top:clamp(6px,.75dvh,7px);
-          row-gap:clamp(5px,.7dvh,6px);
+          margin-top:clamp(4px,.55dvh,6px);
+          row-gap:clamp(5px,.65dvh,7px);
         }
         .le-weather-hero { display:contents; }
         .le-weather-headline {
@@ -106,97 +106,112 @@
           z-index:3;
           margin:0;
         }
-        .le-weather-temperature-row {
+        .le-weather-art-stage {
           grid-area:scene;
           position:relative;
-          z-index:3;
-          align-self:start;
-          justify-self:start;
-          width:min(100%,60dvh);
-          max-width:100%;
-          justify-self:center;
-          margin:8px 0 0;
-          pointer-events:none;
-        }
-        .le-weather-art-stage {
-          position:relative;
+          isolation:isolate;
           box-sizing:border-box;
           width:100vw;
           height:15dvh;
-          min-height:0;
-          max-height:none;
+          min-height:118px;
+          max-height:154px;
           margin-left:calc(50% - 50vw);
           margin-right:calc(50% - 50vw);
           overflow:hidden;
         }
         .le-weather-art-canvas {
           position:absolute;
-          top:50%;
-          left:50%;
-          width:min(100%,60dvh);
-          height:auto;
-          aspect-ratio:4 / 1;
-          transform:translate(-50%,-50%);
+          inset:0;
+          display:block;
+          width:100%;
+          height:100%;
+          aspect-ratio:auto;
+          transform:none;
         }
+        /* This overlay is deliberately a child of the same scene canvas. */
+        .le-weather-temperature-row {
+          position:absolute;
+          z-index:3;
+          top:0;
+          left:50%;
+          width:min(calc(100% - 34px),60dvh);
+          max-width:100%;
+          margin:0;
+          align-items:flex-start;
+          transform:translateX(-50%);
+          pointer-events:none;
+        }
+        .le-weather-temperature { font-size:clamp(78px,21vw,100px); }
+        .le-weather-condition { padding-top:5px; }
+        .le-weather-condition-icon { width:36px;height:34px;margin-bottom:3px; }
+        .le-weather-condition-name { font-size:17px; }
+        .le-weather-feels { font-size:10px; }
         .le-weather-summary { padding:8px 0; }
 
-        /* The painting fills one framed card; all copy floats above the canvas. */
+        /* The painting reaches every edge of its inset card; copy is overlay UI. */
         .le-weather-studio {
           box-sizing:border-box;
           position:relative;
-          width:100vw;
-          height:clamp(140px,18dvh,176px);
+          width:100%;
+          height:clamp(150px,19dvh,184px);
           min-height:0;
           max-height:none;
-          margin-left:calc(50% - 50vw);
-          margin-right:calc(50% - 50vw);
+          margin:0 auto;
           padding:0;
           display:block;
           overflow:hidden;
+          isolation:isolate;
           border:1px solid color-mix(in srgb,var(--ink) 18%,transparent);
-          border-radius:16px;
+          border-radius:17px;
           background:linear-gradient(145deg,rgba(255,255,255,.34),rgba(214,218,204,.18));
           box-shadow:0 5px 18px rgba(41,48,40,.055),inset 0 1px rgba(255,255,255,.6);
         }
         .le-weather-studio-canvas {
           position:absolute;
-          top:50%;
-          left:50%;
+          inset:0;
           display:block;
-          width:min(100%,60dvh);
-          height:auto;
-          aspect-ratio:4 / 1;
-          max-width:100%;
+          width:100%;
+          height:100%;
+          aspect-ratio:auto;
+          max-width:none;
           min-height:0;
-          transform:translate(-50%,-50%);
+          transform:none;
           border-radius:0;
-          background:linear-gradient(180deg,rgba(233,231,218,.08),rgba(233,231,218,.01));
+          background:transparent;
           touch-action:none;
+        }
+        .le-weather-studio:after {
+          content:"";
+          position:absolute;
+          z-index:1;
+          inset:0;
+          pointer-events:none;
+          background:linear-gradient(180deg,color-mix(in srgb,var(--paper) 72%,transparent) 0%,color-mix(in srgb,var(--paper) 12%,transparent) 34%,transparent 62%,color-mix(in srgb,var(--paper) 62%,transparent) 100%);
         }
         .le-weather-studio-head {
           position:absolute;
           z-index:2;
-          top:9px;
-          left:11px;
-          right:11px;
+          top:11px;
+          left:14px;
+          right:14px;
           display:flex;
           align-items:flex-start;
           justify-content:space-between;
           gap:8px;
           margin:0;
           pointer-events:none;
-          text-shadow:0 1px 8px rgba(245,243,231,.82);
+          text-shadow:0 1px 9px rgba(245,243,231,.92);
         }
         .le-weather-studio-head > div { min-width:0; }
         .le-weather-studio-kicker {
           display:block;
           font-size:6px;
           line-height:1.1;
-          letter-spacing:.16em;
+          letter-spacing:.17em;
         }
         .le-weather-studio-title {
-          margin:3px 0 0;
-          font-size:clamp(14px,3.8vw,18px);
+          margin:4px 0 0;
+          font-size:clamp(15px,3.9vw,19px);
           line-height:1.02;
           white-space:nowrap;
           overflow:hidden;
@@ -209,14 +224,14 @@
           line-height:1.1;
           letter-spacing:.12em;
           white-space:nowrap;
-          text-shadow:0 1px 8px rgba(245,243,231,.9);
+          text-shadow:0 1px 9px rgba(245,243,231,.96);
         }
         .le-weather-studio-foot {
           position:absolute;
           z-index:2;
-          left:11px;
-          right:11px;
-          bottom:8px;
+          left:14px;
+          right:14px;
+          bottom:9px;
           display:flex;
           align-items:center;
           justify-content:space-between;
@@ -224,7 +239,7 @@
           margin:0;
           font-size:7px;
           line-height:1.1;
-          text-shadow:0 1px 8px rgba(245,243,231,.9);
+          text-shadow:0 1px 9px rgba(245,243,231,.96);
         }
         .le-weather-studio-foot > span {
           min-width:0;
@@ -234,14 +249,14 @@
         }
         .le-weather-art-replay {
           flex:0 0 auto;
-          min-height:23px;
-          padding:4px 10px;
+          min-height:24px;
+          padding:5px 11px;
           font-size:7px;
           line-height:1;
           pointer-events:auto;
           backdrop-filter:blur(8px);
           -webkit-backdrop-filter:blur(8px);
-          background:rgba(255,255,255,.52);
+          background:rgba(255,255,255,.62);
         }
         .le-weather-status,.le-weather-attribution {
           position:absolute!important;
@@ -397,35 +412,29 @@
     const wash=(x,y,w,h,color,alpha)=>{ctx.save();ctx.globalAlpha=alpha;const g=ctx.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.5,color);g.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=g;ctx.fillRect(x,y,w,h);ctx.restore();};
     function drawSky(p,t){
       const {ink,soft,accent}=p;const night=state.phase==='night';
-      const sx=width*(state.phase==='evening'?.78:.76),sy=height*.18,r=Math.min(width,height)*.065;
+      const sx=width*(state.phase==='evening'?.78:.76),sy=height*.34,r=Math.min(width,height)*.115;
       ctx.save();ctx.globalAlpha=state.weather==='storm'?.42:state.weather==='fog'?.38:.68;ctx.fillStyle=night?'#dfe3d6':accent;ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.fill();
       if(night){ctx.globalCompositeOperation='destination-out';ctx.beginPath();ctx.arc(sx+r*.36,sy-r*.22,r*.84,0,Math.PI*2);ctx.fill();ctx.globalCompositeOperation='source-over';}
       ctx.globalAlpha=night?.48:.23;ctx.strokeStyle=ink;ctx.lineWidth=.7;for(let i=0;i<4;i++){ctx.beginPath();ctx.ellipse(sx,sy,r*(.56+i*.13),r*(.62+i*.09),-.2,0,Math.PI*2);ctx.stroke();}ctx.restore();
       const cloudCount=state.cloud>72?4:state.cloud>32?2:1;
-      for(let i=0;i<cloudCount;i++){const x=width*(.48+i*.12)+Math.sin(t*.12+i)*Math.max(2,state.wind*.45);const y=height*(.22+i*.065);const s=Math.min(width,height)*(.035+i*.004);ctx.save();ctx.globalAlpha=(.25+state.cloud/440)*(night?1.28:1);ctx.strokeStyle=soft;ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(x,y,s,.95,2.7);ctx.arc(x+s*.85,y-s*.12,s*.78,Math.PI,Math.PI*1.98);ctx.arc(x+s*1.65,y,s,.45,2.4);ctx.stroke();ctx.restore();}
+      for(let i=0;i<cloudCount;i++){const x=width*(.48+i*.12)+Math.sin(t*.12+i)*Math.max(2,state.wind*.45);const y=height*(.25+i*.075);const s=Math.min(width,height)*(.045+i*.006);ctx.save();ctx.globalAlpha=(.25+state.cloud/440)*(night?1.28:1);ctx.strokeStyle=soft;ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(x,y,s,.95,2.7);ctx.arc(x+s*.85,y-s*.12,s*.78,Math.PI,Math.PI*1.98);ctx.arc(x+s*1.65,y,s,.45,2.4);ctx.stroke();ctx.restore();}
     }
     function drawMountains(p,t){
       const night=state.phase==='night';
-      // Three broad, overlapping mountain ranges are deliberately composed for
-      // a shallow 4:1 canvas: large silhouettes first, then only a few ink folds.
+      // A layered mountain panorama with recognisable peaks, soft ink edges,
+      // and enough vertical relief to remain legible beneath the live readings.
       const ranges=[
         {
-          points:[[-.08,.68],[.08,.43],[.19,.60],[.34,.34],[.48,.57],[.62,.39],[.78,.58],[.91,.42],[1.08,.65]],
-          top:night?'#82968a':'#c3c9bf',
-          base:night?'#43594f':'#e5e3d9',
-          alpha:night?.92:.92
+          points:[[-.08,.74],[.06,.61],[.17,.45],[.27,.60],[.39,.37],[.51,.59],[.66,.42],[.78,.58],[.91,.45],[1.08,.69]],
+          top:night?'#82978e':'#cbd0c8',base:night?'#43594f':'#ece9df',alpha:.86
         },
         {
-          points:[[-.08,.80],[.12,.58],[.28,.73],[.45,.47],[.61,.69],[.78,.50],[.92,.69],[1.08,.61]],
-          top:night?'#667e72':'#929f93',
-          base:night?'#354b42':'#cbd1c6',
-          alpha:night?.88:.78
+          points:[[-.08,.83],[.12,.68],[.24,.74],[.41,.54],[.55,.73],[.70,.56],[.84,.71],[1.08,.74]],
+          top:night?'#667f74':'#aab5ab',base:night?'#354b42':'#d2d7cd',alpha:.82
         },
         {
-          points:[[-.08,.91],[.13,.76],[.32,.85],[.49,.66],[.68,.84],[.83,.69],[1.08,.86]],
-          top:night?'#536c61':'#7c8d80',
-          base:night?'#2b4138':'#b7c2b6',
-          alpha:night?.82:.69
+          points:[[-.08,.91],[.14,.78],[.31,.85],[.49,.69],[.67,.85],[.84,.70],[1.08,.83]],
+          top:night?'#536c61':'#87988d',base:night?'#2b4138':'#b9c4b9',alpha:.72
         }
       ];
 
@@ -435,11 +444,11 @@
         ctx.beginPath();
         ctx.moveTo(pts[0][0]*width,height);
         ctx.lineTo(pts[0][0]*width,pts[0][1]*height);
+        // Slightly softened angular peaks: distinct summits, not rolling waves.
         for(let i=1;i<pts.length;i++){
-          const [px,py]=pts[i];
-          const prev=pts[i-1];
-          const midX=(prev[0]+px)/2*width;
-          const midY=(prev[1]+py)/2*height;
+          const prev=pts[i-1],point=pts[i];
+          const midX=(prev[0]+point[0])*.5*width;
+          const midY=(prev[1]+point[1])*.5*height;
           ctx.quadraticCurveTo(prev[0]*width,prev[1]*height,midX,midY);
         }
         const last=pts[pts.length-1];
@@ -447,51 +456,51 @@
         ctx.lineTo(width,height);
         ctx.closePath();
 
-        const gradient=ctx.createLinearGradient(0,height*.30,0,height);
+        const gradient=ctx.createLinearGradient(0,height*.34,0,height);
         gradient.addColorStop(0,range.top);
         gradient.addColorStop(1,range.base);
         ctx.globalAlpha=range.alpha;
         ctx.fillStyle=gradient;
         ctx.fill();
 
-        // A single light crest and one inner fold preserve the hand-painted finish.
-        ctx.globalAlpha=night?.52:.34;
+        // Thin ink contours add the overlapping ridge detail from the reference.
+        ctx.globalAlpha=night?.48:.34;
         ctx.strokeStyle=night?'#dbe6dc':'#53645a';
-        ctx.lineWidth=layer===2?1.35:1.05;
+        ctx.lineWidth=layer===2?1.15:.9;
         ctx.lineCap='round';
+        ctx.lineJoin='round';
         ctx.beginPath();
         ctx.moveTo(pts[0][0]*width,pts[0][1]*height);
         for(let i=1;i<pts.length;i++){
-          const prev=pts[i-1],pt=pts[i];
+          const prev=pts[i-1],point=pts[i];
           ctx.quadraticCurveTo(prev[0]*width,prev[1]*height,
-            (prev[0]+pt[0])/2*width,(prev[1]+pt[1])/2*height);
+            (prev[0]+point[0])*.5*width,(prev[1]+point[1])*.5*height);
         }
         ctx.stroke();
 
-        ctx.globalAlpha=night?.19:.13;
+        // A second pale fold is intentionally offset so the ridges have depth.
+        ctx.globalAlpha=night?.18:.14;
         ctx.strokeStyle=night?'#d8e4d9':'#65746a';
-        ctx.lineWidth=.8;
+        ctx.lineWidth=.7;
         ctx.beginPath();
-        ctx.moveTo(width*.08,height*(pts[1][1]+.075));
-        ctx.quadraticCurveTo(width*.28,height*(pts[1][1]+.12),
-          width*.47,height*(pts[2][1]+.075));
-        ctx.quadraticCurveTo(width*.68,height*(pts[3][1]+.10),
-          width*.94,height*(pts[4][1]+.11));
+        ctx.moveTo(width*.06,height*(pts[1][1]+.075));
+        ctx.quadraticCurveTo(width*.25,height*(pts[1][1]+.14),width*.43,height*(pts[2][1]+.075));
+        ctx.quadraticCurveTo(width*.65,height*(pts[3][1]+.12),width*.95,height*(pts[4][1]+.10));
         ctx.stroke();
         ctx.restore();
       });
 
-      // Low mist ribbons separate the far ridges from the water.
+      // A distant veil and two low mist ribbons separate the mountain planes.
       for(let i=0;i<3;i++){
-        const yy=height*(.72+i*.055)+Math.sin(t*.12+i)*.8;
-        wash(width*.04,yy,width*.92,height*.055,
+        const yy=height*(.56+i*.075)+Math.sin(t*.10+i)*.7;
+        wash(width*.025,yy,width*.95,height*.045,
           night?'#bdcec1':p.paper,
-          (night?.27:.22)+(state.weather==='fog'?.18:0));
+          (night?.22:.19)+(state.weather==='fog'?.20:0));
       }
     }
     function drawWater(p,t){
       const {ink,water,soft}=p;
-      const top=height*.79;
+      const top=height*.82;
       ctx.save();
       const grad=ctx.createLinearGradient(0,top,0,height);
       grad.addColorStop(0,state.phase==='night'?'rgba(116,151,139,.48)':'rgba(142,161,148,.39)');
@@ -520,14 +529,14 @@
       }
     }
     function drawPagoda(p){
-      const {ink,soft}=p;const x=width*.79,y=height*.64,s=Math.min(width,height)*.38;ctx.save();ctx.translate(x,y);ctx.scale(s/100,s/100);ctx.strokeStyle=ink;ctx.globalAlpha=state.phase==='night'?.92:.72;ctx.lineWidth=2.8;ctx.lineJoin='round';ctx.lineCap='round';
+      const {ink,soft}=p;const x=width*.79,y=height*.68,s=Math.min(width,height)*.30;ctx.save();ctx.translate(x,y);ctx.scale(s/100,s/100);ctx.strokeStyle=ink;ctx.globalAlpha=state.phase==='night'?.92:.72;ctx.lineWidth=2.8;ctx.lineJoin='round';ctx.lineCap='round';
       const roof=(yy,half)=>{ctx.beginPath();ctx.moveTo(-half,yy+7);ctx.quadraticCurveTo(-half*.25,yy-7,0,yy-15);ctx.quadraticCurveTo(half*.25,yy-7,half,yy+7);ctx.lineTo(half*.76,yy+8);ctx.stroke();};
       roof(0,42);line([[-30,9],[-30,43],[30,9],[30,43]],ink,.62,1.8);roof(48,55);line([[-39,56],[-39,92],[39,56],[39,92]],ink,.58,2);line([[-47,95],[47,95]],ink,.58,2);line([[0,-15],[0,-30]],ink,.65,2);ctx.restore();
     }
     function drawPagodaReflection(p){
       const night=state.phase==='night';
       const x=width*.79;
-      const y=height*.80;
+      const y=height*.87;
       ctx.save();
       ctx.globalAlpha=night?.23:.18;
       ctx.fillStyle=night?'#b7c9bd':'#6f8175';
@@ -677,21 +686,38 @@
           i%2?'soft':'ink',1.0,.66);
       }
     } else {
-      add(cubic([.82,.86],[.80,.68],[.84,.52],[.79,.34]),'ink',3.1,.88);
-      for(let i=0;i<6;i++){
-        const y=.40+i*.062, reach=.11+(i%3)*.025, sway=(i%2?1:-1)*.025;
-        add(cubic([.80,y],[.80+reach*.12,y-.015],[.80+reach*.65,y+.025],[.80+reach+sway,y+.01]),'ink',1.55,.76);
-        add(cubic([.80,y+.005],[.80-reach*.20,y-.025],[.80-reach*.60,y+.025],[.80-reach,y+.02]),'soft',1.2,.68);
-        for(let j=0;j<4;j++){
-          const bx=.80+(j-1.5)*reach*.48, by=y+(j%2?-.018:.018);
-          add(cubic([bx,by],[bx+.018,by-.025],[bx+.035,by-.017],[bx+.05,by-.028]),j%3===0?'accent':'ink',.8,.65);
+      // Pine is drawn as an open, asymmetric silhouette. Boughs fall away from
+      // the trunk in distinct tiers; short needle marks replace the old dense lattice.
+      add(cubic([.88,.98],[.82,.78],[.86,.53],[.79,.27]),'ink',4.2,.92);
+      const tiers=[
+        {y:.38,x:.81,left:.68,right:.91,drop:.10},
+        {y:.49,x:.83,left:.59,right:.98,drop:.13},
+        {y:.61,x:.84,left:.55,right:1.03,drop:.15},
+        {y:.74,x:.85,left:.62,right:1.06,drop:.15}
+      ];
+      tiers.forEach((tier,index)=>{
+        const leftPath=cubic([tier.x,tier.y],
+          [tier.x-.045,tier.y+.025],[tier.left+.055,tier.y+tier.drop*.76],[tier.left,tier.y+tier.drop]);
+        const rightPath=cubic([tier.x,tier.y+.012],
+          [tier.x+.045,tier.y+.035],[tier.right-.055,tier.y+tier.drop*.72],[tier.right,tier.y+tier.drop]);
+        add(leftPath,'ink',1.65,.78);
+        add(rightPath,'soft',1.45,.72);
+
+        // Small paired needle clusters follow each bough's slope with breathing room.
+        for(let j=1;j<=3;j++){
+          for(const [path,side] of [[leftPath,-1],[rightPath,1]]){
+            const point=path[Math.round(j/4*(path.length-1))];
+            const [x,y]=point;
+            add(cubic([x,y],[x+side*.012,y+.018],[x+side*.027,y+.032],[x+side*.043,y+.038]),
+              index===1&&j===2?'accent':'ink',.72,.62);
+            add(cubic([x,y+.008],[x-side*.010,y+.022],[x-side*.020,y+.034],[x-side*.028,y+.043]),
+              'soft',.62,.52);
+          }
         }
-        for(let j=0;j<5;j++){
-          const bx=.80+(j-2)*reach*.30, by=y+(j%2?-.012:.013);
-          add(cubic([bx,by],[bx-.006,by-.018],[bx-.025,by-.027],[bx-.039,by-.033]),'ink',.8,.50);
-          add(cubic([bx,by],[bx+.006,by-.018],[bx+.026,by-.025],[bx+.040,by-.030]),'soft',.7,.46);
-        }
-      }
+      });
+      // Fine upper twigs keep the crown light instead of forming a solid mesh.
+      add(cubic([.79,.30],[.75,.24],[.73,.20],[.71,.16]),'soft',1.0,.58);
+      add(cubic([.80,.32],[.84,.25],[.87,.22],[.91,.20]),'ink',1.0,.56);
     }
     // Small Japanese roof / pavilion silhouette, drawn as separate brush lines.
     const roofY=.67,rx=.53;
@@ -846,7 +872,7 @@
 
       // A clear moon after dark; a softly washed vermilion sun during the day.
       ctx.save();
-      const markRadius=Math.min(width,height)*.17;
+      const markRadius=Math.min(width,height)*.11;
       if(current?.phase==='night'){
         ctx.globalAlpha=.92;
         ctx.fillStyle='#dce8dc';
@@ -983,11 +1009,11 @@
         <div class="le-weather-date-row"><div class="le-weather-date" id="le-weather-date">LOCAL TIME</div><label class="le-weather-mode"><span>SCENE</span><select id="le-weather-mode-select" aria-label="Weather scene preview"><option value="auto">AUTO</option><option value="clear">CLEAR</option><option value="cloudy">CLOUDY</option><option value="rain">RAIN</option><option value="storm">STORM</option><option value="snow">SNOW</option><option value="fog">FOG</option><option value="wind">WIND</option><option value="night">NIGHT</option><option value="hot">HOT</option></select></label></div>
         <div class="le-weather-dashboard">
           <div class="le-weather-forecast-column">
-            <section class="le-weather-hero" aria-label="Current weather"><h1 class="le-weather-headline" id="le-weather-headline">A quiet sky.</h1><div class="le-weather-temperature-row"><div class="le-weather-temperature" id="le-weather-temperature">—</div><div class="le-weather-condition"><span class="le-weather-condition-icon" id="le-weather-condition-icon"></span><div class="le-weather-condition-name" id="le-weather-condition">Weather preview</div><div class="le-weather-feels" id="le-weather-feels">Sample values</div></div></div></section>
+            <section class="le-weather-hero" aria-label="Current weather"><h1 class="le-weather-headline" id="le-weather-headline">A quiet sky.</h1></section>
             <section class="le-weather-summary" aria-label="Important weather details"><div class="le-weather-stat"><span class="le-weather-stat-label">HIGH / LOW</span><strong class="le-weather-stat-value" id="le-weather-highlow">—</strong></div><div class="le-weather-stat"><span class="le-weather-stat-label">RAIN CHANCE</span><strong class="le-weather-stat-value" id="le-weather-rainchance">—</strong></div><div class="le-weather-stat"><span class="le-weather-stat-label">WIND</span><strong class="le-weather-stat-value" id="le-weather-wind">—</strong></div></section>
           </div>
           <div class="le-weather-art-column">
-            <div class="le-weather-art-stage" aria-label="Live weather illustration"><canvas class="le-weather-art-canvas" id="le-weather-art-canvas"></canvas></div>
+            <div class="le-weather-art-stage" aria-label="Live weather illustration"><canvas class="le-weather-art-canvas" id="le-weather-art-canvas"></canvas><div class="le-weather-temperature-row"><div class="le-weather-temperature" id="le-weather-temperature">—</div><div class="le-weather-condition"><span class="le-weather-condition-icon" id="le-weather-condition-icon"></span><div class="le-weather-condition-name" id="le-weather-condition">Weather preview</div><div class="le-weather-feels" id="le-weather-feels">Sample values</div></div></div></div>
             <section class="le-weather-studio" aria-label="Live Japanese art studio">
               <div class="le-weather-studio-head"><div><span class="le-weather-studio-kicker">LIVE ART · PAINTING THE WEATHER</span><h2 class="le-weather-studio-title" id="le-weather-studio-title">Red Sun over Pine Ridge</h2></div><span class="le-weather-studio-state" id="le-weather-studio-state" role="status">PREPARING</span></div>
               <canvas class="le-weather-studio-canvas" id="le-weather-studio-canvas" aria-label="Japanese ink artwork being drawn stroke by stroke"></canvas>

@@ -91,7 +91,7 @@ select,input[type=number]{padding:6px 8px;width:100%;min-width:0}input[type=chec
     <button id="exportBtn" type="button">Export JSON</button>
   </div>
   <div id="selectionInfo">Select an element from the list, or tap an element in the preview.</div>
-  <div class="note">Drag an element to move it. Drag a corner to resize. Main Weather art starts at 2.5:1; Live Art painting starts at 3:1. The full Live Art frame and every text/control element can be adjusted separately. Use “Scroll preview” to scroll the app, then return to Edit mode.</div>
+  <div class="note">Drag an element to move it. Drag a corner to resize. The temperature and condition are layered inside the full Weather scene; the Live Art painting fills its complete card with text and controls floating above it. The card and every overlay element can be adjusted separately. Use “Scroll preview” to scroll the app, then return to Edit mode.</div>
 </section>
 <button id="showControlsBtn" type="button">Show editor</button>
 <script>
@@ -163,10 +163,11 @@ function makeRecord(el){
 function installPreviewRatios(){
  const style=doc.createElement('style');style.id='le-weather-layout-editor-preview';
  style.textContent=`
- .le-weather-art-stage{height:auto!important;aspect-ratio:2.5 / 1!important;min-height:0!important}
- .le-weather-art-canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;aspect-ratio:2.5 / 1!important;transform:none!important;object-fit:fill}
- .le-weather-studio{height:20dvh!important;min-height:0!important}
- .le-weather-studio-canvas{position:absolute!important;top:50%!important;left:50%!important;width:100%!important;height:auto!important;aspect-ratio:3 / 1!important;max-width:100%!important;transform:translate(-50%,-50%)!important}
+ /* Match the production composition; do not impose artificial canvas ratios. */
+ .le-weather-art-stage{height:15dvh!important;min-height:118px!important;max-height:154px!important}
+ .le-weather-art-canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;aspect-ratio:auto!important;transform:none!important}
+ .le-weather-studio{height:clamp(150px,19dvh,184px)!important;min-height:0!important}
+ .le-weather-studio-canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;aspect-ratio:auto!important;max-width:none!important;transform:none!important}
  `;
  doc.head.appendChild(style);
 }
@@ -254,7 +255,7 @@ function exportData(){
  });
  return{tool:'LIVE // EARTH Weather Layout Editor',formatVersion:1,exportedAt:new Date().toISOString(),
   note:'Preview-only measurements. No production files or browser settings are changed. Review and convert these values into responsive CSS before applying.',
-  previewRatios:{mainWeatherArt:'2.5:1',liveArtPainting:'3:1',liveArtOuterFrame:'independent adjustable frame'},
+  previewGeometry:{mainWeatherArt:'full-stage',liveArtPainting:'full-card',liveArtOuterFrame:'independent adjustable frame'},
   viewport:{width:vp.width,height:vp.height,screenWidth:round(sr.width),screenHeight:round(sr.height),devicePixelRatio:win.devicePixelRatio||1},
   elements};
 }
