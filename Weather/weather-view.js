@@ -124,12 +124,12 @@
         }
         .le-weather-dashboard {
           display:grid;
-          grid-template-columns:minmax(218px,.42fr) minmax(0,1fr);
+          grid-template-columns:minmax(248px,.72fr) minmax(0,1fr);
           grid-template-areas:"forecast artwork";
           column-gap:clamp(15px,2vw,23px);
           row-gap:0;
           align-items:stretch;
-          --le-weather-landscape-height:clamp(190px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,126px) - 80px),292px);
+          --le-weather-landscape-height:clamp(210px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,116px) - 58px),300px);
           height:var(--le-weather-landscape-height);
           margin-top:clamp(7px,1.5vh,11px);
         }
@@ -228,7 +228,7 @@
           box-sizing:border-box;
           position:relative;
           display:block;
-          width:min(100%,calc((var(--le-weather-landscape-height) - 20px) * 1.428571));
+          width:min(100%,calc((var(--le-weather-landscape-height) - 18px) * 1.428571));
           height:auto;
           aspect-ratio:10 / 7;
           min-height:0;
@@ -366,13 +366,13 @@
         .le-weather-place { grid-column:2;grid-row:1;font-size:9px; }
         .le-weather-mode { grid-column:2;grid-row:2;min-height:32px;padding:3px 9px; }
         .le-weather-dashboard {
-          --le-weather-landscape-height:clamp(178px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,126px) - 94px),260px);
+          --le-weather-landscape-height:clamp(198px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,116px) - 56px),288px);
           height:var(--le-weather-landscape-height);
         }
       }
       @media (orientation:landscape) and (max-height:390px) {
         .le-weather-dashboard {
-          --le-weather-landscape-height:clamp(168px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,116px) - 72px),238px);
+          --le-weather-landscape-height:clamp(184px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,108px) - 44px),270px);
           height:var(--le-weather-landscape-height);
         }
         .le-weather-content { padding-top:calc(env(safe-area-inset-top) + 6px); }
@@ -385,7 +385,7 @@
         .le-weather-temperature { font-size:clamp(49px,5.8vw,60px); }
         .le-weather-studio-title { font-size:clamp(20px,2.5vw,26px); }
       }
-      @media(max-width:430px){.le-weather-content{padding-left:17px;padding-right:17px;padding-bottom:calc(env(safe-area-inset-bottom) + 278px)}.le-weather-date-row{margin-top:24px;align-items:flex-start}.le-weather-headline{font-size:clamp(42px,11.5vw,52px)}.le-weather-temperature{font-size:clamp(74px,20vw,86px)}.le-weather-art-stage{height:clamp(168px,20dvh,192px);min-height:168px;max-height:192px;margin-left:-9px;margin-right:-9px}.le-weather-summary{padding:10px 0}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:6px;letter-spacing:.08em}.le-weather-stat-value{font-size:11px}.le-weather-studio{padding:11px 10px 9px;border-radius:14px}.le-weather-studio-title{font-size:18px}.le-weather-studio-canvas{height:clamp(138px,18vh,155px)}}
+      @media(max-width:430px){.le-weather-content{padding-left:17px;padding-right:17px;padding-bottom:calc(env(safe-area-inset-bottom) + 278px)}.le-weather-date-row{margin-top:24px;align-items:flex-start}.le-weather-headline{font-size:clamp(42px,11.5vw,52px)}.le-weather-temperature{font-size:clamp(74px,20vw,86px)}.le-weather-art-stage{height:clamp(142px,16.5dvh,154px);min-height:142px;max-height:154px;margin-left:-9px;margin-right:-9px}.le-weather-summary{padding:10px 0}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:6px;letter-spacing:.08em}.le-weather-stat-value{font-size:11px}.le-weather-studio{padding:11px 10px 9px;border-radius:14px}.le-weather-studio-title{font-size:clamp(20px,5.4vw,25px)}.le-weather-studio-canvas{height:clamp(138px,18vh,155px)}}
 
       /* Portrait composition: the weather readings and artwork form one scene.
          Live Art is a full-card painting with its controls layered above it. */
@@ -394,11 +394,11 @@
           padding-top:calc(env(safe-area-inset-top) + clamp(20px,2.4dvh,28px));
           padding-bottom:var(--le-weather-dock-clearance,calc(env(safe-area-inset-bottom) + 112px));
         }
-        .le-weather-topbar { row-gap:clamp(16px,1.9dvh,22px); }
+        .le-weather-topbar { row-gap:clamp(12px,1.45dvh,16px); }
         .le-weather-dashboard {
           grid-template-areas:"headline" "scene" "summary" "studio";
-          margin-top:clamp(8px,.9dvh,11px);
-          row-gap:clamp(7px,.8dvh,9px);
+          margin-top:clamp(6px,.7dvh,8px);
+          row-gap:clamp(5px,.6dvh,7px);
         }
         .le-weather-hero { display:contents; }
         .le-weather-headline {
@@ -413,9 +413,9 @@
           isolation:isolate;
           box-sizing:border-box;
           width:100vw;
-          height:clamp(168px,20dvh,192px);
-          min-height:168px;
-          max-height:192px;
+          height:clamp(142px,16.5dvh,154px);
+          min-height:142px;
+          max-height:154px;
           margin-left:calc(50% - 50vw);
           margin-right:calc(50% - 50vw);
           overflow:hidden;
@@ -442,20 +442,20 @@
           transform:translateX(-50%);
           pointer-events:none;
         }
-        .le-weather-temperature { font-size:clamp(78px,21vw,100px); }
+        .le-weather-temperature { font-size:clamp(82px,21vw,104px); }
         .le-weather-condition { padding-top:5px; }
         .le-weather-condition-icon { width:36px;height:34px;margin-bottom:3px; }
-        .le-weather-condition-name { font-size:17px; }
+        .le-weather-condition-name { font-size:18px; }
         .le-weather-feels { font-size:10px; }
         .le-weather-summary { padding:10px 0; }
         .le-weather-stat-label { font-size:7.5px;letter-spacing:.10em; }
-        .le-weather-stat-value { margin-top:5px;font-size:14px; }
+        .le-weather-stat-value { margin-top:5px;font-size:15px; }
 
         /* The painting reaches every edge of its inset card; copy is overlay UI. */
         .le-weather-studio {
           box-sizing:border-box;
           position:relative;
-          width:min(95vw,760px);
+          width:min(95vw,760px, max(260px, calc((100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,112px) - 360px) * 1.428571)));
           height:auto;
           aspect-ratio:10 / 7;
           margin-left:calc(50% - min(47.5vw,380px));
@@ -511,14 +511,14 @@
         .le-weather-studio-head > div { min-width:0; }
         .le-weather-studio-kicker {
           display:block;
-          font-size:6px;
-          line-height:1.1;
+          font-size:7px;
+          line-height:1.15;
           letter-spacing:.17em;
         }
         .le-weather-studio-title {
           margin:4px 0 0;
-          font-size:clamp(15px,3.9vw,19px);
-          line-height:1.02;
+          font-size:clamp(20px,5.4vw,25px);
+          line-height:1.03;
           white-space:nowrap;
           overflow:hidden;
           text-overflow:ellipsis;
@@ -526,7 +526,7 @@
         .le-weather-studio-state {
           flex:0 0 auto;
           padding-top:1px;
-          font-size:6px;
+          font-size:7px;
           line-height:1.1;
           letter-spacing:.12em;
           white-space:nowrap;
@@ -555,9 +555,9 @@
         }
         .le-weather-art-replay {
           flex:0 0 auto;
-          min-height:24px;
-          padding:5px 11px;
-          font-size:7px;
+          min-height:29px;
+          padding:6px 12px;
+          font-size:8px;
           line-height:1;
           pointer-events:auto;
           backdrop-filter:blur(8px);
@@ -717,13 +717,48 @@
     const line=(points,color,alpha=1,widthPx=1.3)=>{ctx.save();ctx.strokeStyle=color;ctx.globalAlpha=alpha;ctx.lineWidth=widthPx;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();ctx.restore();};
     const wash=(x,y,w,h,color,alpha)=>{ctx.save();ctx.globalAlpha=alpha;const g=ctx.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.5,color);g.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=g;ctx.fillRect(x,y,w,h);ctx.restore();};
     function drawSky(p,t){
-      const {ink,soft,accent}=p;const night=state.phase==='night';
-      const sx=width*(state.phase==='evening'?.78:.76),sy=height*.34,r=Math.min(width,height)*.115;
-      ctx.save();ctx.globalAlpha=state.weather==='storm'?.42:state.weather==='fog'?.38:.68;ctx.fillStyle=night?'#dfe3d6':accent;ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.fill();
-      if(night){ctx.globalCompositeOperation='destination-out';ctx.beginPath();ctx.arc(sx+r*.36,sy-r*.22,r*.84,0,Math.PI*2);ctx.fill();ctx.globalCompositeOperation='source-over';}
-      ctx.globalAlpha=night?.48:.23;ctx.strokeStyle=ink;ctx.lineWidth=.7;for(let i=0;i<4;i++){ctx.beginPath();ctx.ellipse(sx,sy,r*(.56+i*.13),r*(.62+i*.09),-.2,0,Math.PI*2);ctx.stroke();}ctx.restore();
-      const cloudCount=state.cloud>72?2:state.cloud>32?1:0;
-      for(let i=0;i<cloudCount;i++){const x=width*(.48+i*.12)+Math.sin(t*.12+i)*Math.max(2,state.wind*.45);const y=height*(.25+i*.075);const s=Math.min(width,height)*(.045+i*.006);ctx.save();ctx.globalAlpha=(.25+state.cloud/440)*(night?1.28:1);ctx.strokeStyle=soft;ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(x,y,s,.95,2.7);ctx.arc(x+s*.85,y-s*.12,s*.78,Math.PI,Math.PI*1.98);ctx.arc(x+s*1.65,y,s,.45,2.4);ctx.stroke();ctx.restore();}
+      const {ink,soft,accent}=p;
+      const night=state.phase==='night';
+      const sx=width*(state.phase==='evening'?.76:.75);
+      const sy=height*.33;
+      const radius=Math.min(width,height)*.112;
+
+      // A single softly pigmented sun/moon, not a set of concentric interface rings.
+      ctx.save();
+      const sun=ctx.createRadialGradient(sx-radius*.25,sy-radius*.32,radius*.08,sx,sy,radius*1.08);
+      sun.addColorStop(0,night?'#dbe4dc':'#df9a89');
+      sun.addColorStop(.74,night?'#c8d8cf':accent);
+      sun.addColorStop(1,night?'rgba(179,202,189,.72)':'rgba(184,91,83,.70)');
+      ctx.globalAlpha=state.weather==='storm'?.54:state.weather==='fog'?.42:.78;
+      ctx.fillStyle=sun;
+      ctx.beginPath();ctx.arc(sx,sy,radius,0,Math.PI*2);ctx.fill();
+      ctx.save();ctx.beginPath();ctx.arc(sx,sy,radius*.94,0,Math.PI*2);ctx.clip();
+      ctx.globalAlpha=night?.12:.14;ctx.strokeStyle=night?'#f1f2e9':'#f8e7d9';ctx.lineWidth=.7;
+      for(let i=0;i<4;i++){
+        const yy=sy-radius*.48+i*radius*.30;
+        ctx.beginPath();ctx.moveTo(sx-radius,yy);ctx.bezierCurveTo(sx-radius*.35,yy-1.5,sx+radius*.28,yy+1.3,sx+radius,yy-.3);ctx.stroke();
+      }
+      ctx.restore();
+      if(night){
+        ctx.globalCompositeOperation='destination-out';
+        ctx.beginPath();ctx.arc(sx+radius*.37,sy-radius*.22,radius*.84,0,Math.PI*2);ctx.fill();
+        ctx.globalCompositeOperation='source-over';
+      }
+      ctx.restore();
+
+      // Sparse cloud contours retain the Japanese negative-space quality.
+      const cloudCount=state.cloud>78?2:state.cloud>43?1:0;
+      for(let i=0;i<cloudCount;i++){
+        const x=width*(.42+i*.25)+Math.sin(t*.10+i)*Math.max(1.5,state.wind*.22);
+        const y=height*(.25+i*.075);
+        const scale=Math.min(width,height)*(.050+i*.008);
+        ctx.save();ctx.globalAlpha=(.18+state.cloud/520)*(night?1.15:1);ctx.strokeStyle=soft;ctx.lineWidth=1.1;ctx.lineCap='round';ctx.lineJoin='round';
+        ctx.beginPath();ctx.moveTo(x-scale*1.35,y+scale*.2);
+        ctx.bezierCurveTo(x-scale*1.1,y-scale*.28,x-scale*.48,y-scale*.34,x-scale*.24,y-scale*.02);
+        ctx.bezierCurveTo(x-scale*.04,y-scale*.72,x+scale*.9,y-scale*.57,x+scale*.92,y-scale*.05);
+        ctx.bezierCurveTo(x+scale*1.5,y-scale*.02,x+scale*1.55,y+scale*.35,x+scale*1.16,y+scale*.4);
+        ctx.lineTo(x-scale*1.35,y+scale*.4);ctx.stroke();ctx.restore();
+      }
     }
     function drawMountains(p,t){
       const night=state.phase==='night';
@@ -861,81 +896,104 @@
       ctx.restore();
     }
     function drawSnow(p,t){if(state.weather!=='snow'){snowLoad=Math.max(0,snowLoad-.0015);return;}const {soft}=p;const amount=Math.max(.12,Math.min(1,state.snowfall/2));snowLoad=reduced?Math.max(snowLoad,amount*.32):Math.min(.92,snowLoad+amount*.00055);const count=Math.round(7+amount*9);for(let i=0;i<count;i++){const x=((i*83+Math.sin(t*.3+i)*13)%width+width)%width;const y=((i*47+t*(4+(i%4)*1.2))%height*.78);ctx.save();ctx.globalAlpha=.45+(i%3)*.12;ctx.fillStyle=soft;ctx.beginPath();ctx.arc(x,y,1+(i%3)*.45,0,Math.PI*2);ctx.fill();ctx.restore();}}
-    function drawRain(p,t){if(state.weather!=='rain'&&state.weather!=='storm')return;const {soft,ink}=p;const intensity=Math.min(1,Math.max(.18,state.precipitation/6));const count=Math.round(9+intensity*9);for(let i=0;i<count;i++){const x=((i*73+t*(state.wind*.8+9))%width+width)%width;const y=((i*49+t*(90+intensity*90))%height*.86);line([[x,y],[x-2+Math.sin(state.direction*Math.PI/180)*6,y+8+intensity*7]],soft,.23+intensity*.18,.65);}
-      for(let i=0;i<5;i++){const x=width*(.12+i*.19);const y=height*(.75+(i%2)*.12);const phase=(t*.55+i*.27)%1;ctx.save();ctx.globalAlpha=.32*(1-phase);ctx.strokeStyle=ink;ctx.lineWidth=.75;ctx.beginPath();ctx.ellipse(x,y,4+phase*15,1.5+phase*3,0,0,Math.PI*2);ctx.stroke();ctx.restore();}}
+    function drawRain(p,t){if(state.weather!=='rain'&&state.weather!=='storm')return;const {soft,ink}=p;const intensity=Math.min(1,Math.max(.18,state.precipitation/6));const count=Math.round(6+intensity*5);for(let i=0;i<count;i++){const x=((i*73+t*(state.wind*.8+9))%width+width)%width;const y=((i*49+t*(90+intensity*90))%height*.86);line([[x,y],[x-2+Math.sin(state.direction*Math.PI/180)*6,y+8+intensity*7]],soft,.23+intensity*.18,.65);}
+      for(let i=0;i<3;i++){const x=width*(.18+i*.31);const y=height*(.75+(i%2)*.12);const phase=(t*.55+i*.27)%1;ctx.save();ctx.globalAlpha=.32*(1-phase);ctx.strokeStyle=ink;ctx.lineWidth=.75;ctx.beginPath();ctx.ellipse(x,y,4+phase*15,1.5+phase*3,0,0,Math.PI*2);ctx.stroke();ctx.restore();}}
     function drawWindLines(p,t){if(state.wind<18)return;const {soft}=p;const alpha=Math.min(.30,state.wind/180);for(let i=0;i<4;i++){const y=height*(.38+i*.095)+Math.sin(t*.55+i)*3;ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=soft;ctx.lineWidth=.9;ctx.beginPath();ctx.moveTo(width*(.10+i*.03),y);ctx.bezierCurveTo(width*.35,y-5,width*.56,y+6,width*.88,y-3);ctx.stroke();ctx.restore();}}
     function drawFog(p,t){if(state.weather!=='fog'&&state.cloud<85)return;const {paper,soft}=p;for(let i=0;i<3;i++){const y=height*(.49+i*.075)+Math.sin(t*.15+i)*7;const g=ctx.createLinearGradient(0,y,width,y);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.48,state.weather==='fog'?'rgba(238,238,224,.34)':'rgba(238,238,224,.15)');g.addColorStop(1,'rgba(255,255,255,0)');ctx.save();ctx.fillStyle=g;ctx.fillRect(0,y-9,width,19);ctx.restore();}}
     function drawMinimalLandscape(p,t){
       const night=state.phase==='night';
-      const horizon=height*.76;
+      const horizon=height*.79;
       drawSky(p,t);
 
-      // Two quiet ink-wash ridges: a distant range and one nearer shoulder.
-      ctx.save();
-      const farGradient=ctx.createLinearGradient(0,height*.34,0,height*.78);
-      farGradient.addColorStop(0,night?'rgba(112,139,126,.42)':'rgba(166,178,165,.36)');
-      farGradient.addColorStop(1,night?'rgba(76,101,88,.24)':'rgba(205,211,199,.20)');
-      ctx.fillStyle=farGradient;
-      ctx.beginPath();
-      ctx.moveTo(0,height*.72);
-      ctx.quadraticCurveTo(width*.14,height*.60,width*.28,height*.66);
-      ctx.quadraticCurveTo(width*.45,height*.47,width*.59,height*.62);
-      ctx.quadraticCurveTo(width*.75,height*.53,width*.88,height*.63);
-      ctx.quadraticCurveTo(width*.95,height*.60,width,height*.65);
-      ctx.lineTo(width,height*.83);
-      ctx.lineTo(0,height*.83);
-      ctx.closePath();
-      ctx.fill();
+      const fillRidge=(points,top,base,alpha)=>{
+        ctx.save();ctx.beginPath();
+        ctx.moveTo(points[0][0]*width,height);
+        ctx.lineTo(points[0][0]*width,points[0][1]*height);
+        // Keep the principal summits legible; only the shoulders are softly joined.
+        for(let i=1;i<points.length;i++){
+          const a=points[i-1],b=points[i];
+          if(i%2===0)ctx.quadraticCurveTo(a[0]*width,a[1]*height,b[0]*width,b[1]*height);
+          else ctx.lineTo(b[0]*width,b[1]*height);
+        }
+        const last=points[points.length-1];ctx.lineTo(last[0]*width,last[1]*height);
+        ctx.lineTo(width,height);ctx.closePath();
+        const g=ctx.createLinearGradient(0,height*.28,0,height*.91);
+        g.addColorStop(0,top);g.addColorStop(1,base);
+        ctx.globalAlpha=alpha;ctx.fillStyle=g;ctx.fill();ctx.restore();
+      };
+      const contour=(points,color,alpha,lineWidth)=>{
+        ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=color;ctx.lineWidth=lineWidth;
+        ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();
+        points.forEach((pt,i)=>i?ctx.lineTo(pt[0]*width,pt[1]*height):ctx.moveTo(pt[0]*width,pt[1]*height));
+        ctx.stroke();ctx.restore();
+      };
 
-      ctx.globalAlpha=night?.45:.30;
-      ctx.strokeStyle=night?'#dbe6dc':'#718176';
-      ctx.lineWidth=.9;
-      ctx.beginPath();
-      ctx.moveTo(0,height*.72);
-      ctx.quadraticCurveTo(width*.14,height*.60,width*.28,height*.66);
-      ctx.quadraticCurveTo(width*.45,height*.47,width*.59,height*.62);
-      ctx.quadraticCurveTo(width*.75,height*.53,width*.88,height*.63);
-      ctx.quadraticCurveTo(width*.95,height*.60,width,height*.65);
-      ctx.stroke();
+      // Distant ink mountains: three distinct summits, softer shoulders and pale atmospheric depth.
+      const far=[[-.06,.73],[.08,.61],[.17,.65],[.30,.39],[.38,.56],[.51,.27],[.61,.54],[.74,.40],[.84,.59],[.94,.47],[1.06,.66]];
+      fillRidge(far,night?'rgba(125,148,137,.58)':'rgba(176,185,174,.62)',night?'rgba(71,94,84,.12)':'rgba(232,230,220,.08)',.92);
+      contour(far,night?'#dbe6dc':'#778679',night?.36:.30,.9);
+      const mid=[[-.05,.82],[.11,.72],[.23,.76],[.39,.61],[.52,.74],[.68,.59],[.82,.74],[.95,.65],[1.05,.77]];
+      fillRidge(mid,night?'rgba(82,111,96,.52)':'rgba(135,154,140,.39)',night?'rgba(43,67,57,.22)':'rgba(179,194,180,.12)',.84);
+      contour(mid,night?'#c8d8cc':'#65796d',night?.32:.27,.85);
+      const near=[[-.04,.88],[.13,.81],[.30,.86],[.47,.77],[.65,.86],[.83,.76],[1.04,.85]];
+      fillRidge(near,night?'rgba(53,79,67,.46)':'rgba(111,135,119,.23)',night?'rgba(35,57,48,.16)':'rgba(192,203,190,.06)',.75);
+      contour(near,night?'#b9cbbf':'#758579',night?.26:.20,.7);
 
-      const nearGradient=ctx.createLinearGradient(0,height*.62,0,height*.88);
-      nearGradient.addColorStop(0,night?'rgba(75,99,86,.48)':'rgba(131,151,136,.28)');
-      nearGradient.addColorStop(1,night?'rgba(49,70,60,.24)':'rgba(183,196,181,.12)');
-      ctx.globalAlpha=1;
-      ctx.fillStyle=nearGradient;
-      ctx.beginPath();
-      ctx.moveTo(0,height*.79);
-      ctx.quadraticCurveTo(width*.20,height*.68,width*.38,height*.77);
-      ctx.quadraticCurveTo(width*.55,height*.66,width*.70,height*.76);
-      ctx.quadraticCurveTo(width*.86,height*.69,width,height*.77);
-      ctx.lineTo(width,height*.88);
-      ctx.lineTo(0,height*.88);
-      ctx.closePath();
-      ctx.fill();
-      ctx.globalAlpha=night?.34:.23;
-      ctx.strokeStyle=night?'#dbe6dc':'#6f8175';
-      ctx.lineWidth=.8;
-      ctx.beginPath();
-      ctx.moveTo(0,height*.79);
-      ctx.quadraticCurveTo(width*.20,height*.68,width*.38,height*.77);
-      ctx.quadraticCurveTo(width*.55,height*.66,width*.70,height*.76);
-      ctx.quadraticCurveTo(width*.86,height*.69,width,height*.77);
-      ctx.stroke();
-
-      // A very light veil separates the ridges from the water without adding clutter.
-      wash(width*.025,height*.70,width*.95,height*.055,night?'#c7d4c8':p.paper,night?.14:.22);
-      const water=ctx.createLinearGradient(0,horizon,0,height);
-      water.addColorStop(0,night?'rgba(116,151,139,.32)':'rgba(142,161,148,.22)');
-      water.addColorStop(1,'rgba(255,255,255,.015)');
-      ctx.fillStyle=water;
-      ctx.globalAlpha=1;
-      ctx.fillRect(0,horizon,width,height-horizon);
-      for(let i=0;i<4;i++){
-        const y=horizon+(height-horizon)*(i+1)/5;
-        const wave=Math.sin(t*.38+i)*Math.min(1.8,state.wind*.045);
-        line([[width*.08,y],[width*.34,y+wave],[width*.62,y-wave*.3],[width*.92,y]],p.soft,.22-i*.03,.6);
+      // Small facets and broken ink folds stop the mountains reading as smooth waves.
+      const facets=[
+        [[.30,.40],[.26,.55],[.35,.49]],[[.51,.28],[.45,.51],[.55,.44]],
+        [[.74,.41],[.69,.56],[.79,.51]],[[.94,.48],[.89,.60],[.98,.57]]
+      ];
+      facets.forEach((tri,i)=>{
+        ctx.save();ctx.globalAlpha=night?.20:.18;ctx.fillStyle=i%2?'#eef0e7':'#667a6d';
+        ctx.beginPath();tri.forEach((pt,j)=>j?ctx.lineTo(pt[0]*width,pt[1]*height):ctx.moveTo(pt[0]*width,pt[1]*height));
+        ctx.closePath();ctx.fill();ctx.restore();
+      });
+      if(state.weather==='snow'){
+        const caps=[[[.30,.40],[.278,.47],[.31,.445],[.335,.50]],[[.51,.28],[.47,.39],[.51,.36],[.55,.42]],[[.74,.41],[.715,.47],[.745,.46],[.775,.50]]];
+        caps.forEach(poly=>{ctx.save();ctx.globalAlpha=.62;ctx.fillStyle='#f6f5ed';ctx.beginPath();poly.forEach((pt,i)=>i?ctx.lineTo(pt[0]*width,pt[1]*height):ctx.moveTo(pt[0]*width,pt[1]*height));ctx.closePath();ctx.fill();ctx.restore();});
       }
-      ctx.restore();
+
+      // Japanese landscape foreground: two quiet ink-wash ridges, a tiny pine and a distant pavilion.
+      // Quiet floating mist, like diluted sumi ink, rather than wide graphic bands.
+      for(let i=0;i<3;i++){
+        const y=height*(.58+i*.065)+Math.sin(t*.08+i)*.5;
+        const g=ctx.createLinearGradient(0,y,width,y);
+        g.addColorStop(0,'rgba(255,255,255,0)');
+        g.addColorStop(.48,night?'rgba(203,218,207,.20)':'rgba(247,244,235,.48)');
+        g.addColorStop(1,'rgba(255,255,255,0)');
+        ctx.save();ctx.fillStyle=g;ctx.fillRect(0,y-3,width,6);ctx.restore();
+      }
+
+      // Water and restrained reflections keep the foreground quiet under the readings.
+      const water=ctx.createLinearGradient(0,horizon,0,height);
+      water.addColorStop(0,night?'rgba(101,139,125,.38)':'rgba(133,158,142,.30)');
+      water.addColorStop(.62,night?'rgba(62,100,87,.23)':'rgba(170,187,171,.17)');
+      water.addColorStop(1,'rgba(255,255,255,.01)');
+      ctx.save();ctx.fillStyle=water;ctx.fillRect(0,horizon,width,height-horizon);ctx.restore();
+      for(let i=0;i<5;i++){
+        const y=horizon+(height-horizon)*(.13+i*.16);
+        const wave=Math.sin(t*.24+i*.8)*Math.min(1.1,state.wind*.03);
+        line([[width*(.08+i*.015),y],[width*.34,y+wave],[width*.63,y-wave*.25],[width*.94,y]],p.soft,.22-i*.025,.55);
+      }
+
+      // A small, recognisable pine silhouette balances the distant pavilion.
+      ctx.save();
+      const tx=width*.13,ty=height*.84,sc=Math.min(width,height)*.31;
+      ctx.translate(tx,ty);ctx.scale(sc/100,sc/100);
+      ctx.strokeStyle=p.ink;ctx.lineCap='round';ctx.lineJoin='round';ctx.globalAlpha=night?.66:.55;
+      ctx.lineWidth=2.6;ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(-6,-22,8,-54);ctx.stroke();
+      const tiers=[[-13,-47,-37,-43,19,-47],[-10,-34,-42,-30,24,-36],[-5,-22,-34,-18,27,-24]];
+      tiers.forEach((q,i)=>{
+        ctx.beginPath();ctx.moveTo(5,q[1]);ctx.quadraticCurveTo(-5,q[1]-6,q[2],q[3]);
+        ctx.moveTo(5,q[1]+2);ctx.quadraticCurveTo(13,q[1]-5,q[4],q[5]);ctx.stroke();
+        for(let j=0;j<4;j++){
+          const xx=q[2]+(q[4]-q[2])*j/3,yy=q[3]+(q[5]-q[3])*j/3;
+          ctx.globalAlpha=night?.54:.40;ctx.lineWidth=1.3;
+          ctx.beginPath();ctx.moveTo(xx-6,yy-3);ctx.quadraticCurveTo(xx,yy-9,xx+7,yy-2);ctx.stroke();
+        }
+      });ctx.restore();
+      drawPagoda(p);drawPagodaReflection(p);
 
       if(state.weather==='rain'||state.weather==='storm')drawRain(p,t);
       else if(state.weather==='snow')drawSnow(p,t);
@@ -973,206 +1031,261 @@
 
   function makeArtStudyStrokes(state) {
     const kind=state.phase==='night'?'night':(state.weather==='hot'?'clear':state.weather);
-    const study=JAPANESE_ART_LIBRARY.find(item=>item.weather.includes(kind)) || JAPANESE_ART_LIBRARY[0];
+    const study=JAPANESE_ART_LIBRARY.find(item=>item.weather.includes(kind))||JAPANESE_ART_LIBRARY[0];
     const strokes=[];
-    const add=(points,tone='ink',weight=1.7,alpha=.78,kind='line')=>strokes.push({points,tone,weight,alpha,kind});
-    const sample=(fn,count=22)=>Array.from({length:count+1},(_,i)=>fn(i/count));
-    const quad=(a,c,b,n=18)=>sample(t=>[(1-t)*(1-t)*a[0]+2*(1-t)*t*c[0]+t*t*b[0],(1-t)*(1-t)*a[1]+2*(1-t)*t*c[1]+t*t*b[1]],n);
-    const cubic=(a,c1,c2,b,n=24)=>sample(t=>{const u=1-t;return [u*u*u*a[0]+3*u*u*t*c1[0]+3*u*t*t*c2[0]+t*t*t*b[0],u*u*u*a[1]+3*u*u*t*c1[1]+3*u*t*t*c2[1]+t*t*t*b[1]];},n);
-    const paper=state.phase==='night'?'#d8ddd2':'#344239';
-    // A quiet red sun / moon is the signature mark in every composition.
-    if(state.phase==='night'||study.motif==='moon'){
-      // Subtle lunar surface marks; the filled crescent is rendered by the canvas layer.
-      add([[.718,.225],[.735,.220],[.748,.224]],'soft',.65,.42);
-      add([[.756,.265],[.768,.260],[.776,.264]],'soft',.55,.34);
-    } else {
-      // Fine horizontal pigment striations sit inside the vermilion sun disk.
-      for(let i=0;i<5;i++){
-        const y=.205+i*.014;
-        add([[.685,y],[.715,y+.002],[.755,y],[.795,y+.002]],'soft',.55,.28);
-      }
+    const add=(points,tone='ink',weight=1.6,alpha=.75,kind='line')=>strokes.push({points,tone,weight,alpha,kind});
+    const sample=(fn,count=28)=>Array.from({length:count+1},(_,i)=>fn(i/count));
+    const cubic=(a,c1,c2,b,n=28)=>sample(t=>{const u=1-t;return [u*u*u*a[0]+3*u*u*t*c1[0]+3*u*t*t*c2[0]+t*t*t*b[0],u*u*u*a[1]+3*u*u*t*c1[1]+3*u*t*t*c2[1]+t*t*t*b[1]];},n);
+    const shape=(points,tone,alpha=.68)=>add([...points,points[0]],tone,.55,alpha,'fill');
+    const curve=(a,c1,c2,b,tone='ink',weight=1.6,alpha=.75)=>add(cubic(a,c1,c2,b),tone,weight,alpha,'line');
+    const wash=(a,c1,c2,b,tone='soft',weight=6,alpha=.14)=>add(cubic(a,c1,c2,b),tone,weight,alpha,'wash');
+    const leaf=(x,y,length,angle,tone='pine',alpha=.72)=>{
+      const dx=Math.cos(angle)*length,dy=Math.sin(angle)*length;
+      const px=-Math.sin(angle)*length*.22,py=Math.cos(angle)*length*.22;
+      shape([[x,y],[x+dx*.28+px,y+dy*.28+py],[x+dx*.72+px*.48,y+dy*.72+py*.48],[x+dx,y+dy],[x+dx*.68-px*.42,y+dy*.68-py*.42],[x+dx*.20-px,y+dy*.20-py],[x,y]],tone,alpha);
+      curve([x,y],[x+dx*.22,y+dy*.22],[x+dx*.54,y+dy*.54],[x+dx*.82,y+dy*.82],'soft',.34,alpha*.52);
+    };
+
+    // Japanese landscape foundation: overlapping peaks, ink contours and atmospheric distance.
+    wash([-.04,.52],[.15,.38],[.28,.43],[.45,.57],'mist',5.5,.18);
+    wash([.47,.55],[.64,.39],[.82,.43],[1.05,.57],'mist',5.0,.16);
+    shape([[-.06,.71],[.06,.60],[.16,.63],[.29,.43],[.38,.57],[.51,.28],[.61,.50],[.73,.35],[.83,.55],[.93,.44],[1.06,.65],[1.06,.85],[-.06,.85]],'ridge',.64);
+    shape([[-.05,.80],[.10,.71],[.23,.75],[.39,.59],[.52,.72],[.68,.56],[.83,.70],[.96,.62],[1.06,.73],[1.06,.93],[-.05,.93]],'soft',.50);
+    shape([[-.04,.90],[.16,.83],[.33,.86],[.50,.76],[.68,.86],[.84,.75],[1.05,.86],[1.05,1.04],[-.04,1.04]],'deep',.22);
+    curve([-.01,.70],[.11,.60],[.22,.54],[.29,.43],'soft',1.15,.62);
+    curve([.29,.57],[.40,.46],[.45,.35],[.51,.28],'ink',1.2,.56);
+    curve([.50,.49],[.60,.39],[.66,.36],[.73,.35],'soft',1.15,.55);
+    curve([.72,.54],[.83,.47],[.88,.43],[.93,.44],'ink',.95,.44);
+    curve([.08,.76],[.23,.70],[.34,.74],[.47,.71],'soft',.75,.38);
+    curve([.54,.79],[.69,.70],[.82,.73],[.98,.70],'ink',.75,.30);
+
+    // Mountain facets and broken dry-brush marks create painted depth, not a wireframe.
+    const facets=[
+      [[.29,.44],[.26,.53],[.33,.50],[.36,.56]],
+      [[.51,.29],[.46,.43],[.51,.39],[.57,.48]],
+      [[.73,.36],[.69,.46],[.76,.43],[.80,.51]],
+      [[.93,.45],[.89,.54],[.96,.51],[.99,.57]]
+    ];
+    facets.forEach((poly,i)=>shape(poly,i%2?'foam':'mist',i%2?.62:.34));
+    for(let i=0;i<18;i++){
+      const x=.09+(i*37%82)/100,y=.57+(i*19%23)/100;
+      curve([x,y],[x+.012,y-.015],[x+.025,y-.012],[x+.038,y-.024],i%3?'soft':'paper',.50,.34);
     }
-    // Broad, translucent ink washes establish the paper-and-pigment depth first.
-    add(cubic([-.08,.66],[.16,.50],[.27,.55],[.43,.65]),'ridge',8.5,.16,'wash');
-    add(cubic([.24,.69],[.43,.55],[.62,.58],[.82,.68]),'soft',7.2,.13,'wash');
-    add(cubic([-.02,.78],[.23,.69],[.48,.73],[.71,.80]),'ridge',9.5,.12,'wash');
-    // Broad, layered mountain planes are the backbone of this 4:1 panorama.
-    const farMountain=[
-      ...cubic([-.08,.69],[.08,.40],[.19,.52],[.35,.66]),
-      ...cubic([.35,.66],[.53,.38],[.69,.48],[1.08,.64]).slice(1),
-      [1.08,.92],[-.08,.92],[-.08,.69]
-    ];
-    add(farMountain,'ridge',1.2,state.phase==='night'?.72:.62,'fill');
+    for(let i=0;i<4;i++){
+      const y=.58+i*.052;
+      wash([-.04,y],[.24,y-.03],[.62,y+.025],[1.04,y-.01],'mist',4.8,.22);
+    }
+    if(kind==='snow'){
+      shape([[.24,.51],[.29,.43],[.32,.47],[.35,.53],[.31,.50],[.28,.55]],'snow',.84);
+      shape([[.44,.43],[.51,.28],[.56,.39],[.53,.37],[.50,.42],[.48,.39]],'snow',.90);
+      shape([[.66,.46],[.73,.35],[.77,.43],[.74,.42],[.72,.46],[.70,.42]],'snow',.82);
+    }
 
-    const middleMountain=[
-      ...cubic([-.08,.82],[.13,.58],[.28,.72],[.47,.80]),
-      ...cubic([.47,.80],[.63,.58],[.80,.66],[1.08,.78]).slice(1),
-      [1.08,.96],[-.08,.96],[-.08,.82]
-    ];
-    add(middleMountain,'soft',1.1,state.phase==='night'?.57:.48,'fill');
+    // Quiet reflective water; the foreground scene is allowed to remain the hero.
+    shape([[-.04,.79],[.13,.75],[.26,.79],[.43,.75],[.61,.79],[.79,.74],[1.04,.78],[1.04,1.04],[-.04,1.04]],'water',.30);
+    for(let i=0;i<13;i++){
+      const y=.83+i*.012,x=.05+(i%3)*.018;
+      curve([x,y],[.25,y-.012],[.44,y+.008],[.67,y-.004],'water',.56,.28);
+      if(i%2===0)curve([.56,y+.018],[.70,y],[.86,y+.012],[1.0,y+.004],'soft',.46,.23);
+    }
 
-    const foregroundRidge=[
-      ...cubic([-.04,.91],[.18,.79],[.35,.83],[.53,.88]),
-      ...cubic([.53,.88],[.70,.76],[.86,.82],[1.04,.88]).slice(1),
-      [1.04,1.02],[-.04,1.02],[-.04,.91]
-    ];
-    add(foregroundRidge,'ink',.8,state.phase==='night'?.22:.13,'fill');
-
-    // A few clear crest lines give the soft pigment planes their Japanese ink contour.
-    add(cubic([-.03,.69],[.13,.48],[.23,.54],[.35,.66]),'soft',1.55,.58);
-    add(cubic([.34,.66],[.52,.42],[.68,.49],[.83,.67]),'ink',1.65,.62);
-    add(cubic([.66,.70],[.80,.55],[.91,.58],[1.05,.66]),'soft',1.25,.48);
-
-    // Tree motif follows the selected artwork: a willow has a readable trunk,
-    // a light crown and separate cascading boughs (not a tangled pine lattice).
-    if(study.motif==='willow'){
-      // A recognisable willow silhouette: one leaning trunk, an open crown,
-      // and four separated curtains of long foliage. Keep the canopy on the right.
-      add(cubic([.89,.98],[.82,.79],[.93,.57],[.88,.34]),'ink',4.8,.96);
-      add(cubic([.89,.43],[.79,.34],[.70,.38],[.64,.47]),'ink',2.0,.82);
-      add(cubic([.89,.42],[.97,.33],[1.03,.39],[1.08,.50]),'soft',1.8,.82);
-      add(cubic([.87,.47],[.77,.45],[.72,.51],[.68,.60]),'soft',1.45,.72);
-
-      const curtains=[
-        [.67,.46,.61,.88],
-        [.77,.40,.74,.94],
-        [.88,.38,.88,.93],
-        [.98,.43,1.04,.88]
+    const addPine=(baseX=.88,baseY=1.0,scale=1)=>{
+      // A bent trunk and layered needle-cloud silhouettes; foliage reads as a tree, not scaffolding.
+      curve([baseX,baseY],[baseX-.055*scale,baseY-.22*scale],[baseX-.018*scale,baseY-.50*scale],[baseX-.13*scale,baseY-.76*scale],'ink',5.0,.94);
+      const tiers=[
+        {y:.34,x:-.11,left:-.36,right:.15,drop:.055},
+        {y:.47,x:-.085,left:-.43,right:.20,drop:.070},
+        {y:.60,x:-.060,left:-.40,right:.22,drop:.078},
+        {y:.72,x:-.035,left:-.31,right:.18,drop:.070}
       ];
-      for(let i=0;i<curtains.length;i++){
-        const [sx,sy,ex,ey]=curtains[i];
-        const path=cubic([sx,sy],
-          [sx+(ex-sx)*.10,sy+.17],
-          [ex+(sx-ex)*.16,ey-.12],
-          [ex,ey]);
-        add(path,i%2?'soft':'ink',1.75,.82);
-
-        // Individual tapered leaves attach to alternating sides of each bough.
-        for(let j=0;j<5;j++){
-          const t=.20+j*.15;
-          const point=path[Math.min(path.length-1,Math.round(t*(path.length-1)))];
-          const side=(i+j)%2?1:-1;
-          const lx=point[0],ly=point[1];
-          const leaf=[
-            [lx,ly],
-            [lx+side*.018,ly-.006],
-            [lx+side*.050,ly+.006],
-            [lx+side*.031,ly+.040],
-            [lx+side*.008,ly+.034],
-            [lx,ly]
-          ];
-          const tone=(j===1&&i%2===0)?'accent':(j%2?'soft':'ink');
-          add(leaf,tone,.75,.78,'fill');
-          add([[lx,ly],[lx+side*.040,ly+.014]],'soft',.48,.50);
+      for(let i=0;i<tiers.length;i++){
+        const q=tiers[i],root=baseX+q.x*scale,yy=baseY-(1-q.y)*scale;
+        const left=root+q.left*scale,right=root+q.right*scale;
+        curve([root,yy],[root-.07*scale,yy+.04*scale],[left+.08*scale,yy+q.drop*scale],[left,yy+q.drop*scale],'ink',1.85,.88);
+        curve([root,yy+.012*scale],[root+.06*scale,yy+.04*scale],[right-.07*scale,yy+q.drop*.8*scale],[right,yy+q.drop*scale],'soft',1.65,.80);
+        // Irregular soft foliage masses behind the needles.
+        shape([
+          [left,yy+q.drop*.66*scale],[left+.035*scale,yy+.005*scale],
+          [root-.22*scale,yy-.055*scale],[root-.10*scale,yy-.075*scale],
+          [root+.015*scale,yy-.055*scale],[root+.12*scale,yy-.035*scale],
+          [right,yy+q.drop*.55*scale],[right-.04*scale,yy+q.drop*1.10*scale],
+          [root+.04*scale,yy+q.drop*.82*scale],[left+.06*scale,yy+q.drop*1.05*scale]
+        ],i%2?'pine':'deep',.54);
+        // short needle marks replace the old dense lattice.
+        for(let j=0;j<7;j++){
+          const t=.10+j*.125;
+          const x=left+(right-left)*t;
+          const y=yy+q.drop*.40*scale+Math.sin(t*Math.PI)*.018*scale;
+          curve([x,y],[x-.015*scale,y-.018*scale],[x-.028*scale,y-.014*scale],[x-.040*scale,y-.023*scale],'pine',.75,.72);
+          curve([x+.01*scale,y+.005*scale],[x+.025*scale,y-.012*scale],[x+.038*scale,y-.008*scale],[x+.050*scale,y-.016*scale],'soft',.65,.62);
+        }
+        if(kind==='snow'){
+          curve([left+.01*scale,yy+q.drop*.55*scale],[left+.10*scale,yy+q.drop*.12*scale],[root-.05*scale,yy-.025*scale],[root+.01*scale,yy+.005*scale],'snow',2.1,.92);
+          curve([root+.01*scale,yy+.005*scale],[right-.05*scale,yy-.015*scale],[right-.01*scale,yy+.04*scale],[right,yy+q.drop*.75*scale],'snow',1.8,.88);
         }
       }
+      curve([baseX-.13*scale,baseY-.76*scale],[baseX-.20*scale,baseY-.82*scale],[baseX-.22*scale,baseY-.85*scale],[baseX-.26*scale,baseY-.88*scale],'soft',1.0,.60);
+    };
 
-      // Fine tips hang below the main foliage, without crossing the open centre.
-      for(let i=0;i<4;i++){
-        const x=.71+i*.085,y=.62+(i%2)*.035;
-        add(cubic([x,y],[x-.015,y+.08],[x+.012,y+.15],[x-.005,y+.23]),
-          i%2?'soft':'ink',1.0,.66);
-      }
-    } else {
-      // Pine is drawn as an open, asymmetric silhouette. Boughs fall away from
-      // the trunk in distinct tiers; short needle marks replace the old dense lattice.
-      add(cubic([.88,.98],[.82,.78],[.86,.53],[.79,.27]),'ink',4.2,.92);
-      const tiers=[
-        {y:.38,x:.81,left:.68,right:.91,drop:.10},
-        {y:.49,x:.83,left:.59,right:.98,drop:.13},
-        {y:.61,x:.84,left:.55,right:1.03,drop:.15},
-        {y:.74,x:.85,left:.62,right:1.06,drop:.15}
+    const addWillow=(baseX=.86,baseY=.99,scale=1)=>{
+      // A recognisable cascading willow: rounded canopy, arcing boughs and fine hanging curtains.
+      shape([
+        [baseX-.32*scale,baseY-.61*scale],[baseX-.29*scale,baseY-.75*scale],
+        [baseX-.18*scale,baseY-.80*scale],[baseX-.07*scale,baseY-.78*scale],
+        [baseX+.06*scale,baseY-.82*scale],[baseX+.22*scale,baseY-.72*scale],
+        [baseX+.31*scale,baseY-.59*scale],[baseX+.26*scale,baseY-.49*scale],
+        [baseX+.11*scale,baseY-.54*scale],[baseX-.08*scale,baseY-.52*scale]
+      ],'pine',.24);
+      curve([baseX,baseY],[baseX-.055*scale,baseY-.21*scale],[baseX+.035*scale,baseY-.48*scale],[baseX-.015*scale,baseY-.73*scale],'ink',6.0,.95);
+      curve([baseX-.02*scale,baseY-.68*scale],[baseX-.15*scale,baseY-.82*scale],[baseX-.25*scale,baseY-.75*scale],[baseX-.34*scale,baseY-.60*scale],'ink',2.0,.86);
+      curve([baseX-.02*scale,baseY-.69*scale],[baseX+.12*scale,baseY-.84*scale],[baseX+.24*scale,baseY-.72*scale],[baseX+.32*scale,baseY-.56*scale],'soft',1.9,.82);
+      const curtains=[
+        [baseX-.29*scale,baseY-.62*scale,baseX-.36*scale,baseY-.12*scale],
+        [baseX-.19*scale,baseY-.72*scale,baseX-.23*scale,baseY-.02*scale],
+        [baseX-.06*scale,baseY-.75*scale,baseX-.09*scale,baseY+.005*scale],
+        [baseX+.10*scale,baseY-.70*scale,baseX+.15*scale,baseY-.09*scale],
+        [baseX+.24*scale,baseY-.60*scale,baseX+.31*scale,baseY-.17*scale]
       ];
-      tiers.forEach((tier,index)=>{
-        const leftPath=cubic([tier.x,tier.y],
-          [tier.x-.045,tier.y+.025],[tier.left+.055,tier.y+tier.drop*.76],[tier.left,tier.y+tier.drop]);
-        const rightPath=cubic([tier.x,tier.y+.012],
-          [tier.x+.045,tier.y+.035],[tier.right-.055,tier.y+tier.drop*.72],[tier.right,tier.y+tier.drop]);
-        add(leftPath,'ink',1.65,.78);
-        add(rightPath,'soft',1.45,.72);
-
-        // Small paired needle clusters follow each bough's slope with breathing room.
-        for(let j=1;j<=3;j++){
-          for(const [path,side] of [[leftPath,-1],[rightPath,1]]){
-            const point=path[Math.round(j/4*(path.length-1))];
-            const [x,y]=point;
-            add(cubic([x,y],[x+side*.012,y+.018],[x+side*.027,y+.032],[x+side*.043,y+.038]),
-              index===1&&j===2?'accent':'ink',.72,.62);
-            add(cubic([x,y+.008],[x-side*.010,y+.022],[x-side*.020,y+.034],[x-side*.028,y+.043]),
-              'soft',.62,.52);
-          }
+      curtains.forEach((f,i)=>{
+        const [sx,sy,ex,ey]=f;
+        const path=cubic([sx,sy],[sx+(ex-sx)*.20,sy+.18*scale],[ex+(sx-ex)*.18,ey-.16*scale],[ex,ey]);
+        add(path,i%2?'soft':'ink',1.25,.76);
+        for(let j=0;j<11;j++){
+          const t=.10+j*.078,pt=path[Math.round(t*(path.length-1))];
+          const side=(i+j)%2?1:-1;
+          leaf(pt[0],pt[1],(.025+(j%3)*.004)*scale,side*(.48+(j%2)*.25),j%5===0?'accent':(j%2?'soft':'pine'),.73);
         }
       });
-      // Fine upper twigs keep the crown light instead of forming a solid mesh.
-      add(cubic([.79,.30],[.75,.24],[.73,.20],[.71,.16]),'soft',1.0,.58);
-      add(cubic([.80,.32],[.84,.25],[.87,.22],[.91,.20]),'ink',1.0,.56);
-    }
-    // Small Japanese roof / pavilion silhouette, drawn as separate brush lines.
-    const roofY=.67,rx=.53;
-    add(cubic([rx-.145,roofY+.035],[rx-.070,roofY-.030],[rx+.070,roofY-.030],[rx+.145,roofY+.035]),'ink',2.4,.88);
-    add([[rx-.145,roofY+.035],[rx+.145,roofY+.035]],'ink',1.8,.84);
-    add([[rx-.105,roofY+.045],[rx-.105,roofY+.245],[rx+.105,roofY+.245],[rx+.105,roofY+.045]],'ink',1.65,.78);
-    add([[rx-.105,roofY+.245],[rx+.105,roofY+.245]],'ink',1.5,.78);
-    add(cubic([rx-.125,roofY+.25],[rx,roofY+.225],[rx+.125,roofY+.25],[rx+.155,roofY+.275]),'ink',1.45,.78);
-    // Weather-specific motifs make the library selection visible, not just metadata.
-    if(kind==='rain'||kind==='storm'){
-      // Rain-cloud scallops, falling brush strokes and repeated water rings.
-      add(cubic([.20,.30],[.24,.25],[.29,.27],[.31,.30]),'soft',1.5,.66);
-      add(cubic([.31,.30],[.34,.25],[.40,.25],[.43,.30]),'soft',1.5,.66);
-      // Drooping willow tassels: long, tapered, individually painted strokes.
-      if(kind==='rain'){
-        add(cubic([.17,.34],[.15,.48],[.20,.55],[.18,.67]),'ink',1.8,.65);
-        add(cubic([.20,.33],[.23,.48],[.20,.57],[.25,.70]),'soft',1.2,.68);
-        for(let i=0;i<9;i++){const x=.15+(i%3)*.035,y=.43+Math.floor(i/3)*.07;add(cubic([x,y],[x-.018,y+.045],[x-.010,y+.075],[x-.024,y+.12]),i%3?'ink':'soft',.8,.62);}
+    };
+
+    const addBamboo=(baseX=.84,baseY=1,scale=1)=>{
+      [-.13,0,.12].forEach((offset,i)=>{
+        const x=baseX+offset*scale;
+        curve([x,baseY],[x-.04*scale,baseY-.26*scale],[x+.04*scale,baseY-.55*scale],[x-.01*scale,baseY-.88*scale],'pine',2.4,.92);
+        for(let j=0;j<6;j++){
+          const y=baseY-(.15+j*.13)*scale;
+          curve([x-.01*scale,y],[x-.05*scale,y-.01*scale],[x-.10*scale,y-.035*scale],[x-.14*scale,y-.065*scale],'soft',.8,.58);
+          curve([x+.005*scale,y-.03*scale],[x+.05*scale,y-.045*scale],[x+.10*scale,y-.07*scale],[x+.15*scale,y-.10*scale],'ink',.8,.60);
+          leaf(x-.09*scale,y-.03*scale,.105*scale,-2.5-(j%2)*.24,'pine',.72);
+          leaf(x+.08*scale,y-.05*scale,.095*scale,-.35+(j%2)*.24,j%3?'soft':'accent',.68);
+        }
+      });
+    };
+
+    const addRocks=()=>{
+      shape([[.67,.96],[.70,.87],[.76,.84],[.81,.87],[.85,.81],[.90,.84],[.96,.82],[1.04,.90],[1.04,1.03],[.67,1.03]],'stone',.88);
+      shape([[.72,.90],[.77,.86],[.82,.87],[.85,.84],[.91,.87],[.88,.92],[.79,.93]],'soft',.60);
+      shape([[.86,.94],[.90,.88],[.95,.90],[.99,.91],[1.02,.96],[.93,.97]],'deep',.50);
+      curve([.69,.91],[.76,.87],[.82,.89],[.88,.86],'foam',.8,.44);
+      curve([.84,.96],[.91,.91],[.97,.92],[1.02,.95],'ink',1.0,.52);
+    };
+
+    const addPavilion=(cx=.80,cy=.73,scale=1)=>{
+      const x=cx,y=cy,s=scale;
+      shape([[x-.15*s,y],[x-.075*s,y-.045*s],[x,y-.078*s],[x+.075*s,y-.045*s],[x+.15*s,y+.006*s],[x+.105*s,y+.014*s],[x,y-.032*s],[x-.11*s,y+.014*s]],'deep',.91);
+      curve([x-.16*s,y+.008*s],[x-.08*s,y-.055*s],[x+.08*s,y-.055*s],[x+.16*s,y+.008*s],'ink',2.0,.96);
+      curve([x-.13*s,y+.02*s],[x-.04*s,y+.035*s],[x+.05*s,y+.035*s],[x+.13*s,y+.02*s],'soft',.9,.78);
+      for(const side of [-1,1]){
+        curve([x+side*.09*s,y+.02*s],[x+side*.087*s,y+.11*s],[x+side*.087*s,y+.17*s],[x+side*.087*s,y+.22*s],'ink',1.55,.88);
       }
-      for(let i=0;i<11;i++){const x=.19+(i%6)*.105,y=.34+Math.floor(i/6)*.045;add([[x,y],[x-.012,y+.045],[x-.02,y+.075]],'soft',.9,.48);}
-      for(let i=0;i<5;i++){
-        const x=.16+i*.16,y=.88+(i%2)*.035;
-        add(sample(t=>[x+Math.cos(t*Math.PI*2)*(.012+t*.025),y+Math.sin(t*Math.PI*2)*(.004+t*.008)],16),'water',.9,.52);
+      shape([[x-.058*s,y+.06*s],[x+.058*s,y+.06*s],[x+.058*s,y+.18*s],[x-.058*s,y+.18*s]],'gold',.52);
+      curve([x-.027*s,y+.07*s],[x-.027*s,y+.11*s],[x-.027*s,y+.15*s],[x-.027*s,y+.17*s],'foam',.55,.68);
+      curve([x+.027*s,y+.07*s],[x+.027*s,y+.11*s],[x+.027*s,y+.15*s],[x+.027*s,y+.17*s],'foam',.55,.68);
+      curve([x-.13*s,y+.23*s],[x-.02*s,y+.20*s],[x+.09*s,y+.20*s],[x+.16*s,y+.23*s],'ink',1.3,.72);
+    };
+
+    // Weather-specific foregrounds are separate compositions, never a single generic drawing.
+    if(kind==='storm'){
+      // A large breaking wave with a curled crest, foam lace and dark coastal rocks.
+      shape([[0,.76],[.08,.73],[.16,.66],[.24,.62],[.32,.66],[.39,.74],[.46,.84],[.54,.90],[.60,.96],[.60,1],[0,1]],'deep',.94);
+      wash([.03,.82],[.14,.66],[.25,.62],[.36,.76],'water',8,.36);
+      curve([.02,.83],[.13,.66],[.25,.63],[.37,.77],'deep',3.6,.96);
+      curve([.08,.91],[.20,.76],[.34,.73],[.49,.88],'water',3.0,.72);
+      curve([.18,.97],[.31,.84],[.44,.83],[.57,.95],'deep',2.0,.80);
+      curve([.20,.68],[.25,.59],[.34,.61],[.39,.73],'foam',2.8,.98);
+      curve([.24,.70],[.30,.64],[.36,.65],[.41,.77],'foam',1.45,.92);
+      curve([.28,.64],[.33,.61],[.38,.64],[.42,.70],'paper',.85,.82);
+      for(let i=0;i<22;i++){
+        const x=.10+(i*17%43)/100,y=.67+(i*13%24)/100;
+        curve([x,y],[x+.010,y-.018],[x+.027,y-.016],[x+.042,y-.032],i%3?'foam':'paper',.7,.78);
       }
-      if(kind==='storm'){
-        add(cubic([.10,.24],[.24,.14],[.40,.17],[.52,.25]),'ink',2.1,.72);
-        add([[.49,.30],[.46,.38],[.51,.37],[.47,.46]],'accent',2.0,.82);
-        // Large crashing wave and curling foam, built as layered brush arcs.
-        add(cubic([.02,.82],[.16,.66],[.28,.67],[.38,.82]),'water',10,.20,'wash');
-        add(cubic([.04,.80],[.18,.65],[.28,.66],[.40,.80]),'ink',2.8,.82);
-        add(cubic([.23,.84],[.32,.72],[.44,.74],[.52,.85]),'soft',5.5,.20,'wash');
-        add(cubic([.28,.79],[.38,.70],[.48,.76],[.53,.83]),'ink',1.9,.74);
-        for(let i=0;i<8;i++){const x=.12+i*.045,y=.73-(i%3)*.025;add(cubic([x,y],[x+.018,y-.025],[x+.035,y-.018],[x+.044,y-.035]),'paper',.9,.82);}
+      wash([.39,.86],[.50,.72],[.61,.75],[.75,.91],'water',7,.28);
+      curve([.40,.85],[.52,.74],[.63,.76],[.75,.92],'soft',1.8,.78);
+      addRocks();addPine(.91,1.02,.94);addPavilion(.75,.77,.78);
+      // Distant storm squalls are brushed across the mountain pass, not drawn as interface icons.
+      wash([.10,.25],[.24,.18],[.39,.19],[.53,.25],'soft',5,.18);
+      wash([.48,.30],[.60,.24],[.73,.25],[.87,.31],'mist',4.5,.17);
+      for(let i=0;i<14;i++){
+        const x=.10+i*.062,y=.31+(i%3)*.035;
+        curve([x,y],[x-.01,y+.025],[x-.023,y+.052],[x-.030,y+.077],'soft',.55,.52);
+      }
+    } else if(kind==='rain'){
+      // A willow over a still pond: cascading leaf curtains and a small waterside pavilion.
+      shape([[0,.78],[.12,.73],[.28,.77],[.45,.73],[.64,.77],[.82,.72],[1,.77],[1,1],[0,1]],'water',.44);
+      addWillow(.87,1.0,1.02);addPavilion(.23,.77,.82);
+      for(let i=0;i<21;i++){
+        const x=.06+(i*29%90)/100,y=.20+(i*17%48)/100;
+        curve([x,y],[x-.008,y+.025],[x-.018,y+.05],[x-.027,y+.08],'soft',.62,.58);
+      }
+      for(let i=0;i<12;i++){
+        const x=.06+i*.078,y=.84+(i%3)*.024;
+        curve([x,y],[x+.024,y-.006],[x+.052,y-.004],[x+.085,y],'water',.55,.44);
       }
     } else if(kind==='snow'){
-      for(let i=0;i<9;i++){
-        const x=.16+(i%3)*.28,y=.24+Math.floor(i/3)*.16;
-        add([[x-.012,y],[x+.012,y]],'soft',1.0,.70);add([[x,y-.012],[x,y+.012]],'soft',1.0,.70);
-        add([[x-.008,y-.008],[x+.008,y+.008]],'soft',.75,.58);
+      shape([[0,.80],[.16,.73],[.32,.78],[.49,.71],[.66,.77],[.84,.72],[1,.79],[1,1],[0,1]],'foam',.76);
+      addPine(.88,1.02,1.12);addPavilion(.22,.78,.76);
+      for(let i=0;i<26;i++){
+        const x=.05+(i*23%92)/100,y=.20+(i*31%58)/100;
+        curve([x,y],[x-.003,y+.01],[x-.01,y+.02],[x-.014,y+.03],'snow',.64,.86);
       }
-      for(let i=0;i<6;i++){const x=.78+(i-2.5)*.035,y=.45+i*.045;add([[x-.018,y],[x+.016,y-.006],[x+.035,y+.002]],'paper',2.2,.86);}
-    } else if(kind==='fog'){
-      for(let i=0;i<5;i++)add(cubic([.03,.47+i*.065],[.24,.42+i*.065],[.62,.52+i*.065],[.98,.46+i*.065]),'wash',6.5,.18,'wash');
-    } else if(kind==='wind'||kind==='bamboo'){
-      for(let i=0;i<7;i++){const x=.20+i*.11,y=.40+(i%3)*.06;add(cubic([x,y],[x+.06,y-.07],[x+.13,y+.04],[x+.22,y-.03]),'soft',1.15,.62);}
-      for(let i=0;i<8;i++){const x=.82+(i%2)*.018,y=.29+i*.036;add(cubic([x,y],[x+.07,y-.01],[x+.12,y-.05],[x+.16,y-.02]),i%3?'ink':'accent',1.0,.72);}
+      for(let i=0;i<10;i++){
+        const x=.74+(i%2)*.04,y=.37+i*.045;
+        curve([x,y],[x+.02,y-.018],[x+.045,y-.015],[x+.066,y-.026],'snow',1.25,.92);
+      }
     } else if(kind==='cloudy'){
-      for(let i=0;i<4;i++)add(cubic([.08,.30+i*.055],[.20,.25+i*.055],[.31,.35+i*.055],[.45,.30+i*.055]),'soft',1.7,.55);
+      shape([[0,.79],[.17,.73],[.34,.77],[.52,.72],[.71,.77],[.89,.72],[1,.78],[1,1],[0,1]],'water',.30);
+      addWillow(.84,1.0,.96);addPavilion(.25,.78,.80);
+      for(let i=0;i<6;i++){
+        const y=.30+i*.055;
+        wash([.02,y],[.24,y-.04],[.56,y+.03],[.98,y-.01],'mist',5,.21);
+      }
+    } else if(kind==='fog'){
+      shape([[0,.79],[.18,.73],[.38,.77],[.58,.72],[.78,.76],[1,.73],[1,1],[0,1]],'water',.20);
+      addPavilion(.72,.75,1.0);
+      for(let i=0;i<9;i++){
+        const y=.34+i*.052;
+        wash([-.02,y],[.23,y-.035],[.68,y+.03],[1.03,y-.01],'mist',5.8,.25);
+      }
+    } else if(kind==='wind'){
+      shape([[0,.80],[.16,.74],[.34,.78],[.53,.72],[.73,.77],[1,.73],[1,1],[0,1]],'water',.27);
+      addBamboo(.84,1.02,1.0);addPine(.16,1.0,.58);
+      for(let i=0;i<10;i++){
+        const x=.04+i*.103,y=.31+(i%3)*.055;
+        curve([x,y],[x+.08,y-.06],[x+.15,y+.035],[x+.24,y-.025],'soft',.86,.62);
+      }
     } else if(kind==='night'){
-      for(let i=0;i<9;i++){const x=.13+(i*37%70)/100,y=.18+(i*23%32)/100;add([[x-.006,y],[x+.006,y]],'soft',.9,.68);add([[x,y-.006],[x,y+.006]],'soft',.9,.68);}
+      shape([[0,.79],[.17,.73],[.34,.77],[.53,.71],[.72,.77],[.90,.72],[1,.77],[1,1],[0,1]],'water',.32);
+      addPine(.88,1.0,1.0);addPavilion(.23,.77,.78);
+      for(let i=0;i<18;i++){
+        const x=.05+(i*31%90)/100,y=.16+(i*19%48)/100;
+        curve([x,y],[x+.006,y-.006],[x+.015,y-.006],[x+.022,y],'foam',.55,.58);
+      }
     } else {
-      add(cubic([.13,.34],[.24,.28],[.33,.30],[.43,.34]),'soft',1.25,.48);
+      shape([[0,.80],[.16,.74],[.35,.78],[.54,.72],[.73,.77],[.91,.72],[1,.78],[1,1],[0,1]],'water',.24);
+      addPine(.88,1.0,1.0);addPavilion(.24,.77,.78);
     }
-    // Atmospheric cloud banks and distant reflected ridges make each study read as a complete landscape.
-    add(cubic([.04,.42],[.19,.36],[.32,.39],[.45,.43]),'wash',6.0,.13,'wash');
-    add(cubic([.54,.46],[.68,.39],[.84,.42],[1.03,.45]),'wash',5.0,.12,'wash');
-    add(cubic([.02,.76],[.22,.69],[.38,.71],[.56,.77]),'soft',1.0,.34);
-    add(cubic([.42,.79],[.61,.72],[.80,.73],[1.02,.78]),'ink',1.0,.30);
-    // A few short water / ground lines anchor the composition.
-    for(let i=0;i<9;i++){
-      const y=.86+i*.014;
-      add(cubic([.08,y],[.26,y-.018],[.48,y+.012],[.70,y-.006]),'water',.78,.34);
-      if(i%2===0)add(cubic([.55,y+.018],[.70,y],[.86,y+.02],[.98,y+.01]),'soft',.62,.27);
-    }
-    return {study,strokes,paper};
-  }
 
+    // Shore reeds, broken reflections and a few pigment flecks complete the composition.
+    for(let i=0;i<8;i++){
+      const x=.04+i*.03,y=.91+(i%2)*.025;
+      curve([x,y],[x-.012,y-.06],[x+.012,y-.10],[x+.02,y-.14],'soft',.60,.48);
+    }
+    for(let i=0;i<12;i++){
+      const x=.06+(i*23%90)/100,y=.94+(i%3)*.014;
+      curve([x,y],[x+.04,y-.008],[x+.09,y+.004],[x+.13,y],'water',.48,.38);
+    }
+    return {study,strokes,paper:'#f3efe5'};
+  }
   function makeArtStudioPainter(canvas,onProgress){
     let ctx=null;try{ctx=canvas.getContext('2d',{alpha:true});}catch(_){ctx=null;}
     if(!ctx)return {setState(){},replay(){},stop(){}};
@@ -1195,10 +1308,17 @@
     const colors=()=>({
       ink:current?.phase==='night'?'#e6eee4':'#26312b',
       soft:current?.phase==='night'?'#b8c9be':'#718074',
-      ridge:current?.phase==='night'?'#8ca398':'#9aa99d',
-      water:current?.phase==='night'?'#98bdb5':'#789a98',
+      ridge:current?.phase==='night'?'#8ca398':'#a7b1a5',
+      water:current?.phase==='night'?'#98bdb5':'#71928e',
       accent:current?.phase==='night'?'#e58d7b':'#c77b75',
-      paper:current?.phase==='night'?'#293a36':'#f3efe5'
+      paper:current?.phase==='night'?'#293a36':'#f3efe5',
+      deep:current?.phase==='night'?'#243a35':'#405851',
+      pine:current?.phase==='night'?'#809b8d':'#526b58',
+      foam:current?.phase==='night'?'#dce6dc':'#f8f5eb',
+      snow:current?.phase==='night'?'#eef1e8':'#fbfaf1',
+      stone:current?.phase==='night'?'#536b62':'#59655d',
+      gold:current?.phase==='night'?'#a98a58':'#c69a5e',
+      mist:current?.phase==='night'?'#bdcfc3':'#e8e7dc'
     });
 
     function strokeOne(stroke,portion){
@@ -1208,7 +1328,14 @@
         stroke.tone==='soft'?palette.soft:
         stroke.tone==='ridge'?palette.ridge:
         stroke.tone==='water'?palette.water:
-        stroke.tone==='paper'?palette.paper:palette.ink;
+        stroke.tone==='paper'?palette.paper:
+        stroke.tone==='deep'?palette.deep:
+        stroke.tone==='pine'?palette.pine:
+        stroke.tone==='foam'?palette.foam:
+        stroke.tone==='snow'?palette.snow:
+        stroke.tone==='stone'?palette.stone:
+        stroke.tone==='gold'?palette.gold:
+        stroke.tone==='mist'?palette.mist:palette.ink;
       const points=stroke.points;
       const scaled=points.map(pt=>[pt[0]*width,pt[1]*height]);
       const total=scaled.length-1;
@@ -1219,7 +1346,7 @@
       ctx.globalAlpha=stroke.alpha??.75;
       ctx.strokeStyle=tone;
       ctx.lineWidth=isWash
-        ?Math.max(5,Math.min(38,stroke.weight*Math.min(width,height)/62))
+        ?Math.max(3,Math.min(22,stroke.weight*Math.min(width,height)/140))
         :Math.max(.9,Math.min(18,stroke.weight*Math.min(width,height)/105));
       ctx.lineCap='round';
       ctx.lineJoin='round';
@@ -1234,16 +1361,26 @@
           x=scaled[index][0]+(next[0]-scaled[index][0])*fraction;
           y=scaled[index][1]+(next[1]-scaled[index][1])*fraction;
         }
-        ctx.lineTo(x,y);
+        if(!isFill&&!isWash&&i<visible){
+          const next=scaled[Math.min(index+1,scaled.length-1)];
+          const midX=(x+next[0])*.5,midY=(y+next[1])*.5;
+          ctx.quadraticCurveTo(x,y,midX,midY);
+        }else ctx.lineTo(x,y);
       }
       if(isFill&&portion>=1){
         ctx.closePath();
-        ctx.fillStyle=tone;
+        const fill=ctx.createLinearGradient(0,0,0,height);
+        fill.addColorStop(0,tone);
+        fill.addColorStop(1,palette.paper);
+        ctx.fillStyle=fill;
         ctx.fill();
-      }
-      ctx.stroke();
+        ctx.globalAlpha=(stroke.alpha??.75)*.48;
+        ctx.strokeStyle=tone;
+        ctx.lineWidth=Math.max(.5,Math.min(1.4,Math.min(width,height)/210));
+        ctx.stroke();
+      }else ctx.stroke();
       // A restrained dry-brush echo gives the marks an ink-on-paper edge.
-      if(!isWash&&stroke.weight>1.2){
+      if(!isWash&&!isFill&&stroke.weight>1.2){
         ctx.globalAlpha=(stroke.alpha??.75)*.17;
         ctx.lineWidth=Math.max(.4,ctx.lineWidth*.45);
         ctx.translate(.65,-.45);
@@ -1255,8 +1392,17 @@
     function drawFrame(progress){
       const palette=colors();
       ctx.clearRect(0,0,width,height);
-      ctx.fillStyle=palette.paper;
-      ctx.fillRect(0,0,width,height);
+      const paperWash=ctx.createLinearGradient(0,0,width,height);
+      paperWash.addColorStop(0,current?.phase==='night'?'#31423b':'#f7f3e9');
+      paperWash.addColorStop(1,palette.paper);
+      ctx.fillStyle=paperWash;ctx.fillRect(0,0,width,height);
+      // Fine, deterministic paper fibres stay subtle so the painting remains clean.
+      ctx.save();ctx.globalAlpha=current?.phase==='night'?.055:.045;ctx.strokeStyle=palette.soft;ctx.lineWidth=.42;
+      for(let i=0;i<92;i++){
+        const x=(i*73.17)%width,y=(i*41.93)%height;
+        ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+2.2+(i%4),y+(i%3===0?.45:-.35));ctx.stroke();
+      }
+      ctx.restore();
 
       // A clear moon after dark; a softly washed vermilion sun during the day.
       ctx.save();

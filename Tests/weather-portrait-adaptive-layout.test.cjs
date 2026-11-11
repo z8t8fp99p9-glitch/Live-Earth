@@ -4,9 +4,9 @@ const path=require('node:path');
 const source=fs.readFileSync(path.join(__dirname,'..','Weather','weather-view.js'),'utf8');
 
 // The main scene canvas fills its own stage; readings are layered inside that same scene.
-assert.ok(source.includes('height:clamp(168px,20dvh,192px);'));
+assert.ok(source.includes('height:clamp(142px,16.5dvh,154px);'));
 assert.ok(source.includes('padding-top:calc(env(safe-area-inset-top) + clamp(20px,2.4dvh,28px));'));
-assert.ok(source.includes('font-size:14px;'));
+assert.ok(source.includes('font-size:18px;'));
 assert.ok(source.includes('drawMinimalLandscape(p,t);'));
 assert.ok(!source.includes('const compactLandscape='));
 assert.ok(source.includes('.le-weather-temperature-row {\n          position:absolute;'));
@@ -16,7 +16,7 @@ assert.ok(source.includes('<div class="le-weather-temperature-row">'));
 assert.ok(!source.includes('aspect-ratio:4 / 1;'));
 
 // Live Art painting fills the inset card edge-to-edge, with title/status and footer floating above.
-assert.ok(source.includes('width:min(95vw,760px);'));
+assert.ok(source.includes('width:min(95vw,760px, max(260px, calc((100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,112px) - 360px) * 1.428571)));'));
 assert.ok(source.includes('aspect-ratio:10 / 7;'));
 assert.ok(source.includes('margin-left:calc(50% - min(47.5vw,380px));'));
 assert.ok(source.includes('margin-right:calc(50% - min(47.5vw,380px));'));
@@ -30,7 +30,7 @@ assert.ok(source.includes('pointer-events:auto;'));
 
 // Weather art studies preserve recognisable willow and more natural, separated pine boughs.
 assert.ok(source.includes('const curtains=['));
-assert.ok(source.includes("study.motif==='willow'"));
+assert.ok(source.includes("kind==='rain'"));
 assert.ok(source.includes('const tiers=['));
 assert.ok(source.includes('short needle marks replace the old dense lattice'));
 assert.ok(source.includes('drawFrame(1);'));
@@ -48,7 +48,7 @@ assert.ok(!/weatherDock\.style\.(?:bottom|top|left|right|transform|width|height)
 
 // Keep data, landscape layout, privacy and the no-hours-rail decision.
 assert.ok(source.includes('@media (orientation:landscape) and (min-width:650px)'));
-assert.ok(source.includes('grid-template-columns:minmax(218px,.42fr) minmax(0,1fr);'));
+assert.ok(source.includes('grid-template-columns:minmax(248px,.72fr) minmax(0,1fr);'));
 assert.ok(source.includes('grid-template-areas:"forecast artwork"'));
 assert.ok(source.includes('Open-Meteo'));
 assert.ok(source.includes('liveEarthLocationAllowed'));

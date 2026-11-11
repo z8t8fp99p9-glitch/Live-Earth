@@ -14,14 +14,14 @@ assert.ok(source.includes('font-size:clamp(12px,1.35vw,14px)'));
 assert.ok(source.includes('font-size:clamp(9px,1.05vw,11px)'));
 
 // Live Art is the feature area; Weather is a compact, quieter overview.
-assert.ok(source.includes('grid-template-columns:minmax(218px,.42fr) minmax(0,1fr);'));
+assert.ok(source.includes('grid-template-columns:minmax(248px,.72fr) minmax(0,1fr);'));
 assert.ok(source.includes('grid-template-areas:"forecast artwork"'));
 assert.ok(source.includes('font-size:clamp(22px,2.8vw,31px)'));
 assert.ok(source.includes('white-space:normal;\n          overflow:visible;\n          text-overflow:clip;'));
 assert.ok(source.includes('Live Art keeps the same 10:7 frame in both orientations.'));
 assert.ok(source.includes('function drawMinimalLandscape(p,t)'));
-assert.ok(source.includes('--le-weather-landscape-height:clamp(190px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,126px) - 80px),292px);'));
-assert.ok(source.includes('width:min(100%,calc((var(--le-weather-landscape-height) - 20px) * 1.428571));'));
+assert.ok(source.includes('--le-weather-landscape-height:clamp(210px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,116px) - 58px),300px);'));
+assert.ok(source.includes('width:min(100%,calc((var(--le-weather-landscape-height) - 18px) * 1.428571));'));
 assert.ok(source.includes('place-items:center;'));
 assert.ok(source.includes('justify-self:center;'));
 assert.ok(source.includes('align-self:center;'));
@@ -30,8 +30,8 @@ assert.ok(!source.includes('const compactLandscape='));
 
 // The portrait full-card 10:7 Live Art remains independent of landscape treatment.
 assert.ok(source.includes('aspect-ratio:10 / 7;'));
-assert.ok(source.includes('width:min(100%,calc((var(--le-weather-landscape-height) - 20px) * 1.428571));'));
-assert.ok(source.includes('width:min(95vw,760px);'));
+assert.ok(source.includes('width:min(100%,calc((var(--le-weather-landscape-height) - 18px) * 1.428571));'));
+assert.ok(source.includes('width:min(95vw,760px, max(260px, calc((100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,112px) - 360px) * 1.428571)));'));
 assert.ok(source.includes('grid-template-areas:"headline" "scene" "summary" "studio";'));
 
 // The dock remains read-only and no hours-ahead forecast is reintroduced.

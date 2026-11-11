@@ -15,21 +15,21 @@ assert.ok(drawBody.includes('drawMinimalLandscape(p,t);'));
 assert.ok(!drawBody.includes('drawMountains('));
 assert.ok(!drawBody.includes('drawPagoda('));
 assert.ok(!drawBody.includes('drawBambooAndLeaves('));
-assert.ok(source.includes('const horizon=height*.76;'));
-assert.ok(source.includes('Two quiet ink-wash ridges'));
+assert.ok(source.includes('const horizon=height*.79;'));
+assert.ok(source.includes('Japanese landscape foreground'));
 
 // Weather copy remains prominent and readable in both orientations.
 assert.ok(source.includes('font-size:clamp(58px,6.8vw,72px)'));
 assert.ok(source.includes('font-size:clamp(14px,1.7vw,17px)'));
-assert.ok(source.includes('font-size:14px;'));
+assert.ok(source.includes('font-size:18px;'));
 
 // Portrait receives breathing room below the physical top safe area.
 assert.ok(source.includes('padding-top:calc(env(safe-area-inset-top) + clamp(20px,2.4dvh,28px));'));
-assert.ok(source.includes('height:clamp(168px,20dvh,192px);'));
+assert.ok(source.includes('height:clamp(142px,16.5dvh,154px);'));
 
 // Landscape preserves the 10:7 art ratio and centres it in the available feature area.
-assert.ok(source.includes('--le-weather-landscape-height:clamp(190px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,126px) - 80px),292px);'));
-assert.ok(source.includes('width:min(100%,calc((var(--le-weather-landscape-height) - 20px) * 1.428571));'));
+assert.ok(source.includes('--le-weather-landscape-height:clamp(210px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,116px) - 58px),300px);'));
+assert.ok(source.includes('width:min(100%,calc((var(--le-weather-landscape-height) - 18px) * 1.428571));'));
 assert.ok(source.includes('aspect-ratio:10 / 7;'));
 assert.ok(source.includes('place-items:center;'));
 assert.ok(source.includes('justify-self:center;'));

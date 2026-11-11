@@ -8,15 +8,15 @@ const source = fs.readFileSync(
 );
 
 assert.ok(source.includes('@media (orientation:landscape) and (min-width:650px)'));
-assert.ok(source.includes('grid-template-columns:minmax(218px,.42fr) minmax(0,1fr);'));
+assert.ok(source.includes('grid-template-columns:minmax(248px,.72fr) minmax(0,1fr);'));
 assert.ok(source.includes('grid-template-areas:"forecast artwork";'));
 assert.ok(source.includes('grid-area:forecast;'));
 assert.ok(source.includes('grid-area:artwork;'));
 assert.ok(source.includes('grid-template-rows:auto minmax(82px,1fr) auto;'));
 assert.ok(source.includes('grid-template-areas:"hero" "scene" "summary";'));
 assert.ok(source.includes('height:100%;'));
-assert.ok(source.includes('--le-weather-landscape-height:clamp(190px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,126px) - 80px),292px);'));
-assert.ok(source.includes('width:min(100%,calc((var(--le-weather-landscape-height) - 20px) * 1.428571));'));
+assert.ok(source.includes('--le-weather-landscape-height:clamp(210px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,116px) - 58px),300px);'));
+assert.ok(source.includes('width:min(100%,calc((var(--le-weather-landscape-height) - 18px) * 1.428571));'));
 assert.ok(source.includes('aspect-ratio:10 / 7;'));
 assert.ok(source.includes('place-items:center;'));
 assert.ok(source.includes('justify-self:center;'));
@@ -39,7 +39,7 @@ assert.ok(hero > forecast && scene > hero && summary > scene);
 assert.ok(artwork > summary && studio > artwork);
 assert.ok(source.includes('padding-left:max(env(safe-area-inset-left),clamp(40px,5.8vw,64px))'));
 assert.ok(source.includes('padding-right:max(env(safe-area-inset-right),clamp(40px,5.8vw,64px))'));
-assert.ok(source.includes('grid-template-columns:minmax(218px,.42fr) minmax(0,1fr);'));
+assert.ok(source.includes('grid-template-columns:minmax(248px,.72fr) minmax(0,1fr);'));
 assert.ok(source.includes('font-size:clamp(12px,1.35vw,14px)'));
 assert.ok(source.includes('font-size:clamp(22px,2.8vw,31px)'));
 assert.ok(source.includes('function drawMinimalLandscape(p,t)'));

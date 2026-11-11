@@ -21,7 +21,7 @@ Japanese influence is visual artwork only. Do not add Japanese-language interfac
 
 ## Portrait composition — approved reference behaviour
 
-- The entire portrait content group starts comfortably below the iPhone status/safe area. Add 20–28 px of breathing room after `safe-area-inset-top`; do not pin the brand or scene controls to the top edge.
+- The entire portrait content group starts comfortably below the iPhone status/safe area and uses a compact Weather scene to preserve room for the full Live Art card above the Orb dock. Add 20–28 px of breathing room after `safe-area-inset-top`; do not pin the brand or scene controls to the top edge.
 - The top header and date/scene selector remain compact.
 - The editorial headline sits above the main illustrated scene.
 - **The main temperature and condition are overlays inside the same full-width weather illustration.** They must read as one composed visual, not as a separate information card next to or above a small landscape strip.
@@ -34,7 +34,7 @@ Japanese influence is visual artwork only. Do not add Japanese-language interfac
 
 ## Landscape composition — centred Live Art frame
 
-- Use a balanced asymmetric safe-width split: the Weather overview uses about 42% and the Live Art feature area about 58% (`minmax(218px,.42fr) minmax(0,1fr)` before the shared gutter). The card itself does not stretch to fill that area.
+- Use a balanced asymmetric safe-width split: the Weather overview uses about 42% and the Live Art feature area about 58% (`minmax(248px,.72fr) minmax(0,1fr)` before the shared gutter). The card itself does not stretch to fill that area; its 10:7 frame is centred within the feature column and scaled from the usable vertical space.
 - Live Art keeps the same **10:7 width-to-height ratio in both orientations**. In landscape, calculate its width from the usable dashboard height, then reduce it slightly to leave balanced top and bottom breathing room, and centre it horizontally and vertically inside the Live Art feature area rather than pinning it to the top edge.
 - Keep the masthead on one landscape row: brand, date/time, location and scene selector. Respect both `safe-area-inset-left` and `safe-area-inset-right`, and increase label sizes so the notch and rounded corners cannot obscure them.
 - The left Weather column is intentionally quiet: a concise headline, temperature and condition overlaid in one minimalist Canvas 2D weather scene, and only high/low, rain chance and wind.

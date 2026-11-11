@@ -14,7 +14,7 @@ for (const selector of [
 ]) assert.ok(tool.includes(selector), `Missing Weather editor selector: ${selector}`);
 
 assert.ok(tool.includes('The temperature and condition are layered inside the full Weather scene'));
-assert.ok(tool.includes('Landscape uses a balanced Weather column and centres the 10:7 Live Art frame in the available feature area.'));
+assert.ok(tool.includes('Landscape uses a balanced 42/58 Weather-to-Live-Art split and centres the 10:7 Live Art frame in the available feature area.'));
 assert.ok(tool.includes('no artificial canvas sizing overrides'));
 assert.ok(tool.includes('.le-weather-forecast-column'));
 assert.ok(tool.includes('.le-weather-art-column'));
