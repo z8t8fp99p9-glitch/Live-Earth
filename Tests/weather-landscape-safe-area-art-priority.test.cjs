@@ -13,8 +13,17 @@ assert.ok(source.includes('padding-right:max(env(safe-area-inset-right),clamp(40
 assert.ok(source.includes('font-size:clamp(12px,1.35vw,14px)'));
 assert.ok(source.includes('font-size:clamp(9px,1.05vw,11px)'));
 
-// Live Art is the feature area; Weather is a compact, quieter overview.
+// Both paintings remain substantial; landscape Weather readings are layered over its full scene.
 assert.ok(source.includes('grid-template-columns:minmax(248px,.72fr) minmax(0,1fr);'));
+const landscapeStart = source.indexOf('@media (orientation:landscape) and (min-width:650px) {');
+const landscapeEnd = source.indexOf('@media (orientation:landscape) and (min-width:650px) and (max-width:820px)', landscapeStart);
+const landscapeCss = source.slice(landscapeStart, landscapeEnd);
+assert.ok(landscapeCss.includes('grid-template-rows:minmax(0,1fr) auto;'));
+assert.ok(landscapeCss.includes('grid-template-areas:"scene" "summary";'));
+assert.ok(landscapeCss.includes('top:clamp(90px,20vh,102px);'));
+assert.ok(landscapeCss.includes('position:absolute;\n          z-index:4;\n          top:0;'));
+assert.ok(landscapeCss.includes('min-height:120px;'));
+assert.ok(landscapeCss.includes('position:absolute;\n          z-index:3;'));
 assert.ok(source.includes('grid-template-areas:"forecast artwork"'));
 assert.ok(source.includes('font-size:clamp(22px,2.8vw,31px)'));
 assert.ok(source.includes('white-space:normal;\n          overflow:visible;\n          text-overflow:clip;'));
@@ -33,6 +42,13 @@ assert.ok(source.includes('aspect-ratio:10 / 7;'));
 assert.ok(source.includes('width:min(100%,calc((var(--le-weather-landscape-height) - 18px) * 1.428571));'));
 assert.ok(source.includes('width:min(90vw,760px,max(260px,calc((100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,112px) - 360px) * 1.428571)));'));
 assert.ok(source.includes('grid-template-areas:"scene" "summary" "studio";'));
+const portraitStart = source.indexOf('/* Portrait composition:');
+const portraitEnd = source.indexOf('@media(prefers-reduced-motion:reduce)', portraitStart);
+const portraitCss = source.slice(portraitStart, portraitEnd);
+assert.ok(portraitStart >= 0 && portraitEnd > portraitStart);
+assert.ok(portraitCss.includes('top:clamp(108px,15dvh,132px);'));
+assert.ok(portraitCss.includes('width:min(90vw,760px,max(260px,calc((100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,112px) - 360px) * 1.428571)));'));
+assert.ok(portraitCss.includes('height:var(--le-weather-scene-height,clamp(24dvh,30dvh,38dvh));'));
 
 // The dock remains read-only and no hours-ahead forecast is reintroduced.
 assert.ok(source.includes("document.getElementById('le-feature-dock')"));
