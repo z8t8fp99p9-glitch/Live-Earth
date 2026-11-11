@@ -456,7 +456,7 @@
         .le-weather-studio {
           box-sizing:border-box;
           position:relative;
-          width:min(95vw,760px, max(0px, calc((100svh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - var(--le-weather-dock-clearance,112px) - var(--le-weather-scene-height,30dvh) - 19rem) * 1.428571)));
+          width:min(95vw,760px,max(260px,calc((100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,112px) - 360px) * 1.428571)));
           height:auto;
           aspect-ratio:10 / 7;
           margin-inline:auto;

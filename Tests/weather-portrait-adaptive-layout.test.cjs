@@ -16,7 +16,9 @@ assert.ok(source.includes('<div class="le-weather-temperature-row">'));
 assert.ok(!source.includes('aspect-ratio:4 / 1;'));
 
 // Live Art painting fills the inset card edge-to-edge, with title/status and footer floating above.
-assert.ok(source.includes('width:min(95vw,760px, max(0px, calc((100svh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - var(--le-weather-dock-clearance,112px) - var(--le-weather-scene-height,30dvh) - 19rem) * 1.428571)));'));
+assert.ok(source.includes('width:min(95vw,760px,max(260px,calc((100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,112px) - 360px) * 1.428571)));'));
+assert.ok(!source.includes('max(0px, calc((100svh'));
+assert.ok(source.includes('aspect-ratio:10 / 7;'));
 assert.ok(source.includes('aspect-ratio:10 / 7;'));
 assert.ok(source.includes('margin-inline:auto;'));
 assert.ok(source.includes(''));
