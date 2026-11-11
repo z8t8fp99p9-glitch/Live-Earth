@@ -24,12 +24,15 @@ Japanese influence is visual artwork only. Do not add Japanese-language interfac
 - Keep the lower area quiet so the shared Orb dock remains visually clear. Do not add an hours-ahead rail to fill the space.
 - Preserve safe-area spacing and calculate scroll clearance from the existing shared Orb dock without styling or moving it.
 
-## Landscape composition
+## Landscape composition — approved 50/50 split
 
-- Keep the existing responsive two-column layout rather than stretching the portrait stack.
-- The weather headline/readings remain coordinated with the main illustration, with the temperature/condition overlay inside its scene.
-- The Live Art canvas fills its card, with the same floating title/status and footer controls.
-- Keep both columns within the viewport width and retain safe-area and Orb-dock clearance.
+- Use two equal flexible columns: **50% Weather overview on the left and 50% Live Art on the right**, measured within the safe content width. The inter-column gutter is shared equally and must not create a wider preferred side.
+- Keep the shared header and date/scene selector across the top.
+- The left Weather column contains the editorial headline, then one continuous full-scene illustration with the temperature and condition overlaid inside that same artwork, then the high/low, rain chance and wind summary.
+- The right Live Art column is one complete painted card. Its canvas fills the card; title/status float over the top and caption/Replay float over the bottom.
+- Give both columns the same available dashboard height. Do not retain the previous asymmetric `.88fr / 1.12fr` ratio or place the main Weather illustration on a separate side from its readings.
+- Keep the shared Orb dock centred and untouched. Use the existing measured dock-clearance variable for content spacing; never style, resize or reposition the dock from Weather.
+- Use responsive height limits and allow natural scrolling on shorter landscape viewports. Do not force a desktop dashboard or crop content beneath the shared dock.
 
 ## Illustration and Live Art behaviour
 
@@ -53,3 +56,10 @@ Japanese influence is visual artwork only. Do not add Japanese-language interfac
 ## Protected scope
 
 Changes are limited to `Weather/weather-view.js`, `Tools/WEATHER-LAYOUT-EDITOR.html`, this Weather design note and Weather-specific regression tests. Do not alter Home, Earth/Earth Engine, Moon, Sun, Location, Global Orb/navigation lifecycle, Stacks runtime, service worker, update manager, databases or unrelated views.
+
+
+## Orientation-specific composition (11 November 2026)
+
+- **Portrait:** keep the editorial weather story vertically stacked. Live Art is centered at 95% of the viewport width and uses a 10:7 width-to-height ratio (height is 70% of width). The painting fills the card; title, status, caption and Replay remain overlaid.
+- **Landscape:** use equal 1fr / 1fr columns. Weather information and its integrated weather illustration occupy the left half; the full-card Live Art painting occupies the right half.
+- The shared Orb dock remains owned and positioned by the existing global controller in both orientations. Weather only measures its bounds to reserve clearance.

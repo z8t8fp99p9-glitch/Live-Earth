@@ -74,18 +74,257 @@
       .le-weather-screen[data-weather="rain"],.le-weather-screen[data-weather="storm"]{--accent:#4e8285}.le-weather-screen[data-weather="snow"]{--accent:#718c9e}.le-weather-screen[data-weather="hot"]{--accent:#bd6945}
       .le-weather-attribution{margin:13px 1px 0;color:var(--muted);font-size:7px;line-height:1.4;opacity:.78}
       @media(min-width:600px) and (orientation:portrait){.le-weather-content{width:min(100%,760px);padding-left:clamp(32px,7vw,60px);padding-right:clamp(32px,7vw,60px)}.le-weather-headline{font-size:clamp(64px,9vw,88px)}.le-weather-temperature{font-size:126px}.le-weather-art-stage{height:clamp(240px,34vh,320px)}.le-weather-studio-canvas{height:clamp(210px,30vh,280px)}}
-      @media(orientation:landscape) and (min-width:650px){
-        .le-weather-screen{overflow-y:auto}
-        .le-weather-content{width:min(100%,1380px);min-height:100%;padding:calc(env(safe-area-inset-top) + 12px) clamp(24px,4vw,56px) calc(env(safe-area-inset-bottom) + 160px)}
-        .le-weather-dashboard{grid-template-columns:minmax(280px,.88fr) minmax(380px,1.12fr);grid-template-areas:"hero scene" "summary studio";column-gap:clamp(24px,4vw,54px);row-gap:12px;margin-top:16px}
-        .le-weather-headline{font-size:clamp(46px,5vw,72px)}.le-weather-temperature{font-size:clamp(82px,8vw,110px)}
-        .le-weather-art-stage{height:clamp(190px,32vh,270px);margin:0;align-self:stretch}
-        .le-weather-summary{align-self:start;padding:13px 0}
-        
-        .le-weather-studio{align-self:stretch;padding:15px 16px 12px}.le-weather-studio-canvas{height:clamp(190px,26vh,218px)}.le-weather-studio-title{font-size:23px}
+      /* Landscape: an intentional 50/50 composition, not a rotated portrait stack.
+         Weather and its illustration share the left half; full-card Live Art owns the right. */
+      @media (orientation:landscape) and (min-width:650px) {
+        .le-weather-screen { overflow-y:auto; }
+        .le-weather-content {
+          width:min(100%,1380px);
+          min-height:100%;
+          padding:calc(env(safe-area-inset-top) + 8px)
+            clamp(20px,3vw,44px)
+            var(--le-weather-dock-clearance,calc(env(safe-area-inset-bottom) + 92px));
+        }
+        .le-weather-topbar { min-height:26px; }
+        .le-weather-date-row {
+          margin-top:clamp(5px,1.2vh,8px);
+          min-height:26px;
+        }
+        .le-weather-dashboard {
+          display:grid;
+          grid-template-columns:repeat(2,minmax(0,1fr));
+          grid-template-areas:"forecast artwork";
+          column-gap:clamp(14px,2vw,22px);
+          row-gap:0;
+          align-items:stretch;
+          height:clamp(242px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,96px) - 72px),320px);
+          margin-top:clamp(7px,1.5vh,12px);
+        }
+        .le-weather-forecast-column {
+          grid-area:forecast;
+          display:grid;
+          grid-template-columns:minmax(0,1fr);
+          grid-template-rows:auto minmax(0,1fr) auto;
+          grid-template-areas:"hero" "scene" "summary";
+          row-gap:6px;
+          min-width:0;
+          min-height:0;
+        }
+        .le-weather-art-column {
+          grid-area:artwork;
+          display:grid;
+          grid-template-columns:minmax(0,1fr);
+          grid-template-rows:minmax(0,1fr);
+          grid-template-areas:"studio";
+          min-width:0;
+          min-height:0;
+        }
+        .le-weather-hero {
+          grid-area:hero;
+          display:block;
+          position:relative;
+          z-index:2;
+          max-width:none;
+          min-width:0;
+          margin:0;
+        }
+        .le-weather-headline {
+          max-width:78%;
+          font-size:clamp(37px,4.7vw,48px);
+          line-height:.86;
+          letter-spacing:-.06em;
+        }
+        .le-weather-headline:after {
+          width:30px;
+          height:2px;
+          margin:8px 0 5px;
+        }
+        .le-weather-art-stage {
+          grid-area:scene;
+          position:relative;
+          z-index:1;
+          isolation:isolate;
+          box-sizing:border-box;
+          width:100%;
+          height:100%;
+          min-height:104px;
+          max-height:none;
+          margin:0;
+          overflow:hidden;
+          border-radius:14px;
+        }
+        .le-weather-art-canvas {
+          position:absolute;
+          inset:0;
+          display:block;
+          width:100%;
+          height:100%;
+          aspect-ratio:auto;
+          transform:none;
+        }
+        .le-weather-temperature-row {
+          top:clamp(6px,1.4vh,10px);
+          left:12px;
+          display:flex;
+          align-items:flex-start;
+          gap:10px;
+          max-width:calc(100% - 24px);
+        }
+        .le-weather-temperature { font-size:clamp(63px,7.8vw,78px); }
+        .le-weather-condition { padding:2px 0 2px 10px; }
+        .le-weather-condition-icon { width:30px;height:28px;margin-bottom:3px; }
+        .le-weather-condition-name { font-size:14px; }
+        .le-weather-feels { margin-top:3px;font-size:9px; }
+        .le-weather-summary {
+          grid-area:summary;
+          align-self:end;
+          margin:0;
+          padding:8px 0;
+        }
+        .le-weather-stat { padding:0 7px; }
+        .le-weather-stat:first-child { padding-left:2px; }
+        .le-weather-stat-label { font-size:6px;letter-spacing:.08em; }
+        .le-weather-stat-value { margin-top:4px;font-size:clamp(12px,1.6vw,16px); }
+
+        /* Live Art is a full-bleed painting inside the equal-width right column. */
+        .le-weather-studio {
+          grid-area:studio;
+          box-sizing:border-box;
+          position:relative;
+          display:block;
+          width:100%;
+          height:100%;
+          min-height:0;
+          max-height:none;
+          margin:0;
+          padding:0;
+          overflow:hidden;
+          isolation:isolate;
+          border-radius:16px;
+        }
+        .le-weather-studio-canvas {
+          position:absolute;
+          inset:0;
+          display:block;
+          width:100%;
+          height:100%;
+          aspect-ratio:auto;
+          max-width:none;
+          min-height:0;
+          transform:none;
+          border-radius:0;
+          background:transparent;
+          touch-action:none;
+        }
+        .le-weather-studio:after {
+          content:"";
+          position:absolute;
+          z-index:1;
+          inset:0;
+          pointer-events:none;
+          background:linear-gradient(
+            180deg,
+            color-mix(in srgb,var(--paper) 76%,transparent) 0%,
+            color-mix(in srgb,var(--paper) 16%,transparent) 32%,
+            transparent 59%,
+            color-mix(in srgb,var(--paper) 66%,transparent) 100%
+          );
+        }
+        .le-weather-studio-head {
+          position:absolute;
+          z-index:2;
+          top:11px;
+          left:13px;
+          right:13px;
+          display:flex;
+          align-items:flex-start;
+          justify-content:space-between;
+          gap:8px;
+          margin:0;
+          pointer-events:none;
+          text-shadow:0 1px 9px rgba(245,243,231,.92);
+        }
+        .le-weather-studio-head > div { min-width:0; }
+        .le-weather-studio-kicker {
+          display:block;
+          font-size:6px;
+          line-height:1.1;
+          letter-spacing:.16em;
+        }
+        .le-weather-studio-title {
+          margin:4px 0 0;
+          font-size:clamp(17px,2.1vw,23px);
+          line-height:1.02;
+          white-space:nowrap;
+          overflow:hidden;
+          text-overflow:ellipsis;
+        }
+        .le-weather-studio-state {
+          flex:0 0 auto;
+          padding-top:1px;
+          font-size:6px;
+          line-height:1.1;
+          letter-spacing:.12em;
+          white-space:nowrap;
+          text-shadow:0 1px 9px rgba(245,243,231,.96);
+        }
+        .le-weather-studio-foot {
+          position:absolute;
+          z-index:2;
+          left:13px;
+          right:13px;
+          bottom:10px;
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:8px;
+          margin:0;
+          font-size:7px;
+          line-height:1.1;
+          text-shadow:0 1px 9px rgba(245,243,231,.96);
+        }
+        .le-weather-studio-foot > span {
+          min-width:0;
+          overflow:hidden;
+          text-overflow:ellipsis;
+          white-space:nowrap;
+        }
+        .le-weather-art-replay {
+          flex:0 0 auto;
+          min-height:24px;
+          padding:5px 10px;
+          font-size:7px;
+          line-height:1;
+          pointer-events:auto;
+          backdrop-filter:blur(8px);
+          -webkit-backdrop-filter:blur(8px);
+          background:rgba(255,255,255,.62);
+        }
+        .le-weather-status,.le-weather-attribution {
+          position:absolute!important;
+          width:1px!important;
+          height:1px!important;
+          padding:0!important;
+          margin:-1px!important;
+          overflow:hidden!important;
+          clip:rect(0,0,0,0)!important;
+          clip-path:inset(50%)!important;
+          white-space:nowrap!important;
+          border:0!important;
+        }
+      }
+      @media(orientation:landscape) and (max-height:390px) {
+        .le-weather-dashboard {
+          height:clamp(210px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,88px) - 68px),270px);
+        }
+        .le-weather-content { padding-top:calc(env(safe-area-inset-top) + 5px); }
+        .le-weather-date-row { margin-top:4px; }
+        .le-weather-headline { font-size:clamp(34px,4.2vw,42px); }
+        .le-weather-temperature { font-size:clamp(59px,7.4vw,68px); }
+        .le-weather-studio-title { font-size:clamp(15px,1.9vw,19px); }
       }
       @media(max-width:430px){.le-weather-content{padding-left:17px;padding-right:17px;padding-bottom:calc(env(safe-area-inset-bottom) + 278px)}.le-weather-date-row{margin-top:24px;align-items:flex-start}.le-weather-headline{font-size:clamp(42px,11.5vw,52px)}.le-weather-temperature{font-size:clamp(74px,20vw,86px)}.le-weather-art-stage{height:clamp(158px,21vh,180px);margin-left:-9px;margin-right:-9px}.le-weather-summary{padding:10px 0}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:6px;letter-spacing:.08em}.le-weather-stat-value{font-size:11px}.le-weather-studio{padding:11px 10px 9px;border-radius:14px}.le-weather-studio-title{font-size:18px}.le-weather-studio-canvas{height:clamp(138px,18vh,155px)}}
-      @media(orientation:landscape) and (max-height:520px){.le-weather-content{padding-top:calc(env(safe-area-inset-top) + 8px);padding-bottom:calc(env(safe-area-inset-bottom) + 150px)}.le-weather-date-row{margin-top:5px}.le-weather-dashboard{margin-top:7px;column-gap:22px;row-gap:7px}.le-weather-headline{font-size:clamp(36px,4.6vw,48px)}.le-weather-headline:after{margin:10px 0 10px}.le-weather-temperature{font-size:clamp(66px,7vw,80px)}.le-weather-art-stage{height:clamp(130px,31vh,175px)}.le-weather-studio{padding:9px 11px}.le-weather-studio-canvas{height:clamp(118px,21vh,150px)}.le-weather-studio-title{font-size:18px}}
+
       /* Portrait composition: the weather readings and artwork form one scene.
          Live Art is a full-card painting with its controls layered above it. */
       @media (orientation:portrait) {
@@ -152,8 +391,11 @@
         .le-weather-studio {
           box-sizing:border-box;
           position:relative;
-          width:100%;
-          height:clamp(150px,19dvh,184px);
+          width:min(95vw,760px);
+          height:auto;
+          aspect-ratio:10 / 7;
+          margin-left:calc(50% - min(47.5vw,380px));
+          margin-right:calc(50% - min(47.5vw,380px));
           min-height:0;
           max-height:none;
           margin:0 auto;
@@ -1010,10 +1252,11 @@
         <div class="le-weather-dashboard">
           <div class="le-weather-forecast-column">
             <section class="le-weather-hero" aria-label="Current weather"><h1 class="le-weather-headline" id="le-weather-headline">A quiet sky.</h1></section>
+                        <div class="le-weather-art-stage" aria-label="Live weather illustration"><canvas class="le-weather-art-canvas" id="le-weather-art-canvas"></canvas><div class="le-weather-temperature-row"><div class="le-weather-temperature" id="le-weather-temperature">—</div><div class="le-weather-condition"><span class="le-weather-condition-icon" id="le-weather-condition-icon"></span><div class="le-weather-condition-name" id="le-weather-condition">Weather preview</div><div class="le-weather-feels" id="le-weather-feels">Sample values</div></div></div></div>
             <section class="le-weather-summary" aria-label="Important weather details"><div class="le-weather-stat"><span class="le-weather-stat-label">HIGH / LOW</span><strong class="le-weather-stat-value" id="le-weather-highlow">—</strong></div><div class="le-weather-stat"><span class="le-weather-stat-label">RAIN CHANCE</span><strong class="le-weather-stat-value" id="le-weather-rainchance">—</strong></div><div class="le-weather-stat"><span class="le-weather-stat-label">WIND</span><strong class="le-weather-stat-value" id="le-weather-wind">—</strong></div></section>
           </div>
           <div class="le-weather-art-column">
-            <div class="le-weather-art-stage" aria-label="Live weather illustration"><canvas class="le-weather-art-canvas" id="le-weather-art-canvas"></canvas><div class="le-weather-temperature-row"><div class="le-weather-temperature" id="le-weather-temperature">—</div><div class="le-weather-condition"><span class="le-weather-condition-icon" id="le-weather-condition-icon"></span><div class="le-weather-condition-name" id="le-weather-condition">Weather preview</div><div class="le-weather-feels" id="le-weather-feels">Sample values</div></div></div></div>
+
             <section class="le-weather-studio" aria-label="Live Japanese art studio">
               <div class="le-weather-studio-head"><div><span class="le-weather-studio-kicker">LIVE ART · PAINTING THE WEATHER</span><h2 class="le-weather-studio-title" id="le-weather-studio-title">Red Sun over Pine Ridge</h2></div><span class="le-weather-studio-state" id="le-weather-studio-state" role="status">PREPARING</span></div>
               <canvas class="le-weather-studio-canvas" id="le-weather-studio-canvas" aria-label="Japanese ink artwork being drawn stroke by stroke"></canvas>

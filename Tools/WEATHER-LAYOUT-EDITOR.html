@@ -91,7 +91,7 @@ select,input[type=number]{padding:6px 8px;width:100%;min-width:0}input[type=chec
     <button id="exportBtn" type="button">Export JSON</button>
   </div>
   <div id="selectionInfo">Select an element from the list, or tap an element in the preview.</div>
-  <div class="note">Drag an element to move it. Drag a corner to resize. The temperature and condition are layered inside the full Weather scene; the Live Art painting fills its complete card with text and controls floating above it. The card and every overlay element can be adjusted separately. Use “Scroll preview” to scroll the app, then return to Edit mode.</div>
+  <div class="note">Drag an element to move it. Drag a corner to resize. The temperature and condition are layered inside the full Weather scene; the Live Art painting fills its complete card with text and controls floating above it. Landscape uses equal Weather and Live Art columns. The preview uses production CSS in both orientations, with no artificial canvas sizing overrides. Use “Scroll preview” to scroll the app, then return to Edit mode.</div>
 </section>
 <button id="showControlsBtn" type="button">Show editor</button>
 <script>
@@ -116,6 +116,8 @@ const configs=[
  ['Scene selector','.le-weather-mode'],
  ['Scene selector control','#le-weather-mode-select'],
  ['Dashboard layout','.le-weather-dashboard'],
+ ['Weather overview · left half','.le-weather-forecast-column'],
+ ['Live Art · right half','.le-weather-art-column'],
  ['Headline','.le-weather-headline'],
  ['Temperature + condition group','.le-weather-temperature-row'],
  ['Temperature value','.le-weather-temperature'],
@@ -161,15 +163,9 @@ function makeRecord(el){
  records.set(el,d);return d;
 }
 function installPreviewRatios(){
- const style=doc.createElement('style');style.id='le-weather-layout-editor-preview';
- style.textContent=`
- /* Match the production composition; do not impose artificial canvas ratios. */
- .le-weather-art-stage{height:15dvh!important;min-height:118px!important;max-height:154px!important}
- .le-weather-art-canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;aspect-ratio:auto!important;transform:none!important}
- .le-weather-studio{height:clamp(150px,19dvh,184px)!important;min-height:0!important}
- .le-weather-studio-canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;aspect-ratio:auto!important;max-width:none!important;transform:none!important}
- `;
- doc.head.appendChild(style);
+ // Keep the embedded preview on the exact production CSS for both orientations.
+ // Deliberately inject no sizing overrides: landscape is an equal 50/50 split.
+ doc.getElementById('le-weather-layout-editor-preview')?.remove();
 }
 function connect(){
  doc=getDoc();win=doc&&doc.defaultView;

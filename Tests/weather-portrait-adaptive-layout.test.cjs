@@ -12,7 +12,10 @@ assert.ok(source.includes('<div class="le-weather-temperature-row">'));
 assert.ok(!source.includes('aspect-ratio:4 / 1;'));
 
 // Live Art painting fills the inset card edge-to-edge, with title/status and footer floating above.
-assert.ok(source.includes('height:clamp(150px,19dvh,184px);'));
+assert.ok(source.includes('width:min(95vw,760px);'));
+assert.ok(source.includes('aspect-ratio:10 / 7;'));
+assert.ok(source.includes('margin-left:calc(50% - min(47.5vw,380px));'));
+assert.ok(source.includes('margin-right:calc(50% - min(47.5vw,380px));'));
 assert.ok(source.includes('.le-weather-studio-canvas {\n          position:absolute;'));
 assert.ok(source.includes('inset:0;'));
 assert.ok(source.includes('width:100%;'));
@@ -40,7 +43,9 @@ assert.ok(!/#le-feature-dock\s*\{/.test(source));
 assert.ok(!/weatherDock\.style\.(?:bottom|top|left|right|transform|width|height)/.test(source));
 
 // Keep data, landscape layout, privacy and the no-hours-rail decision.
-assert.ok(source.includes('@media(orientation:landscape) and (min-width:650px)'));
+assert.ok(source.includes('@media (orientation:landscape) and (min-width:650px)'));
+assert.ok(source.includes('grid-template-columns:repeat(2,minmax(0,1fr));'));
+assert.ok(source.includes('grid-template-areas:"forecast artwork"'));
 assert.ok(source.includes('Open-Meteo'));
 assert.ok(source.includes('liveEarthLocationAllowed'));
 assert.ok(!/navigator\.geolocation|\.getCurrentPosition\s*\(|\.watchPosition\s*\(/.test(source));
