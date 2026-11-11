@@ -373,9 +373,11 @@
     const hours = Array.from({length:6},(_,i)=>{const d=new Date(now);if(i===0)return localWallTime(d);d.setMinutes(0,0,0);d.setHours(d.getHours()+i);return localWallTime(d);});
     const temps = Array.from({length:6},(_,i)=>Math.round(temp + (i===0?0:Math.sin(i*.85)*1.6 + (kind==='hot'?-i*.3:i*.2))));
     const codes = temps.map((_,i)=>kind==='night' ? 0 : (kind==='rain' && i>3 ? 61 : code));
-    const isNight = kind === 'night' || (kind === 'auto' && new Date().getHours() < 6);
+    const localHour=new Date().getHours();
+    const isNight = kind === 'night' || (kind === 'auto' && (localHour < 6 || localHour >= 19));
+    const isDay = kind === 'auto' ? localHour >= 6 && localHour < 19 : kind !== 'night';
     return {
-      current:{time:localWallTime(new Date()),temperature_2m:temp,apparent_temperature:feels,is_day:isNight?0:(new Date().getHours()>=6&&new Date().getHours()<19?1:0),precipitation:precip,rain:precip,snowfall:kind==='snow'?precip:0,weather_code:code,cloud_cover:cloud,wind_speed_10m:wind,wind_direction_10m:direction,wind_gusts_10m:wind*1.4},
+      current:{time:localWallTime(new Date()),temperature_2m:temp,apparent_temperature:feels,is_day:isNight?0:(isDay?1:0),precipitation:precip,rain:precip,snowfall:kind==='snow'?precip:0,weather_code:code,cloud_cover:cloud,wind_speed_10m:wind,wind_direction_10m:direction,wind_gusts_10m:wind*1.4},
       hourly:{time:hours,temperature_2m:temps,weather_code:codes,precipitation_probability:temps.map(()=>chance)},
       daily:{temperature_2m_max:[high],temperature_2m_min:[low],precipitation_probability_max:[chance]}
     };
@@ -444,45 +446,155 @@
     let width=0,height=0,dpr=1,raf=0,last=0,elapsed=0,state={weather:'clear',phase:'day',wind:4,direction:270,precipitation:0,snowfall:0,cloud:12};
     let snowLoad=0;
     const reduced=reducedMotion();
-    const resize=()=>{const rect=canvas.getBoundingClientRect();width=Math.max(1,rect.width);height=Math.max(1,rect.height);dpr=Math.min(window.devicePixelRatio||1,1.5);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);};
-    const palette=()=>state.phase==='night'?{ink:'#d9e0d8',soft:'#9baea6',ridge:'#536b64',water:'#627d78',accent:'#c66d5d',paper:'#dce1d5'}:{ink:'#27332d',soft:'#68796e',ridge:'#87998b',water:'#9aaea0',accent:'#b84437',paper:'#dbe0d2'};
+    const resize=()=>{const rect=canvas.getBoundingClientRect();width=Math.max(1,rect.width);height=Math.max(1,rect.height);dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);};
+    const palette=()=>state.phase==='night'?{ink:'#f0f1e8',soft:'#c0cec3',ridge:'#80978b',water:'#91b1aa',accent:'#e58a78',paper:'#dce4d8'}:{ink:'#27332d',soft:'#748176',ridge:'#9aa99d',water:'#91aaa2',accent:'#b84437',paper:'#dbe0d2'};
     const line=(points,color,alpha=1,widthPx=1.3)=>{ctx.save();ctx.strokeStyle=color;ctx.globalAlpha=alpha;ctx.lineWidth=widthPx;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();ctx.restore();};
     const wash=(x,y,w,h,color,alpha)=>{ctx.save();ctx.globalAlpha=alpha;const g=ctx.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.5,color);g.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=g;ctx.fillRect(x,y,w,h);ctx.restore();};
     function drawSky(p,t){
       const {ink,soft,accent}=p;const night=state.phase==='night';
       const sx=width*(state.phase==='evening'?.78:.76),sy=height*.18,r=Math.min(width,height)*.065;
-      ctx.save();ctx.globalAlpha=state.weather==='storm'?.38:state.weather==='fog'?.34:.56;ctx.fillStyle=night?'#dfe3d6':accent;ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.fill();
+      ctx.save();ctx.globalAlpha=state.weather==='storm'?.42:state.weather==='fog'?.38:.68;ctx.fillStyle=night?'#dfe3d6':accent;ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.fill();
       if(night){ctx.globalCompositeOperation='destination-out';ctx.beginPath();ctx.arc(sx+r*.36,sy-r*.22,r*.84,0,Math.PI*2);ctx.fill();ctx.globalCompositeOperation='source-over';}
-      ctx.globalAlpha=.23;ctx.strokeStyle=ink;ctx.lineWidth=.7;for(let i=0;i<4;i++){ctx.beginPath();ctx.ellipse(sx,sy,r*(.56+i*.13),r*(.62+i*.09),-.2,0,Math.PI*2);ctx.stroke();}ctx.restore();
+      ctx.globalAlpha=night?.48:.23;ctx.strokeStyle=ink;ctx.lineWidth=.7;for(let i=0;i<4;i++){ctx.beginPath();ctx.ellipse(sx,sy,r*(.56+i*.13),r*(.62+i*.09),-.2,0,Math.PI*2);ctx.stroke();}ctx.restore();
       const cloudCount=state.cloud>72?4:state.cloud>32?2:1;
-      for(let i=0;i<cloudCount;i++){const x=width*(.48+i*.12)+Math.sin(t*.12+i)*Math.max(2,state.wind*.45);const y=height*(.22+i*.065);const s=Math.min(width,height)*(.035+i*.004);ctx.save();ctx.globalAlpha=.16+state.cloud/550;ctx.strokeStyle=soft;ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(x,y,s,.95,2.7);ctx.arc(x+s*.85,y-s*.12,s*.78,Math.PI,Math.PI*1.98);ctx.arc(x+s*1.65,y,s,.45,2.4);ctx.stroke();ctx.restore();}
+      for(let i=0;i<cloudCount;i++){const x=width*(.48+i*.12)+Math.sin(t*.12+i)*Math.max(2,state.wind*.45);const y=height*(.22+i*.065);const s=Math.min(width,height)*(.035+i*.004);ctx.save();ctx.globalAlpha=(.25+state.cloud/440)*(night?1.28:1);ctx.strokeStyle=soft;ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(x,y,s,.95,2.7);ctx.arc(x+s*.85,y-s*.12,s*.78,Math.PI,Math.PI*1.98);ctx.arc(x+s*1.65,y,s,.45,2.4);ctx.stroke();ctx.restore();}
     }
     function drawMountains(p,t){
-      const {ink,soft,ridge}=p;const y=height*.61;const peaks=[[-.06,.12],[.13,.26],[.32,.06],[.48,.22],[.67,.02],[.84,.18],[1.06,.04]];
-      for(let layer=0;layer<3;layer++){
-        const offset=layer*height*.075;ctx.save();ctx.beginPath();ctx.moveTo(0,y+offset);
-        peaks.forEach(([x,h],i)=>{const px=x*width,py=y-h*height+offset+Math.sin(t*.08+i)*.7;ctx.quadraticCurveTo(px-width*.045,py+height*.09,px,py);});
-        ctx.lineTo(width,y+offset+height*.13);ctx.lineTo(0,y+offset+height*.13);ctx.closePath();ctx.globalAlpha=.10+layer*.045;ctx.fillStyle=layer===0?soft:ridge;ctx.fill();
-        ctx.globalAlpha=.22-layer*.035;ctx.strokeStyle=ink;ctx.lineWidth=1.05;ctx.stroke();ctx.restore();
+      const night=state.phase==='night';
+      // Three broad, overlapping mountain ranges are deliberately composed for
+      // a shallow 4:1 canvas: large silhouettes first, then only a few ink folds.
+      const ranges=[
+        {
+          points:[[-.08,.68],[.08,.43],[.19,.60],[.34,.34],[.48,.57],[.62,.39],[.78,.58],[.91,.42],[1.08,.65]],
+          top:night?'#82968a':'#c3c9bf',
+          base:night?'#43594f':'#e5e3d9',
+          alpha:night?.92:.92
+        },
+        {
+          points:[[-.08,.80],[.12,.58],[.28,.73],[.45,.47],[.61,.69],[.78,.50],[.92,.69],[1.08,.61]],
+          top:night?'#667e72':'#929f93',
+          base:night?'#354b42':'#cbd1c6',
+          alpha:night?.88:.78
+        },
+        {
+          points:[[-.08,.91],[.13,.76],[.32,.85],[.49,.66],[.68,.84],[.83,.69],[1.08,.86]],
+          top:night?'#536c61':'#7c8d80',
+          base:night?'#2b4138':'#b7c2b6',
+          alpha:night?.82:.69
+        }
+      ];
+
+      ranges.forEach((range,layer)=>{
+        const pts=range.points;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0]*width,height);
+        ctx.lineTo(pts[0][0]*width,pts[0][1]*height);
+        for(let i=1;i<pts.length;i++){
+          const [px,py]=pts[i];
+          const prev=pts[i-1];
+          const midX=(prev[0]+px)/2*width;
+          const midY=(prev[1]+py)/2*height;
+          ctx.quadraticCurveTo(prev[0]*width,prev[1]*height,midX,midY);
+        }
+        const last=pts[pts.length-1];
+        ctx.quadraticCurveTo(last[0]*width,last[1]*height,width,last[1]*height);
+        ctx.lineTo(width,height);
+        ctx.closePath();
+
+        const gradient=ctx.createLinearGradient(0,height*.30,0,height);
+        gradient.addColorStop(0,range.top);
+        gradient.addColorStop(1,range.base);
+        ctx.globalAlpha=range.alpha;
+        ctx.fillStyle=gradient;
+        ctx.fill();
+
+        // A single light crest and one inner fold preserve the hand-painted finish.
+        ctx.globalAlpha=night?.52:.34;
+        ctx.strokeStyle=night?'#dbe6dc':'#53645a';
+        ctx.lineWidth=layer===2?1.35:1.05;
+        ctx.lineCap='round';
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0]*width,pts[0][1]*height);
+        for(let i=1;i<pts.length;i++){
+          const prev=pts[i-1],pt=pts[i];
+          ctx.quadraticCurveTo(prev[0]*width,prev[1]*height,
+            (prev[0]+pt[0])/2*width,(prev[1]+pt[1])/2*height);
+        }
+        ctx.stroke();
+
+        ctx.globalAlpha=night?.19:.13;
+        ctx.strokeStyle=night?'#d8e4d9':'#65746a';
+        ctx.lineWidth=.8;
+        ctx.beginPath();
+        ctx.moveTo(width*.08,height*(pts[1][1]+.075));
+        ctx.quadraticCurveTo(width*.28,height*(pts[1][1]+.12),
+          width*.47,height*(pts[2][1]+.075));
+        ctx.quadraticCurveTo(width*.68,height*(pts[3][1]+.10),
+          width*.94,height*(pts[4][1]+.11));
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      // Low mist ribbons separate the far ridges from the water.
+      for(let i=0;i<3;i++){
+        const yy=height*(.72+i*.055)+Math.sin(t*.12+i)*.8;
+        wash(width*.04,yy,width*.92,height*.055,
+          night?'#bdcec1':p.paper,
+          (night?.27:.22)+(state.weather==='fog'?.18:0));
       }
-      for(let i=0;i<3;i++){const yy=y+height*(.035+i*.055)+Math.sin(t*.12+i)*1.8;wash(width*.18,yy,width*.83,height*.055,p.paper,.12+ (state.weather==='fog'?.22:0));}
     }
     function drawWater(p,t){
-      const {ink,water,soft}=p;const top=height*.77;ctx.save();const grad=ctx.createLinearGradient(0,top,0,height);grad.addColorStop(0,water+'30');grad.addColorStop(1,water+'05');ctx.fillStyle=grad;ctx.fillRect(0,top,width,height-top);ctx.restore();
-      for(let row=0;row<9;row++){const y=top+(height-top)*row/9;const wave=Math.sin(t*.6+row)*Math.min(5,state.wind*.12);const alpha=.22-row*.014;line([[width*.08,y],[width*.24,y+wave],[width*.45,y-wave*.5],[width*.68,y+wave*.4],[width*.92,y]],soft,alpha,.7);}
+      const {ink,water,soft}=p;
+      const top=height*.79;
+      ctx.save();
+      const grad=ctx.createLinearGradient(0,top,0,height);
+      grad.addColorStop(0,state.phase==='night'?'rgba(116,151,139,.48)':'rgba(142,161,148,.39)');
+      grad.addColorStop(.55,state.phase==='night'?'rgba(91,124,115,.27)':'rgba(155,170,157,.23)');
+      grad.addColorStop(1,'rgba(255,255,255,.015)');
+      ctx.fillStyle=grad;
+      ctx.fillRect(0,top,width,height-top);
+      ctx.restore();
+      for(let row=0;row<8;row++){
+        const y=top+(height-top)*row/11;
+        const wave=Math.sin(t*.6+row)*Math.min(5,state.wind*.12);
+        const alpha=(state.phase==='night'?.44:.34)-row*.025;
+        line([[width*.06,y],[width*.24,y+wave],[width*.45,y-wave*.5],
+          [width*.68,y+wave*.4],[width*.94,y]],soft,alpha,.8);
+      }
+      // Broken reflections catch light below the pavilion and sun.
+      for(let row=0;row<5;row++){
+        const y=top+height*(.075+row*.027);
+        const span=width*(.12+row*.035);
+        const cx=width*(.60+(row%2)*.06);
+        line([[cx-span,y],[cx-span*.42,y+.4],[cx+span*.5,y-.3],[cx+span,y]],
+          state.phase==='night'?'#bdd0c3':'#8c9f94',state.phase==='night'?.20:.16,.65);
+      }
       if(state.weather==='rain'||state.weather==='storm'){
         const rainScale=Math.min(1,state.precipitation/5);for(let i=0;i<Math.round(4+rainScale*11);i++){const x=((i*79+Math.floor(t*13)*17)%Math.max(1,Math.round(width)));const y=top+((i*31+Math.floor(t*18)*7)%Math.max(1,Math.round(height-top)));const pulse=(t*2+i)%1;ctx.save();ctx.globalAlpha=.34*(1-pulse);ctx.strokeStyle=soft;ctx.lineWidth=.8;ctx.beginPath();ctx.ellipse(x,y,4+pulse*12,1+pulse*3,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
       }
     }
     function drawPagoda(p){
-      const {ink,soft}=p;const x=width*.79,y=height*.63,s=Math.min(width,height)*.16;ctx.save();ctx.translate(x,y);ctx.scale(s/100,s/100);ctx.strokeStyle=ink;ctx.globalAlpha=.68;ctx.lineWidth=2.3;ctx.lineJoin='round';ctx.lineCap='round';
+      const {ink,soft}=p;const x=width*.79,y=height*.64,s=Math.min(width,height)*.38;ctx.save();ctx.translate(x,y);ctx.scale(s/100,s/100);ctx.strokeStyle=ink;ctx.globalAlpha=state.phase==='night'?.92:.72;ctx.lineWidth=2.8;ctx.lineJoin='round';ctx.lineCap='round';
       const roof=(yy,half)=>{ctx.beginPath();ctx.moveTo(-half,yy+7);ctx.quadraticCurveTo(-half*.25,yy-7,0,yy-15);ctx.quadraticCurveTo(half*.25,yy-7,half,yy+7);ctx.lineTo(half*.76,yy+8);ctx.stroke();};
       roof(0,42);line([[-30,9],[-30,43],[30,9],[30,43]],ink,.62,1.8);roof(48,55);line([[-39,56],[-39,92],[39,56],[39,92]],ink,.58,2);line([[-47,95],[47,95]],ink,.58,2);line([[0,-15],[0,-30]],ink,.65,2);ctx.restore();
     }
+    function drawPagodaReflection(p){
+      const night=state.phase==='night';
+      const x=width*.79;
+      const y=height*.80;
+      ctx.save();
+      ctx.globalAlpha=night?.23:.18;
+      ctx.fillStyle=night?'#b7c9bd':'#6f8175';
+      ctx.beginPath();
+      ctx.ellipse(x,y,width*.105,height*.035,0,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
     function drawBambooAndLeaves(p,t){
       const {ink,accent,soft}=p;const x0=width*.90,y0=height*.12;const gust=Math.min(1,state.wind/55);const dir=Math.sin(state.direction*Math.PI/180);const sway=reduced?0:Math.sin(t*(.6+gust*.8))*gust*9;
-      ctx.save();ctx.strokeStyle=ink;ctx.globalAlpha=.62;ctx.lineWidth=2.1;ctx.beginPath();ctx.moveTo(x0+width*.13,y0-height*.1);ctx.quadraticCurveTo(x0+width*.015+sway,y0+height*.18,x0-width*.08+sway,y0+height*.39);ctx.stroke();
-      const leaves=[];for(let i=0;i<7;i++){const bx=x0+width*(.09-i*.022)+sway*(i/7);const by=y0+height*(i*.047);const side=i%2?1:-1;leaves.push({x:bx,y:by,side,i});ctx.save();ctx.translate(bx,by);ctx.rotate(side*(.45+sway*.006));ctx.fillStyle=i%3===0?accent:ink;ctx.globalAlpha=.48;ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(side*13,-8,side*27,-2);ctx.quadraticCurveTo(side*15,8,0,0);ctx.fill();ctx.strokeStyle=soft;ctx.lineWidth=.55;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(side*24,-2);ctx.stroke();ctx.restore();}
+      ctx.save();ctx.strokeStyle=ink;ctx.globalAlpha=state.phase==='night'?.90:.70;ctx.lineWidth=2.1;ctx.beginPath();ctx.moveTo(x0+width*.13,y0-height*.1);ctx.quadraticCurveTo(x0+width*.015+sway,y0+height*.18,x0-width*.08+sway,y0+height*.39);ctx.stroke();
+      const leaves=[];for(let i=0;i<7;i++){const bx=x0+width*(.09-i*.022)+sway*(i/7);const by=y0+height*(i*.047);const side=i%2?1:-1;leaves.push({x:bx,y:by,side,i});ctx.save();ctx.translate(bx,by);ctx.rotate(side*(.45+sway*.006));ctx.fillStyle=i%3===0?accent:ink;ctx.globalAlpha=state.phase==='night'?.72:.52;ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(side*13,-8,side*27,-2);ctx.quadraticCurveTo(side*15,8,0,0);ctx.fill();ctx.strokeStyle=soft;ctx.lineWidth=.55;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(side*24,-2);ctx.stroke();ctx.restore();}
       if(state.weather==='snow'&&snowLoad>0){ctx.strokeStyle='#fff';ctx.globalAlpha=Math.min(.9,snowLoad);ctx.lineWidth=2.3;for(let i=0;i<leaves.length;i++){const l=leaves[i];ctx.beginPath();ctx.moveTo(l.x,l.y-2);ctx.quadraticCurveTo(l.x+l.side*8,l.y-9,l.x+l.side*16,l.y-5);ctx.stroke();}}
       if((state.weather==='rain'||state.weather==='storm')&&state.precipitation>.1){for(let i=0;i<leaves.length;i++){const l=leaves[i];const phase=(t*.32+i*.21)%1;const px=l.x+l.side*25;const py=l.y-2;ctx.save();ctx.fillStyle='#6d9ba0';ctx.globalAlpha=.35+.5*(1-phase);ctx.beginPath();ctx.ellipse(px,py+phase*18,1.7,3.1,0,0,Math.PI*2);ctx.fill();ctx.restore();}}
       if(gust>.35&&!reduced){for(let i=0;i<Math.min(3,Math.floor(gust*4));i++){const xx=(width*(.62+i*.09)+((t*state.wind*2+i*87)%(width*.34)));const yy=height*(.42+(i%2)*.17+Math.sin(t+i)*.025);ctx.save();ctx.translate(xx,yy);ctx.rotate(dir*.5+Math.sin(t*1.2+i)*.4);ctx.fillStyle=accent;ctx.globalAlpha=.58;ctx.beginPath();ctx.moveTo(-8,0);ctx.quadraticCurveTo(0,-7,10,-1);ctx.quadraticCurveTo(2,7,-8,0);ctx.fill();ctx.restore();}}
@@ -493,7 +605,7 @@
       for(let i=0;i<5;i++){const x=width*(.12+i*.19);const y=height*(.75+(i%2)*.12);const phase=(t*.55+i*.27)%1;ctx.save();ctx.globalAlpha=.32*(1-phase);ctx.strokeStyle=ink;ctx.lineWidth=.75;ctx.beginPath();ctx.ellipse(x,y,4+phase*15,1.5+phase*3,0,0,Math.PI*2);ctx.stroke();ctx.restore();}}
     function drawWindLines(p,t){if(state.wind<18)return;const {soft}=p;const alpha=Math.min(.30,state.wind/180);for(let i=0;i<4;i++){const y=height*(.38+i*.095)+Math.sin(t*.55+i)*3;ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=soft;ctx.lineWidth=.9;ctx.beginPath();ctx.moveTo(width*(.10+i*.03),y);ctx.bezierCurveTo(width*.35,y-5,width*.56,y+6,width*.88,y-3);ctx.stroke();ctx.restore();}}
     function drawFog(p,t){if(state.weather!=='fog'&&state.cloud<85)return;const {paper,soft}=p;for(let i=0;i<3;i++){const y=height*(.49+i*.075)+Math.sin(t*.15+i)*7;const g=ctx.createLinearGradient(0,y,width,y);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.48,state.weather==='fog'?'rgba(238,238,224,.34)':'rgba(238,238,224,.15)');g.addColorStop(1,'rgba(255,255,255,0)');ctx.save();ctx.fillStyle=g;ctx.fillRect(0,y-9,width,19);ctx.restore();}}
-    function draw(){const p=palette();const t=elapsed;ctx.clearRect(0,0,width,height);drawSky(p,t);drawMountains(p,t);drawWater(p,t);drawPagoda(p);drawBambooAndLeaves(p,t);drawWindLines(p,t);drawRain(p,t);drawSnow(p,t);drawFog(p,t);}
+    function draw(){const p=palette();const t=elapsed;ctx.clearRect(0,0,width,height);drawSky(p,t);drawMountains(p,t);drawWater(p,t);drawPagoda(p);drawPagodaReflection(p);drawBambooAndLeaves(p,t);drawWindLines(p,t);drawRain(p,t);drawSnow(p,t);drawFog(p,t);}
     function loop(now){raf=0;if(!canvas.isConnected||!isActive('weather')||document.hidden)return;if(now-last>=42){const delta=Math.min(.08,(now-last)/1000||.04);elapsed+=delta;last=now;draw();}raf=requestAnimationFrame(loop);}
     function onVisibility(){if(document.hidden){if(raf)cancelAnimationFrame(raf);raf=0;}else if(!reduced&&!raf){last=0;raf=requestAnimationFrame(loop);}}
     document.addEventListener('visibilitychange',onVisibility);
@@ -528,46 +640,121 @@
     const paper=state.phase==='night'?'#d8ddd2':'#344239';
     // A quiet red sun / moon is the signature mark in every composition.
     if(state.phase==='night'||study.motif==='moon'){
-      add(sample(t=>{const a=-Math.PI*.48+t*Math.PI*1.45;return [.74+Math.cos(a)*.095,.22+Math.sin(a)*.095]},36),'accent',2.2,.92);
-      add(sample(t=>{const a=Math.PI*.1+t*Math.PI*1.18;return [.755+Math.cos(a)*.078,.205+Math.sin(a)*.078]},28),'soft',.8,.42);
+      // Subtle lunar surface marks; the filled crescent is rendered by the canvas layer.
+      add([[.718,.225],[.735,.220],[.748,.224]],'soft',.65,.42);
+      add([[.756,.265],[.768,.260],[.776,.264]],'soft',.55,.34);
     } else {
-      add(sample(t=>[.74+Math.cos(t*Math.PI*2)*.093,.22+Math.sin(t*Math.PI*2)*.093],42),'accent',2.6,.88);
-      add([[.65,.22],[.66,.20],[.68,.19],[.70,.19]],'accent',.8,.34);
+      // Fine horizontal pigment striations sit inside the vermilion sun disk.
+      for(let i=0;i<5;i++){
+        const y=.205+i*.014;
+        add([[.685,y],[.715,y+.002],[.755,y],[.795,y+.002]],'soft',.55,.28);
+      }
     }
     // Broad, translucent ink washes establish the paper-and-pigment depth first.
     add(cubic([-.08,.66],[.16,.50],[.27,.55],[.43,.65]),'ridge',8.5,.16,'wash');
     add(cubic([.24,.69],[.43,.55],[.62,.58],[.82,.68]),'soft',7.2,.13,'wash');
     add(cubic([-.02,.78],[.23,.69],[.48,.73],[.71,.80]),'ridge',9.5,.12,'wash');
-    // Distant mountain contours, painted in several separate passes.
-    add(cubic([-.03,.66],[.13,.54],[.20,.57],[.33,.64]),'soft',1.35,.46);
-    add(cubic([.20,.67],[.39,.50],[.48,.54],[.61,.64]),'ink',2.0,.68);
-    add(cubic([.50,.67],[.66,.56],[.75,.54],[1.04,.65]),'soft',1.2,.42);
-    add(cubic([.04,.73],[.26,.64],[.48,.69],[.68,.73]),'soft',1.0,.30);
-    // Foreground ridge / riverbank.
-    add(cubic([-.04,.83],[.22,.72],[.40,.77],[.60,.82]),'ink',1.7,.54);
-    add(cubic([.48,.84],[.68,.74],[.84,.76],[1.04,.80]),'soft',1.4,.46);
-    // A pine trunk and deliberate branch strokes.
-    add(cubic([.82,.86],[.80,.68],[.84,.52],[.79,.34]),'ink',3.1,.88);
-    for(let i=0;i<6;i++){
-      const y=.40+i*.062, reach=.11+(i%3)*.025, sway=(i%2?1:-1)*.025;
-      add(cubic([.80,y],[.80+reach*.12,y-.015],[.80+reach*.65,y+.025],[.80+reach+sway,y+.01]),'ink',1.55,.76);
-      add(cubic([.80,y+.005],[.80-reach*.20,y-.025],[.80-reach*.60,y+.025],[.80-reach,y+.02]),'soft',1.2,.68);
-      for(let j=0;j<4;j++){
-        const bx=.80+(j-1.5)*reach*.48, by=y+(j%2?-.018:.018);
-        add(cubic([bx,by],[bx+.018,by-.025],[bx+.035,by-.017],[bx+.05,by-.028]),j%3===0?'accent':'ink',.8,.65);
+    // Broad, layered mountain planes are the backbone of this 4:1 panorama.
+    const farMountain=[
+      ...cubic([-.08,.69],[.08,.40],[.19,.52],[.35,.66]),
+      ...cubic([.35,.66],[.53,.38],[.69,.48],[1.08,.64]).slice(1),
+      [1.08,.92],[-.08,.92],[-.08,.69]
+    ];
+    add(farMountain,'ridge',1.2,state.phase==='night'?.72:.62,'fill');
+
+    const middleMountain=[
+      ...cubic([-.08,.82],[.13,.58],[.28,.72],[.47,.80]),
+      ...cubic([.47,.80],[.63,.58],[.80,.66],[1.08,.78]).slice(1),
+      [1.08,.96],[-.08,.96],[-.08,.82]
+    ];
+    add(middleMountain,'soft',1.1,state.phase==='night'?.57:.48,'fill');
+
+    const foregroundRidge=[
+      ...cubic([-.04,.91],[.18,.79],[.35,.83],[.53,.88]),
+      ...cubic([.53,.88],[.70,.76],[.86,.82],[1.04,.88]).slice(1),
+      [1.04,1.02],[-.04,1.02],[-.04,.91]
+    ];
+    add(foregroundRidge,'ink',.8,state.phase==='night'?.22:.13,'fill');
+
+    // A few clear crest lines give the soft pigment planes their Japanese ink contour.
+    add(cubic([-.03,.69],[.13,.48],[.23,.54],[.35,.66]),'soft',1.55,.58);
+    add(cubic([.34,.66],[.52,.42],[.68,.49],[.83,.67]),'ink',1.65,.62);
+    add(cubic([.66,.70],[.80,.55],[.91,.58],[1.05,.66]),'soft',1.25,.48);
+
+    // Tree motif follows the selected artwork: a willow has a readable trunk,
+    // a light crown and separate cascading boughs (not a tangled pine lattice).
+    if(study.motif==='willow'){
+      // A recognisable willow silhouette: one leaning trunk, an open crown,
+      // and four separated curtains of long foliage. Keep the canopy on the right.
+      add(cubic([.89,.98],[.82,.79],[.93,.57],[.88,.34]),'ink',4.8,.96);
+      add(cubic([.89,.43],[.79,.34],[.70,.38],[.64,.47]),'ink',2.0,.82);
+      add(cubic([.89,.42],[.97,.33],[1.03,.39],[1.08,.50]),'soft',1.8,.82);
+      add(cubic([.87,.47],[.77,.45],[.72,.51],[.68,.60]),'soft',1.45,.72);
+
+      const curtains=[
+        [.67,.46,.61,.88],
+        [.77,.40,.74,.94],
+        [.88,.38,.88,.93],
+        [.98,.43,1.04,.88]
+      ];
+      for(let i=0;i<curtains.length;i++){
+        const [sx,sy,ex,ey]=curtains[i];
+        const path=cubic([sx,sy],
+          [sx+(ex-sx)*.10,sy+.17],
+          [ex+(sx-ex)*.16,ey-.12],
+          [ex,ey]);
+        add(path,i%2?'soft':'ink',1.75,.82);
+
+        // Individual tapered leaves attach to alternating sides of each bough.
+        for(let j=0;j<5;j++){
+          const t=.20+j*.15;
+          const point=path[Math.min(path.length-1,Math.round(t*(path.length-1)))];
+          const side=(i+j)%2?1:-1;
+          const lx=point[0],ly=point[1];
+          const leaf=[
+            [lx,ly],
+            [lx+side*.018,ly-.006],
+            [lx+side*.050,ly+.006],
+            [lx+side*.031,ly+.040],
+            [lx+side*.008,ly+.034],
+            [lx,ly]
+          ];
+          const tone=(j===1&&i%2===0)?'accent':(j%2?'soft':'ink');
+          add(leaf,tone,.75,.78,'fill');
+          add([[lx,ly],[lx+side*.040,ly+.014]],'soft',.48,.50);
+        }
       }
-      for(let j=0;j<5;j++){
-        const bx=.80+(j-2)*reach*.30, by=y+(j%2?-.012:.013);
-        add(cubic([bx,by],[bx-.006,by-.018],[bx-.025,by-.027],[bx-.039,by-.033]),'ink',.8,.50);
-        add(cubic([bx,by],[bx+.006,by-.018],[bx+.026,by-.025],[bx+.040,by-.030]),'soft',.7,.46);
+
+      // Fine tips hang below the main foliage, without crossing the open centre.
+      for(let i=0;i<4;i++){
+        const x=.71+i*.085,y=.62+(i%2)*.035;
+        add(cubic([x,y],[x-.015,y+.08],[x+.012,y+.15],[x-.005,y+.23]),
+          i%2?'soft':'ink',1.0,.66);
+      }
+    } else {
+      add(cubic([.82,.86],[.80,.68],[.84,.52],[.79,.34]),'ink',3.1,.88);
+      for(let i=0;i<6;i++){
+        const y=.40+i*.062, reach=.11+(i%3)*.025, sway=(i%2?1:-1)*.025;
+        add(cubic([.80,y],[.80+reach*.12,y-.015],[.80+reach*.65,y+.025],[.80+reach+sway,y+.01]),'ink',1.55,.76);
+        add(cubic([.80,y+.005],[.80-reach*.20,y-.025],[.80-reach*.60,y+.025],[.80-reach,y+.02]),'soft',1.2,.68);
+        for(let j=0;j<4;j++){
+          const bx=.80+(j-1.5)*reach*.48, by=y+(j%2?-.018:.018);
+          add(cubic([bx,by],[bx+.018,by-.025],[bx+.035,by-.017],[bx+.05,by-.028]),j%3===0?'accent':'ink',.8,.65);
+        }
+        for(let j=0;j<5;j++){
+          const bx=.80+(j-2)*reach*.30, by=y+(j%2?-.012:.013);
+          add(cubic([bx,by],[bx-.006,by-.018],[bx-.025,by-.027],[bx-.039,by-.033]),'ink',.8,.50);
+          add(cubic([bx,by],[bx+.006,by-.018],[bx+.026,by-.025],[bx+.040,by-.030]),'soft',.7,.46);
+        }
       }
     }
     // Small Japanese roof / pavilion silhouette, drawn as separate brush lines.
-    const roofY=.71,rx=.60;
-    add(cubic([rx-.105,roofY+.03],[rx-.055,roofY-.012],[rx+.045,roofY-.012],[rx+.105,roofY+.03]),'ink',1.8,.78);
-    add([[rx-.105,roofY+.03],[rx+.105,roofY+.03]],'ink',1.2,.76);
-    add([[rx-.072,roofY+.035],[rx-.072,roofY+.14],[rx+.072,roofY+.14],[rx+.072,roofY+.035]],'ink',1.25,.68);
-    add(cubic([rx-.09,roofY+.14],[rx,roofY+.11],[rx+.09,roofY+.14],[rx+.12,roofY+.16]),'ink',1.1,.70);
+    const roofY=.67,rx=.53;
+    add(cubic([rx-.145,roofY+.035],[rx-.070,roofY-.030],[rx+.070,roofY-.030],[rx+.145,roofY+.035]),'ink',2.4,.88);
+    add([[rx-.145,roofY+.035],[rx+.145,roofY+.035]],'ink',1.8,.84);
+    add([[rx-.105,roofY+.045],[rx-.105,roofY+.245],[rx+.105,roofY+.245],[rx+.105,roofY+.045]],'ink',1.65,.78);
+    add([[rx-.105,roofY+.245],[rx+.105,roofY+.245]],'ink',1.5,.78);
+    add(cubic([rx-.125,roofY+.25],[rx,roofY+.225],[rx+.125,roofY+.25],[rx+.155,roofY+.275]),'ink',1.45,.78);
     // Weather-specific motifs make the library selection visible, not just metadata.
     if(kind==='rain'||kind==='storm'){
       // Rain-cloud scallops, falling brush strokes and repeated water rings.
@@ -613,57 +800,234 @@
     } else {
       add(cubic([.13,.34],[.24,.28],[.33,.30],[.43,.34]),'soft',1.25,.48);
     }
+    // Atmospheric cloud banks and distant reflected ridges make each study read as a complete landscape.
+    add(cubic([.04,.42],[.19,.36],[.32,.39],[.45,.43]),'wash',6.0,.13,'wash');
+    add(cubic([.54,.46],[.68,.39],[.84,.42],[1.03,.45]),'wash',5.0,.12,'wash');
+    add(cubic([.02,.76],[.22,.69],[.38,.71],[.56,.77]),'soft',1.0,.34);
+    add(cubic([.42,.79],[.61,.72],[.80,.73],[1.02,.78]),'ink',1.0,.30);
     // A few short water / ground lines anchor the composition.
-    for(let i=0;i<5;i++)add(cubic([.10,.90+i*.012],[.28,.88+i*.012],[.48,.92+i*.012],[.66,.89+i*.012]),'water',.85,.42);
+    for(let i=0;i<9;i++){
+      const y=.86+i*.014;
+      add(cubic([.08,y],[.26,y-.018],[.48,y+.012],[.70,y-.006]),'water',.78,.34);
+      if(i%2===0)add(cubic([.55,y+.018],[.70,y],[.86,y+.02],[.98,y+.01]),'soft',.62,.27);
+    }
     return {study,strokes,paper};
   }
 
   function makeArtStudioPainter(canvas,onProgress){
     let ctx=null;try{ctx=canvas.getContext('2d',{alpha:true});}catch(_){ctx=null;}
     if(!ctx)return {setState(){},replay(){},stop(){}};
-    let width=0,height=0,dpr=1,raf=0,replayTimer=0,startAt=0,elapsed=0,last=0,current=null,study=null,strokes=[],paper='#f1eee5',complete=false;
+
+    let width=0,height=0,dpr=1,raf=0,startAt=0,frameProgress=1;
+    let current=null,study=null,strokes=[],complete=true;
     const reduced=reducedMotion();
-    const resize=()=>{const rect=canvas.getBoundingClientRect();width=Math.max(1,rect.width);height=Math.max(1,rect.height);dpr=Math.min(window.devicePixelRatio||1,1.5);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);drawFrame(1);};
-    const colors=()=>({ink:current?.phase==='night'?'#dce4dc':'#26312b',soft:current?.phase==='night'?'#9eaea2':'#718074',water:current?.phase==='night'?'#87a2a0':'#789a98',accent:current?.phase==='night'?'#cb7868':'#bb4438',paper:current?.phase==='night'?'#26332f':'#f3efe5'});
+
+    const resize=()=>{
+      const rect=canvas.getBoundingClientRect();
+      width=Math.max(1,rect.width);
+      height=Math.max(1,rect.height);
+      dpr=Math.min(window.devicePixelRatio||1,2);
+      canvas.width=Math.round(width*dpr);
+      canvas.height=Math.round(height*dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      drawFrame(frameProgress);
+    };
+
+    const colors=()=>({
+      ink:current?.phase==='night'?'#e6eee4':'#26312b',
+      soft:current?.phase==='night'?'#b8c9be':'#718074',
+      ridge:current?.phase==='night'?'#8ca398':'#9aa99d',
+      water:current?.phase==='night'?'#98bdb5':'#789a98',
+      accent:current?.phase==='night'?'#e58d7b':'#bb4438',
+      paper:current?.phase==='night'?'#293a36':'#f3efe5'
+    });
+
     function strokeOne(stroke,portion){
       if(!stroke.points||stroke.points.length<2||portion<=0)return;
-      const palette=colors();const tone=stroke.tone==='accent'?palette.accent:stroke.tone==='soft'?palette.soft:stroke.tone==='ridge'?palette.ridge:stroke.tone==='water'?palette.water:stroke.tone==='paper'?palette.paper:palette.ink;
-      const points=stroke.points;const scaled=points.map(pt=>[pt[0]*width,pt[1]*height]);
-      const total=scaled.length-1,visible=Math.max(1,Math.min(total,Math.ceil(total*portion)));
+      const palette=colors();
+      const tone=stroke.tone==='accent'?palette.accent:
+        stroke.tone==='soft'?palette.soft:
+        stroke.tone==='ridge'?palette.ridge:
+        stroke.tone==='water'?palette.water:
+        stroke.tone==='paper'?palette.paper:palette.ink;
+      const points=stroke.points;
+      const scaled=points.map(pt=>[pt[0]*width,pt[1]*height]);
+      const total=scaled.length-1;
+      const visible=Math.max(1,Math.min(total,Math.ceil(total*portion)));
       const isWash=stroke.kind==='wash';
-      ctx.save();ctx.globalAlpha=stroke.alpha??.75;ctx.strokeStyle=tone;ctx.lineWidth=isWash?Math.max(5,Math.min(34,stroke.weight*Math.min(width,height)/70)):Math.max(.7,Math.min(12,stroke.weight*Math.min(width,height)/180));ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(scaled[0][0],scaled[0][1]);
+      const isFill=stroke.kind==='fill';
+      ctx.save();
+      ctx.globalAlpha=stroke.alpha??.75;
+      ctx.strokeStyle=tone;
+      ctx.lineWidth=isWash
+        ?Math.max(5,Math.min(38,stroke.weight*Math.min(width,height)/62))
+        :Math.max(.9,Math.min(18,stroke.weight*Math.min(width,height)/105));
+      ctx.lineCap='round';
+      ctx.lineJoin='round';
+      ctx.beginPath();
+      ctx.moveTo(scaled[0][0],scaled[0][1]);
       for(let i=1;i<=visible;i++){
-        const index=Math.min(i,scaled.length-1);let x=scaled[index][0],y=scaled[index][1];
-        if(i===visible&&portion<1){const fraction=total*portion-Math.floor(total*portion);const next=scaled[Math.min(index+1,scaled.length-1)];x=scaled[index][0]+(next[0]-scaled[index][0])*fraction;y=scaled[index][1]+(next[1]-scaled[index][1])*fraction;}
+        const index=Math.min(i,scaled.length-1);
+        let x=scaled[index][0],y=scaled[index][1];
+        if(i===visible&&portion<1){
+          const fraction=total*portion-Math.floor(total*portion);
+          const next=scaled[Math.min(index+1,scaled.length-1)];
+          x=scaled[index][0]+(next[0]-scaled[index][0])*fraction;
+          y=scaled[index][1]+(next[1]-scaled[index][1])*fraction;
+        }
         ctx.lineTo(x,y);
+      }
+      if(isFill&&portion>=1){
+        ctx.closePath();
+        ctx.fillStyle=tone;
+        ctx.fill();
       }
       ctx.stroke();
       // A restrained dry-brush echo gives the marks an ink-on-paper edge.
-      if(!isWash&&stroke.weight>1.2){ctx.globalAlpha=(stroke.alpha??.75)*.17;ctx.lineWidth=Math.max(.4,ctx.lineWidth*.45);ctx.translate(.65,-.45);ctx.stroke();}
+      if(!isWash&&stroke.weight>1.2){
+        ctx.globalAlpha=(stroke.alpha??.75)*.17;
+        ctx.lineWidth=Math.max(.4,ctx.lineWidth*.45);
+        ctx.translate(.65,-.45);
+        ctx.stroke();
+      }
       ctx.restore();
     }
+
     function drawFrame(progress){
-      const palette=colors();ctx.clearRect(0,0,width,height);ctx.fillStyle=palette.paper;ctx.fillRect(0,0,width,height);
-      // Washed red sun, completed early as a soft pigment mark.
-      ctx.save();ctx.globalAlpha=.12;ctx.fillStyle=palette.accent;ctx.beginPath();ctx.arc(width*.74,height*.22,Math.min(width,height)*.105,0,Math.PI*2);ctx.fill();ctx.restore();
-      const units=Math.max(0,Math.min(1,progress))*strokes.length;const done=Math.floor(units);const partial=units-done;
+      const palette=colors();
+      ctx.clearRect(0,0,width,height);
+      ctx.fillStyle=palette.paper;
+      ctx.fillRect(0,0,width,height);
+
+      // A clear moon after dark; a softly washed vermilion sun during the day.
+      ctx.save();
+      const markRadius=Math.min(width,height)*.17;
+      if(current?.phase==='night'){
+        ctx.globalAlpha=.92;
+        ctx.fillStyle='#dce8dc';
+        ctx.beginPath();
+        ctx.arc(width*.76,height*.25,markRadius,0,Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle=palette.paper;
+        ctx.globalAlpha=1;
+        ctx.beginPath();
+        ctx.arc(width*.81,height*.21,markRadius*.88,0,Math.PI*2);
+        ctx.fill();
+      }else{
+        ctx.globalAlpha=.58;
+        ctx.fillStyle=palette.accent;
+        ctx.beginPath();
+        ctx.arc(width*.74,height*.24,markRadius,0,Math.PI*2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      const units=Math.max(0,Math.min(1,progress))*strokes.length;
+      const done=Math.floor(units);
+      const partial=units-done;
       for(let i=0;i<done;i++)strokeOne(strokes[i],1);
       if(done<strokes.length&&partial>0)strokeOne(strokes[done],partial);
-      if(progress>=1){ctx.save();ctx.globalAlpha=.08;ctx.fillStyle=palette.soft;for(let i=0;i<7;i++){ctx.beginPath();ctx.ellipse(width*(.08+i*.14),height*(.17+(i%3)*.21),width*.025,height*.008,(i%2)*.2,0,Math.PI*2);ctx.fill();}ctx.restore();}
-      if(typeof onProgress==='function')onProgress({title:study?.title||'Ink study',count:Math.min(strokes.length,done+(partial>0?1:0)),total:strokes.length,complete:progress>=1});
+
+      if(progress>=1){
+        ctx.save();
+        ctx.globalAlpha=.10;
+        ctx.fillStyle=palette.soft;
+        for(let i=0;i<7;i++){
+          ctx.beginPath();
+          ctx.ellipse(width*(.08+i*.14),height*(.17+(i%3)*.21),
+            width*.025,height*.008,(i%2)*.2,0,Math.PI*2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      if(typeof onProgress==='function'){
+        onProgress({
+          title:study?.title||'Ink study',
+          count:Math.min(strokes.length,done+(partial>0?1:0)),
+          total:strokes.length,
+          complete:progress>=1
+        });
+      }
     }
-    function stopLoop(){if(raf)cancelAnimationFrame(raf);raf=0;if(replayTimer)clearTimeout(replayTimer);replayTimer=0;}
-    function frame(now){raf=0;if(!canvas.isConnected||!isActive('weather')||document.hidden)return;const progress=Math.min(1,(now-startAt)/Math.max(12000,Math.min(22000,strokes.length*300)));drawFrame(progress);if(progress<1){raf=requestAnimationFrame(frame);}else{complete=true;replayTimer=window.setTimeout(()=>startDrawing(),11500);}}
-    function startDrawing(){stopLoop();if(!current)return;startAt=performance.now();complete=false;last=0;drawFrame(0);if(reduced){drawFrame(1);complete=true;return;}raf=requestAnimationFrame(frame);}
-    function choose(next){current=next||current;const built=makeArtStudyStrokes(current||{weather:'clear',phase:'day'});study=built.study;strokes=built.strokes;paper=built.paper;startDrawing();}
-    function setState(next){const changed=!current||current.weather!==next.weather||current.phase!==next.phase||Math.abs((current.wind||0)-(next.wind||0))>8;current=next||current;if(changed){choose(current);} }
-    function replay(){if(current)startDrawing();}
-    function onVisibility(){if(document.hidden)stopLoop();else if(current&&!complete)startDrawing();}
+
+    function stopLoop(){
+      if(raf)cancelAnimationFrame(raf);
+      raf=0;
+    }
+
+    function frame(now){
+      raf=0;
+      if(!canvas.isConnected||!isActive('weather')||document.hidden)return;
+      frameProgress=Math.min(1,(now-startAt)/Math.max(10000,Math.min(18000,strokes.length*180)));
+      drawFrame(frameProgress);
+      if(frameProgress<1)raf=requestAnimationFrame(frame);
+      else complete=true;
+    }
+
+    // Start with a finished, legible illustration. Animation is an explicit Replay action.
+    function choose(next){
+      current=next||current;
+      const built=makeArtStudyStrokes(current||{weather:'clear',phase:'day'});
+      study=built.study;
+      strokes=built.strokes;
+      frameProgress=1;
+      complete=true;
+      stopLoop();
+      drawFrame(1);
+    }
+
+    function startDrawing(){
+      stopLoop();
+      if(!current)return;
+      if(reduced){
+        frameProgress=1;
+        complete=true;
+        drawFrame(1);
+        return;
+      }
+      startAt=performance.now();
+      frameProgress=0;
+      complete=false;
+      drawFrame(0);
+      raf=requestAnimationFrame(frame);
+    }
+
+    function setState(next){
+      if(!next)return;
+      const changed=!current||
+        current.weather!==next.weather||
+        current.phase!==next.phase||
+        Math.abs((current.wind||0)-(next.wind||0))>8;
+      current=next;
+      if(changed)choose(current);
+    }
+
+    function replay(){
+      if(current)startDrawing();
+    }
+
+    function onVisibility(){
+      if(document.hidden)stopLoop();
+      else if(current&&!complete)startDrawing();
+    }
+
     document.addEventListener('visibilitychange',onVisibility);
     window.addEventListener('resize',resize,{passive:true});
-    const observer=typeof ResizeObserver==='function'?new ResizeObserver(()=>{resize();}):null;observer?.observe(canvas);
+    const observer=typeof ResizeObserver==='function'?new ResizeObserver(()=>resize()):null;
+    observer?.observe(canvas);
     resize();
-    return {setState,replay,stop(){stopLoop();observer?.disconnect();window.removeEventListener('resize',resize);document.removeEventListener('visibilitychange',onVisibility);}};
+
+    return {
+      setState,
+      replay,
+      stop(){
+        stopLoop();
+        observer?.disconnect();
+        window.removeEventListener('resize',resize);
+        document.removeEventListener('visibilitychange',onVisibility);
+      }
+    };
   }
 
   function makeScreen(){
