@@ -30,7 +30,7 @@
       .le-weather-screen[data-phase="night"]{--paper:#202a2a;--paper-deep:#152223;--ink:#f0eee5;--muted:#bdc8bf;--accent:#d36b55;background:radial-gradient(ellipse at 77% 47%,rgba(74,103,98,.28),transparent 45%),linear-gradient(160deg,var(--paper),var(--paper-deep))}
       .le-weather-screen[data-weather="rain"],.le-weather-screen[data-weather="storm"],.le-weather-screen[data-weather="fog"]{--paper:#e8e9df;--paper-deep:#d7dfd7}
       .le-weather-screen[data-phase="night"][data-weather="rain"],.le-weather-screen[data-phase="night"][data-weather="storm"],.le-weather-screen[data-phase="night"][data-weather="fog"]{--paper:#1b272b;--paper-deep:#101c21}
-      .le-weather-content{box-sizing:border-box;position:relative;z-index:2;width:min(100%,760px);margin:0 auto;padding:calc(env(safe-area-inset-top) + 17px) clamp(20px,5vw,34px) calc(env(safe-area-inset-bottom) + 264px)}
+      .le-weather-content{box-sizing:border-box;--le-weather-scene-height:clamp(24dvh,30dvh,38dvh);position:relative;z-index:2;width:min(100%,760px);margin:0 auto;padding:calc(env(safe-area-inset-top) + 17px) clamp(20px,5vw,34px) calc(env(safe-area-inset-bottom) + 264px)}
       .le-weather-topbar{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;align-items:center;column-gap:12px;row-gap:clamp(16px,2dvh,23px);min-height:31px}
       .le-weather-brand{grid-column:1;grid-row:1;min-width:0;font-size:11px;font-weight:800;letter-spacing:.2em;white-space:nowrap}.le-weather-brand span{font-weight:400;opacity:.65}
       .le-weather-place{grid-column:2;grid-row:1;display:flex;align-items:center;gap:6px;color:var(--muted);font-size:10px;letter-spacing:.04em;white-space:nowrap}
@@ -42,15 +42,15 @@
       .le-weather-mode option{background:var(--paper);color:var(--ink)}
       .le-weather-screen[data-preview="true"] .le-weather-mode{border-color:rgba(184,68,55,.42);color:var(--accent)}
       .le-weather-hero{position:relative;z-index:2;max-width:520px;margin-top:15px}
-      .le-weather-headline{max-width:510px;margin:0;font-family:"Bodoni 72",Didot,"Bodoni MT",Georgia,"Times New Roman",serif;font-size:clamp(43px,11vw,70px);font-weight:400;line-height:.91;letter-spacing:-.055em;text-wrap:balance;color:var(--ink)}
+      .le-weather-headline{max-width:510px;margin:0;font-family:"Yuji Boku","Kaiti SC","Hiragino Mincho ProN",Georgia,serif;font-size:clamp(48px,12.5vw,80px);font-weight:400;line-height:.91;letter-spacing:-.055em;text-wrap:balance;color:var(--ink)}
       .le-weather-headline em{font-style:italic;font-weight:400;color:var(--ink)}
       .le-weather-headline:after{content:"";display:block;width:34px;height:2px;margin:15px 0 13px;background:var(--accent)}
       .le-weather-temperature-row{position:absolute;top:clamp(8px,2vh,18px);left:clamp(12px,2vw,24px);z-index:3;display:flex;align-items:flex-start;gap:14px;max-width:calc(100% - 24px);margin:0;pointer-events:none}
-      .le-weather-temperature{font-family:"Bodoni 72",Didot,"Bodoni MT",Georgia,"Times New Roman",serif;font-size:clamp(78px,21vw,116px);font-weight:400;letter-spacing:-.095em;line-height:.82;white-space:nowrap;color:var(--ink)}
+      .le-weather-temperature{font-family:"Shippori Mincho","Hiragino Mincho ProN",Georgia,serif;font-size:clamp(88px,23vw,128px);font-weight:400;letter-spacing:-.095em;line-height:.82;white-space:nowrap;color:var(--ink)}
       .le-weather-temperature sup{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:.27em;vertical-align:top;letter-spacing:0;margin-left:5px}
       .le-weather-condition{min-width:0;padding:3px 0 4px 14px;border-left:1px solid color-mix(in srgb,var(--ink) 38%,transparent)}
       .le-weather-condition-icon{display:block;width:34px;height:31px;margin-bottom:4px;color:var(--ink)}
-      .le-weather-condition-name{font-family:"Bodoni 72",Didot,"Bodoni MT",Georgia,"Times New Roman",serif;font-size:16px;line-height:1.15}
+      .le-weather-condition-name{font-family:"Shippori Mincho","Hiragino Mincho ProN",Georgia,serif;font-size:clamp(17px,4.4vw,20px);line-height:1.15}
       .le-weather-feels{margin-top:4px;color:var(--muted);font-size:10px}
       .le-weather-dashboard{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"hero" "scene" "summary" "studio";row-gap:12px;align-items:start;margin-top:14px}
       .le-weather-forecast-column,.le-weather-art-column{display:contents}
@@ -60,11 +60,11 @@
       .le-weather-summary{grid-area:summary;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:0;padding:12px 0;border-top:1px solid color-mix(in srgb,var(--ink) 20%,transparent);border-bottom:1px solid color-mix(in srgb,var(--ink) 20%,transparent)}
       .le-weather-stat{min-width:0;padding:0 10px;border-right:1px solid color-mix(in srgb,var(--ink) 17%,transparent)}.le-weather-stat:first-child{padding-left:2px}.le-weather-stat:last-child{border-right:0}
       .le-weather-stat-label{display:block;color:var(--muted);font-size:7px;font-weight:750;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
-      .le-weather-stat-value{display:block;margin-top:6px;color:var(--ink);font-family:"Bodoni 72",Didot,"Bodoni MT",Georgia,"Times New Roman",serif;font-size:clamp(15px,4vw,18px);font-weight:400;letter-spacing:-.025em;line-height:1.05;white-space:nowrap}
+      .le-weather-stat-value{display:block;margin-top:6px;color:var(--ink);font-family:"Shippori Mincho","Hiragino Mincho ProN",Georgia,serif;font-size:clamp(16px,4.2vw,20px);font-weight:400;letter-spacing:-.025em;line-height:1.05;white-space:nowrap}
       .le-weather-studio{grid-area:studio;position:relative;min-width:0;overflow:hidden;border:1px solid color-mix(in srgb,var(--ink) 16%,transparent);border-radius:17px;background:linear-gradient(145deg,rgba(255,255,255,.40),rgba(214,218,204,.20));box-shadow:0 8px 26px rgba(41,48,40,.06),inset 0 1px rgba(255,255,255,.68);padding:13px 13px 10px}
       .le-weather-studio-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:5px}
       .le-weather-studio-kicker{display:block;color:var(--muted);font-size:7px;font-weight:850;letter-spacing:.20em;text-transform:uppercase}
-      .le-weather-studio-title{margin:4px 0 0;font-family:"Bodoni 72",Didot,"Bodoni MT",Georgia,"Times New Roman",serif;font-size:20px;font-weight:400;line-height:1.05;letter-spacing:-.025em;color:var(--ink)}
+      .le-weather-studio-title{margin:4px 0 0;font-family:"Yuji Boku","Kaiti SC","Hiragino Mincho ProN",Georgia,serif;font-size:clamp(21px,5.8vw,28px);font-weight:400;line-height:1.05;letter-spacing:-.025em;color:var(--ink)}
       .le-weather-studio-state{flex:0 0 auto;color:var(--accent);font-size:7px;font-weight:850;letter-spacing:.13em;text-align:right;white-space:nowrap;padding-top:2px}
       .le-weather-studio-canvas{display:block;width:100%;height:clamp(180px,28vh,245px);border-radius:10px;background:radial-gradient(ellipse at 50% 46%,rgba(255,255,255,.48),rgba(231,229,215,.12) 72%);touch-action:none}
       .le-weather-studio-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px;color:var(--muted);font-size:8px;letter-spacing:.03em}
@@ -73,7 +73,7 @@
       .le-weather-status{min-height:15px;margin:12px 1px 0;color:var(--muted);font-size:8px;line-height:1.45}.le-weather-status:empty{display:none}
       .le-weather-screen[data-weather="rain"],.le-weather-screen[data-weather="storm"]{--accent:#4e8285}.le-weather-screen[data-weather="snow"]{--accent:#718c9e}.le-weather-screen[data-weather="hot"]{--accent:#bd6945}
       .le-weather-attribution{margin:13px 1px 0;color:var(--muted);font-size:7px;line-height:1.4;opacity:.78}
-      @media(min-width:600px) and (orientation:portrait){.le-weather-content{width:min(100%,760px);padding-left:clamp(32px,7vw,60px);padding-right:clamp(32px,7vw,60px)}.le-weather-headline{font-size:clamp(64px,9vw,88px)}.le-weather-temperature{font-size:126px}.le-weather-art-stage{height:clamp(240px,34vh,320px)}.le-weather-studio-canvas{height:clamp(210px,30vh,280px)}}
+      @media(min-width:600px) and (orientation:portrait){.le-weather-content{width:min(100%,760px);padding-left:clamp(32px,7vw,60px);padding-right:clamp(32px,7vw,60px)}.le-weather-headline{font-size:clamp(64px,9vw,88px)}.le-weather-temperature{font-size:clamp(104px,17vw,128px)}.le-weather-art-stage{height:var(--le-weather-scene-height,clamp(24dvh,30dvh,38dvh));min-height:clamp(210px,26dvh,280px);max-height:42dvh}.le-weather-studio-canvas{height:clamp(210px,30vh,280px)}}
       /* Landscape: a quiet Weather overview on the left; Live Art is the visual feature on the right.
          Header elements stay inside the physical horizontal safe areas on notched iPhones. */
       @media (orientation:landscape) and (min-width:650px) {
@@ -385,7 +385,7 @@
         .le-weather-temperature { font-size:clamp(49px,5.8vw,60px); }
         .le-weather-studio-title { font-size:clamp(20px,2.5vw,26px); }
       }
-      @media(max-width:430px){.le-weather-content{padding-left:17px;padding-right:17px;padding-bottom:calc(env(safe-area-inset-bottom) + 278px)}.le-weather-date-row{margin-top:24px;align-items:flex-start}.le-weather-headline{font-size:clamp(42px,11.5vw,52px)}.le-weather-temperature{font-size:clamp(74px,20vw,86px)}.le-weather-art-stage{height:clamp(142px,16.5dvh,154px);min-height:142px;max-height:154px;margin-left:-9px;margin-right:-9px}.le-weather-summary{padding:10px 0}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:6px;letter-spacing:.08em}.le-weather-stat-value{font-size:11px}.le-weather-studio{padding:11px 10px 9px;border-radius:14px}.le-weather-studio-title{font-size:clamp(20px,5.4vw,25px)}.le-weather-studio-canvas{height:clamp(138px,18vh,155px)}}
+      @media(max-width:430px){.le-weather-content{padding-left:17px;padding-right:17px;padding-bottom:calc(env(safe-area-inset-bottom) + 278px)}.le-weather-date-row{margin-top:24px;align-items:flex-start}.le-weather-headline{font-size:clamp(48px,12.5vw,80px)}.le-weather-temperature{font-size:clamp(88px,23vw,128px)}.le-weather-art-stage{height:var(--le-weather-scene-height);min-height:clamp(190px,24dvh,260px);max-height:42dvh;margin-left:-9px;margin-right:-9px}.le-weather-summary{padding:10px 0}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:6px;letter-spacing:.08em}.le-weather-stat-value{font-size:11px}.le-weather-studio{padding:11px 10px 9px;border-radius:14px}.le-weather-studio-title{font-size:clamp(21px,5.8vw,28px)}.le-weather-studio-canvas{height:clamp(138px,18vh,155px)}}
 
       /* Portrait composition: the weather readings and artwork form one scene.
          Live Art is a full-card painting with its controls layered above it. */
@@ -403,6 +403,7 @@
         .le-weather-hero { display:contents; }
         .le-weather-headline {
           grid-area:headline;
+          font-size:clamp(48px,12.5vw,80px);
           position:relative;
           z-index:3;
           margin:0;
@@ -413,9 +414,9 @@
           isolation:isolate;
           box-sizing:border-box;
           width:100vw;
-          height:clamp(142px,16.5dvh,154px);
-          min-height:142px;
-          max-height:154px;
+          height:var(--le-weather-scene-height,clamp(24dvh,30dvh,38dvh));
+          min-height:clamp(190px,24dvh,260px);
+          max-height:42dvh;
           margin-left:calc(50% - 50vw);
           margin-right:calc(50% - 50vw);
           overflow:hidden;
@@ -442,10 +443,10 @@
           transform:translateX(-50%);
           pointer-events:none;
         }
-        .le-weather-temperature { font-size:clamp(82px,21vw,104px); }
+        .le-weather-temperature { font-size:clamp(88px,23vw,128px); }
         .le-weather-condition { padding-top:5px; }
         .le-weather-condition-icon { width:36px;height:34px;margin-bottom:3px; }
-        .le-weather-condition-name { font-size:18px; }
+        .le-weather-condition-name { font-size:clamp(17px,4.4vw,20px); }
         .le-weather-feels { font-size:10px; }
         .le-weather-summary { padding:10px 0; }
         .le-weather-stat-label { font-size:7.5px;letter-spacing:.10em; }
@@ -455,11 +456,10 @@
         .le-weather-studio {
           box-sizing:border-box;
           position:relative;
-          width:min(95vw,760px, max(260px, calc((100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,112px) - 360px) * 1.428571)));
+          width:min(95vw,760px, max(0px, calc((100svh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - var(--le-weather-dock-clearance,112px) - var(--le-weather-scene-height,30dvh) - 19rem) * 1.428571)));
           height:auto;
           aspect-ratio:10 / 7;
-          margin-left:calc(50% - min(47.5vw,380px));
-          margin-right:calc(50% - min(47.5vw,380px));
+          margin-inline:auto;
           min-height:0;
           max-height:none;
           margin:0 auto;
@@ -517,7 +517,7 @@
         }
         .le-weather-studio-title {
           margin:4px 0 0;
-          font-size:clamp(20px,5.4vw,25px);
+          font-size:clamp(21px,5.8vw,28px);
           line-height:1.03;
           white-space:nowrap;
           overflow:hidden;

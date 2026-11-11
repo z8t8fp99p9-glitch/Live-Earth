@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');
 const s=fs.readFileSync(path.join(__dirname,'..','Weather/weather-view.js'),'utf8');
-assert.ok(s.includes('--paper:#f4efe9'));assert.ok(s.includes('font-family:"Bodoni 72",Didot,"Bodoni MT",Georgia,"Times New Roman",serif'));
-assert.ok(s.includes('font-size:clamp(43px,11vw,70px)'));assert.ok(s.includes('id="le-weather-art-canvas"'));assert.ok(s.includes('.le-weather-art-canvas{display:block;width:100%;height:100%'));
+assert.ok(s.includes('--paper:#f4efe9'));assert.ok(s.includes('font-family:"Yuji Boku"'));
+assert.ok(s.includes('font-size:clamp(48px,12.5vw,80px)'));assert.ok(s.includes('id="le-weather-art-canvas"'));assert.ok(s.includes('.le-weather-art-canvas{display:block;width:100%;height:100%'));
 assert.ok(s.includes('id="le-weather-temperature"'));assert.ok(s.includes('id="le-weather-date"'));
 assert.ok(s.includes('grid-template-columns:minmax(248px,.72fr) minmax(0,1fr);'));
 assert.ok(s.includes('grid-template-areas:"forecast artwork"'));assert.ok(s.includes('function drawMinimalLandscape(p,t)'));

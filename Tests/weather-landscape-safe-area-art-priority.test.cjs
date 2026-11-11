@@ -31,7 +31,7 @@ assert.ok(!source.includes('const compactLandscape='));
 // The portrait full-card 10:7 Live Art remains independent of landscape treatment.
 assert.ok(source.includes('aspect-ratio:10 / 7;'));
 assert.ok(source.includes('width:min(100%,calc((var(--le-weather-landscape-height) - 18px) * 1.428571));'));
-assert.ok(source.includes('width:min(95vw,760px, max(260px, calc((100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,112px) - 360px) * 1.428571)));'));
+assert.ok(source.includes('width:min(95vw,760px, max(0px, calc((100svh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - var(--le-weather-dock-clearance,112px) - var(--le-weather-scene-height,30dvh) - 19rem) * 1.428571)));'));
 assert.ok(source.includes('grid-template-areas:"headline" "scene" "summary" "studio";'));
 
 // The dock remains read-only and no hours-ahead forecast is reintroduced.

@@ -26,11 +26,11 @@ assert.ok(source.includes('Math.min(22,stroke.weight*Math.min(width,height)/140)
 assert.ok(source.includes('Fine, deterministic paper fibres'));
 
 // Prominent weather copy remains readable; portrait content starts lower and clears the dock.
-assert.ok(source.includes('font-size:clamp(82px,21vw,104px)'));
-assert.ok(source.includes('.le-weather-condition-name { font-size:18px; }'));
-assert.ok(source.includes('font-size:clamp(42px,11.5vw,52px)'));
+assert.ok(source.includes('font-size:clamp(88px,23vw,128px)'));
+assert.ok(source.includes('.le-weather-condition-name { font-size:clamp(17px,4.4vw,20px); }'));
+assert.ok(source.includes('font-size:clamp(48px,12.5vw,80px)'));
 assert.ok(source.includes('padding-top:calc(env(safe-area-inset-top) + clamp(20px,2.4dvh,28px));'));
-assert.ok(source.includes('height:clamp(142px,16.5dvh,154px);'));
+assert.ok(source.includes('height:var(--le-weather-scene-height,clamp(24dvh,30dvh,38dvh));'));
 
 // 10:7 is the one Live Art ratio in both orientations; landscape frame is centred, not stretched.
 assert.ok(source.includes('aspect-ratio:10 / 7;'));

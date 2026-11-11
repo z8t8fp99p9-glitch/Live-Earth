@@ -21,11 +21,11 @@ assert.ok(source.includes('Japanese landscape foreground'));
 // Weather copy remains prominent and readable in both orientations.
 assert.ok(source.includes('font-size:clamp(58px,6.8vw,72px)'));
 assert.ok(source.includes('font-size:clamp(14px,1.7vw,17px)'));
-assert.ok(source.includes('font-size:18px;'));
+assert.ok(source.includes('font-size:clamp(17px,4.4vw,20px);'));
 
 // Portrait receives breathing room below the physical top safe area.
 assert.ok(source.includes('padding-top:calc(env(safe-area-inset-top) + clamp(20px,2.4dvh,28px));'));
-assert.ok(source.includes('height:clamp(142px,16.5dvh,154px);'));
+assert.ok(source.includes('height:var(--le-weather-scene-height,clamp(24dvh,30dvh,38dvh));'));
 
 // Landscape preserves the 10:7 art ratio and centres it in the available feature area.
 assert.ok(source.includes('--le-weather-landscape-height:clamp(210px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,116px) - 58px),300px);'));
