@@ -4,7 +4,9 @@ const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname, '..', 'Weather', 'weather-view.js'), 'utf8');
 
 // The full-width Weather scene and its floating reading overlay are one composition.
-assert.ok(source.includes('grid-template-areas:"headline" "scene" "summary" "studio";'));
+assert.ok(source.includes('grid-template-areas:"scene" "summary" "studio";'));
+assert.ok(source.includes('position:absolute;\n          z-index:4;'));
+assert.ok(source.includes('top:clamp(108px,15dvh,132px);'));
 assert.ok(source.includes('.le-weather-art-stage {\n          grid-area:scene;'));
 assert.ok(source.includes('.le-weather-art-canvas {\n          position:absolute;'));
 assert.ok(source.includes('inset:0;'));

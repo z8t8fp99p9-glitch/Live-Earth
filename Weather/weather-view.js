@@ -396,17 +396,27 @@
         }
         .le-weather-topbar { row-gap:clamp(12px,1.45dvh,16px); }
         .le-weather-dashboard {
-          grid-template-areas:"headline" "scene" "summary" "studio";
+          grid-template-areas:"scene" "summary" "studio";
           margin-top:clamp(6px,.7dvh,8px);
           row-gap:clamp(5px,.6dvh,7px);
         }
-        .le-weather-hero { display:contents; }
-        .le-weather-headline {
-          grid-area:headline;
-          font-size:clamp(48px,12.5vw,80px);
-          position:relative;
-          z-index:3;
+        .le-weather-hero {
+          position:absolute;
+          z-index:4;
+          top:0;
+          left:0;
+          right:0;
+          display:block;
           margin:0;
+          pointer-events:none;
+        }
+        .le-weather-headline {
+          position:relative;
+          z-index:4;
+          width:min(78%,330px);
+          margin:0;
+          text-shadow:0 1px 12px color-mix(in srgb,var(--paper) 88%,transparent);
+          font-size:clamp(48px,12.5vw,80px);
         }
         .le-weather-art-stage {
           grid-area:scene;
@@ -417,6 +427,7 @@
           height:var(--le-weather-scene-height,clamp(24dvh,30dvh,38dvh));
           min-height:clamp(190px,24dvh,260px);
           max-height:42dvh;
+          margin:0;
           margin-left:calc(50% - 50vw);
           margin-right:calc(50% - 50vw);
           overflow:hidden;
@@ -430,18 +441,19 @@
           aspect-ratio:auto;
           transform:none;
         }
-        /* This overlay is deliberately a child of the same scene canvas. */
+        /* Text stays at its original screen position while the weather painting rises. */
         .le-weather-temperature-row {
           position:absolute;
           z-index:3;
-          top:0;
-          left:50%;
-          width:min(calc(100% - 34px),60dvh);
+          top:clamp(108px,15dvh,132px);
+          left:18px;
+          width:min(calc(100% - 36px),60dvh);
           max-width:100%;
           margin:0;
           align-items:flex-start;
-          transform:translateX(-50%);
+          transform:none;
           pointer-events:none;
+          filter:drop-shadow(0 1px 10px color-mix(in srgb,var(--paper) 62%,transparent));
         }
         .le-weather-temperature { font-size:clamp(88px,23vw,128px); }
         .le-weather-condition { padding-top:5px; }
@@ -456,7 +468,7 @@
         .le-weather-studio {
           box-sizing:border-box;
           position:relative;
-          width:min(95vw,760px,max(260px,calc((100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,112px) - 360px) * 1.428571)));
+          width:min(90vw,760px,max(260px,calc((100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,112px) - 360px) * 1.428571)));
           height:auto;
           aspect-ratio:10 / 7;
           margin-inline:auto;

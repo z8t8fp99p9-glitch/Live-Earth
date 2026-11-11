@@ -10,13 +10,18 @@ assert.ok(source.includes('font-size:clamp(17px,4.4vw,20px);'));
 assert.ok(source.includes('drawMinimalLandscape(p,t);'));
 assert.ok(!source.includes('const compactLandscape='));
 assert.ok(source.includes('.le-weather-temperature-row {\n          position:absolute;'));
-assert.ok(source.includes('grid-template-areas:"headline" "scene" "summary" "studio";'));
+assert.ok(source.includes('grid-template-areas:"scene" "summary" "studio";'));
+assert.ok(source.includes('height:var(--le-weather-scene-height,clamp(24dvh,30dvh,38dvh));'));
+assert.ok(source.includes('max-height:42dvh;'));
+assert.ok(source.includes('min-height:clamp(190px,24dvh,260px);'));
+assert.ok(source.includes('top:clamp(108px,15dvh,132px);'));
+assert.ok(source.includes('font-size:clamp(88px,23vw,128px)'));
 assert.ok(source.includes('<div class="le-weather-art-stage" aria-label="Live weather illustration"><canvas'));
 assert.ok(source.includes('<div class="le-weather-temperature-row">'));
 assert.ok(!source.includes('aspect-ratio:4 / 1;'));
 
 // Live Art painting fills the inset card edge-to-edge, with title/status and footer floating above.
-assert.ok(source.includes('width:min(95vw,760px,max(260px,calc((100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,112px) - 360px) * 1.428571)));'));
+assert.ok(source.includes('width:min(90vw,760px,max(260px,calc((100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,112px) - 360px) * 1.428571)));'));
 assert.ok(!source.includes('max(0px, calc((100svh'));
 assert.ok(source.includes('aspect-ratio:10 / 7;'));
 assert.ok(source.includes('aspect-ratio:10 / 7;'));

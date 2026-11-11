@@ -8,10 +8,14 @@ const source = fs.readFileSync(
 );
 
 // Main Weather readings are actual children of the full-width scene canvas.
-assert.ok(source.includes('grid-template-areas:"headline" "scene" "summary" "studio";'));
+assert.ok(source.includes('grid-template-areas:"scene" "summary" "studio";'));
 assert.ok(source.includes('.le-weather-art-stage {\n          grid-area:scene;'));
 assert.ok(source.includes('.le-weather-temperature-row {\n          position:absolute;'));
-assert.ok(source.includes('top:0;'));
+assert.ok(source.includes('top:clamp(108px,15dvh,132px);'));
+assert.ok(source.includes('position:absolute;\n          z-index:4;'));
+assert.ok(source.includes('grid-template-areas:"scene" "summary" "studio";'));
+assert.ok(source.includes('transform:none;'));
+assert.ok(source.includes('width:min(78%,330px);'));
 assert.ok(source.includes('width:100%;'));
 assert.ok(source.includes('height:100%;'));
 assert.ok(source.includes('id="le-weather-art-canvas"'));
