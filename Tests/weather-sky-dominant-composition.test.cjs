@@ -3,8 +3,8 @@ const s=fs.readFileSync(path.join(__dirname,'..','Weather/weather-view.js'),'utf
 assert.ok(s.includes('--paper:#f4efe9'));assert.ok(s.includes('font-family:"Bodoni 72",Didot,"Bodoni MT",Georgia,"Times New Roman",serif'));
 assert.ok(s.includes('font-size:clamp(43px,11vw,70px)'));assert.ok(s.includes('id="le-weather-art-canvas"'));assert.ok(s.includes('.le-weather-art-canvas{display:block;width:100%;height:100%'));
 assert.ok(s.includes('id="le-weather-temperature"'));assert.ok(s.includes('id="le-weather-date"'));
-assert.ok(s.includes('grid-template-columns:repeat(2,minmax(0,1fr));'));
-assert.ok(s.includes('grid-template-areas:"forecast artwork"'));
+assert.ok(s.includes('grid-template-columns:minmax(218px,.42fr) minmax(0,1fr);'));
+assert.ok(s.includes('grid-template-areas:"forecast artwork"'));assert.ok(s.includes('function drawMinimalLandscape(p,t)'));
 assert.ok(!s.includes('le-weather-hourly'));assert.ok(!s.includes('hourly:'));
 assert.ok(s.includes('HIGH / LOW'));assert.ok(s.includes('RAIN CHANCE'));assert.ok(s.includes('WIND'));
 assert.ok(!s.includes('UV INDEX'));assert.ok(!s.includes('VISIBILITY'));assert.ok(!s.includes('PRESSURE'));

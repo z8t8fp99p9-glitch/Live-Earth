@@ -44,7 +44,7 @@ assert.ok(!/weatherDock\.style\.(?:bottom|top|left|right|transform|width|height)
 
 // Keep data, landscape layout, privacy and the no-hours-rail decision.
 assert.ok(source.includes('@media (orientation:landscape) and (min-width:650px)'));
-assert.ok(source.includes('grid-template-columns:repeat(2,minmax(0,1fr));'));
+assert.ok(source.includes('grid-template-columns:minmax(218px,.42fr) minmax(0,1fr);'));
 assert.ok(source.includes('grid-template-areas:"forecast artwork"'));
 assert.ok(source.includes('Open-Meteo'));
 assert.ok(source.includes('liveEarthLocationAllowed'));

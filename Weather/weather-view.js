@@ -31,13 +31,13 @@
       .le-weather-screen[data-weather="rain"],.le-weather-screen[data-weather="storm"],.le-weather-screen[data-weather="fog"]{--paper:#e8e9df;--paper-deep:#d7dfd7}
       .le-weather-screen[data-phase="night"][data-weather="rain"],.le-weather-screen[data-phase="night"][data-weather="storm"],.le-weather-screen[data-phase="night"][data-weather="fog"]{--paper:#1b272b;--paper-deep:#101c21}
       .le-weather-content{box-sizing:border-box;position:relative;z-index:2;width:min(100%,760px);margin:0 auto;padding:calc(env(safe-area-inset-top) + 17px) clamp(20px,5vw,34px) calc(env(safe-area-inset-bottom) + 264px)}
-      .le-weather-topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:31px}
-      .le-weather-brand{font-size:11px;font-weight:800;letter-spacing:.2em;white-space:nowrap}.le-weather-brand span{font-weight:400;opacity:.65}
-      .le-weather-place{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:10px;letter-spacing:.04em;white-space:nowrap}
+      .le-weather-topbar{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;align-items:center;column-gap:12px;row-gap:clamp(16px,2dvh,23px);min-height:31px}
+      .le-weather-brand{grid-column:1;grid-row:1;min-width:0;font-size:11px;font-weight:800;letter-spacing:.2em;white-space:nowrap}.le-weather-brand span{font-weight:400;opacity:.65}
+      .le-weather-place{grid-column:2;grid-row:1;display:flex;align-items:center;gap:6px;color:var(--muted);font-size:10px;letter-spacing:.04em;white-space:nowrap}
       .le-weather-place svg{width:12px;height:15px;flex:0 0 auto}
-      .le-weather-date-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:31px}
-      .le-weather-date{color:var(--muted);font-size:8px;font-weight:750;letter-spacing:.22em;text-transform:uppercase}
-      .le-weather-mode{display:flex;align-items:center;gap:5px;min-height:27px;padding:3px 8px;border:1px solid rgba(52,65,56,.22);border-radius:999px;background:rgba(255,255,255,.43);color:var(--muted);font-size:7px;font-weight:800;letter-spacing:.10em;white-space:nowrap}
+      .le-weather-date-row{display:contents}
+      .le-weather-date{grid-column:1;grid-row:2;color:var(--muted);font-size:8px;font-weight:750;letter-spacing:.22em;text-transform:uppercase;white-space:nowrap}
+      .le-weather-mode{grid-column:2;grid-row:2;justify-self:end;display:flex;align-items:center;gap:5px;min-height:27px;padding:3px 8px;border:1px solid rgba(52,65,56,.22);border-radius:999px;background:rgba(255,255,255,.43);color:var(--muted);font-size:7px;font-weight:800;letter-spacing:.10em;white-space:nowrap}
       .le-weather-mode select{max-width:105px;border:0;outline:0;background:transparent;color:var(--ink);font:750 8px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.035em;appearance:none;-webkit-appearance:none;padding:4px 13px 4px 2px;background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);background-position:calc(100% - 5px) 50%,calc(100% - 1px) 50%;background-size:4px 4px;background-repeat:no-repeat}
       .le-weather-mode option{background:var(--paper);color:var(--ink)}
       .le-weather-screen[data-preview="true"] .le-weather-mode{border-color:rgba(184,68,55,.42);color:var(--accent)}
@@ -74,37 +74,69 @@
       .le-weather-screen[data-weather="rain"],.le-weather-screen[data-weather="storm"]{--accent:#4e8285}.le-weather-screen[data-weather="snow"]{--accent:#718c9e}.le-weather-screen[data-weather="hot"]{--accent:#bd6945}
       .le-weather-attribution{margin:13px 1px 0;color:var(--muted);font-size:7px;line-height:1.4;opacity:.78}
       @media(min-width:600px) and (orientation:portrait){.le-weather-content{width:min(100%,760px);padding-left:clamp(32px,7vw,60px);padding-right:clamp(32px,7vw,60px)}.le-weather-headline{font-size:clamp(64px,9vw,88px)}.le-weather-temperature{font-size:126px}.le-weather-art-stage{height:clamp(240px,34vh,320px)}.le-weather-studio-canvas{height:clamp(210px,30vh,280px)}}
-      /* Landscape: an intentional 50/50 composition, not a rotated portrait stack.
-         Weather and its illustration share the left half; full-card Live Art owns the right. */
+      /* Landscape: a quiet Weather overview on the left; Live Art is the visual feature on the right.
+         Header elements stay inside the physical horizontal safe areas on notched iPhones. */
       @media (orientation:landscape) and (min-width:650px) {
         .le-weather-screen { overflow-y:auto; }
         .le-weather-content {
           width:min(100%,1380px);
           min-height:100%;
-          padding:calc(env(safe-area-inset-top) + 8px)
-            clamp(20px,3vw,44px)
-            var(--le-weather-dock-clearance,calc(env(safe-area-inset-bottom) + 92px));
+          padding-top:calc(env(safe-area-inset-top) + clamp(8px,1.6vh,12px));
+          padding-right:max(env(safe-area-inset-right),clamp(40px,5.8vw,64px));
+          padding-bottom:var(--le-weather-dock-clearance,calc(env(safe-area-inset-bottom) + 112px));
+          padding-left:max(env(safe-area-inset-left),clamp(40px,5.8vw,64px));
         }
-        .le-weather-topbar { min-height:26px; }
-        .le-weather-date-row {
-          margin-top:clamp(5px,1.2vh,8px);
-          min-height:26px;
+        .le-weather-topbar {
+          grid-template-columns:minmax(0,1fr) auto auto auto;
+          grid-template-rows:auto;
+          column-gap:clamp(11px,1.5vw,20px);
+          row-gap:0;
+          min-height:40px;
+        }
+        .le-weather-brand {
+          grid-column:1;grid-row:1;
+          font-size:clamp(12px,1.35vw,14px);
+          letter-spacing:.19em;
+        }
+        .le-weather-date {
+          grid-column:2;grid-row:1;
+          font-size:clamp(9px,1.05vw,11px);
+          letter-spacing:.16em;
+        }
+        .le-weather-place {
+          grid-column:3;grid-row:1;
+          font-size:clamp(9px,1.05vw,11px);
+          letter-spacing:.07em;
+        }
+        .le-weather-place svg { width:14px;height:17px; }
+        .le-weather-mode {
+          grid-column:4;grid-row:1;
+          min-height:35px;
+          padding:4px 11px;
+          gap:7px;
+          font-size:9px;
+          letter-spacing:.11em;
+        }
+        .le-weather-mode select {
+          max-width:112px;
+          font-size:10px;
+          padding:5px 14px 5px 3px;
         }
         .le-weather-dashboard {
           display:grid;
-          grid-template-columns:repeat(2,minmax(0,1fr));
+          grid-template-columns:minmax(218px,.42fr) minmax(0,1fr);
           grid-template-areas:"forecast artwork";
-          column-gap:clamp(14px,2vw,22px);
+          column-gap:clamp(15px,2vw,23px);
           row-gap:0;
           align-items:stretch;
-          height:clamp(242px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,96px) - 72px),320px);
-          margin-top:clamp(7px,1.5vh,12px);
+          height:clamp(190px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,126px) - 80px),292px);
+          margin-top:clamp(7px,1.5vh,11px);
         }
         .le-weather-forecast-column {
           grid-area:forecast;
           display:grid;
           grid-template-columns:minmax(0,1fr);
-          grid-template-rows:auto minmax(0,1fr) auto;
+          grid-template-rows:auto minmax(58px,1fr) auto;
           grid-template-areas:"hero" "scene" "summary";
           row-gap:6px;
           min-width:0;
@@ -129,16 +161,17 @@
           margin:0;
         }
         .le-weather-headline {
-          max-width:78%;
-          font-size:clamp(37px,4.7vw,48px);
-          line-height:.86;
+          max-width:100%;
+          font-size:clamp(31px,4.4vw,42px);
+          line-height:.89;
           letter-spacing:-.06em;
         }
         .le-weather-headline:after {
-          width:30px;
+          width:27px;
           height:2px;
-          margin:8px 0 5px;
+          margin:7px 0 3px;
         }
+        /* A quiet, borderless scene leaves the detailed painting to Live Art. */
         .le-weather-art-stage {
           grid-area:scene;
           position:relative;
@@ -147,11 +180,11 @@
           box-sizing:border-box;
           width:100%;
           height:100%;
-          min-height:104px;
+          min-height:58px;
           max-height:none;
           margin:0;
           overflow:hidden;
-          border-radius:14px;
+          border-radius:0;
         }
         .le-weather-art-canvas {
           position:absolute;
@@ -163,30 +196,30 @@
           transform:none;
         }
         .le-weather-temperature-row {
-          top:clamp(6px,1.4vh,10px);
-          left:12px;
+          top:clamp(5px,1vh,8px);
+          left:9px;
           display:flex;
           align-items:flex-start;
-          gap:10px;
-          max-width:calc(100% - 24px);
+          gap:8px;
+          max-width:calc(100% - 18px);
         }
-        .le-weather-temperature { font-size:clamp(63px,7.8vw,78px); }
-        .le-weather-condition { padding:2px 0 2px 10px; }
-        .le-weather-condition-icon { width:30px;height:28px;margin-bottom:3px; }
-        .le-weather-condition-name { font-size:14px; }
+        .le-weather-temperature { font-size:clamp(53px,6.1vw,66px); }
+        .le-weather-condition { padding:2px 0 2px 9px; }
+        .le-weather-condition-icon { width:27px;height:25px;margin-bottom:2px; }
+        .le-weather-condition-name { font-size:13px; }
         .le-weather-feels { margin-top:3px;font-size:9px; }
         .le-weather-summary {
           grid-area:summary;
           align-self:end;
           margin:0;
-          padding:8px 0;
+          padding:6px 0;
         }
-        .le-weather-stat { padding:0 7px; }
-        .le-weather-stat:first-child { padding-left:2px; }
-        .le-weather-stat-label { font-size:6px;letter-spacing:.08em; }
-        .le-weather-stat-value { margin-top:4px;font-size:clamp(12px,1.6vw,16px); }
+        .le-weather-stat { padding:0 4px; }
+        .le-weather-stat:first-child { padding-left:1px; }
+        .le-weather-stat-label { font-size:7px;letter-spacing:.04em; }
+        .le-weather-stat-value { margin-top:4px;font-size:clamp(13px,1.55vw,16px); }
 
-        /* Live Art is a full-bleed painting inside the equal-width right column. */
+        /* The painting receives the remaining ~70% of the usable width. */
         .le-weather-studio {
           grid-area:studio;
           box-sizing:border-box;
@@ -200,7 +233,7 @@
           padding:0;
           overflow:hidden;
           isolation:isolate;
-          border-radius:16px;
+          border-radius:17px;
         }
         .le-weather-studio-canvas {
           position:absolute;
@@ -233,27 +266,27 @@
         .le-weather-studio-head {
           position:absolute;
           z-index:2;
-          top:11px;
-          left:13px;
-          right:13px;
+          top:clamp(13px,2vh,18px);
+          left:clamp(16px,2vw,24px);
+          right:clamp(16px,2vw,24px);
           display:flex;
           align-items:flex-start;
           justify-content:space-between;
-          gap:8px;
+          gap:12px;
           margin:0;
           pointer-events:none;
-          text-shadow:0 1px 9px rgba(245,243,231,.92);
+          text-shadow:0 1px 10px rgba(245,243,231,.94);
         }
         .le-weather-studio-head > div { min-width:0; }
         .le-weather-studio-kicker {
           display:block;
-          font-size:6px;
-          line-height:1.1;
-          letter-spacing:.16em;
+          font-size:clamp(8px,.9vw,10px);
+          line-height:1.15;
+          letter-spacing:.17em;
         }
         .le-weather-studio-title {
-          margin:4px 0 0;
-          font-size:clamp(17px,2.1vw,23px);
+          margin:6px 0 0;
+          font-size:clamp(22px,2.8vw,31px);
           line-height:1.02;
           white-space:nowrap;
           overflow:hidden;
@@ -261,27 +294,27 @@
         }
         .le-weather-studio-state {
           flex:0 0 auto;
-          padding-top:1px;
-          font-size:6px;
+          padding-top:2px;
+          font-size:clamp(8px,.9vw,10px);
           line-height:1.1;
-          letter-spacing:.12em;
+          letter-spacing:.13em;
           white-space:nowrap;
-          text-shadow:0 1px 9px rgba(245,243,231,.96);
+          text-shadow:0 1px 10px rgba(245,243,231,.98);
         }
         .le-weather-studio-foot {
           position:absolute;
           z-index:2;
-          left:13px;
-          right:13px;
-          bottom:10px;
+          left:clamp(16px,2vw,24px);
+          right:clamp(16px,2vw,24px);
+          bottom:clamp(12px,1.8vh,17px);
           display:flex;
           align-items:center;
           justify-content:space-between;
-          gap:8px;
+          gap:12px;
           margin:0;
-          font-size:7px;
-          line-height:1.1;
-          text-shadow:0 1px 9px rgba(245,243,231,.96);
+          font-size:clamp(9px,1vw,11px);
+          line-height:1.2;
+          text-shadow:0 1px 10px rgba(245,243,231,.98);
         }
         .le-weather-studio-foot > span {
           min-width:0;
@@ -291,14 +324,14 @@
         }
         .le-weather-art-replay {
           flex:0 0 auto;
-          min-height:24px;
-          padding:5px 10px;
-          font-size:7px;
+          min-height:32px;
+          padding:7px 13px;
+          font-size:9px;
           line-height:1;
           pointer-events:auto;
           backdrop-filter:blur(8px);
           -webkit-backdrop-filter:blur(8px);
-          background:rgba(255,255,255,.62);
+          background:rgba(255,255,255,.68);
         }
         .le-weather-status,.le-weather-attribution {
           position:absolute!important;
@@ -313,15 +346,34 @@
           border:0!important;
         }
       }
-      @media(orientation:landscape) and (max-height:390px) {
-        .le-weather-dashboard {
-          height:clamp(210px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,88px) - 68px),270px);
+      @media (orientation:landscape) and (min-width:650px) and (max-width:820px) {
+        .le-weather-topbar {
+          grid-template-columns:minmax(0,1fr) auto;
+          grid-template-rows:auto auto;
+          row-gap:9px;
+          min-height:54px;
         }
-        .le-weather-content { padding-top:calc(env(safe-area-inset-top) + 5px); }
-        .le-weather-date-row { margin-top:4px; }
-        .le-weather-headline { font-size:clamp(34px,4.2vw,42px); }
-        .le-weather-temperature { font-size:clamp(59px,7.4vw,68px); }
-        .le-weather-studio-title { font-size:clamp(15px,1.9vw,19px); }
+        .le-weather-brand { grid-column:1;grid-row:1;font-size:11px; }
+        .le-weather-date { grid-column:1;grid-row:2;font-size:9px;letter-spacing:.12em; }
+        .le-weather-place { grid-column:2;grid-row:1;font-size:9px; }
+        .le-weather-mode { grid-column:2;grid-row:2;min-height:32px;padding:3px 9px; }
+        .le-weather-dashboard {
+          height:clamp(178px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,126px) - 94px),260px);
+        }
+      }
+      @media (orientation:landscape) and (max-height:390px) {
+        .le-weather-dashboard {
+          height:clamp(168px,calc(100svh - env(safe-area-inset-top) - var(--le-weather-dock-clearance,116px) - 72px),238px);
+        }
+        .le-weather-content { padding-top:calc(env(safe-area-inset-top) + 6px); }
+        .le-weather-topbar { min-height:34px; }
+        .le-weather-brand { font-size:clamp(11px,1.2vw,12px); }
+        .le-weather-date { font-size:clamp(8px,.95vw,9px); }
+        .le-weather-place { font-size:clamp(8px,.95vw,9px); }
+        .le-weather-mode { min-height:31px;padding:3px 9px; }
+        .le-weather-headline { font-size:clamp(29px,4vw,36px); }
+        .le-weather-temperature { font-size:clamp(49px,5.8vw,60px); }
+        .le-weather-studio-title { font-size:clamp(20px,2.5vw,26px); }
       }
       @media(max-width:430px){.le-weather-content{padding-left:17px;padding-right:17px;padding-bottom:calc(env(safe-area-inset-bottom) + 278px)}.le-weather-date-row{margin-top:24px;align-items:flex-start}.le-weather-headline{font-size:clamp(42px,11.5vw,52px)}.le-weather-temperature{font-size:clamp(74px,20vw,86px)}.le-weather-art-stage{height:clamp(158px,21vh,180px);margin-left:-9px;margin-right:-9px}.le-weather-summary{padding:10px 0}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:6px;letter-spacing:.08em}.le-weather-stat-value{font-size:11px}.le-weather-studio{padding:11px 10px 9px;border-radius:14px}.le-weather-studio-title{font-size:18px}.le-weather-studio-canvas{height:clamp(138px,18vh,155px)}}
 
@@ -332,7 +384,7 @@
           padding-top:calc(env(safe-area-inset-top) + 0px);
           padding-bottom:var(--le-weather-dock-clearance,calc(env(safe-area-inset-bottom) + 112px));
         }
-        .le-weather-date-row { margin-top:clamp(10px,1.25dvh,13px); }
+        .le-weather-topbar { row-gap:clamp(15px,1.8dvh,21px); }
         .le-weather-dashboard {
           grid-template-areas:"headline" "scene" "summary" "studio";
           margin-top:clamp(4px,.55dvh,6px);
@@ -801,7 +853,57 @@
       for(let i=0;i<5;i++){const x=width*(.12+i*.19);const y=height*(.75+(i%2)*.12);const phase=(t*.55+i*.27)%1;ctx.save();ctx.globalAlpha=.32*(1-phase);ctx.strokeStyle=ink;ctx.lineWidth=.75;ctx.beginPath();ctx.ellipse(x,y,4+phase*15,1.5+phase*3,0,0,Math.PI*2);ctx.stroke();ctx.restore();}}
     function drawWindLines(p,t){if(state.wind<18)return;const {soft}=p;const alpha=Math.min(.30,state.wind/180);for(let i=0;i<4;i++){const y=height*(.38+i*.095)+Math.sin(t*.55+i)*3;ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=soft;ctx.lineWidth=.9;ctx.beginPath();ctx.moveTo(width*(.10+i*.03),y);ctx.bezierCurveTo(width*.35,y-5,width*.56,y+6,width*.88,y-3);ctx.stroke();ctx.restore();}}
     function drawFog(p,t){if(state.weather!=='fog'&&state.cloud<85)return;const {paper,soft}=p;for(let i=0;i<3;i++){const y=height*(.49+i*.075)+Math.sin(t*.15+i)*7;const g=ctx.createLinearGradient(0,y,width,y);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.48,state.weather==='fog'?'rgba(238,238,224,.34)':'rgba(238,238,224,.15)');g.addColorStop(1,'rgba(255,255,255,0)');ctx.save();ctx.fillStyle=g;ctx.fillRect(0,y-9,width,19);ctx.restore();}}
-    function draw(){const p=palette();const t=elapsed;ctx.clearRect(0,0,width,height);drawSky(p,t);drawMountains(p,t);drawWater(p,t);drawPagoda(p);drawPagodaReflection(p);drawBambooAndLeaves(p,t);drawWindLines(p,t);drawRain(p,t);drawSnow(p,t);drawFog(p,t);}
+    function drawMinimalLandscape(p,t){
+      const night=state.phase==='night';
+      const horizon=height*.68;
+      drawSky(p,t);
+      ctx.save();
+      const far=ctx.createLinearGradient(0,height*.28,0,height*.84);
+      far.addColorStop(0,night?'#6e8578':'#c7cec4');
+      far.addColorStop(1,night?'#40574d':'#e2e4da');
+      ctx.fillStyle=far;
+      ctx.globalAlpha=.72;
+      ctx.beginPath();
+      ctx.moveTo(0,height*.72);
+      ctx.quadraticCurveTo(width*.18,height*.48,width*.34,height*.64);
+      ctx.quadraticCurveTo(width*.54,height*.38,width*.72,height*.62);
+      ctx.quadraticCurveTo(width*.86,height*.51,width,height*.65);
+      ctx.lineTo(width,height);
+      ctx.lineTo(0,height);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha=night?.48:.34;
+      ctx.strokeStyle=night?'#dbe6dc':'#718176';
+      ctx.lineWidth=1;
+      ctx.beginPath();
+      ctx.moveTo(0,height*.73);
+      ctx.quadraticCurveTo(width*.20,height*.54,width*.37,height*.68);
+      ctx.quadraticCurveTo(width*.58,height*.46,width*.76,height*.66);
+      ctx.quadraticCurveTo(width*.89,height*.56,width,height*.68);
+      ctx.stroke();
+      const water=ctx.createLinearGradient(0,horizon,0,height);
+      water.addColorStop(0,night?'rgba(116,151,139,.34)':'rgba(142,161,148,.24)');
+      water.addColorStop(1,'rgba(255,255,255,.015)');
+      ctx.fillStyle=water;
+      ctx.globalAlpha=1;
+      ctx.fillRect(0,horizon,width,height-horizon);
+      for(let i=0;i<4;i++){
+        const y=horizon+(height-horizon)*(i+1)/5;
+        const wave=Math.sin(t*.45+i)*Math.min(2.2,state.wind*.06);
+        line([[width*.04,y],[width*.34,y+wave],[width*.63,y-wave*.35],[width*.96,y]],p.soft,.25-i*.035,.65);
+      }
+      ctx.restore();
+      if(state.weather==='rain'||state.weather==='storm')drawRain(p,t);
+      else if(state.weather==='snow')drawSnow(p,t);
+      else if(state.weather==='fog')drawFog(p,t);
+      else if(state.weather==='wind')drawWindLines(p,t);
+    }
+    function draw(){
+      const p=palette();const t=elapsed;ctx.clearRect(0,0,width,height);
+      const compactLandscape=window.innerWidth>window.innerHeight&&width<560;
+      if(compactLandscape){drawMinimalLandscape(p,t);return;}
+      drawSky(p,t);drawMountains(p,t);drawWater(p,t);drawPagoda(p);drawPagodaReflection(p);drawBambooAndLeaves(p,t);drawWindLines(p,t);drawRain(p,t);drawSnow(p,t);drawFog(p,t);
+    }
     function loop(now){raf=0;if(!canvas.isConnected||!isActive('weather')||document.hidden)return;if(now-last>=42){const delta=Math.min(.08,(now-last)/1000||.04);elapsed+=delta;last=now;draw();}raf=requestAnimationFrame(loop);}
     function onVisibility(){if(document.hidden){if(raf)cancelAnimationFrame(raf);raf=0;}else if(!reduced&&!raf){last=0;raf=requestAnimationFrame(loop);}}
     document.addEventListener('visibilitychange',onVisibility);
@@ -1247,8 +1349,12 @@
     const screen=el('div','le-weather-screen');screen.dataset.weather='clear';screen.dataset.phase='day';screen.dataset.preview='true';
     screen.innerHTML=`
       <div class="le-weather-content">
-        <header class="le-weather-topbar"><div class="le-weather-brand">LIVE <span>//</span> EARTH</div><div class="le-weather-place"><svg viewBox="0 0 18 22" fill="none" aria-hidden="true"><path d="M9 20s7-7 7-12a7 7 0 1 0-14 0c0 5 7 12 7 12Z" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="8" r="2.2" stroke="currentColor" stroke-width="1.5"/></svg><span id="le-weather-place-text">LOCATION PREVIEW</span></div></header>
-        <div class="le-weather-date-row"><div class="le-weather-date" id="le-weather-date">LOCAL TIME</div><label class="le-weather-mode"><span>SCENE</span><select id="le-weather-mode-select" aria-label="Weather scene preview"><option value="auto">AUTO</option><option value="clear">CLEAR</option><option value="cloudy">CLOUDY</option><option value="rain">RAIN</option><option value="storm">STORM</option><option value="snow">SNOW</option><option value="fog">FOG</option><option value="wind">WIND</option><option value="night">NIGHT</option><option value="hot">HOT</option></select></label></div>
+        <header class="le-weather-topbar">
+          <div class="le-weather-brand">LIVE <span>//</span> EARTH</div>
+          <div class="le-weather-date-row"><div class="le-weather-date" id="le-weather-date">LOCAL TIME</div></div>
+          <div class="le-weather-place"><svg viewBox="0 0 18 22" fill="none" aria-hidden="true"><path d="M9 20s7-7 7-12a7 7 0 1 0-14 0c0 5 7 12 7 12Z" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="8" r="2.2" stroke="currentColor" stroke-width="1.5"/></svg><span id="le-weather-place-text">LOCATION PREVIEW</span></div>
+          <div class="le-weather-date-row"><label class="le-weather-mode"><span>SCENE</span><select id="le-weather-mode-select" aria-label="Weather scene preview"><option value="auto">AUTO</option><option value="clear">CLEAR</option><option value="cloudy">CLOUDY</option><option value="rain">RAIN</option><option value="storm">STORM</option><option value="snow">SNOW</option><option value="fog">FOG</option><option value="wind">WIND</option><option value="night">NIGHT</option><option value="hot">HOT</option></select></label></div>
+        </header>
         <div class="le-weather-dashboard">
           <div class="le-weather-forecast-column">
             <section class="le-weather-hero" aria-label="Current weather"><h1 class="le-weather-headline" id="le-weather-headline">A quiet sky.</h1></section>

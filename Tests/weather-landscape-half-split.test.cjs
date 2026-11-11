@@ -8,11 +8,11 @@ const source = fs.readFileSync(
 );
 
 assert.ok(source.includes('@media (orientation:landscape) and (min-width:650px)'));
-assert.ok(source.includes('grid-template-columns:repeat(2,minmax(0,1fr));'));
+assert.ok(source.includes('grid-template-columns:minmax(218px,.42fr) minmax(0,1fr);'));
 assert.ok(source.includes('grid-template-areas:"forecast artwork";'));
 assert.ok(source.includes('grid-area:forecast;'));
 assert.ok(source.includes('grid-area:artwork;'));
-assert.ok(source.includes('grid-template-rows:auto minmax(0,1fr) auto;'));
+assert.ok(source.includes('grid-template-rows:auto minmax(58px,1fr) auto;'));
 assert.ok(source.includes('grid-template-areas:"hero" "scene" "summary";'));
 assert.ok(source.includes('height:100%;'));
 assert.ok(source.includes('var(--le-weather-dock-clearance'));
@@ -28,7 +28,13 @@ const studio = source.indexOf('<section class="le-weather-studio"', artwork);
 assert.ok(dashboard >= 0 && forecast > dashboard);
 assert.ok(hero > forecast && scene > hero && summary > scene);
 assert.ok(artwork > summary && studio > artwork);
-assert.ok(!source.includes('grid-template-columns:minmax(280px,.88fr) minmax(380px,1.12fr)'));
+assert.ok(source.includes('padding-left:max(env(safe-area-inset-left),clamp(40px,5.8vw,64px))'));
+assert.ok(source.includes('padding-right:max(env(safe-area-inset-right),clamp(40px,5.8vw,64px))'));
+assert.ok(source.includes('grid-template-columns:minmax(218px,.42fr) minmax(0,1fr);'));
+assert.ok(source.includes('font-size:clamp(12px,1.35vw,14px)'));
+assert.ok(source.includes('font-size:clamp(22px,2.8vw,31px)'));
+assert.ok(source.includes('function drawMinimalLandscape(p,t)'));
+assert.ok(source.includes('const compactLandscape=window.innerWidth>window.innerHeight&&width<560;'));
 assert.ok(!source.includes('le-weather-hourly'));
 assert.ok(!source.includes('NEXT 6 HOURS'));
 assert.ok(!source.includes('hourly:'));
@@ -39,4 +45,4 @@ assert.ok(source.includes('function syncDockClearance()'));
 assert.ok(!/#le-feature-dock\s*\{/.test(source));
 assert.ok(!/weatherDock\.style\.(?:bottom|top|left|right|transform|width|height)/.test(source));
 
-console.log('Weather landscape 50/50 columns, integrated Weather scene, full-card Live Art and locked Orb dock contracts passed.');
+console.log('Weather compact overview, Live Art priority, notched-safe masthead and locked Orb dock contracts passed.');

@@ -23,7 +23,7 @@ assert.ok(source.includes('margin-left:calc(50% - 50vw);'));
 assert.ok(!source.includes('aspect-ratio:4 / 1;'));
 
 // Live Art is a full-panel canvas in an inset card; the text/control layers float above it.
-assert.ok(source.includes('height:clamp(150px,19dvh,184px);'));
+assert.ok(source.includes('aspect-ratio:10 / 7;'));
 assert.ok(source.includes('.le-weather-studio-canvas {\n          position:absolute;'));
 assert.ok(source.includes('inset:0;'));
 assert.ok(source.includes('aspect-ratio:auto;'));

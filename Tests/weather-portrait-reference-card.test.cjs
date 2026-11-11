@@ -19,7 +19,7 @@ assert.ok(!source.includes('aspect-ratio:4 / 1;'));
 
 // Live Art is a rounded, inset card whose canvas paints beneath floating UI across the full panel.
 assert.ok(source.includes('.le-weather-studio {\n          box-sizing:border-box;'));
-assert.ok(source.includes('height:clamp(150px,19dvh,184px);'));
+assert.ok(source.includes('aspect-ratio:10 / 7;'));
 assert.ok(source.includes('border-radius:17px;'));
 assert.ok(source.includes('.le-weather-studio-canvas {\n          position:absolute;'));
 assert.ok(source.includes('aspect-ratio:auto;'));

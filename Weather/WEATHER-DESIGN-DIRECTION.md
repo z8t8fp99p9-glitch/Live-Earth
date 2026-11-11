@@ -24,15 +24,15 @@ Japanese influence is visual artwork only. Do not add Japanese-language interfac
 - Keep the lower area quiet so the shared Orb dock remains visually clear. Do not add an hours-ahead rail to fill the space.
 - Preserve safe-area spacing and calculate scroll clearance from the existing shared Orb dock without styling or moving it.
 
-## Landscape composition — approved 50/50 split
+## Landscape composition — Live Art priority split
 
-- Use two equal flexible columns: **50% Weather overview on the left and 50% Live Art on the right**, measured within the safe content width. The inter-column gutter is shared equally and must not create a wider preferred side.
-- Keep the shared header and date/scene selector across the top.
-- The left Weather column contains the editorial headline, then one continuous full-scene illustration with the temperature and condition overlaid inside that same artwork, then the high/low, rain chance and wind summary.
-- The right Live Art column is one complete painted card. Its canvas fills the card; title/status float over the top and caption/Replay float over the bottom.
-- Give both columns the same available dashboard height. Do not retain the previous asymmetric `.88fr / 1.12fr` ratio or place the main Weather illustration on a separate side from its readings.
+- Use an intentionally asymmetric, safe-width split: a compact Weather overview at approximately 30% and the Live Art feature at approximately 70% (`minmax(218px,.42fr) minmax(0,1fr)` before the shared gutter).
+- Keep the masthead on one landscape row: brand, date/time, location and scene selector. Respect both `safe-area-inset-left` and `safe-area-inset-right`, and increase label sizes so the notch and rounded corners cannot obscure them.
+- The left Weather column is intentionally quiet: a concise headline, temperature and condition overlaid in one minimalist Canvas 2D weather scene, and only high/low, rain chance and wind.
+- In compact landscape layouts, simplify the main Weather canvas to a restrained horizon, one low mountain plane, light water marks and only the selected weather effect. Keep the richer landscape painter for portrait and larger canvases.
+- The right Live Art column owns the visual emphasis. Its canvas fills the large card; title/status float over the top and caption/Replay float over the bottom, with larger legible controls.
 - Keep the shared Orb dock centred and untouched. Use the existing measured dock-clearance variable for content spacing; never style, resize or reposition the dock from Weather.
-- Use responsive height limits and allow natural scrolling on shorter landscape viewports. Do not force a desktop dashboard or crop content beneath the shared dock.
+- Use responsive height limits and allow natural scrolling on shorter landscape viewports. Never crop content beneath the shared dock.
 
 ## Illustration and Live Art behaviour
 
@@ -61,5 +61,5 @@ Changes are limited to `Weather/weather-view.js`, `Tools/WEATHER-LAYOUT-EDITOR.h
 ## Orientation-specific composition (11 November 2026)
 
 - **Portrait:** keep the editorial weather story vertically stacked. Live Art is centered at 95% of the viewport width and uses a 10:7 width-to-height ratio (height is 70% of width). The painting fills the card; title, status, caption and Replay remain overlaid.
-- **Landscape:** use equal 1fr / 1fr columns. Weather information and its integrated weather illustration occupy the left half; the full-card Live Art painting occupies the right half.
+- **Landscape:** use a compact Weather overview beside a larger Live Art feature (approximately 30/70 within the safe content width). The masthead respects both horizontal safe-area insets; Live Art receives the visual priority.
 - The shared Orb dock remains owned and positioned by the existing global controller in both orientations. Weather only measures its bounds to reserve clearance.
