@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#08131d">
+<title>LIVE // EARTH — Weather Layout Editor</title>
+<style>
+:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#07111b;color:#eaf4fb}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07111b}
+button,input,select{font:inherit}button,select,input{color:#eef7ff;background:#0d1b29;border:1px solid #34516a;border-radius:9px;min-height:34px}
+button{padding:7px 10px;cursor:pointer;touch-action:manipulation}button:active{background:#19344b}button:disabled{opacity:.38}
+select,input[type=number]{padding:6px 8px;width:100%;min-width:0}input[type=checkbox]{accent-color:#79d6ff;width:17px;height:17px}
+#appFrame{position:fixed;inset:0;width:100%;height:100%;border:0;background:#111;pointer-events:none}
+#workspace{position:fixed;inset:0;z-index:10000;touch-action:none;pointer-events:auto}
+#selectionBox{position:fixed;display:none;border:1.5px solid #79d9ff;background:#4bbcff10;box-shadow:0 0 0 1px #061320,0 0 14px #4ec3ff4a;pointer-events:none}
+#selectionBox:before{content:"";position:absolute;inset:-5px;border:1px dashed #7bcfff60;pointer-events:none}
+#selectionLabel{position:absolute;left:-1px;top:-23px;max-width:88vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:2px 6px;border:1px solid #4a9bcb;border-radius:5px;background:#0b2940;color:#d8f1ff;font-size:10px;pointer-events:none}
+.handle{position:absolute;width:19px;height:19px;border:2px solid #071321;border-radius:5px;background:#8ce0ff;box-shadow:0 0 0 1px #52bdf6;pointer-events:auto;touch-action:none}
+.handle.tl{left:-9px;top:-9px}.handle.tr{right:-9px;top:-9px}.handle.bl{left:-9px;bottom:-9px}.handle.br{right:-9px;bottom:-9px}
+#toolHeader{position:fixed;z-index:10010;top:calc(env(safe-area-inset-top) + 7px);left:8px;right:8px;display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #34516a;border-radius:13px;background:#071522ed;box-shadow:0 6px 25px #0009;backdrop-filter:blur(13px);-webkit-backdrop-filter:blur(13px)}
+#brand{font-size:11px;font-weight:850;letter-spacing:.11em;white-space:nowrap}#brand span{color:#79d6ff}
+#status{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#a9c2d6;font-size:10px}
+#toolHeader button{min-height:30px;padding:5px 8px;font-size:11px}
+#panel{position:fixed;z-index:10011;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 7px);max-height:min(45vh,470px);overflow:auto;padding:10px;border:1px solid #34516a;border-radius:15px;background:#071522ed;box-shadow:0 7px 30px #000b;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);overscroll-behavior:contain}
+#panel.hidden{display:none!important}
+#panelHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+#panelHead strong{font-size:13px}#panelHead .sub{color:#8eabc3;font-size:10px;margin-top:2px}
+#collapseBtn{min-height:28px;padding:4px 8px;font-size:10px}
+.row{display:grid;grid-template-columns:1.2fr .8fr;gap:7px;margin-bottom:7px}
+.field{min-width:0}.field label{display:block;color:#a5bfd4;font-size:10px;margin:0 0 4px 1px}
+.four{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:7px 0}
+.four input{height:34px;font-size:12px}
+.actions{display:flex;flex-wrap:wrap;gap:6px;margin:7px 0}
+.actions button{flex:1 1 auto;font-size:10px;min-height:33px}
+.switchrow{display:flex;align-items:center;gap:6px;margin:7px 0;color:#c9d9e8;font-size:10px}
+.note{margin-top:6px;color:#9db5ca;font-size:10px;line-height:1.4}
+#selectionInfo{margin-top:6px;color:#79cfff;font:10px/1.35 ui-monospace,monospace;overflow-wrap:anywhere}
+#showControlsBtn{position:fixed;z-index:10013;right:12px;bottom:calc(env(safe-area-inset-bottom) + 90px);display:none;min-height:36px;padding:7px 11px;border:1px solid #3a6685;border-radius:11px;background:#071522f2;box-shadow:0 6px 22px #000a;font-size:11px}
+#showControlsBtn.visible{display:block}
+#measurePreview{display:none;position:fixed;z-index:10012;left:8px;right:8px;top:calc(env(safe-area-inset-top) + 55px);max-height:23vh;overflow:auto;white-space:pre-wrap;word-break:break-word;border:1px solid #34516a;border-radius:10px;background:#071522f5;padding:8px;font:9px/1.4 ui-monospace,monospace;color:#cce6fb}
+#measurePreview.show{display:block}
+#emptyState{position:fixed;z-index:10005;left:50%;top:50%;transform:translate(-50%,-50%);max-width:84vw;padding:13px 16px;border:1px solid #34516a;border-radius:12px;background:#071522ed;color:#d6e8f6;font-size:12px;line-height:1.5;text-align:center;display:none}
+@media(min-width:760px){#panel{left:auto;right:12px;top:72px;bottom:12px;width:380px;max-height:none}#toolHeader{left:12px;right:12px}#measurePreview{left:12px;right:auto;top:72px;width:min(470px,48vw);max-height:40vh}}
+@media(max-height:650px){#panel{max-height:38vh}.actions{margin:5px 0}.four{margin:5px 0}}
+</style>
+</head>
+<body>
+<iframe id="appFrame" title="LIVE // EARTH Weather preview" src="../index.html?weatherLayoutEditorPreview=1"></iframe>
+<div id="workspace" aria-label="Weather view layout editing surface">
+  <div id="selectionBox">
+    <div id="selectionLabel"></div>
+    <div class="handle tl" data-handle="tl"></div><div class="handle tr" data-handle="tr"></div>
+    <div class="handle bl" data-handle="bl"></div><div class="handle br" data-handle="br"></div>
+  </div>
+</div>
+<header id="toolHeader">
+  <div id="brand">LIVE <span>//</span> WEATHER LAB</div>
+  <div id="status">Opening the actual Weather view…</div>
+  <button id="modeBtn" type="button">Scroll preview</button>
+  <button id="reconnectBtn" type="button">Reconnect</button>
+</header>
+<div id="emptyState">Waiting for the Weather view to finish loading.<br>Tap Reconnect if it does not appear.</div>
+<pre id="measurePreview"></pre>
+<section id="panel">
+  <div id="panelHead">
+    <div><strong>Weather · full-screen layout editor</strong><div class="sub">Preview only · nothing is written to the app or repository</div></div>
+    <button id="collapseBtn" type="button">Hide</button>
+  </div>
+  <div class="row">
+    <div class="field"><label for="targetSelect">Element to adjust</label><select id="targetSelect"><option>Connecting to Weather…</option></select></div>
+    <div class="field"><label for="stepSelect">Move step</label><select id="stepSelect"><option value="1">Fine · 1 px</option><option value="3">3 px</option><option value="5" selected>Normal · 5 px</option><option value="10">Coarse · 10 px</option></select></div>
+  </div>
+  <div class="four">
+    <div class="field"><label for="xField">X · px</label><input id="xField" type="number" step="1" inputmode="numeric" value="0"></div>
+    <div class="field"><label for="yField">Y · px</label><input id="yField" type="number" step="1" inputmode="numeric" value="0"></div>
+    <div class="field"><label for="wField">Width · px</label><input id="wField" type="number" min="8" step="1" inputmode="numeric" value="0"></div>
+    <div class="field"><label for="hField">Height · px</label><input id="hField" type="number" min="8" step="1" inputmode="numeric" value="0"></div>
+  </div>
+  <label class="switchrow"><input id="lockAspect" type="checkbox"> Lock proportions while resizing</label>
+  <div class="actions">
+    <button id="leftBtn" type="button">← Move</button><button id="upBtn" type="button">↑ Move</button>
+    <button id="downBtn" type="button">↓ Move</button><button id="rightBtn" type="button">Move →</button>
+  </div>
+  <div class="actions">
+    <button id="smallerBtn" type="button">− Size</button><button id="largerBtn" type="button">+ Size</button>
+    <button id="resetOneBtn" type="button">Reset element</button><button id="resetAllBtn" type="button">Reset all</button>
+  </div>
+  <div class="actions">
+    <button id="copyBtn" type="button">Copy layout details</button>
+    <button id="exportBtn" type="button">Export JSON</button>
+  </div>
+  <div id="selectionInfo">Select an element from the list, or tap an element in the preview.</div>
+  <div class="note">Drag an element to move it. Drag a corner to resize. Main Weather art starts at 2.5:1; Live Art painting starts at 3:1. The full Live Art frame and every text/control element can be adjusted separately. Use “Scroll preview” to scroll the app, then return to Edit mode.</div>
+</section>
+<button id="showControlsBtn" type="button">Show editor</button>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const frame=$('appFrame'), workspace=$('workspace'), box=$('selectionBox'), status=$('status');
+const empty=$('emptyState'), targetSelect=$('targetSelect'), panel=$('panel'), preview=$('measurePreview');
+const targets=[], records=new Map();
+let doc=null, win=null, screen=null, current=null, drag=null, editMode=true;
+const px=n=>`${Math.round(n*100)/100}px`;
+const round=n=>Math.round(n*100)/100;
+const configs=[
+ ['Screen · Weather root','.le-weather-screen'],
+ ['Content · full page','.le-weather-content'],
+ ['Top header · full row','.le-weather-topbar'],
+ ['Brand · LIVE // EARTH','.le-weather-brand'],
+ ['Location label','.le-weather-place'],
+ ['Location text','#le-weather-place-text'],
+ ['Date + scene row','.le-weather-date-row'],
+ ['Date and local time','.le-weather-date'],
+ ['Scene selector','.le-weather-mode'],
+ ['Scene selector control','#le-weather-mode-select'],
+ ['Dashboard layout','.le-weather-dashboard'],
+ ['Headline','.le-weather-headline'],
+ ['Temperature + condition group','.le-weather-temperature-row'],
+ ['Temperature value','.le-weather-temperature'],
+ ['Condition group','.le-weather-condition'],
+ ['Condition icon','.le-weather-condition-icon'],
+ ['Condition name','#le-weather-condition'],
+ ['Feels-like text','#le-weather-feels'],
+ ['Main Weather illustration stage','.le-weather-art-stage'],
+ ['Main Weather illustration canvas','.le-weather-art-canvas'],
+ ['Weather statistics · full row','.le-weather-summary'],
+ ['Statistic 1 · High / Low','.le-weather-stat:nth-child(1)'],
+ ['Statistic 1 · Label','.le-weather-stat:nth-child(1) .le-weather-stat-label'],
+ ['Statistic 1 · Value','.le-weather-stat:nth-child(1) .le-weather-stat-value'],
+ ['Statistic 2 · Rain chance','.le-weather-stat:nth-child(2)'],
+ ['Statistic 2 · Label','.le-weather-stat:nth-child(2) .le-weather-stat-label'],
+ ['Statistic 2 · Value','.le-weather-stat:nth-child(2) .le-weather-stat-value'],
+ ['Statistic 3 · Wind','.le-weather-stat:nth-child(3)'],
+ ['Statistic 3 · Label','.le-weather-stat:nth-child(3) .le-weather-stat-label'],
+ ['Statistic 3 · Value','.le-weather-stat:nth-child(3) .le-weather-stat-value'],
+ ['Live Art · outer frame','.le-weather-studio'],
+ ['Live Art · header row','.le-weather-studio-head'],
+ ['Live Art · kicker','.le-weather-studio-kicker'],
+ ['Live Art · title','.le-weather-studio-title'],
+ ['Live Art · drawing status','.le-weather-studio-state'],
+ ['Live Art · painting canvas','.le-weather-studio-canvas'],
+ ['Live Art · footer row','.le-weather-studio-foot'],
+ ['Live Art · caption','#le-weather-studio-caption'],
+ ['Live Art · Replay button','#le-weather-art-replay'],
+ ['Hourly forecast · full section','.le-weather-hourly-section'],
+ ['Hourly heading row','.le-weather-section-head'],
+ ['Hourly title','.le-weather-section-title'],
+ ['Hourly range note','.le-weather-section-note'],
+ ['Hourly forecast rail','.le-weather-hourly'],
+ ['Hourly temperature curve','.le-weather-curve']
+];
+for(let i=1;i<=6;i++){
+ const n=i-1, tag=i===1?'Now':`${String(6+i).padStart(2,'0')}:00`;
+ configs.push([`Hour ${i} · ${tag}`,`.le-weather-hour:nth-child(${i})`]);
+ configs.push([`Hour ${i} · time`,`.le-weather-hour:nth-child(${i}) .le-weather-hour-time`]);
+ configs.push([`Hour ${i} · icon`,`.le-weather-hour:nth-child(${i}) .le-weather-hour-icon`]);
+ configs.push([`Hour ${i} · temperature`,`.le-weather-hour:nth-child(${i}) .le-weather-hour-temp`]);
+ configs.push([`Hour ${i} · rain chance`,`.le-weather-hour:nth-child(${i}) .le-weather-hour-rain`]);
+}
+configs.push(['Status / notice text','#le-weather-status'],['Weather data attribution','.le-weather-attribution']);
+
+function setStatus(s){status.textContent=s;}
+function getDoc(){try{return frame.contentDocument&&frame.contentDocument.documentElement?frame.contentDocument:null;}catch(_){return null;}}
+function parseTranslate(s){if(!s||s==='none')return{x:0,y:0};const m=s.match(/(-?[\d.]+)px(?:\s+|,\s*)(-?[\d.]+)px/);return m?{x:Number(m[1]),y:Number(m[2])}:{x:0,y:0};}
+function parseScale(s){if(!s||s==='none')return{x:1,y:1};const a=s.trim().split(/[ ,]+/).map(Number);return{x:Number.isFinite(a[0])?a[0]:1,y:Number.isFinite(a[1])?a[1]:(Number.isFinite(a[0])?a[0]:1)};}
+function rectOf(el){const r=el.getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height,right:r.right,bottom:r.bottom};}
+function stageRect(){const r=screen.getBoundingClientRect();return{left:r.left,top:r.top,width:r.width,height:r.height};}
+function isVisible(el){if(!el||!el.isConnected)return false;const s=win.getComputedStyle(el);return s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity)!==0&&el.getClientRects().length>0&&rectOf(el).w>0&&rectOf(el).h>0;}
+function makeRecord(el){
+ if(records.has(el))return records.get(el);
+ const style=win.getComputedStyle(el),r=rectOf(el);
+ const d={el,baseRect:{...r},baseTranslate:parseTranslate(style.translate),baseScale:parseScale(style.scale),inline:{translate:el.style.translate,scale:el.style.scale,transformOrigin:el.style.transformOrigin},dx:0,dy:0,sx:1,sy:1};
+ records.set(el,d);return d;
+}
+function installPreviewRatios(){
+ const style=doc.createElement('style');style.id='le-weather-layout-editor-preview';
+ style.textContent=`
+ .le-weather-art-stage{height:auto!important;aspect-ratio:2.5 / 1!important;min-height:0!important}
+ .le-weather-art-canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;aspect-ratio:2.5 / 1!important;transform:none!important;object-fit:fill}
+ .le-weather-studio{height:20dvh!important;min-height:0!important}
+ .le-weather-studio-canvas{position:absolute!important;top:50%!important;left:50%!important;width:100%!important;height:auto!important;aspect-ratio:3 / 1!important;max-width:100%!important;transform:translate(-50%,-50%)!important}
+ `;
+ doc.head.appendChild(style);
+}
+function connect(){
+ doc=getDoc();win=doc&&doc.defaultView;
+ if(!doc){setStatus('App frame not ready yet.');empty.style.display='block';return false;}
+ const api=win.LiveEarthFeatureViews;
+ if(api?.open&&api.getActive?.()!=='weather'){api.open('weather','weather-layout-editor');}
+ screen=doc.querySelector('.le-weather-screen');
+ if(!screen){setStatus('Opening Weather view in the app preview…');empty.style.display='block';return false;}
+ installPreviewRatios();
+ // Wait for the ratio override to take effect before capturing the editable baseline.
+ requestAnimationFrame(()=>requestAnimationFrame(rebuildTargets));
+ empty.style.display='none';
+ return true;
+}
+function rebuildTargets(){
+ if(!screen||!screen.isConnected)return;
+ targets.length=0;
+ for(const [label,selector] of configs){
+  const el=doc.querySelector(selector);if(!isVisible(el))continue;
+  const d=makeRecord(el);
+  const t={label,selector,el,area:rectOf(el).w*rectOf(el).h};
+  targets.push(t);
+ }
+ targetSelect.innerHTML='';
+ for(let i=0;i<targets.length;i++){const o=doc.createElement('option');o.value=String(i);o.textContent=targets[i].label;targetSelect.appendChild(o);}
+ if(targets.length){
+  let initial=targets.findIndex(t=>t.selector==='.le-weather-art-stage');
+  if(initial<0)initial=0;targetSelect.value=String(initial);selectTarget(targets[initial]);
+  setStatus(`${targets.length} visible Weather elements found · preview only`);
+ }else{setStatus('Weather view loaded, but no editable elements were found.');empty.style.display='block';}
+}
+function record(){return current?records.get(current.el):null;}
+function finalRect(){return current?rectOf(current.el):null;}
+function syncFields(){
+ if(!current)return;const r=finalRect(),sr=stageRect();
+ $('xField').value=round(r.x-sr.left);$('yField').value=round(r.y-sr.top);
+ $('wField').value=round(r.w);$('hField').value=round(r.h);
+ const d=record();
+ $('selectionInfo').textContent=`${current.selector} · Δ ${round(d.dx)}, ${round(d.dy)} px · scale ${d.sx.toFixed(3)} × ${d.sy.toFixed(3)} · ${round(r.w)} × ${round(r.h)} px`;
+ drawBox();
+}
+function apply(){
+ if(!current)return;const d=record();
+ current.el.style.translate=`${px(d.baseTranslate.x+d.dx)} ${px(d.baseTranslate.y+d.dy)}`;
+ current.el.style.scale=`${d.baseScale.x*d.sx} ${d.baseScale.y*d.sy}`;
+ current.el.style.transformOrigin='0 0';
+ syncFields();
+}
+function selectTarget(t){
+ if(!t)return;current=t;
+ const d=record();
+ const ratioLock=$('lockAspect');
+ ratioLock.checked=t.selector==='.le-weather-art-canvas'||t.selector==='.le-weather-studio-canvas';
+ syncFields();setStatus(`${t.label} selected · drag to move or resize with a corner`);
+}
+function drawBox(){
+ if(!current||!current.el.isConnected){box.style.display='none';return;}
+ const r=rectOf(current.el);if(r.w<1||r.h<1){box.style.display='none';return;}
+ box.style.display='block';box.style.left=px(r.x);box.style.top=px(r.y);box.style.width=px(r.w);box.style.height=px(r.h);
+ $('selectionLabel').textContent=current.label;
+}
+function move(dx,dy){const d=record();if(!d)return;d.dx+=dx;d.dy+=dy;apply();}
+function size(f){const d=record();if(!d)return;const lock=$('lockAspect').checked;d.sx=Math.max(.12,Math.min(8,d.sx*f));d.sy=lock?d.sx:d.sy*f;apply();}
+function resetElement(t){const d=records.get(t.el);t.el.style.translate=d.inline.translate;t.el.style.scale=d.inline.scale;t.el.style.transformOrigin=d.inline.transformOrigin;d.dx=0;d.dy=0;d.sx=1;d.sy=1;}
+function resetAll(){for(const t of targets)resetElement(t);if(current)syncFields();setStatus('All preview adjustments reset.');}
+function applyFields(){
+ if(!current)return;const d=record(),sr=stageRect();
+ const wantX=Number($('xField').value)||0,wantY=Number($('yField').value)||0;
+ const wantW=Math.max(8,Number($('wField').value)||8),wantH=Math.max(8,Number($('hField').value)||8);
+ d.dx=sr.left+wantX-d.baseRect.x;d.dy=sr.top+wantY-d.baseRect.y;
+ const sx=wantW/Math.max(1,d.baseRect.w),sy=wantH/Math.max(1,d.baseRect.h);
+ if($('lockAspect').checked){const f=Math.min(sx,sy);d.sx=f;d.sy=f;}else{d.sx=sx;d.sy=sy;}
+ apply();
+}
+function exportData(){
+ const sr=stageRect(),vp={width:win.innerWidth,height:win.innerHeight};
+ const elements=targets.map(t=>{
+  const d=records.get(t.el),r=rectOf(t.el);
+  return{label:t.label,selector:t.selector,rect:{x:round(r.x-sr.left),y:round(r.y-sr.top),width:round(r.w),height:round(r.h)},
+   percent:{x:round((r.x-sr.left)/Math.max(1,sr.width)*100),y:round((r.y-sr.top)/Math.max(1,sr.height)*100),width:round(r.w/Math.max(1,sr.width)*100),height:round(r.h/Math.max(1,sr.height)*100)},
+   transform:{translateX:round(d.dx),translateY:round(d.dy),scaleX:round(d.sx),scaleY:round(d.sy)},
+   aspectRatio:round(r.w/Math.max(1,r.h)),baseline:{x:round(d.baseRect.x-sr.left),y:round(d.baseRect.y-sr.top),width:round(d.baseRect.w),height:round(d.baseRect.h)}};
+ });
+ return{tool:'LIVE // EARTH Weather Layout Editor',formatVersion:1,exportedAt:new Date().toISOString(),
+  note:'Preview-only measurements. No production files or browser settings are changed. Review and convert these values into responsive CSS before applying.',
+  previewRatios:{mainWeatherArt:'2.5:1',liveArtPainting:'3:1',liveArtOuterFrame:'independent adjustable frame'},
+  viewport:{width:vp.width,height:vp.height,screenWidth:round(sr.width),screenHeight:round(sr.height),devicePixelRatio:win.devicePixelRatio||1},
+  elements};
+}
+function json(){return JSON.stringify(exportData(),null,2);}
+function save(name,text){const a=document.createElement('a'),u=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1200);}
+function hitTarget(x,y){
+ return targets.map(t=>({t,r:rectOf(t.el)})).filter(q=>x>=q.r.x&&x<=q.r.right&&y>=q.r.y&&y<=q.r.bottom)
+  .sort((a,b)=>a.r.w*a.r.h-b.r.w*b.r.h)[0]?.t||null;
+}
+function pointerDown(e){
+ if(!editMode||e.target.closest('#panel,#toolHeader,#measurePreview,#showControlsBtn'))return;
+ const handle=e.target.closest('[data-handle]');
+ let t=current;
+ if(!handle){const found=hitTarget(e.clientX,e.clientY);if(found){t=found;current=t;targetSelect.value=String(targets.indexOf(t));$('lockAspect').checked=t.selector.includes('art-canvas');}}
+ if(!t)return;
+ const d=records.get(t.el),r=rectOf(t.el);
+ drag={id:e.pointerId,t,mode:handle?'resize':'move',corner:handle?.dataset.handle||'br',x:e.clientX,y:e.clientY,dx:d.dx,dy:d.dy,sx:d.sx,sy:d.sy,rect:{...r}};
+ workspace.setPointerCapture?.(e.pointerId);e.preventDefault();
+}
+function pointerMove(e){
+ if(!drag||e.pointerId!==drag.id)return;
+ const d=records.get(drag.t.el),dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+ if(drag.mode==='move'){d.dx=drag.dx+dx;d.dy=drag.dy+dy;}
+ else{
+  const c=drag.corner,lock=$('lockAspect').checked;
+  let fx=1,fy=1;
+  if(c.includes('r'))fx=Math.max(.12,(drag.rect.w+dx)/Math.max(1,drag.rect.w));
+  if(c.includes('l'))fx=Math.max(.12,(drag.rect.w-dx)/Math.max(1,drag.rect.w));
+  if(c.includes('b'))fy=Math.max(.12,(drag.rect.h+dy)/Math.max(1,drag.rect.h));
+  if(c.includes('t'))fy=Math.max(.12,(drag.rect.h-dy)/Math.max(1,drag.rect.h));
+  if(lock){const f=Math.abs(fx-1)>Math.abs(fy-1)?fx:fy;fx=f;fy=f;}
+  d.sx=drag.sx*fx;d.sy=drag.sy*fy;
+  if(c.includes('l'))d.dx=drag.dx+drag.rect.w*(1-fx);
+  if(c.includes('t'))d.dy=drag.dy+drag.rect.h*(1-fy);
+ }
+ apply();e.preventDefault();
+}
+function pointerUp(e){if(drag&&e.pointerId===drag.id)drag=null;}
+function setEditMode(on){
+ editMode=!!on;workspace.style.pointerEvents=editMode?'auto':'none';frame.style.pointerEvents=editMode?'none':'auto';
+ $('modeBtn').textContent=editMode?'Scroll preview':'Edit layout';
+ setStatus(editMode?'Edit mode · tap or drag any Weather element':'Scroll mode · swipe the preview, then return to Edit layout');
+}
+function hidePanel(){panel.classList.add('hidden');$('showControlsBtn').classList.add('visible');}
+function showPanel(){panel.classList.remove('hidden');$('showControlsBtn').classList.remove('visible');}
+$('reconnectBtn').addEventListener('click',()=>connect());
+frame.addEventListener('load',()=>{setStatus('App loaded · opening Weather…');let n=0;const timer=setInterval(()=>{n++;if(connect()){clearInterval(timer);return;}if(n>80){clearInterval(timer);setStatus('Weather did not activate. Tap Reconnect.');}},400);});
+targetSelect.addEventListener('change',()=>selectTarget(targets[Number(targetSelect.value)]));
+workspace.addEventListener('pointerdown',pointerDown,{passive:false});workspace.addEventListener('pointermove',pointerMove,{passive:false});
+workspace.addEventListener('pointerup',pointerUp);workspace.addEventListener('pointercancel',pointerUp);
+for(const [id,dx,dy] of [['leftBtn',-1,0],['upBtn',0,-1],['downBtn',0,1],['rightBtn',1,0]])$(id).addEventListener('click',()=>{const s=Number($('stepSelect').value)||1;move(dx*s,dy*s);});
+$('smallerBtn').addEventListener('click',()=>size(.95));$('largerBtn').addEventListener('click',()=>size(1.05));
+for(const id of ['xField','yField','wField','hField'])$(id).addEventListener('change',applyFields);
+$('resetOneBtn').addEventListener('click',()=>{if(current){resetElement(current);syncFields();setStatus('Selected element reset.');}});
+$('resetAllBtn').addEventListener('click',resetAll);
+$('copyBtn').addEventListener('click',async()=>{const s=json();preview.textContent=s;preview.classList.add('show');try{await navigator.clipboard.writeText(s);setStatus('All Weather layout details copied. Paste them back into the chat.');}catch(_){setStatus('JSON is displayed above. Long-press to select and copy.');}});
+$('exportBtn').addEventListener('click',()=>{const s=json();save('weather-layout-details.json',s);preview.textContent=s;preview.classList.add('show');setStatus('Weather layout JSON exported.');});
+$('modeBtn').addEventListener('click',()=>setEditMode(!editMode));
+$('collapseBtn').addEventListener('click',hidePanel);$('showControlsBtn').addEventListener('click',showPanel);
+window.addEventListener('resize',()=>{if(current)syncFields();});
+window.addEventListener('beforeunload',()=>{for(const t of targets)resetElement(t);});
+setEditMode(true);
+})();
+</script>
+</body>
+</html>
