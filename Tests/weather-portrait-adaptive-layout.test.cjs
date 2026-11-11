@@ -9,12 +9,13 @@ const source = fs.readFileSync(
 
 // Portrait uses full-width, proportional 4:1 artwork; the surrounding cards are overlays.
 assert.equal((source.match(/aspect-ratio:4 \/ 1;/g) || []).length, 2);
-assert.ok((source.match(/height:15dvh;/g) || []).length >= 2);
+assert.ok(source.includes('height:15dvh;')); // Main landscape keeps its 15dvh visual stage.
+assert.ok(source.includes('height:clamp(140px,18dvh,176px);')); // Live Art receives the freed vertical space.
 assert.ok(source.includes('width:100vw;'));
 assert.ok(source.includes('margin-left:calc(50% - 50vw);'));
 
 // Temperature and condition sit over the primary illustrated landscape.
-assert.ok(source.includes('grid-template-areas:"headline" "scene" "summary" "studio" "hours";'));
+assert.ok(source.includes('grid-template-areas:"headline" "scene" "summary" "studio";'));
 assert.ok(source.includes('.le-weather-hero { display:contents; }'));
 assert.ok(source.includes('grid-area:scene;'));
 assert.ok(source.includes('.le-weather-temperature-row {'));

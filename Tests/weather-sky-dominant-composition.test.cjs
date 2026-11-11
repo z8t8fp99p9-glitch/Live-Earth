@@ -1,9 +1,10 @@
 const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');
 const s=fs.readFileSync(path.join(__dirname,'..','Weather/weather-view.js'),'utf8');
-assert.ok(s.includes('--paper:#f1eee5'));assert.ok(s.includes('font-family:Georgia,"Times New Roman",serif'));
+assert.ok(s.includes('--paper:#f4efe9'));assert.ok(s.includes('font-family:"Bodoni 72",Didot,"Bodoni MT",Georgia,"Times New Roman",serif'));
 assert.ok(s.includes('font-size:clamp(43px,11vw,70px)'));assert.ok(s.includes('id="le-weather-art-canvas"'));assert.ok(s.includes('.le-weather-art-canvas{display:block;width:100%;height:100%'));
 assert.ok(s.includes('id="le-weather-temperature"'));assert.ok(s.includes('id="le-weather-date"'));
-assert.ok(s.includes('grid-template-areas:"hero scene" "summary studio" "hours studio"'));
+assert.ok(s.includes('grid-template-areas:"hero scene" "summary studio"'));
+assert.ok(!s.includes('le-weather-hourly'));assert.ok(!s.includes('hourly:'));
 assert.ok(s.includes('HIGH / LOW'));assert.ok(s.includes('RAIN CHANCE'));assert.ok(s.includes('WIND'));
 assert.ok(!s.includes('UV INDEX'));assert.ok(!s.includes('VISIBILITY'));assert.ok(!s.includes('PRESSURE'));
 console.log('Minimal paper background, expressive editorial type, live artwork and essential-only weather data checks passed.');

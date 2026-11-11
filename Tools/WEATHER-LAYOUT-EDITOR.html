@@ -144,21 +144,7 @@ const configs=[
  ['Live Art · footer row','.le-weather-studio-foot'],
  ['Live Art · caption','#le-weather-studio-caption'],
  ['Live Art · Replay button','#le-weather-art-replay'],
- ['Hourly forecast · full section','.le-weather-hourly-section'],
- ['Hourly heading row','.le-weather-section-head'],
- ['Hourly title','.le-weather-section-title'],
- ['Hourly range note','.le-weather-section-note'],
- ['Hourly forecast rail','.le-weather-hourly'],
- ['Hourly temperature curve','.le-weather-curve']
 ];
-for(let i=1;i<=6;i++){
- const n=i-1, tag=i===1?'Now':`${String(6+i).padStart(2,'0')}:00`;
- configs.push([`Hour ${i} · ${tag}`,`.le-weather-hour:nth-child(${i})`]);
- configs.push([`Hour ${i} · time`,`.le-weather-hour:nth-child(${i}) .le-weather-hour-time`]);
- configs.push([`Hour ${i} · icon`,`.le-weather-hour:nth-child(${i}) .le-weather-hour-icon`]);
- configs.push([`Hour ${i} · temperature`,`.le-weather-hour:nth-child(${i}) .le-weather-hour-temp`]);
- configs.push([`Hour ${i} · rain chance`,`.le-weather-hour:nth-child(${i}) .le-weather-hour-rain`]);
-}
 configs.push(['Status / notice text','#le-weather-status'],['Weather data attribution','.le-weather-attribution']);
 
 function setStatus(s){status.textContent=s;}

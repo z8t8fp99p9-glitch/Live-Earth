@@ -11,7 +11,6 @@ for (const selector of [
   '.le-weather-temperature','.le-weather-condition','.le-weather-art-stage',
   '.le-weather-art-canvas','.le-weather-summary','.le-weather-studio',
   '.le-weather-studio-head','.le-weather-studio-canvas','.le-weather-studio-foot',
-  '.le-weather-hourly-section','.le-weather-hourly','.le-weather-hour:nth-child(6)'
 ]) assert.ok(tool.includes(selector), `Missing Weather editor selector: ${selector}`);
 
 assert.ok(tool.includes('aspect-ratio:2.5 / 1'));
@@ -20,10 +19,12 @@ assert.ok(tool.includes('Copy layout details'));
 assert.ok(tool.includes('Export JSON'));
 assert.ok(tool.includes('Scroll preview'));
 assert.ok(tool.includes('weather-layout-details.json'));
-assert.ok(tool.includes('window.LiveEarthFeatureViews'));
+assert.ok(tool.includes('win.LiveEarthFeatureViews')); // The editor reaches the feature API through its same-origin frame window.
 assert.ok(!tool.includes('localStorage'));
 assert.ok(!tool.includes('fetch('));
 assert.ok(!/#le-feature-dock\\s*\\{/.test(tool));
+assert.ok(!tool.includes('le-weather-hourly'));
+assert.ok(!weather.includes('le-weather-hourly'));
 assert.ok(weather.includes("document.getElementById('le-feature-dock')"));
 assert.ok(!/weatherDock\\.style\\.(?:bottom|top|left|right|transform|width|height)/.test(weather));
 

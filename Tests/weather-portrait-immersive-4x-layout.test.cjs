@@ -11,8 +11,11 @@ const source = fs.readFileSync(
 assert.equal((source.match(/aspect-ratio:4 \/ 1;/g) || []).length, 2);
 assert.equal((source.match(/width:min\(100%,60dvh\);/g) || []).length, 3);
 
+// No hourly strip: the portrait hierarchy ends with the Live Art card.
+assert.ok(!source.includes("le-weather-hourly"));
+
 // The temperature/condition overlay shares the main illustration's grid area.
-assert.ok(source.includes('grid-template-areas:"headline" "scene" "summary" "studio" "hours";'));
+assert.ok(source.includes('grid-template-areas:"headline" "scene" "summary" "studio";'));
 assert.ok(source.includes('.le-weather-hero { display:contents; }'));
 assert.ok(source.includes('grid-area:headline;'));
 assert.ok(source.includes('.le-weather-temperature-row {'));
