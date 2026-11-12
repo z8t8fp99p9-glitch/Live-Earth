@@ -1,0 +1,6 @@
+File: sw.js (repository root)
+Add this exact line at the very bottom, after the final event listener:
+
+importScripts("./Weather/Art/service-worker-extension.js");
+
+Do not replace sw.js with service-worker-extension.js. This is the only manual source hookup for this test package.

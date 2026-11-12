@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "scope": "Weather Live Art studio only",
+  "canvas": { "width": 1000, "height": 700, "aspectRatio": "10:7" },
+  "artworks": [
+    {
+      "id": "rainy-tea-afternoon-001",
+      "title": "A Rainy Tea Afternoon",
+      "weather": ["rain", "cloudy"],
+      "moment": "A quiet cup beside a rain-streaked window",
+      "mood": ["comfort", "stillness", "warmth"],
+      "dataPath": "Weather/Art/rainy-tea-afternoon-001.json",
+      "format": "application/json",
+      "renderMode": "ordered-ink-wash-paths",
+      "durationMs": 18000,
+      "palette": "fixed; charcoal ink, warm paper, muted grey, vermilion accents",
+      "availability": "online-on-demand"
+    }
+  ]
+}
