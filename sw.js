@@ -1205,3 +1205,5 @@ self.addEventListener("fetch", event => {
   }
   event.respondWith(boundedOptionalCache(request));
 });
+
+importScripts("./Weather/Art/service-worker-extension.js");
