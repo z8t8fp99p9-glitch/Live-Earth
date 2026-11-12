@@ -78,20 +78,25 @@
          Header elements stay inside the physical horizontal safe areas on notched iPhones. */
       @media (orientation:landscape) and (min-width:650px) {
         .le-weather-screen { overflow-y:auto; }
-        /* Landscape receives a warmer washi atmosphere that links the two artworks. */
+        /* Landscape-only painted-paper atmosphere: visibly warm, layered and soft, without touching content. */
         .le-weather-screen::after {
           content:"";
           position:fixed;
           z-index:0;
           inset:0;
           pointer-events:none;
+          opacity:1;
           background:
-            radial-gradient(ellipse at 3% 4%,rgba(190,91,67,.12) 0,transparent 23%),
-            radial-gradient(ellipse at 98% 8%,rgba(138,151,126,.13) 0,transparent 25%),
-            radial-gradient(ellipse at 7% 100%,rgba(91,116,99,.20) 0,transparent 30%),
-            radial-gradient(ellipse at 94% 100%,rgba(91,116,99,.18) 0,transparent 32%),
-            radial-gradient(ellipse at 48% 88%,rgba(196,205,185,.25) 0,transparent 44%),
-            linear-gradient(180deg,rgba(249,245,236,.18),rgba(239,237,226,.035) 55%,rgba(211,218,204,.13));
+            radial-gradient(ellipse at 2% 2%,rgba(190,91,67,.24) 0,rgba(190,91,67,.10) 15%,transparent 31%),
+            radial-gradient(ellipse at 99% 5%,rgba(138,151,126,.24) 0,rgba(138,151,126,.09) 17%,transparent 34%),
+            radial-gradient(ellipse at 1% 96%,rgba(75,105,89,.34) 0,rgba(104,128,105,.20) 18%,transparent 39%),
+            radial-gradient(ellipse at 100% 98%,rgba(75,105,89,.31) 0,rgba(104,128,105,.18) 19%,transparent 40%),
+            radial-gradient(ellipse at 48% 83%,rgba(174,190,166,.38) 0,rgba(196,205,185,.22) 29%,transparent 58%),
+            radial-gradient(ellipse at 51% 47%,rgba(255,252,243,.42) 0,transparent 55%),
+            repeating-linear-gradient(4deg,rgba(94,83,65,.025) 0 1px,transparent 1px 7px),
+            repeating-linear-gradient(94deg,rgba(94,83,65,.018) 0 1px,transparent 1px 11px),
+            linear-gradient(180deg,rgba(249,245,236,.34),rgba(239,237,226,.06) 49%,rgba(183,197,178,.22));
+          mix-blend-mode:multiply;
         }
         .le-weather-content {
           width:min(100%,1380px);
@@ -160,12 +165,14 @@
           border-radius:0;
           pointer-events:none;
           background:
-            radial-gradient(ellipse at 5% 78%,rgba(112,132,111,.20),transparent 34%),
-            radial-gradient(ellipse at 31% 34%,rgba(198,205,187,.29),transparent 46%),
-            radial-gradient(ellipse at 68% 54%,rgba(218,207,188,.22),transparent 51%),
-            radial-gradient(ellipse at 98% 84%,rgba(112,132,111,.17),transparent 35%),
-            linear-gradient(106deg,rgba(247,243,234,.07),rgba(229,234,224,.20) 53%,rgba(247,243,234,.05));
-          filter:blur(13px);
+            radial-gradient(ellipse at 2% 78%,rgba(103,128,103,.34),transparent 35%),
+            radial-gradient(ellipse at 29% 30%,rgba(186,199,174,.42),transparent 48%),
+            radial-gradient(ellipse at 67% 54%,rgba(216,198,174,.34),transparent 54%),
+            radial-gradient(ellipse at 99% 83%,rgba(91,119,96,.30),transparent 37%),
+            radial-gradient(ellipse at 50% 100%,rgba(142,163,139,.23),transparent 52%),
+            linear-gradient(106deg,rgba(247,243,234,.14),rgba(215,226,210,.34) 52%,rgba(247,243,234,.12));
+          filter:blur(9px);
+          opacity:.96;
         }
         .le-weather-forecast-column {
           grid-area:forecast;

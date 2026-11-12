@@ -21,13 +21,15 @@ const end = source.indexOf('@media (orientation:landscape) and (min-width:650px)
 assert.ok(start >= 0 && end > start);
 const landscape = source.slice(start, end);
 
-// The shared landscape-only background is a continuous paper-and-mist field, not another card.
+// The shared landscape-only background is a visible continuous paper-and-mist field, not another card.
 assert.ok(landscape.includes('.le-weather-screen::after'));
-assert.ok(landscape.includes('radial-gradient(ellipse at 7% 100%'));
-assert.ok(landscape.includes('radial-gradient(ellipse at 94% 100%'));
+assert.ok(landscape.includes('rgba(190,91,67,.24)'));
+assert.ok(landscape.includes('rgba(75,105,89,.34)'));
+assert.ok(landscape.includes('repeating-linear-gradient(4deg'));
 assert.ok(landscape.includes('border-radius:0;'));
-assert.ok(landscape.includes('filter:blur(13px);'));
+assert.ok(landscape.includes('filter:blur(9px);'));
 assert.ok(landscape.includes('.le-weather-dashboard::before'));
+assert.ok(landscape.includes('rgba(103,128,103,.34)'));
 
 // Weather typography moves closer to the large editorial reference while staying responsive.
 assert.ok(landscape.includes('width:min(94%,410px);'));
