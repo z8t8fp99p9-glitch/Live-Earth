@@ -2,24 +2,26 @@
 
 **Repository:** `z8t8fp99p9-glitch/Live-Earth`  
 **Branch:** `main`  
-**Latest inspected commit:** `a81afab9a007c0183d47073b35cd2831e3694b32` — `Remove Duplicate ZIP Extraction Workflow`  
+**Last inspected main commit before this documentation-pointer correction:** `01c2442f887db29d4156044f31c1bc44bad99c75` — `Refresh LIVE EARTH App Documentation and Weather Art Locks`  
 **Latest app-source commit:** `f00750e4b374009b2ff8acfaed2d11f583921cc9` — `Keep Weather and Live Art illustration colours consistent across day and night`  
 **Service-worker build identity:** `v132-residents-removed` (`sw.js`; verify matching identity in `Global/update-manager.js` before a future release).
 
+This package changes documentation pointers only. Its upload will create a subsequent documentation-only commit; check GitHub `main` for the resulting current HEAD after the upload.
+
 ## 1. Current workflow position
 
-- `.github/workflows/regression-tests.yml` has been deleted in commit `a81afab9a007c0183d47073b35cd2831e3694b32`.
+- `.github/workflows/regression-tests.yml` was deleted in commit `a81afab9a007c0183d47073b35cd2831e3694b32`.
 - Important correction: that file was not a regression-test workflow. It was an older duplicate root-ZIP extractor. It attempted to extract the same upload a second time after the newer extractor had already processed/removed it, producing the misleading `Upload one ZIP file at repository root.` failure.
 - `.github/workflows/zip-extract-auto-upload.yml` remains present and intact. It is the active **manifest-validated ZIP extractor**. It validates one changed root ZIP, exact manifest membership, byte sizes, SHA-256 hashes, safe paths, and the task-specific `commitTitle` before applying the payload.
 - The ZIP extractor rejects `.github/` paths, so future workflow-YAML changes require a separate manual GitHub edit/commit.
 - All existing files under `Tests/` are retained. The deletion removed only the duplicate workflow YAML. The repository's test files remain available, but the removed workflow no longer runs a GitHub regression suite. Do not describe CI regression tests as passing/running unless a separate actual runner is introduced and verified.
-- The latest commit is workflow-only. It does not change application source or require a Pages rebuild by itself.
+- The workflow cleanup commit is not the current `main` HEAD; see the inspected commit pointer above. The documentation update itself does not change application source.
 
 ## 2. Current app release position
 
 - The last app-source commit is `f00750e4b374009b2ff8acfaed2d11f583921cc9`. The Pages deployment for that app-source change succeeded; the user then confirmed the fixed Weather/Live Art colour behaviour in the app.
-- The latest `main` commit `a81afab...` removes only `.github/workflows/regression-tests.yml`.
-- Do not confuse the last app deployment with the later workflow-only commit.
+- The subsequent commits `a81afab...`, `f9e2da2...` and `01c2442...` were workflow/documentation changes, not new app-source releases.
+- Do not confuse the last app deployment with later workflow-only or documentation-only commits.
 
 ## 3. Weather and Live Art — current accepted state
 

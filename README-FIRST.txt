@@ -2,7 +2,7 @@ LIVE // EARTH — START HERE
 Repository: z8t8fp99p9-glitch/Live-Earth
 Branch: main
 Documentation review: 12 November 2026
-Latest inspected main commit: a81afab9a007c0183d47073b35cd2831e3694b32
+Last inspected main commit before this documentation-pointer correction: 01c2442f887db29d4156044f31c1bc44bad99c75
 
 READ THESE FIRST — IN THIS ORDER
 1. PROJECT-CONTINUITY.md
@@ -15,11 +15,11 @@ READ THESE FIRST — IN THIS ORDER
 
 CURRENT PROJECT POSITION — 12 NOVEMBER 2026
 - Treat the app and existing modules as production code. Inspect current main, callers, dependencies and tests before every source change.
-- Latest main commit is a workflow-only cleanup: a81afab9a007c0183d47073b35cd2831e3694b32 (Remove Duplicate ZIP Extraction Workflow).
-- The duplicate `.github/workflows/regression-tests.yml` file was removed. Despite its filename, it was an older duplicate ZIP extractor, not a regression-test runner.
+- The last inspected main commit before this documentation-pointer correction is 01c2442f887db29d4156044f31c1bc44bad99c75 (Refresh LIVE EARTH App Documentation and Weather Art Locks). This package will create a subsequent documentation-only commit; check GitHub main for the resulting current HEAD after upload.
+- The duplicate `.github/workflows/regression-tests.yml` file was removed in commit a81afab9a007c0183d47073b35cd2831e3694b32. Despite its filename, it was an older duplicate ZIP extractor, not a regression-test runner.
 - Keep `.github/workflows/zip-extract-auto-upload.yml`. It is the active manifest-validated ZIP extractor. Do not modify it casually.
 - Keep all source files under `Tests/`. Removing the duplicate workflow did not delete test files. The repository's tests remain available for deliberate local/manual validation; do not imply a GitHub regression workflow currently runs them.
-- Last app-source commit before the workflow-only cleanup: `f00750e4b374009b2ff8acfaed2d11f583921cc9` — Weather and Live Art illustration colours remain consistent across day and night. Pages deployment succeeded and the user confirmed the result in-app.
+- Last app-source commit: `f00750e4b374009b2ff8acfaed2d11f583921cc9` — Weather and Live Art illustration colours remain consistent across day and night. Pages deployment succeeded and the user confirmed the result in-app.
 - Current service-worker build identity: `v132-residents-removed` (confirm it remains synchronized with `Global/update-manager.js` before future releases).
 - Weather and Live Art artwork palettes are fixed across day/night. The sun/moon subject and weather-specific painting content/effects may still respond to phase/conditions; the underlying artwork palette must not recolour.
 - Preserve the approved Portrait lock, accepted Landscape layout, Live Art 10:7 frame, and shared Orb dock.
