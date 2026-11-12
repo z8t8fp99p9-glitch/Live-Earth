@@ -78,6 +78,21 @@
          Header elements stay inside the physical horizontal safe areas on notched iPhones. */
       @media (orientation:landscape) and (min-width:650px) {
         .le-weather-screen { overflow-y:auto; }
+        /* Landscape receives a warmer washi atmosphere that links the two artworks. */
+        .le-weather-screen::after {
+          content:"";
+          position:fixed;
+          z-index:0;
+          inset:0;
+          pointer-events:none;
+          background:
+            radial-gradient(ellipse at 3% 4%,rgba(190,91,67,.12) 0,transparent 23%),
+            radial-gradient(ellipse at 98% 8%,rgba(138,151,126,.13) 0,transparent 25%),
+            radial-gradient(ellipse at 7% 100%,rgba(91,116,99,.20) 0,transparent 30%),
+            radial-gradient(ellipse at 94% 100%,rgba(91,116,99,.18) 0,transparent 32%),
+            radial-gradient(ellipse at 48% 88%,rgba(196,205,185,.25) 0,transparent 44%),
+            linear-gradient(180deg,rgba(249,245,236,.18),rgba(239,237,226,.035) 55%,rgba(211,218,204,.13));
+        }
         .le-weather-content {
           width:min(100%,1380px);
           min-height:100%;
@@ -141,14 +156,16 @@
           content:"";
           position:absolute;
           z-index:0;
-          inset:-14px calc(-1 * clamp(26px,3.4vw,42px)) -8px;
-          border-radius:30px;
+          inset:-26px calc(-1 * clamp(26px,3.4vw,42px)) -30px;
+          border-radius:0;
           pointer-events:none;
           background:
-            radial-gradient(ellipse at 19% 38%,rgba(190,204,190,.24),transparent 48%),
-            radial-gradient(ellipse at 70% 56%,rgba(215,204,184,.17),transparent 55%),
-            linear-gradient(106deg,rgba(241,239,229,.10),rgba(229,234,224,.16) 56%,rgba(244,239,231,.08));
-          filter:blur(9px);
+            radial-gradient(ellipse at 5% 78%,rgba(112,132,111,.20),transparent 34%),
+            radial-gradient(ellipse at 31% 34%,rgba(198,205,187,.29),transparent 46%),
+            radial-gradient(ellipse at 68% 54%,rgba(218,207,188,.22),transparent 51%),
+            radial-gradient(ellipse at 98% 84%,rgba(112,132,111,.17),transparent 35%),
+            linear-gradient(106deg,rgba(247,243,234,.07),rgba(229,234,224,.20) 53%,rgba(247,243,234,.05));
+          filter:blur(13px);
         }
         .le-weather-forecast-column {
           grid-area:forecast;
@@ -193,20 +210,20 @@
           pointer-events:none;
         }
         .le-weather-headline {
-          width:min(88%,360px);
+          width:min(94%,410px);
           max-width:100%;
           margin:0;
-          font-size:clamp(36px,3.5vw,48px);
-          line-height:.91;
+          font-size:clamp(40px,4.15vw,57px);
+          line-height:.92;
           letter-spacing:-.06em;
           white-space:normal;
           text-wrap:balance;
-          text-shadow:0 1px 12px color-mix(in srgb,var(--paper) 88%,transparent);
+          text-shadow:0 1px 14px color-mix(in srgb,var(--paper) 90%,transparent);
         }
         .le-weather-headline:after {
-          width:32px;
+          width:36px;
           height:2px;
-          margin:8px 0 5px;
+          margin:9px 0 6px;
         }
         /* The weather illustration occupies the whole forecast scene, not a strip below the headline. */
         .le-weather-art-stage {
@@ -237,7 +254,7 @@
         .le-weather-temperature-row {
           position:absolute;
           z-index:3;
-          top:clamp(96px,18vh,126px);
+          top:clamp(108px,19vh,140px);
           left:clamp(7px,1vw,13px);
           display:flex;
           align-items:flex-start;
@@ -245,11 +262,11 @@
           max-width:calc(100% - 18px);
           filter:drop-shadow(0 1px 12px color-mix(in srgb,var(--paper) 76%,transparent));
         }
-        .le-weather-temperature { font-size:clamp(64px,5.2vw,82px); }
-        .le-weather-condition { padding:3px 0 2px 11px; }
-        .le-weather-condition-icon { width:32px;height:30px;margin-bottom:4px; }
-        .le-weather-condition-name { font-size:clamp(16px,1.35vw,18px); }
-        .le-weather-feels { margin-top:4px;font-size:11px; }
+        .le-weather-temperature { font-size:clamp(72px,5.8vw,94px); }
+        .le-weather-condition { padding:4px 0 3px 12px; }
+        .le-weather-condition-icon { width:36px;height:34px;margin-bottom:4px; }
+        .le-weather-condition-name { font-size:clamp(19px,1.55vw,22px); }
+        .le-weather-feels { margin-top:5px;font-size:12px; }
         .le-weather-summary {
           grid-area:summary;
           position:relative;
@@ -257,14 +274,14 @@
           align-self:end;
           margin:0;
           padding:6px 0;
-          background:linear-gradient(90deg,color-mix(in srgb,var(--paper) 46%,transparent),color-mix(in srgb,var(--paper) 24%,transparent));
-          backdrop-filter:blur(3px);
-          -webkit-backdrop-filter:blur(3px);
+          background:linear-gradient(90deg,color-mix(in srgb,var(--paper) 29%,transparent),color-mix(in srgb,var(--paper) 12%,transparent));
+          backdrop-filter:blur(2px);
+          -webkit-backdrop-filter:blur(2px);
         }
-        .le-weather-stat { padding:0 4px; }
+        .le-weather-stat { padding:0 5px; }
         .le-weather-stat:first-child { padding-left:1px; }
-        .le-weather-stat-label { font-size:8px;letter-spacing:.055em; }
-        .le-weather-stat-value { margin-top:4px;font-size:clamp(14px,1.7vw,17px); }
+        .le-weather-stat-label { font-size:9px;letter-spacing:.065em; }
+        .le-weather-stat-value { margin-top:5px;font-size:clamp(17px,1.9vw,20px); }
 
         /* Live Art keeps the same 10:7 frame in both orientations.
            Its width follows the available height; the art column centres it on both axes. */
@@ -400,9 +417,12 @@
         }
       }
       @media (orientation:landscape) and (min-width:650px) and (max-width:820px) {
-        .le-weather-headline { width:min(86%,320px);font-size:clamp(32px,4vw,40px); }
-        .le-weather-temperature-row { top:clamp(86px,18vh,108px); }
-        .le-weather-temperature { font-size:clamp(58px,6.6vw,70px); }
+        .le-weather-headline { width:min(94%,370px);font-size:clamp(37px,4.5vw,47px); }
+        .le-weather-temperature-row { top:clamp(100px,19vh,120px); }
+        .le-weather-temperature { font-size:clamp(68px,7.2vw,82px); }
+        .le-weather-condition-name { font-size:clamp(18px,2vw,20px); }
+        .le-weather-stat-label { font-size:8.5px; }
+        .le-weather-stat-value { font-size:clamp(16px,2vw,18px); }
         /* Keep the compact landscape masthead on one line to protect painting height. */
         .le-weather-topbar {
           grid-template-columns:minmax(0,1fr) auto auto auto;
@@ -433,9 +453,13 @@
         .le-weather-date { font-size:clamp(8px,.95vw,9px); }
         .le-weather-place { font-size:clamp(8px,.95vw,9px); }
         .le-weather-mode { min-height:31px;padding:3px 9px; }
-        .le-weather-headline { width:min(86%,300px);font-size:clamp(30px,3.8vw,37px); }
-        .le-weather-temperature-row { top:clamp(78px,18vh,92px); }
-        .le-weather-temperature { font-size:clamp(54px,6.2vw,64px); }
+        .le-weather-headline { width:min(94%,350px);font-size:clamp(34px,4.2vw,44px); }
+        .le-weather-temperature-row { top:clamp(88px,20vh,108px); }
+        .le-weather-temperature { font-size:clamp(62px,7.3vw,76px); }
+        .le-weather-condition-name { font-size:clamp(17px,2vw,19px); }
+        .le-weather-feels { font-size:11px; }
+        .le-weather-stat-label { font-size:8px; }
+        .le-weather-stat-value { font-size:clamp(15px,1.9vw,17px); }
         .le-weather-studio-title { font-size:clamp(20px,2.5vw,26px); }
       }
       @media(max-width:430px){.le-weather-content{padding-left:17px;padding-right:17px;padding-bottom:calc(env(safe-area-inset-bottom) + 278px)}.le-weather-date-row{margin-top:24px;align-items:flex-start}.le-weather-headline{font-size:clamp(48px,12.5vw,80px)}.le-weather-temperature{font-size:clamp(88px,23vw,128px)}.le-weather-art-stage{height:var(--le-weather-scene-height);min-height:clamp(190px,24dvh,260px);max-height:42dvh;margin-left:-9px;margin-right:-9px}.le-weather-summary{padding:10px 0}.le-weather-stat{padding:0 6px}.le-weather-stat-label{font-size:6px;letter-spacing:.08em}.le-weather-stat-value{font-size:11px}.le-weather-studio{padding:11px 10px 9px;border-radius:14px}.le-weather-studio-title{font-size:clamp(21px,5.8vw,28px)}.le-weather-studio-canvas{height:clamp(138px,18vh,155px)}}

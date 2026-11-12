@@ -27,11 +27,11 @@ assert.ok(landscapeCss.includes('margin:0 0 calc(-1 * var(--le-weather-scene-flo
 assert.ok(landscapeCss.includes('z-index:2;'));
 assert.ok(landscapeCss.includes('z-index:3;'));
 assert.ok(landscapeCss.includes('z-index:5;'));
-assert.ok(landscapeCss.includes('backdrop-filter:blur(3px);'));
+assert.ok(landscapeCss.includes('backdrop-filter:blur(2px);'));
 assert.ok(landscapeCss.includes('.le-weather-dashboard::before'));
-assert.ok(landscapeCss.includes('font-size:clamp(36px,3.5vw,48px);'));
-assert.ok(landscapeCss.includes('font-size:clamp(64px,5.2vw,82px);'));
-assert.ok(landscapeCss.includes('top:clamp(96px,18vh,126px);'));
+assert.ok(landscapeCss.includes('font-size:clamp(40px,4.15vw,57px);'));
+assert.ok(landscapeCss.includes('font-size:clamp(72px,5.8vw,94px);'));
+assert.ok(landscapeCss.includes('top:clamp(108px,19vh,140px);'));
 assert.ok(landscapeCss.includes('position:absolute;\n          z-index:4;\n          top:0;'));
 assert.ok(landscapeCss.includes('min-height:120px;'));
 assert.ok(landscapeCss.includes('position:absolute;\n          z-index:3;'));
