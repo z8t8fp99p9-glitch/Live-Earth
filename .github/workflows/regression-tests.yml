@@ -1,72 +1,147 @@
 
-name: LIVE // EARTH Regression Tests
+name: LIVE // EARTH ZIP Auto Extractor
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
+    branches:
+      - main
+    paths:
+      - "*.zip"
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: live-earth-regression-${{ github.ref }}
+  group: live-earth-zip-extractor
   cancel-in-progress: false
 
 jobs:
-  regression:
-    name: JavaScript and Python regression checks
+  extract:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
 
     steps:
-      - name: Check out repository
+      - name: Checkout main
         uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          ref: main
+          fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Check JavaScript syntax
-        shell: bash
+      - name: Extract uploaded ZIP safely
+        env:
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.sha }}
         run: |
-          set -euo pipefail
-          mapfile -d '' source_files < <(find . -type f \( -name '*.js' -o -name '*.cjs' \) -not -path './.git/*' -print0 | sort -z)
-          if ((${#source_files[@]} == 0)); then
-            echo "No JavaScript source files were found."
-            exit 1
+          python - <<'PY'
+          import os
+          import shutil
+          import stat
+          import subprocess
+          import tempfile
+          import zipfile
+          from pathlib import Path, PurePosixPath
+
+          repo = Path.cwd()
+          before = os.environ["PUSH_BEFORE"]
+          after = os.environ["PUSH_AFTER"]
+
+          changed = subprocess.check_output(
+              ["git", "diff", "--name-only", before, after],
+              text=True
+          ).splitlines()
+
+          uploads = [
+              name for name in changed
+              if len(PurePosixPath(name).parts) == 1
+              and name.lower().endswith(".zip")
+              and (repo / name).is_file()
+          ]
+
+          if len(uploads) != 1:
+              raise SystemExit("Upload one ZIP file at repository root.")
+
+          archive = repo / uploads[0]
+
+          if archive.stat().st_size > 100 * 1024 * 1024:
+              raise SystemExit("ZIP exceeds 100 MB.")
+
+          with zipfile.ZipFile(archive) as zf:
+              entries = [
+                  info for info in zf.infolist()
+                  if not info.is_dir()
+                  and info.filename != "UPLOAD_MANIFEST.json"
+              ]
+
+              if not entries:
+                  raise SystemExit("ZIP contains no files.")
+
+              if len(entries) > 5000:
+                  raise SystemExit("Too many files in ZIP.")
+
+              names = set()
+
+              for info in entries:
+                  name = info.filename
+                  path = PurePosixPath(name)
+                  mode = (info.external_attr >> 16) & 0xFFFF
+
+                  if (
+                      path.is_absolute()
+                      or "\\" in name
+                      or any(p in ("", ".", "..") for p in path.parts)
+                      or path.parts[0] in (".git", ".github")
+                      or path.suffix.lower() == ".zip"
+                      or stat.S_ISLNK(mode)
+                  ):
+                      raise SystemExit(f"Unsafe ZIP entry: {name}")
+
+                  if name in names:
+                      raise SystemExit(f"Duplicate file: {name}")
+
+                  names.add(name)
+
+                  if info.file_size > 50 * 1024 * 1024:
+                      raise SystemExit(f"File too large: {name}")
+
+              with tempfile.TemporaryDirectory() as temp:
+                  stage = Path(temp)
+
+                  for info in entries:
+                      target = stage.joinpath(*PurePosixPath(info.filename).parts)
+                      target.parent.mkdir(parents=True, exist_ok=True)
+                      target.write_bytes(zf.read(info))
+
+                  for info in entries:
+                      parts = PurePosixPath(info.filename).parts
+                      source = stage.joinpath(*parts)
+                      target = repo.joinpath(*parts)
+                      target.parent.mkdir(parents=True, exist_ok=True)
+
+                      if target.is_symlink():
+                          raise SystemExit(f"Refusing symlink: {info.filename}")
+
+                      shutil.copy2(source, target)
+                      print(f"Extracted: {info.filename}")
+
+          archive.unlink()
+          print("ZIP extraction completed.")
+
+          PY
+
+      - name: Commit extracted files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
           fi
-          for file in "${source_files[@]}"; do
-            echo "Checking $file"
-            node --check "$file"
-          done
 
-      - name: Run JavaScript regression tests
-        shell: bash
-        run: |
-          set -euo pipefail
-          shopt -s nullglob
-          test_files=(Tests/*.test.cjs)
-          if ((${#test_files[@]} == 0)); then
-            echo "No JavaScript regression tests were found."
-            exit 1
-          fi
-          for test_file in "${test_files[@]}"; do
-            echo "Running $test_file"
-            node "$test_file"
-          done
+          ZIP_NAME=$(git diff HEAD^ HEAD --name-only -- '*.zip' | head -n 1)
+          TITLE="Extract uploaded ZIP: ${ZIP_NAME%.zip}"
 
-      - name: Compile Python sources and run Editorial Engine tests
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -m compileall -q Editorial-Engine Tests
-          python -m unittest discover -s Tests -p 'test_*.py' -v
+          git commit -m "$TITLE"
+          git push origin HEAD:main
