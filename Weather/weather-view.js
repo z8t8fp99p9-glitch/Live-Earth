@@ -26,6 +26,7 @@
       .le-sfv--weather>.le-sfv-panel{display:none!important}
       .le-weather-screen{box-sizing:border-box;--paper:#f4efe9;--paper-deep:#ece6df;--ink:#172123;--muted:#68716f;--accent:#b52c32;position:absolute;inset:0;z-index:1;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;color:var(--ink);background:radial-gradient(ellipse at 76% 45%,rgba(202,211,194,.30),transparent 42%),linear-gradient(160deg,var(--paper),var(--paper-deep));font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;pointer-events:auto;isolation:isolate}
       .le-weather-screen::-webkit-scrollbar{display:none}
+      .le-weather-landscape-accents{display:none}
       .le-weather-screen:before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.23;background-image:repeating-linear-gradient(7deg,transparent 0 11px,rgba(78,68,51,.035) 12px,transparent 13px),repeating-linear-gradient(93deg,transparent 0 17px,rgba(78,68,51,.025) 18px,transparent 19px);mix-blend-mode:multiply}
       .le-weather-screen[data-phase="night"]{--paper:#202a2a;--paper-deep:#152223;--ink:#f0eee5;--muted:#bdc8bf;--accent:#d36b55;background:radial-gradient(ellipse at 77% 47%,rgba(74,103,98,.28),transparent 45%),linear-gradient(160deg,var(--paper),var(--paper-deep))}
       .le-weather-screen[data-weather="rain"],.le-weather-screen[data-weather="storm"],.le-weather-screen[data-weather="fog"]{--paper:#e8e9df;--paper-deep:#d7dfd7}
@@ -78,6 +79,17 @@
          Header elements stay inside the physical horizontal safe areas on notched iPhones. */
       @media (orientation:landscape) and (min-width:650px) {
         .le-weather-screen { overflow-y:auto; }
+        .le-weather-landscape-accents {
+          display:block;
+          position:fixed;
+          z-index:1;
+          inset:0;
+          overflow:hidden;
+          pointer-events:none;
+          opacity:.54;
+        }
+        .le-weather-landscape-accents svg { display:block;width:100%;height:100%; }
+        .le-weather-screen[data-phase="night"] .le-weather-landscape-accents { opacity:.30; }
         /* Landscape receives a warmer washi atmosphere that links the two artworks. */
         .le-weather-screen::after {
           content:"";
@@ -91,6 +103,8 @@
             radial-gradient(ellipse at 7% 100%,rgba(91,116,99,.20) 0,transparent 30%),
             radial-gradient(ellipse at 94% 100%,rgba(91,116,99,.18) 0,transparent 32%),
             radial-gradient(ellipse at 48% 88%,rgba(196,205,185,.25) 0,transparent 44%),
+            radial-gradient(ellipse at 0% 96%,rgba(174,190,170,.18) 0,transparent 24%),
+            radial-gradient(ellipse at 100% 96%,rgba(196,170,151,.13) 0,transparent 22%),
             linear-gradient(180deg,rgba(249,245,236,.18),rgba(239,237,226,.035) 55%,rgba(211,218,204,.13));
         }
         .le-weather-content {
@@ -241,6 +255,19 @@
           margin:0 0 calc(-1 * var(--le-weather-scene-flow-y));
           overflow:hidden;
           border-radius:0;
+        }
+        /* Extend the same Weather painting through the full left column and into
+           the lower margin. The Live Art area remains a separate foreground panel. */
+        .le-weather-forecast-column > .le-weather-art-stage {
+          position:absolute;
+          top:0;
+          left:0;
+          width:calc(100% + var(--le-weather-landscape-gap) + var(--le-weather-scene-flow-x));
+          height:calc(100% + max(72px,calc(var(--le-weather-dock-clearance,116px) - 24px)) + var(--le-weather-scene-flow-y));
+          min-height:0;
+          margin:0;
+          overflow:hidden;
+          pointer-events:none;
         }
         .le-weather-art-canvas {
           position:absolute;
@@ -1731,6 +1758,31 @@
   function makeScreen(){
     const screen=el('div','le-weather-screen');screen.dataset.weather='clear';screen.dataset.phase='day';screen.dataset.preview='true';
     screen.innerHTML=`
+      <div class="le-weather-landscape-accents" aria-hidden="true">
+        <svg viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice" focusable="false">
+          <g fill="none" stroke="#75897b" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" opacity=".50">
+            <path d="M-28 92 C 35 118 63 71 104 43 C 142 16 171 19 208 -10"/>
+            <path d="M45 101 C 54 72 70 57 89 38 M87 68 C 109 65 126 50 138 32 M118 47 C 122 27 139 11 158 1"/>
+            <path d="M1228 58 C 1169 84 1155 131 1115 153 C 1083 170 1052 172 1023 205"/>
+            <path d="M1167 105 C 1140 87 1120 67 1110 43 M1138 130 C 1109 121 1090 105 1074 82 M1091 165 C 1069 154 1050 139 1040 118"/>
+            <path d="M-12 595 C 18 544 32 505 28 466 M7 570 C 45 540 64 507 70 470 M35 594 C 70 564 91 530 98 493"/>
+            <path d="M1210 600 C 1177 553 1161 511 1168 469 M1190 578 C 1150 548 1130 516 1126 480 M1163 600 C 1124 569 1105 539 1102 505"/>
+          </g>
+          <g fill="#c98278" opacity=".42">
+            <ellipse cx="87" cy="47" rx="8" ry="13" transform="rotate(-34 87 47)"/>
+            <ellipse cx="104" cy="40" rx="8" ry="13" transform="rotate(22 104 40)"/>
+            <ellipse cx="96" cy="24" rx="8" ry="13" transform="rotate(4 96 24)"/>
+            <ellipse cx="1110" cy="83" rx="8" ry="13" transform="rotate(-31 1110 83)"/>
+            <ellipse cx="1127" cy="76" rx="8" ry="13" transform="rotate(22 1127 76)"/>
+            <ellipse cx="1119" cy="60" rx="8" ry="13" transform="rotate(4 1119 60)"/>
+            <ellipse cx="1055" cy="155" rx="7" ry="11" transform="rotate(-24 1055 155)"/>
+            <ellipse cx="1070" cy="146" rx="7" ry="11" transform="rotate(25 1070 146)"/>
+          </g>
+          <g fill="#d7b981" opacity=".55">
+            <circle cx="98" cy="38" r="3.5"/><circle cx="1119" cy="74" r="3.5"/><circle cx="1063" cy="150" r="3"/>
+          </g>
+        </svg>
+      </div>
       <div class="le-weather-content">
         <header class="le-weather-topbar">
           <div class="le-weather-brand">LIVE <span>//</span> EARTH</div>

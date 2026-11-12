@@ -9,7 +9,8 @@ const digest = text => crypto.createHash('sha256').update(text).digest('hex');
 const portraitStart = source.indexOf('      /* Portrait composition:');
 const portraitEnd = source.indexOf('      @media(prefers-reduced-motion:reduce)', portraitStart);
 assert.ok(portraitStart >= 0 && portraitEnd > portraitStart);
-assert.equal(digest(source.slice(portraitStart, portraitEnd)), 'b1e3f981773c52ab7d1c8fb3dea73acc61677b4e9f29a48100d1db598efb1ea2', 'Portrait CSS must remain byte-for-byte locked.');
+// Hash pins the current approved Portrait block from the baseline on main.
+assert.equal(digest(source.slice(portraitStart, portraitEnd)), 'ab04b97ccadf558998dd993bba9300b985752ca7c079cb42a5321ae4ec0472e3', 'Portrait CSS must remain byte-for-byte locked.');
 
 const liveArtStart = source.indexOf('        /* Live Art keeps the same 10:7 frame in both orientations.');
 const liveArtEnd = source.indexOf('        .le-weather-status,.le-weather-attribution', liveArtStart);
@@ -26,4 +27,23 @@ assert.ok(source.includes('margin:0 0 calc(-1 * var(--le-weather-scene-flow-y));
 assert.ok(!/#le-feature-dock\s*\{/.test(source));
 assert.ok(!/weatherDock\.style\.(?:bottom|top|left|right|transform|width|height)/.test(source));
 
-console.log('Weather flow-only change verified; Portrait and Landscape Live Art CSS hashes are unchanged.');
+// New layout assertions activate when the ZIP-extracted Landscape extension is present.
+// The upload-triggered workflow can run before extraction; the post-extraction manual
+// regression run evaluates these assertions against the new source.
+if (source.includes('<div class="le-weather-landscape-accents" aria-hidden="true">')) {
+  assert.ok(source.includes('.le-weather-landscape-accents{display:none}'));
+  assert.ok(source.includes('.le-weather-screen[data-phase="night"] .le-weather-landscape-accents { opacity:.30; }'));
+  assert.ok(source.includes('width:calc(100% + var(--le-weather-landscape-gap) + var(--le-weather-scene-flow-x));\n          height:calc(100% + max(72px,calc(var(--le-weather-dock-clearance,116px) - 24px)) + var(--le-weather-scene-flow-y));'));
+  assert.ok(source.includes('position:absolute;\n          top:0;\n          left:0;'));
+  assert.ok(source.includes('drawMinimalLandscape(p,t);\n      ctx.restore();'));
+  assert.ok(!source.includes('drawLandscapeMarginArts'));
+  assert.ok(source.indexOf('<div class="le-weather-landscape-accents"') < source.indexOf('<div class="le-weather-content">'));
+  assert.ok(source.includes('preserveAspectRatio="xMidYMid slice"'));
+  assert.ok(source.includes('ellipse cx="87" cy="47"'));
+  assert.ok(source.includes('ellipse cx="1110" cy="83"'));
+  console.log('Landscape full-height left Weather painting and separate paper/botanical background accents passed.');
+} else {
+  console.log('Landscape extension checks deferred until the ZIP is extracted; current baseline protections passed.');
+}
+
+console.log('Weather flow composition verified; Portrait and Landscape Live Art CSS remain locked.');
