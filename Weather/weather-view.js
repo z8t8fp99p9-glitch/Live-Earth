@@ -227,7 +227,7 @@
         }
         /* The weather illustration occupies the whole forecast scene, not a strip below the headline. */
         .le-weather-art-stage {
-          --le-weather-scene-flow-x:clamp(42px,5.6vw,82px);
+          --le-weather-scene-flow-x:clamp(56px,6.8vw,104px);
           --le-weather-scene-flow-y:clamp(22px,3.2vh,30px);
           grid-area:scene;
           position:relative;
@@ -258,7 +258,9 @@
           position:absolute;
           z-index:3;
           top:clamp(108px,19vh,140px);
-          left:clamp(7px,1vw,13px);
+          /* The stage itself begins --scene-flow-x farther left. Compensate
+             the child anchor so temperature and condition stay at their old position. */
+          left:calc(clamp(7px,1vw,13px) + var(--le-weather-scene-flow-x));
           display:flex;
           align-items:flex-start;
           gap:clamp(8px,1vw,13px);
