@@ -227,7 +227,7 @@
         }
         /* The weather illustration occupies the whole forecast scene, not a strip below the headline. */
         .le-weather-art-stage {
-          --le-weather-scene-flow-x:clamp(56px,6.8vw,104px);
+          --le-weather-scene-flow-x:clamp(82px,8.7vw,132px);
           --le-weather-scene-flow-y:clamp(22px,3.2vh,30px);
           grid-area:scene;
           position:relative;
@@ -279,10 +279,39 @@
           align-self:end;
           margin:0;
           padding:6px 0;
+          border-top-color:transparent;
+          border-bottom-color:transparent;
           background:linear-gradient(90deg,color-mix(in srgb,var(--paper) 29%,transparent),color-mix(in srgb,var(--paper) 12%,transparent));
           backdrop-filter:blur(2px);
           -webkit-backdrop-filter:blur(2px);
         }
+        /* Fine editorial rules frame the three readings. A small weather-accent
+           mark sits on the centre column; it highlights Rain Chance without
+           shifting the row, its labels, values or vertical dividers. */
+        .le-weather-summary::before,
+        .le-weather-summary::after {
+          content:"";
+          position:absolute;
+          left:0;
+          right:0;
+          height:1px;
+          pointer-events:none;
+          background:
+            linear-gradient(90deg,
+              transparent 0%,
+              color-mix(in srgb,var(--muted) 28%,transparent) 9%,
+              color-mix(in srgb,var(--muted) 38%,transparent) 38%,
+              color-mix(in srgb,var(--muted) 38%,transparent) 62%,
+              color-mix(in srgb,var(--muted) 28%,transparent) 91%,
+              transparent 100%),
+            linear-gradient(90deg,
+              transparent 46%,
+              color-mix(in srgb,var(--accent) 58%,transparent) 48%,
+              color-mix(in srgb,var(--accent) 58%,transparent) 52%,
+              transparent 54%);
+        }
+        .le-weather-summary::before { top:0; }
+        .le-weather-summary::after { bottom:0;opacity:.72; }
         .le-weather-stat { padding:0 5px; }
         .le-weather-stat:first-child { padding-left:1px; }
         .le-weather-stat-label { font-size:9px;letter-spacing:.065em; }

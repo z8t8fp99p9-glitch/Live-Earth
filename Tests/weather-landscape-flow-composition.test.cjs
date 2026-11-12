@@ -22,11 +22,17 @@ assert.ok(source.includes('function drawLandscapeWeatherScene(p,t)'));
 assert.ok(source.includes('drawLandscapeWeatherScene(p,t);'));
 assert.ok(source.includes('drawMinimalLandscape(p,t);'));
 assert.ok(source.includes('.le-weather-dashboard::before'));
-assert.ok(source.includes('--le-weather-scene-flow-x:clamp(56px,6.8vw,104px);'), 'Landscape artwork receives a small additional left bleed.');
+assert.ok(source.includes('--le-weather-scene-flow-x:clamp(82px,8.7vw,132px);'), 'Landscape artwork receives the final additional left bleed.');
 assert.ok(source.includes('width:calc(100% + var(--le-weather-landscape-gap) + (2 * var(--le-weather-scene-flow-x)));'));
 assert.ok(source.includes('left:calc(clamp(7px,1vw,13px) + var(--le-weather-scene-flow-x));'), 'Temperature and condition text remain anchored to their original screen position.');
 assert.ok(source.includes('margin:0 0 calc(-1 * var(--le-weather-scene-flow-y));'));
 assert.ok(source.includes('margin-left:calc(-1 * var(--le-weather-scene-flow-x));'), 'Weather canvas must extend left without moving its right edge.');
+assert.ok(source.includes('.le-weather-summary::before,\n        .le-weather-summary::after'));
+assert.ok(source.includes('color-mix(in srgb,var(--accent) 58%,transparent) 48%'));
+assert.ok(source.includes('.le-weather-summary::before { top:0; }'));
+assert.ok(source.includes('.le-weather-summary::after { bottom:0;opacity:.72; }'));
+assert.ok(source.includes('border-top-color:transparent;'));
+assert.ok(source.includes('border-bottom-color:transparent;'));
 assert.ok(!/#le-feature-dock\s*\{/.test(source));
 assert.ok(!/weatherDock\.style\.(?:bottom|top|left|right|transform|width|height)/.test(source));
 
