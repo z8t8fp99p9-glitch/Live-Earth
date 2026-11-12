@@ -10,8 +10,13 @@ const landscapeEnd = source.indexOf('@media (orientation:landscape) and (min-wid
 const landscapeCss = source.slice(landscapeStart, landscapeEnd);
 assert.ok(landscapeStart >= 0 && landscapeEnd > landscapeStart);
 
-// Weather readings must clear the Orb row even though Live Art is allowed to flow lower.
+// Weather readings retain a lower safety band while the illustration flows beneath them and toward Live Art.
 assert.ok(landscapeCss.includes('padding-bottom:clamp(22px,7vh,30px);'));
+assert.ok(landscapeCss.includes('--le-weather-scene-flow-x:clamp(42px,5.6vw,82px);'));
+assert.ok(landscapeCss.includes('--le-weather-scene-flow-y:clamp(22px,3.2vh,30px);'));
+assert.ok(landscapeCss.includes('z-index:2;'));
+assert.ok(landscapeCss.includes('z-index:3;'));
+assert.ok(landscapeCss.includes('z-index:5;'));
 assert.ok(landscapeCss.includes('grid-template-rows:minmax(0,1fr) auto;'));
 assert.ok(landscapeCss.includes('grid-template-areas:"scene" "summary";'));
 
@@ -38,7 +43,8 @@ assert.ok(source.includes('aspect-ratio:10 / 7;'));
 assert.ok(source.includes('function syncDockClearance()'));
 assert.ok(!/#le-feature-dock\s*\{/.test(source));
 assert.ok(!/weatherDock\.style\.(?:bottom|top|left|right|transform|width|height)/.test(source));
-assert.ok(design.includes('aspect-aware canvas zoom'));
-assert.ok(design.includes('protected lower breathing band'));
+assert.ok(design.includes('canvas may also flow behind the summary band'));
+assert.ok(design.includes('lower safety band'));
+assert.ok(design.includes('shared paper-and-mist atmosphere'));
 
-console.log('Landscape portrait-reference weather scene, summary dock-clearance, unchanged Portrait CSS and locked 10:7 Live Art contracts passed.');
+console.log('Portrait-inspired Weather illustration flow, safe summary overlay, unchanged Portrait CSS and locked 10:7 Live Art contracts passed.');
