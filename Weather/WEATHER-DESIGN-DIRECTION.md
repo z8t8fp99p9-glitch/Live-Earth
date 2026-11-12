@@ -1,15 +1,26 @@
 # LIVE // EARTH — Weather layout and live Japanese art studio
 
-**Updated:** 12 November 2026  
+**Updated:** 12 November 2026 — artwork palette lock confirmed in-app  
 **Scope:** Production Weather Stacks view only
+
+## Binding colour rule — overrides older palette wording below (12 November 2026)
+
+- The Weather illustration palette is fixed across DAY and NIGHT.
+- The separate Live Art painting palette is also fixed across DAY and NIGHT, including paper wash and paper-grain treatment.
+- The shared Weather/Live Art background uses the approved fixed treatment. Portfolio mode uses the same agreed fixed background; it must not cycle colours with weather or time.
+- DAY/NIGHT may change the depicted celestial subject (sun/moon) and condition-specific painted content/effects. These subject/effect changes must not switch the underlying artwork palette to a separate night palette.
+- Do not use weather conditions, time-of-day or phase to recolour the illustration, Live Art painting, paper wash, grain or shared background.
+- The user confirmed the deployed colour-lock result was working on 12 November 2026.
+
+This rule supersedes the older sentence below that describes “warm washi-paper tones by day and a deep ink-paper treatment at night.” That phrase is retained as historical wording only and must not be implemented as palette switching.
 
 ## Approved visual identity
 
 The Weather view combines three restrained directions:
 
 1. **Expressive English typography** — an editorial weather headline, a large current temperature, and a concise condition/feels-like reading.
-2. **A quiet minimalist ground** — warm washi-paper tones by day and a deep ink-paper treatment at night. Photographic wallpaper is not used.
-3. **Japanese-inspired 2D artwork** — a weather-reactive landscape and a separate Live Art painting, both drawn locally on Canvas 2D.
+2. **A quiet minimalist ground** — warm washi-paper treatment with a fixed palette. Photographic wallpaper is not used.
+3. **Japanese-inspired 2D artwork** — a weather-reactive landscape and a separate Live Art painting, both drawn locally on Canvas 2D with fixed underlying palettes.
 
 Japanese influence is visual artwork only. Do not add Japanese-language interface labels, decorative Japanese characters, or character/mascot figures.
 
@@ -41,7 +52,7 @@ Japanese influence is visual artwork only. Do not add Japanese-language interfac
 - Landscape typography is allowed to reflow and scale to the actual forecast-column width. Preserve the editorial two-line headline character; do not force a small single-line heading into the narrow column.
 - Reuse the same minimalist Canvas 2D painter and motif in both orientations. In landscape only, extend the Weather painting across the column gutter and slightly underneath the foreground Live Art card. Its canvas may also flow behind the summary band, while the readings remain legible above it. This creates one continuous visual field rather than two boxed panels with a hard gap.
 - Add a very restrained shared paper-and-mist atmosphere behind both columns so the Weather canvas and Live Art card feel like one scene. Do not add a new painter, artwork assets, or a separate wallpaper.
-- The Landscape-only backdrop may add warm washi highlights, muted lower-edge terrain haze and soft botanical colour at the margins. Keep it atmospheric and low-contrast; do not create a rounded background panel or a hard divider between Weather and Live Art.
+- The Landscape-only backdrop may add warm washi highlights, muted lower-edge terrain haze and soft botanical colour at the margins. Keep it atmospheric and low-contrast; do not create a rounded background panel or a hard divider between Weather and Live Art. All such colours remain within the fixed palette.
 - Landscape Weather type should approach the reference scale: expressive two-line headline, larger temperature and condition group, and larger summary labels/values. Use responsive compact and short-height overrides so every value remains readable above the Orb dock.
 - The shared Live Art card is already approved: do not change its size, 10:7 ratio, canvas, title, status, caption, Replay control, or card styling as part of Weather illustration refinements.
 - Keep the existing lower safety band under the Weather summary so all three values remain readable above the shared Orb dock. The dock remains untouched.
@@ -52,8 +63,8 @@ Japanese influence is visual artwork only. Do not add Japanese-language interfac
 ## Illustration and Live Art behaviour
 
 - The main weather landscape remains a local, deterministic Canvas 2D illustration; never replace it with a photo wallpaper.
-- Main landscape layers should have recognisable peaks and shoulders, lighter distant ridges, soft ink contours, restrained mist, and water/reflection detail. Sun, clouds, branches, rain, snow, fog and wind should respond to actual selected weather/phase without obscuring the reading overlay.
-- The separate Canvas 2D Live Art studio progressively paints an original weather-matched ink study, stroke by stroke. Its artwork fills the full card surface while interface copy floats above it.
+- Main landscape layers should have recognisable peaks and shoulders, lighter distant ridges, soft ink contours, restrained mist, and water/reflection detail. Sun, clouds, branches, rain, snow, fog and wind should respond to actual selected weather/phase without obscuring the reading overlay. Condition-specific content/effects may change, but the underlying colour palette must remain fixed.
+- The separate Canvas 2D Live Art studio progressively paints an original weather-matched ink study, stroke by stroke. Its artwork fills the full card surface while interface copy floats above it. The painting's palette remains fixed across day/night.
 - The starter registry contains eight studies: clear pine/red sun, cloudy willow, rainy willow, storm waves, snowy pine, fog temple, windy bamboo, and night moon.
 - Tree motifs must remain readable at phone size. Pine boughs should be distinct, layered and asymmetrical, with visible breathing room; avoid dense horizontal lattices. The willow remains a separate, recognisable cascading silhouette.
 - Show drawing progress and provide a Replay control. When weather/phase changes, select the corresponding study. Reduced-motion settings render the completed study without progressive animation.
@@ -63,7 +74,7 @@ Japanese influence is visual artwork only. Do not add Japanese-language interfac
 ## Weather and data behaviour
 
 - Use the existing Open-Meteo current conditions and daily summary data. The hours-ahead forecast rail and hourly request payload are intentionally removed.
-- Actual weather and local day/night state determine the main illustration and selected art study.
+- Actual weather and local day/night state determine the main illustration and selected art study; phase selection must not recolour the underlying artwork.
 - The scene selector supports sample previews for clear, cloudy, rain, storm, snow, fog, wind, night and hot conditions. Sample readings must remain explicitly labelled as samples.
 - The view may use only the app's already-enabled fresh Location fix. It must never request browser geolocation itself. Location remains OFF by default.
 - Offline/unavailable conditions must not be presented as live readings; the drawing system remains available using a labelled sample scene.
@@ -71,7 +82,6 @@ Japanese influence is visual artwork only. Do not add Japanese-language interfac
 ## Protected scope
 
 Changes are limited to `Weather/weather-view.js`, `Tools/WEATHER-LAYOUT-EDITOR.html`, this Weather design note and Weather-specific regression tests. Do not alter Home, Earth/Earth Engine, Moon, Sun, Location, Global Orb/navigation lifecycle, Stacks runtime, service worker, update manager, databases or unrelated views.
-
 
 ## Orientation-specific composition (11 November 2026)
 
