@@ -234,11 +234,14 @@
           z-index:1;
           isolation:isolate;
           box-sizing:border-box;
-          width:calc(100% + var(--le-weather-landscape-gap) + var(--le-weather-scene-flow-x));
+          /* Extend the same weather-painted canvas leftward while keeping its
+             existing right edge, height and every UI element in place. */
+          width:calc(100% + var(--le-weather-landscape-gap) + (2 * var(--le-weather-scene-flow-x)));
           height:calc(100% + var(--le-weather-scene-flow-y));
           min-height:120px;
           max-height:none;
           margin:0 0 calc(-1 * var(--le-weather-scene-flow-y));
+          margin-left:calc(-1 * var(--le-weather-scene-flow-x));
           overflow:hidden;
           border-radius:0;
         }
