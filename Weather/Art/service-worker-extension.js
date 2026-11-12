@@ -17,7 +17,11 @@
     if (!isHome) return transformed;
 
     const html = await transformed.clone().text();
-    if (html.includes('Weather/Art/live-art-online.js')) return transformed;
+    // The renderer filename may occur in the controller's asset list without
+    // being loaded. Only skip injection when an actual script tag is present.
+    const scriptAlreadyInjected = /<script\b[^>]*\bsrc=["'][^"']*Weather\/Art\/live-art-online\.js(?:\?[^"']*)?["']/i.test(html);
+    if (scriptAlreadyInjected) return transformed;
+
     const augmented = html.replace(
       /<\/body\s*>/i,
       '<script src="./Weather/Art/live-art-online.js" defer></script>\n</body>'
