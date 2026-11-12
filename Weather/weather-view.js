@@ -667,6 +667,64 @@
         }
       }
 
+      /* USER VISUAL EDITOR TUNING — LANDSCAPE ONLY
+         Based on the supplied 912x420 preview. Percent translations stay viewport-relative.
+         Nested scales are intentionally softened to avoid multiplying the raw editor values. */
+      @media (orientation:landscape) and (min-width:650px) {
+        .le-weather-content {
+          transform:translate3d(-.35vw,0,0) scale(1);
+          transform-origin:center top;
+        }
+        .le-weather-dashboard {
+          transform:translate3d(0,0,0) scale(1.006);
+          transform-origin:center center;
+        }
+        .le-weather-forecast-column {
+          transform:translate3d(3.1vw,0,0) scale(1.05);
+          transform-origin:center center;
+        }
+        .le-weather-headline {
+          transform:translate3d(2.6vw,2.4vh,0) scale(1.11);
+          transform-origin:center center;
+        }
+        .le-weather-temperature {
+          transform:translate3d(1.2vw,2.3vh,0) scale(1.31);
+          transform-origin:center center;
+        }
+        .le-weather-condition {
+          transform:translate3d(1.65vw,.35vh,0) scale(.92);
+          transform-origin:center center;
+        }
+        .le-weather-art-column {
+          transform:translate3d(4vw,-1.4vh,0) scale(.98);
+          transform-origin:center center;
+        }
+        .le-weather-studio-title {
+          transform:translate3d(-.9vw,-.15vh,0) scale(.95);
+          transform-origin:center center;
+        }
+        /* Attribution stays visually hidden in Landscape for screen-reader semantics. */
+      }
+
+      @media (orientation:landscape) and (min-width:650px) and (max-width:820px) {
+        .le-weather-content { transform:translate3d(-.25vw,0,0) scale(1); }
+        .le-weather-dashboard { transform:scale(1.003); }
+        .le-weather-forecast-column { transform:translate3d(2vw,0,0) scale(1.03); }
+        .le-weather-headline { transform:translate3d(1.8vw,1.8vh,0) scale(1.06); }
+        .le-weather-temperature { transform:translate3d(.6vw,1.6vh,0) scale(1.20); }
+        .le-weather-condition { transform:translate3d(1vw,.2vh,0) scale(.95); }
+        .le-weather-art-column { transform:translate3d(2vw,-.8vh,0) scale(.995); }
+        .le-weather-studio-title { transform:translate3d(-.4vw,-.1vh,0) scale(.97); }
+      }
+
+      @media (orientation:landscape) and (max-height:390px) {
+        .le-weather-headline { transform:translate3d(2vw,1.5vh,0) scale(1.06); }
+        .le-weather-temperature { transform:translate3d(.65vw,1.2vh,0) scale(1.18); }
+        .le-weather-condition { transform:translate3d(1vw,.2vh,0) scale(.95); }
+        .le-weather-art-column { transform:translate3d(2.4vw,-.65vh,0) scale(.995); }
+        .le-weather-studio-title { transform:translate3d(-.4vw,-.1vh,0) scale(.97); }
+      }
+
       @media(prefers-reduced-motion:reduce){.le-weather-screen *,.le-weather-screen *:before,.le-weather-screen *:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
       @media(prefers-reduced-transparency:reduce){.le-weather-mode{background:var(--paper)}}
       /* Temporary in-view size/position editor. It only adds editing controls; all edits stay in memory. */
