@@ -263,12 +263,14 @@
           left:var(--le-weather-scene-flow-x);
           display:flex;
           align-items:flex-start;
-          gap:clamp(8px,1vw,13px);
+          /* The temperature is visually enlarged with a transform; reserve
+             the extra painted width before the condition divider begins. */
+          gap:clamp(38px,4.2vw,46px);
           max-width:calc(100% - 18px);
           filter:drop-shadow(0 1px 12px color-mix(in srgb,var(--paper) 76%,transparent));
         }
         .le-weather-temperature { font-size:clamp(72px,5.8vw,94px); }
-        .le-weather-condition { padding:4px 0 3px 12px; }
+        .le-weather-condition { padding:4px 0 3px 14px; }
         .le-weather-condition-icon { width:36px;height:34px;margin-bottom:4px; }
         .le-weather-condition-name { font-size:clamp(19px,1.55vw,22px); }
         .le-weather-feels { margin-top:5px;font-size:12px; }
@@ -449,7 +451,7 @@
       }
       @media (orientation:landscape) and (min-width:650px) and (max-width:820px) {
         .le-weather-headline { width:min(94%,370px);font-size:clamp(37px,4.5vw,47px); }
-        .le-weather-temperature-row { top:clamp(100px,19vh,120px); }
+        .le-weather-temperature-row { top:clamp(100px,19vh,120px);gap:clamp(28px,3.4vw,34px); }
         .le-weather-temperature { font-size:clamp(68px,7.2vw,82px); }
         .le-weather-condition-name { font-size:clamp(18px,2vw,20px); }
         .le-weather-stat-label { font-size:8.5px; }
@@ -485,7 +487,7 @@
         .le-weather-place { font-size:clamp(8px,.95vw,9px); }
         .le-weather-mode { min-height:31px;padding:3px 9px; }
         .le-weather-headline { width:min(94%,350px);font-size:clamp(34px,4.2vw,44px); }
-        .le-weather-temperature-row { top:clamp(88px,20vh,108px); }
+        .le-weather-temperature-row { top:clamp(88px,20vh,108px);gap:clamp(26px,3vw,31px); }
         .le-weather-temperature { font-size:clamp(62px,7.3vw,76px); }
         .le-weather-condition-name { font-size:clamp(17px,2vw,19px); }
         .le-weather-feels { font-size:11px; }

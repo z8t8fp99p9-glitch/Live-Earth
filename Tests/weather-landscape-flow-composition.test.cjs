@@ -24,6 +24,10 @@ assert.ok(source.includes('--le-weather-scene-flow-x:clamp(82px,8.7vw,132px);'))
 assert.ok(source.includes('width:calc(100% + var(--le-weather-landscape-gap) + (2 * var(--le-weather-scene-flow-x)));'));
 assert.ok(source.includes('margin-left:calc(-1 * var(--le-weather-scene-flow-x));'));
 assert.ok(source.includes('left:var(--le-weather-scene-flow-x);'), 'Weather copy must align to the masthead left edge while the canvas bleeds left.');
+assert.ok(source.includes('gap:clamp(38px,4.2vw,46px);'), 'Keep clear visual space for the transformed temperature before the condition divider.');
+assert.ok(source.includes('.le-weather-condition { padding:4px 0 3px 14px; }'), 'Keep breathing room between the separator and the condition icon/text.');
+assert.ok(source.includes('gap:clamp(28px,3.4vw,34px);'), 'Use a tighter gap on compact Landscape screens.');
+assert.ok(source.includes('gap:clamp(26px,3vw,31px);'), 'Keep the row balanced on short Landscape screens.');
 
 // The content masthead stays put. Forecast and text layers retain their sizes/Y positions,
 // but their former accumulated horizontal offsets are removed.
