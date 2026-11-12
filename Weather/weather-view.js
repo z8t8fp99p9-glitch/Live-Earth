@@ -258,9 +258,9 @@
           position:absolute;
           z-index:3;
           top:clamp(108px,19vh,140px);
-          /* The stage itself begins --scene-flow-x farther left. Compensate
-             the child anchor so temperature and condition stay at their old position. */
-          left:calc(clamp(7px,1vw,13px) + var(--le-weather-scene-flow-x));
+          /* The illustration canvas bleeds left; keep the weather copy aligned
+             to the same content edge as the LIVE // EARTH masthead. */
+          left:var(--le-weather-scene-flow-x);
           display:flex;
           align-items:flex-start;
           gap:clamp(8px,1vw,13px);
@@ -281,13 +281,12 @@
           padding:6px 0;
           border-top-color:transparent;
           border-bottom-color:transparent;
-          background:linear-gradient(90deg,color-mix(in srgb,var(--paper) 29%,transparent),color-mix(in srgb,var(--paper) 12%,transparent));
-          backdrop-filter:blur(2px);
-          -webkit-backdrop-filter:blur(2px);
+          background:transparent;
+          backdrop-filter:none;
+          -webkit-backdrop-filter:none;
         }
-        /* Fine editorial rules frame the three readings. A small weather-accent
-           mark sits on the centre column; it highlights Rain Chance without
-           shifting the row, its labels, values or vertical dividers. */
+        /* Quiet hairlines frame the readings. Their ends dissolve into the
+           washi background instead of forming a hard-edged horizontal strip. */
         .le-weather-summary::before,
         .le-weather-summary::after {
           content:"";
@@ -296,23 +295,21 @@
           right:0;
           height:1px;
           pointer-events:none;
-          background:
-            linear-gradient(90deg,
-              transparent 0%,
-              color-mix(in srgb,var(--muted) 28%,transparent) 9%,
-              color-mix(in srgb,var(--muted) 38%,transparent) 38%,
-              color-mix(in srgb,var(--muted) 38%,transparent) 62%,
-              color-mix(in srgb,var(--muted) 28%,transparent) 91%,
-              transparent 100%),
-            linear-gradient(90deg,
-              transparent 46%,
-              color-mix(in srgb,var(--accent) 58%,transparent) 48%,
-              color-mix(in srgb,var(--accent) 58%,transparent) 52%,
-              transparent 54%);
+          background:linear-gradient(90deg,
+            transparent 0%,
+            color-mix(in srgb,var(--muted) 10%,transparent) 5%,
+            color-mix(in srgb,var(--muted) 22%,transparent) 18%,
+            color-mix(in srgb,var(--muted) 25%,transparent) 50%,
+            color-mix(in srgb,var(--muted) 22%,transparent) 82%,
+            color-mix(in srgb,var(--muted) 10%,transparent) 95%,
+            transparent 100%);
         }
-        .le-weather-summary::before { top:0; }
-        .le-weather-summary::after { bottom:0;opacity:.72; }
+        .le-weather-summary::before { top:0;opacity:.82; }
+        .le-weather-summary::after { bottom:0;opacity:.58; }
         .le-weather-stat { padding:0 5px; }
+        .le-weather-stat:nth-child(2) .le-weather-stat-label {
+          color:color-mix(in srgb,var(--accent) 38%,var(--muted));
+        }
         .le-weather-stat:first-child { padding-left:1px; }
         .le-weather-stat-label { font-size:9px;letter-spacing:.065em; }
         .le-weather-stat-value { margin-top:5px;font-size:clamp(17px,1.9vw,20px); }
@@ -714,20 +711,20 @@
           transform-origin:center center;
         }
         .le-weather-forecast-column {
-          transform:translate3d(3.1vw,0,0) scale(1.05);
-          transform-origin:center center;
+          transform:translate3d(0,0,0) scale(1.05);
+          transform-origin:left center;
         }
         .le-weather-headline {
-          transform:translate3d(2.6vw,2.4vh,0) scale(1.11);
-          transform-origin:center center;
+          transform:translate3d(0,2.4vh,0) scale(1.11);
+          transform-origin:left center;
         }
         .le-weather-temperature {
-          transform:translate3d(1.2vw,2.3vh,0) scale(1.31);
-          transform-origin:center center;
+          transform:translate3d(0,2.3vh,0) scale(1.31);
+          transform-origin:left center;
         }
         .le-weather-condition {
-          transform:translate3d(1.65vw,.35vh,0) scale(.92);
-          transform-origin:center center;
+          transform:translate3d(0,.35vh,0) scale(.92);
+          transform-origin:left top;
         }
         .le-weather-art-column {
           transform:translate3d(4vw,-1.4vh,0) scale(.98);
@@ -743,48 +740,24 @@
       @media (orientation:landscape) and (min-width:650px) and (max-width:820px) {
         .le-weather-content { transform:translate3d(-.25vw,0,0) scale(1); }
         .le-weather-dashboard { transform:scale(1.003); }
-        .le-weather-forecast-column { transform:translate3d(2vw,0,0) scale(1.03); }
-        .le-weather-headline { transform:translate3d(1.8vw,1.8vh,0) scale(1.06); }
-        .le-weather-temperature { transform:translate3d(.6vw,1.6vh,0) scale(1.20); }
-        .le-weather-condition { transform:translate3d(1vw,.2vh,0) scale(.95); }
+        .le-weather-forecast-column { transform:translate3d(0,0,0) scale(1.03);transform-origin:left center; }
+        .le-weather-headline { transform:translate3d(0,1.8vh,0) scale(1.06);transform-origin:left center; }
+        .le-weather-temperature { transform:translate3d(0,1.6vh,0) scale(1.20);transform-origin:left center; }
+        .le-weather-condition { transform:translate3d(0,.2vh,0) scale(.95);transform-origin:left top; }
         .le-weather-art-column { transform:translate3d(2vw,-.8vh,0) scale(.995); }
         .le-weather-studio-title { transform:translate3d(-.4vw,-.1vh,0) scale(.97); }
       }
 
       @media (orientation:landscape) and (max-height:390px) {
-        .le-weather-headline { transform:translate3d(2vw,1.5vh,0) scale(1.06); }
-        .le-weather-temperature { transform:translate3d(.65vw,1.2vh,0) scale(1.18); }
-        .le-weather-condition { transform:translate3d(1vw,.2vh,0) scale(.95); }
+        .le-weather-headline { transform:translate3d(0,1.5vh,0) scale(1.06);transform-origin:left center; }
+        .le-weather-temperature { transform:translate3d(0,1.2vh,0) scale(1.18);transform-origin:left center; }
+        .le-weather-condition { transform:translate3d(0,.2vh,0) scale(.95);transform-origin:left top; }
         .le-weather-art-column { transform:translate3d(2.4vw,-.65vh,0) scale(.995); }
         .le-weather-studio-title { transform:translate3d(-.4vw,-.1vh,0) scale(.97); }
       }
 
       @media(prefers-reduced-motion:reduce){.le-weather-screen *,.le-weather-screen *:before,.le-weather-screen *:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
       @media(prefers-reduced-transparency:reduce){.le-weather-mode{background:var(--paper)}}
-      /* Temporary in-view size/position editor. It only adds editing controls; all edits stay in memory. */
-      .le-weather-layout-edit-toggle{position:fixed;z-index:2147483000;left:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);appearance:none;border:1px solid rgba(255,255,255,.42);border-radius:999px;padding:10px 14px;background:rgba(22,34,34,.92);color:#fff;font:800 10px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.13em;box-shadow:0 5px 18px rgba(0,0,0,.24);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);cursor:pointer;pointer-events:auto}
-      .le-weather-layout-edit-panel{position:fixed;z-index:2147483000;left:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);box-sizing:border-box;width:min(390px,calc(100vw - 24px));max-height:min(52dvh,258px);overflow:auto;border:1px solid rgba(255,255,255,.20);border-radius:16px;padding:11px 12px;background:rgba(20,29,31,.96);color:#f7f5ed;box-shadow:0 12px 34px rgba(0,0,0,.32);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;pointer-events:auto;overscroll-behavior:contain}
-      .le-weather-layout-edit-panel[hidden],.le-weather-layout-edit-toggle[hidden]{display:none!important}
-      .le-weather-layout-edit-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
-      .le-weather-layout-edit-title{font-size:10px;font-weight:850;letter-spacing:.15em;color:#fff}
-      .le-weather-layout-edit-close,.le-weather-layout-edit-action{appearance:none;border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:7px 10px;background:rgba(255,255,255,.09);color:#fff;font:750 9px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.06em;cursor:pointer}
-      .le-weather-layout-edit-select{box-sizing:border-box;width:100%;margin:0 0 7px;border:1px solid rgba(255,255,255,.22);border-radius:9px;padding:8px 9px;background:#293638;color:#fff;font:650 11px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-      .le-weather-layout-edit-row{display:grid;grid-template-columns:42px minmax(0,1fr) 48px;align-items:center;gap:8px;margin:5px 0}
-      .le-weather-layout-edit-row label{font-size:9px;font-weight:800;letter-spacing:.08em;color:#d5ddd5}
-      .le-weather-layout-edit-row input{width:100%;min-width:0;accent-color:#9bc6b3}
-      .le-weather-layout-edit-value{font-size:9px;text-align:right;font-variant-numeric:tabular-nums;color:#f1d8b9}
-      .le-weather-layout-edit-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
-      .le-weather-layout-edit-copy{background:#dce8dc;color:#1a2a28;border-color:#dce8dc}
-      .le-weather-layout-edit-status{min-height:13px;margin-top:7px;color:#c3d2c5;font-size:9px;line-height:1.35}
-      .le-weather-layout-edit-json{box-sizing:border-box;width:100%;margin-top:7px;min-height:62px;border:1px solid rgba(255,255,255,.22);border-radius:8px;padding:7px;background:#111a1c;color:#e8eee6;font:9px ui-monospace,SFMono-Regular,monospace;white-space:pre;}
-      .le-weather-layout-edit-json[hidden]{display:none!important}
-      .le-weather-screen.le-layout-editing [data-le-layout-id]{pointer-events:auto!important;touch-action:none!important;cursor:move!important;outline:1px dashed rgba(77,151,184,.28)!important;outline-offset:2px!important}
-      .le-weather-screen.le-layout-editing [data-le-layout-selected="true"]{outline:2px solid #80c7ff!important;outline-offset:3px!important;filter:drop-shadow(0 0 5px rgba(70,166,255,.58))!important}
-      .le-weather-layout-edit-handle{position:fixed;z-index:2147483001;width:23px;height:23px;margin:-11px 0 0 -11px;border:2px solid #fff;border-radius:50%;background:#248bd2;box-shadow:0 2px 10px #0008;touch-action:none;cursor:nwse-resize;pointer-events:auto}
-      .le-weather-layout-edit-handle[hidden]{display:none!important}
-      @media (orientation:portrait){.le-weather-layout-edit-toggle,.le-weather-layout-edit-panel,.le-weather-layout-edit-handle{display:none!important}}
-
-
     `;
     document.head.appendChild(style);
   }
@@ -1794,392 +1767,9 @@
   }
 
 
-  /* Temporary, in-app visual layout editor. It changes no files and persists nothing.
-     Users can select, drag and uniformly resize every major visible Weather-view layer,
-     then copy normalized adjustments as JSON for a deliberate production-code update. */
-  function installVisualLayoutEditor(screen) {
-    const landscapeQuery = window.matchMedia('(orientation:landscape) and (min-width:650px)');
-    const definitions = [
-      ['content','Whole Weather content','.le-weather-content'],
-      ['masthead','Masthead group','.le-weather-topbar'],
-      ['brand','LIVE // EARTH brand','.le-weather-brand'],
-      ['date','Date and time','.le-weather-date'],
-      ['location','Location label','.le-weather-place'],
-      ['sceneSelector','Scene selector','.le-weather-mode'],
-      ['dashboard','Weather + Live Art layout','.le-weather-dashboard'],
-      ['forecastColumn','Weather column','.le-weather-forecast-column'],
-      ['headline','Weather headline','.le-weather-headline'],
-      ['weatherScene','Weather scene area','.le-weather-art-stage'],
-      ['weatherPainting','Weather illustration canvas','.le-weather-art-canvas'],
-      ['temperatureGroup','Temperature + condition group','.le-weather-temperature-row'],
-      ['temperature','Temperature number','.le-weather-temperature'],
-      ['conditionGroup','Condition group','.le-weather-condition'],
-      ['conditionIcon','Condition icon','.le-weather-condition-icon'],
-      ['conditionName','Condition name','.le-weather-condition-name'],
-      ['feelsLike','Feels-like reading','.le-weather-feels'],
-      ['summary','Forecast readings group','.le-weather-summary'],
-      ['highLow','High / Low cell','.le-weather-stat:nth-child(1)'],
-      ['highLowLabel','High / Low label','.le-weather-stat:nth-child(1) .le-weather-stat-label'],
-      ['highLowValue','High / Low value','#le-weather-highlow'],
-      ['rainChance','Rain chance cell','.le-weather-stat:nth-child(2)'],
-      ['rainChanceLabel','Rain chance label','.le-weather-stat:nth-child(2) .le-weather-stat-label'],
-      ['rainChanceValue','Rain chance value','#le-weather-rainchance'],
-      ['wind','Wind cell','.le-weather-stat:nth-child(3)'],
-      ['windLabel','Wind label','.le-weather-stat:nth-child(3) .le-weather-stat-label'],
-      ['windValue','Wind value','#le-weather-wind'],
-      ['artColumn','Live Art column','.le-weather-art-column'],
-      ['artCard','Live Art card','.le-weather-studio'],
-      ['artHeader','Live Art header','.le-weather-studio-head'],
-      ['artKicker','Live Art kicker','.le-weather-studio-kicker'],
-      ['artTitle','Live Art title','.le-weather-studio-title'],
-      ['artState','Live Art drawing status','.le-weather-studio-state'],
-      ['artCanvas','Live Art canvas','.le-weather-studio-canvas'],
-      ['artFooter','Live Art footer','.le-weather-studio-foot'],
-      ['artCaption','Live Art caption','#le-weather-studio-caption'],
-      ['replay','Replay button','.le-weather-art-replay'],
-      ['status','Weather status message','.le-weather-status'],
-      ['attribution','Weather attribution','.le-weather-attribution']
-    ];
-    const states = new Map();
-    const originals = new Map();
-    const nodes = new Map();
-    const selectorOptions = [];
-    let selectedId = 'headline';
-    let activeDrag = null;
-    let activeResize = null;
-    let editing = false;
-    let disposed = false;
-
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = 'le-weather-layout-edit-toggle';
-    toggle.textContent = 'EDIT SIZE & POSITION';
-    toggle.setAttribute('aria-label','Edit Weather view element size and position');
-
-    const panel = document.createElement('section');
-    panel.className = 'le-weather-layout-edit-panel';
-    panel.hidden = true;
-    panel.setAttribute('aria-label','Temporary Weather layout editor');
-
-    const head = document.createElement('div');
-    head.className = 'le-weather-layout-edit-head';
-    const title = document.createElement('div');
-    title.className = 'le-weather-layout-edit-title';
-    title.textContent = 'LAYOUT STUDIO · TEMPORARY';
-    const close = document.createElement('button');
-    close.type = 'button';
-    close.className = 'le-weather-layout-edit-close';
-    close.textContent = 'HIDE TOOLS';
-    head.append(title,close);
-
-    const select = document.createElement('select');
-    select.className = 'le-weather-layout-edit-select';
-    select.setAttribute('aria-label','Choose an element to edit');
-    for (const [id,label] of definitions) {
-      const option = document.createElement('option');
-      option.value = id;
-      option.textContent = label;
-      select.appendChild(option);
-    }
-
-    function makeRange(labelText,min,max,value,step) {
-      const row = document.createElement('div');
-      row.className = 'le-weather-layout-edit-row';
-      const label = document.createElement('label');
-      label.textContent = labelText;
-      const input = document.createElement('input');
-      input.type = 'range'; input.min = String(min); input.max = String(max);
-      input.step = String(step); input.value = String(value);
-      const output = document.createElement('output');
-      output.className = 'le-weather-layout-edit-value';
-      row.append(label,input,output);
-      return {row,input,output};
-    }
-    const xControl = makeRange('X',-30,30,0,0.5);
-    const yControl = makeRange('Y',-30,30,0,0.5);
-    const sizeControl = makeRange('SIZE',50,200,100,1);
-
-    const actions = document.createElement('div');
-    actions.className = 'le-weather-layout-edit-actions';
-    const copy = document.createElement('button');
-    copy.type = 'button'; copy.className = 'le-weather-layout-edit-action le-weather-layout-edit-copy';
-    copy.textContent = 'COPY LAYOUT JSON';
-    const reset = document.createElement('button');
-    reset.type = 'button'; reset.className = 'le-weather-layout-edit-action'; reset.textContent = 'RESET ALL';
-    const finish = document.createElement('button');
-    finish.type = 'button'; finish.className = 'le-weather-layout-edit-action'; finish.textContent = 'FINISH';
-    actions.append(copy,reset,finish);
-    const status = document.createElement('div');
-    status.className = 'le-weather-layout-edit-status';
-    status.setAttribute('role','status'); status.setAttribute('aria-live','polite');
-    status.textContent = 'Tap an element to select it. Drag to move; use the blue corner handle to resize.';
-    const jsonBox = document.createElement('textarea');
-    jsonBox.className = 'le-weather-layout-edit-json';
-    jsonBox.readOnly = true; jsonBox.hidden = true;
-    jsonBox.setAttribute('aria-label','Layout JSON to copy manually');
-    panel.append(head,select,xControl.row,yControl.row,sizeControl.row,actions,status,jsonBox);
-
-    const handle = document.createElement('div');
-    handle.className = 'le-weather-layout-edit-handle';
-    handle.hidden = true;
-    handle.setAttribute('role','button');
-    handle.setAttribute('aria-label','Resize selected element');
-    screen.append(toggle,panel,handle);
-
-    for (const [id,label,selectorText] of definitions) {
-      const node = screen.querySelector(selectorText);
-      if (!node) continue;
-      node.dataset.leLayoutId = id;
-      node.dataset.leLayoutLabel = label;
-      nodes.set(id,node);
-      states.set(id,{x:0,y:0,scale:1});
-      originals.set(id,{
-        transform:node.style.getPropertyValue('transform'),
-        transformPriority:node.style.getPropertyPriority('transform'),
-        origin:node.style.getPropertyValue('transform-origin'),
-        originPriority:node.style.getPropertyPriority('transform-origin')
-      });
-    }
-    for (const option of Array.from(select.options)) {
-      if (!nodes.has(option.value)) option.disabled = true;
-    }
-
-    function setStatus(message) { status.textContent = message; }
-    function apply(id) {
-      const node = nodes.get(id), state = states.get(id);
-      if (!node || !state) return;
-      const dx = state.x * 100;
-      const dy = state.y * 100;
-      node.style.setProperty('transform',`translate3d(${dx}vw,${dy}vh,0) scale(${state.scale})`,'important');
-      node.style.setProperty('transform-origin','center center','important');
-    }
-    function positionHandle() {
-      const node = nodes.get(selectedId);
-      if (!editing || !node) { handle.hidden = true; return; }
-      const rect = node.getBoundingClientRect();
-      handle.style.left = `${rect.right}px`;
-      handle.style.top = `${rect.bottom}px`;
-      handle.hidden = false;
-    }
-    function syncControls() {
-      const state = states.get(selectedId) || {x:0,y:0,scale:1};
-      xControl.input.value = String(Math.round(state.x*1000)/10);
-      yControl.input.value = String(Math.round(state.y*1000)/10);
-      sizeControl.input.value = String(Math.round(state.scale*100));
-      xControl.output.textContent = `${Number(xControl.input.value).toFixed(1)}%`;
-      yControl.output.textContent = `${Number(yControl.input.value).toFixed(1)}%`;
-      sizeControl.output.textContent = `${sizeControl.input.value}%`;
-    }
-    function selectElement(id) {
-      if (!nodes.has(id)) return;
-      const previous = nodes.get(selectedId);
-      previous?.removeAttribute('data-le-layout-selected');
-      selectedId = id;
-      const node = nodes.get(id);
-      node?.setAttribute('data-le-layout-selected','true');
-      select.value = id;
-      syncControls();
-      positionHandle();
-    }
-    function openEditor() {
-      if (!landscapeQuery.matches || disposed) return;
-      if (!editing) {
-        editing = true;
-        screen.classList.add('le-layout-editing');
-        selectElement(selectedId);
-        setStatus('Tap an outlined element or choose it from the list. Drag to move; use the blue handle or SIZE slider to resize.');
-      }
-      panel.hidden = false; toggle.hidden = true;
-    }
-    function restoreElement(id) {
-      const node = nodes.get(id), original = originals.get(id);
-      if (!node || !original) return;
-      if (original.transform) node.style.setProperty('transform',original.transform,original.transformPriority);
-      else node.style.removeProperty('transform');
-      if (original.origin) node.style.setProperty('transform-origin',original.origin,original.originPriority);
-      else node.style.removeProperty('transform-origin');
-      node.removeAttribute('data-le-layout-selected');
-    }
-    function minimizePanel() {
-      if (!editing) return;
-      panel.hidden = true;
-      toggle.hidden = !landscapeQuery.matches;
-      toggle.textContent = 'SHOW LAYOUT TOOLS';
-      positionHandle();
-    }
-    function exitEditor(resetAll=true) {
-      editing = false;
-      activeDrag = null; activeResize = null;
-      screen.classList.remove('le-layout-editing');
-      panel.hidden = true; toggle.hidden = !landscapeQuery.matches;
-      toggle.textContent = 'EDIT SIZE & POSITION';
-      handle.hidden = true;
-      if (resetAll) {
-        for (const [id] of nodes) {
-          restoreElement(id);
-          states.set(id,{x:0,y:0,scale:1});
-        }
-      }
-      jsonBox.hidden = true;
-      setStatus('Temporary edits cleared. Nothing was saved to the app.');
-    }
-    function updateAxis(axis,value) {
-      const state = states.get(selectedId); if (!state) return;
-      state[axis] = Math.max(-0.30,Math.min(0.30,Number(value)/100));
-      apply(selectedId); syncControls(); positionHandle();
-    }
-    function updateScale(value) {
-      const state = states.get(selectedId); if (!state) return;
-      state.scale = Math.max(0.5,Math.min(2,Number(value)/100));
-      apply(selectedId); syncControls(); positionHandle();
-    }
-    function layoutExport() {
-      const elements = {};
-      for (const [id,label] of definitions) {
-        if (!nodes.has(id)) continue;
-        const state = states.get(id);
-        if (Math.abs(state.x)>0.00001 || Math.abs(state.y)>0.00001 || Math.abs(state.scale-1)>0.00001) {
-          elements[id] = {
-            label,
-            selector:definitions.find(item=>item[0]===id)?.[2] || '',
-            xPercent:Number((state.x*100).toFixed(2)),
-            yPercent:Number((state.y*100).toFixed(2)),
-            scalePercent:Number((state.scale*100).toFixed(1))
-          };
-        }
-      }
-      return {
-        schema:'live-earth-weather-layout-adjustments-v1',
-        mode:'temporary-visual-editor',
-        orientation:'landscape',
-        coordinateReference:'viewport width and height; translations are percentages; scale is uniform',
-        viewport:{width:window.innerWidth,height:window.innerHeight},
-        elements
-      };
-    }
-    async function copyLayout() {
-      const text = JSON.stringify(layoutExport(),null,2);
-      jsonBox.value = text;
-      try {
-        if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
-        await navigator.clipboard.writeText(text);
-        jsonBox.hidden = true;
-        setStatus('Layout JSON copied. Paste it into this chat when ready.');
-      } catch (_) {
-        jsonBox.hidden = false;
-        jsonBox.focus(); jsonBox.select();
-        setStatus('Select the JSON below and use Copy, then paste it into this chat.');
-      }
-    }
-    function resetAll() {
-      for (const [id] of nodes) {
-        states.set(id,{x:0,y:0,scale:1});
-        restoreElement(id);
-      }
-      selectElement(selectedId);
-      jsonBox.hidden = true;
-      setStatus('All temporary sizes and positions reset.');
-    }
-
-    function onPointerDown(event) {
-      if (!editing || panel.contains(event.target)) return;
-      const node = event.target.closest?.('[data-le-layout-id]');
-      if (!node || !screen.contains(node)) return;
-      if (event.target.closest?.('select')) return;
-      const id = node.dataset.leLayoutId;
-      selectElement(id);
-      const state = states.get(id);
-      activeDrag = {id,pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,baseX:state.x,baseY:state.y,moved:false};
-      try { node.setPointerCapture(event.pointerId); } catch (_) {}
-      event.preventDefault();
-    }
-    function onPointerMove(event) {
-      if (!activeDrag || event.pointerId !== activeDrag.pointerId) return;
-      const dx = event.clientX-activeDrag.startX;
-      const dy = event.clientY-activeDrag.startY;
-      if (Math.abs(dx)+Math.abs(dy)>2) activeDrag.moved = true;
-      const state = states.get(activeDrag.id);
-      state.x = Math.max(-0.30,Math.min(0.30,activeDrag.baseX + dx/Math.max(1,screen.clientWidth)));
-      state.y = Math.max(-0.30,Math.min(0.30,activeDrag.baseY + dy/Math.max(1,screen.clientHeight)));
-      apply(activeDrag.id); syncControls(); positionHandle();
-    }
-    function onPointerUp(event) {
-      if (activeDrag && event.pointerId===activeDrag.pointerId) activeDrag=null;
-    }
-    function onHandleDown(event) {
-      if (!editing) return;
-      const node = nodes.get(selectedId); if (!node) return;
-      const rect = node.getBoundingClientRect();
-      activeResize={pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,baseScale:states.get(selectedId).scale,baseExtent:Math.max(1,rect.width+rect.height)};
-      try { handle.setPointerCapture(event.pointerId); } catch (_) {}
-      event.preventDefault(); event.stopPropagation();
-    }
-    function onHandleMove(event) {
-      if (!activeResize || event.pointerId!==activeResize.pointerId) return;
-      const delta=(event.clientX-activeResize.startX + event.clientY-activeResize.startY)/activeResize.baseExtent;
-      updateScale(Math.round(Math.max(0.5,Math.min(2,activeResize.baseScale*(1+delta)))*100));
-    }
-    function onHandleUp(event) { if(activeResize && event.pointerId===activeResize.pointerId)activeResize=null; }
-    function onOrientationChange() {
-      if (!landscapeQuery.matches) exitEditor(true);
-      toggle.hidden = !landscapeQuery.matches;
-    }
-
-    const handleClose = minimizePanel;
-    const handleFinish = () => exitEditor(true);
-    const handleSelect = () => selectElement(select.value);
-    toggle.addEventListener('click',openEditor);
-    close.addEventListener('click',handleClose);
-    finish.addEventListener('click',handleFinish);
-    select.addEventListener('change',handleSelect);
-    xControl.input.addEventListener('input',()=>updateAxis('x',xControl.input.value));
-    yControl.input.addEventListener('input',()=>updateAxis('y',yControl.input.value));
-    sizeControl.input.addEventListener('input',()=>updateScale(sizeControl.input.value));
-    copy.addEventListener('click',copyLayout);
-    reset.addEventListener('click',resetAll);
-    screen.addEventListener('pointerdown',onPointerDown,true);
-    window.addEventListener('pointermove',onPointerMove,{passive:false});
-    window.addEventListener('pointerup',onPointerUp);
-    window.addEventListener('pointercancel',onPointerUp);
-    handle.addEventListener('pointerdown',onHandleDown);
-    handle.addEventListener('pointermove',onHandleMove);
-    handle.addEventListener('pointerup',onHandleUp);
-    handle.addEventListener('pointercancel',onHandleUp);
-    window.addEventListener('resize',positionHandle,{passive:true});
-    window.addEventListener('orientationchange',onOrientationChange,{passive:true});
-    toggle.hidden = !landscapeQuery.matches;
-    selectElement(selectedId);
-
-    return () => {
-      if (disposed) return;
-      disposed=true;
-      exitEditor(true);
-      toggle.removeEventListener('click',openEditor);
-      close.removeEventListener('click',handleClose);
-      finish.removeEventListener('click',handleFinish);
-      select.removeEventListener('change',handleSelect);
-      screen.removeEventListener('pointerdown',onPointerDown,true);
-      window.removeEventListener('pointermove',onPointerMove);
-      window.removeEventListener('pointerup',onPointerUp);
-      window.removeEventListener('pointercancel',onPointerUp);
-      handle.removeEventListener('pointerdown',onHandleDown);
-      handle.removeEventListener('pointermove',onHandleMove);
-      handle.removeEventListener('pointerup',onHandleUp);
-      handle.removeEventListener('pointercancel',onHandleUp);
-      window.removeEventListener('resize',positionHandle);
-      window.removeEventListener('orientationchange',onOrientationChange);
-      for (const [id,node] of nodes) {
-        restoreElement(id);
-        delete node.dataset.leLayoutId;
-        delete node.dataset.leLayoutLabel;
-      }
-      toggle.remove(); panel.remove(); handle.remove();
-    };
-  }
-
   function activateWeather(){
     const view=mount('weather');if(!view)return;
-    addStyles();const screen=makeScreen();view.panel.remove();view.root.replaceChildren(screen);const layoutEditorCleanup=installVisualLayoutEditor(screen);
+    addStyles();const screen=makeScreen();view.panel.remove();view.root.replaceChildren(screen);
 
     const weatherDock = document.getElementById('le-feature-dock');
     function syncDockClearance() {
@@ -2244,7 +1834,7 @@
     refreshTimer=window.setInterval(()=>{if(!disposed&&!document.hidden&&!manualPreview&&window.liveEarthLocationAllowed?.()===true)fetchLive();},REFRESH_MS);
     clockTimer=window.setInterval(updateLocalClock,30000);updateLocalClock();
     if(window.liveEarthLocationAllowed?.()===true)pollForFix();else showLocationOff();
-    return () => {disposed=true;requestSerial++;stopPolling();if(refreshTimer)clearInterval(refreshTimer);if(clockTimer)clearInterval(clockTimer);abortController?.abort();abortController=null;painter.stop();studioPainter.stop();replayButton?.removeEventListener('click',handleReplay);selector.removeEventListener('change',handleModeChange);window.removeEventListener('live-earth-location-state',onLocationState);window.removeEventListener('live-earth-location-stop',onLocationStop);window.removeEventListener('online',onOnline);window.removeEventListener('offline',onOffline);document.removeEventListener('visibilitychange',onVisibility);weatherDockObserver?.disconnect();window.removeEventListener('resize',syncDockClearance);window.removeEventListener('orientationchange',syncDockClearance);layoutEditorCleanup?.();screen.remove();document.getElementById(STYLE_ID)?.remove();};
+    return () => {disposed=true;requestSerial++;stopPolling();if(refreshTimer)clearInterval(refreshTimer);if(clockTimer)clearInterval(clockTimer);abortController?.abort();abortController=null;painter.stop();studioPainter.stop();replayButton?.removeEventListener('click',handleReplay);selector.removeEventListener('change',handleModeChange);window.removeEventListener('live-earth-location-state',onLocationState);window.removeEventListener('live-earth-location-stop',onLocationStop);window.removeEventListener('online',onOnline);window.removeEventListener('offline',onOffline);document.removeEventListener('visibilitychange',onVisibility);weatherDockObserver?.disconnect();window.removeEventListener('resize',syncDockClearance);window.removeEventListener('orientationchange',syncDockClearance);screen.remove();document.getElementById(STYLE_ID)?.remove();};
   }
 
   runtime.registerFeature('weather',activateWeather);
