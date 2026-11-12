@@ -19,8 +19,10 @@ assert.ok(source.includes('const horizon=height*.79;'));
 assert.ok(source.includes('Japanese landscape foreground'));
 
 // Weather copy remains prominent and readable in both orientations.
-assert.ok(source.includes('font-size:clamp(58px,6.8vw,72px)'));
-assert.ok(source.includes('font-size:clamp(14px,1.7vw,17px)'));
+// These assertions follow the current responsive landscape scale rather than retired exact values.
+assert.ok(source.includes('.le-weather-temperature { font-size:clamp(72px,5.8vw,94px); }'));
+assert.ok(source.includes('.le-weather-condition-name { font-size:clamp(19px,1.55vw,22px); }'));
+assert.ok(source.includes('.le-weather-stat-value { margin-top:5px;font-size:clamp(17px,1.9vw,20px); }'));
 assert.ok(source.includes('font-size:clamp(17px,4.4vw,20px);'));
 
 // Portrait receives breathing room below the physical top safe area.
@@ -46,4 +48,4 @@ assert.ok(source.includes("document.getElementById('le-feature-dock')"));
 assert.ok(!/#le-feature-dock\s*\{/.test(source));
 assert.ok(!/weatherDock\.style\.(?:bottom|top|left|right|transform|width|height)/.test(source));
 
-console.log('Japanese minimalist Weather scene, prominent readings, portrait top breathing room and centred 10:7 Live Art contracts passed.');
+console.log('Japanese minimalist Weather scene, current responsive typography, portrait safe area and centred 10:7 Live Art contracts passed.');
