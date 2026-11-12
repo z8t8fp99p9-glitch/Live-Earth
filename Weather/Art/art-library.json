@@ -1,20 +1,83 @@
 {
   "schemaVersion": 1,
   "scope": "Weather Live Art studio only",
-  "canvas": { "width": 1000, "height": 700, "aspectRatio": "10:7" },
+  "canvas": {
+    "width": 1000,
+    "height": 700,
+    "aspectRatio": "10:7"
+  },
+  "productionStandard": {
+    "id": "WEATHER-LIVE-ART-STANDARD-002",
+    "version": "2.0",
+    "guidePath": "Weather/Art/LIVE-ART-PRODUCTION-GUIDE.md",
+    "directionPath": "Weather/Art/ART-DIRECTION.json",
+    "activeVisualReference": "Weather/Art/References/approved-style-reference-002.jpg",
+    "illustrationFootprintPercent": 70,
+    "quietWarmPaperPercent": 30,
+    "style": "minimalist-monochromatic-japanese-inspired-ink-line-art",
+    "weatherRecolouring": false,
+    "preserveProgressiveReplay": true
+  },
   "artworks": [
     {
       "id": "rainy-tea-afternoon-001",
       "title": "A Rainy Tea Afternoon",
-      "weather": ["rain", "cloudy"],
+      "weather": [
+        "rain",
+        "cloudy"
+      ],
       "moment": "A quiet cup beside a rain-streaked window",
-      "mood": ["comfort", "stillness", "warmth"],
+      "mood": [
+        "comfort",
+        "stillness",
+        "warmth"
+      ],
       "dataPath": "Weather/Art/rainy-tea-afternoon-001.json",
       "format": "application/json",
       "renderMode": "ordered-ink-wash-paths",
-      "durationMs": 18000,
-      "palette": "fixed; charcoal ink, warm paper, muted grey, vermilion accents",
-      "availability": "online-on-demand"
+      "durationMs": 22000,
+      "palette": "mostly black ink on warm ivory paper; rare vermilion accents",
+      "availability": "online-on-demand",
+      "drawingPlanId": "rainy-tea-afternoon-sequence-v1",
+      "drawingSequence": [
+        {
+          "order": 1,
+          "stage": "The door / window frame",
+          "strokeWeight": "thick",
+          "notes": "Strong confident structural strokes establish the setting and sill."
+        },
+        {
+          "order": 2,
+          "stage": "The tree branch",
+          "strokeWeight": "thick then medium",
+          "notes": "Flowing main branch first, then only a few selected leaves."
+        },
+        {
+          "order": 3,
+          "stage": "The hills",
+          "strokeWeight": "medium to thin",
+          "notes": "Long, elegant, restrained lines in the distance."
+        },
+        {
+          "order": 4,
+          "stage": "The little house / pavilion",
+          "strokeWeight": "medium",
+          "notes": "Only enough roof and building strokes to reveal it."
+        },
+        {
+          "order": 5,
+          "stage": "The kettle and teacup",
+          "strokeWeight": "medium",
+          "notes": "Careful, simple outlines; very few defining details; paper remains visible inside objects."
+        },
+        {
+          "order": 6,
+          "stage": "The red essence",
+          "strokeWeight": "selective red marks",
+          "notes": "Red sun, maple leaves and tiny intended accents appear last."
+        }
+      ],
+      "replayRequirement": "The encoded paths array in rainy-tea-afternoon-001.json must follow these six stages in order. The renderer reveals paths progressively in stored array order; it does not create named stage pauses."
     }
   ]
 }

@@ -1,190 +1,273 @@
 # LIVE // EARTH — Weather Live Art Production Guide
 
-**Document ID:** `WEATHER-LIVE-ART-STANDARD-001`  
-**Status:** Approved production standard  
+**Document ID:** `WEATHER-LIVE-ART-STANDARD-002`  
+**Version:** 2.0 — approved visual direction  
+**Status:** Current binding production standard  
 **Scope:** LIVE // EARTH Weather view — Live Art card only  
-**Approved visual benchmark:** `References/approved-style-reference-001.jpg`  
+**Active visual benchmark:** `References/approved-style-reference-002.jpg`  
+**Historical reference:** `References/approved-style-reference-001.jpg` (retained; superseded for new artwork)  
 **Last updated:** 12 November 2026
 
 ---
 
+## 0. Read this before creating or changing any Weather Live Art
+
+This guide is the single source of truth for the appearance, composition, colour, drawing order, Replay preparation, and approval of Weather Live Art.
+
+The matching machine-readable specification is `ART-DIRECTION.json`. The app-local catalogue `art-library.json` links to that specification and stores each artwork's own drawing plan. Read all three before preparing an artwork:
+
+1. `LIVE-ART-PRODUCTION-GUIDE.md` — complete human-readable standard.
+2. `ART-DIRECTION.json` — compact structured rules for production tools and assistants.
+3. `art-library.json` — current artwork list and artwork-specific drawing plans.
+
+Do not rely on memory, generic image prompts, or a previous artwork alone. Inspect the active reference and current catalogue every time. When the user supplies a new approved visual direction, update these files together in one documentation/catalogue package.
+
+**Current art identity:** minimalist Japanese-inspired monochromatic ink line art on warm ivory paper. The illustration is made from a small number of confident, expressive marks. The paper and the unpainted space are part of the composition.
+
+The earlier watercolor-heavy guide is superseded for future artwork. Its history is retained through the repository's commit history and the old reference file; do not use it as the active style target.
+
 ## 1. Purpose and promise
 
-Live Art is a collection of small, quiet visual stories inspired by the weather. It is not a collection of weather icons, generic wallpapers, or interchangeable illustrations.
+Weather Live Art is a collection of small, quiet visual moments inspired by weather. It is not a collection of weather icons, generic wallpapers, or densely detailed landscape paintings.
 
-The weather is the setting. A place, ritual, animal, plant, object, or fleeting natural detail gives each image its subject. The feeling should be calm, intimate, observant, and human.
+The weather is the setting or condition. A single intimate subject, a simple environment, and a few carefully chosen marks communicate the moment. A viewer should recognise the subject quickly, then notice the restraint and details.
 
-The collection must feel like one artist made it with one visual sensibility, while every artwork remains a genuinely new scene. The approved reference establishes the visual language and composition discipline. It is **not** a scene template to copy.
+Every image must feel like part of one coherent collection while presenting a genuinely different subject, setting, silhouette, and composition. The approved reference establishes visual language and drawing economy; it is not a scene template to copy.
 
-This guide is the production authority for every future Weather Live Art image, whether the collection contains ten images or one thousand.
+## 2. Active visual identity — mandatory
 
-## 2. The approved visual identity
+### 2.1 Medium and mark-making
 
-### Medium and mark-making
-- Japanese-inspired ink-and-wash and watercolor illustration, created as a refined 2D digital painting.
-- Expressive, confident ink contours; visible brush decisions; soft layered washes; restrained dry-brush texture; subtle natural paper grain.
-- A balance of defined focal objects and softened atmospheric distance.
-- Painterly variation is welcome. Airbrushed gradients, plastic surfaces, vector-clean outlines, and 3D rendering are not.
-- Detail should feel intentional and hand-placed, never mechanically repeated or uniformly distributed.
+- Minimalist Japanese-inspired black ink line art on warm, subtly textured paper.
+- Fine, continuous-feeling black ink strokes with slight natural variation, like deliberate hand-drawn brush movements.
+- Prefer clear, economical outlines that suggest an object rather than fully describe every surface.
+- Use confident long strokes for structural forms and expressive curved strokes for organic forms.
+- Allow a small amount of dry-brush character or rough edge where it supports the mark; do not turn every line into a scratchy texture.
+- Use almost no filled-black areas. Large solid silhouettes, broad black blocks, and heavily shaded objects are prohibited.
+- Recognisability must come from silhouette, proportion, and a few defining marks — not micro-detail.
+- The result should look intentionally simple and complete, never like an unfinished wireframe or a technical diagram.
 
-### Emotional character
-- Quiet, contemplative, warm, and atmospheric.
-- A scene should suggest a moment just before or after something happens.
-- Prefer one memorable observation over a decorative inventory of objects.
-- Beauty comes from restraint, composition, light, texture, and the relationship between foreground and distance.
+### 2.2 What the style is not
 
-### Cultural restraint
-- Japanese influence belongs in the composition, brush language, paper treatment, and selective architectural or botanical references when they genuinely serve the scene.
-- Do not add random Japanese props, costume, symbols, lettering, pseudo-calligraphy, or cultural motifs merely to signal a style.
-- No interface text, labels, captions, logos, watermarks, signatures, or invented characters inside the image.
+Do not use:
+- elaborate watercolor scenery or broad painted washes as the dominant technique;
+- photorealism, 3D rendering, glossy surfaces, airbrushed gradients, or vector-perfect icon art;
+- dense cross-hatching, stippling, repeated texture marks, or intricate surface decoration;
+- large filled-black areas or thick blocks used as substitutes for line drawing;
+- decorative props that do not help tell the weather moment;
+- typography, captions, pseudo-calligraphy, labels, logos, signatures, borders, or watermarks inside the artwork.
 
-## 3. Composition standard — the most important rule
+### 2.3 Emotional character
 
-**The paper is part of the artwork. The scene must breathe inside it.**
+Quiet, observant, intimate, balanced, and contemplative. The scene should feel like a small moment noticed rather than a stage filled with objects. Negative space is active composition, not unused space to fill.
 
-The approved reference is a contained illustration floating on a warm paper field. It is not a full-bleed scene. The painted setting and objects occupy a carefully composed central area; the surrounding paper remains visible and visually quiet.
+## 3. Composition — the 70/30 rule
 
-### 10:7 master composition
-- Every production artwork is composed for a **10:7 landscape canvas**.
-- App export is exactly **1200 × 840 px**.
-- Treat the full canvas as warm, subtly textured paper, but keep the actual scene and its strong visual marks contained within that paper.
-- Target scene envelope: approximately **72–78% of canvas width** and **76–84% of canvas height**, measured around the main connected scene/focal group. These are composition guides, not crop instructions.
-- Preserve approximately **11–14% quiet paper at each horizontal edge** and **8–12% at the top and bottom** wherever the scene allows.
-- Keep dominant subjects, faces, animals, vessels, architecture, branches, and other important forms comfortably inside the scene envelope. Do not let important details touch or run off the image edge.
-- The scene may be asymmetrical. Balance it with open paper, mist, sky, water, or a soft wash rather than filling empty areas with extra objects.
-- The visual centre of gravity should feel composed near the middle of the canvas. It need not be mathematically centred; a gentle left/right or high/low offset is desirable when balanced by negative space.
-- Outer paper may show faint grain or very soft pigment variation. It must not become a second scene or a busy decorative border.
+### 3.1 Fixed canvas and card
 
-### Never do these
-- Do not fill the entire 10:7 canvas with objects, trees, buildings, foliage, or dense scenery.
-- Do not zoom or crop the subject until it touches the edges.
-- Do not turn the image into a full-screen landscape wallpaper.
-- Do not add a visible frame, border, card edge, vignette, or artificial white margin. The breathing room must feel like the natural paper of the painting.
-- Do not fill every quiet space with leaves, birds, rain marks, lanterns, flowers, or decorative props.
-- Do not shrink the scene into a tiny central stamp. It must remain substantial and readable within its generous paper field.
+- Artwork composition: landscape **10:7**.
+- Encoded drawing coordinate system: **1000 × 700** (the current ordered-path asset schema).
+- App artwork export/reference target: **1200 × 840 px**, sRGB.
+- Existing Weather Live Art card remains **10:7**. Do not change card sizing, layout, overlays, or responsive behaviour as part of art production.
 
-### Visual hierarchy
-Use a simple hierarchy:
-1. **One primary focal subject or moment.**
-2. **One supporting setting** that explains where the moment takes place.
-3. **A small number of secondary details** that add story or depth.
+### 3.2 Illustration footprint
 
-As a normal target, use one strong subject, one clear environment, and no more than two to four supporting objects or motifs. More may be used only when the composition remains quiet and each detail has a reason to exist.
+- The complete illustration should occupy **about 70% of the 10:7 canvas**.
+- Preserve roughly **30% as clean, warm paper around the illustration**. This is the visual breathing-space budget, not a demand for an exact pixel mask.
+- Judge the visual footprint by the composed scene — its structural lines, focal object, and supporting marks — not by counting non-paper pixels. Fine line art naturally uses fewer ink pixels than a painted image.
+- Keep the scene comfortably inside the canvas. Leave visible warm-paper separation on every side; no essential object or stroke should be clipped or pressed against the edge.
+- The composition may be asymmetrical. Balance one side with open paper rather than adding more objects.
+- Avoid a tiny central stamp. The subject must remain readable at the actual card size while retaining the generous paper field.
+- Do not zoom, crop, or stretch artwork to force it into the card. Compose natively for 10:7; if adapting a reference, extend matching paper rather than cutting off the artwork.
 
-## 4. Palette and light rules
+### 3.3 Visual hierarchy
 
-Use a consistent family of natural, restrained pigments:
-- Warm ivory, cream, or rice-paper tones for the ground.
-- Charcoal, soot, and soft ink-black for structure and contours.
-- Muted stone, mist, and warm greys for distance and weather.
-- Natural wood, earth, and subdued botanical greens as supporting colours.
-- Vermilion or soft crimson as a selective accent, not a blanket colour.
-- A small amount of warm amber may be used where a genuine light source belongs.
+Use this hierarchy unless the story genuinely requires otherwise:
+1. One primary focal subject or moment.
+2. One simple supporting setting that makes the subject understandable.
+3. Zero to three secondary details that create atmosphere or identify the weather.
 
-Keep the palette delicate and connected. Strong red, amber, or dark ink should lead the eye, not overpower the paper.
+A composition should normally communicate its idea with one glance. If the scene needs a paragraph of explanation, simplify the drawing.
 
-**The underlying artwork palette is fixed across day and night.** Do not make a night version by recolouring an existing image blue, purple, or black. Do not let device time, sun phase, or a DAY/NIGHT toggle recolour the paper, ink, grain, or established palette.
+## 4. Stroke hierarchy and object construction
 
-Different weather scenes may naturally contain different depicted conditions and local colour relationships, but they must still belong to the same restrained collection palette. A weather change may select a different artwork; it must not apply an automatic colour filter to the same artwork.
+Use three deliberately chosen visual weights. The labels describe the intended appearance; they are not instructions to apply uniform software stroke widths to every path.
 
-## 5. Weather storytelling and scene diversity
+| Visual weight | Typical use | Drawing character |
+|---|---|---|
+| **Thick / structural** | Window or door frame, main branch, kettle silhouette, mountain or roof silhouette | Confident, long, decisive strokes; establish the scene |
+| **Medium / object-defining** | Teacup, pavilion, small house, wind chime, pot, umbrella, main leaf shapes | Clear outlines with a few recognisable details |
+| **Thin / atmospheric** | Rain, steam, distant birds, delicate twigs, tiny surface marks | Very sparse; only where needed to suggest motion or depth |
 
-Weather should shape what is happening in the scene, not merely add a symbol on top of an otherwise identical picture.
+Rules:
+- Vary stroke weight intentionally. Do not outline every object with the same thickness.
+- Use thick strokes for structure, medium strokes for the principal objects, and thin strokes sparingly for atmosphere.
+- Prefer a continuous contour or a small set of connected marks over many disconnected fragments.
+- Break a line only when the visual design calls for an opening, overlap, or implied edge.
+- Avoid filling object interiors. Use one or two interior marks only where they materially improve recognition.
+- Red accents are separate late-stage marks, not a substitute for black structure.
 
-Possible story territories include:
-- **Rain:** shelter, wet stone, a quiet window, a garden path, a riverbank, a boat tied at rest.
-- **Storm:** distant waves, bent grasses, protective architecture, a warm light seen from safety.
-- **Snow:** a courtyard, a branch carrying fresh snow, a quiet path, a warm window, footprints fading into distance.
-- **Wind:** moving fabric, a wind chime, grasses leaning, leaves crossing an open path.
-- **Fog:** a bridge, a far house, a garden gate, a softened mountain path.
-- **Clear or sunny:** a shaded veranda, a garden table, laundry in a light breeze, a path through trees.
-- **Cloudy:** a still river, a waiting boat, layered hills, a quiet courtyard.
-- **Heat:** shade, a water jar, a sunlit wall, a garden resting in still air.
-- **Night:** a lantern-lit room, a moonlit garden, a still pond, a distant house.
+### 4.1 Current renderer constraint — important for production
 
-These are idea territories, not fixed recipes or a requirement to make every image contain a building or a lantern.
+The current renderer accepts `ordered-ink-wash-paths`. Each entry in `paths` is a palette index plus encoded point data. The renderer reveals the `paths` array progressively, in its stored array order. It does not currently read per-path `strokeWidth`, semantic object names, stage timing, or named pauses.
 
-### Diversity ledger
-Before creating a new image, check the existing catalogue and record the proposed:
-- weather condition(s);
-- story/subject;
-- setting type;
-- viewpoint and distance;
+The renderer completes each path as a filled closed shape. To create the appearance of a line with this schema, author each ink mark as a narrow closed ribbon/contour whose geometry defines the apparent thickness. Use narrow shapes for fine lines, wider shapes for structural strokes, and avoid large filled regions. Do not assume a `strokeWidth` field will affect rendering — it is not part of the current schema.
+
+The human/machine drawing plan records stage names and intent. The actual visible Replay sequence is driven by the order of records in `paths`. Therefore the path array itself must be authored in the specified stage order. Do not shuffle or sort it after authoring.
+
+The existing Replay progressively reveals the whole ordered path stream over `durationMs`. It does not stop at named stage boundaries. Adding stage holds, object-level controls, true open stroke paths, or a new stroke-width engine would require a separate renderer implementation and explicit testing; it is not authorised by this guide update.
+
+## 5. Colour and weather — fixed visual language
+
+### 5.1 Base palette
+
+- Warm ivory / cream paper as the ground.
+- Black or near-black ink as the principal drawing colour.
+- Optional very restrained soft grey only when a light secondary line materially helps separation or depth.
+- Vermilion / muted red as a rare accent.
+
+Keep the artwork predominantly monochrome. Red should normally be limited to one small family of meaningful accents — for example, the sun and a few maple leaves — not scattered decoration.
+
+### 5.2 Weather must not recolour the illustration
+
+**Weather influences the subject and its details, not the overall colour treatment.**
+
+- Clear weather may be suggested by an open sky, a simple sun, a few birds, crisp shadows, or a quiet outdoor object.
+- Rain may be suggested by sparse thin rain strokes, a wet sill, a drip, or a sheltered object.
+- Wind may be suggested by a tilted hanging object, bent grass, or a few travelling leaves.
+- Snow may be suggested by bare branches and a small number of falling flakes.
+- Fog may be suggested through restrained broken horizon lines and open paper.
+- Storm may be suggested through a few decisive cloud or rain strokes and a protected focal subject.
+
+These are examples, not recipes. Do not add a sun, red maple leaves, a wind chime, a house, or a tea set to every scene. Select details only when they belong to that particular story.
+
+Do not automatically recolour the whole image according to rain, clear, cloudy, day, night, temperature, or device time. Do not create blue cold-weather versions, purple night versions, or darkened night filters. The underlying paper, ink, and accent logic remain stable. Weather selection can choose a different artwork; it must not apply a colour filter to the same artwork.
+
+## 6. Progressive drawing and Replay — mandatory
+
+Replay is part of the artwork's presentation, not an optional decorative effect. Every production asset must have an intentional drawing order.
+
+### 6.1 Global ordering principles
+
+- Establish the setting before the focal objects.
+- Draw large structural contours before smaller supporting shapes.
+- Draw the main subject after the viewer understands its setting.
+- Add sparse atmospheric marks after the main forms, unless the artwork-specific plan intentionally places them earlier.
+- Add strong colour accents last unless a user-approved artwork plan explicitly says otherwise.
+- Preserve a coherent spatial and visual progression. Do not let unrelated objects appear in arbitrary order.
+
+### 6.2 Artwork-specific direction is required
+
+Each artwork must have its own named drawing plan before path authoring begins. The plan must state:
+- artwork ID and title;
+- weather tags and one-sentence scene story;
+- canvas and approximate 70/30 composition;
+- focal subject, setting, and secondary marks;
+- the ordered drawing stages;
+- intended stroke weight for each stage/object;
+- colour-accent stage and exact accent subjects;
+- any specific exclusions (objects, clutter, palette, or details not wanted).
+
+A plan for one artwork must never be copied wholesale to another artwork. The global style stays consistent; the drawing sequence and subject composition are specific to that artwork.
+
+### 6.3 Approved sequence — A Rainy Tea Afternoon
+
+This sequence is approved and must be retained exactly in this order:
+
+1. **The door / window frame** — strong, confident structural strokes establish the setting and sill. Use thick weight; keep the shape simple and recognisable.
+2. **The tree branch** — draw the flowing main branch, then add only a few selected leaves. Use thick weight for the branch and medium weight for the leaves.
+3. **The hills** — add long, elegant, restrained lines in the distance. Use medium-to-thin marks; keep the horizon quiet.
+4. **The little house / pavilion** — reveal the small distant structure with only the necessary roof and building lines. Use medium weight; do not add architectural micro-detail.
+5. **The kettle and teacup** — draw the principal still-life objects carefully. Use confident medium outlines with a few defining details; leave interiors mostly as paper.
+6. **The red essence** — add the red sun, red maple leaves, and only the intended tiny red accents last. Do not introduce additional red decoration.
+
+Replay for this artwork must follow that order. Do not reorder the path records for visual convenience, colour grouping, or compression. Within each stage, draw the most structural marks first and the small details after them.
+
+### 6.4 New artworks
+
+Before drawing a new artwork, first agree the weather and scene with the user. Then prepare its own ordered stages. Do not assume the rainy tea sequence applies to clear weather, wind, snow, or any other condition. A clear-weather drawing plan has not yet been approved; do not invent or register one until the user approves the subject and composition.
+
+## 7. Subject diversity and collection planning
+
+Weather Live Art is a collection of distinct small observations, not one repeated room/window scene.
+
+Before proposing a new artwork, check the current catalogue and record:
+- weather condition;
+- focal subject or moment;
+- setting;
+- viewpoint;
 - dominant silhouette;
-- distinctive supporting motif;
-- palette accent.
+- supporting detail;
+- accent colour use;
+- proposed Replay order.
 
-Do not repeat the same combination with only minor prop or weather changes. As a planning guardrail, avoid giving two consecutive artworks the same setting, viewpoint, and focal subject. Across a group of ten, deliberately vary interiors, open landscapes, gardens, water, architecture, paths, and close atmospheric moments.
+Avoid giving consecutive artworks the same focal subject, setting, and composition. Vary interiors, thresholds, courtyards, paths, plants, small objects, water edges, rooftops, and open-air moments, while keeping each illustration restrained. Variation must come from the story and silhouettes, not from adding more detail.
 
-The rainy tea-window reference must not become the default composition. Do not repeatedly reuse its window, bamboo blind, lantern, teacup, book, maple branch, pavilion, or the same left-foreground/right-background arrangement. Each may appear again only when a genuinely different story calls for it.
+## 8. Production workflow — one artwork at a time
 
-## 6. Production workflow — one artwork at a time
+1. Read this guide, `ART-DIRECTION.json`, the active reference, and the current catalogue.
+2. Ask/confirm the weather condition if it is not explicit. Never substitute a different condition.
+3. Propose one concise scene concept that matches the requested weather and established style.
+4. Show one artwork concept at a time. No collages, multi-weather boards, or unrequested batches.
+5. Obtain user approval of the subject and composition before preparing an app asset.
+6. Write the artwork-specific drawing plan, including its exact Replay order and stroke hierarchy.
+7. Create the drawing paths in that order, with geometry suited to the current renderer.
+8. Review the full illustration at 10:7 and at actual card scale. Check the 70/30 breathing-space balance and monochrome discipline.
+9. Validate the asset schema, palette indices, encoded coordinates, path count, ID, and duration. Confirm that the `paths` array order matches the approved drawing plan.
+10. Add one catalogue record and preserve all existing artwork IDs and paths.
+11. Package the artwork and catalogue update, validate hashes/manifest, and present it for user upload.
+12. Do not claim app or device success until the ZIP extractor, deployment, and actual user test have been confirmed.
 
-1. **Read this guide and the approved reference.** Use the reference for composition, restraint, paper, brushwork, and mood only.
-2. **Check the catalogue and diversity ledger.** Choose a subject and viewpoint that add something new.
-3. **Write a one-sentence story.** State what is happening and what the viewer should notice first.
-4. **Create one original image.** Do not produce a batch of near-identical variants or automatically recolour an earlier image.
-5. **Review the composition before polishing.** Confirm the 10:7 layout, scene envelope, open paper, hierarchy, and visual balance.
-6. **Review style and storytelling.** Confirm the image belongs to the collection but is clearly distinct from the reference and all existing entries.
-7. **Present the artwork for user approval.** Do not silently add an unapproved generation to the production library.
-8. **Prepare the app asset only after approval.** Export the approved composition, add metadata, and run the quality checklist.
-9. **Add one permanent catalogue record.** Give the artwork a unique ID and record its condition tags and descriptive details.
-10. **Package and verify.** Check dimensions, aspect ratio, format, file integrity, and package manifest before delivery.
+Never interpret “more art” as permission to generate a batch. Work one artwork at a time, as requested.
 
-Never interpret a request for “more art” as permission to generate hundreds of images in one uncontrolled batch. Build the collection deliberately, one approved scene at a time.
+## 9. Production brief — copy-ready base prompt
 
-## 7. Generation brief template
+> Create ONE original LIVE // EARTH Weather Live Art illustration for the approved scene: **[one-sentence scene]**. Use minimalist Japanese-inspired monochromatic black ink line art on warm ivory textured paper. Compose natively for a landscape 10:7 canvas. The illustration should occupy about 70% of the canvas, with roughly 30% remaining as clean, warm paper around it. Use fine, continuous-feeling black ink marks with deliberate variation: thick strokes for structural forms, medium strokes for object-defining outlines, and very few thin strokes for rain, steam, birds, or atmosphere. Prefer simple expressive outlines that suggest objects through silhouette rather than fully describe them. Use almost no filled-black areas. Keep the image predominantly monochrome; use only a very small number of vermilion accents when the approved scene calls for them. Let the requested weather change the scene and its details, never automatically recolour the whole illustration. Keep the composition quiet, balanced, recognisable at small card size, and free of clutter. No text, pseudo-writing, border, watermark, 3D, photorealism, elaborate watercolor wash, dense shading, or extra props. **Artwork-specific ordered drawing plan:** [insert exact approved stages, objects, and stroke weights here]. The final path data must follow this exact order for progressive Replay.
 
-Use this as the stable instruction frame for future image creation. Replace the bracketed story details each time; do not copy the reference scene.
+Do not submit this generic prompt by itself. Fill in the weather, scene, negative constraints, and ordered drawing plan every time.
 
-> Create ONE original LIVE // EARTH Weather Live Art illustration for this story: **[one-sentence scene]**. Use the approved reference only as a guide for its contained central composition, generous warm-paper negative space, Japanese-inspired ink-and-wash brushwork, restrained watercolor layering, and quiet atmosphere. Invent a distinct setting, focal subject, viewpoint, and supporting details; do not reproduce the reference's tea-window arrangement, props, or silhouette. Compose natively for a 10:7 landscape canvas. Keep the scene substantial but contained, with approximately 72–78% width and 76–84% height occupied by the main scene group, leaving quiet paper visible on every side. Use warm ivory paper, charcoal ink, muted natural greys and earth tones, and selective vermilion accents. Keep the underlying palette consistent with the collection and independent of day/night. No text, lettering, pseudo-characters, watermark, border, full-bleed scenery, 3D, photorealism, or clutter.
+## 10. File, catalogue, and app rules
 
-If a future image model returns a different aspect ratio, preserve the composition by extending the matching paper field where possible. Do not solve an aspect-ratio mismatch by cropping away the negative space or enlarging the scene to the edges.
+- All Weather Live Art production material belongs under `Weather/Art/` only.
+- Active visual reference: `References/approved-style-reference-002.jpg`. This is a style/composition benchmark, not a display artwork and not part of the artwork catalogue.
+- Keep `References/approved-style-reference-001.jpg` as historical material; it is superseded for new artwork and must not be deleted as part of this revision.
+- `ART-DIRECTION.json` is the structured companion specification; keep it consistent with this guide.
+- `art-library.json` is the app-local artwork catalogue. It links to the production standard and stores artwork-specific drawing plans as metadata. The current renderer ignores production metadata and reads the established artwork fields (`weather`, `dataPath`, `id`); unknown metadata must not be mistaken for runtime drawing instructions.
+- Individual artwork files retain the current `schemaVersion: 1` and `renderMode: "ordered-ink-wash-paths"` unless a separately tested renderer change is approved.
+- Keep the current encoded canvas at 1000 × 700 and the current 10:7 app card. Export/reference images target 1200 × 840 px, sRGB.
+- Do not overwrite or recycle an artwork ID. Add a new ID for a genuinely new scene.
+- New approved artwork data is loaded online on demand by the existing renderer. Do not add a remote image-generation service, external art API, or unapproved cache behaviour.
+- Do not put production image references into the runtime artwork catalogue.
 
-## 8. File, catalogue, and app rules
-
-- All Live Art production material belongs only under `Weather/Art/`. Do not put it in a global asset directory or another view.
-- The approved visual benchmark belongs in `Weather/Art/References/`. It is a style reference, **not** a display artwork and must not be included in the production artwork catalogue.
-- Production images use descriptive, permanent filenames and unique catalogue IDs. Example pattern: `rain-garden-stone-path-001.webp`.
-- App delivery format: WebP, sRGB, exactly 1200 × 840 px. Optimise carefully; preserve wash transitions, paper grain, and fine ink marks. Avoid destructive compression.
-- Keep a catalogue record for every approved production image. At minimum record: ID, title, weather tags, short scene description, relative file path, dimensions, aspect ratio, palette family, approval status, and creation date.
-- Do not overwrite or recycle an existing ID. Add a new ID for a genuinely new scene.
-- No remote artwork URLs, runtime image-generation service, network dependency, or third-party art API. Final images must be local app assets and available offline after the app's normal asset-cache process.
-- The main Weather landscape painter and the Live Art artwork system are separate. This guide governs Live Art only.
-- This document-only package does not replace the old procedural studies or connect the image renderer. Such source changes require a separately inspected and tested implementation package.
-
-## 9. Quality gate — required before an image enters the library
-
-Every approved image must pass all of these checks:
-
-- [ ] It tells one quiet, understandable story.
-- [ ] It is visibly different from existing catalogue entries.
-- [ ] The composition is 10:7 and the focal scene remains contained.
-- [ ] Generous warm-paper negative space is visible on all sides.
-- [ ] No important form is clipped or touching the canvas edge.
-- [ ] The image is not full-bleed, overcrowded, or reduced to a tiny stamp.
-- [ ] Brushwork, ink, watercolor washes, and paper texture feel coherent.
-- [ ] The fixed collection palette is respected; no automatic day/night recolouring.
-- [ ] No text, pseudo-writing, watermark, border, or accidental interface element appears.
-- [ ] The focal subject remains readable at approximately 300 × 210 and 200 × 140 px.
-- [ ] The 1200 × 840 WebP export preserves the source composition and visual quality.
-- [ ] Unique filename, catalogue ID, tags, dimensions, and approval status are recorded.
-
-If a composition fails the central-scene/negative-space rule, reject or regenerate it. Do not try to rescue it by cropping, filling the margins with decoration, or changing the approved standard.
-
-## 10. Protected boundaries
+## 11. Protected boundaries
 
 This guide does not authorise changes to:
-- the main Weather landscape painter, readings, forecast data, typography, or Weather layout;
-- the approved Live Art card dimensions or its exact 10:7 ratio;
-- title/status/caption/Replay overlays or their established behaviour;
-- the shared Orb dock, Location privacy, or any other app view;
-- service-worker, update-manager, database, or offline/recovery behaviour.
+- the Weather landscape painter, weather readings, forecast data, typography, or Weather layout;
+- the existing 10:7 Live Art card, title/caption/status/Replay overlays, or their behaviour;
+- the shared Orb dock, Location privacy, Home, Earth, Moon, Sun, Stacks, or any other view;
+- the shared renderer, path decoder, progressive timing, service worker, app shell, network policy, Cache Storage policy, offline/recovery behaviour, or database.
 
-Any future renderer or asset-loader integration must be a separate, narrow source change. It must retain offline availability and a deliberate failure path, and it must be verified without disturbing the protected Weather layout.
+A future renderer enhancement for explicit stage pauses, path semantics, or true stroke-width metadata must be a separate narrow source task with repository inspection, tests, and user approval. Documentation and catalogue metadata must not pretend those features already exist.
+
+## 12. Final quality gate
+
+- [ ] User explicitly selected the weather condition; no substitution.
+- [ ] One original scene only; no batch or collage.
+- [ ] The subject is instantly recognisable from simple shapes.
+- [ ] The illustration occupies about 70% of the canvas; about 30% remains quiet warm paper.
+- [ ] The canvas/card remains exactly 10:7.
+- [ ] The image is predominantly black ink on warm paper.
+- [ ] Stroke weights are intentionally varied: thick structure, medium objects, sparse thin atmosphere.
+- [ ] Large filled-black areas are absent or exceptionally rare.
+- [ ] Red accents are few, meaningful, and placed at the approved final stage.
+- [ ] Weather changes depicted details, not the whole image's colour.
+- [ ] No clutter, excess props, dense micro-detail, text, border, or watermark.
+- [ ] Artwork-specific drawing sequence is documented and matches `paths` array order.
+- [ ] Existing progressive Replay and 10:7 card are preserved.
+- [ ] Asset and catalogue schema validate; no protected source behaviour changed.
 
 ---
 
 ## The collection rule
 
-**One visual language. One carefully composed scene at a time. Plenty of room to breathe. No shortcuts that dilute the reference.**
+**One visual language. One quiet scene at a time. About 70% illustration, 30% warm paper. Black ink first, rare red accents last. Every artwork has its own deliberate drawing plan. Replay follows the authored path order.**
