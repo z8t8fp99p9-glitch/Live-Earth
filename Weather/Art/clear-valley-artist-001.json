@@ -1,0 +1,2806 @@
+{
+  "schemaVersion": 4,
+  "renderMode": "artist-led-pigment-painting",
+  "id": "clear-valley-artist-001",
+  "title": "Where the River Bends",
+  "caption": "A quiet valley painted with ink, water and open paper",
+  "weather": [
+    "clear"
+  ],
+  "canvas": [
+    1000,
+    700
+  ],
+  "durationMs": 56000,
+  "stagePauseMs": 280,
+  "medium": {
+    "surface": "warm-fibre-paper",
+    "pigmentModel": "layered-deposition-with-soft-wet-edges-and-granulation",
+    "brushModel": "pressure-speed-direction-bristle-bundle",
+    "sourceArtwork": null,
+    "revealMasks": null
+  },
+  "palette": [
+    "#28332F",
+    "#3D5148",
+    "#71857B",
+    "#A7B3A5",
+    "#587F7D",
+    "#B5C3B9",
+    "#9C7851",
+    "#D5B77E"
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "title": "Air and distance"
+    },
+    {
+      "id": "02",
+      "title": "Distant ridges"
+    },
+    {
+      "id": "03",
+      "title": "The river"
+    },
+    {
+      "id": "04",
+      "title": "Valley and tree groups"
+    },
+    {
+      "id": "05",
+      "title": "Banks and foreground"
+    },
+    {
+      "id": "06",
+      "title": "Last light"
+    }
+  ],
+  "eventCount": 80,
+  "events": [
+    {
+      "id": "paint-001",
+      "order": 1,
+      "phase": "01 · AIR AND DISTANCE",
+      "tool": "wash",
+      "colorIndex": 5,
+      "width": 150,
+      "opacity": 0.22,
+      "pigmentLoad": 0.44,
+      "wetness": 0.96,
+      "durationWeight": 1.25,
+      "granulation": 0.08,
+      "points": [
+        [
+          0.05,
+          0.16,
+          0.2
+        ],
+        [
+          0.3,
+          0.13,
+          0.14
+        ],
+        [
+          0.56,
+          0.16,
+          0.12
+        ],
+        [
+          0.93,
+          0.12,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-002",
+      "order": 2,
+      "phase": "01 · AIR AND DISTANCE",
+      "tool": "wash",
+      "colorIndex": 3,
+      "width": 92,
+      "opacity": 0.18,
+      "pigmentLoad": 0.38,
+      "wetness": 0.9,
+      "durationWeight": 1.0,
+      "granulation": 0.08,
+      "points": [
+        [
+          0.0,
+          0.3,
+          0.16
+        ],
+        [
+          0.24,
+          0.28,
+          0.13
+        ],
+        [
+          0.48,
+          0.31,
+          0.1
+        ]
+      ]
+    },
+    {
+      "id": "paint-003",
+      "order": 3,
+      "phase": "01 · AIR AND DISTANCE",
+      "tool": "wash",
+      "colorIndex": 5,
+      "width": 82,
+      "opacity": 0.15,
+      "pigmentLoad": 0.34,
+      "wetness": 0.88,
+      "durationWeight": 1.0,
+      "granulation": 0.08,
+      "points": [
+        [
+          0.54,
+          0.2,
+          0.12
+        ],
+        [
+          0.77,
+          0.18,
+          0.1
+        ],
+        [
+          1.0,
+          0.22,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-004",
+      "order": 4,
+      "phase": "01 · AIR AND DISTANCE",
+      "tool": "mop",
+      "colorIndex": 3,
+      "width": 54,
+      "opacity": 0.27,
+      "pigmentLoad": 0.42,
+      "wetness": 0.82,
+      "durationWeight": 1.15,
+      "granulation": 0.12,
+      "points": [
+        [
+          0.1,
+          0.39,
+          0.1
+        ],
+        [
+          0.31,
+          0.36,
+          0.14
+        ],
+        [
+          0.49,
+          0.39,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-005",
+      "order": 5,
+      "phase": "01 · AIR AND DISTANCE",
+      "tool": "mop",
+      "colorIndex": 3,
+      "width": 48,
+      "opacity": 0.24,
+      "pigmentLoad": 0.4,
+      "wetness": 0.82,
+      "durationWeight": 1.1,
+      "granulation": 0.12,
+      "points": [
+        [
+          0.58,
+          0.38,
+          0.08
+        ],
+        [
+          0.76,
+          0.34,
+          0.12
+        ],
+        [
+          0.96,
+          0.39,
+          0.09
+        ]
+      ]
+    },
+    {
+      "id": "paint-006",
+      "order": 6,
+      "phase": "01 · AIR AND DISTANCE",
+      "tool": "dry",
+      "colorIndex": 2,
+      "width": 12,
+      "opacity": 0.24,
+      "pigmentLoad": 0.6,
+      "wetness": 0.12,
+      "durationWeight": 0.85,
+      "granulation": 0.8,
+      "points": [
+        [
+          0.12,
+          0.31,
+          0.12
+        ],
+        [
+          0.22,
+          0.3,
+          0.09
+        ],
+        [
+          0.33,
+          0.32,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-007",
+      "order": 7,
+      "phase": "01 · AIR AND DISTANCE",
+      "tool": "dry",
+      "colorIndex": 2,
+      "width": 11,
+      "opacity": 0.2,
+      "pigmentLoad": 0.56,
+      "wetness": 0.1,
+      "durationWeight": 0.85,
+      "granulation": 0.82,
+      "points": [
+        [
+          0.69,
+          0.31,
+          0.08
+        ],
+        [
+          0.79,
+          0.29,
+          0.1
+        ],
+        [
+          0.91,
+          0.32,
+          0.07
+        ]
+      ]
+    },
+    {
+      "id": "paint-008",
+      "order": 8,
+      "kind": "mass",
+      "phase": "02 · DISTANT RIDGES",
+      "tool": "wash",
+      "colorIndex": 2,
+      "width": 44,
+      "opacity": 0.63,
+      "pigmentLoad": 0.67,
+      "wetness": 0.88,
+      "durationWeight": 1.55,
+      "granulation": 0.18,
+      "angle": 0.02,
+      "rowSpacing": 16,
+      "region": [
+        [
+          0.0,
+          0.505
+        ],
+        [
+          0.075,
+          0.414
+        ],
+        [
+          0.17,
+          0.322
+        ],
+        [
+          0.245,
+          0.365
+        ],
+        [
+          0.33,
+          0.438
+        ],
+        [
+          0.425,
+          0.477
+        ],
+        [
+          0.43,
+          0.515
+        ],
+        [
+          0.0,
+          0.545
+        ]
+      ]
+    },
+    {
+      "id": "paint-009",
+      "order": 9,
+      "kind": "mass",
+      "phase": "02 · DISTANT RIDGES",
+      "tool": "mop",
+      "colorIndex": 2,
+      "width": 48,
+      "opacity": 0.5900000000000001,
+      "pigmentLoad": 0.6900000000000001,
+      "wetness": 0.82,
+      "durationWeight": 1.5,
+      "granulation": 0.2,
+      "angle": -0.035,
+      "rowSpacing": 28,
+      "region": [
+        [
+          0.255,
+          0.515
+        ],
+        [
+          0.365,
+          0.377
+        ],
+        [
+          0.47,
+          0.272
+        ],
+        [
+          0.575,
+          0.355
+        ],
+        [
+          0.685,
+          0.475
+        ],
+        [
+          0.7,
+          0.525
+        ],
+        [
+          0.255,
+          0.55
+        ]
+      ]
+    },
+    {
+      "id": "paint-010",
+      "order": 10,
+      "kind": "mass",
+      "phase": "02 · DISTANT RIDGES",
+      "tool": "wash",
+      "colorIndex": 2,
+      "width": 46,
+      "opacity": 0.6100000000000001,
+      "pigmentLoad": 0.68,
+      "wetness": 0.87,
+      "durationWeight": 1.5,
+      "granulation": 0.18,
+      "angle": 0.035,
+      "rowSpacing": 27,
+      "region": [
+        [
+          0.575,
+          0.505
+        ],
+        [
+          0.68,
+          0.355
+        ],
+        [
+          0.775,
+          0.392
+        ],
+        [
+          0.865,
+          0.312
+        ],
+        [
+          1.0,
+          0.425
+        ],
+        [
+          1.0,
+          0.545
+        ],
+        [
+          0.575,
+          0.55
+        ]
+      ]
+    },
+    {
+      "id": "paint-011",
+      "order": 11,
+      "phase": "02 · DISTANT RIDGES",
+      "tool": "wash",
+      "colorIndex": 2,
+      "width": 70,
+      "opacity": 0.34,
+      "pigmentLoad": 0.48,
+      "wetness": 0.86,
+      "durationWeight": 1.3,
+      "granulation": 0.16,
+      "points": [
+        [
+          0.0,
+          0.48,
+          0.14
+        ],
+        [
+          0.09,
+          0.39,
+          0.35
+        ],
+        [
+          0.17,
+          0.31,
+          0.42
+        ],
+        [
+          0.25,
+          0.36,
+          0.3
+        ],
+        [
+          0.34,
+          0.43,
+          0.12
+        ]
+      ]
+    },
+    {
+      "id": "paint-012",
+      "order": 12,
+      "phase": "02 · DISTANT RIDGES",
+      "tool": "wash",
+      "colorIndex": 2,
+      "width": 68,
+      "opacity": 0.31,
+      "pigmentLoad": 0.46,
+      "wetness": 0.84,
+      "durationWeight": 1.25,
+      "granulation": 0.16,
+      "points": [
+        [
+          0.29,
+          0.43,
+          0.12
+        ],
+        [
+          0.39,
+          0.32,
+          0.36
+        ],
+        [
+          0.47,
+          0.26,
+          0.42
+        ],
+        [
+          0.56,
+          0.34,
+          0.28
+        ],
+        [
+          0.65,
+          0.42,
+          0.1
+        ]
+      ]
+    },
+    {
+      "id": "paint-013",
+      "order": 13,
+      "phase": "02 · DISTANT RIDGES",
+      "tool": "wash",
+      "colorIndex": 2,
+      "width": 76,
+      "opacity": 0.33,
+      "pigmentLoad": 0.47,
+      "wetness": 0.85,
+      "durationWeight": 1.3,
+      "granulation": 0.16,
+      "points": [
+        [
+          0.57,
+          0.43,
+          0.1
+        ],
+        [
+          0.68,
+          0.31,
+          0.38
+        ],
+        [
+          0.76,
+          0.36,
+          0.27
+        ],
+        [
+          0.86,
+          0.29,
+          0.36
+        ],
+        [
+          1.0,
+          0.44,
+          0.1
+        ]
+      ]
+    },
+    {
+      "id": "paint-014",
+      "order": 14,
+      "phase": "02 · DISTANT RIDGES",
+      "tool": "mop",
+      "colorIndex": 3,
+      "width": 43,
+      "opacity": 0.38,
+      "pigmentLoad": 0.55,
+      "wetness": 0.66,
+      "durationWeight": 1.1,
+      "granulation": 0.2,
+      "points": [
+        [
+          0.02,
+          0.47,
+          0.14
+        ],
+        [
+          0.12,
+          0.4,
+          0.34
+        ],
+        [
+          0.18,
+          0.34,
+          0.38
+        ],
+        [
+          0.28,
+          0.4,
+          0.25
+        ]
+      ]
+    },
+    {
+      "id": "paint-015",
+      "order": 15,
+      "phase": "02 · DISTANT RIDGES",
+      "tool": "mop",
+      "colorIndex": 3,
+      "width": 40,
+      "opacity": 0.34,
+      "pigmentLoad": 0.52,
+      "wetness": 0.65,
+      "durationWeight": 1.05,
+      "granulation": 0.2,
+      "points": [
+        [
+          0.3,
+          0.42,
+          0.12
+        ],
+        [
+          0.4,
+          0.35,
+          0.34
+        ],
+        [
+          0.48,
+          0.29,
+          0.39
+        ],
+        [
+          0.58,
+          0.39,
+          0.2
+        ]
+      ]
+    },
+    {
+      "id": "paint-016",
+      "order": 16,
+      "phase": "02 · DISTANT RIDGES",
+      "tool": "mop",
+      "colorIndex": 3,
+      "width": 42,
+      "opacity": 0.36,
+      "pigmentLoad": 0.52,
+      "wetness": 0.67,
+      "durationWeight": 1.2,
+      "granulation": 0.2,
+      "points": [
+        [
+          0.6,
+          0.41,
+          0.13
+        ],
+        [
+          0.69,
+          0.35,
+          0.35
+        ],
+        [
+          0.77,
+          0.39,
+          0.22
+        ],
+        [
+          0.87,
+          0.33,
+          0.36
+        ],
+        [
+          0.98,
+          0.43,
+          0.1
+        ]
+      ]
+    },
+    {
+      "id": "paint-017",
+      "order": 17,
+      "phase": "02 · DISTANT RIDGES",
+      "tool": "dry",
+      "colorIndex": 1,
+      "width": 16,
+      "opacity": 0.28,
+      "pigmentLoad": 0.68,
+      "wetness": 0.08,
+      "durationWeight": 0.85,
+      "granulation": 0.82,
+      "points": [
+        [
+          0.09,
+          0.42,
+          0.18
+        ],
+        [
+          0.17,
+          0.35,
+          0.38
+        ],
+        [
+          0.23,
+          0.37,
+          0.22
+        ]
+      ]
+    },
+    {
+      "id": "paint-018",
+      "order": 18,
+      "phase": "02 · DISTANT RIDGES",
+      "tool": "dry",
+      "colorIndex": 1,
+      "width": 14,
+      "opacity": 0.25,
+      "pigmentLoad": 0.65,
+      "wetness": 0.08,
+      "durationWeight": 0.85,
+      "granulation": 0.82,
+      "points": [
+        [
+          0.4,
+          0.36,
+          0.22
+        ],
+        [
+          0.48,
+          0.3,
+          0.38
+        ],
+        [
+          0.55,
+          0.37,
+          0.18
+        ]
+      ]
+    },
+    {
+      "id": "paint-019",
+      "order": 19,
+      "phase": "02 · DISTANT RIDGES",
+      "tool": "dry",
+      "colorIndex": 1,
+      "width": 15,
+      "opacity": 0.26,
+      "pigmentLoad": 0.68,
+      "wetness": 0.08,
+      "durationWeight": 0.85,
+      "granulation": 0.82,
+      "points": [
+        [
+          0.7,
+          0.36,
+          0.2
+        ],
+        [
+          0.77,
+          0.39,
+          0.16
+        ],
+        [
+          0.86,
+          0.34,
+          0.32
+        ]
+      ]
+    },
+    {
+      "id": "paint-020",
+      "order": 20,
+      "phase": "02 · DISTANT RIDGES",
+      "tool": "calligraphy",
+      "colorIndex": 1,
+      "width": 5,
+      "opacity": 0.31,
+      "pigmentLoad": 0.73,
+      "wetness": 0.04,
+      "durationWeight": 0.7,
+      "granulation": 0.36,
+      "points": [
+        [
+          0.1,
+          0.39,
+          0.12
+        ],
+        [
+          0.16,
+          0.35,
+          0.42
+        ],
+        [
+          0.2,
+          0.36,
+          0.18
+        ]
+      ]
+    },
+    {
+      "id": "paint-021",
+      "order": 21,
+      "phase": "02 · DISTANT RIDGES",
+      "tool": "calligraphy",
+      "colorIndex": 1,
+      "width": 5,
+      "opacity": 0.28,
+      "pigmentLoad": 0.7,
+      "wetness": 0.04,
+      "durationWeight": 0.7,
+      "granulation": 0.36,
+      "points": [
+        [
+          0.43,
+          0.32,
+          0.12
+        ],
+        [
+          0.48,
+          0.29,
+          0.4
+        ],
+        [
+          0.53,
+          0.34,
+          0.14
+        ]
+      ]
+    },
+    {
+      "id": "paint-022",
+      "order": 22,
+      "phase": "02 · DISTANT RIDGES",
+      "tool": "calligraphy",
+      "colorIndex": 1,
+      "width": 5,
+      "opacity": 0.29,
+      "pigmentLoad": 0.72,
+      "wetness": 0.04,
+      "durationWeight": 0.7,
+      "granulation": 0.36,
+      "points": [
+        [
+          0.78,
+          0.37,
+          0.14
+        ],
+        [
+          0.86,
+          0.33,
+          0.38
+        ],
+        [
+          0.91,
+          0.36,
+          0.12
+        ]
+      ]
+    },
+    {
+      "id": "paint-023",
+      "order": 23,
+      "kind": "mass",
+      "phase": "03 · THE RIVER",
+      "tool": "wash",
+      "colorIndex": 4,
+      "width": 66,
+      "opacity": 0.64,
+      "pigmentLoad": 0.76,
+      "wetness": 0.98,
+      "durationWeight": 1.7,
+      "granulation": 0.14,
+      "angle": -0.19,
+      "rowSpacing": 22,
+      "region": [
+        [
+          0.465,
+          0.455
+        ],
+        [
+          0.535,
+          0.455
+        ],
+        [
+          0.575,
+          0.565
+        ],
+        [
+          0.545,
+          0.665
+        ],
+        [
+          0.505,
+          0.765
+        ],
+        [
+          0.575,
+          0.905
+        ],
+        [
+          0.635,
+          1.0
+        ],
+        [
+          0.37,
+          1.0
+        ],
+        [
+          0.425,
+          0.86
+        ],
+        [
+          0.405,
+          0.755
+        ],
+        [
+          0.455,
+          0.65
+        ],
+        [
+          0.475,
+          0.56
+        ]
+      ]
+    },
+    {
+      "id": "paint-024",
+      "order": 24,
+      "phase": "03 · THE RIVER",
+      "tool": "wash",
+      "colorIndex": 4,
+      "width": 112,
+      "opacity": 0.25,
+      "pigmentLoad": 0.42,
+      "wetness": 0.98,
+      "durationWeight": 1.6,
+      "granulation": 0.1,
+      "points": [
+        [
+          0.47,
+          0.44,
+          0.1
+        ],
+        [
+          0.51,
+          0.53,
+          0.16
+        ],
+        [
+          0.48,
+          0.63,
+          0.22
+        ],
+        [
+          0.43,
+          0.74,
+          0.28
+        ],
+        [
+          0.47,
+          0.86,
+          0.36
+        ],
+        [
+          0.52,
+          1.0,
+          0.22
+        ]
+      ]
+    },
+    {
+      "id": "paint-025",
+      "order": 25,
+      "phase": "03 · THE RIVER",
+      "tool": "wash",
+      "colorIndex": 5,
+      "width": 78,
+      "opacity": 0.29,
+      "pigmentLoad": 0.42,
+      "wetness": 0.92,
+      "durationWeight": 1.45,
+      "granulation": 0.1,
+      "points": [
+        [
+          0.52,
+          0.46,
+          0.1
+        ],
+        [
+          0.56,
+          0.56,
+          0.14
+        ],
+        [
+          0.52,
+          0.67,
+          0.18
+        ],
+        [
+          0.49,
+          0.77,
+          0.22
+        ],
+        [
+          0.54,
+          0.91,
+          0.18
+        ],
+        [
+          0.58,
+          1.0,
+          0.12
+        ]
+      ]
+    },
+    {
+      "id": "paint-026",
+      "order": 26,
+      "phase": "03 · THE RIVER",
+      "tool": "mop",
+      "colorIndex": 4,
+      "width": 48,
+      "opacity": 0.36,
+      "pigmentLoad": 0.5,
+      "wetness": 0.72,
+      "durationWeight": 1.4,
+      "granulation": 0.2,
+      "points": [
+        [
+          0.44,
+          0.52,
+          0.08
+        ],
+        [
+          0.47,
+          0.62,
+          0.18
+        ],
+        [
+          0.42,
+          0.72,
+          0.24
+        ],
+        [
+          0.43,
+          0.82,
+          0.3
+        ],
+        [
+          0.49,
+          0.97,
+          0.14
+        ]
+      ]
+    },
+    {
+      "id": "paint-027",
+      "order": 27,
+      "phase": "03 · THE RIVER",
+      "tool": "mop",
+      "colorIndex": 4,
+      "width": 45,
+      "opacity": 0.34,
+      "pigmentLoad": 0.48,
+      "wetness": 0.72,
+      "durationWeight": 1.35,
+      "granulation": 0.2,
+      "points": [
+        [
+          0.55,
+          0.53,
+          0.08
+        ],
+        [
+          0.57,
+          0.62,
+          0.17
+        ],
+        [
+          0.53,
+          0.71,
+          0.23
+        ],
+        [
+          0.56,
+          0.82,
+          0.22
+        ],
+        [
+          0.61,
+          0.97,
+          0.1
+        ]
+      ]
+    },
+    {
+      "id": "paint-028",
+      "order": 28,
+      "phase": "03 · THE RIVER",
+      "tool": "flat",
+      "colorIndex": 4,
+      "width": 24,
+      "opacity": 0.31,
+      "pigmentLoad": 0.54,
+      "wetness": 0.35,
+      "durationWeight": 1.05,
+      "granulation": 0.26,
+      "points": [
+        [
+          0.48,
+          0.48,
+          0.08
+        ],
+        [
+          0.53,
+          0.54,
+          0.18
+        ],
+        [
+          0.5,
+          0.62,
+          0.2
+        ],
+        [
+          0.46,
+          0.7,
+          0.16
+        ]
+      ]
+    },
+    {
+      "id": "paint-029",
+      "order": 29,
+      "phase": "03 · THE RIVER",
+      "tool": "flat",
+      "colorIndex": 4,
+      "width": 22,
+      "opacity": 0.32,
+      "pigmentLoad": 0.52,
+      "wetness": 0.34,
+      "durationWeight": 1.0,
+      "granulation": 0.26,
+      "points": [
+        [
+          0.54,
+          0.62,
+          0.1
+        ],
+        [
+          0.52,
+          0.7,
+          0.18
+        ],
+        [
+          0.55,
+          0.8,
+          0.2
+        ],
+        [
+          0.59,
+          0.88,
+          0.1
+        ]
+      ]
+    },
+    {
+      "id": "paint-030",
+      "order": 30,
+      "phase": "03 · THE RIVER",
+      "tool": "dry",
+      "colorIndex": 2,
+      "width": 10,
+      "opacity": 0.45,
+      "pigmentLoad": 0.75,
+      "wetness": 0.05,
+      "durationWeight": 0.85,
+      "granulation": 0.88,
+      "points": [
+        [
+          0.46,
+          0.61,
+          0.08
+        ],
+        [
+          0.44,
+          0.68,
+          0.22
+        ],
+        [
+          0.46,
+          0.73,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-031",
+      "order": 31,
+      "phase": "03 · THE RIVER",
+      "tool": "dry",
+      "colorIndex": 2,
+      "width": 9,
+      "opacity": 0.4,
+      "pigmentLoad": 0.72,
+      "wetness": 0.05,
+      "durationWeight": 0.8,
+      "granulation": 0.88,
+      "points": [
+        [
+          0.55,
+          0.72,
+          0.08
+        ],
+        [
+          0.53,
+          0.79,
+          0.22
+        ],
+        [
+          0.56,
+          0.84,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-032",
+      "order": 32,
+      "phase": "03 · THE RIVER",
+      "tool": "detail",
+      "colorIndex": 5,
+      "width": 5,
+      "opacity": 0.42,
+      "pigmentLoad": 0.68,
+      "wetness": 0.02,
+      "durationWeight": 0.7,
+      "granulation": 0.34,
+      "points": [
+        [
+          0.48,
+          0.58,
+          0.12
+        ],
+        [
+          0.51,
+          0.6,
+          0.46
+        ],
+        [
+          0.54,
+          0.59,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-033",
+      "order": 33,
+      "phase": "03 · THE RIVER",
+      "tool": "detail",
+      "colorIndex": 5,
+      "width": 4,
+      "opacity": 0.38,
+      "pigmentLoad": 0.66,
+      "wetness": 0.02,
+      "durationWeight": 0.65,
+      "granulation": 0.34,
+      "points": [
+        [
+          0.45,
+          0.75,
+          0.1
+        ],
+        [
+          0.48,
+          0.76,
+          0.4
+        ],
+        [
+          0.5,
+          0.75,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-034",
+      "order": 34,
+      "phase": "03 · THE RIVER",
+      "tool": "detail",
+      "colorIndex": 5,
+      "width": 4,
+      "opacity": 0.38,
+      "pigmentLoad": 0.66,
+      "wetness": 0.02,
+      "durationWeight": 0.65,
+      "granulation": 0.34,
+      "points": [
+        [
+          0.54,
+          0.86,
+          0.08
+        ],
+        [
+          0.57,
+          0.87,
+          0.4
+        ],
+        [
+          0.6,
+          0.86,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-035",
+      "order": 35,
+      "phase": "03 · THE RIVER",
+      "tool": "calligraphy",
+      "colorIndex": 1,
+      "width": 12,
+      "opacity": 0.48,
+      "pigmentLoad": 0.72,
+      "wetness": 0.12,
+      "durationWeight": 0.9,
+      "granulation": 0.42,
+      "points": [
+        [
+          0.37,
+          0.55,
+          0.08
+        ],
+        [
+          0.42,
+          0.59,
+          0.28
+        ],
+        [
+          0.46,
+          0.62,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-036",
+      "order": 36,
+      "phase": "03 · THE RIVER",
+      "tool": "calligraphy",
+      "colorIndex": 1,
+      "width": 11,
+      "opacity": 0.46,
+      "pigmentLoad": 0.7,
+      "wetness": 0.12,
+      "durationWeight": 0.85,
+      "granulation": 0.42,
+      "points": [
+        [
+          0.61,
+          0.55,
+          0.08
+        ],
+        [
+          0.58,
+          0.6,
+          0.25
+        ],
+        [
+          0.56,
+          0.64,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-037",
+      "order": 37,
+      "kind": "mass",
+      "phase": "04 · VALLEY AND TREE GROUPS",
+      "tool": "mop",
+      "colorIndex": 1,
+      "width": 56,
+      "opacity": 0.68,
+      "pigmentLoad": 0.8,
+      "wetness": 0.64,
+      "durationWeight": 1.45,
+      "granulation": 0.27,
+      "angle": -0.11,
+      "rowSpacing": 22,
+      "region": [
+        [
+          0.0,
+          0.565
+        ],
+        [
+          0.135,
+          0.505
+        ],
+        [
+          0.255,
+          0.535
+        ],
+        [
+          0.365,
+          0.59
+        ],
+        [
+          0.425,
+          0.695
+        ],
+        [
+          0.32,
+          0.755
+        ],
+        [
+          0.16,
+          0.7
+        ],
+        [
+          0.0,
+          0.735
+        ]
+      ]
+    },
+    {
+      "id": "paint-038",
+      "order": 38,
+      "kind": "mass",
+      "phase": "04 · VALLEY AND TREE GROUPS",
+      "tool": "mop",
+      "colorIndex": 1,
+      "width": 54,
+      "opacity": 0.68,
+      "pigmentLoad": 0.8,
+      "wetness": 0.64,
+      "durationWeight": 1.4,
+      "granulation": 0.27,
+      "angle": 0.1,
+      "rowSpacing": 22,
+      "region": [
+        [
+          0.585,
+          0.695
+        ],
+        [
+          0.66,
+          0.585
+        ],
+        [
+          0.77,
+          0.515
+        ],
+        [
+          0.89,
+          0.535
+        ],
+        [
+          1.0,
+          0.57
+        ],
+        [
+          1.0,
+          0.74
+        ],
+        [
+          0.84,
+          0.7
+        ],
+        [
+          0.7,
+          0.755
+        ]
+      ]
+    },
+    {
+      "id": "paint-039",
+      "order": 39,
+      "phase": "04 · VALLEY AND TREE GROUPS",
+      "tool": "wash",
+      "colorIndex": 3,
+      "width": 112,
+      "opacity": 0.32,
+      "pigmentLoad": 0.48,
+      "wetness": 0.78,
+      "durationWeight": 1.35,
+      "granulation": 0.2,
+      "points": [
+        [
+          0.0,
+          0.52,
+          0.08
+        ],
+        [
+          0.14,
+          0.48,
+          0.28
+        ],
+        [
+          0.27,
+          0.49,
+          0.18
+        ],
+        [
+          0.38,
+          0.54,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-040",
+      "order": 40,
+      "phase": "04 · VALLEY AND TREE GROUPS",
+      "tool": "wash",
+      "colorIndex": 3,
+      "width": 105,
+      "opacity": 0.31,
+      "pigmentLoad": 0.46,
+      "wetness": 0.78,
+      "durationWeight": 1.3,
+      "granulation": 0.2,
+      "points": [
+        [
+          0.62,
+          0.53,
+          0.08
+        ],
+        [
+          0.75,
+          0.48,
+          0.26
+        ],
+        [
+          0.89,
+          0.49,
+          0.2
+        ],
+        [
+          1.0,
+          0.54,
+          0.07
+        ]
+      ]
+    },
+    {
+      "id": "paint-041",
+      "order": 41,
+      "phase": "04 · VALLEY AND TREE GROUPS",
+      "tool": "flat",
+      "colorIndex": 1,
+      "width": 46,
+      "opacity": 0.42,
+      "pigmentLoad": 0.7,
+      "wetness": 0.34,
+      "durationWeight": 1.15,
+      "granulation": 0.36,
+      "points": [
+        [
+          0.02,
+          0.55,
+          0.16
+        ],
+        [
+          0.15,
+          0.49,
+          0.38
+        ],
+        [
+          0.27,
+          0.51,
+          0.24
+        ],
+        [
+          0.39,
+          0.57,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-042",
+      "order": 42,
+      "phase": "04 · VALLEY AND TREE GROUPS",
+      "tool": "flat",
+      "colorIndex": 1,
+      "width": 45,
+      "opacity": 0.4,
+      "pigmentLoad": 0.68,
+      "wetness": 0.34,
+      "durationWeight": 1.1,
+      "granulation": 0.36,
+      "points": [
+        [
+          0.63,
+          0.57,
+          0.08
+        ],
+        [
+          0.76,
+          0.5,
+          0.3
+        ],
+        [
+          0.9,
+          0.51,
+          0.23
+        ],
+        [
+          1.0,
+          0.55,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-043",
+      "order": 43,
+      "phase": "04 · VALLEY AND TREE GROUPS",
+      "tool": "calligraphy",
+      "colorIndex": 0,
+      "width": 10,
+      "opacity": 0.62,
+      "pigmentLoad": 0.83,
+      "wetness": 0.08,
+      "durationWeight": 0.9,
+      "granulation": 0.42,
+      "points": [
+        [
+          0.08,
+          0.52,
+          0.1
+        ],
+        [
+          0.14,
+          0.44,
+          0.42
+        ],
+        [
+          0.2,
+          0.39,
+          0.18
+        ]
+      ]
+    },
+    {
+      "id": "paint-044",
+      "order": 44,
+      "phase": "04 · VALLEY AND TREE GROUPS",
+      "tool": "calligraphy",
+      "colorIndex": 0,
+      "width": 9,
+      "opacity": 0.6,
+      "pigmentLoad": 0.82,
+      "wetness": 0.08,
+      "durationWeight": 0.85,
+      "granulation": 0.42,
+      "points": [
+        [
+          0.19,
+          0.5,
+          0.08
+        ],
+        [
+          0.25,
+          0.44,
+          0.38
+        ],
+        [
+          0.3,
+          0.41,
+          0.12
+        ]
+      ]
+    },
+    {
+      "id": "paint-045",
+      "order": 45,
+      "phase": "04 · VALLEY AND TREE GROUPS",
+      "tool": "calligraphy",
+      "colorIndex": 0,
+      "width": 10,
+      "opacity": 0.58,
+      "pigmentLoad": 0.82,
+      "wetness": 0.08,
+      "durationWeight": 0.9,
+      "granulation": 0.42,
+      "points": [
+        [
+          0.73,
+          0.5,
+          0.1
+        ],
+        [
+          0.78,
+          0.43,
+          0.4
+        ],
+        [
+          0.84,
+          0.4,
+          0.12
+        ]
+      ]
+    },
+    {
+      "id": "paint-046",
+      "order": 46,
+      "phase": "04 · VALLEY AND TREE GROUPS",
+      "tool": "calligraphy",
+      "colorIndex": 0,
+      "width": 8,
+      "opacity": 0.56,
+      "pigmentLoad": 0.8,
+      "wetness": 0.07,
+      "durationWeight": 0.85,
+      "granulation": 0.42,
+      "points": [
+        [
+          0.83,
+          0.52,
+          0.08
+        ],
+        [
+          0.89,
+          0.45,
+          0.34
+        ],
+        [
+          0.94,
+          0.42,
+          0.12
+        ]
+      ]
+    },
+    {
+      "id": "paint-047",
+      "order": 47,
+      "phase": "04 · VALLEY AND TREE GROUPS",
+      "tool": "dry",
+      "colorIndex": 1,
+      "width": 20,
+      "opacity": 0.5,
+      "pigmentLoad": 0.72,
+      "wetness": 0.06,
+      "durationWeight": 1.05,
+      "granulation": 0.88,
+      "points": [
+        [
+          0.04,
+          0.57,
+          0.12
+        ],
+        [
+          0.16,
+          0.53,
+          0.3
+        ],
+        [
+          0.29,
+          0.56,
+          0.1
+        ]
+      ]
+    },
+    {
+      "id": "paint-048",
+      "order": 48,
+      "phase": "04 · VALLEY AND TREE GROUPS",
+      "tool": "dry",
+      "colorIndex": 1,
+      "width": 18,
+      "opacity": 0.47,
+      "pigmentLoad": 0.7,
+      "wetness": 0.05,
+      "durationWeight": 1.0,
+      "granulation": 0.88,
+      "points": [
+        [
+          0.69,
+          0.56,
+          0.1
+        ],
+        [
+          0.8,
+          0.52,
+          0.3
+        ],
+        [
+          0.96,
+          0.56,
+          0.1
+        ]
+      ]
+    },
+    {
+      "id": "paint-049",
+      "order": 49,
+      "phase": "04 · VALLEY AND TREE GROUPS",
+      "tool": "mop",
+      "colorIndex": 2,
+      "width": 64,
+      "opacity": 0.28,
+      "pigmentLoad": 0.44,
+      "wetness": 0.72,
+      "durationWeight": 0.95,
+      "granulation": 0.16,
+      "points": [
+        [
+          0.21,
+          0.47,
+          0.08
+        ],
+        [
+          0.26,
+          0.44,
+          0.3
+        ],
+        [
+          0.33,
+          0.48,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-050",
+      "order": 50,
+      "phase": "04 · VALLEY AND TREE GROUPS",
+      "tool": "mop",
+      "colorIndex": 2,
+      "width": 58,
+      "opacity": 0.27,
+      "pigmentLoad": 0.42,
+      "wetness": 0.72,
+      "durationWeight": 0.95,
+      "granulation": 0.16,
+      "points": [
+        [
+          0.78,
+          0.47,
+          0.08
+        ],
+        [
+          0.84,
+          0.43,
+          0.3
+        ],
+        [
+          0.9,
+          0.47,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-051",
+      "order": 51,
+      "phase": "04 · VALLEY AND TREE GROUPS",
+      "tool": "dry",
+      "colorIndex": 0,
+      "width": 7,
+      "opacity": 0.44,
+      "pigmentLoad": 0.78,
+      "wetness": 0.04,
+      "durationWeight": 0.8,
+      "granulation": 0.84,
+      "points": [
+        [
+          0.25,
+          0.46,
+          0.08
+        ],
+        [
+          0.28,
+          0.42,
+          0.34
+        ],
+        [
+          0.32,
+          0.45,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-052",
+      "order": 52,
+      "phase": "04 · VALLEY AND TREE GROUPS",
+      "tool": "dry",
+      "colorIndex": 0,
+      "width": 7,
+      "opacity": 0.42,
+      "pigmentLoad": 0.78,
+      "wetness": 0.04,
+      "durationWeight": 0.8,
+      "granulation": 0.84,
+      "points": [
+        [
+          0.82,
+          0.46,
+          0.08
+        ],
+        [
+          0.85,
+          0.42,
+          0.34
+        ],
+        [
+          0.89,
+          0.45,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-053",
+      "order": 53,
+      "kind": "mass",
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "flat",
+      "colorIndex": 1,
+      "width": 64,
+      "opacity": 0.7,
+      "pigmentLoad": 0.82,
+      "wetness": 0.55,
+      "durationWeight": 1.55,
+      "granulation": 0.36,
+      "angle": -0.15,
+      "rowSpacing": 25,
+      "region": [
+        [
+          0.0,
+          0.705
+        ],
+        [
+          0.12,
+          0.655
+        ],
+        [
+          0.26,
+          0.695
+        ],
+        [
+          0.405,
+          0.77
+        ],
+        [
+          0.435,
+          0.88
+        ],
+        [
+          0.355,
+          1.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "id": "paint-054",
+      "order": 54,
+      "kind": "mass",
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "flat",
+      "colorIndex": 1,
+      "width": 62,
+      "opacity": 0.7,
+      "pigmentLoad": 0.82,
+      "wetness": 0.55,
+      "durationWeight": 1.5,
+      "granulation": 0.36,
+      "angle": 0.15,
+      "rowSpacing": 25,
+      "region": [
+        [
+          0.6,
+          0.78
+        ],
+        [
+          0.735,
+          0.685
+        ],
+        [
+          0.865,
+          0.655
+        ],
+        [
+          1.0,
+          0.7
+        ],
+        [
+          1.0,
+          1.0
+        ],
+        [
+          0.665,
+          1.0
+        ],
+        [
+          0.575,
+          0.9
+        ]
+      ]
+    },
+    {
+      "id": "paint-055",
+      "order": 55,
+      "kind": "mass",
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "mop",
+      "colorIndex": 6,
+      "width": 40,
+      "opacity": 0.7,
+      "pigmentLoad": 0.82,
+      "wetness": 0.42,
+      "durationWeight": 0.95,
+      "granulation": 0.48,
+      "angle": -0.18,
+      "rowSpacing": 25,
+      "region": [
+        [
+          0.075,
+          0.83
+        ],
+        [
+          0.13,
+          0.78
+        ],
+        [
+          0.22,
+          0.8
+        ],
+        [
+          0.26,
+          0.855
+        ],
+        [
+          0.205,
+          0.895
+        ],
+        [
+          0.12,
+          0.89
+        ]
+      ]
+    },
+    {
+      "id": "paint-056",
+      "order": 56,
+      "kind": "mass",
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "mop",
+      "colorIndex": 6,
+      "width": 38,
+      "opacity": 0.7,
+      "pigmentLoad": 0.82,
+      "wetness": 0.42,
+      "durationWeight": 0.9,
+      "granulation": 0.48,
+      "angle": 0.18,
+      "rowSpacing": 25,
+      "region": [
+        [
+          0.755,
+          0.84
+        ],
+        [
+          0.81,
+          0.78
+        ],
+        [
+          0.9,
+          0.8
+        ],
+        [
+          0.945,
+          0.855
+        ],
+        [
+          0.89,
+          0.9
+        ],
+        [
+          0.79,
+          0.89
+        ]
+      ]
+    },
+    {
+      "id": "paint-057",
+      "order": 57,
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "wash",
+      "colorIndex": 3,
+      "width": 128,
+      "opacity": 0.27,
+      "pigmentLoad": 0.42,
+      "wetness": 0.78,
+      "durationWeight": 1.45,
+      "granulation": 0.18,
+      "points": [
+        [
+          0.0,
+          0.69,
+          0.1
+        ],
+        [
+          0.15,
+          0.64,
+          0.25
+        ],
+        [
+          0.3,
+          0.69,
+          0.18
+        ],
+        [
+          0.4,
+          0.75,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-058",
+      "order": 58,
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "wash",
+      "colorIndex": 3,
+      "width": 122,
+      "opacity": 0.26,
+      "pigmentLoad": 0.42,
+      "wetness": 0.78,
+      "durationWeight": 1.4,
+      "granulation": 0.18,
+      "points": [
+        [
+          0.62,
+          0.74,
+          0.08
+        ],
+        [
+          0.74,
+          0.66,
+          0.23
+        ],
+        [
+          0.88,
+          0.65,
+          0.19
+        ],
+        [
+          1.0,
+          0.72,
+          0.07
+        ]
+      ]
+    },
+    {
+      "id": "paint-059",
+      "order": 59,
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "flat",
+      "colorIndex": 1,
+      "width": 58,
+      "opacity": 0.58,
+      "pigmentLoad": 0.76,
+      "wetness": 0.26,
+      "durationWeight": 1.3,
+      "granulation": 0.38,
+      "points": [
+        [
+          0.0,
+          0.73,
+          0.12
+        ],
+        [
+          0.15,
+          0.67,
+          0.3
+        ],
+        [
+          0.29,
+          0.72,
+          0.18
+        ],
+        [
+          0.39,
+          0.78,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-060",
+      "order": 60,
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "flat",
+      "colorIndex": 1,
+      "width": 55,
+      "opacity": 0.55,
+      "pigmentLoad": 0.74,
+      "wetness": 0.26,
+      "durationWeight": 1.25,
+      "granulation": 0.38,
+      "points": [
+        [
+          0.61,
+          0.77,
+          0.08
+        ],
+        [
+          0.73,
+          0.69,
+          0.28
+        ],
+        [
+          0.88,
+          0.68,
+          0.2
+        ],
+        [
+          1.0,
+          0.74,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-061",
+      "order": 61,
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "dry",
+      "colorIndex": 0,
+      "width": 27,
+      "opacity": 0.62,
+      "pigmentLoad": 0.8,
+      "wetness": 0.04,
+      "durationWeight": 1.2,
+      "granulation": 0.9,
+      "points": [
+        [
+          0.02,
+          0.81,
+          0.1
+        ],
+        [
+          0.16,
+          0.75,
+          0.36
+        ],
+        [
+          0.28,
+          0.79,
+          0.12
+        ]
+      ]
+    },
+    {
+      "id": "paint-062",
+      "order": 62,
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "dry",
+      "colorIndex": 0,
+      "width": 24,
+      "opacity": 0.6,
+      "pigmentLoad": 0.8,
+      "wetness": 0.04,
+      "durationWeight": 1.15,
+      "granulation": 0.9,
+      "points": [
+        [
+          0.68,
+          0.81,
+          0.1
+        ],
+        [
+          0.81,
+          0.74,
+          0.34
+        ],
+        [
+          0.98,
+          0.78,
+          0.1
+        ]
+      ]
+    },
+    {
+      "id": "paint-063",
+      "order": 63,
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "mop",
+      "colorIndex": 6,
+      "width": 56,
+      "opacity": 0.42,
+      "pigmentLoad": 0.64,
+      "wetness": 0.42,
+      "durationWeight": 1.05,
+      "granulation": 0.34,
+      "points": [
+        [
+          0.08,
+          0.84,
+          0.1
+        ],
+        [
+          0.14,
+          0.79,
+          0.35
+        ],
+        [
+          0.22,
+          0.82,
+          0.18
+        ]
+      ]
+    },
+    {
+      "id": "paint-064",
+      "order": 64,
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "mop",
+      "colorIndex": 6,
+      "width": 48,
+      "opacity": 0.4,
+      "pigmentLoad": 0.62,
+      "wetness": 0.4,
+      "durationWeight": 1.0,
+      "granulation": 0.34,
+      "points": [
+        [
+          0.76,
+          0.85,
+          0.1
+        ],
+        [
+          0.84,
+          0.79,
+          0.34
+        ],
+        [
+          0.92,
+          0.83,
+          0.12
+        ]
+      ]
+    },
+    {
+      "id": "paint-065",
+      "order": 65,
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "dry",
+      "colorIndex": 6,
+      "width": 18,
+      "opacity": 0.66,
+      "pigmentLoad": 0.85,
+      "wetness": 0.04,
+      "durationWeight": 0.9,
+      "granulation": 0.92,
+      "points": [
+        [
+          0.1,
+          0.86,
+          0.08
+        ],
+        [
+          0.16,
+          0.82,
+          0.3
+        ],
+        [
+          0.24,
+          0.85,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-066",
+      "order": 66,
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "dry",
+      "colorIndex": 6,
+      "width": 16,
+      "opacity": 0.62,
+      "pigmentLoad": 0.84,
+      "wetness": 0.04,
+      "durationWeight": 0.85,
+      "granulation": 0.92,
+      "points": [
+        [
+          0.78,
+          0.87,
+          0.08
+        ],
+        [
+          0.85,
+          0.82,
+          0.3
+        ],
+        [
+          0.94,
+          0.85,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-067",
+      "order": 67,
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "calligraphy",
+      "colorIndex": 0,
+      "width": 13,
+      "opacity": 0.7,
+      "pigmentLoad": 0.86,
+      "wetness": 0.03,
+      "durationWeight": 1.0,
+      "granulation": 0.45,
+      "points": [
+        [
+          0.18,
+          0.88,
+          0.08
+        ],
+        [
+          0.23,
+          0.82,
+          0.38
+        ],
+        [
+          0.27,
+          0.78,
+          0.12
+        ]
+      ]
+    },
+    {
+      "id": "paint-068",
+      "order": 68,
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "calligraphy",
+      "colorIndex": 0,
+      "width": 12,
+      "opacity": 0.68,
+      "pigmentLoad": 0.85,
+      "wetness": 0.03,
+      "durationWeight": 0.95,
+      "granulation": 0.45,
+      "points": [
+        [
+          0.31,
+          0.91,
+          0.08
+        ],
+        [
+          0.35,
+          0.85,
+          0.4
+        ],
+        [
+          0.37,
+          0.8,
+          0.1
+        ]
+      ]
+    },
+    {
+      "id": "paint-069",
+      "order": 69,
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "calligraphy",
+      "colorIndex": 0,
+      "width": 11,
+      "opacity": 0.66,
+      "pigmentLoad": 0.84,
+      "wetness": 0.03,
+      "durationWeight": 0.95,
+      "granulation": 0.45,
+      "points": [
+        [
+          0.72,
+          0.91,
+          0.08
+        ],
+        [
+          0.69,
+          0.85,
+          0.38
+        ],
+        [
+          0.67,
+          0.81,
+          0.1
+        ]
+      ]
+    },
+    {
+      "id": "paint-070",
+      "order": 70,
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "calligraphy",
+      "colorIndex": 0,
+      "width": 12,
+      "opacity": 0.68,
+      "pigmentLoad": 0.85,
+      "wetness": 0.03,
+      "durationWeight": 0.95,
+      "granulation": 0.45,
+      "points": [
+        [
+          0.86,
+          0.9,
+          0.08
+        ],
+        [
+          0.82,
+          0.84,
+          0.4
+        ],
+        [
+          0.8,
+          0.79,
+          0.1
+        ]
+      ]
+    },
+    {
+      "id": "paint-071",
+      "order": 71,
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "detail",
+      "colorIndex": 1,
+      "width": 5,
+      "opacity": 0.58,
+      "pigmentLoad": 0.74,
+      "wetness": 0.02,
+      "durationWeight": 0.75,
+      "granulation": 0.4,
+      "points": [
+        [
+          0.14,
+          0.74,
+          0.08
+        ],
+        [
+          0.18,
+          0.7,
+          0.4
+        ],
+        [
+          0.21,
+          0.69,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-072",
+      "order": 72,
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "detail",
+      "colorIndex": 1,
+      "width": 5,
+      "opacity": 0.55,
+      "pigmentLoad": 0.72,
+      "wetness": 0.02,
+      "durationWeight": 0.75,
+      "granulation": 0.4,
+      "points": [
+        [
+          0.82,
+          0.73,
+          0.08
+        ],
+        [
+          0.86,
+          0.69,
+          0.4
+        ],
+        [
+          0.9,
+          0.68,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-073",
+      "order": 73,
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "detail",
+      "colorIndex": 2,
+      "width": 4,
+      "opacity": 0.38,
+      "pigmentLoad": 0.62,
+      "wetness": 0.02,
+      "durationWeight": 0.65,
+      "granulation": 0.3,
+      "points": [
+        [
+          0.35,
+          0.49,
+          0.08
+        ],
+        [
+          0.38,
+          0.47,
+          0.3
+        ],
+        [
+          0.41,
+          0.48,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-074",
+      "order": 74,
+      "phase": "05 · BANKS AND FOREGROUND",
+      "tool": "detail",
+      "colorIndex": 2,
+      "width": 4,
+      "opacity": 0.38,
+      "pigmentLoad": 0.62,
+      "wetness": 0.02,
+      "durationWeight": 0.65,
+      "granulation": 0.3,
+      "points": [
+        [
+          0.64,
+          0.48,
+          0.08
+        ],
+        [
+          0.67,
+          0.46,
+          0.3
+        ],
+        [
+          0.7,
+          0.47,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-075",
+      "order": 75,
+      "phase": "06 · LAST LIGHT",
+      "tool": "wash",
+      "colorIndex": 7,
+      "width": 36,
+      "opacity": 0.3,
+      "pigmentLoad": 0.45,
+      "wetness": 0.75,
+      "durationWeight": 0.9,
+      "granulation": 0.12,
+      "points": [
+        [
+          0.805,
+          0.16,
+          0.1
+        ],
+        [
+          0.82,
+          0.145,
+          0.26
+        ],
+        [
+          0.84,
+          0.16,
+          0.2
+        ],
+        [
+          0.83,
+          0.18,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-076",
+      "order": 76,
+      "phase": "06 · LAST LIGHT",
+      "tool": "calligraphy",
+      "colorIndex": 0,
+      "width": 3.8,
+      "opacity": 0.55,
+      "pigmentLoad": 0.82,
+      "wetness": 0.02,
+      "durationWeight": 0.55,
+      "granulation": 0.38,
+      "points": [
+        [
+          0.11,
+          0.23,
+          0.08
+        ],
+        [
+          0.13,
+          0.21,
+          0.35
+        ],
+        [
+          0.15,
+          0.23,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-077",
+      "order": 77,
+      "phase": "06 · LAST LIGHT",
+      "tool": "calligraphy",
+      "colorIndex": 0,
+      "width": 3.4,
+      "opacity": 0.52,
+      "pigmentLoad": 0.8,
+      "wetness": 0.02,
+      "durationWeight": 0.55,
+      "granulation": 0.38,
+      "points": [
+        [
+          0.18,
+          0.2,
+          0.08
+        ],
+        [
+          0.2,
+          0.18,
+          0.34
+        ],
+        [
+          0.22,
+          0.2,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-078",
+      "order": 78,
+      "phase": "06 · LAST LIGHT",
+      "tool": "calligraphy",
+      "colorIndex": 0,
+      "width": 3.5,
+      "opacity": 0.54,
+      "pigmentLoad": 0.81,
+      "wetness": 0.02,
+      "durationWeight": 0.55,
+      "granulation": 0.38,
+      "points": [
+        [
+          0.72,
+          0.22,
+          0.08
+        ],
+        [
+          0.74,
+          0.2,
+          0.34
+        ],
+        [
+          0.76,
+          0.22,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-079",
+      "order": 79,
+      "phase": "06 · LAST LIGHT",
+      "tool": "detail",
+      "colorIndex": 5,
+      "width": 3.5,
+      "opacity": 0.45,
+      "pigmentLoad": 0.66,
+      "wetness": 0.02,
+      "durationWeight": 0.55,
+      "granulation": 0.26,
+      "points": [
+        [
+          0.49,
+          0.66,
+          0.08
+        ],
+        [
+          0.52,
+          0.67,
+          0.3
+        ],
+        [
+          0.55,
+          0.66,
+          0.08
+        ]
+      ]
+    },
+    {
+      "id": "paint-080",
+      "order": 80,
+      "phase": "06 · LAST LIGHT",
+      "tool": "detail",
+      "colorIndex": 5,
+      "width": 3.0,
+      "opacity": 0.42,
+      "pigmentLoad": 0.64,
+      "wetness": 0.02,
+      "durationWeight": 0.5,
+      "granulation": 0.26,
+      "points": [
+        [
+          0.46,
+          0.82,
+          0.08
+        ],
+        [
+          0.49,
+          0.83,
+          0.3
+        ],
+        [
+          0.52,
+          0.82,
+          0.08
+        ]
+      ]
+    }
+  ]
+}

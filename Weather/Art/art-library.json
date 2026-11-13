@@ -1,139 +1,72 @@
 {
   "schemaVersion": 1,
-  "scope": "Weather Live Art studio only",
-  "canvas": {
-    "width": 1000,
-    "height": 700,
-    "aspectRatio": "10:7"
-  },
+  "scope": "LIVE // EARTH Weather Live Art studio only",
+  "canvas": { "width": 1000, "height": 700, "aspectRatio": "10:7" },
   "productionStandard": {
-    "id": "WEATHER-LIVE-ART-STANDARD-002",
-    "version": "2.5",
+    "id": "WEATHER-LIVE-ART-ARTIST-ENGINE-001",
+    "version": "3.0",
     "guidePath": "Weather/Art/LIVE-ART-PRODUCTION-GUIDE.md",
-    "guideAddendumPath": "Weather/Art/LIVE-ART-PRODUCTION-GUIDE-ADDENDUM-2.5.md",
-    "masterFirstWorkflowPath": "Weather/Art/LIVE-ART-MASTER-FIRST-WORKFLOW.md",
     "directionPath": "Weather/Art/ART-DIRECTION.json",
-    "directionAddendumPath": "Weather/Art/ART-DIRECTION-ADDENDUM-2.4.json",
-    "activeVisualReference": "Weather/Art/References/clear-maple-pavilion-master-003.jpg",
-    "illustrationFootprintPercent": 70,
-    "quietWarmPaperPercent": 30,
-    "style": "approved-painted-Japanese-ink-brush-master-with-raster-preservation",
-    "weatherRecolouring": false,
-    "preserveProgressiveReplay": true,
-    "masterFirstRule": "The approved artwork master is the only visual source of truth. Convert that exact artwork into an ordered path or stroke representation; never design a substitute Live illustration.",
-    "rendererSupportsSchemaVersions": [
-      1,
-      2,
-      3
-    ],
-    "newStrokeRule": "One record equals one continuous brush-reveal gesture; authored order controls replay; maximum 100 gestures in 30 seconds with equal gesture timing.",
-    "masterRevealRule": "The immutable approved raster master is revealed through stage-specific masks derived from its actual painted pigment pixels; do not redraw or simplify the master."
+    "activeVisualReference": null,
+    "style": "original artist-led ink, wash and pigment painting generated directly on canvas",
+    "rendererSupportsSchemaVersions": [1, 4],
+    "clearRenderer": "artist-led-pigment-painting",
+    "rainRenderer": "ordered-ink-wash-paths",
+    "masterImageReveal": false,
+    "sourceImageInput": false,
+    "stageMaskInput": false,
+    "newArtworkRule": "Clear artwork must be authored as an original painting score. The renderer deposits pigment through brush dynamics onto a persistent canvas; no finished image, source artwork, reveal atlas, or image-derived masks may be loaded.",
+    "brushDynamics": ["pressure", "speed", "direction", "bristle variation", "pigment load", "wetness", "dry-brush breakup", "natural taper", "granulation"],
+    "canvasSurface": "programmatic warm-fibre paper texture; no source-image texture",
+    "replayRule": "Every intermediate frame must contain only pigment already deposited by the artist engine. Completion does not swap, uncover, or copy a finished image."
   },
   "artworks": [
     {
       "id": "rainy-tea-afternoon-001",
       "title": "A Rainy Tea Afternoon",
-      "weather": [
-        "rain"
-      ],
-      "moment": "A quiet cup beside a rain-streaked window",
-      "mood": [
-        "comfort",
-        "stillness",
-        "warmth"
-      ],
+      "weather": ["rain"],
       "dataPath": "Weather/Art/rainy-tea-afternoon-001.json",
       "format": "application/json",
       "renderMode": "ordered-ink-wash-paths",
+      "rendererVersion": 1,
       "durationMs": 22000,
-      "palette": "mostly black ink on warm ivory paper; rare vermilion accents",
       "availability": "online-on-demand",
-      "drawingPlanId": "rainy-tea-afternoon-sequence-v1",
-      "drawingSequence": [
-        {
-          "order": 1,
-          "stage": "The door / window frame",
-          "strokeWeight": "thick",
-          "notes": "Strong confident structural strokes establish the setting and sill."
-        },
-        {
-          "order": 2,
-          "stage": "The tree branch",
-          "strokeWeight": "thick then medium",
-          "notes": "Flowing main branch first, then only a few selected leaves."
-        },
-        {
-          "order": 3,
-          "stage": "The hills",
-          "strokeWeight": "medium to thin",
-          "notes": "Long, elegant, restrained lines in the distance."
-        },
-        {
-          "order": 4,
-          "stage": "The little house / pavilion",
-          "strokeWeight": "medium",
-          "notes": "Only enough roof and building strokes to reveal it."
-        },
-        {
-          "order": 5,
-          "stage": "The kettle and teacup",
-          "strokeWeight": "medium",
-          "notes": "Careful, simple outlines; very few defining details; paper remains visible inside objects."
-        },
-        {
-          "order": 6,
-          "stage": "The red essence",
-          "strokeWeight": "selective red marks",
-          "notes": "Red sun, maple leaves and tiny intended accents appear last."
-        }
-      ],
-      "replayRequirement": "The encoded paths array in rainy-tea-afternoon-001.json must follow these six stages in order. The renderer reveals paths progressively in stored array order; it does not create named stage pauses."
+      "protected": true,
+      "notes": "Existing Rain score and schema-v1 drawing behaviour are retained."
     },
     {
-      "id": "clear-maple-pavilion-003",
-      "title": "A Clear Day at the Maple Pavilion",
-      "weather": [
-        "clear"
-      ],
-      "moment": "The original painted maple pavilion beneath an open sky, revealed with expressive brush movements",
-      "mood": [
-        "clarity",
-        "stillness",
-        "quiet warmth"
-      ],
-      "dataPath": "Weather/Art/clear-maple-pavilion-003.json",
+      "id": "clear-valley-artist-001",
+      "title": "Where the River Bends",
+      "weather": ["clear"],
+      "moment": "A quiet river moving between distant ridges and an open valley",
+      "mood": ["clarity", "stillness", "quiet warmth"],
+      "dataPath": "Weather/Art/clear-valley-artist-001.json",
       "format": "application/json",
-      "renderMode": "ordered-master-brush-reveal",
-      "durationMs": 30000,
-      "palette": "Original approved master palette; unchanged",
+      "renderMode": "artist-led-pigment-painting",
+      "rendererVersion": 4,
+      "durationMs": 56000,
+      "eventCount": 80,
       "availability": "online-on-demand",
-      "drawingPlanId": "clear-maple-pavilion-master-reveal-003",
-      "drawingPlanPath": "Weather/Art/Plans/clear-maple-pavilion-003.md",
-      "masterImagePath": "Weather/Art/References/clear-maple-pavilion-master-003.jpg",
-      "gestureCount": 100,
-      "maxGestureCount": 100,
-      "replayRequirement": "Replay reveals the immutable painted master using 100 ordered brush-shaped gestures with equal timing across 30 seconds. Stage masks retain the source pigment pixels; sequence is thick structure, attached thin details, air/birds/little things, leaves, then sun and finish."
+      "sourceImage": null,
+      "maskAtlas": null,
+      "drawingPlanId": "clear-valley-artist-score-001",
+      "notes": "An original authored score. All visible marks are generated by brush and pigment deposition during Replay."
     }
   ],
-  "supersededArtworkRecords": [
+  "historicalArtworkRecords": [
     {
       "id": "clear-maple-pavilion-001",
-      "title": "A Clear Day at the Maple Pavilion",
-      "weather": [
-        "clear"
-      ],
       "dataPath": "Weather/Art/clear-maple-pavilion-001.json",
-      "renderMode": "ordered-ink-wash-paths",
-      "durationMs": 30000,
-      "status": "preserved-source-version; replaced in active catalogue by clear-maple-pavilion-002"
+      "status": "historical-source-version; not in the active catalogue"
     },
     {
       "id": "clear-maple-pavilion-002",
-      "title": "A Clear Day at the Maple Pavilion",
       "dataPath": "Weather/Art/clear-maple-pavilion-002.json",
-      "renderMode": "ordered-pressure-strokes",
-      "durationMs": 75000,
-      "status": "preserved historical revision; replaced in active catalogue by clear-maple-pavilion-003 because it simplified the painted master into line art"
+      "status": "historical-pressure-ribbon experiment; not supported by the active runtime"
+    },
+    {
+      "id": "clear-maple-pavilion-003",
+      "status": "removed from active runtime and production pipeline; schema-v3 master-reveal renderer and score retired"
     }
   ]
 }

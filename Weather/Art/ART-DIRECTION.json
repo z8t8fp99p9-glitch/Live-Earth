@@ -1,88 +1,63 @@
 {
   "schemaVersion": 1,
-  "standardId": "WEATHER-LIVE-ART-STANDARD-002",
-  "version": "2.5",
-  "status": "current-binding-painted-master-brush-reveal-standard",
+  "standardId": "WEATHER-LIVE-ART-ARTIST-ENGINE-001",
+  "version": "3.0",
+  "status": "current-independent-artist-engine-standard",
   "scope": "LIVE // EARTH Weather Live Art card only",
   "authority": {
     "humanGuide": "Weather/Art/LIVE-ART-PRODUCTION-GUIDE.md",
     "thisFile": "Weather/Art/ART-DIRECTION.json",
-    "catalogue": "Weather/Art/art-library.json",
-    "activeVisualReference": "Weather/Art/References/clear-maple-pavilion-master-003.jpg"
+    "catalogue": "Weather/Art/art-library.json"
   },
   "canvas": {
     "aspectRatio": "10:7",
-    "encodedDrawingCoordinates": {
-      "width": 1000,
-      "height": 700
-    },
-    "appExportPixels": {
-      "width": 1200,
-      "height": 840
-    },
-    "cardRatioProtected": true,
-    "noCropOrStretch": true
+    "encodedDrawingCoordinates": { "width": 1000, "height": 700 },
+    "noCropOrStretch": true,
+    "cardRatioProtected": true
   },
-  "visualIdentity": {
-    "style": "approved Japanese-inspired brush-painted artwork; retain original master",
-    "ground": "warm textured ivory paper from original master",
-    "primaryMarks": "expressive black ink brushwork with natural taper and dry-brush texture",
-    "accent": "original selective vermilion details",
-    "preserveMasterPixels": true,
-    "lineArtConversionForbidden": true,
-    "redesignOrSimplificationForbidden": true
+  "artistPrinciples": {
+    "originality": "Create each scene as an independent artwork. Do not trace, reinterpret, derive paths from, or use earlier artworks as visual input.",
+    "noSourceArtwork": true,
+    "noMasterImage": true,
+    "noRevealMasks": true,
+    "noCompletedImageSwap": true,
+    "paintingProcess": "Every visible form must be deposited through the painter's own brush and pigment operations onto a persistent canvas.",
+    "composition": "The artist score determines large value masses, spatial depth, negative space, directional flow, focal balance and finishing restraint.",
+    "intermediateFrames": "Every moment is a genuine partial painting. No sudden reveal, no hidden finished artwork, and no end-frame substitution."
+  },
+  "brushEngine": {
+    "pressureResponse": true,
+    "speedResponse": true,
+    "directionalBristleSpread": true,
+    "individualBristleVariation": true,
+    "naturalTaper": true,
+    "pigmentLoad": true,
+    "wetEdgeAndWash": true,
+    "dryBrushBreakup": true,
+    "granulation": true,
+    "overlappingPigmentDeposition": true,
+    "paperSurface": "Procedurally generated warm fibre paper, independent of any source artwork"
   },
   "replayStandard": {
-    "maxBrushStrokes": 100,
-    "durationMs": 30000,
-    "countIsCeilingNotTarget": true,
-    "oneRecordEqualsOneContinuousBrushGesture": true,
-    "variablePressureRequired": true,
-    "naturalTaperRequired": true,
-    "masterRevealRendering": true,
-    "stageOrder": [
-      {
-        "order": 1,
-        "stage": "thick structural brushwork"
-      },
-      {
-        "order": 2,
-        "stage": "attached thin brushwork"
-      },
-      {
-        "order": 3,
-        "stage": "air, birds and little details"
-      },
-      {
-        "order": 4,
-        "stage": "leaves and floating accents"
-      },
-      {
-        "order": 5,
-        "stage": "sun and final finish",
-        "sunMustBeLast": true
-      }
-    ],
-    "equalGestureTiming": true,
-    "stagePauseMs": 100,
-    "maskRule": "Stage masks must retain the actual painted pigment pixels for each stage; contour-only or skeleton masks are forbidden."
+    "durationIsArtworkDefined": true,
+    "noArbitraryStrokeCeiling": true,
+    "authoredOrderIsBinding": true,
+    "progressivePigmentDeposition": true,
+    "pauseAtArtistDefinedPhaseBoundaries": true,
+    "replayRebuildsFromScore": true
   },
   "rendererCompatibility": {
-    "schemaVersions": [
-      1,
-      2,
-      3
-    ],
     "schema1": "ordered-ink-wash-paths",
-    "schema2": "ordered-pressure-strokes",
-    "schema3": "ordered-master-brush-reveal",
+    "schema4": "artist-led-pigment-painting",
+    "schema3MasterReveal": false,
+    "schema2PressureRibbon": false,
     "legacyRainProtected": true
   },
   "protectedAreas": [
-    "Rain artwork and schema-v1 rendering",
+    "Rain artwork and schema-v1 drawing behaviour",
     "Weather card layout and 10:7 ratio",
-    "portrait layout",
-    "forecast and temperature UI",
-    "service worker and data flow"
+    "Portrait layout",
+    "Forecast and temperature UI",
+    "Service-worker injection and data flow"
   ]
 }
