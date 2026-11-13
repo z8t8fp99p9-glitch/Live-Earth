@@ -31,7 +31,7 @@
       1
     ],
     "widthUnit": "1000-unit canvas width",
-    "widthBehaviour": "variable-width sweeping brush reveal with natural taper at the lifted endpoints",
+    "widthBehaviour": "hand-guided variable-width brush gestures with expressive curved motion and natural taper at each lifted endpoint; paths follow individual painted forms instead of crossing the canvas in raster rows",
     "purpose": "remove the paper veil only inside the assigned master-derived stage mask; reveal original painted pixels without redrawing them"
   },
   "replayOrder": [
@@ -86,4402 +86,3302 @@
   "strokeCount": 100,
   "strokes": [
     {
-      "id": "001-thick-structure",
+      "id": "001-tree-main-trunk-sweep",
       "order": 1,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
       "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "baseWidth": 86.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.05256,
-          0.46
+          0.068,
+          0.61429,
+          0.18
         ],
         [
-          0.2,
-          0.05696,
-          0.86
+          0.078,
+          0.55,
+          0.48
         ],
         [
+          0.098,
+          0.47857,
+          0.76
+        ],
+        [
+          0.126,
           0.4,
-          0.04895,
-          1.0
-        ],
-        [
-          0.6,
-          0.04761,
           0.96
         ],
         [
-          0.8,
-          0.05325,
-          0.82
+          0.166,
+          0.33571,
+          1.0
         ],
         [
-          0.995,
-          0.05431,
-          0.38
+          0.218,
+          0.28857,
+          0.92
+        ],
+        [
+          0.278,
+          0.25714,
+          0.68
         ]
       ]
     },
     {
-      "id": "002-thick-structure",
+      "id": "002-tree-left-trunk-edge",
       "order": 2,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
       "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "baseWidth": 55.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.08831,
-          0.46
+          0.07,
+          0.59714,
+          0.16
         ],
         [
-          0.2,
-          0.0879,
+          0.082,
+          0.52857,
+          0.45
+        ],
+        [
+          0.106,
+          0.46,
+          0.72
+        ],
+        [
+          0.132,
+          0.39714,
           0.86
         ],
         [
-          0.4,
-          0.07918,
-          1.0
-        ],
-        [
-          0.6,
-          0.08243,
-          0.96
-        ],
-        [
-          0.8,
-          0.08841,
-          0.82
-        ],
-        [
-          0.995,
-          0.08553,
-          0.38
+          0.158,
+          0.35714,
+          0.55
         ]
       ]
     },
     {
-      "id": "003-thick-structure",
+      "id": "003-tree-trunk-crown-mass",
       "order": 3,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
       "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "baseWidth": 72.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.12234,
-          0.46
+          0.15,
+          0.36571,
+          0.42
         ],
         [
-          0.2,
-          0.11753,
-          0.86
+          0.184,
+          0.31429,
+          0.88
         ],
         [
-          0.4,
-          0.11117,
+          0.22,
+          0.28,
           1.0
         ],
         [
-          0.6,
-          0.11849,
-          0.96
+          0.264,
+          0.26286,
+          0.91
         ],
         [
-          0.8,
-          0.12184,
-          0.82
-        ],
-        [
-          0.995,
-          0.11555,
-          0.38
+          0.306,
+          0.25714,
+          0.58
         ]
       ]
     },
     {
-      "id": "004-thick-structure",
+      "id": "004-tree-root-to-crown-flow",
       "order": 4,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
       "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "baseWidth": 46.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.15423,
-          0.46
+          0.074,
+          0.62571,
+          0.12
         ],
         [
-          0.2,
-          0.14726,
-          0.86
+          0.092,
+          0.57714,
+          0.5
         ],
         [
-          0.4,
-          0.14535,
-          1.0
-        ],
-        [
-          0.6,
-          0.15437,
-          0.96
-        ],
-        [
-          0.8,
-          0.15316,
+          0.116,
+          0.54,
           0.82
         ],
         [
-          0.995,
-          0.14575,
-          0.38
+          0.148,
+          0.5,
+          0.35
         ]
       ]
     },
     {
-      "id": "005-thick-structure",
+      "id": "005-branch-upper-left-rise",
       "order": 5,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
       "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "baseWidth": 39.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.18399,
-          0.46
+          0.255,
+          0.26286,
+          0.65
         ],
         [
-          0.2,
-          0.18839,
+          0.272,
+          0.21429,
           0.86
         ],
         [
-          0.4,
-          0.18038,
-          1.0
+          0.291,
+          0.16286,
+          0.98
         ],
         [
-          0.6,
-          0.17904,
-          0.96
+          0.322,
+          0.11143,
+          0.84
         ],
         [
-          0.8,
-          0.18468,
-          0.82
-        ],
-        [
-          0.995,
-          0.18574,
-          0.38
+          0.354,
+          0.06286,
+          0.24
         ]
       ]
     },
     {
-      "id": "006-thick-structure",
+      "id": "006-branch-left-high-tip",
       "order": 6,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 25.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.21973,
-          0.46
+          0.3,
+          0.14857,
+          0.34
         ],
         [
-          0.2,
-          0.21933,
-          0.86
-        ],
-        [
-          0.4,
-          0.21061,
-          1.0
-        ],
-        [
-          0.6,
-          0.21386,
-          0.96
-        ],
-        [
-          0.8,
-          0.21983,
+          0.326,
+          0.10857,
           0.82
         ],
         [
-          0.995,
-          0.21696,
-          0.38
+          0.354,
+          0.07,
+          0.62
+        ],
+        [
+          0.388,
+          0.02571,
+          0.16
         ]
       ]
     },
     {
-      "id": "007-thick-structure",
+      "id": "007-branch-main-right-sweep",
       "order": 7,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
       "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "baseWidth": 48.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.25377,
-          0.46
+          0.278,
+          0.26,
+          0.78
         ],
         [
-          0.2,
-          0.24896,
-          0.86
-        ],
-        [
-          0.4,
-          0.2426,
+          0.348,
+          0.25286,
           1.0
         ],
         [
-          0.6,
-          0.24992,
-          0.96
+          0.42,
+          0.26286,
+          0.88
         ],
         [
-          0.8,
-          0.25327,
-          0.82
+          0.492,
+          0.23286,
+          0.72
         ],
         [
-          0.995,
-          0.24698,
-          0.38
+          0.566,
+          0.18286,
+          0.52
+        ],
+        [
+          0.632,
+          0.13,
+          0.18
         ]
       ]
     },
     {
-      "id": "008-thick-structure",
+      "id": "008-branch-upper-right-limb",
       "order": 8,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
       "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "baseWidth": 36.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.28566,
-          0.46
+          0.415,
+          0.26143,
+          0.5
         ],
         [
-          0.2,
-          0.27869,
-          0.86
+          0.466,
+          0.23429,
+          0.92
         ],
         [
-          0.4,
-          0.27677,
-          1.0
-        ],
-        [
-          0.6,
-          0.2858,
-          0.96
-        ],
-        [
-          0.8,
-          0.28459,
+          0.51,
+          0.20429,
           0.82
         ],
         [
-          0.995,
-          0.27718,
-          0.38
+          0.555,
+          0.16429,
+          0.25
         ]
       ]
     },
     {
-      "id": "009-thick-structure",
+      "id": "009-branch-lower-right-arc",
       "order": 9,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
       "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "baseWidth": 32.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.31542,
-          0.46
+          0.338,
+          0.26857,
+          0.62
         ],
         [
-          0.2,
-          0.31982,
-          0.86
+          0.38,
+          0.29571,
+          0.94
         ],
         [
-          0.4,
-          0.3118,
-          1.0
+          0.423,
+          0.33714,
+          0.74
         ],
         [
-          0.6,
-          0.31046,
-          0.96
-        ],
-        [
-          0.8,
-          0.31611,
-          0.82
-        ],
-        [
-          0.995,
-          0.31717,
-          0.38
+          0.47,
+          0.37571,
+          0.2
         ]
       ]
     },
     {
-      "id": "010-thick-structure",
+      "id": "010-branch-far-right-taper",
       "order": 10,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 23.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.35116,
-          0.46
+          0.52,
+          0.20714,
+          0.54
         ],
         [
-          0.2,
-          0.35076,
-          0.86
+          0.552,
+          0.18,
+          0.9
         ],
         [
-          0.4,
-          0.34204,
-          1.0
+          0.586,
+          0.15571,
+          0.55
         ],
         [
-          0.6,
-          0.34529,
-          0.96
-        ],
-        [
-          0.8,
-          0.35126,
-          0.82
-        ],
-        [
-          0.995,
-          0.34839,
-          0.38
+          0.62,
+          0.12714,
+          0.15
         ]
       ]
     },
     {
-      "id": "011-thick-structure",
+      "id": "011-pavilion-roof-upper-gesture",
       "order": 11,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
       "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "baseWidth": 52.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.3852,
-          0.46
+          0.148,
+          0.5,
+          0.18
         ],
         [
-          0.2,
-          0.38039,
-          0.86
+          0.185,
+          0.50714,
+          0.62
         ],
         [
-          0.4,
-          0.37403,
-          1.0
+          0.224,
+          0.51429,
+          0.95
         ],
         [
-          0.6,
-          0.38135,
-          0.96
+          0.262,
+          0.50571,
+          0.84
         ],
         [
-          0.8,
-          0.3847,
-          0.82
-        ],
-        [
-          0.995,
-          0.37841,
-          0.38
+          0.298,
+          0.48571,
+          0.18
         ]
       ]
     },
     {
-      "id": "012-thick-structure",
+      "id": "012-pavilion-roof-eave-main",
       "order": 12,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
       "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "baseWidth": 59.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.41709,
-          0.46
+          0.14,
+          0.55143,
+          0.18
         ],
         [
-          0.2,
-          0.41012,
-          0.86
+          0.19,
+          0.57286,
+          0.66
         ],
         [
-          0.4,
-          0.4082,
+          0.244,
+          0.58857,
+          0.95
+        ],
+        [
+          0.3,
+          0.59143,
           1.0
         ],
         [
-          0.6,
-          0.41723,
-          0.96
+          0.35,
+          0.57857,
+          0.72
         ],
         [
-          0.8,
-          0.41602,
-          0.82
-        ],
-        [
-          0.995,
-          0.40861,
-          0.38
+          0.383,
+          0.55429,
+          0.16
         ]
       ]
     },
     {
-      "id": "013-thick-structure",
+      "id": "013-pavilion-roof-upturned-tip",
       "order": 13,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
       "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "baseWidth": 37.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.44684,
-          0.46
+          0.258,
+          0.50571,
+          0.62
         ],
         [
-          0.2,
-          0.45125,
-          0.86
+          0.292,
+          0.51,
+          0.95
         ],
         [
-          0.4,
-          0.44323,
-          1.0
-        ],
-        [
-          0.6,
-          0.44189,
-          0.96
-        ],
-        [
-          0.8,
-          0.44754,
+          0.326,
+          0.52714,
           0.82
         ],
         [
-          0.995,
-          0.4486,
-          0.38
+          0.36,
+          0.54714,
+          0.22
         ]
       ]
     },
     {
-      "id": "014-thick-structure",
+      "id": "014-pavilion-roof-lower-sweep",
       "order": 14,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
       "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "baseWidth": 34.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.48259,
-          0.46
+          0.174,
+          0.56571,
+          0.18
         ],
         [
-          0.2,
-          0.48219,
-          0.86
+          0.218,
+          0.58857,
+          0.78
         ],
         [
-          0.4,
-          0.47347,
-          1.0
-        ],
-        [
+          0.269,
           0.6,
-          0.47672,
-          0.96
+          0.98
         ],
         [
-          0.8,
-          0.48269,
-          0.82
-        ],
-        [
-          0.995,
-          0.47982,
-          0.38
+          0.32,
+          0.59143,
+          0.48
         ]
       ]
     },
     {
-      "id": "015-thick-structure",
+      "id": "015-pavilion-left-roof-return",
       "order": 15,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 25.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.51663,
-          0.46
+          0.142,
+          0.5,
+          0.18
         ],
         [
-          0.2,
-          0.51182,
-          0.86
+          0.164,
+          0.52714,
+          0.76
         ],
         [
-          0.4,
-          0.50546,
-          1.0
-        ],
-        [
-          0.6,
-          0.51277,
-          0.96
-        ],
-        [
-          0.8,
-          0.51613,
-          0.82
-        ],
-        [
-          0.995,
-          0.50984,
-          0.38
+          0.199,
+          0.54286,
+          0.44
         ]
       ]
     },
     {
-      "id": "016-thick-structure",
+      "id": "016-pavilion-main-post",
       "order": 16,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
       "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "baseWidth": 38.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.54852,
-          0.46
+          0.28,
+          0.59,
+          0.34
         ],
         [
-          0.2,
-          0.54155,
-          0.86
+          0.28,
+          0.65,
+          0.88
         ],
         [
-          0.4,
-          0.53963,
+          0.281,
+          0.72571,
           1.0
         ],
         [
-          0.6,
-          0.54866,
-          0.96
+          0.282,
+          0.79714,
+          0.78
         ],
         [
-          0.8,
-          0.54744,
-          0.82
-        ],
-        [
-          0.995,
-          0.54004,
-          0.38
+          0.282,
+          0.83429,
+          0.22
         ]
       ]
     },
     {
-      "id": "017-thick-structure",
+      "id": "017-pavilion-post-foot",
       "order": 17,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 24.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.57827,
-          0.46
+          0.26,
+          0.80714,
+          0.18
         ],
         [
-          0.2,
-          0.58267,
-          0.86
-        ],
-        [
-          0.4,
-          0.57466,
-          1.0
-        ],
-        [
-          0.6,
-          0.57332,
-          0.96
-        ],
-        [
-          0.8,
-          0.57896,
+          0.281,
+          0.82,
           0.82
         ],
         [
-          0.995,
-          0.58003,
-          0.38
+          0.306,
+          0.81857,
+          0.28
         ]
       ]
     },
     {
-      "id": "018-thick-structure",
+      "id": "018-pavilion-rail-upper",
       "order": 18,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 17.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.61402,
-          0.46
+          0.294,
+          0.70571,
+          0.18
         ],
         [
-          0.2,
-          0.61361,
-          0.86
+          0.327,
+          0.70571,
+          0.84
         ],
         [
-          0.4,
-          0.60489,
-          1.0
+          0.359,
+          0.70714,
+          0.72
         ],
         [
-          0.6,
-          0.60815,
-          0.96
-        ],
-        [
-          0.8,
-          0.61412,
-          0.82
-        ],
-        [
-          0.995,
-          0.61125,
-          0.38
+          0.382,
+          0.70429,
+          0.16
         ]
       ]
     },
     {
-      "id": "019-thick-structure",
+      "id": "019-pavilion-rail-lower",
       "order": 19,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 15.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.64805,
-          0.46
+          0.293,
+          0.73429,
+          0.18
         ],
         [
-          0.2,
-          0.64325,
-          0.86
-        ],
-        [
-          0.4,
-          0.63689,
-          1.0
-        ],
-        [
-          0.6,
-          0.6442,
-          0.96
-        ],
-        [
-          0.8,
-          0.64756,
+          0.327,
+          0.73714,
           0.82
         ],
         [
-          0.995,
-          0.64127,
-          0.38
+          0.359,
+          0.73714,
+          0.68
+        ],
+        [
+          0.382,
+          0.73429,
+          0.14
         ]
       ]
     },
     {
-      "id": "020-thick-structure",
+      "id": "020-foreground-bank-main-curve",
       "order": 20,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
       "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "baseWidth": 39.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.67994,
-          0.46
+          0.126,
+          0.87143,
+          0.18
         ],
         [
-          0.2,
-          0.67298,
-          0.86
+          0.175,
+          0.83571,
+          0.72
         ],
         [
-          0.4,
-          0.67106,
+          0.23,
+          0.80286,
           1.0
         ],
         [
-          0.6,
-          0.68008,
-          0.96
-        ],
-        [
+          0.292,
           0.8,
-          0.67887,
-          0.82
+          0.95
         ],
         [
-          0.995,
-          0.67147,
-          0.38
+          0.352,
+          0.82857,
+          0.8
+        ],
+        [
+          0.422,
+          0.87714,
+          0.2
         ]
       ]
     },
     {
-      "id": "021-thick-structure",
+      "id": "021-foreground-bank-inner-flow",
       "order": 21,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 25.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.7097,
-          0.46
+          0.142,
+          0.88571,
+          0.16
         ],
         [
-          0.2,
-          0.7141,
-          0.86
+          0.198,
+          0.86,
+          0.68
         ],
         [
-          0.4,
-          0.70609,
-          1.0
+          0.249,
+          0.83429,
+          0.9
         ],
         [
-          0.6,
-          0.70475,
-          0.96
-        ],
-        [
-          0.8,
-          0.71039,
-          0.82
-        ],
-        [
-          0.995,
-          0.71146,
-          0.38
+          0.306,
+          0.84286,
+          0.28
         ]
       ]
     },
     {
-      "id": "022-thick-structure",
+      "id": "022-foreground-bank-right-lift",
       "order": 22,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 22.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.74545,
-          0.46
+          0.33,
+          0.83143,
+          0.22
         ],
         [
-          0.2,
-          0.74504,
-          0.86
+          0.365,
+          0.85429,
+          0.78
         ],
         [
-          0.4,
-          0.73632,
-          1.0
-        ],
-        [
-          0.6,
-          0.73958,
-          0.96
-        ],
-        [
-          0.8,
-          0.74555,
-          0.82
-        ],
-        [
-          0.995,
-          0.74268,
-          0.38
+          0.402,
+          0.88143,
+          0.32
         ]
       ]
     },
     {
-      "id": "023-thick-structure",
+      "id": "023-left-rock-ink-mass",
       "order": 23,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 19.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.77948,
-          0.46
+          0.408,
+          0.82143,
+          0.18
         ],
         [
-          0.2,
-          0.77468,
-          0.86
+          0.426,
+          0.79714,
+          0.84
         ],
         [
-          0.4,
-          0.76832,
-          1.0
+          0.446,
+          0.79571,
+          0.7
         ],
         [
-          0.6,
-          0.77563,
-          0.96
-        ],
-        [
-          0.8,
-          0.77899,
-          0.82
-        ],
-        [
-          0.995,
-          0.7727,
-          0.38
+          0.462,
+          0.81857,
+          0.16
         ]
       ]
     },
     {
-      "id": "024-thick-structure",
+      "id": "024-right-rock-ink-mass",
       "order": 24,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 17.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.81137,
-          0.46
+          0.474,
+          0.83143,
+          0.14
         ],
         [
-          0.2,
-          0.80441,
+          0.49,
+          0.81429,
           0.86
         ],
         [
-          0.4,
-          0.80249,
-          1.0
+          0.509,
+          0.82,
+          0.5
         ],
         [
-          0.6,
-          0.81151,
-          0.96
-        ],
-        [
-          0.8,
-          0.8103,
-          0.82
-        ],
-        [
-          0.995,
-          0.8029,
-          0.38
+          0.523,
+          0.83714,
+          0.12
         ]
       ]
     },
     {
-      "id": "025-thick-structure",
+      "id": "025-left-grass-long-sweep",
       "order": 25,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 18.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.84113,
-          0.46
+          0.072,
+          0.71429,
+          0.12
         ],
         [
-          0.2,
-          0.84553,
-          0.86
+          0.085,
+          0.67714,
+          0.58
         ],
         [
-          0.4,
-          0.83752,
-          1.0
+          0.106,
+          0.64429,
+          0.92
         ],
         [
-          0.6,
-          0.83618,
-          0.96
-        ],
-        [
-          0.8,
-          0.84182,
-          0.82
-        ],
-        [
-          0.995,
-          0.84289,
-          0.38
+          0.126,
+          0.66571,
+          0.24
         ]
       ]
     },
     {
-      "id": "026-thick-structure",
+      "id": "026-left-grass-return-sweep",
       "order": 26,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 16.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.87688,
-          0.46
+          0.109,
+          0.71571,
+          0.1
         ],
         [
-          0.2,
-          0.87647,
-          0.86
+          0.13,
+          0.67571,
+          0.65
         ],
         [
-          0.4,
-          0.86775,
-          1.0
+          0.151,
+          0.65429,
+          0.9
         ],
         [
-          0.6,
-          0.87101,
-          0.96
-        ],
-        [
-          0.8,
-          0.87698,
-          0.82
-        ],
-        [
-          0.995,
-          0.87411,
-          0.38
+          0.174,
+          0.68286,
+          0.18
         ]
       ]
     },
     {
-      "id": "027-thick-structure",
+      "id": "027-bank-grass-centre-sweep",
       "order": 27,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 14.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.91091,
-          0.46
+          0.376,
+          0.87143,
+          0.12
         ],
         [
-          0.2,
-          0.90611,
+          0.393,
+          0.84143,
+          0.68
+        ],
+        [
+          0.41,
+          0.81857,
           0.86
         ],
         [
-          0.4,
-          0.89975,
-          1.0
-        ],
-        [
-          0.6,
-          0.90706,
-          0.96
-        ],
-        [
-          0.8,
-          0.91041,
-          0.82
-        ],
-        [
-          0.995,
-          0.90412,
-          0.38
+          0.426,
+          0.83143,
+          0.2
         ]
       ]
     },
     {
-      "id": "028-thick-structure",
+      "id": "028-root-shadow-lower-flick",
       "order": 28,
       "stageId": "01",
       "stage": "Thick structural brushwork",
       "role": "01",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 82.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 21.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.9428,
-          0.46
+          0.084,
+          0.63429,
+          0.1
         ],
         [
-          0.2,
-          0.93584,
-          0.86
+          0.106,
+          0.59857,
+          0.62
         ],
         [
-          0.4,
-          0.93392,
-          1.0
+          0.132,
+          0.56429,
+          0.8
         ],
         [
-          0.6,
-          0.94294,
-          0.96
-        ],
-        [
-          0.8,
-          0.94173,
-          0.82
-        ],
-        [
-          0.995,
-          0.93433,
-          0.38
+          0.154,
+          0.53429,
+          0.18
         ]
       ]
     },
     {
-      "id": "029-attached-detail",
+      "id": "029-twig-left-fork-01",
       "order": 29,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 9.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.02063,
-          0.46
+          0.273,
+          0.22429,
+          0.12
         ],
         [
-          0.2,
-          0.02354,
-          0.86
+          0.282,
+          0.19286,
+          0.72
         ],
         [
-          0.4,
-          0.01495,
-          1.0
-        ],
-        [
-          0.6,
-          0.01505,
-          0.96
-        ],
-        [
-          0.8,
-          0.02113,
-          0.82
-        ],
-        [
-          0.995,
-          0.02097,
-          0.38
+          0.294,
+          0.17,
+          0.26
         ]
       ]
     },
     {
-      "id": "030-attached-detail",
+      "id": "030-twig-left-fork-02",
       "order": 30,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 8.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.05991,
-          0.46
+          0.289,
+          0.18286,
+          0.12
         ],
         [
-          0.2,
-          0.05791,
-          0.86
+          0.306,
+          0.16,
+          0.68
         ],
         [
-          0.4,
-          0.04965,
-          1.0
-        ],
-        [
-          0.6,
-          0.0544,
-          0.96
-        ],
-        [
-          0.8,
-          0.05982,
-          0.82
-        ],
-        [
-          0.995,
-          0.05566,
-          0.38
+          0.322,
+          0.14714,
+          0.2
         ]
       ]
     },
     {
-      "id": "031-attached-detail",
+      "id": "031-twig-left-tip-03",
       "order": 31,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 7.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.09724,
-          0.46
+          0.304,
+          0.14,
+          0.12
         ],
         [
-          0.2,
-          0.09141,
-          0.86
+          0.318,
+          0.11286,
+          0.7
         ],
         [
-          0.4,
-          0.08636,
-          1.0
-        ],
-        [
-          0.6,
-          0.09456,
-          0.96
-        ],
-        [
-          0.8,
-          0.09655,
-          0.82
-        ],
-        [
-          0.995,
-          0.08957,
-          0.38
+          0.333,
+          0.09714,
+          0.16
         ]
       ]
     },
     {
-      "id": "032-attached-detail",
+      "id": "032-twig-right-fork-01",
       "order": 32,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 10.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.1325,
-          0.46
+          0.448,
+          0.24714,
+          0.12
         ],
         [
-          0.2,
-          0.12548,
-          0.86
+          0.466,
+          0.21571,
+          0.72
         ],
         [
-          0.4,
-          0.12516,
-          1.0
-        ],
-        [
-          0.6,
-          0.13407,
-          0.96
-        ],
-        [
-          0.8,
-          0.13124,
-          0.82
-        ],
-        [
-          0.995,
-          0.12414,
-          0.38
+          0.484,
+          0.19857,
+          0.18
         ]
       ]
     },
     {
-      "id": "033-attached-detail",
+      "id": "033-twig-right-fork-02",
       "order": 33,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 8.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.16804,
-          0.46
+          0.475,
+          0.22429,
+          0.12
         ],
         [
-          0.2,
-          0.17095,
-          0.86
+          0.495,
+          0.20571,
+          0.75
         ],
         [
-          0.4,
-          0.16236,
-          1.0
-        ],
-        [
-          0.6,
-          0.16246,
-          0.96
-        ],
-        [
-          0.8,
-          0.16854,
-          0.82
-        ],
-        [
-          0.995,
-          0.16838,
-          0.38
+          0.514,
+          0.19571,
+          0.18
         ]
       ]
     },
     {
-      "id": "034-attached-detail",
+      "id": "034-twig-right-tip-03",
       "order": 34,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 7.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.20732,
-          0.46
+          0.516,
+          0.19571,
+          0.12
         ],
         [
-          0.2,
-          0.20532,
-          0.86
+          0.534,
+          0.17,
+          0.72
         ],
         [
-          0.4,
-          0.19706,
-          1.0
-        ],
-        [
-          0.6,
-          0.20181,
-          0.96
-        ],
-        [
-          0.8,
-          0.20723,
-          0.82
-        ],
-        [
-          0.995,
-          0.20307,
-          0.38
+          0.551,
+          0.15857,
+          0.16
         ]
       ]
     },
     {
-      "id": "035-attached-detail",
+      "id": "035-twig-mid-lower-01",
       "order": 35,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 9.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.24464,
-          0.46
+          0.356,
+          0.27286,
+          0.12
         ],
         [
-          0.2,
-          0.23882,
-          0.86
+          0.374,
+          0.28857,
+          0.7
         ],
         [
-          0.4,
-          0.23377,
-          1.0
-        ],
-        [
-          0.6,
-          0.24197,
-          0.96
-        ],
-        [
-          0.8,
-          0.24396,
-          0.82
-        ],
-        [
-          0.995,
-          0.23698,
-          0.38
+          0.391,
+          0.31286,
+          0.18
         ]
       ]
     },
     {
-      "id": "036-attached-detail",
+      "id": "036-twig-mid-lower-02",
       "order": 36,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 7.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.2799,
-          0.46
+          0.398,
+          0.31429,
+          0.12
         ],
         [
-          0.2,
-          0.27289,
-          0.86
+          0.42,
+          0.33857,
+          0.7
         ],
         [
-          0.4,
-          0.27257,
-          1.0
-        ],
-        [
-          0.6,
-          0.28147,
-          0.96
-        ],
-        [
-          0.8,
-          0.27865,
-          0.82
-        ],
-        [
-          0.995,
-          0.27155,
-          0.38
+          0.436,
+          0.36,
+          0.16
         ]
       ]
     },
     {
-      "id": "037-attached-detail",
+      "id": "037-twig-right-splinter-01",
       "order": 37,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 6.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.31544,
-          0.46
+          0.56,
+          0.17,
+          0.1
         ],
         [
-          0.2,
-          0.31835,
-          0.86
+          0.578,
+          0.14857,
+          0.72
         ],
         [
-          0.4,
-          0.30977,
-          1.0
-        ],
-        [
-          0.6,
-          0.30986,
-          0.96
-        ],
-        [
-          0.8,
-          0.31594,
-          0.82
-        ],
-        [
-          0.995,
-          0.31579,
-          0.38
+          0.594,
+          0.14,
+          0.16
         ]
       ]
     },
     {
-      "id": "038-attached-detail",
+      "id": "038-twig-right-splinter-02",
       "order": 38,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 6.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.35473,
-          0.46
+          0.586,
+          0.15429,
+          0.12
         ],
         [
-          0.2,
-          0.35273,
-          0.86
+          0.603,
+          0.13,
+          0.65
         ],
         [
-          0.4,
-          0.34447,
-          1.0
-        ],
-        [
-          0.6,
-          0.34922,
-          0.96
-        ],
-        [
-          0.8,
-          0.35463,
-          0.82
-        ],
-        [
-          0.995,
-          0.35048,
-          0.38
+          0.618,
+          0.11714,
+          0.15
         ]
       ]
     },
     {
-      "id": "039-attached-detail",
+      "id": "039-pavilion-eave-fine-return",
       "order": 39,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 11.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.39205,
-          0.46
+          0.162,
+          0.55857,
+          0.12
         ],
         [
-          0.2,
-          0.38622,
-          0.86
+          0.206,
+          0.58143,
+          0.65
         ],
         [
-          0.4,
-          0.38118,
-          1.0
-        ],
-        [
-          0.6,
-          0.38938,
-          0.96
-        ],
-        [
-          0.8,
-          0.39136,
-          0.82
-        ],
-        [
-          0.995,
-          0.38439,
-          0.38
+          0.253,
+          0.59143,
+          0.2
         ]
       ]
     },
     {
-      "id": "040-attached-detail",
+      "id": "040-pavilion-roof-hairline-01",
       "order": 40,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 7.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.42731,
-          0.46
+          0.178,
+          0.51286,
+          0.1
         ],
         [
-          0.2,
-          0.4203,
-          0.86
+          0.214,
+          0.52429,
+          0.6
         ],
         [
-          0.4,
-          0.41998,
-          1.0
-        ],
-        [
-          0.6,
-          0.42888,
-          0.96
-        ],
-        [
-          0.8,
-          0.42606,
-          0.82
-        ],
-        [
-          0.995,
-          0.41896,
-          0.38
+          0.247,
+          0.52143,
+          0.18
         ]
       ]
     },
     {
-      "id": "041-attached-detail",
+      "id": "041-pavilion-roof-hairline-02",
       "order": 41,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 7.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.46285,
-          0.46
+          0.279,
+          0.51571,
+          0.1
         ],
         [
-          0.2,
-          0.46576,
-          0.86
+          0.31,
+          0.52857,
+          0.66
         ],
         [
-          0.4,
-          0.45717,
-          1.0
-        ],
-        [
-          0.6,
-          0.45727,
-          0.96
-        ],
-        [
-          0.8,
-          0.46335,
-          0.82
-        ],
-        [
-          0.995,
-          0.46319,
-          0.38
+          0.339,
+          0.54143,
+          0.16
         ]
       ]
     },
     {
-      "id": "042-attached-detail",
+      "id": "042-pavilion-post-fine-edge",
       "order": 42,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 8.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.50214,
-          0.46
+          0.286,
+          0.60286,
+          0.1
         ],
         [
-          0.2,
-          0.50014,
-          0.86
+          0.287,
+          0.66714,
+          0.6
         ],
         [
-          0.4,
-          0.49188,
-          1.0
-        ],
-        [
-          0.6,
-          0.49663,
-          0.96
-        ],
-        [
-          0.8,
-          0.50204,
-          0.82
-        ],
-        [
-          0.995,
-          0.49789,
-          0.38
+          0.287,
+          0.73143,
+          0.15
         ]
       ]
     },
     {
-      "id": "043-attached-detail",
+      "id": "043-pavilion-rail-cap",
       "order": 43,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 8.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.53946,
-          0.46
+          0.292,
+          0.69714,
+          0.1
         ],
         [
-          0.2,
-          0.53363,
-          0.86
+          0.33,
+          0.69571,
+          0.72
         ],
         [
-          0.4,
-          0.52858,
-          1.0
-        ],
-        [
-          0.6,
-          0.53678,
-          0.96
-        ],
-        [
-          0.8,
-          0.53877,
-          0.82
-        ],
-        [
-          0.995,
-          0.5318,
-          0.38
+          0.371,
+          0.69714,
+          0.16
         ]
       ]
     },
     {
-      "id": "044-attached-detail",
+      "id": "044-pavilion-rail-joint",
       "order": 44,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 6.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.57472,
-          0.46
+          0.369,
+          0.68857,
+          0.1
         ],
         [
-          0.2,
-          0.5677,
-          0.86
+          0.371,
+          0.70857,
+          0.72
         ],
         [
-          0.4,
-          0.56738,
-          1.0
-        ],
-        [
-          0.6,
-          0.57629,
-          0.96
-        ],
-        [
-          0.8,
-          0.57347,
-          0.82
-        ],
-        [
-          0.995,
-          0.56636,
-          0.38
+          0.369,
+          0.74714,
+          0.16
         ]
       ]
     },
     {
-      "id": "045-attached-detail",
+      "id": "045-chime-suspension-line",
       "order": 45,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 6.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.61026,
-          0.46
+          0.448,
+          0.32857,
+          0.1
         ],
         [
-          0.2,
-          0.61317,
-          0.86
+          0.449,
+          0.36143,
+          0.75
         ],
         [
-          0.4,
-          0.60458,
-          1.0
-        ],
-        [
-          0.6,
-          0.60468,
-          0.96
-        ],
-        [
-          0.8,
-          0.61076,
-          0.82
-        ],
-        [
-          0.995,
-          0.6106,
-          0.38
+          0.449,
+          0.39714,
+          0.18
         ]
       ]
     },
     {
-      "id": "046-attached-detail",
+      "id": "046-chime-upper-loop",
       "order": 46,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 8.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.64954,
-          0.46
+          0.442,
+          0.33714,
+          0.12
         ],
         [
-          0.2,
-          0.64754,
-          0.86
+          0.449,
+          0.32714,
+          0.85
         ],
         [
-          0.4,
-          0.63928,
-          1.0
-        ],
-        [
-          0.6,
-          0.64403,
-          0.96
-        ],
-        [
-          0.8,
-          0.64945,
-          0.82
-        ],
-        [
-          0.995,
-          0.64529,
-          0.38
+          0.456,
+          0.33571,
+          0.12
         ]
       ]
     },
     {
-      "id": "047-attached-detail",
+      "id": "047-chime-drop-to-bell",
       "order": 47,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 7.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.68687,
-          0.46
+          0.449,
+          0.38571,
+          0.1
         ],
         [
-          0.2,
-          0.68104,
-          0.86
+          0.45,
+          0.41143,
+          0.78
         ],
         [
-          0.4,
-          0.67599,
-          1.0
-        ],
-        [
-          0.6,
-          0.68419,
-          0.96
-        ],
-        [
-          0.8,
-          0.68618,
-          0.82
-        ],
-        [
-          0.995,
-          0.6792,
-          0.38
+          0.45,
+          0.43,
+          0.16
         ]
       ]
     },
     {
-      "id": "048-attached-detail",
+      "id": "048-chime-bell-left-arc",
       "order": 48,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 15.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.72213,
-          0.46
+          0.421,
+          0.45286,
+          0.12
         ],
         [
-          0.2,
-          0.71511,
-          0.86
+          0.426,
+          0.43,
+          0.72
         ],
         [
-          0.4,
-          0.71479,
-          1.0
+          0.444,
+          0.41857,
+          0.92
         ],
         [
-          0.6,
-          0.7237,
-          0.96
-        ],
-        [
-          0.8,
-          0.72087,
-          0.82
-        ],
-        [
-          0.995,
-          0.71377,
-          0.38
+          0.451,
+          0.45,
+          0.2
         ]
       ]
     },
     {
-      "id": "049-attached-detail",
+      "id": "049-chime-bell-right-arc",
       "order": 49,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 14.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.75767,
-          0.46
+          0.45,
+          0.45,
+          0.18
         ],
         [
-          0.2,
-          0.76058,
-          0.86
-        ],
-        [
-          0.4,
-          0.75199,
-          1.0
-        ],
-        [
-          0.6,
-          0.75209,
-          0.96
-        ],
-        [
-          0.8,
-          0.75817,
+          0.458,
+          0.42286,
           0.82
         ],
         [
-          0.995,
-          0.75801,
-          0.38
+          0.477,
+          0.43571,
+          0.62
+        ],
+        [
+          0.48,
+          0.46,
+          0.12
         ]
       ]
     },
     {
-      "id": "050-attached-detail",
+      "id": "050-chime-bell-lower-rim",
       "order": 50,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 12.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.79695,
-          0.46
+          0.421,
+          0.45571,
+          0.12
         ],
         [
-          0.2,
-          0.79495,
-          0.86
+          0.442,
+          0.46714,
+          0.75
         ],
         [
-          0.4,
-          0.78669,
-          1.0
+          0.462,
+          0.46571,
+          0.78
         ],
         [
-          0.6,
-          0.79144,
-          0.96
-        ],
-        [
-          0.8,
-          0.79686,
-          0.82
-        ],
-        [
-          0.995,
-          0.7927,
-          0.38
+          0.48,
+          0.45857,
+          0.12
         ]
       ]
     },
     {
-      "id": "051-attached-detail",
+      "id": "051-chime-tag-left-edge",
       "order": 51,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 8.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.83427,
-          0.46
+          0.439,
+          0.49143,
+          0.1
         ],
         [
-          0.2,
-          0.82845,
-          0.86
+          0.431,
+          0.53429,
+          0.62
         ],
         [
-          0.4,
-          0.8234,
-          1.0
-        ],
-        [
-          0.6,
-          0.8316,
-          0.96
-        ],
-        [
-          0.8,
-          0.83359,
-          0.82
-        ],
-        [
-          0.995,
-          0.82661,
-          0.38
+          0.423,
+          0.58143,
+          0.18
         ]
       ]
     },
     {
-      "id": "052-attached-detail",
+      "id": "052-chime-tag-right-edge",
       "order": 52,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 8.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.86953,
-          0.46
+          0.462,
+          0.49286,
+          0.1
         ],
         [
-          0.2,
-          0.86252,
-          0.86
+          0.459,
+          0.54,
+          0.64
         ],
         [
-          0.4,
-          0.8622,
-          1.0
-        ],
-        [
-          0.6,
-          0.8711,
-          0.96
-        ],
-        [
-          0.8,
-          0.86828,
-          0.82
-        ],
-        [
-          0.995,
-          0.86118,
-          0.38
+          0.453,
+          0.58857,
+          0.18
         ]
       ]
     },
     {
-      "id": "053-attached-detail",
+      "id": "053-chime-tag-bottom-curve",
       "order": 53,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 9.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.90507,
-          0.46
+          0.423,
+          0.58143,
+          0.12
         ],
         [
-          0.2,
-          0.90798,
-          0.86
+          0.438,
+          0.59429,
+          0.78
         ],
         [
-          0.4,
-          0.8994,
-          1.0
-        ],
-        [
-          0.6,
-          0.89949,
-          0.96
-        ],
-        [
-          0.8,
-          0.90557,
-          0.82
-        ],
-        [
-          0.995,
-          0.90542,
-          0.38
+          0.453,
+          0.59,
+          0.12
         ]
       ]
     },
     {
-      "id": "054-attached-detail",
+      "id": "054-chime-tag-top-link",
       "order": 54,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 6.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.94436,
-          0.46
+          0.444,
+          0.47286,
+          0.12
         ],
         [
-          0.2,
-          0.94236,
-          0.86
+          0.445,
+          0.48857,
+          0.74
         ],
         [
-          0.4,
-          0.9341,
-          1.0
-        ],
-        [
-          0.6,
-          0.93885,
-          0.96
-        ],
-        [
-          0.8,
-          0.94426,
-          0.82
-        ],
-        [
-          0.995,
-          0.94011,
-          0.38
+          0.444,
+          0.50286,
+          0.15
         ]
       ]
     },
     {
-      "id": "055-attached-detail",
+      "id": "055-tiny-stem-attached-detail",
       "order": 55,
       "stageId": "02",
       "stage": "Attached thin brushwork",
       "role": "02",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 64.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 6.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.98168,
-          0.46
-        ],
-        [
-          0.2,
-          0.97585,
-          0.86
+          0.386,
+          0.83571,
+          0.1
         ],
         [
           0.4,
-          0.97081,
-          1.0
+          0.80857,
+          0.65
         ],
         [
-          0.6,
-          0.97901,
-          0.96
-        ],
-        [
-          0.8,
-          0.98099,
-          0.82
-        ],
-        [
-          0.995,
-          0.97402,
-          0.38
+          0.414,
+          0.79143,
+          0.12
         ]
       ]
     },
     {
-      "id": "056-air-detail-upper",
+      "id": "056-bird-left-wing-sweep",
       "order": 56,
       "stageId": "03",
       "stage": "Air, birds and little details",
       "role": "03",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 70.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 12.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.27609,
-          0.46
+          0.606,
+          0.28714,
+          0.12
         ],
         [
-          0.2,
-          0.27739,
-          0.86
+          0.622,
+          0.27286,
+          0.75
         ],
         [
-          0.4,
-          0.26856,
-          1.0
+          0.638,
+          0.27714,
+          0.88
         ],
         [
-          0.6,
-          0.27019,
-          0.96
-        ],
-        [
-          0.8,
-          0.27639,
-          0.82
-        ],
-        [
-          0.995,
-          0.27492,
-          0.38
+          0.651,
+          0.29143,
+          0.14
         ]
       ]
     },
     {
-      "id": "057-air-detail-upper",
+      "id": "057-bird-left-tail-flick",
       "order": 57,
       "stageId": "03",
       "stage": "Air, birds and little details",
       "role": "03",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 70.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 7.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.31378,
-          0.46
+          0.635,
+          0.27714,
+          0.16
         ],
         [
-          0.2,
-          0.31031,
-          0.86
-        ],
-        [
-          0.4,
-          0.30283,
-          1.0
-        ],
-        [
-          0.6,
-          0.30894,
-          0.96
-        ],
-        [
-          0.8,
-          0.31349,
+          0.644,
+          0.26286,
           0.82
         ],
         [
-          0.995,
-          0.30819,
-          0.38
+          0.653,
+          0.25571,
+          0.14
         ]
       ]
     },
     {
-      "id": "058-air-detail-upper",
+      "id": "058-bird-right-wing-sweep",
       "order": 58,
       "stageId": "03",
       "stage": "Air, birds and little details",
       "role": "03",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 70.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 12.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.34937,
-          0.46
+          0.67,
+          0.33571,
+          0.12
         ],
         [
-          0.2,
-          0.34282,
-          0.86
+          0.685,
+          0.32286,
+          0.76
         ],
         [
-          0.4,
-          0.33925,
-          1.0
+          0.701,
+          0.32714,
+          0.88
         ],
         [
-          0.6,
-          0.34803,
-          0.96
-        ],
-        [
-          0.8,
-          0.34849,
-          0.82
-        ],
-        [
-          0.995,
-          0.34114,
-          0.38
+          0.714,
+          0.34,
+          0.14
         ]
       ]
     },
     {
-      "id": "059-air-detail-upper",
+      "id": "059-bird-right-tail-flick",
       "order": 59,
       "stageId": "03",
       "stage": "Air, birds and little details",
       "role": "03",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 70.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 7.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.38308,
-          0.46
+          0.699,
+          0.32571,
+          0.15
         ],
         [
-          0.2,
-          0.37635,
-          0.86
+          0.709,
+          0.31286,
+          0.78
         ],
         [
-          0.4,
-          0.37757,
-          1.0
-        ],
-        [
-          0.6,
-          0.38601,
-          0.96
-        ],
-        [
-          0.8,
-          0.38166,
-          0.82
-        ],
-        [
-          0.995,
-          0.37519,
-          0.38
+          0.718,
+          0.30714,
+          0.12
         ]
       ]
     },
     {
-      "id": "060-air-detail-upper",
+      "id": "060-mountain-near-slope",
       "order": 60,
       "stageId": "03",
       "stage": "Air, birds and little details",
       "role": "03",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 70.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 17.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.41942,
-          0.46
+          0.446,
+          0.71714,
+          0.1
         ],
         [
-          0.2,
-          0.42073,
-          0.86
+          0.505,
+          0.68,
+          0.42
         ],
         [
-          0.4,
-          0.41189,
-          1.0
+          0.562,
+          0.64,
+          0.88
         ],
         [
-          0.6,
-          0.41353,
-          0.96
+          0.614,
+          0.62,
+          0.98
         ],
         [
-          0.8,
-          0.41973,
-          0.82
-        ],
-        [
-          0.995,
-          0.41825,
-          0.38
+          0.66,
+          0.63429,
+          0.26
         ]
       ]
     },
     {
-      "id": "061-air-detail-upper",
+      "id": "061-mountain-ridge-main",
       "order": 61,
       "stageId": "03",
       "stage": "Air, birds and little details",
       "role": "03",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 70.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 20.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.45712,
-          0.46
+          0.612,
+          0.62143,
+          0.18
         ],
         [
-          0.2,
-          0.45364,
-          0.86
+          0.66,
+          0.58857,
+          0.88
         ],
         [
-          0.4,
-          0.44616,
+          0.705,
+          0.57429,
           1.0
         ],
         [
-          0.6,
-          0.45228,
-          0.96
-        ],
-        [
-          0.8,
-          0.45682,
+          0.75,
+          0.60571,
           0.82
         ],
         [
-          0.995,
-          0.45152,
-          0.38
+          0.797,
+          0.64,
+          0.22
         ]
       ]
     },
     {
-      "id": "062-air-detail-lower",
+      "id": "062-mountain-far-slope",
       "order": 62,
       "stageId": "03",
       "stage": "Air, birds and little details",
       "role": "03",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 70.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 15.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.70067,
-          0.46
+          0.744,
+          0.60714,
+          0.12
         ],
         [
-          0.2,
-          0.70198,
-          0.86
+          0.788,
+          0.63286,
+          0.72
         ],
         [
-          0.4,
-          0.69314,
-          1.0
-        ],
-        [
-          0.6,
-          0.69478,
-          0.96
-        ],
-        [
-          0.8,
-          0.70098,
+          0.836,
+          0.65,
           0.82
         ],
         [
-          0.995,
-          0.6995,
-          0.38
+          0.884,
+          0.66714,
+          0.14
         ]
       ]
     },
     {
-      "id": "063-air-detail-lower",
+      "id": "063-mountain-ridge-hairline",
       "order": 63,
       "stageId": "03",
       "stage": "Air, birds and little details",
       "role": "03",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 70.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 8.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.73753,
-          0.46
+          0.622,
+          0.62571,
+          0.12
         ],
         [
-          0.2,
-          0.73406,
-          0.86
+          0.678,
+          0.60143,
+          0.72
         ],
         [
-          0.4,
-          0.72658,
-          1.0
-        ],
-        [
-          0.6,
-          0.73269,
-          0.96
-        ],
-        [
-          0.8,
-          0.73724,
-          0.82
-        ],
-        [
-          0.995,
-          0.73194,
-          0.38
+          0.715,
+          0.59286,
+          0.15
         ]
       ]
     },
     {
-      "id": "064-air-detail-lower",
+      "id": "064-water-ripple-left",
       "order": 64,
       "stageId": "03",
       "stage": "Air, birds and little details",
       "role": "03",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 70.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 9.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.77229,
-          0.46
+          0.352,
+          0.88286,
+          0.12
         ],
         [
-          0.2,
-          0.76573,
-          0.86
+          0.388,
+          0.87714,
+          0.72
         ],
         [
-          0.4,
-          0.76217,
-          1.0
-        ],
-        [
-          0.6,
-          0.77095,
-          0.96
-        ],
-        [
-          0.8,
-          0.77141,
-          0.82
-        ],
-        [
-          0.995,
-          0.76405,
-          0.38
+          0.425,
+          0.88,
+          0.2
         ]
       ]
     },
     {
-      "id": "065-air-detail-lower",
+      "id": "065-water-ripple-middle",
       "order": 65,
       "stageId": "03",
       "stage": "Air, birds and little details",
       "role": "03",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 70.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 10.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.80516,
-          0.46
+          0.43,
+          0.89,
+          0.12
         ],
         [
-          0.2,
-          0.79843,
-          0.86
+          0.47,
+          0.88857,
+          0.68
         ],
         [
-          0.4,
-          0.79965,
-          1.0
-        ],
-        [
-          0.6,
-          0.80809,
-          0.96
-        ],
-        [
-          0.8,
-          0.80374,
-          0.82
-        ],
-        [
-          0.995,
-          0.79727,
-          0.38
+          0.511,
+          0.89143,
+          0.18
         ]
       ]
     },
     {
-      "id": "066-air-detail-lower",
+      "id": "066-water-ripple-right",
       "order": 66,
       "stageId": "03",
       "stage": "Air, birds and little details",
       "role": "03",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 70.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 9.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.84067,
-          0.46
+          0.52,
+          0.87857,
+          0.12
         ],
         [
-          0.2,
-          0.84198,
-          0.86
+          0.558,
+          0.87714,
+          0.74
         ],
         [
-          0.4,
-          0.83314,
-          1.0
-        ],
-        [
-          0.6,
-          0.83478,
-          0.96
-        ],
-        [
-          0.8,
-          0.84098,
-          0.82
-        ],
-        [
-          0.995,
-          0.8395,
-          0.38
+          0.595,
+          0.88,
+          0.16
         ]
       ]
     },
     {
-      "id": "067-air-detail-lower",
+      "id": "067-open-sky-breeze-mark",
       "order": 67,
       "stageId": "03",
       "stage": "Air, birds and little details",
       "role": "03",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 70.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 7.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.87753,
-          0.46
+          0.61,
+          0.39429,
+          0.1
         ],
         [
-          0.2,
-          0.87406,
-          0.86
+          0.635,
+          0.39,
+          0.65
         ],
         [
-          0.4,
-          0.86658,
-          1.0
-        ],
-        [
-          0.6,
-          0.87269,
-          0.96
-        ],
-        [
-          0.8,
-          0.87724,
-          0.82
-        ],
-        [
-          0.995,
-          0.87194,
-          0.38
+          0.659,
+          0.39571,
+          0.16
         ]
       ]
     },
     {
-      "id": "068-maple-leaves",
+      "id": "068-maple-crown-leaf-01",
       "order": 68,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 21.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.07186,
-          0.46
+          0.25,
+          0.12429,
+          0.12
         ],
         [
-          0.2,
-          0.07153,
-          0.86
+          0.281,
+          0.09429,
+          0.7
         ],
         [
-          0.4,
-          0.0628,
-          1.0
+          0.316,
+          0.09,
+          0.95
         ],
         [
-          0.6,
-          0.06598,
-          0.96
-        ],
-        [
-          0.8,
-          0.07197,
-          0.82
-        ],
-        [
-          0.995,
-          0.06916,
-          0.38
+          0.338,
+          0.10571,
+          0.2
         ]
       ]
     },
     {
-      "id": "069-maple-leaves",
+      "id": "069-maple-crown-leaf-02",
       "order": 69,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 19.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.11882,
-          0.46
+          0.286,
+          0.10571,
+          0.12
         ],
         [
-          0.2,
-          0.11406,
-          0.86
+          0.313,
+          0.07286,
+          0.74
         ],
         [
-          0.4,
-          0.10765,
-          1.0
+          0.348,
+          0.07429,
+          0.92
         ],
         [
-          0.6,
-          0.11492,
-          0.96
-        ],
-        [
-          0.8,
-          0.11833,
-          0.82
-        ],
-        [
-          0.995,
-          0.11208,
-          0.38
+          0.367,
+          0.09429,
+          0.16
         ]
       ]
     },
     {
-      "id": "070-maple-leaves",
+      "id": "070-maple-crown-leaf-03",
       "order": 70,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 19.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.16363,
-          0.46
+          0.328,
+          0.11857,
+          0.12
         ],
         [
-          0.2,
-          0.15668,
-          0.86
+          0.354,
+          0.08714,
+          0.75
         ],
         [
-          0.4,
-          0.15469,
-          1.0
+          0.386,
+          0.09286,
+          0.94
         ],
         [
-          0.6,
-          0.16371,
-          0.96
-        ],
-        [
-          0.8,
-          0.16257,
-          0.82
-        ],
-        [
-          0.995,
-          0.15516,
-          0.38
+          0.399,
+          0.11571,
+          0.16
         ]
       ]
     },
     {
-      "id": "071-maple-leaves",
+      "id": "071-maple-crown-leaf-04",
       "order": 71,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 20.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.20685,
-          0.46
+          0.364,
+          0.13714,
+          0.12
         ],
         [
-          0.2,
-          0.20071,
-          0.86
+          0.39,
+          0.10857,
+          0.72
         ],
         [
-          0.4,
-          0.20333,
-          1.0
+          0.423,
+          0.11714,
+          0.9
         ],
         [
-          0.6,
-          0.211,
-          0.96
-        ],
-        [
-          0.8,
-          0.20526,
-          0.82
-        ],
-        [
-          0.995,
-          0.19973,
-          0.38
+          0.44,
+          0.14429,
+          0.16
         ]
       ]
     },
     {
-      "id": "072-maple-leaves",
+      "id": "072-maple-crown-leaf-05",
       "order": 72,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 18.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.25486,
-          0.46
+          0.337,
+          0.13286,
+          0.1
         ],
         [
-          0.2,
-          0.25453,
-          0.86
+          0.351,
+          0.16429,
+          0.78
         ],
         [
-          0.4,
-          0.2458,
-          1.0
-        ],
-        [
-          0.6,
-          0.24898,
-          0.96
-        ],
-        [
-          0.8,
-          0.25497,
+          0.362,
+          0.20286,
           0.82
         ],
         [
-          0.995,
-          0.25216,
-          0.38
+          0.367,
+          0.23571,
+          0.12
         ]
       ]
     },
     {
-      "id": "073-maple-leaves",
+      "id": "073-maple-crown-leaf-06",
       "order": 73,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 18.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.30182,
-          0.46
+          0.385,
+          0.14714,
+          0.1
         ],
         [
-          0.2,
-          0.29706,
-          0.86
+          0.408,
+          0.17,
+          0.74
         ],
         [
-          0.4,
-          0.29065,
-          1.0
+          0.424,
+          0.20429,
+          0.9
         ],
         [
-          0.6,
-          0.29792,
-          0.96
-        ],
-        [
-          0.8,
-          0.30133,
-          0.82
-        ],
-        [
-          0.995,
-          0.29508,
-          0.38
+          0.429,
+          0.23286,
+          0.12
         ]
       ]
     },
     {
-      "id": "074-maple-leaves",
+      "id": "074-maple-crown-leaf-07",
       "order": 74,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 17.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.34663,
-          0.46
+          0.302,
+          0.13,
+          0.12
         ],
         [
-          0.2,
-          0.33968,
-          0.86
+          0.292,
+          0.15857,
+          0.8
         ],
         [
-          0.4,
-          0.33769,
-          1.0
+          0.283,
+          0.18714,
+          0.72
         ],
         [
-          0.6,
-          0.34671,
-          0.96
-        ],
-        [
-          0.8,
-          0.34557,
-          0.82
-        ],
-        [
-          0.995,
-          0.33816,
-          0.38
+          0.278,
+          0.21143,
+          0.12
         ]
       ]
     },
     {
-      "id": "075-maple-leaves",
+      "id": "075-maple-right-cluster-01",
       "order": 75,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 18.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.38985,
-          0.46
+          0.475,
+          0.18429,
+          0.12
         ],
         [
-          0.2,
-          0.38371,
-          0.86
+          0.493,
+          0.15857,
+          0.76
         ],
         [
-          0.4,
-          0.38633,
-          1.0
+          0.514,
+          0.14714,
+          0.95
         ],
         [
-          0.6,
-          0.394,
-          0.96
-        ],
-        [
-          0.8,
-          0.38826,
-          0.82
-        ],
-        [
-          0.995,
-          0.38273,
-          0.38
+          0.531,
+          0.16,
+          0.16
         ]
       ]
     },
     {
-      "id": "076-maple-leaves",
+      "id": "076-maple-right-cluster-02",
       "order": 76,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 17.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.43786,
-          0.46
+          0.493,
+          0.19,
+          0.12
         ],
         [
+          0.514,
+          0.17286,
+          0.78
+        ],
+        [
+          0.538,
+          0.17857,
+          0.92
+        ],
+        [
+          0.551,
           0.2,
-          0.43753,
-          0.86
-        ],
-        [
-          0.4,
-          0.4288,
-          1.0
-        ],
-        [
-          0.6,
-          0.43198,
-          0.96
-        ],
-        [
-          0.8,
-          0.43797,
-          0.82
-        ],
-        [
-          0.995,
-          0.43516,
-          0.38
+          0.15
         ]
       ]
     },
     {
-      "id": "077-maple-leaves",
+      "id": "077-maple-right-cluster-03",
       "order": 77,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 17.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.48482,
-          0.46
+          0.485,
+          0.20857,
+          0.12
         ],
         [
-          0.2,
-          0.48006,
-          0.86
+          0.505,
+          0.21571,
+          0.75
         ],
         [
-          0.4,
-          0.47365,
-          1.0
+          0.525,
+          0.23857,
+          0.9
         ],
         [
-          0.6,
-          0.48092,
-          0.96
-        ],
-        [
-          0.8,
-          0.48433,
-          0.82
-        ],
-        [
-          0.995,
-          0.47808,
-          0.38
+          0.537,
+          0.26143,
+          0.12
         ]
       ]
     },
     {
-      "id": "078-maple-leaves",
+      "id": "078-maple-right-cluster-04",
       "order": 78,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 17.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.52963,
-          0.46
+          0.51,
+          0.18286,
+          0.12
         ],
         [
-          0.2,
-          0.52268,
-          0.86
+          0.526,
+          0.15429,
+          0.76
         ],
         [
-          0.4,
-          0.52069,
-          1.0
+          0.548,
+          0.15,
+          0.9
         ],
         [
-          0.6,
-          0.52971,
-          0.96
-        ],
-        [
-          0.8,
-          0.52857,
-          0.82
-        ],
-        [
-          0.995,
-          0.52116,
-          0.38
+          0.565,
+          0.16714,
+          0.12
         ]
       ]
     },
     {
-      "id": "079-maple-leaves",
+      "id": "079-maple-right-cluster-05",
       "order": 79,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 16.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.57285,
-          0.46
+          0.527,
+          0.20714,
+          0.12
         ],
         [
-          0.2,
-          0.56671,
+          0.546,
+          0.20429,
+          0.8
+        ],
+        [
+          0.563,
+          0.21714,
           0.86
         ],
         [
-          0.4,
-          0.56933,
-          1.0
-        ],
-        [
-          0.6,
-          0.577,
-          0.96
-        ],
-        [
-          0.8,
-          0.57126,
-          0.82
-        ],
-        [
-          0.995,
-          0.56573,
-          0.38
+          0.576,
+          0.23714,
+          0.12
         ]
       ]
     },
     {
-      "id": "080-maple-leaves",
+      "id": "080-small-branch-leaf-01",
       "order": 80,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 14.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.62086,
-          0.46
+          0.242,
+          0.36857,
+          0.1
         ],
         [
-          0.2,
-          0.62053,
-          0.86
+          0.259,
+          0.35429,
+          0.8
         ],
         [
-          0.4,
-          0.6118,
-          1.0
+          0.275,
+          0.36286,
+          0.9
         ],
         [
-          0.6,
-          0.61498,
-          0.96
-        ],
-        [
-          0.8,
-          0.62097,
-          0.82
-        ],
-        [
-          0.995,
-          0.61816,
-          0.38
+          0.288,
+          0.38286,
+          0.14
         ]
       ]
     },
     {
-      "id": "081-maple-leaves",
+      "id": "081-small-branch-leaf-02",
       "order": 81,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 13.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.66782,
-          0.46
+          0.26,
+          0.38,
+          0.1
         ],
         [
-          0.2,
-          0.66306,
+          0.278,
+          0.39714,
+          0.75
+        ],
+        [
+          0.29,
+          0.42286,
           0.86
         ],
         [
-          0.4,
-          0.65665,
-          1.0
-        ],
-        [
-          0.6,
-          0.66392,
-          0.96
-        ],
-        [
-          0.8,
-          0.66733,
-          0.82
-        ],
-        [
-          0.995,
-          0.66108,
-          0.38
+          0.296,
+          0.43857,
+          0.14
         ]
       ]
     },
     {
-      "id": "082-maple-leaves",
+      "id": "082-falling-maple-leaf-01",
       "order": 82,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 13.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.71263,
-          0.46
+          0.315,
+          0.44143,
+          0.1
         ],
         [
-          0.2,
-          0.70568,
+          0.327,
+          0.45,
+          0.8
+        ],
+        [
+          0.338,
+          0.46286,
           0.86
         ],
         [
-          0.4,
-          0.70369,
-          1.0
-        ],
-        [
-          0.6,
-          0.71271,
-          0.96
-        ],
-        [
-          0.8,
-          0.71157,
-          0.82
-        ],
-        [
-          0.995,
-          0.70416,
-          0.38
+          0.346,
+          0.48143,
+          0.14
         ]
       ]
     },
     {
-      "id": "083-maple-leaves",
+      "id": "083-falling-maple-leaf-02",
       "order": 83,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 12.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.75585,
-          0.46
-        ],
-        [
-          0.2,
-          0.74971,
-          0.86
+          0.384,
+          0.5,
+          0.1
         ],
         [
           0.4,
-          0.75233,
-          1.0
+          0.50714,
+          0.8
         ],
         [
-          0.6,
-          0.76,
-          0.96
+          0.414,
+          0.52286,
+          0.88
         ],
         [
-          0.8,
-          0.75426,
-          0.82
-        ],
-        [
-          0.995,
-          0.74873,
-          0.38
+          0.42,
+          0.54143,
+          0.14
         ]
       ]
     },
     {
-      "id": "084-maple-leaves",
+      "id": "084-falling-maple-leaf-03",
       "order": 84,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 12.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.80386,
-          0.46
+          0.552,
+          0.52286,
+          0.1
         ],
         [
-          0.2,
-          0.80353,
-          0.86
+          0.57,
+          0.52571,
+          0.8
         ],
         [
-          0.4,
-          0.7948,
-          1.0
+          0.586,
+          0.53429,
+          0.85
         ],
         [
-          0.6,
-          0.79798,
-          0.96
-        ],
-        [
-          0.8,
-          0.80397,
-          0.82
-        ],
-        [
-          0.995,
-          0.80116,
-          0.38
+          0.594,
+          0.54714,
+          0.14
         ]
       ]
     },
     {
-      "id": "085-maple-leaves",
+      "id": "085-flowering-twig-red-sweep",
       "order": 85,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 12.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.85082,
-          0.46
+          0.393,
+          0.82,
+          0.12
         ],
         [
-          0.2,
-          0.84606,
-          0.86
+          0.421,
+          0.78286,
+          0.5
         ],
         [
-          0.4,
-          0.83965,
-          1.0
+          0.45,
+          0.75857,
+          0.8
         ],
         [
-          0.6,
-          0.84692,
-          0.96
+          0.479,
+          0.74143,
+          0.95
         ],
         [
-          0.8,
-          0.85033,
-          0.82
-        ],
-        [
-          0.995,
-          0.84408,
-          0.38
+          0.512,
+          0.73571,
+          0.2
         ]
       ]
     },
     {
-      "id": "086-maple-leaves",
+      "id": "086-flowering-twig-blossom-branch",
       "order": 86,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 10.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.89563,
-          0.46
+          0.433,
+          0.78429,
+          0.1
         ],
         [
-          0.2,
-          0.88868,
+          0.441,
+          0.75286,
+          0.72
+        ],
+        [
+          0.454,
+          0.72429,
           0.86
         ],
         [
-          0.4,
-          0.88669,
-          1.0
-        ],
-        [
-          0.6,
-          0.89571,
-          0.96
-        ],
-        [
-          0.8,
-          0.89457,
-          0.82
-        ],
-        [
-          0.995,
-          0.88716,
-          0.38
+          0.466,
+          0.7,
+          0.12
         ]
       ]
     },
     {
-      "id": "087-maple-leaves",
+      "id": "087-flowering-twig-red-tip",
       "order": 87,
       "stageId": "04",
       "stage": "Leaves after everything else",
       "role": "04",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 76.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 9.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.93885,
-          0.46
+          0.478,
+          0.74429,
+          0.1
         ],
         [
-          0.2,
-          0.93271,
-          0.86
+          0.493,
+          0.71571,
+          0.76
         ],
         [
-          0.4,
-          0.93533,
-          1.0
+          0.511,
+          0.70143,
+          0.84
         ],
         [
-          0.6,
-          0.943,
-          0.96
-        ],
-        [
-          0.8,
-          0.93726,
-          0.82
-        ],
-        [
-          0.995,
-          0.93173,
-          0.38
+          0.527,
+          0.7,
+          0.12
         ]
       ]
     },
     {
-      "id": "088-sun-finish",
+      "id": "088-sun-centre-spiral",
       "order": 88,
       "stageId": "05",
       "stage": "Sun and final finish",
       "role": "05",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 84.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 28.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.21961,
-          0.46
+          0.785,
+          0.26857,
+          0.12
         ],
         [
-          0.2,
-          0.21768,
-          0.86
+          0.799,
+          0.24857,
+          0.58
         ],
         [
-          0.4,
-          0.20939,
-          1.0
+          0.817,
+          0.25143,
+          0.92
         ],
         [
-          0.6,
-          0.21408,
-          0.96
+          0.83,
+          0.27286,
+          0.95
         ],
         [
-          0.8,
-          0.21953,
-          0.82
+          0.822,
+          0.3,
+          0.78
         ],
         [
-          0.995,
-          0.21543,
+          0.801,
+          0.31,
           0.38
         ]
       ]
     },
     {
-      "id": "089-sun-finish",
+      "id": "089-sun-upper-arc",
       "order": 89,
       "stageId": "05",
       "stage": "Sun and final finish",
       "role": "05",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 84.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 22.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.24012,
-          0.46
+          0.755,
+          0.26714,
+          0.12
         ],
         [
-          0.2,
-          0.23433,
-          0.86
+          0.765,
+          0.23429,
+          0.7
         ],
         [
-          0.4,
-          0.22922,
-          1.0
+          0.791,
+          0.21571,
+          0.94
         ],
         [
-          0.6,
-          0.23739,
-          0.96
+          0.817,
+          0.22286,
+          0.72
         ],
         [
-          0.8,
-          0.23944,
-          0.82
-        ],
-        [
-          0.995,
-          0.23248,
-          0.38
+          0.834,
+          0.24571,
+          0.12
         ]
       ]
     },
     {
-      "id": "090-sun-finish",
+      "id": "090-sun-lower-arc",
       "order": 90,
       "stageId": "05",
       "stage": "Sun and final finish",
       "role": "05",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 84.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 20.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.25855,
-          0.46
+          0.756,
+          0.28429,
+          0.12
         ],
         [
-          0.2,
-          0.25153,
-          0.86
+          0.775,
+          0.31571,
+          0.7
         ],
         [
-          0.4,
-          0.25114,
-          1.0
+          0.802,
+          0.32571,
+          0.9
         ],
         [
-          0.6,
-          0.26006,
-          0.96
-        ],
-        [
-          0.8,
-          0.25731,
-          0.82
-        ],
-        [
-          0.995,
-          0.25018,
-          0.38
+          0.828,
+          0.30857,
+          0.12
         ]
       ]
     },
     {
-      "id": "091-sun-finish",
+      "id": "091-sun-left-pigment-sweep",
       "order": 91,
       "stageId": "05",
       "stage": "Sun and final finish",
       "role": "05",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 84.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 16.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.27575,
-          0.46
+          0.753,
+          0.25286,
+          0.12
         ],
         [
-          0.2,
-          0.27048,
-          0.86
-        ],
-        [
-          0.4,
-          0.2743,
-          1.0
-        ],
-        [
-          0.6,
-          0.28091,
-          0.96
-        ],
-        [
-          0.8,
-          0.274,
+          0.76,
+          0.27857,
           0.82
         ],
         [
-          0.995,
-          0.26968,
-          0.38
+          0.775,
+          0.30143,
+          0.32
         ]
       ]
     },
     {
-      "id": "092-sun-finish",
+      "id": "092-sun-right-pigment-sweep",
       "order": 92,
       "stageId": "05",
       "stage": "Sun and final finish",
       "role": "05",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 84.0,
-      "opacity": 1.0,
+      "widthClass": "medium",
+      "baseWidth": 16.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.29961,
-          0.46
+          0.835,
+          0.25429,
+          0.12
         ],
         [
-          0.2,
-          0.29768,
-          0.86
-        ],
-        [
-          0.4,
-          0.28939,
-          1.0
-        ],
-        [
-          0.6,
-          0.29408,
-          0.96
-        ],
-        [
-          0.8,
-          0.29953,
+          0.829,
+          0.28286,
           0.82
         ],
         [
-          0.995,
-          0.29543,
-          0.38
+          0.815,
+          0.30286,
+          0.24
         ]
       ]
     },
     {
-      "id": "093-sun-finish",
+      "id": "093-sun-texture-mark-01",
       "order": 93,
       "stageId": "05",
       "stage": "Sun and final finish",
       "role": "05",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 84.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 8.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.32012,
-          0.46
+          0.773,
+          0.26143,
+          0.12
         ],
         [
-          0.2,
-          0.31433,
-          0.86
+          0.784,
+          0.26714,
+          0.72
         ],
         [
-          0.4,
-          0.30922,
-          1.0
-        ],
-        [
-          0.6,
-          0.31739,
-          0.96
-        ],
-        [
-          0.8,
-          0.31944,
-          0.82
-        ],
-        [
-          0.995,
-          0.31248,
-          0.38
+          0.794,
+          0.26714,
+          0.18
         ]
       ]
     },
     {
-      "id": "094-sun-finish",
+      "id": "094-sun-texture-mark-02",
       "order": 94,
       "stageId": "05",
       "stage": "Sun and final finish",
       "role": "05",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 84.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 8.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.33855,
-          0.46
-        ],
-        [
-          0.2,
-          0.33153,
-          0.86
-        ],
-        [
-          0.4,
-          0.33114,
-          1.0
-        ],
-        [
-          0.6,
-          0.34006,
-          0.96
-        ],
-        [
           0.8,
-          0.33731,
-          0.82
+          0.23429,
+          0.12
         ],
         [
-          0.995,
-          0.33018,
-          0.38
+          0.81,
+          0.24429,
+          0.78
+        ],
+        [
+          0.816,
+          0.25857,
+          0.15
         ]
       ]
     },
     {
-      "id": "095-sun-finish",
+      "id": "095-sun-texture-mark-03",
       "order": 95,
       "stageId": "05",
       "stage": "Sun and final finish",
       "role": "05",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 84.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 7.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.35575,
-          0.46
+          0.811,
+          0.28429,
+          0.12
         ],
         [
-          0.2,
-          0.35048,
-          0.86
+          0.819,
+          0.29143,
+          0.74
         ],
         [
-          0.4,
-          0.3543,
-          1.0
-        ],
-        [
-          0.6,
-          0.36091,
-          0.96
-        ],
-        [
-          0.8,
-          0.354,
-          0.82
-        ],
-        [
-          0.995,
-          0.34968,
-          0.38
+          0.824,
+          0.30286,
+          0.15
         ]
       ]
     },
     {
-      "id": "096-sun-finish",
+      "id": "096-sun-texture-mark-04",
       "order": 96,
       "stageId": "05",
       "stage": "Sun and final finish",
       "role": "05",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 84.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 7.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.37961,
-          0.46
+          0.78,
+          0.29571,
+          0.12
         ],
         [
-          0.2,
-          0.37768,
-          0.86
+          0.791,
+          0.30286,
+          0.72
         ],
         [
-          0.4,
-          0.36939,
-          1.0
-        ],
-        [
-          0.6,
-          0.37408,
-          0.96
-        ],
-        [
-          0.8,
-          0.37953,
-          0.82
-        ],
-        [
-          0.995,
-          0.37543,
-          0.38
+          0.803,
+          0.30429,
+          0.15
         ]
       ]
     },
     {
-      "id": "097-sun-finish",
+      "id": "097-sun-reflection-waver-left",
       "order": 97,
       "stageId": "05",
       "stage": "Sun and final finish",
       "role": "05",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 84.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 13.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.40012,
-          0.46
+          0.67,
+          0.38857,
+          0.12
         ],
         [
-          0.2,
-          0.39433,
-          0.86
+          0.704,
+          0.38571,
+          0.6
         ],
         [
-          0.4,
-          0.38922,
-          1.0
+          0.738,
+          0.39286,
+          0.85
         ],
         [
-          0.6,
-          0.39739,
-          0.96
-        ],
-        [
-          0.8,
-          0.39944,
-          0.82
-        ],
-        [
-          0.995,
-          0.39248,
-          0.38
+          0.759,
+          0.38571,
+          0.16
         ]
       ]
     },
     {
-      "id": "098-sun-finish",
+      "id": "098-sun-reflection-waver-centre",
       "order": 98,
       "stageId": "05",
       "stage": "Sun and final finish",
       "role": "05",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 84.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 12.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.41855,
-          0.46
+          0.758,
+          0.39286,
+          0.12
         ],
         [
-          0.2,
-          0.41153,
-          0.86
+          0.78,
+          0.40143,
+          0.68
         ],
         [
-          0.4,
-          0.41114,
-          1.0
+          0.811,
+          0.39857,
+          0.88
         ],
         [
-          0.6,
-          0.42006,
-          0.96
-        ],
-        [
-          0.8,
-          0.41731,
-          0.82
-        ],
-        [
-          0.995,
-          0.41018,
-          0.38
+          0.839,
+          0.38714,
+          0.16
         ]
       ]
     },
     {
-      "id": "099-sun-finish",
+      "id": "099-sun-reflection-waver-right",
       "order": 99,
       "stageId": "05",
       "stage": "Sun and final finish",
       "role": "05",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 84.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 12.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.43575,
-          0.46
+          0.839,
+          0.38571,
+          0.12
         ],
         [
-          0.2,
-          0.43048,
-          0.86
+          0.866,
+          0.39429,
+          0.72
         ],
         [
-          0.4,
-          0.4343,
-          1.0
+          0.9,
+          0.40143,
+          0.84
         ],
         [
-          0.6,
-          0.44091,
-          0.96
-        ],
-        [
-          0.8,
-          0.434,
-          0.82
-        ],
-        [
-          0.995,
-          0.42968,
-          0.38
+          0.93,
+          0.39571,
+          0.12
         ]
       ]
     },
     {
-      "id": "100-sun-finish",
+      "id": "100-final-ink-lift",
       "order": 100,
       "stageId": "05",
       "stage": "Sun and final finish",
       "role": "05",
       "colorIndex": 0,
-      "widthClass": "thick",
-      "baseWidth": 84.0,
-      "opacity": 1.0,
+      "widthClass": "thin",
+      "baseWidth": 9.0,
+      "opacity": 0.98,
       "durationWeight": 1.0,
       "points": [
         [
-          0.005,
-          0.45961,
-          0.46
+          0.735,
+          0.41,
+          0.1
         ],
         [
-          0.2,
-          0.45768,
-          0.86
+          0.77,
+          0.41286,
+          0.5
         ],
         [
-          0.4,
-          0.44939,
-          1.0
+          0.805,
+          0.40714,
+          0.7
         ],
         [
-          0.6,
-          0.45408,
-          0.96
-        ],
-        [
-          0.8,
-          0.45953,
-          0.82
-        ],
-        [
-          0.995,
-          0.45543,
-          0.38
+          0.833,
+          0.41143,
+          0.12
         ]
       ]
     }
