@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "standardId": "WEATHER-LIVE-ART-ARTIST-ENGINE-001",
-  "version": "3.0",
-  "status": "current-independent-artist-engine-standard",
+  "version": "3.1",
+  "status": "active-clear-uses-rain-schema-v1-path-renderer",
   "scope": "LIVE // EARTH Weather Live Art card only",
   "authority": {
     "humanGuide": "Weather/Art/LIVE-ART-PRODUCTION-GUIDE.md",
@@ -15,40 +15,39 @@
     "noCropOrStretch": true,
     "cardRatioProtected": true
   },
-  "artistPrinciples": {
-    "originality": "Create each scene as an independent artwork. Do not trace, reinterpret, derive paths from, or use earlier artworks as visual input.",
+  "activeClearArtwork": {
+    "id": "clear-valley-artist-001",
+    "renderer": "Rain schema-v1 ordered-ink-wash-paths",
+    "pathCount": 100,
+    "orderedStages": [
+      { "stage": "house / pavilion", "from": 1, "to": 20 },
+      { "stage": "tree thick strokes", "from": 21, "to": 35 },
+      { "stage": "tree thin strokes", "from": 36, "to": 50 },
+      { "stage": "mountains", "from": 51, "to": 65 },
+      { "stage": "maple leaves", "from": 66, "to": 85 },
+      { "stage": "birds", "from": 86, "to": 90 },
+      { "stage": "sun last", "from": 91, "to": 100 }
+    ],
+    "sunIsFinalSubject": true,
     "noSourceArtwork": true,
     "noMasterImage": true,
-    "noRevealMasks": true,
-    "noCompletedImageSwap": true,
-    "paintingProcess": "Every visible form must be deposited through the painter's own brush and pigment operations onto a persistent canvas.",
-    "composition": "The artist score determines large value masses, spatial depth, negative space, directional flow, focal balance and finishing restraint.",
-    "intermediateFrames": "Every moment is a genuine partial painting. No sudden reveal, no hidden finished artwork, and no end-frame substitution."
+    "noRevealMasks": true
   },
-  "brushEngine": {
-    "pressureResponse": true,
-    "speedResponse": true,
-    "directionalBristleSpread": true,
-    "individualBristleVariation": true,
-    "naturalTaper": true,
-    "pigmentLoad": true,
-    "wetEdgeAndWash": true,
-    "dryBrushBreakup": true,
-    "granulation": true,
-    "overlappingPigmentDeposition": true,
-    "paperSurface": "Procedurally generated warm fibre paper, independent of any source artwork"
-  },
-  "replayStandard": {
-    "durationIsArtworkDefined": true,
-    "noArbitraryStrokeCeiling": true,
-    "authoredOrderIsBinding": true,
-    "progressivePigmentDeposition": true,
-    "pauseAtArtistDefinedPhaseBoundaries": true,
-    "replayRebuildsFromScore": true
+  "rendererCharacteristics": {
+    "usesExistingRainRenderer": true,
+    "rendererCodeChangesRequired": false,
+    "progressivePathTracing": true,
+    "completedPathFill": true,
+    "pressureSimulation": false,
+    "speedSimulation": false,
+    "individualBristleSimulation": false,
+    "wetPigmentSimulation": false,
+    "shapeTaper": "baked into each closed path's outline",
+    "pigmentColour": "selected per path from the artwork palette"
   },
   "rendererCompatibility": {
-    "schema1": "ordered-ink-wash-paths",
-    "schema4": "artist-led-pigment-painting",
+    "schema1": "ordered-ink-wash-paths; active for Clear and Rain",
+    "schema4": "artist-led-pigment-painting; supported by the runtime but not selected for active Clear",
     "schema3MasterReveal": false,
     "schema2PressureRibbon": false,
     "legacyRainProtected": true

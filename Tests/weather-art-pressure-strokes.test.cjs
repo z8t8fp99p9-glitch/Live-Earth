@@ -6,13 +6,16 @@ const root = path.resolve(__dirname, '..');
 const runtime = fs.readFileSync(path.join(root, 'Weather/Art/live-art-online.js'), 'utf8');
 const art = JSON.parse(fs.readFileSync(path.join(root, 'Weather/Art/clear-valley-artist-001.json'), 'utf8'));
 const catalogue = JSON.parse(fs.readFileSync(path.join(root, 'Weather/Art/art-library.json'), 'utf8'));
+// Keep the schema-v4 renderer code available for future use, but do not route Clear through it.
 assert.match(runtime, /function paintSample\(/);
 assert.match(runtime, /const speedResponse =/);
 assert.match(runtime, /const bristles = profile\.bristles/);
 assert.match(runtime, /event\.pigmentLoad/);
 assert.match(runtime, /event\.wetness/);
-assert.equal(art.schemaVersion, 4);
+assert.equal(art.schemaVersion, 1);
+assert.equal(art.renderMode, 'ordered-ink-wash-paths');
 assert.equal(catalogue.productionStandard.rendererSupportsSchemaVersions.includes(2), false);
 assert.equal(catalogue.productionStandard.rendererSupportsSchemaVersions.includes(4), true);
+assert.equal(catalogue.artworks.find(a => a.weather.includes('clear')).rendererVersion, 1);
 assert.equal(catalogue.artworks.find(a => a.weather.includes('rain')).rendererVersion, 1);
-console.log('PASS: physical brush response replaces the retired pressure-ribbon renderer; Rain v1 remains active.');
+console.log('PASS: active Clear selects Rain renderer v1; unused schema-v4 code remains available and unchanged.');
