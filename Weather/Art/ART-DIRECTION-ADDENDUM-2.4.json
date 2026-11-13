@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "standardId": "WEATHER-LIVE-ART-STANDARD-002",
+  "version": "2.4",
+  "status": "active",
+  "humanGuide": "Weather/Art/LIVE-ART-PRODUCTION-GUIDE.md",
+  "humanAddendum": "Weather/Art/LIVE-ART-PRODUCTION-GUIDE-ADDENDUM-2.4.md",
+  "machineDirection": "Weather/Art/ART-DIRECTION.json",
+  "limits": {
+    "maxStrokes": 100,
+    "durationMs": 30000,
+    "countIsCeiling": true
+  },
+  "order": [
+    "thick-structural-brushwork",
+    "attached-thin-brushwork",
+    "air-birds-little-details",
+    "leaves",
+    "sun-last-and-finish"
+  ],
+  "rendering": {
+    "masterFirst": true,
+    "approvedMasterImmutable": true,
+    "masterPixelsRetained": true,
+    "brushGesturesRevealMaster": true,
+    "lineArtSubstitutionForbidden": true
+  },
+  "clearArtwork": {
+    "id": "clear-maple-pavilion-003",
+    "path": "Weather/Art/clear-maple-pavilion-003.json",
+    "masterImagePath": "Weather/Art/References/clear-maple-pavilion-master-003.jpg",
+    "strokeCount": 100,
+    "durationMs": 30000
+  }
+}

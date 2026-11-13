@@ -1,15 +1,14 @@
 {
   "schemaVersion": 1,
   "standardId": "WEATHER-LIVE-ART-STANDARD-002",
-  "version": "2.0",
-  "status": "current-binding-production-direction",
+  "version": "2.4",
+  "status": "current-binding-painted-master-brush-reveal-standard",
   "scope": "LIVE // EARTH Weather Live Art card only",
   "authority": {
     "humanGuide": "Weather/Art/LIVE-ART-PRODUCTION-GUIDE.md",
     "thisFile": "Weather/Art/ART-DIRECTION.json",
     "catalogue": "Weather/Art/art-library.json",
-    "activeVisualReference": "Weather/Art/References/approved-style-reference-002.jpg",
-    "historicalSupersededReference": "Weather/Art/References/approved-style-reference-001.jpg"
+    "activeVisualReference": "Weather/Art/References/clear-maple-pavilion-master-003.jpg"
   },
   "canvas": {
     "aspectRatio": "10:7",
@@ -22,176 +21,65 @@
       "height": 840
     },
     "cardRatioProtected": true,
-    "illustrationFootprintPercent": 70,
-    "quietWarmPaperPercent": 30,
-    "footprintInterpretation": "visual composition and scene envelope, not literal non-paper pixel coverage",
     "noCropOrStretch": true
   },
   "visualIdentity": {
-    "style": "minimalist Japanese-inspired monochromatic ink line art",
-    "ground": "warm ivory textured paper",
-    "primaryInk": "black or near-black",
-    "secondaryTone": "optional very restrained soft grey",
-    "accent": "rare vermilion red",
-    "markMaking": [
-      "fine continuous-feeling deliberate ink strokes",
-      "simple expressive outlines and recognisable silhouettes",
-      "objects suggested rather than fully described",
-      "natural variation in stroke weight",
-      "large areas of untouched paper"
+    "style": "approved Japanese-inspired brush-painted artwork; retain original master",
+    "ground": "warm textured ivory paper from original master",
+    "primaryMarks": "expressive black ink brushwork with natural taper and dry-brush texture",
+    "accent": "original selective vermilion details",
+    "preserveMasterPixels": true,
+    "lineArtConversionForbidden": true,
+    "redesignOrSimplificationForbidden": true
+  },
+  "replayStandard": {
+    "maxBrushStrokes": 100,
+    "durationMs": 30000,
+    "countIsCeilingNotTarget": true,
+    "oneRecordEqualsOneContinuousBrushGesture": true,
+    "variablePressureRequired": true,
+    "naturalTaperRequired": true,
+    "masterRevealRendering": true,
+    "stageOrder": [
+      {
+        "order": 1,
+        "stage": "thick structural brushwork"
+      },
+      {
+        "order": 2,
+        "stage": "attached thin brushwork"
+      },
+      {
+        "order": 3,
+        "stage": "air, birds and little details"
+      },
+      {
+        "order": 4,
+        "stage": "leaves and floating accents"
+      },
+      {
+        "order": 5,
+        "stage": "sun and final finish",
+        "sunMustBeLast": true
+      }
+    ]
+  },
+  "rendererCompatibility": {
+    "schemaVersions": [
+      1,
+      2,
+      3
     ],
-    "avoid": [
-      "elaborate watercolor washes",
-      "photorealism or 3D",
-      "airbrushed gradients",
-      "dense cross-hatching or micro-detail",
-      "large filled-black areas",
-      "clutter and unnecessary props",
-      "text, pseudo-calligraphy, borders and watermarks"
-    ]
+    "schema1": "ordered-ink-wash-paths",
+    "schema2": "ordered-pressure-strokes",
+    "schema3": "ordered-master-brush-reveal",
+    "legacyRainProtected": true
   },
-  "strokeHierarchy": {
-    "thick": {
-      "purpose": "structural silhouette",
-      "examples": [
-        "door or window frame",
-        "main tree branch",
-        "kettle silhouette",
-        "roof or mountain silhouette"
-      ]
-    },
-    "medium": {
-      "purpose": "recognisable object outlines",
-      "examples": [
-        "teacup",
-        "pavilion",
-        "small house",
-        "wind chime"
-      ]
-    },
-    "thin": {
-      "purpose": "sparse atmosphere",
-      "examples": [
-        "rain",
-        "steam",
-        "distant birds",
-        "tiny twigs"
-      ]
-    },
-    "implementationNote": "The current renderer has no per-path strokeWidth property. Encode line thickness geometrically as narrow closed ribbon paths."
-  },
-  "weatherColourRule": {
-    "principle": "Weather changes the subject and its details, not the overall colour treatment.",
-    "automaticRecolouring": false,
-    "dayNightRecolouring": false,
-    "examples": {
-      "clear": [
-        "open paper sky",
-        "small sun if appropriate",
-        "few birds or crisp simple details"
-      ],
-      "rain": [
-        "few thin rain marks",
-        "drip or wet-surface cue",
-        "sheltered subject"
-      ],
-      "wind": [
-        "tilted hanging object",
-        "bent grass",
-        "few travelling leaves"
-      ],
-      "snow": [
-        "bare branch",
-        "few snow marks"
-      ],
-      "fog": [
-        "restrained broken horizon lines",
-        "open paper"
-      ],
-      "storm": [
-        "few decisive cloud or rain marks",
-        "protected focal subject"
-      ]
-    }
-  },
-  "progressiveReplay": {
-    "preserveExistingRenderer": true,
-    "preserveExistingCardRatio": true,
-    "mode": "ordered-ink-wash-paths",
-    "revealRule": "Replay progressively reveals the paths array in stored order.",
-    "authoringRequirement": "Order the paths array by the approved artwork-specific drawing stages; never sort or shuffle it after authoring.",
-    "rendererLimitations": [
-      "No semantic drawing-stage labels are interpreted by the renderer.",
-      "No named stage pauses or stage timing are supported.",
-      "No per-path strokeWidth metadata is supported.",
-      "Completed paths are filled closed shapes; line-like marks must be narrow closed shapes.",
-      "The artwork plan documents intent; actual Replay sequence is determined by paths array order."
-    ]
-  },
-  "workflow": [
-    "Read the human guide, this JSON, active reference and current catalogue.",
-    "Use the weather condition explicitly selected by the user; never substitute another condition.",
-    "Work on one scene at a time; no unrequested batches or collages.",
-    "Propose and obtain approval for one scene composition before asset production.",
-    "Write a unique artwork-specific plan with exact ordered stages and stroke weights.",
-    "Author encoded path data in that exact order.",
-    "Review the 70/30 breathing-space balance and small-card legibility.",
-    "Validate asset schema, palette indices, coordinate bounds, IDs, and path order.",
-    "Update the catalogue without changing existing IDs or renderer behaviour.",
-    "Package and verify; do not claim device success before user testing."
-  ],
-  "artworkPlans": [
-    {
-      "planId": "rainy-tea-afternoon-sequence-v1",
-      "artworkId": "rainy-tea-afternoon-001",
-      "title": "A Rainy Tea Afternoon",
-      "status": "approved",
-      "story": "A quiet tea moment by a rain-streaked window, with a distant pavilion beyond the hills.",
-      "sequence": [
-        {
-          "order": 1,
-          "stage": "door-window-frame",
-          "instruction": "Establish the door/window frame and sill first with strong, confident thick structural strokes."
-        },
-        {
-          "order": 2,
-          "stage": "tree-branch",
-          "instruction": "Draw the flowing main branch, then a few selected leaves. Thick branch strokes; medium leaf shapes."
-        },
-        {
-          "order": 3,
-          "stage": "hills",
-          "instruction": "Add long, elegant, restrained lines for the distant hills. Medium-to-thin weight; keep the horizon quiet."
-        },
-        {
-          "order": 4,
-          "stage": "small-house-pavilion",
-          "instruction": "Reveal the small distant house/pavilion with only necessary roof and building outlines. Medium weight; no micro-detail."
-        },
-        {
-          "order": 5,
-          "stage": "kettle-and-teacup",
-          "instruction": "Draw the kettle and teacup carefully as the focal still-life objects. Medium outlines and only a few defining details; leave interiors mostly paper."
-        },
-        {
-          "order": 6,
-          "stage": "red-essence",
-          "instruction": "Add the red sun, selected red maple leaves and intended tiny red accents last. No extra red decoration."
-        }
-      ],
-      "replayPathOrderMustMatch": true
-    },
-    {
-      "planId": "clear-weather-artwork-pending",
-      "status": "not-approved-yet",
-      "instruction": "Do not invent or register a clear-weather drawing plan until the user approves the specific subject and composition."
-    }
-  ],
-  "protectedBoundaries": [
-    "Weather main landscape painter and forecast data",
-    "10:7 Live Art card and existing overlays",
-    "shared progressive Replay renderer and its timing",
-    "service worker, app shell, online/on-demand loading and offline/recovery behaviour",
-    "all other app views and Orb behaviour"
+  "protectedAreas": [
+    "Rain artwork and schema-v1 rendering",
+    "Weather card layout and 10:7 ratio",
+    "portrait layout",
+    "forecast and temperature UI",
+    "service worker and data flow"
   ]
 }

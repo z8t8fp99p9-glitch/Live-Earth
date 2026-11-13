@@ -134,9 +134,17 @@
       return color;
     });
 
-    if (raw.schemaVersion === 2 && raw.renderMode === 'ordered-pressure-strokes') {
-      if (!Array.isArray(raw.strokes) || raw.strokes.length < 1 || raw.strokes.length > 500) {
-        throw new Error('Pressure-stroke artwork has an invalid stroke list.');
+    const masterReveal = raw.schemaVersion === 3 && raw.renderMode === 'ordered-master-brush-reveal';
+    const pressureStrokes = raw.schemaVersion === 2 && raw.renderMode === 'ordered-pressure-strokes';
+    if (masterReveal || pressureStrokes) {
+      const maxStrokes = masterReveal ? 100 : 500;
+      if (!Array.isArray(raw.strokes) || raw.strokes.length < 1 || raw.strokes.length > maxStrokes) {
+        throw new Error(masterReveal ? 'Master-reveal artwork must contain no more than 100 brush strokes.' : 'Pressure-stroke artwork has an invalid stroke list.');
+      }
+      if (masterReveal && (Number(raw.durationMs) !== 30000 ||
+          typeof raw.masterImagePath !== 'string' || !raw.masterImagePath.startsWith('Weather/Art/References/') || !raw.masterImagePath.endsWith('.jpg') ||
+          typeof raw.stageMaskAtlasPath !== 'string' || !raw.stageMaskAtlasPath.startsWith('Weather/Art/References/') || !raw.stageMaskAtlasPath.endsWith('.png'))) {
+        throw new Error('Master-reveal artwork must use its preserved JPEG master, stage-mask atlas and a 30-second Replay.');
       }
       const stages = new Set();
       const strokes = raw.strokes.map((stroke, index) => {
@@ -181,14 +189,26 @@
           length
         };
       });
+      if (masterReveal) {
+        const expectedStages = ['01','02','03','04','05'];
+        if (strokes.length !== raw.strokeCount || strokes.some(stroke => !expectedStages.includes(stroke.stageId))) {
+          throw new Error('Master-reveal stroke count or stage order is invalid.');
+        }
+        if (strokes[0].stageId !== '01' || strokes.at(-1).stageId !== '05' ||
+            strokes.some((stroke, index) => index > 0 && Number(stroke.stageId) < Number(strokes[index - 1].stageId))) {
+          throw new Error('Master-reveal stages must follow thick, thin, air, leaves, then sun and finish.');
+        }
+      }
       return {
-        rendererVersion: 2,
+        rendererVersion: masterReveal ? 3 : 2,
         id: String(raw.id || ''),
         title: String(raw.title || 'Weather study'),
         caption: String(raw.caption || 'An original ink scene'),
-        durationMs: Math.max(30000, Math.min(180000, Number(raw.durationMs) || 75000)),
-        stagePauseMs: Math.max(0, Math.min(1800, Number(raw.stagePauseMs) || 0)),
+        durationMs: masterReveal ? 30000 : Math.max(30000, Math.min(180000, Number(raw.durationMs) || 75000)),
+        stagePauseMs: Math.max(0, Math.min(masterReveal ? 400 : 1800, Number(raw.stagePauseMs) || 0)),
         stages: Array.isArray(raw.stages) ? raw.stages : [],
+        masterImagePath: masterReveal ? raw.masterImagePath : '',
+        stageMaskAtlasPath: masterReveal ? raw.stageMaskAtlasPath : '',
         strokes
       };
     }
@@ -689,7 +709,140 @@
     };
   }
 
-  function createRenderer(canvas, art, onProgress) {
+  function createMasterRevealRenderer(canvas, art, masterImage, stageMaskAtlas, onProgress) {
+    const visibleCtx = canvas.getContext('2d', { alpha: false });
+    if (!visibleCtx || !masterImage || !stageMaskAtlas) throw new Error('The approved painted master and stage masks could not be prepared.');
+    const baseMask = document.createElement('canvas');
+    const baseMaskCtx = baseMask.getContext('2d');
+    const workingMask = document.createElement('canvas');
+    const workingMaskCtx = workingMask.getContext('2d');
+    const strokeMask = document.createElement('canvas');
+    const strokeMaskCtx = strokeMask.getContext('2d');
+    const coverCanvas = document.createElement('canvas');
+    const coverCtx = coverCanvas.getContext('2d');
+    if (!baseMaskCtx || !workingMaskCtx || !strokeMaskCtx || !coverCtx) throw new Error('The master-reveal drawing surfaces could not be created.');
+
+    let width=1, height=1, dpr=1, raf=0, startAt=0, elapsedMs=0;
+    let drawn=0, stopped=false, completed=false, resizeObserver=null;
+    const strokes=art.strokes;
+    const stageMasks=Array.from({length:5},()=>document.createElement('canvas'));
+    const stageMaskContexts=stageMasks.map(item=>item.getContext('2d'));
+    const maxLength=Math.max(...strokes.map(stroke=>stroke.length));
+    const weighted=strokes.map(stroke=>stroke.durationWeight*(0.68+0.32*Math.sqrt(stroke.length/maxLength)));
+    const weightTotal=weighted.reduce((a,b)=>a+b,0);
+    const transitions=strokes.reduce((n,stroke,index)=>n+(index<strokes.length-1&&stroke.stageId!==strokes[index+1].stageId?1:0),0);
+    const pauseTotal=Math.min(art.durationMs*0.08,transitions*art.stagePauseMs);
+    const drawingBudget=art.durationMs-pauseTotal;
+    let cursor=0;
+    const timeline=strokes.map((stroke,index)=>{
+      const duration=drawingBudget*weighted[index]/weightTotal;
+      const event={start:cursor,end:cursor+duration,duration};cursor+=duration;
+      if(index<strokes.length-1&&stroke.stageId!==strokes[index+1].stageId){event.pauseEnd=cursor+Math.min(art.stagePauseMs,art.durationMs*0.01);cursor=event.pauseEnd;}
+      return event;
+    });
+
+    function paper(ctx){
+      const wash=ctx.createLinearGradient(0,0,width,height);
+      wash.addColorStop(0,'#f8f2e9');wash.addColorStop(1,PAPER);
+      ctx.fillStyle=wash;ctx.fillRect(0,0,width,height);
+      ctx.save();ctx.globalAlpha=.045;ctx.strokeStyle='#887662';ctx.lineWidth=.42;
+      for(let i=0;i<76;i++){
+        const x=(i*73.17)%width,y=(i*41.93)%height;
+        ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+2.2+(i%4),y+(i%3===0?.45:-.35));ctx.stroke();
+      }
+      ctx.restore();
+    }
+    function prefix(samples,fraction){
+      if(fraction>=1)return samples;if(fraction<=0)return[];
+      let total=0;const lengths=[0];
+      for(let i=1;i<samples.length;i++){const dx=(samples[i].x-samples[i-1].x)*width,dy=(samples[i].y-samples[i-1].y)*height;total+=Math.hypot(dx,dy);lengths.push(total);}
+      const target=total*fraction,out=[samples[0]];
+      for(let i=1;i<samples.length;i++){
+        if(lengths[i]<target){out.push(samples[i]);continue;}
+        const segment=lengths[i]-lengths[i-1],t=segment>0?(target-lengths[i-1])/segment:0,a=samples[i-1],b=samples[i];
+        out.push({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,pressure:a.pressure+(b.pressure-a.pressure)*t});break;
+      }
+      return out;
+    }
+    function revealBrush(ctx,stroke,fraction=1){
+      const samples=prefix(stroke.samples,fraction);if(samples.length<2)return;
+      const scale=Math.min(width/1000,height/700),left=[],right=[];
+      for(let i=0;i<samples.length;i++){
+        const prev=samples[Math.max(0,i-1)],next=samples[Math.min(samples.length-1,i+1)];
+        const dx=(next.x-prev.x)*width,dy=(next.y-prev.y)*height,mag=Math.max(.0001,Math.hypot(dx,dy));
+        const nx=-dy/mag,ny=dx/mag,half=Math.max(.18,stroke.width*scale*Math.max(.018,samples[i].pressure)*.5);
+        const x=samples[i].x*width,y=samples[i].y*height;
+        left.push([x+nx*half,y+ny*half]);right.push([x-nx*half,y-ny*half]);
+      }
+      ctx.save();ctx.globalAlpha=1;ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(left[0][0],left[0][1]);
+      for(let i=1;i<left.length;i++)ctx.lineTo(left[i][0],left[i][1]);
+      for(let i=right.length-1;i>=0;i--)ctx.lineTo(right[i][0],right[i][1]);
+      ctx.closePath();ctx.fill();ctx.restore();
+    }
+    function addStageBrush(destinationCtx,stroke,fraction=1){
+      const stageIndex=Number(stroke.stageId)-1;
+      if(stageIndex<0||stageIndex>=stageMasks.length)throw new Error('A master-reveal gesture references an unknown stage.');
+      strokeMaskCtx.clearRect(0,0,width,height);
+      revealBrush(strokeMaskCtx,stroke,fraction);
+      strokeMaskCtx.save();
+      strokeMaskCtx.globalCompositeOperation='destination-in';
+      strokeMaskCtx.drawImage(stageMasks[stageIndex],0,0,width,height);
+      strokeMaskCtx.restore();
+      destinationCtx.drawImage(strokeMask,0,0,width,height);
+    }
+    function stateAt(time){
+      const t=Math.max(0,Math.min(art.durationMs,time));
+      if(t>=art.durationMs-.5)return{completedCount:strokes.length,activeIndex:-1,partial:0,complete:true};
+      let done=0;
+      for(let i=0;i<timeline.length;i++){
+        if(t>=timeline[i].end){done++;continue;}
+        const part=Math.max(0,Math.min(1,(t-timeline[i].start)/timeline[i].duration));
+        return{completedCount:done,activeIndex:part>0?i:-1,partial:part,complete:false};
+      }
+      return{completedCount:strokes.length,activeIndex:-1,partial:0,complete:true};
+    }
+    function setup(){
+      const rect=canvas.getBoundingClientRect();width=Math.max(1,rect.width);height=Math.max(1,rect.height);dpr=Math.min(window.devicePixelRatio||1,2);
+      const pixelWidth=Math.max(1,Math.round(width*dpr)),pixelHeight=Math.max(1,Math.round(height*dpr));
+      for(const target of [canvas,baseMask,workingMask,strokeMask,coverCanvas,...stageMasks]){target.width=pixelWidth;target.height=pixelHeight;}
+      visibleCtx.setTransform(dpr,0,0,dpr,0,0);baseMaskCtx.setTransform(dpr,0,0,dpr,0,0);
+      workingMaskCtx.setTransform(dpr,0,0,dpr,0,0);strokeMaskCtx.setTransform(dpr,0,0,dpr,0,0);coverCtx.setTransform(dpr,0,0,dpr,0,0);
+      const sourceWidth=stageMaskAtlas.width||stageMaskAtlas.naturalWidth;
+      const sourceHeight=(stageMaskAtlas.height||stageMaskAtlas.naturalHeight)/5;
+      for(let i=0;i<5;i++){
+        const maskCtx=stageMaskContexts[i];maskCtx.setTransform(dpr,0,0,dpr,0,0);maskCtx.clearRect(0,0,width,height);
+        maskCtx.drawImage(stageMaskAtlas,0,i*sourceHeight,sourceWidth,sourceHeight,0,0,width,height);
+      }
+      rebuild(elapsedMs);
+    }
+    function rebuild(time){
+      baseMaskCtx.clearRect(0,0,width,height);drawn=0;const state=stateAt(time);
+      while(drawn<state.completedCount)addStageBrush(baseMaskCtx,strokes[drawn++],1);
+      render(state);
+    }
+    function render(state=stateAt(elapsedMs)){
+      workingMaskCtx.clearRect(0,0,width,height);workingMaskCtx.drawImage(baseMask,0,0,width,height);
+      if(state.activeIndex>=0&&state.partial>0)addStageBrush(workingMaskCtx,strokes[state.activeIndex],state.partial);
+      coverCtx.clearRect(0,0,width,height);paper(coverCtx);
+      coverCtx.globalCompositeOperation='destination-out';coverCtx.drawImage(workingMask,0,0,width,height);coverCtx.globalCompositeOperation='source-over';
+      visibleCtx.clearRect(0,0,width,height);visibleCtx.drawImage(masterImage,0,0,width,height);
+      // At FINISHED, show the immutable master directly so even its original
+      // paper grain and finest edge texture are restored exactly.
+      if(!state.complete)visibleCtx.drawImage(coverCanvas,0,0,width,height);
+      if(typeof onProgress==='function')onProgress({count:Math.min(strokes.length,state.completedCount+(state.activeIndex>=0?1:0)),total:strokes.length,complete:state.complete,strokeId:state.activeIndex>=0?strokes[state.activeIndex].id:''});
+    }
+    function advance(time){const state=stateAt(time);while(drawn<state.completedCount)addStageBrush(baseMaskCtx,strokes[drawn++],1);render(state);if(state.complete)completed=true;}
+    function stopLoop(){if(raf)cancelAnimationFrame(raf);raf=0;}
+    function tick(now){raf=0;if(stopped||!canvas.isConnected||document.hidden)return;elapsedMs=Math.max(0,Math.min(art.durationMs,now-startAt));advance(elapsedMs);if(elapsedMs<art.durationMs)raf=requestAnimationFrame(tick);else completed=true;}
+    function replay(){if(stopped)return;stopLoop();if(prefersReducedMotion()){elapsedMs=art.durationMs;completed=true;rebuild(elapsedMs);return;}elapsedMs=0;completed=false;rebuild(0);startAt=performance.now();raf=requestAnimationFrame(tick);}
+    function visibility(){if(document.hidden)stopLoop();else if(!completed&&!stopped){startAt=performance.now()-elapsedMs;raf=requestAnimationFrame(tick);}}
+    document.addEventListener('visibilitychange',visibility);window.addEventListener('resize',setup,{passive:true});
+    if(typeof ResizeObserver==='function'){resizeObserver=new ResizeObserver(setup);resizeObserver.observe(canvas);}setup();
+    return{replay,stop(){stopped=true;stopLoop();resizeObserver?.disconnect();window.removeEventListener('resize',setup);document.removeEventListener('visibilitychange',visibility);}};
+  }
+
+  function createRenderer(canvas, art, onProgress, masterImage, stageMaskAtlas) {
+    if (art.rendererVersion === 3) return createMasterRevealRenderer(canvas, art, masterImage, stageMaskAtlas, onProgress);
     return art.rendererVersion === 2
       ? createPressureStrokeRenderer(canvas, art, onProgress)
       : createLegacyRenderer(canvas, art, onProgress);
@@ -702,7 +855,7 @@
   function makeCanvas(studio, oldCanvas) {
     const canvas = document.createElement('canvas');
     canvas.className = oldCanvas.className + ' le-weather-online-canvas';
-    canvas.setAttribute('aria-label', 'A Japanese ink-and-wash weather scene, painted stroke by stroke');
+    canvas.setAttribute('aria-label', 'The approved Japanese brush painting, revealed progressively through animated brush strokes');
     canvas.dataset.liveArtOnline = 'true';
     oldCanvas.replaceWith(canvas);
     return canvas;
@@ -736,6 +889,20 @@
     const response = await fetch(url, { mode: 'cors', credentials: 'omit', cache: 'no-store', signal });
     if (!response.ok) throw new Error('Artwork source returned HTTP ' + response.status + '.');
     return response.json();
+  }
+
+  async function fetchMasterImage(url, signal) {
+    const response = await fetch(url, { mode: 'cors', credentials: 'omit', cache: 'no-store', signal });
+    if (!response.ok) throw new Error('Approved artwork master returned HTTP ' + response.status + '.');
+    const blob = await response.blob();
+    if (typeof createImageBitmap === 'function') return createImageBitmap(blob);
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      const objectUrl = URL.createObjectURL(blob);
+      image.onload = () => { URL.revokeObjectURL(objectUrl); resolve(image); };
+      image.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('Approved artwork master could not be decoded.')); };
+      image.src = objectUrl;
+    });
   }
 
   async function loadForWeather(screen) {
@@ -778,11 +945,18 @@
       if (serial !== requestSerial || screen !== activeScreen || !screen.isConnected) return;
       const prepared = prepareArtwork(raw);
       if (prepared.id !== record.id) throw new Error('Artwork ID does not match the catalogue.');
+      const masterImage = prepared.rendererVersion === 3
+        ? await fetchMasterImage(new URL(prepared.masterImagePath, RAW_ROOT).href, controller.signal)
+        : null;
+      const stageMaskAtlas = prepared.rendererVersion === 3
+        ? await fetchMasterImage(new URL(prepared.stageMaskAtlasPath, RAW_ROOT).href, controller.signal)
+        : null;
+      if (serial !== requestSerial || screen !== activeScreen || !screen.isConnected) return;
       if (activeRenderer) activeRenderer.stop();
       activeRenderer = createRenderer(activeCanvas, prepared, meta => {
         pinnedStatus = meta.complete ? 'FINISHED' : `PAINTING · ${String(meta.count).padStart(2, '0')} / ${meta.total}`;
         setText(activeStatus, pinnedStatus);
-      });
+      }, masterImage, stageMaskAtlas);
       currentArt = prepared;
       currentArtId = prepared.id;
       currentWeather = entryWeather;

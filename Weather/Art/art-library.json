@@ -8,24 +8,26 @@
   },
   "productionStandard": {
     "id": "WEATHER-LIVE-ART-STANDARD-002",
-    "version": "2.3",
+    "version": "2.4",
     "guidePath": "Weather/Art/LIVE-ART-PRODUCTION-GUIDE.md",
-    "guideAddendumPath": "Weather/Art/LIVE-ART-PRODUCTION-GUIDE-ADDENDUM-2.3.md",
+    "guideAddendumPath": "Weather/Art/LIVE-ART-PRODUCTION-GUIDE-ADDENDUM-2.4.md",
     "masterFirstWorkflowPath": "Weather/Art/LIVE-ART-MASTER-FIRST-WORKFLOW.md",
     "directionPath": "Weather/Art/ART-DIRECTION.json",
-    "directionAddendumPath": "Weather/Art/ART-DIRECTION-ADDENDUM-2.3.json",
-    "activeVisualReference": "Weather/Art/References/approved-style-reference-002.jpg",
+    "directionAddendumPath": "Weather/Art/ART-DIRECTION-ADDENDUM-2.4.json",
+    "activeVisualReference": "Weather/Art/References/clear-maple-pavilion-master-003.jpg",
     "illustrationFootprintPercent": 70,
     "quietWarmPaperPercent": 30,
-    "style": "minimalist-monochromatic-japanese-inspired-ink-line-art",
+    "style": "approved-painted-Japanese-ink-brush-master-with-raster-preservation",
     "weatherRecolouring": false,
     "preserveProgressiveReplay": true,
     "masterFirstRule": "The approved artwork master is the only visual source of truth. Convert that exact artwork into an ordered path or stroke representation; never design a substitute Live illustration.",
     "rendererSupportsSchemaVersions": [
       1,
-      2
+      2,
+      3
     ],
-    "newStrokeRule": "One record equals one continuous pressure-sensitive brush gesture; authored order controls replay."
+    "newStrokeRule": "One record equals one continuous pressure-sensitive brush reveal gesture; authored order controls replay; maximum 100 strokes in 30 seconds.",
+    "masterRevealRule": "The immutable approved raster master is revealed through ordered brush masks; do not redraw or simplify the master."
   },
   "artworks": [
     {
@@ -88,28 +90,29 @@
       "replayRequirement": "The encoded paths array in rainy-tea-afternoon-001.json must follow these six stages in order. The renderer reveals paths progressively in stored array order; it does not create named stage pauses."
     },
     {
-      "id": "clear-maple-pavilion-002",
+      "id": "clear-maple-pavilion-003",
       "title": "A Clear Day at the Maple Pavilion",
       "weather": [
         "clear"
       ],
-      "moment": "A quiet autumn scene beneath a maple branch, with a pavilion, wind chime, distant mountains and an open red sun",
+      "moment": "The original painted maple pavilion beneath an open sky, revealed with expressive brush movements",
       "mood": [
         "clarity",
         "stillness",
         "quiet warmth"
       ],
-      "dataPath": "Weather/Art/clear-maple-pavilion-002.json",
+      "dataPath": "Weather/Art/clear-maple-pavilion-003.json",
       "format": "application/json",
-      "renderMode": "ordered-pressure-strokes",
-      "durationMs": 75000,
-      "palette": "near-black variable-pressure brush ink, restrained soft-grey distance, vermilion accents on warm ivory paper",
+      "renderMode": "ordered-master-brush-reveal",
+      "durationMs": 30000,
+      "palette": "Original approved master palette; unchanged",
       "availability": "online-on-demand",
-      "drawingPlanId": "clear-maple-pavilion-sequence-v2",
-      "drawingPlanPath": "Weather/Art/Plans/clear-maple-pavilion-002.md",
-      "gestureCount": 63,
-      "compositionScale": 0.9,
-      "replayRequirement": "Replay follows the 63 authored continuous centreline gestures in stored array order. Per-gesture time is weighted by intent and arc length, with deliberate pauses at stage boundaries."
+      "drawingPlanId": "clear-maple-pavilion-master-reveal-003",
+      "drawingPlanPath": "Weather/Art/Plans/clear-maple-pavilion-003.md",
+      "masterImagePath": "Weather/Art/References/clear-maple-pavilion-master-003.jpg",
+      "gestureCount": 100,
+      "maxGestureCount": 100,
+      "replayRequirement": "Replay reveals the immutable approved master in the five mandatory stages: thick; attached thin; air/birds/little things; leaves; sun last and finish."
     }
   ],
   "supersededArtworkRecords": [
@@ -123,6 +126,14 @@
       "renderMode": "ordered-ink-wash-paths",
       "durationMs": 30000,
       "status": "preserved-source-version; replaced in active catalogue by clear-maple-pavilion-002"
+    },
+    {
+      "id": "clear-maple-pavilion-002",
+      "title": "A Clear Day at the Maple Pavilion",
+      "dataPath": "Weather/Art/clear-maple-pavilion-002.json",
+      "renderMode": "ordered-pressure-strokes",
+      "durationMs": 75000,
+      "status": "preserved historical revision; replaced in active catalogue by clear-maple-pavilion-003 because it simplified the painted master into line art"
     }
   ]
 }
