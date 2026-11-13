@@ -81,6 +81,7 @@
     activeRenderer = null;
     currentArt = null;
     currentArtId = '';
+    currentWeather = '';
     pinnedStatus = stateLabel;
     pinnedTitle = message;
     pinnedCaption = message;
@@ -355,7 +356,7 @@
   function makeCanvas(studio, oldCanvas) {
     const canvas = document.createElement('canvas');
     canvas.className = oldCanvas.className + ' le-weather-online-canvas';
-    canvas.setAttribute('aria-label', 'A Japanese ink-and-wash rainy tea scene, painted stroke by stroke');
+    canvas.setAttribute('aria-label', 'A Japanese ink-and-wash weather scene, painted stroke by stroke');
     canvas.dataset.liveArtOnline = 'true';
     oldCanvas.replaceWith(canvas);
     return canvas;
@@ -401,7 +402,7 @@
       return;
     }
     const weather = String(screen.dataset.weather || 'clear').toLowerCase();
-    const entryWeather = ['rain', 'cloudy'].includes(weather) ? weather : '';
+    const entryWeather = ['rain', 'clear'].includes(weather) ? weather : '';
     if (!entryWeather) {
       requestSerial++;
       requestController?.abort();
@@ -409,7 +410,7 @@
       showPaper('A new scene is being prepared', 'COMING SOON');
       return;
     }
-    if (currentArt && currentArtId === 'rainy-tea-afternoon-001') return;
+    if (currentArt && currentWeather === entryWeather) return;
 
     requestController?.abort();
     const controller = new AbortController();
@@ -438,6 +439,7 @@
       });
       currentArt = prepared;
       currentArtId = prepared.id;
+      currentWeather = entryWeather;
       activePrompt.hidden = true;
       pinnedTitle = prepared.title;
       pinnedCaption = prepared.caption + ' · Live weather matched';
@@ -474,6 +476,7 @@
     activeCaption = studio.querySelector('#le-weather-studio-caption');
     currentArt = null;
     currentArtId = '';
+    currentWeather = '';
     pinnedTitle = '';
     pinnedCaption = '';
     pinnedStatus = '';
@@ -506,6 +509,7 @@
       activeButton = activeStatus = activeTitle = activeCaption = null;
       currentArt = null;
       currentArtId = '';
+      currentWeather = '';
     }
   }
 

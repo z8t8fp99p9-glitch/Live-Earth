@@ -20,16 +20,14 @@
     "style": "minimalist-monochromatic-japanese-inspired-ink-line-art",
     "weatherRecolouring": false,
     "preserveProgressiveReplay": true,
-    "masterFirstRule": "The approved artwork master is the only visual source of truth. Convert that exact artwork into ordered path data; never design a substitute Live illustration.",
-    "rendererEnablementScriptPath": "apply-clear-weather-renderer-update.py"
+    "masterFirstRule": "The approved artwork master is the only visual source of truth. Convert that exact artwork into ordered path data; never design a substitute Live illustration."
   },
   "artworks": [
     {
       "id": "rainy-tea-afternoon-001",
       "title": "A Rainy Tea Afternoon",
       "weather": [
-        "rain",
-        "cloudy"
+        "rain"
       ],
       "moment": "A quiet cup beside a rain-streaked window",
       "mood": [
