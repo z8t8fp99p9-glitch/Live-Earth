@@ -36,7 +36,7 @@ const pressure=api.prepareArtwork({schemaVersion:2,renderMode:'ordered-pressure-
 assert.equal(pressure.rendererVersion,2);
 const canvas={width:0,height:0,isConnected:true,getBoundingClientRect(){return {width:600,height:420}},getContext(){return ctx()}};
 const master={width:1500,height:1049};const atlas={width:1500,height:5245};const events=[];
-const renderer=api.createRenderer(canvas,prepared,m=>events.push(m),master,atlas);renderer.replay();assert.ok(raf.length);raf.shift()(15000);assert.ok(events.at(-1).count>0&&events.at(-1).count<100);while(raf.length)raf.shift()(30000);assert.equal(events.at(-1).complete,true);assert.equal(events.at(-1).total,100);assert.ok(calls.drawImage>0);renderer.stop();
+const renderer=api.createRenderer(canvas,prepared,m=>events.push(m),master,atlas);renderer.replay();assert.ok(raf.length);raf.shift()(15000);assert.ok(events.at(-1).count>=48&&events.at(-1).count<=52, 'Equal gesture timing should reach about 50/100 at 15 seconds');while(raf.length)raf.shift()(30000);assert.equal(events.at(-1).complete,true);assert.equal(events.at(-1).total,100);assert.ok(calls.drawImage>0);renderer.stop();
 const activeClear=catalog.artworks.find(a=>a.weather.includes('clear'));const activeRain=catalog.artworks.find(a=>a.weather.includes('rain'));
 assert.equal(activeClear.id,'clear-maple-pavilion-003');assert.equal(activeClear.renderMode,'ordered-master-brush-reveal');assert.equal(activeClear.durationMs,30000);assert.equal(activeClear.gestureCount,100);
 assert.equal(activeRain.id,'rainy-tea-afternoon-001');assert.equal(activeRain.renderMode,'ordered-ink-wash-paths');

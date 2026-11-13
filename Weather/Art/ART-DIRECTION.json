@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "standardId": "WEATHER-LIVE-ART-STANDARD-002",
-  "version": "2.4",
+  "version": "2.5",
   "status": "current-binding-painted-master-brush-reveal-standard",
   "scope": "LIVE // EARTH Weather Live Art card only",
   "authority": {
@@ -62,7 +62,10 @@
         "stage": "sun and final finish",
         "sunMustBeLast": true
       }
-    ]
+    ],
+    "equalGestureTiming": true,
+    "stagePauseMs": 100,
+    "maskRule": "Stage masks must retain the actual painted pigment pixels for each stage; contour-only or skeleton masks are forbidden."
   },
   "rendererCompatibility": {
     "schemaVersions": [

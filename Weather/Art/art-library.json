@@ -8,9 +8,9 @@
   },
   "productionStandard": {
     "id": "WEATHER-LIVE-ART-STANDARD-002",
-    "version": "2.4",
+    "version": "2.5",
     "guidePath": "Weather/Art/LIVE-ART-PRODUCTION-GUIDE.md",
-    "guideAddendumPath": "Weather/Art/LIVE-ART-PRODUCTION-GUIDE-ADDENDUM-2.4.md",
+    "guideAddendumPath": "Weather/Art/LIVE-ART-PRODUCTION-GUIDE-ADDENDUM-2.5.md",
     "masterFirstWorkflowPath": "Weather/Art/LIVE-ART-MASTER-FIRST-WORKFLOW.md",
     "directionPath": "Weather/Art/ART-DIRECTION.json",
     "directionAddendumPath": "Weather/Art/ART-DIRECTION-ADDENDUM-2.4.json",
@@ -26,8 +26,8 @@
       2,
       3
     ],
-    "newStrokeRule": "One record equals one continuous pressure-sensitive brush reveal gesture; authored order controls replay; maximum 100 strokes in 30 seconds.",
-    "masterRevealRule": "The immutable approved raster master is revealed through ordered brush masks; do not redraw or simplify the master."
+    "newStrokeRule": "One record equals one continuous brush-reveal gesture; authored order controls replay; maximum 100 gestures in 30 seconds with equal gesture timing.",
+    "masterRevealRule": "The immutable approved raster master is revealed through stage-specific masks derived from its actual painted pigment pixels; do not redraw or simplify the master."
   },
   "artworks": [
     {
@@ -112,7 +112,7 @@
       "masterImagePath": "Weather/Art/References/clear-maple-pavilion-master-003.jpg",
       "gestureCount": 100,
       "maxGestureCount": 100,
-      "replayRequirement": "Replay reveals the immutable approved master in the five mandatory stages: thick; attached thin; air/birds/little things; leaves; sun last and finish."
+      "replayRequirement": "Replay reveals the immutable painted master using 100 ordered brush-shaped gestures with equal timing across 30 seconds. Stage masks retain the source pigment pixels; sequence is thick structure, attached thin details, air/birds/little things, leaves, then sun and finish."
     }
   ],
   "supersededArtworkRecords": [

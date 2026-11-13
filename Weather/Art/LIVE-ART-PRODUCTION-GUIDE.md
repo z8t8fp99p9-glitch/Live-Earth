@@ -1,7 +1,7 @@
 # LIVE // EARTH — Weather Live Art Production Guide
 
 **Document ID:** `WEATHER-LIVE-ART-STANDARD-002`  
-**Version:** 2.4 — painted-master brush-reveal standard  
+**Version:** 2.5 — painted-master brush-reveal standard  
 **Status:** Current binding production standard  
 **Scope:** LIVE // EARTH Weather view — Live Art card only  
 **Active visual benchmark:** `References/clear-maple-pavilion-master-003.jpg` (approved painted master)
@@ -52,7 +52,9 @@ The ordered stroke list is the actual Replay order. Stage labels in documentatio
 
 Each authored gesture is represented by an ordered centreline and pressure samples. The stroke width describes the reveal-brush width in 1000-unit canvas coordinates. Low-pressure endpoints taper naturally; broad structural marks use more pressure and width, while attached and atmospheric marks are finer.
 
-For master-reveal artwork, the renderer places the approved master beneath a warm-paper veil. Each authored brush gesture progressively removes the veil, revealing the original master image exactly underneath. The brush path is an animation mask only; it is not a replacement outline or pigment stroke. Completed Replay reveals the whole master.
+For master-reveal artwork, the renderer places the approved master beneath a warm-paper veil. Each authored brush gesture progressively removes the veil, revealing the original master image exactly underneath. The brush path is an animation mask only; it is not a replacement outline or pigment stroke. Each stage mask must be derived from the actual painted pixels belonging to that stage, preserving filled brush forms, pigment texture and soft edges. Thin edge traces, skeletons, contour-only masks and generic redraws are not acceptable. Completed Replay reveals the whole master.
+
+Each gesture receives an equal share of the 30-second drawing budget; only brief pauses at the four stage boundaries are additional. The progress counter must advance steadily and reach 100/100 at 30 seconds.
 
 New master-reveal files use:
 - `schemaVersion: 3`

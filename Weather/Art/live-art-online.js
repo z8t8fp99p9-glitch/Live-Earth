@@ -727,15 +727,17 @@
     const strokes=art.strokes;
     const stageMasks=Array.from({length:5},()=>document.createElement('canvas'));
     const stageMaskContexts=stageMasks.map(item=>item.getContext('2d'));
-    const maxLength=Math.max(...strokes.map(stroke=>stroke.length));
-    const weighted=strokes.map(stroke=>stroke.durationWeight*(0.68+0.32*Math.sqrt(stroke.length/maxLength)));
-    const weightTotal=weighted.reduce((a,b)=>a+b,0);
-    const transitions=strokes.reduce((n,stroke,index)=>n+(index<strokes.length-1&&stroke.stageId!==strokes[index+1].stageId?1:0),0);
+    // Schema 3 is a timed master-reveal score: each authored gesture receives
+    // the same share of the 30-second drawing budget. This keeps the counter
+    // and the visual sequence in sync; only the four stage boundaries pause.
+    const transitions=strokes.reduce((n,stroke,index)=>
+      n+(index<strokes.length-1&&stroke.stageId!==strokes[index+1].stageId?1:0),0);
     const pauseTotal=Math.min(art.durationMs*0.08,transitions*art.stagePauseMs);
     const drawingBudget=art.durationMs-pauseTotal;
+    const strokeDuration=drawingBudget/strokes.length;
     let cursor=0;
     const timeline=strokes.map((stroke,index)=>{
-      const duration=drawingBudget*weighted[index]/weightTotal;
+      const duration=strokeDuration;
       const event={start:cursor,end:cursor+duration,duration};cursor+=duration;
       if(index<strokes.length-1&&stroke.stageId!==strokes[index+1].stageId){event.pauseEnd=cursor+Math.min(art.stagePauseMs,art.durationMs*0.01);cursor=event.pauseEnd;}
       return event;
