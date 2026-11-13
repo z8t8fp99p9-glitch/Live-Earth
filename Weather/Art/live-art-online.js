@@ -32,6 +32,7 @@
   let requestSerial = 0;
   let currentArt = null;
   let currentArtId = '';
+  let currentWeather = '';
   let attaching = false;
 
   function setText(node, value) {
