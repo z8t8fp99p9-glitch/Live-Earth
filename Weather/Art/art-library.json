@@ -8,15 +8,20 @@
   },
   "productionStandard": {
     "id": "WEATHER-LIVE-ART-STANDARD-002",
-    "version": "2.0",
+    "version": "2.1",
     "guidePath": "Weather/Art/LIVE-ART-PRODUCTION-GUIDE.md",
+    "guideAddendumPath": "Weather/Art/LIVE-ART-PRODUCTION-GUIDE-ADDENDUM-2.1.md",
+    "masterFirstWorkflowPath": "Weather/Art/LIVE-ART-MASTER-FIRST-WORKFLOW.md",
     "directionPath": "Weather/Art/ART-DIRECTION.json",
+    "directionAddendumPath": "Weather/Art/ART-DIRECTION-ADDENDUM-2.1.json",
     "activeVisualReference": "Weather/Art/References/approved-style-reference-002.jpg",
     "illustrationFootprintPercent": 70,
     "quietWarmPaperPercent": 30,
     "style": "minimalist-monochromatic-japanese-inspired-ink-line-art",
     "weatherRecolouring": false,
-    "preserveProgressiveReplay": true
+    "preserveProgressiveReplay": true,
+    "masterFirstRule": "The approved artwork master is the only visual source of truth. Convert that exact artwork into ordered path data; never design a substitute Live illustration.",
+    "rendererEnablementScriptPath": "apply-clear-weather-renderer-update.py"
   },
   "artworks": [
     {
@@ -78,6 +83,66 @@
         }
       ],
       "replayRequirement": "The encoded paths array in rainy-tea-afternoon-001.json must follow these six stages in order. The renderer reveals paths progressively in stored array order; it does not create named stage pauses."
+    },
+    {
+      "id": "clear-maple-pavilion-001",
+      "title": "A Clear Day at the Maple Pavilion",
+      "weather": [
+        "clear"
+      ],
+      "moment": "A quiet autumn scene beneath a maple branch, with a pavilion, wind chime, distant mountains and an open red sun",
+      "mood": [
+        "clarity",
+        "stillness",
+        "quiet warmth"
+      ],
+      "dataPath": "Weather/Art/clear-maple-pavilion-001.json",
+      "format": "application/json",
+      "renderMode": "ordered-ink-wash-paths",
+      "durationMs": 30000,
+      "palette": "near-black brush ink, restrained soft-grey distance, textured vermilion tones on warm ivory paper",
+      "availability": "online-on-demand",
+      "drawingPlanId": "clear-maple-pavilion-sequence-v1",
+      "drawingSequence": [
+        {
+          "order": 1,
+          "stage": "The maple tree structure",
+          "strokeWeight": "thick structural brush marks",
+          "notes": "Reproduce the exact main trunk and connected maple branches from the approved master. Preserve the tapered brush silhouette and its dry-brush edges."
+        },
+        {
+          "order": 2,
+          "stage": "The pavilion structure",
+          "strokeWeight": "thick to medium",
+          "notes": "Draw the pavilion roof contours, central support and small railings in their exact positions and proportions. Keep the roof interior as warm paper."
+        },
+        {
+          "order": 3,
+          "stage": "The distant mountains and horizon",
+          "strokeWeight": "medium to thin; restrained soft grey where present",
+          "notes": "Add both mountain ridges, the quiet horizon and water/cloud-line marks. Preserve the original open spacing."
+        },
+        {
+          "order": 4,
+          "stage": "The foreground garden and water edge",
+          "strokeWeight": "medium and thin",
+          "notes": "Draw the curved bank, stream marks, stones, grasses and small flowering twig. Keep each detail in its original location."
+        },
+        {
+          "order": 5,
+          "stage": "The wind chime and birds",
+          "strokeWeight": "fine to medium",
+          "notes": "Reveal the hanging bell, paper charm and two distant birds. Preserve the open paper within the hanging charm."
+        },
+        {
+          "order": 6,
+          "stage": "The vermilion autumn accents",
+          "strokeWeight": "selective red tones and paper highlights",
+          "notes": "Add the red sun, maple leaves, drifting leaves and tiny blossom/charm accents last. Retain the original red texture and fine light marks; do not simplify them into flat solid shapes."
+        }
+      ],
+      "replayRequirement": "The paths array in clear-maple-pavilion-001.json is authored in the six stages above. Replay reveals records in their stored order. The existing renderer does not create named stage pauses.",
+      "drawingPlanPath": "Weather/Art/Plans/clear-maple-pavilion-001.md"
     }
   ]
 }

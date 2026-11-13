@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "standardId": "WEATHER-LIVE-ART-STANDARD-002",
+  "addendumId": "WEATHER-LIVE-ART-STANDARD-002-A1",
+  "version": "2.1",
+  "status": "binding-production-addendum",
+  "supersedes": "Any previous instruction that treated Clear Weather as an unapproved or pending scene.",
+  "scope": "Weather Live Art artwork production only; no renderer or view changes.",
+  "masterFirstWorkflow": {
+    "path": "Weather/Art/LIVE-ART-MASTER-FIRST-WORKFLOW.md",
+    "required": true,
+    "principle": "The approved artwork is the only visual source of truth. The Live asset is a faithful drawing-data reproduction of that artwork, not a second design.",
+    "steps": [
+      "Preserve the exact approved source master byte-for-byte.",
+      "Inspect the current artwork schema, catalogue, and renderer before tracing.",
+      "Trace the approved master itself; do not generate or redesign an alternate Live composition.",
+      "Preserve silhouettes, proportions, negative spaces, brush edges, tonal details, and meaningful small marks.",
+      "Define a scene-specific path order from the approved master.",
+      "Encode using the existing ordered-ink-wash-paths schema and 1000x700 coordinate system.",
+      "Reconstruct a preview and compare it with the source master at full composition and card scale.",
+      "Validate palette indexes, path decoding, coordinate bounds, path order, and catalogue linkage.",
+      "If an important detail cannot be represented, document it and seek a technical decision rather than silently simplifying.",
+      "Package the artwork, catalogue update, master source, preview, and hashes without claiming deployment."
+    ]
+  },
+  "clearWeatherArtwork": {
+    "artworkId": "clear-maple-pavilion-001",
+    "planId": "clear-maple-pavilion-sequence-v1",
+    "status": "approved-master-path-asset-prepared",
+    "sourceMaster": "Weather/Art/References/clear-weather-master-001.jpg",
+    "sourceMasterSha256": "131173df60c9e9b99b6e25e5e29a2270524130755058549aa3df6648f41ea1fd",
+    "sourceMasterDimensions": [
+      1500,
+      1049
+    ],
+    "canvas": [
+      1000,
+      700
+    ],
+    "aspectRatio": "10:7",
+    "dataPath": "Weather/Art/clear-maple-pavilion-001.json",
+    "durationMs": 30000,
+    "pathCount": 757,
+    "sequence": [
+      "Maple tree structure",
+      "Pavilion structure",
+      "Distant mountains and horizon",
+      "Foreground garden and water edge",
+      "Wind chime and birds",
+      "Vermilion autumn accents"
+    ],
+    "redAccents": "Preserve multiple source vermilion tones and paper-coloured texture gaps; do not flatten to a single solid red.",
+    "compositionRule": "Preserve the supplied master exactly; do not add, remove, rearrange, crop, stretch, or reinterpret its elements.",
+    "fidelityNote": "The untouched master JPEG is the source of truth. The ordered-path asset is a contour-based reproduction within the current renderer's capabilities, not a pixel-identical raster. The current renderer supplies its own paper ground and cannot reproduce every JPEG paper-grain pixel. Any exact-raster renderer feature requires a separate explicit technical decision."
+  },
+  "protectedBoundaries": [
+    "Do not edit the Rain artwork or its drawing sequence.",
+    "Do not change the shared drawing engine, path decoder, painting algorithm, or Replay timing.",
+    "Allow only the narrow Clear Weather selection-routing patch specified in rendererSelectionPatch.",
+    "Do not change the 10:7 Live Art card, title/caption/status/Replay overlays, or other Weather UI.",
+    "Do not change network, cache, offline/recovery, service-worker, or app-shell behaviour.",
+    "Do not modify Home, Earth, Moon, Sun, or any other app view."
+  ],
+  "rendererSelectionPatch": {
+    "scriptPath": "apply-clear-weather-renderer-update.py",
+    "baselineGitBlobSha": "d4e03712d324b1b9a8a0cacb3560de09e910d42a",
+    "purpose": "Allow the existing renderer to select the clear-weather catalogue record.",
+    "changes": [
+      "Add clear to the allowed weather-selection list.",
+      "Preserve raw weather tags in the prepared artwork object.",
+      "Use a weather-aware active-artwork check instead of a Rain-specific ID check.",
+      "Use a generic weather-scene canvas accessibility label."
+    ],
+    "explicitlyUnchanged": [
+      "Path decoder and signed-varint format",
+      "Closed-contour drawing algorithm",
+      "Replay timing and controls",
+      "Paper rendering",
+      "Online/on-demand fetch and cache behaviour",
+      "Other Weather UI and all unrelated app views"
+    ]
+  }
+}

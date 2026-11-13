@@ -1,0 +1,55 @@
+CLEAR WEATHER LIVE ART — VALIDATION REPORT
+==========================================
+
+APPROVED MASTER
+---------------
+Original upload preserved byte-for-byte: PASS
+Dimensions: 1500 × 1049 px
+Master SHA-256: 131173df60c9e9b99b6e25e5e29a2270524130755058549aa3df6648f41ea1fd
+
+ORDERED-PATH ASSET
+------------------
+Artwork ID: clear-maple-pavilion-001
+Weather tag: clear
+Canvas: 1000 × 700 (10:7): PASS
+Encoded paths: 757
+Decoded coordinate points: 10540
+Base64 / signed-varint decoding: PASS
+Palette indexes: PASS
+Minimum path points (3): PASS
+Coordinate bounds (0..1000, 0..700): PASS
+Duration: 30000 ms
+
+CATALOGUE AND PRODUCTION RECORDS
+--------------------------------
+Catalogue JSON parse: PASS
+Original Rain catalogue record retained: PASS
+Clear catalogue record added: PASS
+Six-stage Clear drawing plan order: PASS
+Master-first workflow and guide addendum included: PASS
+Clear master reference and path preview included: PASS
+
+RENDERER ENABLEMENT
+-------------------
+The inspected main-branch renderer admits only rain/cloudy at its weather gate.
+A narrow, baseline-guarded script is included to allow clear and make active-art matching weather-aware.
+Script Python syntax compilation: PASS
+Script execution against the repository file: NOT RUN (no local renderer checkout).
+The script checks the expected Git blob SHA before any modification.
+
+PROTECTED SCOPE
+---------------
+Rain artwork JSON is not modified.
+Shared drawing decoder / contour painter / Replay timing are not redesigned.
+Card layout, paper renderer, network/cache behaviour and unrelated app views are not changed by the supplied patch.
+
+NOT YET TESTED
+--------------
+Actual app/device Replay: NOT TESTED
+Upload/deployment: NOT PERFORMED
+
+FIDELITY NOTE
+-------------
+The untouched master is retained. The ordered-path asset is a close contour-based reproduction
+within the current closed-path renderer; it is not pixel-identical to the original JPEG.
+The existing renderer supplies its own paper ground and cannot reproduce every source paper-grain pixel.
