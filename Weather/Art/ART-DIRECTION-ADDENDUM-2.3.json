@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "standardId": "WEATHER-LIVE-ART-STANDARD-002",
+  "version": "2.3",
+  "status": "active-stroke-based-production-addendum",
+  "humanGuide": "Weather/Art/LIVE-ART-PRODUCTION-GUIDE.md",
+  "activeAddendum": "Weather/Art/LIVE-ART-PRODUCTION-GUIDE-ADDENDUM-2.3.md",
+  "canvas": {
+    "width": 1000,
+    "height": 700,
+    "aspectRatio": "10:7",
+    "cardRatioProtected": true
+  },
+  "markMaking": {
+    "rule": "one-record-equals-one-continuous-brush-gesture",
+    "centrelineRequired": true,
+    "variablePressureRequired": true,
+    "naturalTaperRequired": true,
+    "arbitraryFragmentationForbidden": true,
+    "unrelatedMarksInOneStrokeForbidden": true
+  },
+  "strokeSchema": {
+    "schemaVersion": 2,
+    "renderMode": "ordered-pressure-strokes",
+    "pointTuple": [
+      "x",
+      "y",
+      "pressure"
+    ],
+    "coordinateRange": [
+      0,
+      1
+    ],
+    "pressureRange": [
+      0,
+      1
+    ],
+    "orderedArrayIsReplayOrder": true,
+    "widthUnits": "1000-unit canvas width"
+  },
+  "rendererCompatibility": {
+    "supportsVersion1": true,
+    "supportsVersion2": true,
+    "version1Mode": "ordered-ink-wash-paths",
+    "version2Mode": "ordered-pressure-strokes",
+    "rainAssetMustRemainVersion1": true
+  },
+  "replay": {
+    "clearTargetDurationMs": 75000,
+    "timing": "durationWeight multiplied by arc-length factor",
+    "pauseBetweenStagesMs": 520,
+    "sequentialStrokes": true,
+    "respectReducedMotion": true
+  },
+  "clearRevision": {
+    "artworkId": "clear-maple-pavilion-002",
+    "parent": "clear-maple-pavilion-001",
+    "compositionScale": 0.9,
+    "targetGestureCount": 63,
+    "dataPath": "Weather/Art/clear-maple-pavilion-002.json",
+    "drawingPlan": "Weather/Art/Plans/clear-maple-pavilion-002.md"
+  },
+  "stageCounts": [
+    {
+      "stage": "Maple trunk and branches",
+      "count": 7
+    },
+    {
+      "stage": "Maple leaves and falling leaves",
+      "count": 12
+    },
+    {
+      "stage": "Pavilion roof and structure",
+      "count": 7
+    },
+    {
+      "stage": "Wind chime and charm",
+      "count": 5
+    },
+    {
+      "stage": "Sun and sky details",
+      "count": 4
+    },
+    {
+      "stage": "Birds",
+      "count": 2
+    },
+    {
+      "stage": "Mountain and distant landscape",
+      "count": 4
+    },
+    {
+      "stage": "Foreground bank, grasses, and rocks",
+      "count": 8
+    },
+    {
+      "stage": "Flowering twig",
+      "count": 9
+    },
+    {
+      "stage": "Water and finishing accents",
+      "count": 5
+    }
+  ],
+  "preservation": [
+    "clear-maple-pavilion-001.json",
+    "References/clear-weather-master-001.jpg",
+    "rainy-tea-afternoon-001.json"
+  ]
+}
