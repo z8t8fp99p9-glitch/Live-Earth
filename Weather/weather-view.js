@@ -935,10 +935,14 @@
 
       // Sparse cloud contours retain the Japanese negative-space quality.
       const cloudCount=state.cloud>78?2:state.cloud>43?1:0;
+      const windX=-Math.sin(state.direction*Math.PI/180);
+      const cloudDrift=.012+Math.min(1,state.wind/45)*.028;
       for(let i=0;i<cloudCount;i++){
-        const x=width*(.42+i*.25)+Math.sin(t*.10+i)*Math.max(1.5,state.wind*.22);
-        const y=height*(.25+i*.075);
         const scale=Math.min(width,height)*(.050+i*.008);
+        const travel=width+scale*3;
+        const baseX=width*(.42+i*.25);
+        const x=((baseX+t*width*cloudDrift*windX+scale*1.5)%travel+travel)%travel-scale*1.5;
+        const y=height*(.25+i*.075);
         ctx.save();ctx.globalAlpha=(.18+state.cloud/520);ctx.strokeStyle=soft;ctx.lineWidth=1.1;ctx.lineCap='round';ctx.lineJoin='round';
         ctx.beginPath();ctx.moveTo(x-scale*1.35,y+scale*.2);
         ctx.bezierCurveTo(x-scale*1.1,y-scale*.28,x-scale*.48,y-scale*.34,x-scale*.24,y-scale*.02);
@@ -1082,11 +1086,55 @@
       if(gust>.35&&!reduced){for(let i=0;i<Math.min(3,Math.floor(gust*4));i++){const xx=(width*(.62+i*.09)+((t*state.wind*2+i*87)%(width*.34)));const yy=height*(.42+(i%2)*.17+Math.sin(t+i)*.025);ctx.save();ctx.translate(xx,yy);ctx.rotate(dir*.5+Math.sin(t*1.2+i)*.4);ctx.fillStyle=accent;ctx.globalAlpha=.58;ctx.beginPath();ctx.moveTo(-8,0);ctx.quadraticCurveTo(0,-7,10,-1);ctx.quadraticCurveTo(2,7,-8,0);ctx.fill();ctx.restore();}}
       ctx.restore();
     }
-    function drawSnow(p,t){if(state.weather!=='snow'){snowLoad=Math.max(0,snowLoad-.0015);return;}const {soft}=p;const amount=Math.max(.12,Math.min(1,state.snowfall/2));snowLoad=reduced?Math.max(snowLoad,amount*.32):Math.min(.92,snowLoad+amount*.00055);const count=Math.round(7+amount*9);for(let i=0;i<count;i++){const x=((i*83+Math.sin(t*.3+i)*13)%width+width)%width;const y=((i*47+t*(4+(i%4)*1.2))%height*.78);ctx.save();ctx.globalAlpha=.45+(i%3)*.12;ctx.fillStyle=soft;ctx.beginPath();ctx.arc(x,y,1+(i%3)*.45,0,Math.PI*2);ctx.fill();ctx.restore();}}
-    function drawRain(p,t){if(state.weather!=='rain'&&state.weather!=='storm')return;const {soft,ink}=p;const intensity=Math.min(1,Math.max(.18,state.precipitation/6));const count=Math.round(6+intensity*5);for(let i=0;i<count;i++){const x=((i*73+t*(state.wind*.8+9))%width+width)%width;const y=((i*49+t*(90+intensity*90))%height*.86);line([[x,y],[x-2+Math.sin(state.direction*Math.PI/180)*6,y+8+intensity*7]],soft,.23+intensity*.18,.65);}
-      for(let i=0;i<3;i++){const x=width*(.18+i*.31);const y=height*(.75+(i%2)*.12);const phase=(t*.55+i*.27)%1;ctx.save();ctx.globalAlpha=.32*(1-phase);ctx.strokeStyle=ink;ctx.lineWidth=.75;ctx.beginPath();ctx.ellipse(x,y,4+phase*15,1.5+phase*3,0,0,Math.PI*2);ctx.stroke();ctx.restore();}}
+    function drawSnow(p,t){
+      if(state.weather!=='snow'){snowLoad=Math.max(0,snowLoad-.0015);return;}
+      const {soft}=p;
+      const amount=Math.max(.12,Math.min(1,state.snowfall/2));
+      snowLoad=reduced?Math.max(snowLoad,amount*.32):Math.min(.92,snowLoad+amount*.00055);
+      const windX=-Math.sin(state.direction*Math.PI/180);
+      const drift=windX*Math.min(4.5,state.wind*.11);
+      const count=Math.round(7+amount*9);
+      for(let i=0;i<count;i++){
+        const x=((i*83+Math.sin(t*.3+i)*13+t*drift)%width+width)%width;
+        const y=((i*47+t*(4+(i%4)*1.2))%height*.78);
+        ctx.save();ctx.globalAlpha=.45+(i%3)*.12;ctx.fillStyle=soft;
+        ctx.beginPath();ctx.arc(x,y,1+(i%3)*.45,0,Math.PI*2);ctx.fill();ctx.restore();
+      }
+    }
+    function drawRain(p,t){
+      if(state.weather!=='rain'&&state.weather!=='storm')return;
+      const {soft,ink}=p;
+      const intensity=Math.min(1,Math.max(.18,state.precipitation/6));
+      const windX=-Math.sin(state.direction*Math.PI/180);
+      const count=Math.round(8+intensity*7);
+      for(let i=0;i<count;i++){
+        const x=((i*73+t*(4+state.wind*.55)*windX)%width+width)%width;
+        const y=((i*49+t*(90+intensity*90))%height*.86);
+        const lean=windX*Math.min(6,1.2+state.wind*.13);
+        line([[x,y],[x+lean,y+8+intensity*7]],soft,.23+intensity*.18,.65);
+      }
+      for(let i=0;i<3;i++){
+        const x=width*(.18+i*.31);const y=height*(.75+(i%2)*.12);
+        const phase=(t*.55+i*.27)%1;
+        ctx.save();ctx.globalAlpha=.32*(1-phase);ctx.strokeStyle=ink;ctx.lineWidth=.75;
+        ctx.beginPath();ctx.ellipse(x,y,4+phase*15,1.5+phase*3,0,0,Math.PI*2);ctx.stroke();ctx.restore();
+      }
+    }
     function drawWindLines(p,t){if(state.wind<18)return;const {soft}=p;const alpha=Math.min(.30,state.wind/180);for(let i=0;i<4;i++){const y=height*(.38+i*.095)+Math.sin(t*.55+i)*3;ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=soft;ctx.lineWidth=.9;ctx.beginPath();ctx.moveTo(width*(.10+i*.03),y);ctx.bezierCurveTo(width*.35,y-5,width*.56,y+6,width*.88,y-3);ctx.stroke();ctx.restore();}}
-    function drawFog(p,t){if(state.weather!=='fog'&&state.cloud<85)return;const {paper,soft}=p;for(let i=0;i<3;i++){const y=height*(.49+i*.075)+Math.sin(t*.15+i)*7;const g=ctx.createLinearGradient(0,y,width,y);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.48,state.weather==='fog'?'rgba(238,238,224,.34)':'rgba(238,238,224,.15)');g.addColorStop(1,'rgba(255,255,255,0)');ctx.save();ctx.fillStyle=g;ctx.fillRect(0,y-9,width,19);ctx.restore();}}
+    function drawFog(p,t){
+      if(state.weather!=='fog'&&state.cloud<85)return;
+      const driftX=-Math.sin(state.direction*Math.PI/180);
+      const driftRange=Math.max(1,width*.08);
+      for(let i=0;i<3;i++){
+        const y=height*(.49+i*.075)+Math.sin(t*.15+i)*7;
+        const offset=((t*(.45+state.wind*.025)*driftX)%driftRange+driftRange)%driftRange-driftRange/2;
+        const g=ctx.createLinearGradient(0,y,width,y);
+        g.addColorStop(0,'rgba(255,255,255,0)');
+        g.addColorStop(.48,state.weather==='fog'?'rgba(238,238,224,.34)':'rgba(238,238,224,.15)');
+        g.addColorStop(1,'rgba(255,255,255,0)');
+        ctx.save();ctx.fillStyle=g;ctx.fillRect(-driftRange/2+offset,y-9,width+driftRange,19);ctx.restore();
+      }
+    }
     function drawMinimalLandscape(p,t){
       const night=state.phase==='night';
       const horizon=height*.79;
@@ -1167,7 +1215,8 @@
       // A small, recognisable pine silhouette balances the distant pavilion.
       ctx.save();
       const tx=width*.13,ty=height*.84,sc=Math.min(width,height)*.31;
-      ctx.translate(tx,ty);ctx.scale(sc/100,sc/100);
+      const sway=reduced?0:Math.sin(t*.72)*Math.min(2.4,state.wind*.055);
+      ctx.translate(tx+sway,ty);ctx.scale(sc/100,sc/100);
       ctx.strokeStyle=p.ink;ctx.lineCap='round';ctx.lineJoin='round';ctx.globalAlpha=.55;
       ctx.lineWidth=2.6;ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(-6,-22,8,-54);ctx.stroke();
       const tiers=[[-13,-47,-37,-43,19,-47],[-10,-34,-42,-30,24,-36],[-5,-22,-34,-18,27,-24]];
