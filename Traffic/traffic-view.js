@@ -125,7 +125,7 @@
     (async () => {
       try {
         // Fresh view-owned Three.js renderer. No Home canvas or scene is reused.
-        THREE = await import('./vendor/three.module.js');
+        THREE = await import('../vendor/three.module.js');
         if (!active || disposed) return;
         renderer = new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'low-power'});
         renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -146,7 +146,7 @@
         scene.add(fill);
 
         // A new Engine globe, owned only by this Live Cams view.
-        const engine = await import('./EarthEngine/Core/earth-engine.js');
+        const engine = await import('../EarthEngine/Core/earth-engine.js');
         if (!active || disposed) return;
         const createEarthGlobe = engine.createEarthGlobe || engine.createGlobe;
         if (typeof createEarthGlobe !== 'function') throw new Error('The Earth Engine globe factory is unavailable.');
@@ -193,7 +193,7 @@
         console.error('[LIVE // EARTH] Independent Live Cams Earth could not initialize.',error);
         const note = document.createElement('p');
         note.style.cssText='color:#b7c8d8;padding:18px;font:14px system-ui';
-        note.textContent='Earth could not be initialized. Home Earth remains untouched.';
+        note.textContent='Earth could not be initialized: ' + String(error?.message || error);
         view.body.prepend(note);
         stop();
       }
