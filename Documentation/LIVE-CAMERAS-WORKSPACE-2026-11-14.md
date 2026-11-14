@@ -1,3 +1,5 @@
+> **Historical design note — superseded 14 November 2026.** This document records the earlier globe-first Live Cameras proposal. That design is not the current implementation and must not be reintroduced as part of the present Live Cams redesign. The user explicitly cancelled adding a globe to Live Cams. The current source-of-truth design is [LIVE-CAMS-DISCOVERY-REDESIGN-2026-11-14.md](./LIVE-CAMS-DISCOVERY-REDESIGN-2026-11-14.md). The historical proposal below is retained so the project record is not erased.
+
 # LIVE // EARTH — Live Cameras workspace
 
 **Prepared:** 14 November 2026  
