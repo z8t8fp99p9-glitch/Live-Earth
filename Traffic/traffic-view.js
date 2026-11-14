@@ -36,7 +36,7 @@
     { id: 'africa', title: 'Africa', subtitle: 'Wild places and horizons', bbox: '-20,-35,55,38', icon: '◇', image: 'wildlife' },
     { id: 'americas', title: 'Americas', subtitle: 'North, Central and South', bbox: '-170,-60,-30,80', icon: '✧', image: 'weather' },
     { id: 'oceania', title: 'Oceania', subtitle: 'Australia and the Pacific', bbox: '110,-50,180,0', icon: '≈', image: 'oceans' },
-    { id: 'antarctica', title: 'Antarctica', subtitle: 'The southern frontier', bbox: '-180,-90,180,-60', icon: '❄', image: 'mountains' }
+    { id: 'antarctica', title: 'Antarctica', subtitle: 'The southern frontier', bbox: '-180,-90,180,-60', icon: '❄', image: 'night-skies' }
   ];
 
   // Keep the separate Traffic Orb's previous wallpaper placeholder intact.
@@ -81,54 +81,60 @@
       position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
       max-width:none!important;max-height:none!important;overflow-y:auto!important;overflow-x:hidden!important;
       overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;
-      pointer-events:auto!important;padding:calc(env(safe-area-inset-top) + 18px) clamp(15px,4.2vw,28px) calc(env(safe-area-inset-bottom) + 142px)!important;
+      pointer-events:auto!important;padding:calc(env(safe-area-inset-top) + 16px) clamp(15px,4.2vw,28px) calc(env(safe-area-inset-bottom) + 188px)!important;
       border:0!important;border-radius:0!important;
-      background:radial-gradient(ellipse 110% 33% at 50% 0%,rgba(23,74,108,.42),transparent 72%),
-        radial-gradient(ellipse 70% 27% at 0% 35%,rgba(20,70,85,.16),transparent 80%),
-        linear-gradient(180deg,#050d17 0%,#06111c 47%,#030912 100%)!important;
+      background-image:radial-gradient(ellipse 110% 33% at 50% 0%,rgba(23,74,108,.48),transparent 72%),
+        linear-gradient(180deg,rgba(3,11,20,.78) 0%,rgba(4,15,26,.88) 52%,rgba(2,8,15,.96) 100%),
+        url("./Traffic/Assets/live-cams-discovery/weather.jpg")!important;
+      background-position:center top!important;background-size:auto,auto,cover!important;background-repeat:no-repeat!important;
       box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important
     }
     .le-sfv--live-cams .le-sfv-panel::-webkit-scrollbar{display:none}
-    .le-lc-wrap{width:min(100%,760px);margin:0 auto;display:grid;gap:25px}
+    .le-lc-wrap{width:min(100%,760px);margin:0 auto;display:grid;gap:19px}
     .le-lc-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:0 2px 2px}
     .le-lc-brand{margin:0 0 5px;color:#a9c6db;font-size:9px;font-weight:800;letter-spacing:.32em}
     .le-lc-title{margin:0;color:#f4f7fb;font:italic 500 clamp(37px,10vw,56px)/.98 Georgia,'Times New Roman',serif;letter-spacing:-.045em}
     .le-lc-tagline{margin:9px 0 0;color:#9cb3c7;font:500 9px/1.5 Georgia,'Times New Roman',serif;letter-spacing:.24em}
     .le-lc-live-mark{display:inline-flex;align-items:center;gap:6px;margin-top:28px;padding:7px 10px;border:1px solid rgba(255,90,106,.25);border-radius:999px;background:rgba(125,20,33,.18);color:#ffe7ea;font-size:9px;font-weight:800;letter-spacing:.12em;white-space:nowrap}
     .le-lc-live-dot{width:6px;height:6px;border-radius:50%;background:#ff5368;box-shadow:0 0 10px #ff5368}
-    .le-lc-hero{position:relative;display:block;width:100%;min-height:210px;aspect-ratio:1.35/1;overflow:hidden;border:1px solid rgba(190,221,243,.22);border-radius:23px;background:linear-gradient(140deg,#16354a,#091521 62%,#07101b);box-shadow:0 17px 38px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.08);text-align:left;color:inherit;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+    .le-lc-hero{position:relative;display:block;width:100%;min-height:154px;max-height:310px;aspect-ratio:2.32/1;overflow:hidden;border:1px solid rgba(190,221,243,.22);border-radius:23px;background:linear-gradient(140deg,#16354a,#091521 62%,#07101b);box-shadow:0 17px 38px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.08);text-align:left;color:inherit;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
     .le-lc-hero img,.le-lc-card-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
     .le-lc-hero:after,.le-lc-card:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.06) 12%,transparent 37%,rgba(0,0,0,.78) 100%);pointer-events:none}
     .le-lc-image-fallback{position:absolute;inset:0;display:grid;place-items:center;padding:20px;background-position:center;background-size:cover;color:#e5f3fb;font:italic 22px Georgia,serif;text-align:center;text-shadow:0 2px 14px #000;}
-    .le-lc-image-fallback[hidden]{display:none}
-    .le-lc-hero-content{position:absolute;z-index:1;left:17px;right:17px;bottom:16px;display:grid;gap:5px;pointer-events:none}
+    .le-lc-image-fallback[hidden],.le-lc-badge[hidden],.le-lc-hero-credit[hidden],.le-lc-hero-dots[hidden]{display:none!important}
+    .le-lc-hero-content{position:absolute;z-index:1;left:15px;right:15px;bottom:13px;display:grid;gap:4px;pointer-events:none}
+    .le-lc-hero>.le-lc-badge{position:absolute;z-index:2;left:13px;top:13px}
+    .le-lc-hero:disabled{cursor:default;opacity:1}
+    .le-lc-hero-dots{display:flex;justify-content:center;align-items:center;gap:7px;margin:-9px 0 -2px;min-height:10px}
+    .le-lc-hero-dot{width:7px;height:7px;padding:0;border:0;border-radius:50%;background:rgba(195,218,234,.38);cursor:pointer}
+    .le-lc-hero-dot[aria-pressed="true"]{background:#e9f7ff;box-shadow:0 0 9px rgba(151,225,255,.5)}
     .le-lc-badge{display:inline-flex;align-items:center;gap:6px;width:max-content;max-width:100%;padding:6px 9px;border-radius:999px;background:rgba(128,22,35,.88);color:#fff;font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;backdrop-filter:blur(8px)}
     .le-lc-badge .le-lc-live-dot{width:5px;height:5px}
     .le-lc-camera-title{margin:0;color:#fff;font:600 clamp(23px,6.4vw,31px)/1.05 Georgia,'Times New Roman',serif;text-shadow:0 2px 12px #0009}
     .le-lc-location{margin:0;color:#e1eaf0;font:500 12px/1.4 Georgia,'Times New Roman',serif;text-shadow:0 1px 8px #000}
-    .le-lc-section{display:grid;gap:12px;min-width:0}
+    .le-lc-section{display:grid;gap:10px;min-width:0}
     .le-lc-section-head{display:flex;align-items:end;justify-content:space-between;gap:12px}
     .le-lc-section-title{margin:0;color:#f0f4f8;font:500 clamp(21px,5.4vw,27px)/1.08 Georgia,'Times New Roman',serif;letter-spacing:-.02em}
     .le-lc-section-note{margin:5px 0 0;color:#8fa9bd;font-size:9px;letter-spacing:.14em;text-transform:uppercase}
     .le-lc-link{border:0;background:transparent;color:#b6d5e8;font:600 11px/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;white-space:nowrap;padding:6px 0;cursor:pointer}
     .le-lc-category-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-    .le-lc-region-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-    .le-lc-region{position:relative;isolation:isolate;min-width:0;min-height:132px;display:grid;align-content:space-between;gap:10px;padding:11px;border:1px solid rgba(168,207,231,.22);border-radius:15px;overflow:hidden;background:#102536;color:#edf6fc;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+    .le-lc-region-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+    .le-lc-region{position:relative;isolation:isolate;min-width:0;min-height:0;aspect-ratio:.78/1;display:grid;align-content:end;gap:0;padding:6px;border:1px solid rgba(168,207,231,.22);border-radius:15px;overflow:hidden;background:#102536;color:#edf6fc;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
     .le-lc-region:before{content:'';position:absolute;z-index:1;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(1,8,15,.08) 0%,rgba(1,8,15,.18) 38%,rgba(1,8,15,.88) 100%)}
     .le-lc-region-image,.le-lc-category-image{position:absolute;z-index:0;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .35s ease}
     .le-lc-region:active .le-lc-region-image,.le-lc-category:active .le-lc-category-image{transform:scale(1.04)}
-    .le-lc-region-icon{position:relative;z-index:2;display:grid;place-items:center;width:29px;height:29px;border:1px solid rgba(220,242,255,.32);border-radius:50%;background:rgba(4,19,30,.44);color:#e5f7ff;font:500 15px Georgia,serif;backdrop-filter:blur(7px)}
-    .le-lc-region-name{position:relative;z-index:2;display:block;font:600 15px Georgia,'Times New Roman',serif;text-shadow:0 2px 10px #000}
-    .le-lc-region-sub{position:relative;z-index:2;display:block;margin-top:3px;color:#d5e7f2;font-size:8px;line-height:1.25;text-shadow:0 1px 7px #000}
-    .le-lc-category{position:relative;isolation:isolate;min-width:0;min-height:122px;display:grid;grid-template-columns:36px minmax(0,1fr);align-items:center;gap:10px;padding:12px;border:1px solid rgba(158,197,223,.22);border-radius:16px;overflow:hidden;background:#102536;color:#edf6fc;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
-    .le-lc-category:before{content:'';position:absolute;z-index:1;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(2,10,18,.28),rgba(2,10,18,.86) 42%,rgba(2,10,18,.88) 100%)}
+    .le-lc-region-icon{display:none}
+    .le-lc-region-name{position:relative;z-index:2;display:block;font:600 clamp(9px,2.45vw,13px)/1.05 Georgia,'Times New Roman',serif;text-shadow:0 2px 10px #000;overflow-wrap:anywhere}
+    .le-lc-region-sub{display:none}
+    .le-lc-category{position:relative;isolation:isolate;min-width:0;min-height:106px;display:grid;grid-template-columns:36px minmax(0,1fr);align-items:center;gap:10px;padding:12px;border:1px solid rgba(158,197,223,.22);border-radius:16px;overflow:hidden;background:#102536;color:#edf6fc;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+    .le-lc-category:before{content:'';position:absolute;z-index:1;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(2,10,18,.10),rgba(2,10,18,.70) 43%,rgba(2,10,18,.86) 100%)}
     .le-lc-category-icon{position:relative;z-index:2;display:grid;place-items:center;width:36px;height:36px;border:1px solid rgba(200,229,246,.30);border-radius:12px;background:rgba(8,27,41,.58);color:#e4f6ff;font:500 20px Georgia,serif;backdrop-filter:blur(7px)}
     .le-lc-category-name{position:relative;z-index:2;display:block;font:600 14px/1.2 Georgia,'Times New Roman',serif;text-shadow:0 2px 10px #000}
     .le-lc-category-sub{position:relative;z-index:2;display:block;margin-top:4px;color:#d0e2ee;font-size:9px;line-height:1.3;text-shadow:0 1px 7px #000}
     .le-lc-category-count{position:relative;z-index:2;display:block;margin-top:5px;color:#7ce0fa;font-size:9px;font-weight:750;letter-spacing:.05em;text-shadow:0 1px 7px #000}
-    .le-lc-rail{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(218px,72%);gap:11px;overflow-x:auto;overscroll-behavior-x:contain;padding:1px 1px 7px;scroll-snap-type:x mandatory;scrollbar-width:none}
+    .le-lc-rail{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 18px)/3);gap:9px;overflow-x:auto;overscroll-behavior-x:contain;padding:1px 1px 7px;scroll-snap-type:x mandatory;scrollbar-width:none}
     .le-lc-rail::-webkit-scrollbar{display:none}
-    .le-lc-card{position:relative;display:block;min-width:0;width:100%;aspect-ratio:1.32/1;overflow:hidden;border:1px solid rgba(182,215,237,.19);border-radius:17px;background:linear-gradient(140deg,#18374c,#091723);color:inherit;text-align:left;padding:0;cursor:pointer;scroll-snap-align:start;-webkit-tap-highlight-color:transparent}
+    .le-lc-card{position:relative;display:block;min-width:0;width:100%;aspect-ratio:1.36/1;overflow:hidden;border:1px solid rgba(182,215,237,.19);border-radius:17px;background:linear-gradient(140deg,#18374c,#091723);color:inherit;text-align:left;padding:0;cursor:pointer;scroll-snap-align:start;-webkit-tap-highlight-color:transparent}
     .le-lc-card-content{position:absolute;z-index:1;left:12px;right:12px;bottom:11px;display:grid;gap:4px;pointer-events:none}
     .le-lc-card-title{margin:0;color:#fff;font:600 17px/1.05 Georgia,'Times New Roman',serif;text-shadow:0 2px 8px #000}
     .le-lc-card-location{margin:0;color:#e0eaf1;font:500 10px/1.35 Georgia,'Times New Roman',serif;text-shadow:0 1px 6px #000}
@@ -146,8 +152,10 @@
     .le-lc-load-more[hidden]{display:none}
     .le-lc-load-more:disabled{opacity:.55}
     .le-lc-results .le-lc-card{aspect-ratio:1.08/1}
-    .le-lc-empty{grid-column:1/-1;margin:0;padding:18px;border:1px solid rgba(153,195,224,.13);border-radius:15px;background:rgba(5,15,25,.56);color:#9db6c8;font-size:11px;line-height:1.55}
-    .le-lc-state{margin:0;padding:12px 13px;border:1px solid rgba(151,194,223,.13);border-radius:13px;background:rgba(4,13,23,.56);color:#98b4c8;font-size:10px;line-height:1.5}
+    .le-lc-empty{grid-column:1/-1;margin:0;padding:14px;border:1px solid rgba(153,195,224,.13);border-radius:14px;background:rgba(5,15,25,.42);color:#9db6c8;font-size:10px;line-height:1.5}
+    .le-lc-empty--inline{padding:7px 2px;border:0;border-radius:0;background:transparent;font-size:10px}
+    .le-lc-state{margin:0;padding:9px 11px;border:1px solid rgba(151,194,223,.13);border-radius:12px;background:rgba(4,13,23,.42);color:#98b4c8;font-size:9px;line-height:1.45}
+    .le-lc-state[hidden],.le-lc-results[hidden],.le-lc-results-title[hidden]{display:none!important}
     .le-lc-state[data-kind="error"]{border-color:rgba(255,130,140,.25);color:#ffc0c5}
     .le-lc-state[data-kind="success"]{border-color:rgba(103,213,180,.2);color:#a8e9d4}
     .le-lc-modal{position:fixed;z-index:20;inset:0;display:grid;align-items:end;padding:16px 12px calc(env(safe-area-inset-bottom) + 112px);background:rgba(0,4,9,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);pointer-events:auto}
@@ -162,10 +170,10 @@
     .le-lc-modal-credit a{color:#9cddf7;text-underline-offset:3px}
     .le-lc-modal-actions{display:flex;flex-wrap:wrap;gap:8px}
     .le-lc-modal-actions a{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 14px;border:1px solid rgba(125,198,230,.28);border-radius:12px;background:rgba(53,132,170,.22);color:#eff8ff;font-size:11px;font-weight:700;text-decoration:none}
-    @media(min-width:620px){.le-lc-region-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.le-lc-region-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.le-lc-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.le-lc-results{grid-template-columns:repeat(3,minmax(0,1fr))}.le-lc-rail{grid-auto-columns:minmax(230px,31%)} }
+    @media(min-width:620px){.le-lc-region-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}.le-lc-region{aspect-ratio:1.02/1;min-height:100px;padding:9px}.le-lc-region-name{font-size:clamp(12px,1.6vw,16px)}.le-lc-region-sub{display:block;font-size:9px}.le-lc-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.le-lc-results{grid-template-columns:repeat(3,minmax(0,1fr))}.le-lc-rail{grid-auto-columns:minmax(160px,31%)} }
     @media(orientation:landscape) and (max-height:560px){
-      .le-sfv--live-cams .le-sfv-panel{padding-top:calc(env(safe-area-inset-top) + 12px)!important;padding-bottom:calc(env(safe-area-inset-bottom) + 112px)!important}
-      .le-lc-wrap{gap:18px}.le-lc-title{font-size:37px}.le-lc-hero{aspect-ratio:2.3/1;min-height:160px}.le-lc-region-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.le-lc-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.le-lc-results{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .le-sfv--live-cams .le-sfv-panel{padding-top:calc(env(safe-area-inset-top) + 10px)!important;padding-bottom:calc(env(safe-area-inset-bottom) + 160px)!important}
+      .le-lc-wrap{gap:14px}.le-lc-title{font-size:37px}.le-lc-hero{aspect-ratio:2.4/1;min-height:132px}.le-lc-region-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.le-lc-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.le-lc-results{grid-template-columns:repeat(3,minmax(0,1fr))}
     }
     @media(prefers-reduced-motion:reduce){.le-sfv--live-cams *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
   `;
@@ -237,6 +245,8 @@
     if (Array.isArray(payload?.items)) return payload.items;
     if (Array.isArray(payload?.results)) return payload.results;
     if (Array.isArray(payload?.streams)) return payload.streams;
+    if (payload?.item && typeof payload.item === 'object') return [payload.item];
+    if (payload?.id && typeof payload === 'object') return [payload];
     return [];
   }
   function nextCursorFrom(payload) {
@@ -304,9 +314,13 @@
     heroBadge.append(make('span', 'le-lc-live-dot'), make('span', '', 'LIVE WINDOW'));
     const heroTitle = make('h2', 'le-lc-camera-title', 'Finding a window into the world…');
     const heroLocation = make('p', 'le-lc-location', 'Connecting to public cameras');
-    heroContent.append(heroBadge, heroTitle, heroLocation);
-    heroButton.append(heroImage, heroFallback, heroContent);
+    heroContent.append(heroTitle, heroLocation);
+    heroButton.append(heroImage, heroFallback, heroBadge, heroContent);
     wrap.appendChild(heroButton);
+    const heroDots = make('div', 'le-lc-hero-dots');
+    heroDots.hidden = true;
+    heroDots.setAttribute('aria-label', 'Featured camera previews');
+    wrap.appendChild(heroDots);
     const heroCredit = make('a', 'le-lc-hero-credit');
     heroCredit.hidden = true;
     heroCredit.target = '_blank';
@@ -375,13 +389,15 @@
     const searchButton = make('button', 'le-lc-search-button', 'Search');
     searchButton.type = 'submit';
     searchRow.append(searchInput, searchButton);
-    const resultsTitle = make('div', 'le-lc-section-head');
-    const resultsHeading = make('h3', 'le-lc-section-title', 'All featured cameras');
+    const resultsTitle = make('div', 'le-lc-section-head le-lc-results-title');
+    resultsTitle.hidden = true;
+    const resultsHeading = make('h3', 'le-lc-section-title', 'Camera results');
     const clearButton = make('button', 'le-lc-link', 'Clear');
     clearButton.type = 'button';
     clearButton.hidden = true;
     resultsTitle.append(resultsHeading, clearButton);
     const resultGrid = make('div', 'le-lc-results');
+    resultGrid.hidden = true;
     const loadMoreButton = make('button', 'le-lc-load-more', 'Load more cameras');
     loadMoreButton.type = 'button';
     loadMoreButton.hidden = true;
@@ -421,6 +437,7 @@
     let currentRegion = null;
     let currentQuery = '';
     let featuredCameras = [];
+    let activeHeroIndex = 0;
     let resultCameras = [];
     let paginationCursor = '';
     let loadingMore = false;
@@ -429,6 +446,7 @@
     function setStatus(message, kind = '') {
       status.textContent = message;
       if (kind) status.dataset.kind = kind; else status.removeAttribute('data-kind');
+      status.hidden = kind === 'success';
     }
     function setHero(camera) {
       if (!camera) {
@@ -457,6 +475,12 @@
         heroFallback.hidden = false;
         heroFallback.textContent = 'Camera preview temporarily unavailable';
         heroFallback.style.backgroundImage = `linear-gradient(180deg,rgba(1,8,15,.04),rgba(1,8,15,.72)),url('${cameraArtwork(camera)}')`;
+        heroBadge.hidden = true;
+        heroButton.disabled = true;
+        heroTitle.textContent = 'Preview temporarily unavailable';
+        heroLocation.textContent = 'Try another camera window below';
+        heroCredit.hidden = true;
+        heroDots.hidden = featuredCameras.length < 2;
       };
       heroTitle.textContent = camera.title || camera.name || 'Live camera';
       heroLocation.textContent = countryLabel(camera);
@@ -477,9 +501,8 @@
       image.referrerPolicy = 'no-referrer';
       image.src = previewUrl(camera);
       image.onerror = () => {
-        image.removeAttribute('src');
-        image.hidden = true;
-        card.style.background = `linear-gradient(180deg,rgba(1,8,15,.04),rgba(1,8,15,.78)),url('${cameraArtwork(camera)}') center/cover`;
+        // A failed live preview is removed rather than disguised with scenic art.
+        shell.remove();
       };
       const content = make('div', 'le-lc-card-content');
       const badge = make('span', 'le-lc-badge');
@@ -500,16 +523,40 @@
       }
       return shell;
     }
+    function renderHeroDots(cameras) {
+      heroDots.replaceChildren();
+      const count = Math.min(cameras.length, 5);
+      heroDots.hidden = count < 2;
+      for (let index = 0; index < count; index += 1) {
+        const dot = make('button', 'le-lc-hero-dot');
+        dot.type = 'button';
+        dot.setAttribute('aria-label', `Show featured camera ${index + 1}`);
+        dot.setAttribute('aria-pressed', index === activeHeroIndex ? 'true' : 'false');
+        dot.addEventListener('click', () => {
+          activeHeroIndex = index;
+          setHero(featuredCameras[index] || null);
+          renderHeroDots(featuredCameras);
+        });
+        heroDots.appendChild(dot);
+      }
+    }
     function renderFeatured(cameras) {
       featuredRail.replaceChildren();
       const filtered = cameras.filter(displayable);
       featuredCameras = filtered;
+      activeHeroIndex = 0;
       setHero(filtered[0] || null);
-      filtered.slice(1, 9).forEach(camera => featuredRail.appendChild(makeCameraCard(camera)));
-      if (filtered.length <= 1) {
-        featuredRail.appendChild(make('p', 'le-lc-empty', 'More camera windows will appear here as eligible public previews become available. Cameras without permission to embed are never forced into image cards.'));
+      renderHeroDots(filtered);
+      filtered.slice(1, 7).forEach(camera => featuredRail.appendChild(makeCameraCard(camera)));
+      if (!filtered.length) {
+        featuredRail.appendChild(make('p', 'le-lc-empty le-lc-empty--inline', 'No public preview is ready to feature right now. Explore a region or search the directory below.'));
+      } else if (filtered.length === 1) {
+        featuredRail.appendChild(make('p', 'le-lc-empty le-lc-empty--inline', 'More camera windows will appear here as eligible public previews become available.'));
       }
-      renderResults(filtered, 'All featured cameras');
+      resultCameras = filtered;
+      resultsTitle.hidden = true;
+      resultGrid.hidden = true;
+      loadMoreButton.hidden = true;
     }
     function mergeUnique(existing, incoming) {
       const map = new Map();
@@ -541,6 +588,8 @@
       });
     }
     function renderResults(cameras, title, { append = false } = {}) {
+      resultsTitle.hidden = false;
+      resultGrid.hidden = false;
       resultsHeading.textContent = title;
       const filtered = cameras.filter(displayable);
       resultCameras = append ? mergeUnique(resultCameras, filtered) : filtered;
@@ -676,15 +725,41 @@
         if (disposed || request.signal.aborted) return;
         const hasFeatured = featuredResult.status === 'fulfilled';
         const hasCategories = categoriesResult.status === 'fulfilled';
-        const cameras = hasFeatured ? itemsFrom(featuredResult.value).filter(displayable) : [];
+        let cameras = hasFeatured ? itemsFrom(featuredResult.value).filter(displayable) : [];
+        // The current OpenEye catalogue documents /catalog as an enriched,
+        // pageable camera feed. Use it to backfill the editorial showcase when
+        // the curated featured endpoint is empty or temporarily incomplete.
+        if (cameras.length < 6) {
+          try {
+            const backfill = await requestCatalog(new URLSearchParams({ embeddable: '1', limit: '36', sort: 'fresh' }), request.signal);
+            if (disposed || request.signal.aborted) return;
+            cameras = mergeUnique(cameras, itemsFrom(backfill).filter(displayable));
+          } catch (backfillError) {
+            if (request.signal.aborted) return;
+            console.warn('[LIVE // EARTH] Featured catalogue backfill unavailable:', backfillError?.message || backfillError);
+          }
+        }
+        // /catalog/random is documented as the last-resort public, live camera.
+        if (cameras.length < 2) {
+          try {
+            const randomCamera = await requestJson('/catalog/random', request.signal);
+            if (disposed || request.signal.aborted) return;
+            cameras = mergeUnique(cameras, itemsFrom(randomCamera).filter(displayable));
+          } catch (randomError) {
+            if (request.signal.aborted) return;
+            console.warn('[LIVE // EARTH] Random camera fallback unavailable:', randomError?.message || randomError);
+          }
+        }
         if (hasCategories) renderCategories(categoriesResult.value);
         renderFeatured(cameras);
-        if (hasFeatured) {
-          setStatus(cameras.length ? `${cameras.length} featured previews are currently eligible to display. More cameras can be found by category or search.` : 'The directory is online, but no featured camera currently meets the live-preview and publisher-credit checks.', cameras.length ? 'success' : '');
+        if (cameras.length) {
+          setStatus(`${cameras.length} public camera previews are ready. More can be explored by region or category.`, 'success');
+        } else if (!hasFeatured) {
+          setStatus(`The featured directory could not be reached. ${featuredResult.reason?.message || 'Try a region or search again.'}`, 'error');
         } else {
-          setStatus(`Featured cameras could not be loaded. ${featuredResult.reason?.message || 'Please try a search or category.'}`, 'error');
+          setStatus('No public preview is ready to feature right now. Try a region or search the directory.', '');
         }
-        if (!hasCategories && hasFeatured) setStatus('Featured cameras loaded. Category counts are temporarily unavailable.', '');
+        if (!hasCategories && cameras.length) setStatus('Camera previews loaded. Category counts are temporarily unavailable.', '');
       } catch (error) {
         if (disposed || request.signal.aborted) return;
         setHero(null);
@@ -807,8 +882,11 @@
       clearButton.hidden = true;
       paginationCursor = '';
       loadingMore = false;
-      renderResults(featuredCameras, 'All featured cameras');
-      setStatus(`${featuredCameras.length} featured previews currently meet the display rules. Choose a category or search the world directory.`);
+      resultsTitle.hidden = true;
+      resultGrid.hidden = true;
+      loadMoreButton.hidden = true;
+      resultCameras = featuredCameras;
+      setStatus('Choose a region, category, or search for a place to explore public camera windows.');
     }
     function refreshCurrent() {
       if (currentQuery) runSearch(currentQuery);

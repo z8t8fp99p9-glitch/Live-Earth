@@ -11,7 +11,29 @@ assert.match(source, /'LIVE \/\/ EARTH'/, 'The product header must use the app n
 assert.doesNotMatch(source, /'EARTH \/\/ LIVE'/, 'The reversed app name must not remain in the visible header.');
 assert.match(source, /le-lc-region-image/);
 assert.match(source, /le-lc-category-image/);
+assert.match(source, /grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/,
+  'The six region cards should sit in one photo-led strip on mobile.');
+assert.match(source, /aspect-ratio:2\.32\/1/,
+  'The featured hero should use the wide cinematic reference ratio.');
+assert.match(source, /grid-auto-columns:calc\(\(100% - 18px\)\/3\)/,
+  'The featured rail should show three compact windows across the mobile viewport.');
+assert.match(source, /le-lc-badge\[hidden\].*display:none!important/,
+  'Hidden fallback badges must not be exposed by the badge display rule.');
+assert.match(source, /function renderHeroDots\(cameras\)/,
+  'Multiple featured camera previews should have accessible carousel controls.');
+assert.match(source, /resultsTitle\.hidden = true/,
+  'The default landing view should place the directory search directly after categories.');
+assert.match(source, /limit: '36'/,
+  'An empty featured endpoint should backfill from the enriched public camera catalogue.');
+assert.match(source, /\/catalog\/random/,
+  'The documented random public-camera endpoint should be the last-resort fallback.');
 assert.match(source, /function discoveryImage\(name\)/);
+assert.match(source, /heroBadge\.hidden = true/,
+  'A scenic fallback or failed image must never retain a LIVE WINDOW badge.');
+assert.match(source, /shell\.remove\(\);/,
+  'A broken camera card must be removed rather than replaced with decorative art under a live label.');
+assert.match(source, /image: 'night-skies' \}/,
+  'The Antarctica tile must not reuse the Europe mountain photograph.');
 for (const image of ['wildlife', 'oceans', 'cities', 'weather', 'mountains', 'night-skies']) {
   assert.ok(fs.existsSync(path.join(root, 'Traffic', 'Assets', 'live-cams-discovery', `${image}.jpg`)),
     `The packaged ${image} discovery image must exist.`);
@@ -122,13 +144,19 @@ async function exerciseLifecycleAndDirectoryFallback() {
     redistribution: { preview_embed: true, attribution: { name: 'Camera operator', url: 'https://operator.example.test' } },
     source_url: 'https://operator.example.test/camera'
   };
+  const randomCamera = {
+    ...camera, id: 'stream_test_02', title: 'Lake panorama', category: 'surf', last_frame_age_s: 45,
+    view: { render: 'image', url: 'https://images.example.test/lake.webp' }
+  };
   const fetchStub = async (url) => {
     requestLog.push(String(url));
     const value = String(url);
     let payload = { items: [] };
     let status = 200;
-    if (value.includes('/catalog/featured')) payload = { items: [camera] };
+    if (value.includes('/catalog/featured')) payload = { items: [] };
     else if (value.includes('/catalog/categories')) payload = { items: [{ category: 'wildlife', count: 466 }] };
+    else if (value.includes('/catalog?embeddable=1&limit=36')) payload = { items: [camera] };
+    else if (value.includes('/catalog/random')) payload = randomCamera;
     else if (value.includes('/catalog?bbox=') && value.includes('-25%2C34%2C60%2C72')) status = 500;
     else if (value.includes('/catalog?bbox=') && (value.includes('sort=fresh') || value.includes('embeddable=1'))) status = 500;
     else if (value.includes('/catalog?bbox=')) payload = { items: [camera] };
@@ -174,7 +202,7 @@ async function exerciseLifecycleAndDirectoryFallback() {
   assert.equal(typeof registered?.deactivate, 'function', 'Live Cams should expose deactivate.');
 
   registered.activate();
-  await wait(5);
+  await wait(15);
   const regionTiles = findAll(body, 'le-lc-region');
   const regionTile = regionTiles[0];
   const europeTile = regionTiles[1];
@@ -185,6 +213,22 @@ async function exerciseLifecycleAndDirectoryFallback() {
   assert.ok(findAll(body, 'le-lc-region-image').length === 6, 'All six regions should have photographic image elements.');
   assert.ok(findAll(body, 'le-lc-category-image').length === 6, 'All six categories should have photographic image elements.');
   assert.ok(requestLog.some(url => url.includes('/catalog/featured')), 'Home should request featured cameras.');
+  assert.ok(requestLog.some(url => url.includes('/catalog?embeddable=1&limit=36')),
+    'An empty curated featured response should trigger a broad, fresh camera catalogue backfill.');
+  assert.ok(requestLog.some(url => url.includes('/catalog/random')),
+    'A sparse backfill should trigger the documented random camera fallback.');
+  assert.equal(findAll(body, 'le-lc-badge')[0]?.hidden, false,
+    'The featured hero badge should be visible for a verified camera preview.');
+  assert.equal(findAll(body, 'le-lc-hero-dots').length, 1,
+    'The hero carousel control row should be present.');
+  assert.equal(findAll(body, 'le-lc-card').length, 1,
+    'The random fallback camera should populate the Featured Windows rail.');
+  assert.equal(findAll(body, 'le-lc-results').length, 1,
+    'The search-results grid should exist but remain collapsed on the landing screen.');
+  assert.equal(findAll(body, 'le-lc-results')[0].hidden, true,
+    'The home screen should not show a second full catalogue below the search field.');
+  assert.equal(findAll(body, 'le-lc-state')[0]?.hidden, true,
+    'A successful home load should not leave a bulky status panel in the editorial layout.');
 
   // Region click: the strict preferred query and its reduced variant return 500;
   // the plain documented catalogue request is then retried and returns a photo.
