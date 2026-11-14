@@ -916,7 +916,7 @@
       sun.addColorStop(0,night?'#f3e7d8':'#df9a89');
       sun.addColorStop(.74,night?'#e8d8c8':accent);
       sun.addColorStop(1,'rgba(184,91,83,.70)');
-      ctx.globalAlpha=state.weather==='storm'?.54:state.weather==='fog'?.42:.78;
+      ctx.globalAlpha=state.weather==='storm'?.66:state.weather==='fog'?.42:.78;
       ctx.fillStyle=sun;
       ctx.beginPath();ctx.arc(sx,sy,radius,0,Math.PI*2);ctx.fill();
       ctx.save();ctx.beginPath();ctx.arc(sx,sy,radius*.94,0,Math.PI*2);ctx.clip();
@@ -1106,12 +1106,12 @@
       const {soft,ink}=p;
       const intensity=Math.min(1,Math.max(.18,state.precipitation/6));
       const windX=-Math.sin(state.direction*Math.PI/180);
-      const count=Math.round(8+intensity*7);
+      const count=Math.round(14+intensity*8);
       for(let i=0;i<count;i++){
         const x=((i*73+t*(4+state.wind*.55)*windX)%width+width)%width;
         const y=((i*49+t*(90+intensity*90))%height*.86);
         const lean=windX*Math.min(6,1.2+state.wind*.13);
-        line([[x,y],[x+lean,y+8+intensity*7]],soft,.23+intensity*.18,.65);
+        line([[x,y],[x+lean,y+12+intensity*9]],soft,.22+intensity*.16,.72);
       }
       for(let i=0;i<3;i++){
         const x=width*(.18+i*.31);const y=height*(.75+(i%2)*.12);
@@ -1165,14 +1165,21 @@
 
       // Distant ink mountains: three distinct summits, softer shoulders and pale atmospheric depth.
       const far=[[-.06,.73],[.08,.61],[.17,.65],[.30,.39],[.38,.56],[.51,.27],[.61,.54],[.74,.40],[.84,.59],[.94,.47],[1.06,.66]];
-      fillRidge(far,'rgba(176,185,174,.62)','rgba(232,230,220,.08)',.92);
-      contour(far,'#778679',.30,.9);
+      const storm=state.weather==='storm';
+      fillRidge(far,
+        storm?'rgba(157,167,159,.68)':'rgba(176,185,174,.62)',
+        'rgba(232,230,220,.08)',.92);
+      contour(far,'#778679',storm?.34:.30,.9);
       const mid=[[-.05,.82],[.11,.72],[.23,.76],[.39,.61],[.52,.74],[.68,.59],[.82,.74],[.95,.65],[1.05,.77]];
-      fillRidge(mid,'rgba(135,154,140,.39)','rgba(179,194,180,.12)',.84);
-      contour(mid,'#65796d',.27,.85);
+      fillRidge(mid,
+        storm?'rgba(105,123,112,.50)':'rgba(135,154,140,.39)',
+        storm?'rgba(169,183,171,.10)':'rgba(179,194,180,.12)',.84);
+      contour(mid,'#596d60',storm?.34:.27,.85);
       const near=[[-.04,.88],[.13,.81],[.30,.86],[.47,.77],[.65,.86],[.83,.76],[1.04,.85]];
-      fillRidge(near,'rgba(111,135,119,.23)','rgba(192,203,190,.06)',.75);
-      contour(near,'#758579',.20,.7);
+      fillRidge(near,
+        storm?'rgba(79,99,87,.34)':'rgba(111,135,119,.23)',
+        'rgba(192,203,190,.06)',.75);
+      contour(near,'#64776a',storm?.27:.20,.7);
 
       // Small facets and broken ink folds stop the mountains reading as smooth waves.
       const facets=[
@@ -1191,7 +1198,7 @@
 
       // Richer Japanese landscape details: broken mountain ink, pine groves and a quiet shoreline.
       // All detail stays inside the existing Weather canvas; the separate Live Art canvas is untouched.
-      const inkTone=p.ink, softTone=p.soft, pineTone=p.accent;
+      const inkTone=p.ink, softTone=p.soft;
       const ridgeMarks=[
         [[.055,.675],[.105,.646],[.145,.657]],[[.205,.623],[.255,.585],[.285,.594]],
         [[.335,.535],[.365,.505],[.395,.525]],[[.455,.465],[.485,.425],[.515,.445]],
@@ -1215,45 +1222,9 @@
         ctx.stroke();ctx.restore();
       }
 
-      // Small pine groves sit on the middle ridge, with restrained wind-responsive movement.
-      const drawPineCluster=(nx,ny,size,phase)=>{
-        const gust=Math.min(1,state.wind/55);
-        const windX=-Math.sin(state.direction*Math.PI/180);
-        const sway=reduced?0:Math.sin(t*.62+phase)*gust*width*.0022*windX;
-        const x=width*nx+sway, y=height*ny, s=Math.min(width,height)*size;
-        ctx.save();ctx.translate(x,y);ctx.scale(s/100,s/100);
-        ctx.strokeStyle=inkTone;ctx.fillStyle=pineTone;ctx.lineCap='round';ctx.lineJoin='round';
-        ctx.globalAlpha=.43;ctx.lineWidth=2.2;
-        ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(2,-24);ctx.lineTo(9,-48);ctx.stroke();
-        const tiers=[[-19,-34,-34,-31,20,-37],[-11,-23,-29,-20,25,-26],[-4,-12,-22,-10,28,-16]];
-        tiers.forEach((q,k)=>{
-          ctx.globalAlpha=.38;ctx.lineWidth=2;
-          ctx.beginPath();ctx.moveTo(5,q[1]);ctx.quadraticCurveTo(-8,q[1]-8,q[2],q[3]);
-          ctx.moveTo(6,q[1]+1);ctx.quadraticCurveTo(15,q[1]-7,q[4],q[5]);ctx.stroke();
-          ctx.globalAlpha=.18;ctx.fillStyle=pineTone;
-          ctx.beginPath();ctx.ellipse(-13-k*2,q[1]-2,14,3,-.10,0,Math.PI*2);ctx.fill();
-          ctx.beginPath();ctx.ellipse(17+k*2,q[1]-3,13,3,.10,0,Math.PI*2);ctx.fill();
-        });
-        ctx.restore();
-      };
-      drawPineCluster(.31,.785,.105,.4);
-      drawPineCluster(.47,.765,.078,1.2);
-      drawPineCluster(.64,.785,.092,2.1);
-
-      // Shoreline and small ink-wash rocks create a more legible foreground landscape.
-      const shoreY=height*.835;
-      ctx.save();ctx.globalAlpha=.25;ctx.strokeStyle=softTone;ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(width*.04,shoreY);
-      ctx.bezierCurveTo(width*.22,shoreY-height*.035,width*.36,shoreY+height*.018,width*.54,shoreY-height*.008);
-      ctx.bezierCurveTo(width*.70,shoreY-height*.028,width*.82,shoreY+height*.012,width*.98,shoreY-height*.018);
-      ctx.stroke();ctx.restore();
-      for(let i=0;i<6;i++){
-        const x=width*(.12+i*.145), y=height*(.865+(i%2)*.018), rx=width*(.018+(i%3)*.004);
-        ctx.save();ctx.globalAlpha=.13+(i%2)*.035;ctx.fillStyle=inkTone;
-        ctx.beginPath();ctx.moveTo(x-rx,y);ctx.quadraticCurveTo(x-rx*.35,y-height*.012,x,y-height*.008);
-        ctx.quadraticCurveTo(x+rx*.8,y-height*.004,x+rx,y);ctx.quadraticCurveTo(x,y+height*.006,x-rx,y);ctx.fill();
-        ctx.restore();
-      }
+      // A single quiet shoreline separates the mountain foothills from the lake.
+      // Keep the middle ridge open: the reference has one foreground pine and one pagoda,
+      // not a row of small trees competing with the mountain silhouettes.
 
       // Japanese landscape foreground: two quiet ink-wash ridges, a tiny pine and a distant pavilion.
       // Quiet floating mist, like diluted sumi ink, rather than wide graphic bands.
@@ -1277,24 +1248,62 @@
         const wave=Math.sin(t*.24+i*.8)*Math.min(1.1,state.wind*.03);
         line([[width*(.08+i*.015),y],[width*.34,y+wave],[width*.63,y-wave*.25],[width*.94,y]],p.soft,.22-i*.025,.55);
       }
+      // A fine, continuous shoreline remains visible above the lake reflections.
+      ctx.save();ctx.globalAlpha=.22;ctx.strokeStyle=p.soft;ctx.lineWidth=.85;
+      ctx.beginPath();ctx.moveTo(width*.035,height*.805);
+      ctx.bezierCurveTo(width*.22,height*.785,width*.37,height*.818,width*.55,height*.802);
+      ctx.bezierCurveTo(width*.72,height*.785,width*.86,height*.814,width*.98,height*.795);
+      ctx.stroke();ctx.restore();
 
-      // A small, recognisable pine silhouette balances the distant pavilion.
+      // One windswept Japanese pine anchors the left foreground, as in the reference.
+      // Broad, irregular foliage pads and exposed boughs keep it distinct from a conifer.
       ctx.save();
-      const tx=width*.13,ty=height*.84,sc=Math.min(width,height)*.31;
-      const sway=reduced?0:Math.sin(t*.72)*Math.min(2.4,state.wind*.055);
+      const tx=width*.135,ty=height*.865,sc=Math.min(width,height)*.56;
+      const gust=Math.min(1,state.wind/55);
+      const sway=reduced?0:Math.sin(t*.72)*gust*2.6;
       ctx.translate(tx+sway,ty);ctx.scale(sc/100,sc/100);
-      ctx.strokeStyle=p.ink;ctx.lineCap='round';ctx.lineJoin='round';ctx.globalAlpha=.55;
-      ctx.lineWidth=2.6;ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(-6,-22,8,-54);ctx.stroke();
-      const tiers=[[-13,-47,-37,-43,19,-47],[-10,-34,-42,-30,24,-36],[-5,-22,-34,-18,27,-24]];
-      tiers.forEach((q,i)=>{
-        ctx.beginPath();ctx.moveTo(5,q[1]);ctx.quadraticCurveTo(-5,q[1]-6,q[2],q[3]);
-        ctx.moveTo(5,q[1]+2);ctx.quadraticCurveTo(13,q[1]-5,q[4],q[5]);ctx.stroke();
+      ctx.strokeStyle=p.ink;ctx.fillStyle='#435b4d';ctx.lineCap='round';ctx.lineJoin='round';
+      ctx.globalAlpha=.76;ctx.lineWidth=4.2;
+      ctx.beginPath();ctx.moveTo(0,0);
+      ctx.bezierCurveTo(-8,-18,-5,-31,8,-43);
+      ctx.bezierCurveTo(18,-52,28,-58,38,-66);
+      ctx.stroke();
+      const boughs=[
+        [[7,-39],[-7,-47],[-26,-48],[-48,-43]],
+        [[12,-48],[1,-60],[-15,-65],[-37,-61]],
+        [[25,-57],[39,-63],[50,-61],[62,-55]],
+        [[16,-51],[25,-58],[39,-57],[50,-51]]
+      ];
+      boughs.forEach((b,i)=>{
+        ctx.globalAlpha=.70;ctx.lineWidth=i===2?2.5:3.0;
+        ctx.beginPath();ctx.moveTo(b[0][0],b[0][1]);
+        ctx.quadraticCurveTo(b[1][0],b[1][1],b[2][0],b[2][1]);
+        ctx.quadraticCurveTo(b[2][0],b[2][1],b[3][0],b[3][1]);ctx.stroke();
+      });
+      const pads=[
+        [-45,-42,17,5],[-29,-47,17,5],[-16,-58,18,5],
+        [4,-64,18,5],[25,-61,19,5],[47,-55,16,4.5],
+        [1,-47,15,4.5]
+      ];
+      pads.forEach((q,i)=>{
+        ctx.save();ctx.globalAlpha=i%3===0?.52:.44;
+        ctx.fillStyle=i%2?'#526b58':'#344c40';
+        ctx.beginPath();ctx.ellipse(q[0],q[1],q[2],q[3],i%2?-.08:.06,0,Math.PI*2);ctx.fill();ctx.restore();
+        // Fine needle strokes give the canopy a soft hand-painted edge.
         for(let j=0;j<4;j++){
-          const xx=q[2]+(q[4]-q[2])*j/3,yy=q[3]+(q[5]-q[3])*j/3;
-          ctx.globalAlpha=.40;ctx.lineWidth=1.3;
-          ctx.beginPath();ctx.moveTo(xx-6,yy-3);ctx.quadraticCurveTo(xx,yy-9,xx+7,yy-2);ctx.stroke();
+          const xx=q[0]-q[2]*.65+j*q[2]*.42;
+          const yy=q[1]+((j%2)?-1.5:1.3);
+          ctx.globalAlpha=.38;ctx.lineWidth=.9;
+          ctx.beginPath();ctx.moveTo(xx,yy);
+          ctx.quadraticCurveTo(xx+2,yy-3,xx+5,yy-1);ctx.stroke();
         }
-      });ctx.restore();
+      });
+      // A few tapering twigs remain visible between the canopy pads.
+      ctx.globalAlpha=.58;ctx.lineWidth=1.25;
+      [[-25,-47,-35,-51],[-12,-58,-23,-63],[34,-60,44,-64],[42,-53,55,-51]].forEach(q=>{
+        ctx.beginPath();ctx.moveTo(q[0],q[1]);ctx.quadraticCurveTo((q[0]+q[2])*.5,(q[1]+q[3])*.5-3,q[2],q[3]);ctx.stroke();
+      });
+      ctx.restore();
       drawPagoda(p);drawPagodaReflection(p);
 
       if(state.weather==='rain'||state.weather==='storm')drawRain(p,t);
