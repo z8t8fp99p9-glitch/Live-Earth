@@ -28,6 +28,8 @@ assert.match(source, /limit: '36'/,
 assert.match(source, /\/catalog\/random/,
   'The documented random public-camera endpoint should be the last-resort fallback.');
 assert.match(source, /function discoveryImage\(name\)/);
+assert.match(source, /\.le-sfv--live-cams \[hidden\]\{display:none!important\}/,
+  'Hidden state must win against component display styles, especially the featured LIVE badge.');
 assert.match(source, /heroBadge\.hidden = true/,
   'A scenic fallback or failed image must never retain a LIVE WINDOW badge.');
 assert.match(source, /shell\.remove\(\);/,
@@ -148,6 +150,12 @@ async function exerciseLifecycleAndDirectoryFallback() {
     ...camera, id: 'stream_test_02', title: 'Lake panorama', category: 'surf', last_frame_age_s: 45,
     view: { render: 'image', url: 'https://images.example.test/lake.webp' }
   };
+  const publisherOnlyCamera = {
+    id: 'stream_test_03', title: 'Harbour entrance camera', city: 'Bergen', country: 'Norway', category: 'port',
+    live: true, is_free: true, last_frame_age_s: 80,
+    view: { render: 'link', url: 'https://publisher.example.test/harbour-live' },
+    redistribution: { preview_embed: false }
+  };
   const fetchStub = async (url) => {
     requestLog.push(String(url));
     const value = String(url);
@@ -155,7 +163,7 @@ async function exerciseLifecycleAndDirectoryFallback() {
     let status = 200;
     if (value.includes('/catalog/featured')) payload = { items: [] };
     else if (value.includes('/catalog/categories')) payload = { items: [{ category: 'wildlife', count: 466 }] };
-    else if (value.includes('/catalog?embeddable=1&limit=36')) payload = { items: [camera] };
+    else if (value.includes('/catalog?limit=36&sort=fresh')) payload = { items: [publisherOnlyCamera] };
     else if (value.includes('/catalog/random')) payload = randomCamera;
     else if (value.includes('/catalog?bbox=') && value.includes('-25%2C34%2C60%2C72')) status = 500;
     else if (value.includes('/catalog?bbox=') && (value.includes('sort=fresh') || value.includes('embeddable=1'))) status = 500;
@@ -213,8 +221,8 @@ async function exerciseLifecycleAndDirectoryFallback() {
   assert.ok(findAll(body, 'le-lc-region-image').length === 6, 'All six regions should have photographic image elements.');
   assert.ok(findAll(body, 'le-lc-category-image').length === 6, 'All six categories should have photographic image elements.');
   assert.ok(requestLog.some(url => url.includes('/catalog/featured')), 'Home should request featured cameras.');
-  assert.ok(requestLog.some(url => url.includes('/catalog?embeddable=1&limit=36')),
-    'An empty curated featured response should trigger a broad, fresh camera catalogue backfill.');
+  assert.ok(requestLog.some(url => url.includes('/catalog?limit=36&sort=fresh') && !url.includes('embeddable=1')),
+    'An empty curated featured response should trigger a broad catalogue backfill that includes publisher-view cameras.');
   assert.ok(requestLog.some(url => url.includes('/catalog/random')),
     'A sparse backfill should trigger the documented random camera fallback.');
   assert.equal(findAll(body, 'le-lc-badge')[0]?.hidden, false,
@@ -222,7 +230,22 @@ async function exerciseLifecycleAndDirectoryFallback() {
   assert.equal(findAll(body, 'le-lc-hero-dots').length, 1,
     'The hero carousel control row should be present.');
   assert.equal(findAll(body, 'le-lc-card').length, 1,
-    'The random fallback camera should populate the Featured Windows rail.');
+    'A publisher-view camera should remain available in the Featured Windows rail beside the image hero.');
+  assert.ok(findAll(body, 'le-lc-badge').some(node => (node.children || []).some(child => child.textContent === 'OPEN SOURCE')),
+    'Publisher-only cards must be identified as source links rather than false live image previews.');
+  const sourceCard = findAll(body, 'le-lc-card')[0];
+  const sourceArtwork = findAll(sourceCard, 'le-lc-card-image')[0];
+  assert.ok(String(sourceArtwork?.src || '').endsWith('.jpg'),
+    'Publisher-only records must use local directory artwork, never the publisher URL as an image source.');
+  assert.notEqual(sourceArtwork?.src, 'https://publisher.example.test/harbour-live');
+  for (const listener of sourceCard.listeners.get('click') || []) listener();
+  const detailsModal = findAll(mountedRoot, 'le-lc-modal')[0];
+  assert.equal(detailsModal.hidden, false, 'Publisher-only camera details must open.');
+  const modalImage = findAll(detailsModal, 'le-lc-modal-image')[0];
+  assert.equal(modalImage.hidden, true, 'Publisher-only records must not be rendered as camera images.');
+  const publisherAction = findAll(detailsModal, 'le-lc-modal-actions')[0]?.children?.[0];
+  assert.equal(publisherAction?.href, 'https://publisher.example.test/harbour-live',
+    'Publisher-only details must provide the documented HTTPS camera destination.');
   assert.equal(findAll(body, 'le-lc-results').length, 1,
     'The search-results grid should exist but remain collapsed on the landing screen.');
   assert.equal(findAll(body, 'le-lc-results')[0].hidden, true,
@@ -236,7 +259,7 @@ async function exerciseLifecycleAndDirectoryFallback() {
   await wait(20);
   assert.ok(requestLog.some(url => url.includes('/catalog?bbox=') && url.includes('sort=fresh')));
   assert.ok(requestLog.some(url => url.includes('/catalog?bbox=') && !url.includes('embeddable=1') && !url.includes('sort=fresh')),
-    'Region browsing must retry without the failing optional filters.');
+    'Region browsing must retry without optional filters while still accepting source-only camera records.');
   const resultCards = findAll(body, 'le-lc-card');
   assert.ok(resultCards.length > 0, 'A successful fallback response should render camera cards.');
 
@@ -252,8 +275,8 @@ async function exerciseLifecycleAndDirectoryFallback() {
   // Category taps use the same robust catalog path.
   for (const listener of categoryTile.listeners.get('click') || []) listener();
   await wait(15);
-  assert.ok(requestLog.some(url => url.includes('/catalog?category=wildlife')),
-    'Category tiles must start a catalogue query when tapped.');
+  assert.ok(requestLog.some(url => url.includes('/catalog?category=wildlife') && !url.includes('embeddable=1')),
+    'Category tiles must query the enriched directory without suppressing publisher-view records.');
   assert.ok(findAll(body, 'le-lc-card').length > 0, 'Category results should render camera cards.');
 
   registered.deactivate();
@@ -265,7 +288,7 @@ async function exerciseLifecycleAndDirectoryFallback() {
 }
 
 exerciseLifecycleAndDirectoryFallback().then(() => {
-  console.log('Live Cams imagery, API fallback, permission and lifecycle tests passed.');
+  console.log('Live Cams catalogue, publisher-link, preview-permission, fallback and lifecycle tests passed.');
 }).catch(error => {
   console.error(error);
   process.exitCode = 1;

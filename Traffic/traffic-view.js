@@ -77,6 +77,8 @@
   style.id = 'le-live-cams-discovery-style';
   style.textContent = `
     .le-sfv--live-cams{pointer-events:none;color:#eef6ff}
+    /* Explicitly honour hidden states even when component rules set display:inline-flex/grid. */
+    .le-sfv--live-cams [hidden]{display:none!important}
     .le-sfv--live-cams .le-sfv-panel{
       position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
       max-width:none!important;max-height:none!important;overflow-y:auto!important;overflow-x:hidden!important;
@@ -162,7 +164,7 @@
     .le-lc-modal[hidden]{display:none}
     .le-lc-modal-panel{position:relative;width:min(100%,560px);max-height:min(72vh,680px);overflow:auto;margin:0 auto;padding:13px;border:1px solid rgba(173,215,241,.22);border-radius:23px;background:linear-gradient(155deg,#122638,#07131f 75%);box-shadow:0 22px 70px #000a}
     .le-lc-modal-close{position:absolute;z-index:2;right:22px;top:22px;width:36px;height:36px;border:1px solid #ffffff55;border-radius:50%;background:#071522dd;color:#fff;font-size:20px;cursor:pointer}
-    .le-lc-modal-image{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:15px;background:#0b1a26}
+    .le-lc-modal-image{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:15px;background:#0b1a26}.le-lc-modal-image[hidden]{display:none!important}
     .le-lc-modal h3{margin:14px 44px 5px 2px;color:#fff;font:600 23px/1.08 Georgia,'Times New Roman',serif}
     .le-lc-modal-location{margin:0 2px 10px;color:#abc1d2;font:12px Georgia,'Times New Roman',serif}
     .le-lc-modal-meta{margin:0 2px 12px;color:#8faabd;font-size:10px;line-height:1.55}
@@ -237,8 +239,18 @@
     if (!cameraCredit(camera)) return '';
     return safeHttps(camera?.view?.url || camera?.preview_url);
   }
+  // A directory record can be useful even when its imagery cannot be embedded.
+  // OpenEye's enriched catalogue explicitly distinguishes image, link and none.
+  // Only image rows with preview_embed + attribution are loaded into <img> tags;
+  // link rows open their publisher viewer, while paid/non-live rows stay excluded.
+  function cameraDestinationUrl(camera) {
+    const render = String(camera?.view?.render || '').toLowerCase();
+    if (render === 'link') return safeHttps(camera?.view?.url || sourceUrl(camera));
+    return safeHttps(camera?.source_url || camera?.publisher_url || camera?.viewer_url || camera?.website);
+  }
   function displayable(camera) {
-    return !!camera && !!camera.id && isFresh(camera) && !!previewUrl(camera);
+    if (!camera || !camera.id || camera.is_free !== true || !isFresh(camera)) return false;
+    return !!previewUrl(camera) || !!cameraDestinationUrl(camera);
   }
   function itemsFrom(payload) {
     if (Array.isArray(payload)) return payload;
@@ -462,32 +474,34 @@
         heroCredit.removeAttribute('href');
         return;
       }
-      heroButton.disabled = false;
-      heroBadge.hidden = false;
-      heroBadge.replaceChildren(make('span', 'le-lc-live-dot'), make('span', '', `${cameraFreshnessLabel(camera)} WINDOW`));
-      heroFallback.style.backgroundImage = '';
+      const imageUrl = previewUrl(camera);
+      const destination = cameraDestinationUrl(camera);
+      heroButton.disabled = !imageUrl && !destination;
+      heroBadge.hidden = !imageUrl;
+      if (imageUrl) {
+        heroBadge.replaceChildren(make('span', 'le-lc-live-dot'), make('span', '', `${cameraFreshnessLabel(camera)} WINDOW`));
+      }
+      heroFallback.style.backgroundImage = `linear-gradient(180deg,rgba(1,8,15,.10),rgba(1,8,15,.76)),url('${cameraArtwork(camera)}')`;
+      heroFallback.textContent = imageUrl ? 'Camera preview temporarily unavailable' : 'Open this camera at its publisher';
       heroButton.onclick = () => openDetails(camera);
-      heroImage.src = previewUrl(camera);
-      heroImage.hidden = false;
-      heroFallback.hidden = true;
+      heroImage.hidden = !imageUrl;
+      heroFallback.hidden = !!imageUrl;
       heroImage.onerror = () => {
         heroImage.hidden = true;
         heroFallback.hidden = false;
-        heroFallback.textContent = 'Camera preview temporarily unavailable';
-        heroFallback.style.backgroundImage = `linear-gradient(180deg,rgba(1,8,15,.04),rgba(1,8,15,.72)),url('${cameraArtwork(camera)}')`;
+        heroFallback.textContent = destination ? 'Preview unavailable · open publisher camera' : 'Camera preview temporarily unavailable';
         heroBadge.hidden = true;
-        heroButton.disabled = true;
-        heroTitle.textContent = 'Preview temporarily unavailable';
-        heroLocation.textContent = 'Try another camera window below';
-        heroCredit.hidden = true;
+        heroButton.disabled = !destination;
         heroDots.hidden = featuredCameras.length < 2;
       };
+      if (imageUrl) heroImage.src = imageUrl;
+      else heroImage.removeAttribute('src');
       heroTitle.textContent = camera.title || camera.name || 'Live camera';
       heroLocation.textContent = countryLabel(camera);
       const credit = cameraCredit(camera);
-      heroCredit.textContent = credit.name;
-      heroCredit.href = credit.url;
-      heroCredit.hidden = false;
+      heroCredit.textContent = credit?.name || '';
+      if (credit) heroCredit.href = credit.url; else heroCredit.removeAttribute('href');
+      heroCredit.hidden = !credit;
     }
     function makeCameraCard(camera) {
       const shell = make('article', 'le-lc-card-shell');
@@ -499,14 +513,23 @@
       image.loading = 'lazy';
       image.decoding = 'async';
       image.referrerPolicy = 'no-referrer';
-      image.src = previewUrl(camera);
-      image.onerror = () => {
-        // A failed live preview is removed rather than disguised with scenic art.
-        shell.remove();
-      };
+      const imageUrl = previewUrl(camera);
+      const destination = cameraDestinationUrl(camera);
+      if (imageUrl) {
+        image.src = imageUrl;
+        image.onerror = () => {
+          // A failed source image is not replaced with scenic artwork.
+          shell.remove();
+        };
+      } else {
+        image.src = cameraArtwork(camera);
+        image.classList.add('le-lc-card-artwork');
+        image.onerror = () => { image.hidden = true; card.style.background = 'linear-gradient(145deg,#153247,#07111c)'; };
+      }
       const content = make('div', 'le-lc-card-content');
       const badge = make('span', 'le-lc-badge');
-      badge.append(make('span', 'le-lc-live-dot'), make('span', '', cameraFreshnessLabel(camera)));
+      if (imageUrl) badge.append(make('span', 'le-lc-live-dot'), make('span', '', cameraFreshnessLabel(camera)));
+      else badge.append(make('span', '', '↗'), make('span', '', 'OPEN SOURCE'));
       const title = make('h3', 'le-lc-card-title', camera.title || camera.name || 'Live camera');
       const location = make('p', 'le-lc-card-location', countryLabel(camera));
       content.append(badge, title, location);
@@ -544,10 +567,10 @@
       featuredRail.replaceChildren();
       const filtered = cameras.filter(displayable);
       featuredCameras = filtered;
-      activeHeroIndex = 0;
-      setHero(filtered[0] || null);
+      activeHeroIndex = Math.max(0, filtered.findIndex(camera => !!previewUrl(camera)));
+      setHero(filtered[activeHeroIndex] || filtered[0] || null);
       renderHeroDots(filtered);
-      filtered.slice(1, 7).forEach(camera => featuredRail.appendChild(makeCameraCard(camera)));
+      filtered.filter((camera, index) => index !== activeHeroIndex).slice(0, 6).forEach(camera => featuredRail.appendChild(makeCameraCard(camera)));
       if (!filtered.length) {
         featuredRail.appendChild(make('p', 'le-lc-empty le-lc-empty--inline', 'No public preview is ready to feature right now. Explore a region or search the directory below.'));
       } else if (filtered.length === 1) {
@@ -606,11 +629,17 @@
     function openDetails(camera) {
       if (disposed || !displayable(camera)) return;
       lastFocused = document.activeElement;
-      modalImage.src = previewUrl(camera);
-      modalImage.onerror = () => { modalImage.removeAttribute('src'); };
+      const imageUrl = previewUrl(camera);
+      modalImage.hidden = !imageUrl;
+      if (imageUrl) {
+        modalImage.src = imageUrl;
+        modalImage.onerror = () => { modalImage.hidden = true; modalImage.removeAttribute('src'); };
+      } else {
+        modalImage.removeAttribute('src');
+      }
       modalTitle.textContent = camera.title || camera.name || 'Live camera';
       modalLocation.textContent = countryLabel(camera);
-      modalMeta.textContent = `${categoryLabel(camera)} · ${timeLabel(camera)}`;
+      modalMeta.textContent = `${categoryLabel(camera)} · ${timeLabel(camera)} · ${imageUrl ? 'Public preview' : 'Publisher-hosted camera'}`;
       modalCredit.replaceChildren();
       const credit = cameraCredit(camera);
       if (credit) {
@@ -622,15 +651,15 @@
         modalCredit.appendChild(link);
       }
       modalActions.replaceChildren();
-      const publisher = sourceUrl(camera);
+      const publisher = cameraDestinationUrl(camera) || sourceUrl(camera);
       if (publisher) {
-        const link = make('a', '', 'Open publisher');
+        const link = make('a', '', imageUrl ? 'Open publisher' : 'Open live camera at publisher');
         link.href = publisher;
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
         modalActions.appendChild(link);
       }
-      if (!publisher) modalActions.appendChild(make('p', 'le-lc-modal-meta', 'This directory record does not provide a separate publisher link. The preview is shown under its listed embed permission.'));
+      if (!publisher) modalActions.appendChild(make('p', 'le-lc-modal-meta', imageUrl ? 'This directory record does not provide a separate publisher link. The preview is shown under its listed embed permission.' : 'The directory lists this camera, but its publisher has not supplied an embeddable preview or a direct viewing link.'));
       modal.hidden = false;
       closeButton.focus?.();
     }
@@ -731,7 +760,7 @@
         // the curated featured endpoint is empty or temporarily incomplete.
         if (cameras.length < 6) {
           try {
-            const backfill = await requestCatalog(new URLSearchParams({ embeddable: '1', limit: '36', sort: 'fresh' }), request.signal);
+            const backfill = await requestCatalog(new URLSearchParams({ limit: '36', sort: 'fresh' }), request.signal);
             if (disposed || request.signal.aborted) return;
             cameras = mergeUnique(cameras, itemsFrom(backfill).filter(displayable));
           } catch (backfillError) {
@@ -753,7 +782,9 @@
         if (hasCategories) renderCategories(categoriesResult.value);
         renderFeatured(cameras);
         if (cameras.length) {
-          setStatus(`${cameras.length} public camera previews are ready. More can be explored by region or category.`, 'success');
+          const imageCount = cameras.filter(camera => !!previewUrl(camera)).length;
+          const sourceCount = cameras.length - imageCount;
+          setStatus(`${cameras.length} public camera windows are available${imageCount ? ` · ${imageCount} embeddable previews` : ''}${sourceCount ? ` · ${sourceCount} publisher-view cameras` : ''}.`, 'success');
         } else if (!hasFeatured) {
           setStatus(`The featured directory could not be reached. ${featuredResult.reason?.message || 'Try a region or search again.'}`, 'error');
         } else {
@@ -779,7 +810,7 @@
       setStatus(`Opening the ${region.title} camera window…`);
       const request = startRequest();
       try {
-        const payload = await requestCatalog(new URLSearchParams({ bbox: region.bbox, embeddable: '1', limit: '48', sort: 'fresh' }), request.signal);
+        const payload = await requestCatalog(new URLSearchParams({ bbox: region.bbox, limit: '48', sort: 'fresh' }), request.signal);
         if (disposed || request.signal.aborted) return;
         paginationCursor = nextCursorFrom(payload);
         const cameras = itemsFrom(payload).filter(displayable);
@@ -805,7 +836,7 @@
       loadingMore = false;
       const request = startRequest();
       try {
-        const payload = await requestCatalog(new URLSearchParams({ category, embeddable: '1', limit: '48', sort: 'fresh' }), request.signal);
+        const payload = await requestCatalog(new URLSearchParams({ category, limit: '48', sort: 'fresh' }), request.signal);
         if (disposed || request.signal.aborted) return;
         const cameras = itemsFrom(payload).filter(displayable);
         paginationCursor = nextCursorFrom(payload);
@@ -830,7 +861,7 @@
       loadingMore = false;
       const request = startRequest();
       try {
-        const payload = await requestCatalog(new URLSearchParams({ q: normalized, embeddable: '1', limit: '48', sort: 'fresh' }), request.signal);
+        const payload = await requestCatalog(new URLSearchParams({ q: normalized, limit: '48', sort: 'fresh' }), request.signal);
         if (disposed || request.signal.aborted) return;
         const cameras = itemsFrom(payload).filter(displayable);
         paginationCursor = nextCursorFrom(payload);
@@ -850,7 +881,7 @@
       loadingMore = true;
       loadMoreButton.disabled = true;
       loadMoreButton.textContent = 'Loading…';
-      const params = new URLSearchParams({ embeddable: '1', limit: '48', sort: 'fresh', cursor: paginationCursor });
+      const params = new URLSearchParams({ limit: '48', sort: 'fresh', cursor: paginationCursor });
       if (currentCategory) params.set('category', currentCategory);
       else if (currentRegion) params.set('bbox', currentRegion.bbox);
       else params.set('q', currentQuery);

@@ -22,7 +22,11 @@ Uses the anonymous OpenEye public REST catalogue:
 
 If the curated featured endpoint returns fewer than six eligible previews, the client backfills from the enriched public `/catalog` feed using `embeddable=1`, then tries `/catalog/random` if fewer than two cameras are available. The random endpoint may return a single camera object rather than an `items` array; the normalizer accepts both documented shapes. If a catalogue query returns a server error, the client retries without the optional `sort=fresh` parameter, then retries without `embeddable=1` and applies the client-side permission checks. If a region/category catalogue query still fails, it falls back to the documented lean `/catalog/map` projection and resolves a small first page of IDs through `/catalog/{id}` to obtain complete records. It never renders the lean map projection as if it were a full camera record.
 
-A directory camera preview is rendered only when all of the following are true:
+The full enriched catalogue is requested without `embeddable=1`, because that filter deliberately removes source-only publisher cameras. A camera directory entry can still be presented as a useful destination when it has a safe HTTPS publisher/viewer URL, even if it cannot be embedded as an image.
+
+The homepage still tries `/catalog/featured` first, then backfills from `/catalog?limit=36&sort=fresh`, and finally tries the documented object-shaped `/catalog/random` response when fewer than two records are available. The client normalizes both array responses and the single camera object returned by `/catalog/random`. Region, category, search, and pagination requests also use the full enriched catalogue rather than forcing `embeddable=1`.
+
+A camera image is rendered only when all of the following are true:
 
 1. `is_free === true`.
 2. `live === true` and a supplied frame timestamp/age is within the documented seven-day directory degradation window.
@@ -31,7 +35,9 @@ A directory camera preview is rendered only when all of the following are true:
 5. The API supplies both `redistribution.attribution.name` and a valid HTTPS `redistribution.attribution.url`.
 6. The preview URL is HTTPS.
 
-Frames up to 24 hours old are labelled **LIVE**. Frames older than 24 hours, but inside the seven-day directory window, are labelled **RECENT** so an older stored image is not described as current. The directory's documented seven-day window replaces the previous overly strict 24-hour exclusion. Publisher credit remains visible beside each preview and in the detail sheet. Restricted/source-only camera records are not forced into embeds.
+When `view.render === "link"`, the UI does not load its URL as an image; it identifies the record as **OPEN SOURCE** and provides an HTTPS publisher action in the details sheet. Where no image can be embedded, any scenic category artwork is only a clearly labelled directory fallback, never represented as a live camera frame. Records with neither a permitted image nor a safe publisher destination are not made into a false working camera card.
+
+Frames up to 24 hours old are labelled **LIVE**. Frames older than 24 hours, but inside the seven-day directory window, are labelled **RECENT** so an older stored image is not described as current. Publisher credit remains visible wherever camera preview imagery is displayed.
 
 ## Playback and cost boundary
 
@@ -50,4 +56,4 @@ This release uses public preview frames only. It does not call the paid frame en
 
 ## Verification boundary
 
-The included Node contract/lifecycle test validates branding, six-across region layout, three-across featured rail, wide hero ratio, hidden-badge enforcement, hero dots, collapsed default results, packaged images, permissions, freshness labelling, curated-to-catalogue-to-random fallback, regional map-to-detail recovery, Stacks registration, and close cleanup. The app has not been launched on the user's iPhone in this session. OpenEye's live service availability, successful camera coverage at runtime, preview image responses, service-worker refresh, deployment, and actual iPhone layout still require a post-upload device check.
+The included Node contract/lifecycle test validates branding, six-across region layout, three-across featured rail, wide hero ratio, hidden-badge enforcement, hero dots, collapsed default results, packaged images, permissions, freshness labelling, curated-to-catalogue-to-random fallback, regional map-to-detail recovery, Stacks registration, and close cleanup. The app has not been launched on the user's iPhone in this session. OpenEye's live service availability, successful camera coverage at runtime, preview image responses, publisher page navigation, service-worker refresh, deployment, and actual iPhone behaviour still require a post-upload device check. Direct REST calls were not available from the build runtime; the Node tests use representative payloads matching the current published API contract.
