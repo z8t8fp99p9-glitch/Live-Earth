@@ -1,7 +1,7 @@
 /* LIVE // EARTH — Minimal full-screen Traffic and Live Cams views.
    These are intentionally empty wallpaper canvases. No feeds, markers,
    camera services, globe, or renderer are mounted by this module.
-   Existing Stacks feature registration and stage lifecycle are preserved. */
+   Each view releases its feature-stage mount when it is deactivated. */
 (() => {
   'use strict';
   const runtime = window.LiveEarthStacksFeatureRuntime;
@@ -35,22 +35,52 @@
     `;
     document.head.appendChild(style);
   }
+
   function activateWallpaperView(id) {
     const view = mount(id);
     if (!view) return () => {};
+
     view.body.replaceChildren();
     view.root.querySelector('.le-sfv-head')?.remove();
     view.root.querySelector('.le-sfv-pill')?.remove();
-    return () => {};
+
+    // The feature registry hides the stage on close, but this module owns the
+    // mounted .le-sfv root and must remove it before the stage is hidden. Without
+    // this, the Stacks stylesheet's .le-sfv-open display rule can cover Home.
+    let disposed = false;
+    return () => {
+      if (disposed) return;
+      disposed = true;
+
+      const stage = view.root.parentElement;
+      if (!stage) return;
+      view.root.remove();
+
+      // Do not disturb a newer feature if a stale cleanup is ever invoked late.
+      if (!stage.querySelector('.le-sfv')) {
+        stage.classList.remove('le-sfv-open');
+        const stageCard = stage.querySelector('.le-feature-stage-card');
+        if (stageCard) stageCard.hidden = false;
+      }
+    };
   }
+
+  // Traffic still uses the Stacks runtime's normal cleanup wrapper.
   runtime.registerFeature('traffic', () => activateWallpaperView('traffic'));
+
+  // Live Cams is registered directly with the Global Feature Orb registry, so
+  // its deactivate callback must invoke the cleanup returned by mount().
   const featureRegistry = window.LiveEarthFeatureViews;
   if (featureRegistry && typeof featureRegistry.register === 'function') {
+    let liveCamsCleanup = () => {};
     featureRegistry.register('live-cams', {
       title:'Live Cams', shortLabel:'Live Cams', symbol:'◉',
       description:'Live Cams', connected:false,
-      activate:() => activateWallpaperView('live-cams'),
-      deactivate:() => {}
+      activate:() => { liveCamsCleanup = activateWallpaperView('live-cams'); },
+      deactivate:() => {
+        liveCamsCleanup();
+        liveCamsCleanup = () => {};
+      }
     });
   } else {
     console.error('[LIVE // EARTH] Stacks Orb registry is unavailable; Live Cams could not register.');
