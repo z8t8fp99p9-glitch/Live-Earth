@@ -246,7 +246,37 @@
     };
   }
 
-  // The original Traffic feature stays registered; Live Cams gets its own Orb.
+  // Keep Traffic in its existing Stacks entry. Register Live Cams directly
+  // with the expandable Stacks Orb registry because it is a distinct feature
+  // and does not need to be added to the legacy VIEW_META list.
   runtime.registerFeature('traffic', activateTraffic);
-  runtime.registerFeature('live-cams', activateLiveCams, true);
+
+  const featureOrbRegistry = window.LiveEarthFeatureViews;
+  if (featureOrbRegistry && typeof featureOrbRegistry.register === 'function') {
+    let liveCamsCleanup = null;
+    featureOrbRegistry.register('live-cams', {
+      title: 'Live Cams',
+      shortLabel: 'Live Cams',
+      symbol: '◉',
+      description: 'Explore public cameras around the planet on the shared Earth.',
+      connected: true,
+      activate: () => {
+        try {
+          liveCamsCleanup = activateLiveCams();
+        } catch (error) {
+          console.error('[LIVE // EARTH] Live Cams view failed to open.', error);
+          liveCamsCleanup = null;
+        }
+      },
+      deactivate: () => {
+        try {
+          if (typeof liveCamsCleanup === 'function') liveCamsCleanup();
+        } finally {
+          liveCamsCleanup = null;
+        }
+      }
+    });
+  } else {
+    console.error('[LIVE // EARTH] Stacks Orb registry is unavailable; Live Cams could not register.');
+  }
 })();
