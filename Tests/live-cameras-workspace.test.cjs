@@ -73,7 +73,15 @@ assert.match(source, /async function requestCatalog\(params, signal\)/);
 assert.match(source, /variants\[1\]\.delete\('sort'\)/);
 assert.match(source, /variants\[2\]\.delete\('embeddable'\)/);
 assert.match(source, /\/catalog\/map\?/);
-assert.match(source, /\/catalog\/\$\{encodeURIComponent\(item\.id\)\}/);
+assert.match(source, /zoom: '11', cluster: 'auto'/,
+  'Spatial recovery must request camera-level map detail instead of low-zoom count bubbles.');
+assert.match(source, /Array\.isArray\(mapPayload\?\.clusters\)/,
+  'Spatial recovery must handle clustered map responses as well as individual items.');
+assert.match(source, /HTTP 200 \+ an empty\/unusable page/,
+  'Successful empty catalogue responses must trigger spatial recovery.');
+assert.match(source, /become neutral unavailable cards/,
+  'Free live directory rows without an image or link must remain visible but neutral.');
+assert.match(source, /\/catalog\/\$\{encodeURIComponent\(id\)\}/);
 assert.match(source, /\/catalog\/featured/);
 assert.match(source, /\/catalog\/categories/);
 assert.match(source, /function loadMore\(\)/);
@@ -156,6 +164,12 @@ async function exerciseLifecycleAndDirectoryFallback() {
     view: { render: 'link', url: 'https://publisher.example.test/harbour-live' },
     redistribution: { preview_embed: false }
   };
+  const unavailableCamera = {
+    id: 'stream_test_04', title: 'Cape observation camera', city: 'Cape Town', country: 'South Africa', category: 'city',
+    live: true, is_free: true, last_frame_age_s: 70,
+    view: { render: 'none', url_type: 'none' },
+    redistribution: { preview_embed: false }
+  };
   const fetchStub = async (url) => {
     requestLog.push(String(url));
     const value = String(url);
@@ -166,10 +180,14 @@ async function exerciseLifecycleAndDirectoryFallback() {
     else if (value.includes('/catalog?limit=36&sort=fresh')) payload = { items: [publisherOnlyCamera] };
     else if (value.includes('/catalog/random')) payload = randomCamera;
     else if (value.includes('/catalog?bbox=') && value.includes('-25%2C34%2C60%2C72')) status = 500;
-    else if (value.includes('/catalog?bbox=') && (value.includes('sort=fresh') || value.includes('embeddable=1'))) status = 500;
+    else if (value.includes('/catalog?bbox=') && (value.includes('60%2C-10%2C180%2C85') || value.includes('-20%2C-35%2C55%2C38'))) payload = { items: [] };
     else if (value.includes('/catalog?bbox=')) payload = { items: [camera] };
+    else if (value.includes('/catalog/map?') && value.includes('60%2C-10%2C180%2C85')) payload = { mode: 'clusters', clusters: [{ id: camera.id, count: 12, free: 10 }], total: 12 };
+    else if (value.includes('/catalog/map?') && value.includes('-20%2C-35%2C55%2C38')) payload = { mode: 'clusters', clusters: [{ id: unavailableCamera.id, count: 5, free: 5 }], total: 5 };
     else if (value.includes('/catalog/map?')) payload = { mode: 'items', items: [{ id: camera.id }], total: 1 };
     else if (value.includes(`/catalog/${camera.id}`)) payload = { item: camera };
+    else if (value.includes(`/catalog/${publisherOnlyCamera.id}`)) payload = { item: publisherOnlyCamera };
+    else if (value.includes(`/catalog/${unavailableCamera.id}`)) payload = { item: unavailableCamera };
     else if (value.includes('/catalog?category=')) payload = { items: [camera] };
     return {
       ok: status >= 200 && status < 300,
@@ -263,6 +281,27 @@ async function exerciseLifecycleAndDirectoryFallback() {
   const resultCards = findAll(body, 'le-lc-card');
   assert.ok(resultCards.length > 0, 'A successful fallback response should render camera cards.');
 
+  assert.ok(requestLog.some(url => url.includes('/catalog/map?') && url.includes('zoom=11') && url.includes('cluster=auto') && url.includes('60%2C-10%2C180%2C85')),
+    'An HTTP 200 empty regional catalogue page must trigger a zoom-11 map recovery request.');
+  assert.ok(requestLog.some(url => url.includes(`/catalog/${camera.id}`)),
+    'Cluster representative IDs must be resolved into enriched camera records.');
+
+  // Africa reproduces the user's screenshot: a successful but empty catalogue
+  // page, followed by a clustered map response. The returned record must surface.
+  const africaTile = regionTiles[2];
+  for (const listener of africaTile.listeners.get('click') || []) listener();
+  await wait(25);
+  assert.ok(requestLog.some(url => url.includes('/catalog/map?') && url.includes('-20%2C-35%2C55%2C38') && url.includes('zoom=11')),
+    'The Africa empty-result path must call the high-zoom map endpoint.');
+  assert.ok(requestLog.some(url => url.includes(`/catalog/${unavailableCamera.id}`)),
+    'Africa cluster IDs must be resolved through the enriched detail endpoint.');
+  const unavailableCard = findAll(body, 'le-lc-card').find(card => card.attributes['aria-label']?.includes('Cape observation camera'));
+  assert.ok(unavailableCard, 'A current free camera with render:none should remain visible in the results.');
+  assert.equal(unavailableCard.disabled, true,
+    'A camera with no permitted preview and no publisher URL must be a neutral, non-clickable card.');
+  assert.ok(findAll(unavailableCard, 'le-lc-badge').some(node => node.children.some(child => child.textContent === 'PREVIEW UNAVAILABLE')),
+    'The no-preview record must be clearly labelled as unavailable, not live.');
+
   // Europe deliberately keeps returning 500 for all catalog-query variants;
   // the documented map projection and per-camera detail lookup must recover it.
   for (const listener of europeTile.listeners.get('click') || []) listener();
@@ -288,7 +327,7 @@ async function exerciseLifecycleAndDirectoryFallback() {
 }
 
 exerciseLifecycleAndDirectoryFallback().then(() => {
-  console.log('Live Cams catalogue, publisher-link, preview-permission, fallback and lifecycle tests passed.');
+  console.log('Live Cams empty-result recovery, clustered map resolution, unavailable-camera state, publisher-link, preview-permission and lifecycle tests passed.');
 }).catch(error => {
   console.error(error);
   process.exitCode = 1;

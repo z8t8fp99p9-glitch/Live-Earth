@@ -245,12 +245,17 @@
   // link rows open their publisher viewer, while paid/non-live rows stay excluded.
   function cameraDestinationUrl(camera) {
     const render = String(camera?.view?.render || '').toLowerCase();
+    // Respect the publisher's declared presentation mode. `none` is still a
+    // discoverable directory record, but must not be turned into a guessed link.
+    if (render === 'none') return '';
     if (render === 'link') return safeHttps(camera?.view?.url || sourceUrl(camera));
     return safeHttps(camera?.source_url || camera?.publisher_url || camera?.viewer_url || camera?.website);
   }
   function displayable(camera) {
-    if (!camera || !camera.id || camera.is_free !== true || !isFresh(camera)) return false;
-    return !!previewUrl(camera) || !!cameraDestinationUrl(camera);
+    // Keep every free, recently verified public camera discoverable. Some valid
+    // directory rows intentionally have render:none and no publisher URL; those
+    // become neutral unavailable cards instead of disappearing from region results.
+    return !!camera && !!camera.id && camera.is_free === true && isFresh(camera);
   }
   function itemsFrom(payload) {
     if (Array.isArray(payload)) return payload;
@@ -482,7 +487,8 @@
         heroBadge.replaceChildren(make('span', 'le-lc-live-dot'), make('span', '', `${cameraFreshnessLabel(camera)} WINDOW`));
       }
       heroFallback.style.backgroundImage = `linear-gradient(180deg,rgba(1,8,15,.10),rgba(1,8,15,.76)),url('${cameraArtwork(camera)}')`;
-      heroFallback.textContent = imageUrl ? 'Camera preview temporarily unavailable' : 'Open this camera at its publisher';
+      heroFallback.textContent = imageUrl ? 'Camera preview temporarily unavailable'
+        : destination ? 'Open this camera at its publisher' : 'No public preview or publisher view is available';
       heroButton.onclick = () => openDetails(camera);
       heroImage.hidden = !imageUrl;
       heroFallback.hidden = !!imageUrl;
@@ -522,14 +528,17 @@
           shell.remove();
         };
       } else {
+        // Scenic tile art is a directory fallback, never a camera frame.
         image.src = cameraArtwork(camera);
         image.classList.add('le-lc-card-artwork');
         image.onerror = () => { image.hidden = true; card.style.background = 'linear-gradient(145deg,#153247,#07111c)'; };
+        if (!destination) card.disabled = true;
       }
       const content = make('div', 'le-lc-card-content');
       const badge = make('span', 'le-lc-badge');
       if (imageUrl) badge.append(make('span', 'le-lc-live-dot'), make('span', '', cameraFreshnessLabel(camera)));
-      else badge.append(make('span', '', '↗'), make('span', '', 'OPEN SOURCE'));
+      else if (destination) badge.append(make('span', '', '↗'), make('span', '', 'OPEN SOURCE'));
+      else badge.append(make('span', '', '•'), make('span', '', 'PREVIEW UNAVAILABLE'));
       const title = make('h3', 'le-lc-card-title', camera.title || camera.name || 'Live camera');
       const location = make('p', 'le-lc-card-location', countryLabel(camera));
       content.append(badge, title, location);
@@ -618,7 +627,7 @@
       resultCameras = append ? mergeUnique(resultCameras, filtered) : filtered;
       resultGrid.replaceChildren();
       if (!resultCameras.length) {
-        resultGrid.appendChild(make('p', 'le-lc-empty', 'No camera previews match this view yet. Try another subject or place. Only public previews that permit embedding and include publisher credit are shown here.'));
+        resultGrid.appendChild(make('p', 'le-lc-empty', 'No current public camera records were returned for this view. Try another subject or place.'));
       } else {
         resultCameras.forEach(camera => resultGrid.appendChild(makeCameraCard(camera)));
       }
@@ -639,7 +648,8 @@
       }
       modalTitle.textContent = camera.title || camera.name || 'Live camera';
       modalLocation.textContent = countryLabel(camera);
-      modalMeta.textContent = `${categoryLabel(camera)} · ${timeLabel(camera)} · ${imageUrl ? 'Public preview' : 'Publisher-hosted camera'}`;
+      const publisher = cameraDestinationUrl(camera);
+      modalMeta.textContent = `${categoryLabel(camera)} · ${timeLabel(camera)} · ${imageUrl ? 'Public preview' : publisher ? 'Publisher-hosted camera' : 'Preview unavailable'}`;
       modalCredit.replaceChildren();
       const credit = cameraCredit(camera);
       if (credit) {
@@ -651,7 +661,6 @@
         modalCredit.appendChild(link);
       }
       modalActions.replaceChildren();
-      const publisher = cameraDestinationUrl(camera) || sourceUrl(camera);
       if (publisher) {
         const link = make('a', '', imageUrl ? 'Open publisher' : 'Open live camera at publisher');
         link.href = publisher;
@@ -704,13 +713,21 @@
       variants[2].delete('sort');
       variants[2].delete('embeddable');
       let lastError = null;
+      let lastEmptyPayload = null;
       const seen = new Set();
+      const needsSpatialRecovery = original.has('bbox') || original.has('category');
       for (const query of variants) {
         const key = query.toString();
         if (seen.has(key)) continue;
         seen.add(key);
         try {
-          return await requestJson(`/catalog?${key}`, signal);
+          const payload = await requestJson(`/catalog?${key}`, signal);
+          const rows = itemsFrom(payload);
+          if (rows.some(displayable)) return payload;
+          // HTTP 200 + an empty/unusable page is not proof that the region is
+          // empty. Keep the response and continue to map-to-detail recovery.
+          lastEmptyPayload = payload;
+          if (!needsSpatialRecovery) return payload;
         } catch (error) {
           if (signal?.aborted) throw error;
           if (!(Number(error?.status) >= 500 && Number(error?.status) <= 599)) throw error;
@@ -718,29 +735,42 @@
         }
       }
 
-      // The lean map projection is a documented fallback for regional/category
-      // discovery. Resolve only a small first page to full records before rendering.
-      // This preserves the directory's image-permission and attribution checks.
-      if (original.has('bbox') || original.has('category')) {
-        const mapParams = new URLSearchParams({ limit: '18' });
+      // The map projection is lean and zoom-dependent. Below zoom 10 it returns
+      // count clusters rather than individual cameras. Ask for camera-level
+      // representatives at zoom 11, and resolve IDs from either `items` or
+      // `clusters` through the enriched /catalog/{id} endpoint.
+      if (needsSpatialRecovery) {
+        const mapParams = new URLSearchParams({ limit: '36', zoom: '11', cluster: 'auto' });
         if (original.has('bbox')) mapParams.set('bbox', original.get('bbox'));
         if (original.has('category')) mapParams.set('category', original.get('category'));
         try {
           const mapPayload = await requestJson(`/catalog/map?${mapParams.toString()}`, signal);
-          const candidates = itemsFrom(mapPayload).filter(item => item?.id).slice(0, 18);
-          const detailResults = await Promise.allSettled(candidates.map(item =>
-            requestJson(`/catalog/${encodeURIComponent(item.id)}`, signal)
+          const mapItems = itemsFrom(mapPayload);
+          const mapClusters = Array.isArray(mapPayload?.clusters) ? mapPayload.clusters : [];
+          const candidateIds = [...new Set([...mapItems, ...mapClusters]
+            .map(item => item?.id)
+            .filter(id => typeof id === 'string' && id.trim()))].slice(0, 36);
+          if (!candidateIds.length) {
+            return { items: [], total: Number(mapPayload?.total) || 0, next_cursor: null };
+          }
+          const detailResults = await Promise.allSettled(candidateIds.map(id =>
+            requestJson(`/catalog/${encodeURIComponent(id)}`, signal)
           ));
-          const records = detailResults
-            .filter(result => result.status === 'fulfilled')
+          const fulfilled = detailResults.filter(result => result.status === 'fulfilled');
+          if (!fulfilled.length) {
+            const failed = detailResults.find(result => result.status === 'rejected');
+            throw failed?.reason || new Error('Camera map candidates could not be resolved.');
+          }
+          const records = fulfilled
             .map(result => result.value?.item || result.value)
-            .filter(record => record && typeof record === 'object');
+            .filter(record => record && typeof record === 'object' && displayable(record));
           return { items: records, total: Number(mapPayload?.total) || records.length, next_cursor: null };
         } catch (error) {
           if (signal?.aborted) throw error;
           lastError = error || lastError;
         }
       }
+      if (lastEmptyPayload && !lastError) return lastEmptyPayload;
       throw lastError || new Error('Camera directory could not complete this search.');
     }
     async function loadHome({ silent = false } = {}) {
@@ -815,7 +845,7 @@
         paginationCursor = nextCursorFrom(payload);
         const cameras = itemsFrom(payload).filter(displayable);
         renderResults(cameras, title);
-        setStatus(cameras.length ? `${cameras.length} eligible previews in the ${region.title} discovery window${paginationCursor ? ' · more cameras are available' : ''}.` : `No eligible embedded previews were found in the ${region.title} discovery window right now. Try another region.`, cameras.length ? 'success' : '');
+        setStatus(cameras.length ? `${cameras.length} public cameras in the ${region.title} discovery window${paginationCursor ? ' · more cameras are available' : ''}.` : `No current public camera records were returned for ${region.title}. Try another region or search.`, cameras.length ? 'success' : '');
       } catch (error) {
         if (disposed || request.signal.aborted) return;
         renderResults([], title);
@@ -841,7 +871,7 @@
         const cameras = itemsFrom(payload).filter(displayable);
         paginationCursor = nextCursorFrom(payload);
         renderResults(cameras, title);
-        setStatus(cameras.length ? `${cameras.length} eligible ${title.toLowerCase()} previews in this result. Publisher-only cameras remain available from their original directory page.` : `No eligible embedded previews were found in ${title.toLowerCase()} right now. Try another category.`, cameras.length ? 'success' : '');
+        setStatus(cameras.length ? `${cameras.length} current public camera records in this result, including publisher-view and preview-unavailable entries where supplied.` : `No current public camera records were returned for ${title.toLowerCase()}. Try another category.`, cameras.length ? 'success' : '');
       } catch (error) {
         if (disposed || request.signal.aborted) return;
         renderResults([], title);
@@ -866,7 +896,7 @@
         const cameras = itemsFrom(payload).filter(displayable);
         paginationCursor = nextCursorFrom(payload);
         renderResults(cameras, `Results for “${normalized}”`);
-        setStatus(cameras.length ? `Found ${cameras.length} eligible previews. Results are limited to public images with explicit embed permission and publisher credit.` : 'No eligible camera previews matched that search. Try a different place or subject.', cameras.length ? 'success' : '');
+        setStatus(cameras.length ? `Found ${cameras.length} current public camera records. Preview images still require explicit embed permission and publisher credit.` : 'No current public camera records matched that search. Try a different place or subject.', cameras.length ? 'success' : '');
       } catch (error) {
         if (disposed || request.signal.aborted) return;
         renderResults([], `Results for “${normalized}”`);

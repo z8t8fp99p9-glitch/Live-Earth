@@ -1,59 +1,52 @@
-# LIVE // EARTH — Live Cams discovery redesign
+# LIVE // EARTH — Live Cams discovery and regional recovery
 
-**Status:** Visual and catalogue follow-up correction prepared for manual upload; not yet deployed or device-verified.  
-**Base commit inspected:** `c8880ff0c1994f72fbd2b5ddd8fe94ba806e9f7d` (`main`, 14 November 2026).  
-**Patch purpose:** Match the approved cinematic mobile composition, make the empty/failing featured state honest, and backfill the featured rail from the public catalogue when the curated endpoint is sparse.
+**Status:** Focused functional recovery patch prepared for manual upload; deployment and device verification pending.  
+**Base commit inspected:** `d0ea4937f76ead886df63d9147bc82a7f437a0fe` (`main`, 14 November 2026).  
+**Patch purpose:** Recover camera discovery when a regional catalogue query succeeds with an empty page, correctly handle zoom-dependent map clusters, and keep valid no-preview directory records visible without misrepresenting them as working camera feeds.
 
-## Product direction
+## Product and integration boundaries
 
-Live Cams is a cinematic world-discovery workspace rather than a plain camera catalogue. It opens inside the existing Stacks full-screen stage, underneath the protected three-Orb feature dock. The main screen contains an editorial hero preview, a Featured Windows rail, continent discovery windows, category tiles, and a searchable camera directory. Regional selections use broad documented bounding-box searches; these are discovery windows, not exact continent boundaries. Search/category/region results expose a Load more action when the API returns a next-page cursor. Camera details show the supplied frame time and publisher credit, and offer a publisher link only when the API supplies a safe HTTPS link.
+The existing Live Cams design remains unchanged. Live Cams continues to mount inside the existing Stacks full-screen stage. The separate Traffic wallpaper registration, Home, Earth, Moon, Sun, the five-Orb Home dock and the protected three-Orb feature dock are not changed. No globe, map renderer, WebGL context, paid frame endpoint or metered continuous-video session is created by this patch.
 
-The visible brand is **LIVE // EARTH**. The approved mobile composition is a wide cinematic hero with small carousel controls, a compact three-card featured rail, six photographic region windows in one row, compact two-column category tiles, and the directory search immediately below the discovery cards. The page uses a layered atmospheric backdrop and reserves scroll space for the fixed three-Orb dock. The six category tiles and six region tiles use locally packaged scenic image assets rather than decorative orb illustrations. These still artworks are editorial destination backdrops, not live camera feeds. A scenic hero fallback never carries a LIVE badge; a broken remote camera preview is removed rather than disguised as a working feed.
+## OpenEye directory contract
 
-## Data contract
+Uses anonymous public GET endpoints from `https://api.openeye.cam/v1`:
 
-Uses the anonymous OpenEye public REST catalogue:
+- `/catalog/featured` for the curated homepage showcase.
+- `/catalog/categories` for category counts.
+- `/catalog?bbox={west,south,east,north}&limit=48&sort=fresh` for a regional directory page.
+- `/catalog?category={category}&limit=48&sort=fresh` for a category page.
+- `/catalog?q={query}&limit=48&sort=fresh` for text search.
+- `/catalog/map` for a lean spatial candidate projection when a regional/category directory page has no usable records.
+- `/catalog/{id}` to resolve a map candidate into its enriched camera record.
+- `/catalog/random` for homepage-only last-resort backfill.
 
-- `GET https://api.openeye.cam/v1/catalog/featured`
-- `GET https://api.openeye.cam/v1/catalog/categories`
-- `GET https://api.openeye.cam/v1/catalog?category={category}&embeddable=1&limit=48&sort=fresh`
-- `GET https://api.openeye.cam/v1/catalog?bbox={west,south,east,north}&embeddable=1&limit=48&sort=fresh`
-- `GET https://api.openeye.cam/v1/catalog?q={query}&embeddable=1&limit=48&sort=fresh`
+The directory queries deliberately do not apply `embeddable=1`: the API documents that filter as showable-preview-only, which removes useful source-link camera records from discovery.
 
-If the curated featured endpoint returns fewer than six eligible previews, the client backfills from the enriched public `/catalog` feed using `embeddable=1`, then tries `/catalog/random` if fewer than two cameras are available. The random endpoint may return a single camera object rather than an `items` array; the normalizer accepts both documented shapes. If a catalogue query returns a server error, the client retries without the optional `sort=fresh` parameter, then retries without `embeddable=1` and applies the client-side permission checks. If a region/category catalogue query still fails, it falls back to the documented lean `/catalog/map` projection and resolves a small first page of IDs through `/catalog/{id}` to obtain complete records. It never renders the lean map projection as if it were a full camera record.
+## Regional recovery behaviour
 
-The full enriched catalogue is requested without `embeddable=1`, because that filter deliberately removes source-only publisher cameras. A camera directory entry can still be presented as a useful destination when it has a safe HTTPS publisher/viewer URL, even if it cannot be embedded as an image.
+A successful HTTP 200 response with no usable records is not treated as proof that a region has no cameras. The client tries the supported simpler query variants and then calls `/catalog/map` with `zoom=11`, `cluster=auto`, and a bounded candidate limit. OpenEye documents count clusters below zoom 10 and camera-level representatives at higher zooms. The client defensively reads IDs from both `items` and `clusters`, de-duplicates them, and resolves them through `/catalog/{id}` before rendering. This recovery runs for empty/unusable successful responses as well as server errors.
 
-The homepage still tries `/catalog/featured` first, then backfills from `/catalog?limit=36&sort=fresh`, and finally tries the documented object-shaped `/catalog/random` response when fewer than two records are available. The client normalizes both array responses and the single camera object returned by `/catalog/random`. Region, category, search, and pagination requests also use the full enriched catalogue rather than forcing `embeddable=1`.
+A map response is only a candidate projection. It is never rendered directly as a camera card. Only the enriched detail response is evaluated for public/free/live status and presentation permissions.
 
-A camera image is rendered only when all of the following are true:
+## Camera presentation and permissions
 
-1. `is_free === true`.
-2. `live === true` and a supplied frame timestamp/age is within the documented seven-day directory degradation window.
-3. `view.render === "image"`.
-4. `redistribution.preview_embed === true`.
-5. The API supplies both `redistribution.attribution.name` and a valid HTTPS `redistribution.attribution.url`.
-6. The preview URL is HTTPS.
+A directory card remains discoverable when it has an ID, `is_free === true`, `live === true`, and a supplied frame age within the documented seven-day degradation window. Presentation is then selected by the API record:
 
-When `view.render === "link"`, the UI does not load its URL as an image; it identifies the record as **OPEN SOURCE** and provides an HTTPS publisher action in the details sheet. Where no image can be embedded, any scenic category artwork is only a clearly labelled directory fallback, never represented as a live camera frame. Records with neither a permitted image nor a safe publisher destination are not made into a false working camera card.
+1. An image is loaded only when `view.render === "image"`, `redistribution.preview_embed === true`, a required publisher attribution with a valid HTTPS URL exists, and the preview URL is HTTPS.
+2. A `view.render === "link"` record is shown as a publisher-view destination. Its URL is opened only as an HTTPS link and is never used as an image source.
+3. A `view.render === "none"` record remains visible as a neutral, disabled **PREVIEW UNAVAILABLE** card. The UI does not invent a publisher URL or pretend the scenic directory artwork is camera footage.
 
-Frames up to 24 hours old are labelled **LIVE**. Frames older than 24 hours, but inside the seven-day directory window, are labelled **RECENT** so an older stored image is not described as current. Publisher credit remains visible wherever camera preview imagery is displayed.
+Frames up to 24 hours old are labelled **LIVE**; older frames within the seven-day window are labelled **RECENT**. A still preview is not represented as continuous video playback.
 
-## Playback and cost boundary
+## Tests and verification boundary
 
-This release uses public preview frames only. It does not call the paid frame endpoint, request WHEP offers, open continuous video sessions, or handle payment. A still preview is not represented as continuous video playback. Paid cameras are excluded from the cards.
+`Tests/live-cameras-workspace.test.cjs` covers:
 
-## Lifecycle and protected surfaces
+- HTTP 200 with an empty Africa catalogue page triggering zoom-11 map recovery.
+- Cluster representative IDs being resolved through the enriched detail endpoint.
+- A successful no-preview record being visible but disabled and labelled unavailable.
+- The existing HTTP 5xx region fallback.
+- Publisher-only viewing, preview permissions, featured backfill, image safety, Stacks registration and idempotent close cleanup.
 
-- Registers `live-cams` through `window.LiveEarthFeatureViews`.
-- Mounts using `LiveEarthStacksFeatureRuntime.mount('live-cams')` in the existing full-screen stage.
-- Aborts outstanding API requests and clears the five-minute refresh timer on close.
-- Removes the mounted root and restores the stage card/class safely.
-- Does not initialize a globe, map renderer, Three.js renderer, or WebGL context.
-- Does not edit Home, Earth, Moon, Sun, the five-Orb Home dock, or the protected three-Orb feature dock.
-- Keeps the separate Traffic feature registration and its wallpaper placeholder intact.
-- Uses `Traffic/Assets/live-cams-discovery/` for the new local artwork; no new JavaScript cache path is added, so `sw.js` does not need a change.
-
-## Verification boundary
-
-The included Node contract/lifecycle test validates branding, six-across region layout, three-across featured rail, wide hero ratio, hidden-badge enforcement, hero dots, collapsed default results, packaged images, permissions, freshness labelling, curated-to-catalogue-to-random fallback, regional map-to-detail recovery, Stacks registration, and close cleanup. The app has not been launched on the user's iPhone in this session. OpenEye's live service availability, successful camera coverage at runtime, preview image responses, publisher page navigation, service-worker refresh, deployment, and actual iPhone behaviour still require a post-upload device check. Direct REST calls were not available from the build runtime; the Node tests use representative payloads matching the current published API contract.
+`node --check Traffic/traffic-view.js` and the Node contract/lifecycle test pass in the local build environment. The live REST endpoints could not be called from that environment; the tests use representative payloads based on the current published OpenEye API contract. Actual regional coverage, third-party preview availability, publisher navigation, GitHub Actions, deployment/service-worker refresh and iPhone runtime still require post-upload verification.
