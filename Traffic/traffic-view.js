@@ -20,23 +20,23 @@
   }
 
   const CATEGORY_TILES = [
-    { id: 'wildlife', title: 'Nature & Wildlife', subtitle: 'Wild places and animals', icon: '✦' },
-    { id: 'surf', title: 'Oceans', subtitle: 'Coasts, surf and harbours', icon: '≈' },
-    { id: 'city', title: 'Cities', subtitle: 'Streets and skylines', icon: '⌂' },
-    { id: 'weather', title: 'Weather Windows', subtitle: 'The atmosphere, live', icon: '☁' },
-    { id: 'ski', title: 'Mountains', subtitle: 'Snow, peaks and resorts', icon: '△' },
-    { id: 'aurora', title: 'Night Skies', subtitle: 'Aurora and dark skies', icon: '☾' }
+    { id: 'wildlife', title: 'Nature & Wildlife', subtitle: 'Wild places and animals', icon: '✦', image: 'wildlife' },
+    { id: 'surf', title: 'Oceans', subtitle: 'Coasts, surf and harbours', icon: '≈', image: 'oceans' },
+    { id: 'city', title: 'Cities', subtitle: 'Streets and skylines', icon: '⌂', image: 'cities' },
+    { id: 'weather', title: 'Weather Windows', subtitle: 'The atmosphere, live', icon: '☁', image: 'weather' },
+    { id: 'ski', title: 'Mountains', subtitle: 'Snow, peaks and resorts', icon: '△', image: 'mountains' },
+    { id: 'aurora', title: 'Night Skies', subtitle: 'Aurora and dark skies', icon: '☾', image: 'night-skies' }
   ];
 
   // Bounding boxes follow OpenEye's documented west,south,east,north order.
   // They are broad discovery windows, not political or precise continent borders.
   const REGION_TILES = [
-    { id: 'asia', title: 'Asia', subtitle: 'East to South Asia', bbox: '60,-10,180,85', icon: '◉' },
-    { id: 'europe', title: 'Europe', subtitle: 'Cities and landscapes', bbox: '-25,34,60,72', icon: '⌁' },
-    { id: 'africa', title: 'Africa', subtitle: 'Wild places and horizons', bbox: '-20,-35,55,38', icon: '◇' },
-    { id: 'americas', title: 'Americas', subtitle: 'North, Central and South', bbox: '-170,-60,-30,80', icon: '✧' },
-    { id: 'oceania', title: 'Oceania', subtitle: 'Australia and the Pacific', bbox: '110,-50,180,0', icon: '≈' },
-    { id: 'antarctica', title: 'Antarctica', subtitle: 'The southern frontier', bbox: '-180,-90,180,-60', icon: '❄' }
+    { id: 'asia', title: 'Asia', subtitle: 'East to South Asia', bbox: '60,-10,180,85', icon: '◉', image: 'cities' },
+    { id: 'europe', title: 'Europe', subtitle: 'Cities and landscapes', bbox: '-25,34,60,72', icon: '⌁', image: 'mountains' },
+    { id: 'africa', title: 'Africa', subtitle: 'Wild places and horizons', bbox: '-20,-35,55,38', icon: '◇', image: 'wildlife' },
+    { id: 'americas', title: 'Americas', subtitle: 'North, Central and South', bbox: '-170,-60,-30,80', icon: '✧', image: 'weather' },
+    { id: 'oceania', title: 'Oceania', subtitle: 'Australia and the Pacific', bbox: '110,-50,180,0', icon: '≈', image: 'oceans' },
+    { id: 'antarctica', title: 'Antarctica', subtitle: 'The southern frontier', bbox: '-180,-90,180,-60', icon: '❄', image: 'mountains' }
   ];
 
   // Keep the separate Traffic Orb's previous wallpaper placeholder intact.
@@ -99,7 +99,7 @@
     .le-lc-hero{position:relative;display:block;width:100%;min-height:210px;aspect-ratio:1.35/1;overflow:hidden;border:1px solid rgba(190,221,243,.22);border-radius:23px;background:linear-gradient(140deg,#16354a,#091521 62%,#07101b);box-shadow:0 17px 38px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.08);text-align:left;color:inherit;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
     .le-lc-hero img,.le-lc-card-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
     .le-lc-hero:after,.le-lc-card:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.06) 12%,transparent 37%,rgba(0,0,0,.78) 100%);pointer-events:none}
-    .le-lc-image-fallback{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(ellipse at 55% 35%,rgba(70,151,181,.27),transparent 58%),linear-gradient(145deg,#17374a,#081522 72%);color:#bad2e0;font:italic 22px Georgia,serif}
+    .le-lc-image-fallback{position:absolute;inset:0;display:grid;place-items:center;padding:20px;background-position:center;background-size:cover;color:#e5f3fb;font:italic 22px Georgia,serif;text-align:center;text-shadow:0 2px 14px #000;}
     .le-lc-image-fallback[hidden]{display:none}
     .le-lc-hero-content{position:absolute;z-index:1;left:17px;right:17px;bottom:16px;display:grid;gap:5px;pointer-events:none}
     .le-lc-badge{display:inline-flex;align-items:center;gap:6px;width:max-content;max-width:100%;padding:6px 9px;border-radius:999px;background:rgba(128,22,35,.88);color:#fff;font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;backdrop-filter:blur(8px)}
@@ -113,16 +113,19 @@
     .le-lc-link{border:0;background:transparent;color:#b6d5e8;font:600 11px/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;white-space:nowrap;padding:6px 0;cursor:pointer}
     .le-lc-category-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
     .le-lc-region-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-    .le-lc-region{position:relative;min-width:0;min-height:78px;display:grid;align-content:space-between;gap:10px;padding:11px;border:1px solid rgba(168,207,231,.17);border-radius:15px;overflow:hidden;background:linear-gradient(145deg,rgba(41,78,101,.82),rgba(9,25,39,.92));color:#edf6fc;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
-    .le-lc-region:before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.55;background:radial-gradient(ellipse 90% 90% at 100% 0%,rgba(116,190,219,.25),transparent 70%)}
-    .le-lc-region-icon{position:relative;color:#a8d8ec;font:500 17px Georgia,serif}
-    .le-lc-region-name{position:relative;display:block;font:600 13px Georgia,'Times New Roman',serif}
-    .le-lc-region-sub{position:relative;display:block;margin-top:3px;color:#91adbf;font-size:8px;line-height:1.25}
-    .le-lc-category{min-width:0;min-height:76px;display:grid;grid-template-columns:36px minmax(0,1fr);align-items:center;gap:10px;padding:12px;border:1px solid rgba(158,197,223,.15);border-radius:16px;background:linear-gradient(145deg,rgba(31,59,78,.70),rgba(10,22,34,.78));color:#edf6fc;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
-    .le-lc-category-icon{display:grid;place-items:center;width:36px;height:36px;border:1px solid rgba(200,229,246,.20);border-radius:12px;background:rgba(120,176,208,.10);color:#d7efff;font:500 20px Georgia,serif}
-    .le-lc-category-name{display:block;font:600 13px/1.2 Georgia,'Times New Roman',serif}
-    .le-lc-category-sub{display:block;margin-top:4px;color:#8faabd;font-size:9px;line-height:1.3}
-    .le-lc-category-count{display:block;margin-top:5px;color:#70c9e5;font-size:9px;font-weight:750;letter-spacing:.05em}
+    .le-lc-region{position:relative;isolation:isolate;min-width:0;min-height:132px;display:grid;align-content:space-between;gap:10px;padding:11px;border:1px solid rgba(168,207,231,.22);border-radius:15px;overflow:hidden;background:#102536;color:#edf6fc;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+    .le-lc-region:before{content:'';position:absolute;z-index:1;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(1,8,15,.08) 0%,rgba(1,8,15,.18) 38%,rgba(1,8,15,.88) 100%)}
+    .le-lc-region-image,.le-lc-category-image{position:absolute;z-index:0;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .35s ease}
+    .le-lc-region:active .le-lc-region-image,.le-lc-category:active .le-lc-category-image{transform:scale(1.04)}
+    .le-lc-region-icon{position:relative;z-index:2;display:grid;place-items:center;width:29px;height:29px;border:1px solid rgba(220,242,255,.32);border-radius:50%;background:rgba(4,19,30,.44);color:#e5f7ff;font:500 15px Georgia,serif;backdrop-filter:blur(7px)}
+    .le-lc-region-name{position:relative;z-index:2;display:block;font:600 15px Georgia,'Times New Roman',serif;text-shadow:0 2px 10px #000}
+    .le-lc-region-sub{position:relative;z-index:2;display:block;margin-top:3px;color:#d5e7f2;font-size:8px;line-height:1.25;text-shadow:0 1px 7px #000}
+    .le-lc-category{position:relative;isolation:isolate;min-width:0;min-height:122px;display:grid;grid-template-columns:36px minmax(0,1fr);align-items:center;gap:10px;padding:12px;border:1px solid rgba(158,197,223,.22);border-radius:16px;overflow:hidden;background:#102536;color:#edf6fc;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+    .le-lc-category:before{content:'';position:absolute;z-index:1;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(2,10,18,.28),rgba(2,10,18,.86) 42%,rgba(2,10,18,.88) 100%)}
+    .le-lc-category-icon{position:relative;z-index:2;display:grid;place-items:center;width:36px;height:36px;border:1px solid rgba(200,229,246,.30);border-radius:12px;background:rgba(8,27,41,.58);color:#e4f6ff;font:500 20px Georgia,serif;backdrop-filter:blur(7px)}
+    .le-lc-category-name{position:relative;z-index:2;display:block;font:600 14px/1.2 Georgia,'Times New Roman',serif;text-shadow:0 2px 10px #000}
+    .le-lc-category-sub{position:relative;z-index:2;display:block;margin-top:4px;color:#d0e2ee;font-size:9px;line-height:1.3;text-shadow:0 1px 7px #000}
+    .le-lc-category-count{position:relative;z-index:2;display:block;margin-top:5px;color:#7ce0fa;font-size:9px;font-weight:750;letter-spacing:.05em;text-shadow:0 1px 7px #000}
     .le-lc-rail{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(218px,72%);gap:11px;overflow-x:auto;overscroll-behavior-x:contain;padding:1px 1px 7px;scroll-snap-type:x mandatory;scrollbar-width:none}
     .le-lc-rail::-webkit-scrollbar{display:none}
     .le-lc-card{position:relative;display:block;min-width:0;width:100%;aspect-ratio:1.32/1;overflow:hidden;border:1px solid rgba(182,215,237,.19);border-radius:17px;background:linear-gradient(140deg,#18374c,#091723);color:inherit;text-align:left;padding:0;cursor:pointer;scroll-snap-align:start;-webkit-tap-highlight-color:transparent}
@@ -159,10 +162,10 @@
     .le-lc-modal-credit a{color:#9cddf7;text-underline-offset:3px}
     .le-lc-modal-actions{display:flex;flex-wrap:wrap;gap:8px}
     .le-lc-modal-actions a{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 14px;border:1px solid rgba(125,198,230,.28);border-radius:12px;background:rgba(53,132,170,.22);color:#eff8ff;font-size:11px;font-weight:700;text-decoration:none}
-    @media(min-width:620px){.le-lc-region-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.le-lc-region-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.le-lc-category-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.le-lc-results{grid-template-columns:repeat(3,minmax(0,1fr))}.le-lc-rail{grid-auto-columns:minmax(230px,31%)} }
+    @media(min-width:620px){.le-lc-region-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.le-lc-region-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.le-lc-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.le-lc-results{grid-template-columns:repeat(3,minmax(0,1fr))}.le-lc-rail{grid-auto-columns:minmax(230px,31%)} }
     @media(orientation:landscape) and (max-height:560px){
       .le-sfv--live-cams .le-sfv-panel{padding-top:calc(env(safe-area-inset-top) + 12px)!important;padding-bottom:calc(env(safe-area-inset-bottom) + 112px)!important}
-      .le-lc-wrap{gap:18px}.le-lc-title{font-size:37px}.le-lc-hero{aspect-ratio:2.3/1;min-height:160px}.le-lc-region-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.le-lc-category-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.le-lc-results{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .le-lc-wrap{gap:18px}.le-lc-title{font-size:37px}.le-lc-hero{aspect-ratio:2.3/1;min-height:160px}.le-lc-region-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.le-lc-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.le-lc-results{grid-template-columns:repeat(3,minmax(0,1fr))}
     }
     @media(prefers-reduced-motion:reduce){.le-sfv--live-cams *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
   `;
@@ -173,6 +176,11 @@
     if (className) node.className = className;
     if (text !== undefined && text !== null) node.textContent = String(text);
     return node;
+  }
+  function discoveryImage(name) {
+    const allowed = new Set(['wildlife', 'oceans', 'cities', 'weather', 'mountains', 'night-skies']);
+    const key = allowed.has(name) ? name : 'night-skies';
+    return `./Traffic/Assets/live-cams-discovery/${key}.jpg`;
   }
   function safeHttps(value) {
     if (typeof value !== 'string' || !value.trim()) return '';
@@ -188,16 +196,31 @@
     const url = safeHttps(credit?.url);
     return name && url ? { name, url } : null;
   }
+  function frameAgeSeconds(camera) {
+    const suppliedAge = camera?.last_frame_age_s;
+    if (suppliedAge !== undefined && suppliedAge !== null && suppliedAge !== '') {
+      const age = Number(suppliedAge);
+      if (Number.isFinite(age)) return age;
+    }
+    const timestamp = Number(camera?.frame_ts);
+    if (Number.isFinite(timestamp) && timestamp > 0) return Math.max(0, (Date.now() - timestamp) / 1000);
+    return NaN;
+  }
   function isFresh(camera) {
     if (camera?.live !== true) return false;
-    const hasAge = camera.last_frame_age_s !== undefined && camera.last_frame_age_s !== null && camera.last_frame_age_s !== '';
-    let age = hasAge ? Number(camera.last_frame_age_s) : NaN;
-    const hasFrameTimestamp = camera.frame_ts !== undefined && camera.frame_ts !== null && camera.frame_ts !== '';
-    if (!Number.isFinite(age) && hasFrameTimestamp && Number.isFinite(Number(camera.frame_ts))) {
-      age = Math.max(0, (Date.now() - Number(camera.frame_ts)) / 1000);
-    }
-    // Do not call an old still "LIVE". The directory's fresh preview window is 24 h.
-    return Number.isFinite(age) && age >= 0 && age <= 86400;
+    const age = frameAgeSeconds(camera);
+    // OpenEye keeps a camera in its live/degradation window for up to seven days.
+    // Older stored images must not be presented as current directory previews.
+    return Number.isFinite(age) && age >= 0 && age <= 7 * 86400;
+  }
+  function cameraFreshnessLabel(camera) {
+    const age = frameAgeSeconds(camera);
+    return Number.isFinite(age) && age <= 86400 ? 'LIVE' : 'RECENT';
+  }
+  function cameraArtwork(camera) {
+    const category = String(camera?.category || '').toLowerCase();
+    const artwork = ({ wildlife: 'wildlife', surf: 'oceans', city: 'cities', weather: 'weather', ski: 'mountains', aurora: 'night-skies' })[category] || 'night-skies';
+    return discoveryImage(artwork);
   }
   function previewUrl(camera) {
     if (camera?.is_free !== true) return '';
@@ -258,7 +281,7 @@
 
     const header = make('header', 'le-lc-header');
     const heading = make('div', '');
-    heading.append(make('p', 'le-lc-brand', 'EARTH // LIVE'));
+    heading.append(make('p', 'le-lc-brand', 'LIVE // EARTH'));
     heading.append(make('h1', 'le-lc-title', 'Live Cams'));
     heading.append(make('p', 'le-lc-tagline', 'WINDOWS TO OUR WORLD'));
     const liveMark = make('span', 'le-lc-live-mark');
@@ -312,7 +335,13 @@
     REGION_TILES.forEach(region => {
       const tile = make('button', 'le-lc-region');
       tile.type = 'button';
-      tile.append(make('span', 'le-lc-region-icon', region.icon));
+      const image = make('img', 'le-lc-region-image');
+      image.src = discoveryImage(region.image);
+      image.alt = '';
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      image.onerror = () => { image.hidden = true; };
+      tile.append(image, make('span', 'le-lc-region-icon', region.icon));
       const text = make('span', '');
       text.append(make('span', 'le-lc-region-name', region.title));
       text.append(make('span', 'le-lc-region-sub', region.subtitle));
@@ -407,6 +436,8 @@
         heroFallback.hidden = false;
         heroTitle.textContent = 'The world, right now.';
         heroLocation.textContent = 'No eligible featured preview is available at the moment';
+        heroBadge.hidden = true;
+        heroFallback.style.backgroundImage = `linear-gradient(180deg,rgba(1,8,15,.04),rgba(1,8,15,.72)),url('${discoveryImage('night-skies')}')`;
         heroButton.onclick = null;
         heroButton.disabled = true;
         heroCredit.hidden = true;
@@ -414,6 +445,9 @@
         return;
       }
       heroButton.disabled = false;
+      heroBadge.hidden = false;
+      heroBadge.replaceChildren(make('span', 'le-lc-live-dot'), make('span', '', `${cameraFreshnessLabel(camera)} WINDOW`));
+      heroFallback.style.backgroundImage = '';
       heroButton.onclick = () => openDetails(camera);
       heroImage.src = previewUrl(camera);
       heroImage.hidden = false;
@@ -421,7 +455,8 @@
       heroImage.onerror = () => {
         heroImage.hidden = true;
         heroFallback.hidden = false;
-        heroFallback.textContent = 'Preview temporarily unavailable';
+        heroFallback.textContent = 'Camera preview temporarily unavailable';
+        heroFallback.style.backgroundImage = `linear-gradient(180deg,rgba(1,8,15,.04),rgba(1,8,15,.72)),url('${cameraArtwork(camera)}')`;
       };
       heroTitle.textContent = camera.title || camera.name || 'Live camera';
       heroLocation.textContent = countryLabel(camera);
@@ -444,11 +479,11 @@
       image.onerror = () => {
         image.removeAttribute('src');
         image.hidden = true;
-        card.style.background = 'radial-gradient(ellipse at 55% 30%,rgba(70,151,181,.25),transparent 60%),linear-gradient(145deg,#17374a,#081522 72%)';
+        card.style.background = `linear-gradient(180deg,rgba(1,8,15,.04),rgba(1,8,15,.78)),url('${cameraArtwork(camera)}') center/cover`;
       };
       const content = make('div', 'le-lc-card-content');
       const badge = make('span', 'le-lc-badge');
-      badge.append(make('span', 'le-lc-live-dot'), make('span', '', 'LIVE'));
+      badge.append(make('span', 'le-lc-live-dot'), make('span', '', cameraFreshnessLabel(camera)));
       const title = make('h3', 'le-lc-card-title', camera.title || camera.name || 'Live camera');
       const location = make('p', 'le-lc-card-location', countryLabel(camera));
       content.append(badge, title, location);
@@ -488,7 +523,13 @@
       CATEGORY_TILES.forEach(item => {
         const tile = make('button', 'le-lc-category');
         tile.type = 'button';
-        tile.append(make('span', 'le-lc-category-icon', item.icon));
+        const image = make('img', 'le-lc-category-image');
+        image.src = discoveryImage(item.image);
+        image.alt = '';
+        image.loading = 'lazy';
+        image.decoding = 'async';
+        image.onerror = () => { image.hidden = true; };
+        tile.append(image, make('span', 'le-lc-category-icon', item.icon));
         const text = make('span', '');
         text.append(make('span', 'le-lc-category-name', item.title));
         text.append(make('span', 'le-lc-category-sub', item.subtitle));
@@ -560,7 +601,11 @@
           method: 'GET', mode: 'cors', credentials: 'omit', cache: 'no-store', signal: controller.signal,
           headers: { Accept: 'application/json' }
         });
-        if (!response.ok) throw new Error(`Camera directory returned ${response.status}.`);
+        if (!response.ok) {
+          const error = new Error(`Camera directory returned ${response.status}.`);
+          error.status = response.status;
+          throw error;
+        }
         const type = (response.headers.get('content-type') || '').toLowerCase();
         if (!type.includes('json')) throw new Error('Camera directory returned an unexpected response.');
         return await response.json();
@@ -573,6 +618,52 @@
       activeRequest?.abort();
       activeRequest = new AbortController();
       return activeRequest;
+    }
+    async function requestCatalog(params, signal) {
+      const original = new URLSearchParams(params);
+      const variants = [new URLSearchParams(original), new URLSearchParams(original), new URLSearchParams(original)];
+      variants[1].delete('sort');
+      variants[2].delete('sort');
+      variants[2].delete('embeddable');
+      let lastError = null;
+      const seen = new Set();
+      for (const query of variants) {
+        const key = query.toString();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        try {
+          return await requestJson(`/catalog?${key}`, signal);
+        } catch (error) {
+          if (signal?.aborted) throw error;
+          if (!(Number(error?.status) >= 500 && Number(error?.status) <= 599)) throw error;
+          lastError = error;
+        }
+      }
+
+      // The lean map projection is a documented fallback for regional/category
+      // discovery. Resolve only a small first page to full records before rendering.
+      // This preserves the directory's image-permission and attribution checks.
+      if (original.has('bbox') || original.has('category')) {
+        const mapParams = new URLSearchParams({ limit: '18' });
+        if (original.has('bbox')) mapParams.set('bbox', original.get('bbox'));
+        if (original.has('category')) mapParams.set('category', original.get('category'));
+        try {
+          const mapPayload = await requestJson(`/catalog/map?${mapParams.toString()}`, signal);
+          const candidates = itemsFrom(mapPayload).filter(item => item?.id).slice(0, 18);
+          const detailResults = await Promise.allSettled(candidates.map(item =>
+            requestJson(`/catalog/${encodeURIComponent(item.id)}`, signal)
+          ));
+          const records = detailResults
+            .filter(result => result.status === 'fulfilled')
+            .map(result => result.value?.item || result.value)
+            .filter(record => record && typeof record === 'object');
+          return { items: records, total: Number(mapPayload?.total) || records.length, next_cursor: null };
+        } catch (error) {
+          if (signal?.aborted) throw error;
+          lastError = error || lastError;
+        }
+      }
+      throw lastError || new Error('Camera directory could not complete this search.');
     }
     async function loadHome({ silent = false } = {}) {
       const request = startRequest();
@@ -613,7 +704,7 @@
       setStatus(`Opening the ${region.title} camera window…`);
       const request = startRequest();
       try {
-        const payload = await requestJson(`/catalog?bbox=${encodeURIComponent(region.bbox)}&embeddable=1&limit=48&sort=fresh`, request.signal);
+        const payload = await requestCatalog(new URLSearchParams({ bbox: region.bbox, embeddable: '1', limit: '48', sort: 'fresh' }), request.signal);
         if (disposed || request.signal.aborted) return;
         paginationCursor = nextCursorFrom(payload);
         const cameras = itemsFrom(payload).filter(displayable);
@@ -639,7 +730,7 @@
       loadingMore = false;
       const request = startRequest();
       try {
-        const payload = await requestJson(`/catalog?category=${encodeURIComponent(category)}&embeddable=1&limit=48&sort=fresh`, request.signal);
+        const payload = await requestCatalog(new URLSearchParams({ category, embeddable: '1', limit: '48', sort: 'fresh' }), request.signal);
         if (disposed || request.signal.aborted) return;
         const cameras = itemsFrom(payload).filter(displayable);
         paginationCursor = nextCursorFrom(payload);
@@ -664,7 +755,7 @@
       loadingMore = false;
       const request = startRequest();
       try {
-        const payload = await requestJson(`/catalog?q=${encodeURIComponent(normalized)}&embeddable=1&limit=48&sort=fresh`, request.signal);
+        const payload = await requestCatalog(new URLSearchParams({ q: normalized, embeddable: '1', limit: '48', sort: 'fresh' }), request.signal);
         if (disposed || request.signal.aborted) return;
         const cameras = itemsFrom(payload).filter(displayable);
         paginationCursor = nextCursorFrom(payload);
@@ -690,7 +781,7 @@
       else params.set('q', currentQuery);
       const request = startRequest();
       try {
-        const payload = await requestJson(`/catalog?${params.toString()}`, request.signal);
+        const payload = await requestCatalog(params, request.signal);
         if (disposed || request.signal.aborted) return;
         paginationCursor = nextCursorFrom(payload);
         renderResults(itemsFrom(payload), title, { append: true });
