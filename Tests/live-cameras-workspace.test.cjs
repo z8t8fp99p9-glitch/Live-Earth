@@ -32,8 +32,8 @@ assert.match(source, /\.le-sfv--live-cams \[hidden\]\{display:none!important\}/,
   'Hidden state must win against component display styles, especially the featured LIVE badge.');
 assert.match(source, /heroBadge\.hidden = true/,
   'A scenic fallback or failed image must never retain a LIVE WINDOW badge.');
-assert.match(source, /shell\.remove\(\);/,
-  'A broken camera card must be removed rather than replaced with decorative art under a live label.');
+assert.match(source, /image\.removeAttribute\('src'\);[\s\S]*?card\.classList\.add\('le-lc-card-no-image'\)/,
+  'A failed camera image must lose its source and live-image treatment rather than be replaced with false camera imagery.');
 assert.match(source, /image: 'night-skies' \}/,
   'The Antarctica tile must not reuse the Europe mountain photograph.');
 for (const image of ['wildlife', 'oceans', 'cities', 'weather', 'mountains', 'night-skies']) {
@@ -55,15 +55,28 @@ assert.doesNotMatch(source, /WebGLRenderer|createEarthGlobe|LiveEarthScene|force
   'Live Cams must not create a globe or initiate metered live-video playback.');
 
 // Directory-permission and freshness rules follow the current OpenEye contract.
-assert.match(source, /camera\?\.is_free !== true/);
-assert.match(source, /camera\?\.view\?\.render !== 'image'/);
-assert.match(source, /camera\?\.redistribution\?\.preview_embed !== true/);
+assert.match(source, /function cameraCardState\(camera\)/,
+  'Directory rows must have an explicit access and preview state.');
+assert.match(source, /view\.hosted === 'source' && view\.url_type === 'image'/,
+  'Official direct-source image cameras must be eligible when attribution is present.');
+assert.match(source, /return !!camera && typeof camera\.id === 'string'/,
+  'Directory discovery must not discard valid listed records merely because they lack preview metadata.');
 assert.match(source, /function cameraCredit\(camera\)/);
 assert.match(source, /function frameAgeSeconds\(camera\)/);
+assert.match(source, /Date\.parse\(suppliedTimestamp\)/,
+  'ISO camera frame timestamps must be parsed instead of rejected as non-numeric.');
+assert.match(source, /timestamp \*= 1000/,
+  'Epoch-second capture timestamps must be converted to milliseconds for display.');
 assert.match(source, /age <= 7 \* 86400/,
   'Eligible previews can remain in the documented seven-day directory window.');
 assert.match(source, /cameraFreshnessLabel/,
   'Older eligible preview frames must not be labelled LIVE.');
+assert.match(source, /window\.LiveEarthCameraDiagnostics/,
+  'Live endpoint results and failures must be exposed for on-device diagnosis.');
+assert.match(source, /Camera connection details/,
+  'The user must be able to inspect the endpoint report without developer tools.');
+assert.match(source, /cameraSummary\(cameras\)/,
+  'Directory records, current feeds, previews and source links must be reported separately.');
 assert.match(source, /credit\.name/);
 assert.match(source, /credit\.url/);
 assert.match(source, /url\.protocol === 'https:'/);
@@ -79,8 +92,8 @@ assert.match(source, /Array\.isArray\(mapPayload\?\.clusters\)/,
   'Spatial recovery must handle clustered map responses as well as individual items.');
 assert.match(source, /HTTP 200 \+ an empty\/unusable page/,
   'Successful empty catalogue responses must trigger spatial recovery.');
-assert.match(source, /become neutral unavailable cards/,
-  'Free live directory rows without an image or link must remain visible but neutral.');
+assert.match(source, /NO PUBLIC VIEW|PREVIEW UNAVAILABLE/,
+  'Directory rows without an image or link must be visibly neutral and not advertised as live.');
 assert.match(source, /\/catalog\/\$\{encodeURIComponent\(id\)\}/);
 assert.match(source, /\/catalog\/featured/);
 assert.match(source, /\/catalog\/categories/);
@@ -164,6 +177,24 @@ async function exerciseLifecycleAndDirectoryFallback() {
     view: { render: 'link', url: 'https://publisher.example.test/harbour-live' },
     redistribution: { preview_embed: false }
   };
+  const directSourceImageCamera = {
+    id: 'stream_test_05', title: 'Downtown street camera', city: 'New York', country: 'USA', category: 'city',
+    is_free: true, live: true, frame_ts: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+    view: { render: 'image', url: 'https://publisher.example.test/nyc-frame.jpg', url_type: 'image', hosted: 'source' },
+    redistribution: { preview_embed: false, attribution: { name: 'City DOT', url: 'https://publisher.example.test' } }
+  };
+  const paidCamera = {
+    id: 'stream_test_06', title: 'Premium observatory camera', country: 'USA', category: 'city',
+    is_free: false, live: true, last_frame_age_s: 30,
+    view: { render: 'link', url: 'https://publisher.example.test/paid-camera' },
+    redistribution: { preview_embed: false }
+  };
+  const accessUnknownCamera = {
+    id: 'stream_test_07', title: 'Unverified access camera', country: 'USA', category: 'city',
+    live: true, last_frame_age_s: 30,
+    view: { render: 'link', url: 'https://publisher.example.test/unknown-access' },
+    redistribution: { preview_embed: false }
+  };
   const unavailableCamera = {
     id: 'stream_test_04', title: 'Cape observation camera', city: 'Cape Town', country: 'South Africa', category: 'city',
     live: true, is_free: true, last_frame_age_s: 70,
@@ -188,7 +219,7 @@ async function exerciseLifecycleAndDirectoryFallback() {
     else if (value.includes(`/catalog/${camera.id}`)) payload = { item: camera };
     else if (value.includes(`/catalog/${publisherOnlyCamera.id}`)) payload = { item: publisherOnlyCamera };
     else if (value.includes(`/catalog/${unavailableCamera.id}`)) payload = { item: unavailableCamera };
-    else if (value.includes('/catalog?category=')) payload = { items: [camera] };
+    else if (value.includes('/catalog?category=')) payload = { items: [camera, directSourceImageCamera, paidCamera, accessUnknownCamera] };
     return {
       ok: status >= 200 && status < 300,
       status,
@@ -299,7 +330,7 @@ async function exerciseLifecycleAndDirectoryFallback() {
   assert.ok(unavailableCard, 'A current free camera with render:none should remain visible in the results.');
   assert.equal(unavailableCard.disabled, true,
     'A camera with no permitted preview and no publisher URL must be a neutral, non-clickable card.');
-  assert.ok(findAll(unavailableCard, 'le-lc-badge').some(node => node.children.some(child => child.textContent === 'PREVIEW UNAVAILABLE')),
+  assert.ok(findAll(unavailableCard, 'le-lc-badge').some(node => node.children.some(child => child.textContent === 'NO PUBLIC VIEW')),
     'The no-preview record must be clearly labelled as unavailable, not live.');
 
   // Europe deliberately keeps returning 500 for all catalog-query variants;
@@ -317,6 +348,23 @@ async function exerciseLifecycleAndDirectoryFallback() {
   assert.ok(requestLog.some(url => url.includes('/catalog?category=wildlife') && !url.includes('embeddable=1')),
     'Category tiles must query the enriched directory without suppressing publisher-view records.');
   assert.ok(findAll(body, 'le-lc-card').length > 0, 'Category results should render camera cards.');
+  const directSourceCard = findAll(body, 'le-lc-card').find(card => card.attributes['aria-label']?.includes('Downtown street camera'));
+  assert.ok(directSourceCard, 'Direct-source image cameras should remain in the enriched category results.');
+  assert.equal(directSourceCard.disabled, false, 'A permitted free direct-source image should open its camera details.');
+  const directSourceImage = findAll(directSourceCard, 'le-lc-card-image')[0];
+  assert.equal(directSourceImage.src, 'https://publisher.example.test/nyc-frame.jpg',
+    'Official source-hosted image URLs should be used directly when the API declares image content and attribution.');
+  const paidCard = findAll(body, 'le-lc-card').find(card => card.attributes['aria-label']?.includes('Premium observatory camera'));
+  assert.ok(paidCard && paidCard.disabled, 'Paid feeds may be identified but must never be opened from this free-camera interface.');
+  assert.ok(findAll(paidCard, 'le-lc-badge').some(node => node.children.some(child => child.textContent === 'PAID FEED · NOT OPENED')));
+  const unknownAccessCard = findAll(body, 'le-lc-card').find(card => card.attributes['aria-label']?.includes('Unverified access camera'));
+  assert.ok(unknownAccessCard && unknownAccessCard.disabled, 'Rows without is_free confirmation must not be opened.');
+  assert.ok(findAll(unknownAccessCard, 'le-lc-badge').some(node => node.children.some(child => child.textContent === 'ACCESS UNCONFIRMED')));
+
+  assert.ok(mockWindow.LiveEarthCameraDiagnostics?.recentRequests?.length,
+    'The runtime must publish a readable on-device API diagnostic report.');
+  assert.ok(mockWindow.LiveEarthCameraDiagnostics.recentRequests.some(entry => entry.endpoint === '/catalog/map'),
+    'Regional map recovery must be observable in the diagnostic report.');
 
   registered.deactivate();
   assert.equal(rootRemoved, true, 'Closing Live Cams must remove its stage root.');

@@ -1,8 +1,8 @@
 /* LIVE // EARTH — Live Cams discovery workspace.
    Editorial camera discovery built on the existing Stacks feature stage.
    No globe, map renderer, WebGL context, or paid live-video session is created.
-   Preview images are shown only when the directory explicitly permits embedding
-   and provides the required publisher credit. */
+   Public directory rows remain discoverable; images, publisher links and unavailable
+   entries are rendered separately according to the directory's declared permissions. */
 (() => {
   'use strict';
 
@@ -160,6 +160,10 @@
     .le-lc-state[hidden],.le-lc-results[hidden],.le-lc-results-title[hidden]{display:none!important}
     .le-lc-state[data-kind="error"]{border-color:rgba(255,130,140,.25);color:#ffc0c5}
     .le-lc-state[data-kind="success"]{border-color:rgba(103,213,180,.2);color:#a8e9d4}
+    .le-lc-diagnostics{border:1px solid rgba(151,194,223,.16);border-radius:13px;background:rgba(4,13,23,.62);padding:10px 12px;color:#9db6c8;font-size:10px}
+    .le-lc-diagnostics[hidden]{display:none!important}
+    .le-lc-diagnostics summary{cursor:pointer;color:#b8d3e4;font-weight:650;letter-spacing:.04em}
+    .le-lc-diagnostics-text{max-height:190px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;margin:10px 0;color:#8faabd;font:10px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
     .le-lc-modal{position:fixed;z-index:20;inset:0;display:grid;align-items:end;padding:16px 12px calc(env(safe-area-inset-bottom) + 112px);background:rgba(0,4,9,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);pointer-events:auto}
     .le-lc-modal[hidden]{display:none}
     .le-lc-modal-panel{position:relative;width:min(100%,560px);max-height:min(72vh,680px);overflow:auto;margin:0 auto;padding:13px;border:1px solid rgba(173,215,241,.22);border-radius:23px;background:linear-gradient(155deg,#122638,#07131f 75%);box-shadow:0 22px 70px #000a}
@@ -212,20 +216,32 @@
       const age = Number(suppliedAge);
       if (Number.isFinite(age)) return age;
     }
-    const timestamp = Number(camera?.frame_ts);
-    if (Number.isFinite(timestamp) && timestamp > 0) return Math.max(0, (Date.now() - timestamp) / 1000);
+    const suppliedTimestamp = camera?.frame_ts;
+    if (typeof suppliedTimestamp === 'string' && !/^\d+(?:\.\d+)?$/.test(suppliedTimestamp.trim())) {
+      const parsed = Date.parse(suppliedTimestamp);
+      if (Number.isFinite(parsed)) return Math.max(0, (Date.now() - parsed) / 1000);
+    }
+    const timestamp = Number(suppliedTimestamp);
+    if (Number.isFinite(timestamp) && timestamp > 0) {
+      // OpenEye documents frame_ts in milliseconds. Also accept epoch seconds
+      // for older adapters without silently turning them into ancient frames.
+      const milliseconds = timestamp < 100000000000 ? timestamp * 1000 : timestamp;
+      return Math.max(0, (Date.now() - milliseconds) / 1000);
+    }
     return NaN;
   }
   function isFresh(camera) {
-    if (camera?.live !== true) return false;
+    if (camera?.live === false) return false;
     const age = frameAgeSeconds(camera);
-    // OpenEye keeps a camera in its live/degradation window for up to seven days.
-    // Older stored images must not be presented as current directory previews.
-    return Number.isFinite(age) && age >= 0 && age <= 7 * 86400;
+    if (Number.isFinite(age)) return age >= 0 && age <= 7 * 86400;
+    // The API defines live:true as a recent-frame health signal. Do not discard
+    // an otherwise valid live directory row merely because an adapter omitted age.
+    return camera?.live === true;
   }
   function cameraFreshnessLabel(camera) {
     const age = frameAgeSeconds(camera);
-    return Number.isFinite(age) && age <= 86400 ? 'LIVE' : 'RECENT';
+    if (Number.isFinite(age)) return age <= 86400 ? 'LIVE' : 'RECENT';
+    return camera?.live === true ? 'LIVE' : 'STATUS UNKNOWN';
   }
   function cameraArtwork(camera) {
     const category = String(camera?.category || '').toLowerCase();
@@ -233,29 +249,43 @@
     return discoveryImage(artwork);
   }
   function previewUrl(camera) {
-    if (camera?.is_free !== true) return '';
-    if (camera?.view?.render !== 'image') return '';
-    if (camera?.redistribution?.preview_embed !== true) return '';
+    if (camera?.is_free !== true || !isFresh(camera)) return '';
+    const view = camera?.view || {};
+    if (String(view.render || '').toLowerCase() !== 'image') return '';
+    // OpenEye's contract has two image cases: a permitted OpenEye preview
+    // (preview_embed=true), and direct source images explicitly typed as image.
+    const isOpenEyePreview = camera?.redistribution?.preview_embed === true;
+    const isDirectSourceImage = view.hosted === 'source' && view.url_type === 'image';
+    if (!isOpenEyePreview && !isDirectSourceImage) return '';
+    // Attribution is mandatory whenever imagery is displayed. Keep the API's
+    // supplied publisher credit and link; never substitute our own label.
     if (!cameraCredit(camera)) return '';
-    return safeHttps(camera?.view?.url || camera?.preview_url);
+    return safeHttps(view.url || camera?.preview_url);
   }
-  // A directory record can be useful even when its imagery cannot be embedded.
-  // OpenEye's enriched catalogue explicitly distinguishes image, link and none.
-  // Only image rows with preview_embed + attribution are loaded into <img> tags;
-  // link rows open their publisher viewer, while paid/non-live rows stay excluded.
   function cameraDestinationUrl(camera) {
-    const render = String(camera?.view?.render || '').toLowerCase();
-    // Respect the publisher's declared presentation mode. `none` is still a
-    // discoverable directory record, but must not be turned into a guessed link.
+    if (camera?.is_free !== true) return '';
+    const view = camera?.view || {};
+    const render = String(view.render || '').toLowerCase();
     if (render === 'none') return '';
-    if (render === 'link') return safeHttps(camera?.view?.url || sourceUrl(camera));
+    if (render === 'link') return safeHttps(view.url || sourceUrl(camera));
     return safeHttps(camera?.source_url || camera?.publisher_url || camera?.viewer_url || camera?.website);
   }
   function displayable(camera) {
-    // Keep every free, recently verified public camera discoverable. Some valid
-    // directory rows intentionally have render:none and no publisher URL; those
-    // become neutral unavailable cards instead of disappearing from region results.
-    return !!camera && !!camera.id && camera.is_free === true && isFresh(camera);
+    // A catalogue row is a directory result even when it is paid, stale, source-
+    // only, missing an image, or missing optional health metadata. The UI labels
+    // those states explicitly and never opens a paid/restricted media endpoint.
+    return !!camera && typeof camera.id === 'string' && camera.id.trim().length > 0;
+  }
+  function cameraCardState(camera) {
+    if (camera?.is_free === false) return 'PAID FEED · NOT OPENED';
+    if (camera?.is_free !== true) return 'ACCESS UNCONFIRMED';
+    if (camera?.live === false) return 'OFFLINE / STALE';
+    const age = frameAgeSeconds(camera);
+    if (Number.isFinite(age) && age > 7 * 86400) return 'STALE · NOT LIVE';
+    if (previewUrl(camera)) return cameraFreshnessLabel(camera);
+    if (cameraDestinationUrl(camera)) return 'OPEN SOURCE';
+    if (String(camera?.view?.render || '').toLowerCase() === 'none') return 'NO PUBLIC VIEW';
+    return camera?.live === true ? 'PREVIEW UNAVAILABLE' : 'STATUS UNKNOWN';
   }
   function itemsFrom(payload) {
     if (Array.isArray(payload)) return payload;
@@ -282,7 +312,14 @@
     return safeHttps(camera?.source_url || camera?.publisher_url || camera?.viewer_url || camera?.website);
   }
   function timeLabel(camera) {
-    const timestamp = Number(camera?.frame_ts);
+    const suppliedTimestamp = camera?.frame_ts;
+    let timestamp = NaN;
+    if (typeof suppliedTimestamp === 'string' && !/^\d+(?:\.\d+)?$/.test(suppliedTimestamp.trim())) {
+      timestamp = Date.parse(suppliedTimestamp);
+    } else {
+      timestamp = Number(suppliedTimestamp);
+      if (Number.isFinite(timestamp) && timestamp > 0 && timestamp < 100000000000) timestamp *= 1000;
+    }
     if (Number.isFinite(timestamp) && timestamp > 0) {
       try { return `Frame captured ${new Date(timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}`; }
       catch (_) {}
@@ -425,6 +462,14 @@
     status.setAttribute('role', 'status');
     status.setAttribute('aria-live', 'polite');
     wrap.appendChild(status);
+    const diagnosticsPanel = make('details', 'le-lc-diagnostics');
+    const diagnosticsSummary = make('summary', '', 'Camera connection details');
+    const diagnosticsText = make('pre', 'le-lc-diagnostics-text', 'Waiting for the first directory request…');
+    const diagnosticsCopy = make('button', 'le-lc-secondary-button', 'Copy diagnostics');
+    diagnosticsCopy.type = 'button';
+    diagnosticsPanel.append(diagnosticsSummary, diagnosticsText, diagnosticsCopy);
+    diagnosticsPanel.hidden = true;
+    wrap.appendChild(diagnosticsPanel);
 
     const modal = make('div', 'le-lc-modal');
     modal.hidden = true;
@@ -459,6 +504,55 @@
     let paginationCursor = '';
     let loadingMore = false;
     let lastFocused = null;
+    const diagnosticLog = [];
+    function refreshDiagnosticPanel() {
+      if (!diagnosticLog.length) return;
+      diagnosticsPanel.hidden = false;
+      diagnosticsText.textContent = diagnosticLog.slice(-18).map(entry => {
+        const details = [entry.status ? `HTTP ${entry.status}` : entry.error || 'request failed', `${entry.ms} ms`];
+        if (entry.shape) details.push(entry.shape);
+        if (entry.rows !== undefined) details.push(`${entry.rows} rows`);
+        if (entry.ids !== undefined) details.push(`${entry.ids} IDs`);
+        if (entry.live !== undefined) details.push(`${entry.live} live`);
+        if (entry.images !== undefined) details.push(`${entry.images} images`);
+        if (entry.links !== undefined) details.push(`${entry.links} links`);
+        if (entry.none !== undefined) details.push(`${entry.none} no-view`);
+        if (entry.total !== undefined && entry.total !== null) details.push(`total ${entry.total}`);
+        if (entry.free !== undefined && entry.free !== null) details.push(`free ${entry.free}`);
+        if (entry.failed !== undefined && entry.failed !== null) details.push(`${entry.failed} detail failures`);
+        return `${entry.endpoint} — ${details.join(' · ')}`;
+      }).join('\n');
+      window.LiveEarthCameraDiagnostics = {
+        updatedAt: new Date().toISOString(),
+        recentRequests: diagnosticLog.slice(-18).map(entry => ({ ...entry }))
+      };
+    }
+    function recordDiagnostic(entry) {
+      diagnosticLog.push({ ...entry, at: new Date().toISOString() });
+      if (diagnosticLog.length > 40) diagnosticLog.shift();
+      refreshDiagnosticPanel();
+    }
+    async function copyDiagnostics() {
+      const report = diagnosticsText.textContent || 'No camera request diagnostics yet.';
+      try {
+        if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(report);
+        else throw new Error('Clipboard unavailable');
+        diagnosticsCopy.textContent = 'Copied';
+      } catch (_) {
+        diagnosticsCopy.textContent = 'Select the diagnostic text to copy';
+      }
+    }
+
+    function cameraSummary(cameras) {
+      const total = cameras.length;
+      const live = cameras.filter(camera => camera.live === true && isFresh(camera)).length;
+      const previews = cameras.filter(camera => !!previewUrl(camera)).length;
+      const publisher = cameras.filter(camera => camera.is_free === true && !!cameraDestinationUrl(camera)).length;
+      const paid = cameras.filter(camera => camera.is_free === false).length;
+      const inactive = cameras.filter(camera => camera.live === false || (Number.isFinite(frameAgeSeconds(camera)) && frameAgeSeconds(camera) > 7 * 86400)).length;
+      const unknown = cameras.filter(camera => camera.is_free !== true && camera.is_free !== false).length;
+      return `${total} directory records · ${live} live · ${previews} permitted image previews · ${publisher} publisher links · ${paid} paid · ${inactive} stale/offline${unknown ? ` · ${unknown} access unknown` : ''}`;
+    }
 
     function setStatus(message, kind = '') {
       status.textContent = message;
@@ -488,7 +582,11 @@
       }
       heroFallback.style.backgroundImage = `linear-gradient(180deg,rgba(1,8,15,.10),rgba(1,8,15,.76)),url('${cameraArtwork(camera)}')`;
       heroFallback.textContent = imageUrl ? 'Camera preview temporarily unavailable'
-        : destination ? 'Open this camera at its publisher' : 'No public preview or publisher view is available';
+        : destination ? 'Open this camera at its publisher'
+          : camera?.is_free === false ? 'Paid camera · not opened here'
+            : camera?.is_free !== true ? 'Camera listed · access not confirmed'
+              : camera?.live === false ? 'Camera currently offline'
+                : 'No public preview or publisher view is available';
       heroButton.onclick = () => openDetails(camera);
       heroImage.hidden = !imageUrl;
       heroFallback.hidden = !!imageUrl;
@@ -521,24 +619,27 @@
       image.referrerPolicy = 'no-referrer';
       const imageUrl = previewUrl(camera);
       const destination = cameraDestinationUrl(camera);
+      const canOpen = camera?.is_free === true && (!!destination || !!imageUrl);
       if (imageUrl) {
         image.src = imageUrl;
         image.onerror = () => {
-          // A failed source image is not replaced with scenic artwork.
-          shell.remove();
+          image.removeAttribute('src');
+          image.hidden = true;
+          card.classList.add('le-lc-card-no-image');
         };
       } else {
-        // Scenic tile art is a directory fallback, never a camera frame.
+        // Scenic art is only a labelled directory placeholder, never a frame.
         image.src = cameraArtwork(camera);
         image.classList.add('le-lc-card-artwork');
         image.onerror = () => { image.hidden = true; card.style.background = 'linear-gradient(145deg,#153247,#07111c)'; };
-        if (!destination) card.disabled = true;
       }
+      card.disabled = !canOpen;
       const content = make('div', 'le-lc-card-content');
       const badge = make('span', 'le-lc-badge');
-      if (imageUrl) badge.append(make('span', 'le-lc-live-dot'), make('span', '', cameraFreshnessLabel(camera)));
-      else if (destination) badge.append(make('span', '', '↗'), make('span', '', 'OPEN SOURCE'));
-      else badge.append(make('span', '', '•'), make('span', '', 'PREVIEW UNAVAILABLE'));
+      const cardState = cameraCardState(camera);
+      if (imageUrl) badge.append(make('span', 'le-lc-live-dot'), make('span', '', cardState));
+      else if (destination) badge.append(make('span', '', '↗'), make('span', '', cardState));
+      else badge.append(make('span', '', '•'), make('span', '', cardState));
       const title = make('h3', 'le-lc-card-title', camera.title || camera.name || 'Live camera');
       const location = make('p', 'le-lc-card-location', countryLabel(camera));
       content.append(badge, title, location);
@@ -649,7 +750,11 @@
       modalTitle.textContent = camera.title || camera.name || 'Live camera';
       modalLocation.textContent = countryLabel(camera);
       const publisher = cameraDestinationUrl(camera);
-      modalMeta.textContent = `${categoryLabel(camera)} · ${timeLabel(camera)} · ${imageUrl ? 'Public preview' : publisher ? 'Publisher-hosted camera' : 'Preview unavailable'}`;
+      const accessLabel = camera?.is_free === false ? 'Paid feed — not opened in Live Cams'
+        : camera?.is_free !== true ? 'Access status not supplied'
+          : camera?.live === false ? 'Camera currently marked offline'
+            : imageUrl ? 'Public preview' : publisher ? 'Publisher-hosted camera' : 'Preview unavailable';
+      modalMeta.textContent = `${categoryLabel(camera)} · ${timeLabel(camera)} · ${accessLabel}`;
       modalCredit.replaceChildren();
       const credit = cameraCredit(camera);
       if (credit) {
@@ -668,7 +773,18 @@
         link.rel = 'noopener noreferrer';
         modalActions.appendChild(link);
       }
-      if (!publisher) modalActions.appendChild(make('p', 'le-lc-modal-meta', imageUrl ? 'This directory record does not provide a separate publisher link. The preview is shown under its listed embed permission.' : 'The directory lists this camera, but its publisher has not supplied an embeddable preview or a direct viewing link.'));
+      if (!publisher) {
+        const explanation = camera?.is_free === false
+          ? 'This camera is a paid feed. Live Cams does not initiate paid frame or video sessions.'
+          : camera?.is_free !== true
+            ? 'The directory did not provide a confirmed free-access flag, so this camera is listed but not opened.'
+            : camera?.live === false
+              ? 'The directory currently marks this camera offline. No live preview is shown.'
+              : imageUrl
+                ? 'The preview is shown under its listed embed permission.'
+                : 'The directory lists this camera, but no embeddable preview or publisher viewing link was supplied.';
+        modalActions.appendChild(make('p', 'le-lc-modal-meta', explanation));
+      }
       modal.hidden = false;
       closeButton.focus?.();
     }
@@ -683,19 +799,60 @@
       if (signal?.aborted) controller.abort();
       else signal?.addEventListener('abort', onAbort, { once: true });
       const timeout = window.setTimeout(() => controller.abort(), 16000);
+      const startedAt = Date.now();
+      const endpoint = path.split('?')[0];
       try {
         const response = await fetch(`${API_BASE}${path}`, {
           method: 'GET', mode: 'cors', credentials: 'omit', cache: 'no-store', signal: controller.signal,
           headers: { Accept: 'application/json' }
         });
+        const statusCode = response.status;
         if (!response.ok) {
-          const error = new Error(`Camera directory returned ${response.status}.`);
-          error.status = response.status;
+          const message = statusCode === 401 || statusCode === 403
+            ? `Camera directory returned ${statusCode}. It may require a free API key or access permission.`
+            : statusCode === 429
+              ? 'Camera directory rate limit reached (HTTP 429). Wait before refreshing; do not keep retrying.'
+              : `Camera directory returned ${statusCode}.`;
+          const error = new Error(message);
+          error.status = statusCode;
+          recordDiagnostic({ endpoint, status: statusCode, ms: Date.now() - startedAt, error: message });
           throw error;
         }
         const type = (response.headers.get('content-type') || '').toLowerCase();
-        if (!type.includes('json')) throw new Error('Camera directory returned an unexpected response.');
-        return await response.json();
+        if (!type.includes('json')) {
+          const error = new Error(`Camera directory returned non-JSON content (${type || 'unknown content type'}).`);
+          error.status = statusCode;
+          recordDiagnostic({ endpoint, status: statusCode, ms: Date.now() - startedAt, error: error.message });
+          throw error;
+        }
+        const payload = await response.json();
+        const rows = itemsFrom(payload);
+        const clusters = Array.isArray(payload?.clusters) ? payload.clusters : [];
+        const allRows = [...rows, ...clusters];
+        const renderCounts = allRows.reduce((counts, row) => {
+          const kind = String(row?.view?.render || 'unknown').toLowerCase();
+          counts[kind] = (counts[kind] || 0) + 1;
+          return counts;
+        }, {});
+        recordDiagnostic({
+          endpoint, status: statusCode, ms: Date.now() - startedAt,
+          shape: payload?.mode || (clusters.length ? 'clusters' : Array.isArray(payload?.items) ? 'items' : Object.keys(payload || {}).slice(0, 6).join(',')),
+          rows: allRows.length,
+          ids: allRows.filter(row => typeof row?.id === 'string' && row.id.trim()).length,
+          live: allRows.filter(row => row?.live === true).length,
+          images: renderCounts.image || 0,
+          links: renderCounts.link || 0,
+          none: renderCounts.none || 0,
+          unknownRender: renderCounts.unknown || 0,
+          total: Number.isFinite(Number(payload?.total)) ? Number(payload.total) : undefined,
+          free: Number.isFinite(Number(payload?.free)) ? Number(payload.free) : undefined
+        });
+        return payload;
+      } catch (error) {
+        if (!error?.status && !signal?.aborted) {
+          recordDiagnostic({ endpoint, ms: Date.now() - startedAt, error: `${error?.name || 'Error'}: ${error?.message || 'Network/CORS/timeout failure'}` });
+        }
+        throw error;
       } finally {
         window.clearTimeout(timeout);
         signal?.removeEventListener('abort', onAbort);
@@ -749,7 +906,7 @@
           const mapClusters = Array.isArray(mapPayload?.clusters) ? mapPayload.clusters : [];
           const candidateIds = [...new Set([...mapItems, ...mapClusters]
             .map(item => item?.id)
-            .filter(id => typeof id === 'string' && id.trim()))].slice(0, 36);
+            .filter(id => typeof id === 'string' && id.trim()))].slice(0, 12);
           if (!candidateIds.length) {
             return { items: [], total: Number(mapPayload?.total) || 0, next_cursor: null };
           }
@@ -757,21 +914,31 @@
             requestJson(`/catalog/${encodeURIComponent(id)}`, signal)
           ));
           const fulfilled = detailResults.filter(result => result.status === 'fulfilled');
+          const rejected = detailResults.filter(result => result.status === 'rejected');
           if (!fulfilled.length) {
-            const failed = detailResults.find(result => result.status === 'rejected');
+            const failed = rejected[0];
             throw failed?.reason || new Error('Camera map candidates could not be resolved.');
           }
           const records = fulfilled
             .map(result => result.value?.item || result.value)
             .filter(record => record && typeof record === 'object' && displayable(record));
-          return { items: records, total: Number(mapPayload?.total) || records.length, next_cursor: null };
+          recordDiagnostic({ endpoint: '/catalog/map → /catalog/{id}', status: 200,
+            ms: 0, shape: `${mapPayload?.mode || 'map'} · ${candidateIds.length} IDs · ${fulfilled.length} resolved`,
+            rows: records.length, ids: records.length,
+            live: records.filter(record => record.live === true).length,
+            images: records.filter(record => String(record?.view?.render || '').toLowerCase() === 'image').length,
+            links: records.filter(record => String(record?.view?.render || '').toLowerCase() === 'link').length,
+            none: records.filter(record => String(record?.view?.render || '').toLowerCase() === 'none').length,
+            total: Number(mapPayload?.total) || 0, free: Number(mapPayload?.free) || 0, failed: rejected.length });
+          return { items: records, total: Number(mapPayload?.total) || records.length,
+            free: Number(mapPayload?.free) || 0, next_cursor: null };
         } catch (error) {
           if (signal?.aborted) throw error;
           lastError = error || lastError;
         }
       }
       if (lastEmptyPayload && !lastError) return lastEmptyPayload;
-      throw lastError || new Error('Camera directory could not complete this search.');
+      throw lastError || new Error('Camera catalogue and regional map both returned no camera IDs. Open the connection details for endpoint counts.');
     }
     async function loadHome({ silent = false } = {}) {
       const request = startRequest();
@@ -812,9 +979,7 @@
         if (hasCategories) renderCategories(categoriesResult.value);
         renderFeatured(cameras);
         if (cameras.length) {
-          const imageCount = cameras.filter(camera => !!previewUrl(camera)).length;
-          const sourceCount = cameras.length - imageCount;
-          setStatus(`${cameras.length} public camera windows are available${imageCount ? ` · ${imageCount} embeddable previews` : ''}${sourceCount ? ` · ${sourceCount} publisher-view cameras` : ''}.`, 'success');
+          setStatus(cameraSummary(cameras), 'success');
         } else if (!hasFeatured) {
           setStatus(`The featured directory could not be reached. ${featuredResult.reason?.message || 'Try a region or search again.'}`, 'error');
         } else {
@@ -845,7 +1010,8 @@
         paginationCursor = nextCursorFrom(payload);
         const cameras = itemsFrom(payload).filter(displayable);
         renderResults(cameras, title);
-        setStatus(cameras.length ? `${cameras.length} public cameras in the ${region.title} discovery window${paginationCursor ? ' · more cameras are available' : ''}.` : `No current public camera records were returned for ${region.title}. Try another region or search.`, cameras.length ? 'success' : '');
+        setStatus(cameras.length ? `${region.title}: ${cameraSummary(cameras)}${paginationCursor ? ' · more results available' : ''}`
+          : `No camera IDs were returned for ${region.title}. Check the Camera connection details below before treating this as an empty region.`, cameras.length ? 'success' : 'error');
       } catch (error) {
         if (disposed || request.signal.aborted) return;
         renderResults([], title);
@@ -871,7 +1037,8 @@
         const cameras = itemsFrom(payload).filter(displayable);
         paginationCursor = nextCursorFrom(payload);
         renderResults(cameras, title);
-        setStatus(cameras.length ? `${cameras.length} current public camera records in this result, including publisher-view and preview-unavailable entries where supplied.` : `No current public camera records were returned for ${title.toLowerCase()}. Try another category.`, cameras.length ? 'success' : '');
+        setStatus(cameras.length ? `${title}: ${cameraSummary(cameras)}`
+          : `No camera IDs were returned for ${title.toLowerCase()}. Check the Camera connection details below before treating this as an empty category.`, cameras.length ? 'success' : 'error');
       } catch (error) {
         if (disposed || request.signal.aborted) return;
         renderResults([], title);
@@ -896,7 +1063,8 @@
         const cameras = itemsFrom(payload).filter(displayable);
         paginationCursor = nextCursorFrom(payload);
         renderResults(cameras, `Results for “${normalized}”`);
-        setStatus(cameras.length ? `Found ${cameras.length} current public camera records. Preview images still require explicit embed permission and publisher credit.` : 'No current public camera records matched that search. Try a different place or subject.', cameras.length ? 'success' : '');
+        setStatus(cameras.length ? `Search: ${cameraSummary(cameras)}`
+          : 'No camera IDs matched that search. Check the Camera connection details below for HTTP status and API response counts.', cameras.length ? 'success' : 'error');
       } catch (error) {
         if (disposed || request.signal.aborted) return;
         renderResults([], `Results for “${normalized}”`);
@@ -963,6 +1131,7 @@
     const onClear = () => resetBrowse();
     const onRefresh = () => refreshCurrent();
     const onCloseModal = () => closeDetails();
+    const onCopyDiagnostics = () => { copyDiagnostics(); };
     const onModalBackdrop = event => { if (event.target === modal) closeDetails(); };
     const onKeyDown = event => { if (event.key === 'Escape' && !modal.hidden) closeDetails(); };
     const onOnline = () => { setStatus('Connection restored. Refreshing camera directory…'); refreshCurrent(); };
@@ -973,6 +1142,7 @@
     clearButton.addEventListener('click', onClear);
     featuredRefresh.addEventListener('click', onRefresh);
     loadMoreButton.addEventListener('click', loadMore);
+    diagnosticsCopy.addEventListener('click', onCopyDiagnostics);
     closeButton.addEventListener('click', onCloseModal);
     modal.addEventListener('click', onModalBackdrop);
     document.addEventListener('keydown', onKeyDown);
@@ -996,6 +1166,7 @@
       clearButton.removeEventListener('click', onClear);
       featuredRefresh.removeEventListener('click', onRefresh);
       loadMoreButton.removeEventListener('click', loadMore);
+      diagnosticsCopy.removeEventListener('click', onCopyDiagnostics);
       closeButton.removeEventListener('click', onCloseModal);
       modal.removeEventListener('click', onModalBackdrop);
       document.removeEventListener('keydown', onKeyDown);
