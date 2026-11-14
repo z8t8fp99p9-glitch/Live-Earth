@@ -1189,6 +1189,72 @@
         caps.forEach(poly=>{ctx.save();ctx.globalAlpha=.62;ctx.fillStyle='#f6f5ed';ctx.beginPath();poly.forEach((pt,i)=>i?ctx.lineTo(pt[0]*width,pt[1]*height):ctx.moveTo(pt[0]*width,pt[1]*height));ctx.closePath();ctx.fill();ctx.restore();});
       }
 
+      // Richer Japanese landscape details: broken mountain ink, pine groves and a quiet shoreline.
+      // All detail stays inside the existing Weather canvas; the separate Live Art canvas is untouched.
+      const inkTone=p.ink, softTone=p.soft, pineTone=p.accent;
+      const ridgeMarks=[
+        [[.055,.675],[.105,.646],[.145,.657]],[[.205,.623],[.255,.585],[.285,.594]],
+        [[.335,.535],[.365,.505],[.395,.525]],[[.455,.465],[.485,.425],[.515,.445]],
+        [[.585,.565],[.625,.535],[.655,.548]],[[.715,.505],[.755,.475],[.785,.492]],
+        [[.865,.625],[.905,.585],[.945,.601]]
+      ];
+      ridgeMarks.forEach((mark,i)=>{
+        ctx.save();ctx.globalAlpha=.17+(i%3)*.025;ctx.strokeStyle=i%2?softTone:inkTone;
+        ctx.lineWidth=Math.max(.55,Math.min(1.15,width*.0015));ctx.lineCap='round';
+        ctx.beginPath();ctx.moveTo(mark[0][0]*width,mark[0][1]*height);
+        ctx.quadraticCurveTo(mark[1][0]*width,mark[1][1]*height,mark[2][0]*width,mark[2][1]*height);
+        ctx.stroke();ctx.restore();
+      });
+      // Fine, broken contour strokes give the mountain faces a hand-painted structure.
+      for(let i=0;i<11;i++){
+        const x=width*(.035+i*.091);
+        const y=height*(.665+(i%4)*.032);
+        ctx.save();ctx.globalAlpha=.10+(i%3)*.025;ctx.strokeStyle=inkTone;ctx.lineWidth=.65;
+        ctx.beginPath();ctx.moveTo(x,y);
+        ctx.quadraticCurveTo(x+width*.018,y-height*.018,x+width*.035,y-height*(.025+(i%2)*.012));
+        ctx.stroke();ctx.restore();
+      }
+
+      // Small pine groves sit on the middle ridge, with restrained wind-responsive movement.
+      const drawPineCluster=(nx,ny,size,phase)=>{
+        const gust=Math.min(1,state.wind/55);
+        const windX=-Math.sin(state.direction*Math.PI/180);
+        const sway=reduced?0:Math.sin(t*.62+phase)*gust*width*.0022*windX;
+        const x=width*nx+sway, y=height*ny, s=Math.min(width,height)*size;
+        ctx.save();ctx.translate(x,y);ctx.scale(s/100,s/100);
+        ctx.strokeStyle=inkTone;ctx.fillStyle=pineTone;ctx.lineCap='round';ctx.lineJoin='round';
+        ctx.globalAlpha=.43;ctx.lineWidth=2.2;
+        ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(2,-24);ctx.lineTo(9,-48);ctx.stroke();
+        const tiers=[[-19,-34,-34,-31,20,-37],[-11,-23,-29,-20,25,-26],[-4,-12,-22,-10,28,-16]];
+        tiers.forEach((q,k)=>{
+          ctx.globalAlpha=.38;ctx.lineWidth=2;
+          ctx.beginPath();ctx.moveTo(5,q[1]);ctx.quadraticCurveTo(-8,q[1]-8,q[2],q[3]);
+          ctx.moveTo(6,q[1]+1);ctx.quadraticCurveTo(15,q[1]-7,q[4],q[5]);ctx.stroke();
+          ctx.globalAlpha=.18;ctx.fillStyle=pineTone;
+          ctx.beginPath();ctx.ellipse(-13-k*2,q[1]-2,14,3,-.10,0,Math.PI*2);ctx.fill();
+          ctx.beginPath();ctx.ellipse(17+k*2,q[1]-3,13,3,.10,0,Math.PI*2);ctx.fill();
+        });
+        ctx.restore();
+      };
+      drawPineCluster(.31,.785,.105,.4);
+      drawPineCluster(.47,.765,.078,1.2);
+      drawPineCluster(.64,.785,.092,2.1);
+
+      // Shoreline and small ink-wash rocks create a more legible foreground landscape.
+      const shoreY=height*.835;
+      ctx.save();ctx.globalAlpha=.25;ctx.strokeStyle=softTone;ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(width*.04,shoreY);
+      ctx.bezierCurveTo(width*.22,shoreY-height*.035,width*.36,shoreY+height*.018,width*.54,shoreY-height*.008);
+      ctx.bezierCurveTo(width*.70,shoreY-height*.028,width*.82,shoreY+height*.012,width*.98,shoreY-height*.018);
+      ctx.stroke();ctx.restore();
+      for(let i=0;i<6;i++){
+        const x=width*(.12+i*.145), y=height*(.865+(i%2)*.018), rx=width*(.018+(i%3)*.004);
+        ctx.save();ctx.globalAlpha=.13+(i%2)*.035;ctx.fillStyle=inkTone;
+        ctx.beginPath();ctx.moveTo(x-rx,y);ctx.quadraticCurveTo(x-rx*.35,y-height*.012,x,y-height*.008);
+        ctx.quadraticCurveTo(x+rx*.8,y-height*.004,x+rx,y);ctx.quadraticCurveTo(x,y+height*.006,x-rx,y);ctx.fill();
+        ctx.restore();
+      }
+
       // Japanese landscape foreground: two quiet ink-wash ridges, a tiny pine and a distant pavilion.
       // Quiet floating mist, like diluted sumi ink, rather than wide graphic bands.
       for(let i=0;i<3;i++){
