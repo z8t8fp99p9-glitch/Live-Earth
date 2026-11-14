@@ -56,7 +56,7 @@ assert.ok(quakes.includes('earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all
 assert.ok(quakes.includes("attachLayer('earthquakes'"), 'Earthquake markers must attach to the existing shared Earth layer host');
 
 const traffic = read('Traffic/traffic-view.js');
-assert.ok(traffic.includes('source pending') || traffic.includes('source is not connected'), 'Traffic must remain transparent about the unconnected feed');
+assert.ok(traffic.includes('source remains pending'), 'Traffic must remain transparent about the unconnected feed');
 assert.ok(!/fetch\s*\(/.test(traffic), 'Traffic preview must not call an unapproved traffic endpoint');
 
 const registry = read('Global/view-module-registry.js');
@@ -124,9 +124,14 @@ console.log('Stacks feature-folder and Global three-Orb contract tests passed.')
     await new Promise(resolve => setImmediate(resolve));
   }
   assert.equal(windowMock.__liveEarthStacksFeatureViewsInstalled, true, 'Feature runtime must finish loading all modules');
-  assert.deepEqual(registered.map(item => item.id), ['clouds', 'weather', 'elevation', 'earthquakes', 'traffic'], 'All feature modules must register in the original Orb scatter order');
+  assert.deepEqual(
+    registered.map(item => item.id),
+    ['clouds', 'weather', 'elevation', 'earthquakes', 'traffic', 'live-cams'],
+    'All feature modules must register in the original order, with Live Cams added after Traffic'
+  );
   assert.equal(registered[0].config.connected, true);
   assert.equal(registered[4].config.connected, false, 'Traffic must remain a preview until a verified source is connected');
+  assert.equal(registered[5].config.connected, true, 'Live Cams must be registered as the independent Engine view');
   console.log('Stacks feature runtime registration-order test passed.');
 })().catch(error => {
   console.error(error);
