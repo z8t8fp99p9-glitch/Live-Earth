@@ -1,67 +1,38 @@
 # Global Standards
 
-> **Critical project reference — applies across all LIVE // EARTH work.**
+These standards apply throughout LIVE // EARTH.
 
-## 1. Global Orb standard
+## Navigation and Orbs
 
-- Orb behaviour and dependencies are protected global infrastructure.
-- Preserve the five Home Orbs: Earth, Moon, Sun, Location and Stacks.
-- Preserve width-driven circular sizing, approved positions, touch areas, visual states and landscape geometry.
-- Primary-view navigation belongs to the existing view manager. Utility Orbs must not unexpectedly replace an active primary view.
-- Location is OFF by default; enabling it is an explicit user action, not a navigation side effect.
-- `Location/location.js` owns the Home Location Orb permission request, GPS watch, fresh-fix validation and ON/OFF lifecycle. `Earth/earth-view-controller.js` owns the separate Earth View Scanner button and marker visibility; it consumes only the already-approved Location state and never requests GPS permission.
-- Preserve Stacks feature lifecycle, the feature dock, hitbox alignment and animation cleanup guards.
-- Do not change Orb code or its dependency chain without explicit owner approval and targeted iPhone tests.
+- Home has five Orbs: Earth, Moon, Sun, Location and Stacks.
+- The shared Stacks feature dock has three controls: active feature (tap to close), Location and Stacks library.
+- `Global/view-manager.js` is the sole primary-view transition authority.
+- Preserve Orb geometry, touch targets, orientation behaviour, hitbox alignment and close cleanup. Do not add a competing dock or close control.
 
-## 2. Independent-view standard
+## Views and engines
 
-Moon and Sun are independent views. The shared sky stage/host is an integration point, not permission to merge renderers or view-specific state.
+- Moon and Sun share a sky host but retain separate controllers, renderers, calculations and UI.
+- `EarthEngine/Core/earth-engine.js` is the shared Earth globe factory. Each view owns its scene, camera and renderer. Only the user-controlled parent-group quaternion is handed between Engine-owned Earth views.
+- Stacks features register through `Stacks/stacks-feature-views.js`; a feature must not create another navigation system or dock.
 
-- Shared host: `Global/sky-view-controller.js`.
-- Moon renderer: `Moon/moon-view-controller.js`.
-- Moon interface and lunar overlay/scroller: `Moon/moon-lunar-interface.js`.
-- Sun controller: `Sun/sun-view-controller.js`.
-- Shared module integration uses the existing view registry and stage.
-- Keep Sun-specific calculations/rendering out of Moon, and Moon-specific calculations/interface behaviour out of Sun.
-- Validate open/close, repeated transitions, portrait/landscape and return-to-Home behaviour on the installed iPhone.
+## Location and privacy
 
-## 3. Feature-workspace standard
+- Location is OFF by default and requires an explicit user action.
+- `Location/location.js` owns permission, GPS watch, fresh-fix validation and ON/OFF state.
+- Other views consume only an already-approved fresh position. They must not invoke browser geolocation directly.
+- Do not store, expose or display observer-local values while Location is OFF unless the feature has another valid source.
 
-- `Stacks/stacks-feature-views.js` owns the shared Stacks feature runtime and Elevation. Weather, Clouds, Traffic and Earthquakes are separate top-level feature folders that register through the shared runtime. Preserve the Global three-Orb lifecycle: active feature Orb closes the view, Location toggles the existing service, and Stacks opens the feature library. Do not change Orb geometry, hitboxes, animation, touch behaviour, or cleanup guards.
-- `Editorial-Engine/engine-feature-views.js` registers only the Universal Editorial Engine workspace.
-- The Editorial Engine workspace does not create another Orb or alter the global Orb contract.
-- No collection, source-discovery, feed, policy-checking, image-processing, database-writing, publishing or magazine workspace is part of the current app.
+## Offline, updates and recovery
 
-## 4. Universal Editorial Engine standard
+- Preserve the service-worker shell, optional-resource cache, readiness checks and staged update flow.
+- `sw.js` and `Global/update-manager.js` must use matching build identities.
+- Do not clear Cache Storage, localStorage, sessionStorage, IndexedDB or user data as a generic fix.
+- Trace runtime dependencies before removing or moving files.
 
-The retained Editorial Engine is deterministic editorial/output infrastructure. Its text-intelligence tools perform source-grounded extractive selection and structure; they do not invent reporting or claim independent fact verification. The retained Python core and browser helper must not be silently replaced by a different engine.
+## Editorial Engine boundary
 
-The previous content-collection and publishing services have been removed. Do not imply that a live feed pipeline is running. The preserved Python core still contains its prior read-only approved-record input contract, which is dormant without its former upstream services.
+The retained Universal Editorial Engine provides source-grounded extractive text and editorial utilities. It is not a live source collector, rights checker, feed publisher, database writer or magazine scheduler. Do not restore the retired publishing systems.
 
-## 5. Offline, privacy and recovery
+## Release discipline
 
-- Location remains OFF unless manually enabled; no automatic geolocation request.
-- Preserve the existing service-worker shell, optional-resource cache and staged update handshake unless the task explicitly concerns them.
-- Build identifiers and cache identities must be checked across the service worker and update manager before release.
-- Never clear Cache Storage, localStorage, sessionStorage, IndexedDB or local data as generic troubleshooting.
-- Use the relevant recovery record and a reversible restore plan. Do not blanket-restore unrelated snapshots or workflow YAML.
-
-## 6. Current-versus-historical rule
-
-Old content-collection, rights-checking and publication notes are historical. They do not describe installed code or active services and must not be used to recreate removed modules. The current repository source and this standard determine the supported application boundary.
-
-- Earth Engine owns one quaternion-only viewpoint snapshot (`{x, y, z, w}`) shared across active Engine-created Earth groups. Views never share scenes, cameras, renderers or zoom.
-
-
-## Home Earth viewpoint hand-off
-`EarthEngine/Core/earth-engine.js` captures the exact outgoing owner's quaternion before a view transition and applies it to the incoming group immediately. It persists only `liveEarthGlobalViewpointV1`. The retired Home-only V3/V2/V1 bridge and its migration fallbacks are removed; no old key may be restored. Home rotation uses the Engine's quaternion interaction controller, with zoom disabled.
-
-### V125 — canonical Earth Engine and strict Moon/Earth isolation
-`EarthEngine/Core/earth-engine.js` is the only Earth globe factory. Home, Independent Earth View and Earth Modes use the same engine, Earth texture and fixed surface calibration, creating separate instances only because their scenes/renderers are independent. The Engine lifecycle transfers only the user-controlled Earth-group quaternion. Moon Orbit may update its own Moon/orbit objects only; it must never read or mutate the Earth surface or Earth group. The V124 surface-quaternion bridge was an incorrect expansion of the legacy Moon/Earth coupling and is superseded.
-
-
-## Global Orb System — 8 November 2026
-
-Home is the default Primary screen. Earth, Moon and Sun are Primary view Orbs; Location and Stacks are utility Feature Orbs; all Stacks catalogue entries are Secondary views. The five-Orb main row and three-Orb Secondary dock remain protected. All categories are exposed through one `LiveEarthOrbSystem` registry and active-view lifecycle. Location and opening/closing Stacks must not emit a view transition. Secondary views remain exclusive: the active one toggles closed and another replaces it.
-
-Earth Engine owns one normalized quaternion snapshot and captures only at view transitions/page hide. No per-view viewpoint API, continuous observer, polling or per-frame storage is permitted.
+The user uploads and commits through the root manifest-validated ZIP workflow. Do not edit `.github/` through that ZIP or write directly to GitHub. Verify ZIP extraction, resulting commit, Pages deployment and installed-device behaviour separately.

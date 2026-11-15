@@ -1,52 +1,31 @@
 LIVE // EARTH — START HERE
 Repository: z8t8fp99p9-glitch/Live-Earth
 Branch: main
-Documentation review: 12 November 2026
-Last inspected main commit before this documentation-pointer correction: 01c2442f887db29d4156044f31c1bc44bad99c75
+Current documentation baseline: 15 November 2026
 
-READ THESE FIRST — IN THIS ORDER
+READ IN THIS ORDER
 1. PROJECT-CONTINUITY.md
 2. GLOBAL-STANDARDS.md
 3. PROTECTED-DECISIONS.md
-4. ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md
+4. ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md (do not edit)
 5. Documentation/INDEX.md
 6. Documentation/CURRENT-STATUS.md
-7. Weather/WEATHER-DESIGN-DIRECTION.md when working on Weather or Live Art
 
-CURRENT PROJECT POSITION — 12 NOVEMBER 2026
-- Treat the app and existing modules as production code. Inspect current main, callers, dependencies and tests before every source change.
-- The last inspected main commit before this documentation-pointer correction is 01c2442f887db29d4156044f31c1bc44bad99c75 (Refresh LIVE EARTH App Documentation and Weather Art Locks). This package will create a subsequent documentation-only commit; check GitHub main for the resulting current HEAD after upload.
-- The duplicate `.github/workflows/regression-tests.yml` file was removed in commit a81afab9a007c0183d47073b35cd2831e3694b32. Despite its filename, it was an older duplicate ZIP extractor, not a regression-test runner.
-- Keep `.github/workflows/zip-extract-auto-upload.yml`. It is the active manifest-validated ZIP extractor. Do not modify it casually.
-- Keep all source files under `Tests/`. Removing the duplicate workflow did not delete test files. The repository's tests remain available for deliberate local/manual validation; do not imply a GitHub regression workflow currently runs them.
-- Last app-source commit: `f00750e4b374009b2ff8acfaed2d11f583921cc9` — Weather and Live Art illustration colours remain consistent across day and night. Pages deployment succeeded and the user confirmed the result in-app.
-- Current service-worker build identity: `v132-residents-removed` (confirm it remains synchronized with `Global/update-manager.js` before future releases).
-- Weather and Live Art artwork palettes are fixed across day/night. The sun/moon subject and weather-specific painting content/effects may still respond to phase/conditions; the underlying artwork palette must not recolour.
-- Preserve the approved Portrait lock, accepted Landscape layout, Live Art 10:7 frame, and shared Orb dock.
-- Portfolio mode uses the agreed fixed background; do not reintroduce weather-driven colour cycling into the artwork/background.
+CURRENT POSITION
+- Latest inspected main: 4c2dc6a95088fdebd0f99059b0c46d3989439395.
+- Latest Pages build for that commit succeeded (GitHub Actions run 43664328131).
+- Latest app change rebuilds Weather as a full-screen 2D living atmosphere.
+- This confirms source and Pages build, not installed-iPhone acceptance.
+- Service Worker and Update Manager both use v132-residents-removed.
+- GitHub Actions validates upload packages and builds Pages; it does not run the repository's regression test files.
 
-PROTECTED APP POSITION
-- Global Orb behaviour and dependencies are protected.
-- The five Home Orbs remain Earth, Moon, Sun, Location and Stacks.
-- Moon and Sun are independent views.
-- Location is OFF unless the user enables it.
-- Preserve real runtime/offline assets, local data, service-worker rules and recovery paths.
-- `Stacks/stacks-feature-views.js` is the shared Stacks feature runtime and retains Elevation. Weather, Clouds, Traffic and Earthquakes have separate top-level view folders.
-- `Editorial-Engine/engine-feature-views.js` registers only the Universal Editorial Engine workspace.
-- The Editorial Engine core and browser helper are retained. Its former upstream collection/publishing integration is not active.
-- The previous collection, source-discovery, feed, policy-checking, image-processing, database-writing, Publisher and Magazine systems were removed at the owner's direction. Do not restore them from old notes.
+PROTECT
+- Five Home Orbs and the shared three-Orb feature dock.
+- Home Earth composition, Earth Engine ownership, independent Moon and Sun views.
+- Location OFF by default; no automatic GPS permission.
+- Stacks lifecycle, offline startup, service-worker/update safeguards and local recovery.
+- User data, IndexedDB and Cache Storage.
+- Retained Universal Editorial Engine; do not restore removed publishing systems.
 
-SAFE WORK
-- Read the relevant project reference, component contract and tests.
-- Change only the requested scope.
-- Never reset databases, browser storage, caches or local recovery data as a generic fix.
-- Do not claim tests, Actions, deployment or iPhone verification unless they actually passed.
-- Preserve unrelated app history and mark superseded decisions accurately.
-- User manually uploads/commits. Assistant must not write directly to GitHub.
-
-ZIP UPLOAD
-- The root ZIP upload standard remains unchanged. Never move, rename, rewrite or delete it.
-- Upload one `.zip` to the repository root on `main`. Do not unpack it.
-- Include `UPLOAD_MANIFEST.json` at the archive root, with exact payload paths, byte sizes, SHA-256 values, `commitTitle` and any approved delete paths.
-- `.github/` is protected from ZIP payload changes. Workflow YAML changes require a separate manual GitHub edit/commit.
-- Check the extractor run and resulting commit. For source releases, separately verify Pages deployment and the user's device acceptance.
+WORKFLOW
+Inspect current main, source, callers and relevant tests before source changes. Make narrow changes. User uploads and commits manually through the manifest-validated ZIP workflow. Do not write directly to GitHub. Verify the extractor, resulting commit, Pages deployment and device behaviour separately.

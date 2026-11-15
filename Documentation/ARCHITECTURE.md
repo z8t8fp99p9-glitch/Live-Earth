@@ -1,26 +1,45 @@
-# LIVE // EARTH — Architecture Overview
+# Application Architecture
 
-## 1. Application and view layer
+## App shell and navigation
 
-The root app shell and managers coordinate navigation and lifecycle:
-- Home and its protected visual/Orb baseline;
-- Earth, Moon and Sun primary views;
-- Location and Stacks global utilities;
-- full-screen Weather, Clouds, Traffic and Earthquakes Stacks feature workspaces;
-- the retained Elevation workspace in the shared Stacks feature runtime;
-- the single Universal Editorial Engine feature workspace;
-- offline/runtime resources and recovery.
+- `index.html` is the app shell and Home entry point.
+- `Global/view-manager.js` owns primary-view transitions.
+- `Global/view-module-registry.js` owns shared module registration, feature lifecycle, Stacks catalogue and the feature dock.
+- `Global/orb-controls-v4.js` owns protected Home Orb interactions and orientation recovery.
+- `ios-standalone-root-flow.js` supports iOS full-screen behaviour.
 
-Moon and Sun use the shared sky host but retain separate rendering and view-specific behaviour. The existing view manager remains the primary-view transition authority.
+## Primary views
 
-## 2. Retained editorial tool
+- Home owns its Earth scene, locked framing, Moon orbit and Home presentation.
+- `Earth/earth-view-controller.js` owns the independent full-screen Earth View.
+- `EarthEngine/Core/earth-engine.js` creates reusable Earth globe objects and manages quaternion-only viewpoint continuity.
+- Moon uses `Moon/moon-view-controller.js` and `Moon/moon-lunar-interface.js`.
+- Sun uses `Sun/sun-view-controller.js`; `Global/sky-view-controller.js` provides the shared sky host.
+- Moon and Sun keep separate rendering and view-specific state.
 
-The four independently-owned Stacks workspaces live in flat top-level folders (`Weather/`, `Clouds/`, `Traffic/`, `Earthquakes/`) and register through `Stacks/stacks-feature-views.js`. The Global three-Orb dock remains unchanged. The Universal Editorial Engine is retained under `Editorial-Engine/`. Its core Python implementation, browser helper and extractive text-intelligence utilities remain in place. The Engine workspace is the only retained content-related Feature Orb.
+## Stacks and secondary features
 
-The app no longer contains the previous source-discovery, collection, rights-checking, image-processing, feed, database-writing, Publisher or Magazine services. The preserved Editorial Engine core still contains its prior read-only approved-record input contract; without those former upstream services, that contract is dormant. Do not describe the app as running a live content pipeline.
+`Stacks/stacks-feature-views.js` provides the shared feature runtime and retains Elevation. Separate feature modules live in `Weather/`, `Clouds/`, `Traffic/` and `Earthquakes/`. They mount into the existing full-screen stage below the shared three-Orb dock. The active feature Orb closes the view. Features must not create a parallel dock, close button or primary-view manager.
 
-## 3. Runtime and data
+Current data sources: Weather uses Open-Meteo; Clouds uses NASA GIBS; Earthquakes uses USGS latest-day GeoJSON; Traffic/Live Cams uses its camera-directory integration. Missing or restricted data must be labelled honestly, never fabricated.
 
-`sw.js` manages service-worker resource caching and startup shell behaviour. `Global/update-manager.js` coordinates readiness and staged updates. The Home, Earth, Moon, Sun, Location, Stacks and dedicated feature folders keep view-owned runtime artwork alongside their relevant view files. `Data/data-store.js` and `Data/data-recovery.js` support local data/recovery.
+## Location, data and recovery
 
-Every file referenced by the service worker, update manager, view controller or lazy-loading path is a dependency. Do not remove or relocate based on filename alone. Do not reset, merge or delete databases, browser storage, cache families or local data as part of unrelated work.
+- `Location/location.js` owns explicit browser permission, GPS watch and fresh-fix lifecycle. Other views consume approved state only.
+- `Data/data-store.js` and `Data/data-recovery.js` manage local IndexedDB records and portable recovery.
+- `Recovery/` contains rollback guidance. Do not reset local data or caches as generic troubleshooting.
+
+## Runtime, updates and offline
+
+- `sw.js` owns the app-shell cache, optional caching, startup recovery and offline resource handling.
+- `Global/update-manager.js` coordinates readiness and staged update activation.
+- Their build identifiers must match; current identity is `v132-residents-removed`.
+- `Tests/` contains source and contract tests. A GitHub Actions regression runner is not currently configured.
+
+## Retained editorial utility
+
+`Editorial-Engine/` contains the retained Universal Editorial Engine core, browser helper and text-intelligence utilities. Its former approved-record input contract is dormant without its removed upstream services. The app does not run a live collection, rights-checking, feed, database-writing, Publisher or Magazine pipeline.
+
+## Dependency rule
+
+A file referenced by `index.html`, the service worker, update manager, view registry, controller or lazy loader is a runtime dependency even when it looks old. Trace references before removing or moving anything.

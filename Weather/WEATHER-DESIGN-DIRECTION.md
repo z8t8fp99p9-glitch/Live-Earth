@@ -1,90 +1,35 @@
-# LIVE // EARTH — Weather layout and live Japanese art studio
+# Weather — Current Design and Behaviour
 
-**Updated:** 12 November 2026 — artwork palette lock confirmed in-app  
-**Scope:** Production Weather Stacks view only
+**Current baseline:** 15 November 2026  
+**Implementation:** `Weather/weather-view.js`
 
-## Binding colour rule — overrides older palette wording below (12 November 2026)
+## Visual direction
 
-- The Weather illustration palette is fixed across DAY and NIGHT.
-- The separate Live Art painting palette is also fixed across DAY and NIGHT, including paper wash and paper-grain treatment.
-- The shared Weather/Live Art background uses the approved fixed treatment. Portfolio mode uses the same agreed fixed background; it must not cycle colours with weather or time.
-- DAY/NIGHT may change the depicted celestial subject (sun/moon) and condition-specific painted content/effects. These subject/effect changes must not switch the underlying artwork palette to a separate night palette.
-- Do not use weather conditions, time-of-day or phase to recolour the illustration, Live Art painting, paper wash, grain or shared background.
-- The user confirmed the deployed colour-lock result was working on 12 November 2026.
+Weather is a full-screen, immersive atmospheric landscape. A local Canvas 2D renderer paints sky, clouds, layered ridges, water/reflections, trees and condition effects. Keep the scene expressive but uncluttered; the illustration is the main visual surface, not a wallpaper behind a stack of cards.
 
-This rule supersedes the older sentence below that describes “warm washi-paper tones by day and a deep ink-paper treatment at night.” That phrase is retained as historical wording only and must not be implemented as palette switching.
+The interface uses large, minimal weather information over the scene: location, local date/time, temperature, condition, feels-like, today's high/low, rain chance, wind and humidity. Preserve safe-area spacing and measured clearance above the shared Orb dock in Portrait and Landscape. Do not modify the dock.
 
-## Approved visual identity
+## Live data and privacy
 
-The Weather view combines three restrained directions:
+- Provider: Open-Meteo current conditions and daily summary.
+- Refresh interval: 15 minutes while the view is active and the page is visible.
+- Weather may use only a fresh position already supplied by the explicitly enabled Location service.
+- Weather must never call browser geolocation itself.
+- Location OFF, offline, waiting for a fresh fix or API failure must show clearly labelled sample/unavailable states, never imply sample values are live.
+- Keep requests bounded and cancellable; ignore responses that arrive after the view closes or a newer request starts.
 
-1. **Expressive English typography** — an editorial weather headline, a large current temperature, and a concise condition/feels-like reading.
-2. **A quiet minimalist ground** — warm washi-paper treatment with a fixed palette. Photographic wallpaper is not used.
-3. **Japanese-inspired 2D artwork** — a weather-reactive landscape and a separate Live Art painting, both drawn locally on Canvas 2D with fixed underlying palettes.
+## Scene states
 
-Japanese influence is visual artwork only. Do not add Japanese-language interface labels, decorative Japanese characters, or character/mascot figures.
+The renderer supports clear, cloudy, rain, storm, snow, fog, wind, hot and night presentation. Conditions influence scene elements and motion. Keep temperature and forecast readings legible against every scene.
 
-## Japanese visual language
+## Motion and lifecycle
 
-- Use warm washi/rice-paper ground, expressive English editorial serif typography, restrained ink-black and muted-sage tones, and selective vermilion accents.
-- Use ma (negative space), asymmetric balance, soft ink contours and layered atmospheric distance. Avoid decorative Japanese characters, random props or generic “Japan” motifs added only for decoration.
-- Weather is the quiet Japanese landscape; Live Art is the detailed Japanese painting. They share palette and atmosphere, but Live Art owns the expressive brushwork and detail.
+- Use responsive Canvas sizing and cap device-pixel ratio/particle counts.
+- Throttle animation and stop it when the document is hidden or Weather closes.
+- Honour `prefers-reduced-motion`.
+- Disconnect ResizeObservers, remove listeners, clear timers and abort network requests during cleanup.
+- Keep a graceful static fallback if Canvas rendering is unavailable.
 
-## Portrait composition — approved reference behaviour
+## Superseded designs
 
-- The entire portrait content group starts comfortably below the iPhone status/safe area and uses a compact Weather scene to preserve room for the full Live Art card above the Orb dock. Add 20–28 px of breathing room after `safe-area-inset-top`; do not pin the brand or scene controls to the top edge.
-- The top header and date/scene selector remain compact.
-- The editorial headline sits above the main illustrated scene.
-- **The main temperature and condition are overlays inside the same full-width weather illustration.** They must read as one composed visual, not as a separate information card next to or above a small landscape strip.
-- The main canvas fills its complete scene stage. Use the same minimalist Japanese landscape painter in portrait and landscape: two restrained mountain ridges, a quiet horizon, a fine water/reflection plane, a vermilion sun/cloud mark where appropriate, and only the selected weather effect. The Weather scene sets the mood; it does not compete with Live Art.
-- Keep weather information prominent: a large editorial headline, a very large temperature, a legible condition/feels-like group, and readable high/low, rain chance and wind values.
-- Show only three summary values below the scene: high/low, rain chance and wind.
-- The **Live Art card is inset from the screen edges** and its painting canvas fills the complete card, including the areas behind the title/status and caption/Replay controls. Text and controls float over the painting; the canvas must not appear as a narrow artwork strip inside an empty card.
-- Keep the lower area quiet so the shared Orb dock remains visually clear. Do not add an hours-ahead rail to fill the space.
-- Preserve safe-area spacing and calculate scroll clearance from the existing shared Orb dock without styling or moving it.
-
-## Landscape composition — centred Live Art frame
-
-- Use a balanced asymmetric safe-width split: the Weather overview uses about 36% and the Live Art feature area about 64% (`minmax(210px,.56fr) minmax(0,1fr)` before the shared gutter). The card itself does not stretch to fill that area; its 10:7 frame is centred within the feature column and scaled from the usable vertical space.
-- Live Art keeps the same **10:7 width-to-height ratio in both orientations**. In landscape, calculate its width from the full usable dashboard height using the largest 10:7 rectangle that fits both the feature-column width and landscape height, then centre it horizontally and vertically inside the Live Art feature area.
-- Keep the masthead on one landscape row: brand, date/time, location and scene selector. Respect both `safe-area-inset-left` and `safe-area-inset-right`, and increase label sizes so the notch and rounded corners cannot obscure them.
-- The left Weather column follows the approved portrait hierarchy: the expressive headline and larger temperature/condition sit over one continuous landscape painting, with only high/low, rain chance and wind beneath it.
-- Landscape typography is allowed to reflow and scale to the actual forecast-column width. Preserve the editorial two-line headline character; do not force a small single-line heading into the narrow column.
-- Reuse the same minimalist Canvas 2D painter and motif in both orientations. In landscape only, extend the Weather painting across the column gutter and slightly underneath the foreground Live Art card. Its canvas may also flow behind the summary band, while the readings remain legible above it. This creates one continuous visual field rather than two boxed panels with a hard gap.
-- Add a very restrained shared paper-and-mist atmosphere behind both columns so the Weather canvas and Live Art card feel like one scene. Do not add a new painter, artwork assets, or a separate wallpaper.
-- The Landscape-only backdrop may add warm washi highlights, muted lower-edge terrain haze and soft botanical colour at the margins. Keep it atmospheric and low-contrast; do not create a rounded background panel or a hard divider between Weather and Live Art. All such colours remain within the fixed palette.
-- Landscape Weather type should approach the reference scale: expressive two-line headline, larger temperature and condition group, and larger summary labels/values. Use responsive compact and short-height overrides so every value remains readable above the Orb dock.
-- The shared Live Art card is already approved: do not change its size, 10:7 ratio, canvas, title, status, caption, Replay control, or card styling as part of Weather illustration refinements.
-- Keep the existing lower safety band under the Weather summary so all three values remain readable above the shared Orb dock. The dock remains untouched.
-- The right Live Art column owns the visual emphasis. Its canvas fills the large card; title/status float over the top and caption/Replay float over the bottom, with larger legible controls.
-- Keep the shared Orb dock centred and untouched. Use the existing measured dock-clearance variable for content spacing; never style, resize or reposition the dock from Weather.
-- Use responsive height limits and allow natural scrolling on shorter landscape viewports. On roomy landscape screens, the painting area may borrow a small, controlled dock-clearance overlap so the art can flow slightly toward the Orb row; the shared dock remains in the foreground, with its geometry, hit targets and behaviour untouched.
-
-## Illustration and Live Art behaviour
-
-- The main weather landscape remains a local, deterministic Canvas 2D illustration; never replace it with a photo wallpaper.
-- Main landscape layers should have recognisable peaks and shoulders, lighter distant ridges, soft ink contours, restrained mist, and water/reflection detail. Sun, clouds, branches, rain, snow, fog and wind should respond to actual selected weather/phase without obscuring the reading overlay. Condition-specific content/effects may change, but the underlying colour palette must remain fixed.
-- The separate Canvas 2D Live Art studio progressively paints an original weather-matched ink study, stroke by stroke. Its artwork fills the full card surface while interface copy floats above it. The painting's palette remains fixed across day/night.
-- The starter registry contains eight studies: clear pine/red sun, cloudy willow, rainy willow, storm waves, snowy pine, fog temple, windy bamboo, and night moon.
-- Tree motifs must remain readable at phone size. Pine boughs should be distinct, layered and asymmetrical, with visible breathing room; avoid dense horizontal lattices. The willow remains a separate, recognisable cascading silhouette.
-- Show drawing progress and provide a Replay control. When weather/phase changes, select the corresponding study. Reduced-motion settings render the completed study without progressive animation.
-- Drawing is local and deterministic: no AI/image generation at runtime, no external artwork dependency, no WebGL and no 3D renderer.
-- The Weather Layout Editor must mirror production dimensions and layering. It must not impose independent canvas aspect ratios or resize a preview differently from the app.
-
-## Weather and data behaviour
-
-- Use the existing Open-Meteo current conditions and daily summary data. The hours-ahead forecast rail and hourly request payload are intentionally removed.
-- Actual weather and local day/night state determine the main illustration and selected art study; phase selection must not recolour the underlying artwork.
-- The scene selector supports sample previews for clear, cloudy, rain, storm, snow, fog, wind, night and hot conditions. Sample readings must remain explicitly labelled as samples.
-- The view may use only the app's already-enabled fresh Location fix. It must never request browser geolocation itself. Location remains OFF by default.
-- Offline/unavailable conditions must not be presented as live readings; the drawing system remains available using a labelled sample scene.
-
-## Protected scope
-
-Changes are limited to `Weather/weather-view.js`, `Tools/WEATHER-LAYOUT-EDITOR.html`, this Weather design note and Weather-specific regression tests. Do not alter Home, Earth/Earth Engine, Moon, Sun, Location, Global Orb/navigation lifecycle, Stacks runtime, service worker, update manager, databases or unrelated views.
-
-## Orientation-specific composition (11 November 2026)
-
-- **Portrait:** begin the content 20–28 px below the top safe area. Keep the editorial weather story vertically stacked. Live Art is centered at 95% of the viewport width and uses a 10:7 width-to-height ratio (height is 70% of width). The painting fills the card; title, status, caption and Replay remain overlaid.
-- **Landscape:** use an approximately 36/64 Weather/Live Art feature-area split. Live Art itself remains 10:7 and is centred within its area, scaled down to fit the usable height between the masthead and dock. The masthead respects both horizontal safe-area insets.
-- The shared Orb dock remains owned and positioned by the existing global controller in both orientations. Weather only measures its bounds to reserve clearance.
+Earlier Japanese Live Art cards, 10:7 artwork layouts, monochrome palette locks, Living Topography 3D trials and one-off Weather landscape experiments are not the current Weather specification. Their runtime files and assets are not changed by this documentation update. `Weather/Art/` and `Weather/LivingTopography/` contain legacy/prototype material; do not remove or modify those code paths without a separate dependency audit.
