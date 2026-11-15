@@ -2,18 +2,17 @@
 
 **Reviewed:** 15 November 2026  
 **Repository:** `z8t8fp99p9-glitch/Live-Earth` · `main`  
-**Latest inspected commit:** `4c2dc6a95088fdebd0f99059b0c46d3989439395`  
-**Commit:** `Rebuild Weather as a Full-Screen Living Atmosphere`
+**Latest inspected commit:** `abe0caf848e4712d262f19f65e8c66640162c58f`  
+**Commit:** `Consolidate Project Documentation and Remove Superseded Notes`
 
 ## Release state
 
-- The latest source commit is on `main`.
-- ZIP extractor run `43664317915` succeeded.
-- GitHub Pages run `43664328131` succeeded for the exact latest commit.
-- This confirms upload processing and Pages build/deployment, not installed-iPhone acceptance of the new Weather view.
-- The latest source commit changed `Weather/weather-view.js`; no other application source file was part of that commit.
-- The service worker and update manager both report `v132-residents-removed`.
-- GitHub Actions currently validate the root ZIP and build Pages. They do not execute the repository's test files as a regression suite.
+- The documentation cleanup is on `main`.
+- The ZIP extractor workflow completed successfully during the upload.
+- GitHub Pages build/deployment run `43668668743` succeeded for the inspected `main` commit.
+- This confirms repository processing and Pages deployment, not installed-iPhone acceptance.
+- The Weather rewrite is `Weather/weather-view.js`; the current view is a full-screen, responsive 2D Canvas atmosphere.
+- The service worker and update manager currently report `v132-residents-removed`.
 
 ## Current application
 
@@ -21,18 +20,18 @@
 - Earth View uses the shared Earth Engine; Moon and Sun remain independent views.
 - Location remains OFF unless explicitly enabled.
 - Stacks uses the shared feature runtime and three-Orb dock.
-- Weather is now a full-screen, responsive 2D Canvas atmosphere with live Open-Meteo conditions when an approved fresh Location fix is available. Otherwise it shows clearly labelled sample/offline states.
+- Weather uses Open-Meteo current conditions and daily summary only when an approved fresh Location fix is available. Otherwise it shows labelled sample/offline states.
 - Clouds, Traffic/Live Cams and Earthquakes remain separate Stacks features.
 - The Universal Editorial Engine is retained as a utility; the former collection and publishing pipeline is not active.
 
-## Open verification
+## Weather audit
 
-1. Test the new Weather screen on the installed iPhone in Portrait and Landscape.
-2. Verify Weather Orb open/close, repeated activation and switching to/from other Stacks views.
-3. Verify Location ON/OFF, stale-fix, offline and reconnection behaviour.
-4. Replace superseded Weather tests with behaviour-based tests for the current renderer. Do not report the old string-based tests as current proof.
-5. Separately review the legacy `Weather/Art` service-worker integration before any runtime removal. It was not changed in the latest Weather rebuild.
+- The old Live Art Home injection has been retired. A no-op compatibility file remains in the service-worker shell for older cached Home HTML.
+- The disconnected Living Topography prototype and its obsolete tests have been removed after a repository reference check.
+- Superseded Weather layout and renderer tests have been replaced by a focused suite. Run it from the repository root with `node Tests/run-weather-tests.cjs`.
+- GitHub Actions still do not run the repository test suite automatically.
+- Installed-iPhone checks remain outstanding: Portrait/Landscape, repeated open/close, switching between Stacks views, Location ON/OFF, stale fix, offline and reconnection.
 
-## Release evidence rule
+## Evidence rule
 
-Record source inspection, local syntax/tests, ZIP validation, Actions, Pages deployment and user device confirmation separately. Never infer iPhone acceptance from a green Pages build.
+Record source inspection, local test execution, ZIP validation, Actions, Pages deployment and user device confirmation separately. Never infer iPhone acceptance from a green Pages build.

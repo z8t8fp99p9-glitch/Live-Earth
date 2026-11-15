@@ -1,7 +1,14 @@
-# Legacy Weather Art Materials
+# Weather Art Archive
 
-This folder contains artwork catalogues, reference images and the previous Live Art renderer/production materials.
+This folder retains artwork catalogues, painting data, style references and production studies from the superseded Weather Live Art experiments.
 
-These materials are **not the current Weather design specification**. Production Weather now uses the full-screen Canvas atmosphere described in `../WEATHER-DESIGN-DIRECTION.md` and implemented in `../weather-view.js`.
+They are archival material, not dependencies of the current Weather view.
 
-Some legacy files remain referenced by the service-worker extension. They are retained for compatibility and recovery during this documentation-only cleanup. Do not delete or modify their code, artwork data or assets until a separate source-level dependency audit confirms the Home injection, offline and update paths can be retired safely.
+## Current runtime
+
+- `../weather-view.js` owns the full-screen Canvas 2D atmosphere and all current Weather presentation.
+- `live-art-online.js` is now an inert compatibility stub. It no longer observes Home, fetches artwork, paints a canvas or modifies the Weather screen.
+- `service-worker-extension.js` keeps that stub in the essential app shell only so older cached Home HTML containing a historical script reference can resolve it offline. It does not inject the old renderer into new Home responses.
+- The disconnected `Weather/LivingTopography/` prototype and its obsolete tests have been retired after checking that the active app does not reference them.
+
+The original artwork JSON and reference images remain preserved here. They should not be mistaken for the active Weather design or reconnected without a new, explicit product decision.
