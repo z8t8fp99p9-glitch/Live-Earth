@@ -2,23 +2,24 @@
 
 **Reviewed:** 15 November 2026  
 **Repository:** `z8t8fp99p9-glitch/Live-Earth` · `main`  
-**Inspected source baseline:** `5f320c9da0f877f679c4fcb1dc1715b108d77813`  
-**Baseline commit:** `Add in-app Live Cams WHEP video player`
+**Inspected source baseline:** `de3b4f18048bc0802489dcee7209a81c11d1e603`  
+**Baseline commit:** `Retire Live Cams and reduce startup essentials`
 
 ## Current decision — Live Cams retired for a clean rebuild
 
 - By owner direction, the Live Cams implementation has been removed completely from the active app. The camera-directory view, WHEP player, public-source adapters and six discovery images are deleted.
 - Live Cams is unregistered from the shared Stacks loader and removed from the startup controller bootstrap, service-worker app shell and startup repair list.
 - Traffic remains as its own independent feature; its module and navigation remain intact. No Live Cams code or imagery is retained as an active Traffic dependency.
-- The service-worker and Update Manager build identity is `v138-core-essential-shell`. The app-shell list drops nine Live Cams resources: 51 to 42 entries; with three shared runtime dependencies, the source-defined startup total drops from 54 to 45. The previously supplied device screenshot showed 56, so the deployed iPhone count still needs to be checked after this package is uploaded and activated.
-- Live Cams technical notes are retained only as archived history. The feature will be designed again from a clean slate when requested.
+- The service-worker and Update Manager build identity is `v138-core-essential-shell`. The app-shell list has 42 entries plus three shared runtime dependencies (45 startup resources). The Weather artwork is not added to Essentials; it is fetched as an optional resource and uses a procedural fallback when unavailable.
+- The previously supplied device screenshot showed 56, so the deployed iPhone count still needs to be checked after the current package is uploaded and activated.
 
 ## Release state
 
 - Phase 3 runtime and asset audit documentation is prepared on the inspected baseline.
 - The exact current Pages deployment and extractor status must be checked after the next upload; this checkpoint does not assume either has processed the pending package.
-- The Weather rewrite is `Weather/weather-view.js`; the current view is a full-screen, responsive 2D Canvas atmosphere.
-- The service worker and Update Manager share the build identity `v138-core-essential-shell`.
+- Weather has been rebuilt as a responsive 2.5D scene. Its square hero composition remains intact through orientation changes, with adaptive scenery and layered weather motion around it.
+- The Weather master artwork is `Weather/Art/weather-world-master-square.webp` (1024 × 1024). It is an optional same-origin asset, not a new essential startup resource.
+- Installed-iPhone checks remain outstanding: Portrait/Landscape, repeated open/close, switching between Stacks views, Location ON/OFF, stale fix, offline and reconnection.
 
 ## Current application
 
@@ -31,12 +32,24 @@
 - Weather, Clouds, Traffic and Earthquakes are separate Stacks features. Traffic has no verified live-data provider connected. Live Cams is retired and no longer registered.
 - The Universal Editorial Engine is retained as a utility; the former collection and publishing pipeline is not active.
 
-## Weather and compatibility
+## Weather Explorer — 15 November 2026
 
-- The old Live Art Home injection has been retired. The no-op compatibility files remain referenced by the service worker and older cached-shell compatibility path.
-- The disconnected Living Topography prototype and its obsolete tests were removed after a repository reference check.
-- The current Weather view retains its own full-screen responsive Canvas renderer and direct Open-Meteo integration.
-- Installed-iPhone checks remain outstanding: Portrait/Landscape, repeated open/close, switching between Stacks views, Location ON/OFF, stale fix, offline and reconnection.
+- The earlier Japanese illustrated Canvas scene has been replaced with a photographic square master composition: a vermilion Torii over a reflective lake, Mount Fuji-inspired mountain, autumn woodland and sunrise light.
+- The protected 1:1 hero is sized from the shorter viewport edge (82% of that edge). It is not stretched to the device aspect ratio. Portrait adds sky/lake breathing room; landscape reveals additional side valleys and tree silhouettes.
+- A softly blurred scene-derived environment sits behind the crisp square hero to blend the composition into the full screen. Canvas weather layers add clouds, mist, lake ripples, rain and splash rings, snow, drifting leaves, night lighting and storm flashes.
+- The renderer is 2.5D, not a full 3D terrain or fluid simulation. The central master image itself remains static; motion is added through separate environmental layers and mood treatment.
+- The scene selector remains a preview tool. Preview values are explicitly labelled sample values, never live forecast data.
+- Open-Meteo integration, 15-minute refresh, approved-location gating and Location OFF default are preserved. No new location permission request was added.
+- The existing Stacks lifecycle, three-Orb dock, close behavior, Home/Earth/Moon/Sun views and service-worker startup essentials were not changed.
+- The master artwork is intentionally served through the existing bounded optional cache, not the essential app shell. If it has not been cached or is unavailable offline, the Weather view draws a procedural fallback scene.
+
+## Verification completed for this package
+
+- JavaScript syntax check: passed (`node --check`).
+- Mock-runtime smoke test: Weather feature registered and activated successfully in portrait (390 × 844) and landscape (844 × 390) viewport simulations.
+- Scene preview smoke test: clear, cloudy, rain, storm, snow, fog, wind, heat, night and auto transitions completed without a runtime exception in the mock environment.
+- Browser screenshot execution was unavailable in this container, so no visual browser-render claim is made.
+- Installed iPhone acceptance remains outstanding. This package has not been uploaded to GitHub Pages or tested on the user's device.
 
 ## Phase 3 runtime and asset audit
 
@@ -61,11 +74,10 @@
 
 Never infer iPhone acceptance from a green Pages build. Report only checks actually performed.
 
-
-## 15 November — Live Cams retirement before rebuild
+### 15 November — Live Cams retirement before rebuild
 
 - The user rejected the current Live Cams experience because of provider restrictions and unreliable feeds, and directed that the entire implementation be removed before a fresh rebuild.
 - Removed all nine active Live Cams files: three JavaScript modules and six category images. Removed Live Cams registration and loader references from the shared Stacks runtime and startup bootstrap.
 - Removed all nine Live Cams paths from the service-worker app shell and all three Live Cams script paths from startup repair diagnostics. Advanced the service-worker/Update Manager build ID to `v138-core-essential-shell` so installed clients can replace the old shell.
 - Kept Traffic independent, with no provider or camera dependency. Historical Live Cams documentation and the prior decision trail are retained as archived records, not active code or current architecture.
-- Source-defined startup total is now 45 resources (42 app-shell entries plus 3 shared runtime dependencies). Installed-device confirmation remains pending until after upload/deployment.
+- Source-defined startup total is 45 resources (42 app-shell entries plus 3 shared runtime dependencies). Installed-device confirmation remains pending until after upload/deployment.

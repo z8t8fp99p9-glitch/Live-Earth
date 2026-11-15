@@ -28,6 +28,17 @@ The primary registry is established by `Global/view-module-registry.js`. The Wea
 
 Current data sources: Weather uses Open-Meteo; Clouds uses NASA GIBS; Earthquakes uses USGS latest-day GeoJSON. Traffic has no verified provider connected yet and must not display fabricated conditions. Missing or restricted data must be labelled honestly, never fabricated.
 
+## Weather Explorer rendering contract
+
+- `Weather/weather-view.js` owns the full-screen Weather experience and registers only with the shared Stacks feature runtime.
+- The visual composition uses a protected square hero scene, sized from the shorter viewport edge, so the mountain, red Torii and lake remain together through portrait/landscape changes. The hero is not stretched to fill the screen.
+- The surrounding viewport is an adaptive environmental extension: landscape reveals additional side valleys and tree silhouettes; portrait reveals additional sky and lake. A softened scene-derived backdrop blends the square hero into those extensions.
+- The square master artwork is `Weather/Art/weather-world-master-square.webp` (1024 × 1024). It is a bounded optional resource rather than a new app-shell essential. The existing optional cache stores it after a successful online request. A procedural fallback scene is drawn if the artwork is unavailable.
+- Weather motion is a layered 2.5D Canvas treatment: drifting cloud and mist fields, water ripples, rain streaks and splash rings, snowfall, wind-blown leaves, day/night lighting and storm flashes. It is not a full 3D terrain or fluid simulation.
+- The Canvas renderer pauses while the document is hidden or the Weather feature is inactive, caps device pixel ratio, and respects reduced-motion preferences.
+- Weather data continues to use Open-Meteo. `Location/location.js` remains the sole owner of explicit permission and fresh-fix lifecycle. Weather consumes the approved location state only; Location remains OFF unless the user enables it.
+- The existing shared stage, feature lifecycle and three-Orb dock remain authoritative. Weather must not add another dock, close action, view registry or location-permission path.
+
 ## Location, data and recovery
 
 - `Location/location.js` owns explicit browser permission, GPS watch and fresh-fix lifecycle. Other views consume approved state only.
@@ -38,8 +49,9 @@ Current data sources: Weather uses Open-Meteo; Clouds uses NASA GIBS; Earthquake
 
 - `sw.js` owns the app-shell cache, optional caching, startup recovery and offline resource handling.
 - `Global/update-manager.js` coordinates readiness, lazy Sun and Editorial Engine loading, and staged update activation.
-- Their build identifiers must match; current identity is `v132-residents-removed`.
+- Their build identifiers must match; current identity is `v138-core-essential-shell`.
 - Three.js module files and the Earth texture are staged as runtime dependencies for same-origin/offline module loading.
+- The Weather master artwork is deliberately not added to the app-shell essential list, so the Weather redesign does not increase the Essentials count. It uses the existing bounded optional cache and has a local procedural fallback.
 - `Weather/Art/service-worker-extension.js` is still imported by the service worker. Its paired Live Art compatibility file is inert; retain both until old-client compatibility is separately retired.
 
 ## Retained tools, dormant components and archival assets
@@ -47,7 +59,7 @@ Current data sources: Weather uses Open-Meteo; Clouds uses NASA GIBS; Earthquake
 - `Tools/LIVE-EARTH-LAYOUT-EDITOR.html` is a standalone developer tool that embeds `../index.html`; it is intentionally outside the normal app-shell navigation.
 - `Global/universal-pdf-viewer.js` is not in the current app startup or app-shell dependency path. It is recorded as dormant and preserved pending an explicit decision about its standalone utility role.
 - `Editorial-Engine/` contains the retained Universal Editorial Engine core, browser helper and text-intelligence utilities. The feature workspace is lazy-loaded by the update manager. Its former approved-record input contract is dormant without the removed upstream services.
-- The Weather Art folder is a preserved creative archive, not part of the current Weather renderer. Exact duplicate image blobs have been identified and remain preserved as part of the named production/master history.
+- The Weather Art folder is a preserved creative archive, not the active renderer. The new Weather world master is a specifically referenced optional runtime asset; the rest of the art archive remains unchanged.
 - `.github/workflows/zip-extract-auto-upload.yml` is the protected ZIP extractor workflow. It must remain intact and is not changed by ordinary ZIP payloads.
 
 ## Verification status
