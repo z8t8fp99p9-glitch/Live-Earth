@@ -200,27 +200,136 @@
       const n=clamp(Math.round(1+state.cloud/17),1,7)+(state.weather==='storm'?3:0);
       for(let i=0;i<n;i++)cloud(i*w/(n||1),h*(.16+(i%3)*.09),.48+(i%4)*.12,colors.sky[2],state.weather==='clear'?.17:state.weather==='storm'?.58:.35,t*(state.weather==='wind'?18:state.weather==='storm'?9:4)*(i%2?1:-1));
     }
-    function landscape(p,t) {
-      const horizon=h*(w/h>1.25?.58:.56);
-      // Distant Japanese ridges, Mount Fuji and a soft snow line.
-      pathMountain([[0,horizon*.95],[w*.14,horizon*.72],[w*.27,horizon*.84],[w*.39,horizon*.62],[w*.52,horizon*.67],[w*.67,horizon*.82],[w*.82,horizon*.65],[w,horizon*.83]],p.far);
-      drawFuji(horizon*.98,.30,p.far);
-      pathMountain([[0,horizon*.98],[w*.13,horizon*.82],[w*.28,horizon*.91],[w*.42,horizon*.79],[w*.57,horizon*.9],[w*.72,horizon*.77],[w*.86,horizon*.9],[w,horizon*.78]],p.mid);
-      // A calm lake with moving reflected light.
-      const lakeY=horizon+h*.13,water=ctx.createLinearGradient(0,lakeY,0,h);water.addColorStop(0,p.water);water.addColorStop(1,state.phase==='night'?'#142b43':'#244b55');ctx.fillStyle=water;ctx.fillRect(0,lakeY,w,h-lakeY);
-      for(let i=0;i<34;i++){const yy=lakeY+((i*17+t*(state.weather==='wind'?17:5))%(h-lakeY));const xx=((i*79+t*(i%2?10:-7))%(w+100))-50;ctx.globalAlpha=.035+(i%4)*.016;ctx.strokeStyle='#f5e8cf';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(xx,yy);ctx.lineTo(xx+w*(.018+(i%5)*.009),yy);ctx.stroke();}ctx.globalAlpha=1;
-      // Near banks frame the water; silhouettes are distinctly Japanese pines.
-      pathMountain([[0,h*.84],[w*.1,h*.78],[w*.2,h*.85],[w*.34,h*.81],[w*.48,h*.88],[w*.63,h*.8],[w*.78,h*.86],[w,h*.8]],p.near);
-      for(let i=0;i<Math.ceil(w/72);i++){const x=i*72+18,base=h*(.89+(i%3)*.018);pine(x,base,.7+(i%4)*.12,p.near,Math.sin(t*1.2+i)*.025*(state.weather==='wind'?3:1));}
-      // Small vermilion torii on the far shore, a quiet landmark rather than a focal graphic.
-      drawTorii(w*.78,lakeY+h*.12,clamp(w/900,.42,.9),state.weather==='night'?'#b87978':'#a84f43');
-      // Cherry branch enters from upper-left; the branch and blossom clusters move in wind.
-      ctx.save();ctx.translate(-w*.03,h*.12);ctx.rotate(Math.sin(t*.7)*(state.weather==='wind'?.025:.008));
-      ctx.strokeStyle='#463d3e';ctx.lineWidth=Math.max(3,w*.006);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(w*.16,h*.015,w*.34,h*.12);ctx.stroke();
-      for(let i=0;i<13;i++){const x=w*(.025+i*.024),y=h*(.01+Math.sin(i*.7)*.045);ctx.fillStyle=i%2?'#e7a9b2':'#f4c3c2';for(let j=0;j<5;j++){const a=j*Math.PI*2/5;ctx.beginPath();ctx.ellipse(x+Math.cos(a)*5,y+Math.sin(a)*4,3.7,2.8,a,0,Math.PI*2);ctx.fill();}}
+    function ridge(points, fill, shade, softness=0) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(0,h);
+      ctx.lineTo(points[0][0],points[0][1]);
+      for(let i=1;i<points.length;i++){
+        const prev=points[i-1],cur=points[i];
+        ctx.quadraticCurveTo((prev[0]+cur[0])/2,prev[1],cur[0],cur[1]);
+      }
+      ctx.lineTo(w,h);ctx.closePath();
+      const g=ctx.createLinearGradient(0,Math.min(...points.map(q=>q[1])),0,h);
+      g.addColorStop(0,fill);g.addColorStop(1,shade||fill);
+      ctx.fillStyle=g;ctx.fill();
+      if(softness>0){ctx.globalAlpha=softness;ctx.strokeStyle='#e8eee5';ctx.lineWidth=12;ctx.stroke();}
       ctx.restore();
-      // Maple colour accents at the right edge.
-      ctx.save();ctx.globalAlpha=.8;for(let i=0;i<7;i++){const x=w*.94+(i%2)*w*.04,y=h*(.47+i*.035);ctx.fillStyle=i%2?'#b65f4d':'#d18a65';ctx.beginPath();ctx.moveTo(x,y-8);ctx.lineTo(x+5,y-2);ctx.lineTo(x+10,y-6);ctx.lineTo(x+8,y+1);ctx.lineTo(x+13,y+6);ctx.lineTo(x+5,y+5);ctx.lineTo(x,y+12);ctx.lineTo(x-2,y+4);ctx.lineTo(x-9,y+2);ctx.lineTo(x-4,y-3);ctx.closePath();ctx.fill();}ctx.restore();
+    }
+    function mountainRange(base, peakX, peakY, width, color, snow=false) {
+      ctx.save();
+      const left=peakX-width*.58,right=peakX+width*.62;
+      const g=ctx.createLinearGradient(peakX-width*.3,peakY,peakX+width*.4,base);
+      g.addColorStop(0,'#d5d8d0');g.addColorStop(.24,color);g.addColorStop(1,color);
+      ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(left,base);
+      ctx.lineTo(peakX-width*.28,peakY+width*.22);
+      ctx.lineTo(peakX-width*.10,peakY+width*.13);
+      ctx.lineTo(peakX,peakY);
+      ctx.lineTo(peakX+width*.13,peakY+width*.12);
+      ctx.lineTo(peakX+width*.29,peakY+width*.18);
+      ctx.lineTo(right,base);ctx.closePath();ctx.fill();
+      // Broken snow and exposed rock bands follow the mountain's irregular shoulders.
+      if(snow||state.weather==='snow'){
+        ctx.fillStyle='#e9eee7';ctx.globalAlpha=.78;ctx.beginPath();
+        ctx.moveTo(peakX-width*.16,peakY+width*.16);
+        ctx.lineTo(peakX-width*.10,peakY+width*.13);
+        ctx.lineTo(peakX,peakY+4);
+        ctx.lineTo(peakX+width*.09,peakY+width*.10);
+        ctx.lineTo(peakX+width*.16,peakY+width*.16);
+        ctx.lineTo(peakX+width*.08,peakY+width*.13);
+        ctx.lineTo(peakX+width*.025,peakY+width*.19);
+        ctx.lineTo(peakX-width*.04,peakY+width*.14);
+        ctx.closePath();ctx.fill();ctx.globalAlpha=1;
+      }
+      // A few broad, translucent rock faces break the flat polygon silhouette.
+      ctx.globalAlpha=.12;ctx.fillStyle='#203d45';ctx.beginPath();
+      ctx.moveTo(peakX,peakY);ctx.lineTo(peakX+width*.13,peakY+width*.12);
+      ctx.lineTo(peakX+width*.29,base);ctx.lineTo(peakX+width*.04,base);ctx.closePath();ctx.fill();
+      ctx.restore();
+    }
+    function forestBand(y, spacing, color, scale, phase, t, detail=true) {
+      for(let i=-2;i<Math.ceil(w/spacing)+2;i++){
+        const seed=i*17+phase;
+        const x=i*spacing+((seed*13)%spacing);
+        const height=scale*(.72+((seed*7)%11)/18);
+        const sway=state.weather==='wind'?Math.sin(t*1.1+i*.7)*.018:Math.sin(t*.35+i)*.003;
+        ctx.save();ctx.translate(x,y+Math.sin(i*2.13+phase)*scale*.12);ctx.rotate(sway);
+        ctx.fillStyle=color;
+        // Irregular layered pine crowns, not repeated triangular icons.
+        for(let k=0;k<4;k++){
+          const yy=-height*(.88-k*.17),ww=height*(.30+k*.09),hh=height*.27;
+          ctx.beginPath();ctx.moveTo(0,yy-hh*.52);
+          ctx.bezierCurveTo(-ww*.55,yy-hh*.2,-ww*1.08,yy+hh*.35,-ww*.92,yy+hh*.55);
+          ctx.quadraticCurveTo(0,yy+hh*.32,ww*.92,yy+hh*.55);
+          ctx.bezierCurveTo(ww*1.08,yy+hh*.35,ww*.55,yy-hh*.2,0,yy-hh*.52);
+          ctx.fill();
+        }
+        ctx.fillRect(-height*.035,-height*.16,height*.07,height*.2);
+        if(detail){ctx.globalAlpha=.18;ctx.strokeStyle='#d2d8c9';ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(-height*.22,-height*.48);ctx.lineTo(0,-height*.67);ctx.lineTo(height*.18,-height*.43);ctx.stroke();}
+        ctx.restore();
+      }
+    }
+    function landscape(p,t) {
+      const portrait=h>w*1.05;
+      const horizon=h*(portrait?.55:.52);
+      const waterY=h*(portrait?.79:.70);
+      // Atmospheric distance: a sequence of ridges fading into the valley.
+      ridge([[0,horizon*.94],[w*.12,horizon*.79],[w*.24,horizon*.88],[w*.38,horizon*.68],[w*.53,horizon*.82],[w*.69,horizon*.66],[w*.83,horizon*.84],[w,horizon*.73]],p.far,'#344f58',.08);
+      ridge([[0,horizon*1.08],[w*.13,horizon*.91],[w*.27,horizon*1.02],[w*.43,horizon*.83],[w*.58,horizon*.99],[w*.76,horizon*.82],[w*.9,horizon*.96],[w,horizon*.86]],p.mid,'#294a4b',.04);
+      // The dominant mountain sits away from the information column in both orientations.
+      const mx=portrait?w*.70:w*.70;
+      const mw=portrait?w*.78:w*.50;
+      mountainRange(horizon*1.24,mx,horizon*.28,mw,p.far,state.weather==='snow');
+      // Sunlight breaks across slopes as a soft, directional wash.
+      const light=ctx.createLinearGradient(mx-mw*.45,horizon*.1,mx+mw*.4,horizon*1.2);
+      light.addColorStop(0,'#fff4d0');light.addColorStop(.42,'#fff4d000');light.addColorStop(1,'#172d3900');
+      ctx.globalAlpha=state.weather==='storm'?.06:state.weather==='fog'?.10:.18;
+      ctx.fillStyle=light;ctx.fillRect(mx-mw,horizon*.08,mw*2,horizon*1.2);ctx.globalAlpha=1;
+      // Forested valley slopes with fine, irregular tree silhouettes.
+      ridge([[0,horizon*1.22],[w*.12,horizon*1.08],[w*.25,horizon*1.2],[w*.4,horizon*1.04],[w*.56,horizon*1.18],[w*.72,horizon*1.01],[w*.88,horizon*1.17],[w,horizon*1.08]],p.mid,'#254b45');
+      forestBand(horizon*1.2,22,p.mid,portrait?28:22,3,t,false);
+      // Lake and shore sit low in frame; the portrait view keeps enough water visible.
+      const lakeY=waterY;
+      const water=ctx.createLinearGradient(0,lakeY,0,h);
+      water.addColorStop(0,p.water);water.addColorStop(.35,state.weather==='storm'?'#284957':'#47747a');
+      water.addColorStop(1,state.phase==='night'?'#102b3c':'#1b4148');
+      ctx.fillStyle=water;ctx.fillRect(0,lakeY,w,h-lakeY);
+      // Distant shore, reeds and reflections soften the waterline.
+      ctx.fillStyle='#203f42';ctx.beginPath();ctx.moveTo(0,lakeY+h*.025);
+      for(let i=0;i<=24;i++){const x=i*w/24,y=lakeY+h*(.015+Math.sin(i*1.7)*.012);ctx.lineTo(x,y);}
+      ctx.lineTo(w,lakeY+h*.06);ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();ctx.fill();
+      // Fine ripples gather under the mountain and lengthen with wind.
+      const rippleCount=portrait?64:48;
+      for(let i=0;i<rippleCount;i++){
+        const yy=lakeY+h*.035+((i*23+t*(state.weather==='wind'?13:state.weather==='storm'?8:3))%(h-lakeY));
+        const center=mx,spread=(yy-lakeY)/(h-lakeY);
+        const xx=((i*97+t*(i%2?7:-5))%(w+100))-50;
+        const len=(w*(.012+(i%7)*.008))*(.45+spread);
+        ctx.globalAlpha=(.025+(i%5)*.012)*(state.weather==='storm'?.55:1);
+        ctx.strokeStyle=i%4===0?'#f5e8ce':'#a9d2cc';ctx.lineWidth=.6+(i%3)*.35;
+        ctx.beginPath();ctx.moveTo(xx,yy);ctx.quadraticCurveTo(xx+len*.5,yy+Math.sin(t+i)*1.4,xx+len,yy);ctx.stroke();
+        if(i%8===0){ctx.globalAlpha=.035;ctx.beginPath();ctx.moveTo(center+(xx-center)*.15,yy);ctx.lineTo(center+(xx-center)*.15+len*.28,yy);ctx.stroke();}
+      }
+      ctx.globalAlpha=1;
+      // Near-bank forest frames the scene with depth and organic variation.
+      ridge([[0,h*.88],[w*.08,h*.83],[w*.18,h*.9],[w*.3,h*.84],[w*.43,h*.92],[w*.57,h*.85],[w*.72,h*.91],[w*.86,h*.84],[w,h*.89]],p.near,'#122f32');
+      forestBand(h*.98,18,p.near,portrait?48:37,9,t,true);
+      // A restrained torii is a distant landmark, not a floating graphic.
+      drawTorii(w*.82,lakeY+h*.09,clamp(w/1250,.28,.58),state.weather==='night'?'#986a68':'#925044');
+      // Foreground grasses and reeds create a tangible edge to the lake.
+      ctx.save();ctx.strokeStyle=state.weather==='snow'?'#d6dfd7':'#9db4a0';ctx.globalAlpha=.3;ctx.lineWidth=1;
+      for(let i=0;i<Math.round(w/9);i++){const x=(i*37)%w,y=h*(.96+(i%4)*.009),height=5+(i%9)*1.7;
+        ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+Math.sin(t*.8+i)*3,y-height*.7,x+(i%2?3:-3),y-height);ctx.stroke();}
+      ctx.restore();
+      // A few close cherry blossoms remain as a subtle Japanese signature.
+      if(state.weather==='clear'||state.weather==='wind'||state.weather==='cloudy'){
+        ctx.save();ctx.translate(-w*.05,h*.12);ctx.rotate(Math.sin(t*.55)*(state.weather==='wind'?.018:.006));
+        ctx.strokeStyle='#463d3e';ctx.lineWidth=Math.max(2,w*.0035);ctx.lineCap='round';
+        ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(w*.11,h*.01,w*.24,h*.10);ctx.stroke();
+        for(let i=0;i<9;i++){const x=w*(.02+i*.026),y=h*(.015+Math.sin(i*.8)*.04);
+          for(let j=0;j<5;j++){const a=j*Math.PI*2/5;ctx.fillStyle=j%2?'#e8b3b8':'#f1c9c3';ctx.beginPath();ctx.ellipse(x+Math.cos(a)*3.2,y+Math.sin(a)*2.7,2.7,2.1,a,0,Math.PI*2);ctx.fill();}}
+        ctx.restore();
+      }
     }
     function atmosphere(p,dt,t) {
       if(state.weather==='rain'||state.weather==='storm'){
@@ -236,11 +345,32 @@
       }
       if(state.weather==='storm'){flashIn-=dt;if(flashIn<=0){lightning=.85;flashIn=5+rand()*10;}if(lightning>0){ctx.fillStyle=`rgba(224,238,244,${lightning*.2})`;ctx.fillRect(0,0,w,h);lightning=Math.max(0,lightning-dt*2.4);}}
       else{lightning=0;flashIn=5;}
+      // Weather changes the air itself, not only the particles in front of it.
+      if(state.weather==='fog'||state.weather==='rain'||state.weather==='snow'){
+        const veil=ctx.createLinearGradient(0,h*.25,0,h*.82);
+        veil.addColorStop(0,'#e9eee900');
+        veil.addColorStop(.52,state.weather==='fog'?'rgba(225,235,226,.24)':state.weather==='rain'?'rgba(194,211,211,.10)':'rgba(238,243,239,.12)');
+        veil.addColorStop(1,'#e9eee900');
+        ctx.fillStyle=veil;ctx.fillRect(0,h*.2,w,h*.68);
+      }
+      if(state.weather==='rain'||state.weather==='storm'){
+        // Wet air and fine lake spray soften distant contrast.
+        ctx.globalAlpha=state.weather==='storm'?.10:.055;
+        ctx.fillStyle='#d8e5e6';ctx.fillRect(0,h*.38,w,h*.48);ctx.globalAlpha=1;
+      }
     }
     function draw(dt) {
       if(!w||!h)return;const p=PALETTES[state.weather]||PALETTES.day,t=time;
       ctx.clearRect(0,0,w,h);sky(p,t);landscape(p,t);atmosphere(p,dt,t);
-      const haze=ctx.createLinearGradient(0,h*.36,0,h*.76);haze.addColorStop(0,'#e9eee000');haze.addColorStop(.5,state.weather==='fog'?'#e9eee055':'#e9eee012');haze.addColorStop(1,'#e9eee000');ctx.fillStyle=haze;ctx.fillRect(0,h*.36,w,h*.4);
+      const haze=ctx.createLinearGradient(0,h*.28,0,h*.82);
+      haze.addColorStop(0,'#e9eee000');
+      haze.addColorStop(.42,state.weather==='fog'?'rgba(235,239,226,.20)':'rgba(233,238,224,.035)');
+      haze.addColorStop(1,'#e9eee000');ctx.fillStyle=haze;ctx.fillRect(0,h*.28,w,h*.54);
+      if(state.weather==='snow'){
+        const bank=ctx.createLinearGradient(0,h*.9,0,h);
+        bank.addColorStop(0,'rgba(226,235,231,0)');bank.addColorStop(1,'rgba(226,235,231,.30)');
+        ctx.fillStyle=bank;ctx.fillRect(0,h*.88,w,h*.12);
+      }
     }
     function loop(now){if(stopped||!visible||document.hidden||!isActive('weather')){raf=0;return;}if(now-last>40){const dt=Math.min(.08,(now-last)/1000||.04);time+=dt;last=now;draw(dt);}raf=requestAnimationFrame(loop);}
     function start(){if(stopped)return;visible=!document.hidden;if(reduced){draw(0);return;}if(visible&&!raf){last=0;raf=requestAnimationFrame(loop);}}
