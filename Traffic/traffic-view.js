@@ -1,5 +1,4 @@
 /* LIVE // EARTH — Independent Traffic feature.
-   This module owns only the Traffic Orb. It does not load or register Live Cams.
    No live traffic provider is connected in this build; never present sample data as live. */
 (() => {
   'use strict';
@@ -44,7 +43,7 @@
 
     const mapCard = runtime.card(
       'Traffic layer',
-      'The Traffic Orb remains independent from Live Cams. Its future map layer will use the shared Earth view rather than creating another globe.'
+      'The future map layer will use the shared Earth view rather than creating another globe.'
     );
     const mapStatus = runtime.el(
       'p',

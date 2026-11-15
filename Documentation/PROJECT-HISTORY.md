@@ -74,3 +74,11 @@ This is a short record of durable decisions, not a log of every experiment or pa
 ### 2026-11-15 — Live Cams multi-source, GitHub Pages-only expansion
 
 User selected a GitHub Pages-only architecture. Added direct public-source adapters for Fintraffic Digitraffic, Hong Kong Transport Department and Singapore LTA. Caltrans remains deferred pending review of live-image terms; TfL remains deferred pending API registration/key. Existing OpenEye directory remains optional. Provider snapshots are explicitly labelled with their refresh cadence; direct video is enabled only when a provider API supplies a media URL. No backend or proxy is introduced. Browser CORS and device playback remain deployment verification items.
+
+
+## 15 November — Live Cams retired before rebuild
+
+- The user decided the current camera experience had too many provider restrictions and failed feeds, and requested a complete removal before starting again.
+- All active Live Cams view, WHEP player, public camera adapter and six discovery assets were removed. The Stacks registration, bootstrap load, service-worker shell entries and startup repair references were removed with them.
+- Traffic remains independent and unchanged in its feature registration and navigation. Historical Live Cams notes remain in the repository as an archive; they do not describe active app code.
+- Future Live Cams work starts as a new design, not as a continuation of the retired implementation.

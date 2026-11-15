@@ -12,11 +12,10 @@ READ IN THIS ORDER
 6. Documentation/CURRENT-STATUS.md
 
 CURRENT POSITION
-- Latest inspected main: 4c2dc6a95088fdebd0f99059b0c46d3989439395.
-- Latest Pages build for that commit succeeded (GitHub Actions run 43664328131).
-- Latest app change rebuilds Weather as a full-screen 2D living atmosphere.
-- This confirms source and Pages build, not installed-iPhone acceptance.
-- Service Worker and Update Manager both use v132-residents-removed.
+- Latest inspected source before this cleanup: `v137-github-pages-public-cameras` on `main` (15 November 2026).
+- Current cleanup package removes the entire Live Cams implementation and reduces the source-defined startup essentials from 54 to 45.
+- Service Worker and Update Manager are advanced together to `v138-core-essential-shell`.
+- This is a source package only; upload, GitHub Actions, Pages deployment and installed-iPhone acceptance remain separate checks.
 - GitHub Actions validates upload packages and builds Pages; it does not run the repository's regression test files.
 
 PROTECT

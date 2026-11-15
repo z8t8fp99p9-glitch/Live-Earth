@@ -42,7 +42,7 @@ The repository tree was checked for image, vector, font, video, JSON and data-ma
 - **Home and primary view assets:** Earth, Moon, Sun, Location and Stacks Orb images; Home Moon surface texture; Moon and Sun portrait/landscape sky backgrounds and Moon responsive SVG.
 - **Earth runtime assets:** Three.js module dependencies and Earth surface texture are staged through `sw.js` runtime dependency handling; Earth Engine graphics modules are separately staged in the app shell.
 - **Sun runtime assets:** shared Sun surface texture and sky backgrounds are used by the Sun controller; the Sun Orb image and equirectangular sphere texture are distinct assets.
-- **Traffic discovery assets:** six category images are referenced by the Live Cams discovery view.
+- **Retired camera discovery assets:** the former six Live Cams category images have been removed; they are not dependencies of Traffic or the current startup shell.
 - **Stacks artwork:** the feature wallpaper is retained as a separate Stacks asset.
 - **Weather artwork archive:** catalogues, JSON drawing data, production plans, master/reference images, previews and mask studies are archival. They are not active dependencies of the current Canvas Weather renderer.
 - **Data metadata:** `Data/dataset-manifest.json` remains a data contract, not disposable artwork.

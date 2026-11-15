@@ -1,3 +1,5 @@
+> **Archived historical record — implementation retired 15 November 2026. This document is retained for project history only; none of its video-player code remains in the app.**
+
 # Live Cams In-App Video Engine
 
 **Implementation:** `LiveCams/live-video-engine.js`  

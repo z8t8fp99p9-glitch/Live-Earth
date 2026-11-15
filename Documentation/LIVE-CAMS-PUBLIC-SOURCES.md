@@ -1,3 +1,5 @@
+> **Archived historical record — implementation retired 15 November 2026. This document is retained for project history only; none of its camera adapters or runtime code remain in the app.**
+
 # Live Cams — GitHub Pages Public Sources
 
 **Build:** `v137-github-pages-public-cameras`

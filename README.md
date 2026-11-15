@@ -19,7 +19,7 @@ A phone-first Earth and sky explorer built as a lightweight web app/PWA.
 | `Earth/`, `EarthEngine/` | Independent Earth View and shared globe engine |
 | `Moon/`, `Sun/` | Separate celestial views |
 | `Location/` | Explicit location permission and fresh-position service |
-| `Stacks/`, `Weather/`, `Clouds/`, `Traffic/`, `LiveCams/`, `Earthquakes/` | Secondary feature views |
+| `Stacks/`, `Weather/`, `Clouds/`, `Traffic/`, `Earthquakes/` | Secondary feature views |
 | `Data/`, `Recovery/` | Local data and recovery |
 | `Editorial-Engine/` | Retained editorial utility; not a live publishing pipeline |
 | `Tests/` | Source and contract tests |

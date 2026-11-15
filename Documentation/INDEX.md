@@ -17,8 +17,6 @@ This is the single documentation front door. Read the root safeguards first, the
 - [`WORKING-RULES.md`](WORKING-RULES.md) — inspection, testing and release discipline.
 - [`EARTH-ENGINE.md`](EARTH-ENGINE.md) — Earth factory and viewpoint contract.
 - [`STACKS-FEATURE-VIEWS.md`](STACKS-FEATURE-VIEWS.md) — secondary-view contract and data sources.
-- [`LIVE-CAMS-PUBLIC-SOURCES.md`](LIVE-CAMS-PUBLIC-SOURCES.md) — GitHub Pages-only public camera adapters, permissions and browser limits.
-- [`LIVE-CAMS-VIDEO-ENGINE.md`](LIVE-CAMS-VIDEO-ENGINE.md) — in-app WebRTC/WHEP playback contract, access and verification.
 - [`../Weather/WEATHER-DESIGN-DIRECTION.md`](../Weather/WEATHER-DESIGN-DIRECTION.md) — current Weather view only.
 
 ## History
@@ -26,4 +24,4 @@ This is the single documentation front door. Read the root safeguards first, the
 - [`PROJECT-HISTORY.md`](PROJECT-HISTORY.md) — concise durable milestones.
 - [`HISTORY-INDEX.md`](HISTORY-INDEX.md) — how to interpret historical records.
 
-Component-specific instructions remain beside their component (`Editorial-Engine/`, `Recovery/` and other folders). Historical prototypes, duplicate HTML mirrors and one-off patch notes are intentionally not indexed.
+Component-specific instructions remain beside their component (`Editorial-Engine/`, `Recovery/` and other folders). Retired Live Cams technical notes remain in the repository as historical records only; they are not active implementation guidance. Historical prototypes, duplicate HTML mirrors and one-off patch notes are intentionally not indexed.

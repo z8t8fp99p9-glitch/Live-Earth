@@ -1,9 +1,9 @@
-/* LIVE // EARTH V136 update manager — Global Orb and view lifecycle. */
+/* LIVE // EARTH V138 update manager — Global Orb and view lifecycle. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v137-github-pages-public-cameras";
+  const BUILD_ID = "v138-core-essential-shell";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
