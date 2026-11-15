@@ -42,7 +42,7 @@
     .le-sfv--live-cams .le-sfv-panel{
       position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
       max-width:none!important;max-height:none!important;overflow-y:auto!important;overflow-x:hidden!important;
-      overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+      overscroll-behavior-y:contain;overscroll-behavior-x:none;-webkit-overflow-scrolling:touch;scrollbar-width:none;touch-action:pan-y;
       pointer-events:auto!important;padding:calc(env(safe-area-inset-top) + 16px) clamp(15px,4.2vw,28px) calc(env(safe-area-inset-bottom) + 188px)!important;
       border:0!important;border-radius:0!important;
       background-image:radial-gradient(ellipse 110% 33% at 50% 0%,rgba(23,74,108,.48),transparent 72%),
@@ -59,7 +59,7 @@
     .le-lc-tagline{margin:9px 0 0;color:#9cb3c7;font:500 9px/1.5 Georgia,'Times New Roman',serif;letter-spacing:.24em}
     .le-lc-live-mark{display:inline-flex;align-items:center;gap:6px;margin-top:28px;padding:7px 10px;border:1px solid rgba(255,90,106,.25);border-radius:999px;background:rgba(125,20,33,.18);color:#ffe7ea;font-size:9px;font-weight:800;letter-spacing:.12em;white-space:nowrap}
     .le-lc-live-dot{width:6px;height:6px;border-radius:50%;background:#ff5368;box-shadow:0 0 10px #ff5368}
-    .le-lc-hero{position:relative;display:block;width:100%;min-height:154px;max-height:310px;aspect-ratio:2.32/1;overflow:hidden;border:1px solid rgba(190,221,243,.22);border-radius:23px;background:linear-gradient(140deg,#16354a,#091521 62%,#07101b);box-shadow:0 17px 38px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.08);text-align:left;color:inherit;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+    .le-lc-hero{touch-action:pan-y;position:relative;display:block;width:100%;min-height:154px;max-height:310px;aspect-ratio:2.32/1;overflow:hidden;border:1px solid rgba(190,221,243,.22);border-radius:23px;background:linear-gradient(140deg,#16354a,#091521 62%,#07101b);box-shadow:0 17px 38px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.08);text-align:left;color:inherit;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
     .le-lc-hero img,.le-lc-card-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
     .le-lc-hero:after,.le-lc-card:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.06) 12%,transparent 37%,rgba(0,0,0,.78) 100%);pointer-events:none}
     .le-lc-image-fallback{position:absolute;inset:0;display:grid;place-items:center;padding:20px;background-position:center;background-size:cover;color:#e5f3fb;font:italic 22px Georgia,serif;text-align:center;text-shadow:0 2px 14px #000;}
@@ -211,16 +211,23 @@
   function previewUrl(camera) {
     if (camera?.is_free !== true || !isFresh(camera)) return '';
     const view = camera?.view || {};
-    if (String(view.render || '').toLowerCase() !== 'image') return '';
-    // OpenEye's contract has two image cases: a permitted OpenEye preview
-    // (preview_embed=true), and direct source images explicitly typed as image.
-    const isOpenEyePreview = camera?.redistribution?.preview_embed === true;
-    const isDirectSourceImage = view.hosted === 'source' && view.url_type === 'image';
-    if (!isOpenEyePreview && !isDirectSourceImage) return '';
-    // Attribution is mandatory whenever imagery is displayed. Keep the API's
-    // supplied publisher credit and link; never substitute our own label.
-    if (!cameraCredit(camera)) return '';
-    return safeHttps(view.url || camera?.preview_url);
+    const render = String(view.render || '').toLowerCase();
+    // OpenEye can supply a verified poster for a source-link camera as well as
+    // a directly embeddable image. A poster never changes the click destination.
+    if (render !== 'image' && !(render === 'link' && camera?.preview_url)) return '';
+    const isOpenEyePreview = view.hosted === 'openeye' || camera?.redistribution?.preview_embed === true;
+    const isDirectSourceImage = render === 'image' && view.hosted === 'source' && view.url_type === 'image';
+    const isVerifiedDirectoryPoster = !!camera?.preview_url;
+    if (!isOpenEyePreview && !isDirectSourceImage && !isVerifiedDirectoryPoster) return '';
+    // Honour mandatory attribution, but do not suppress an approved preview
+    // merely because an optional attribution object is absent.
+    if (camera?.redistribution?.attribution?.required === true && !cameraCredit(camera)) return '';
+    const declaredUrl = safeHttps(camera?.preview_url || view.url);
+    if (declaredUrl) return declaredUrl;
+    if (view.hosted === 'openeye' && camera?.id) {
+      return `${API_BASE}/streams/${encodeURIComponent(camera.id)}/preview.webp`;
+    }
+    return '';
   }
   function cameraDestinationUrl(camera) {
     if (camera?.is_free !== true) return '';
@@ -460,6 +467,11 @@
     let currentQuery = '';
     let featuredCameras = [];
     let activeHeroIndex = 0;
+    let heroRotationTimer = 0;
+    let heroTouchStartX = 0;
+    let heroTouchStartY = 0;
+    let heroTouchStartAt = 0;
+    let heroSwipeHandled = false;
     let resultCameras = [];
     let paginationCursor = '';
     let loadingMore = false;
@@ -616,6 +628,28 @@
       }
       return shell;
     }
+    function stopHeroRotation() {
+      if (heroRotationTimer) window.clearInterval(heroRotationTimer);
+      heroRotationTimer = 0;
+    }
+    function startHeroRotation() {
+      stopHeroRotation();
+      if (featuredCameras.length < 2 || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+      heroRotationTimer = window.setInterval(() => {
+        if (disposed || document.hidden || modal.hidden) return;
+        activeHeroIndex = (activeHeroIndex + 1) % Math.min(featuredCameras.length, 5);
+        setHero(featuredCameras[activeHeroIndex] || null);
+        renderHeroDots(featuredCameras);
+      }, 6500);
+    }
+    function showHeroAt(index) {
+      if (!featuredCameras.length) return;
+      activeHeroIndex = (index + featuredCameras.length) % featuredCameras.length;
+      setHero(featuredCameras[activeHeroIndex] || null);
+      renderHeroDots(featuredCameras);
+      startHeroRotation();
+    }
+
     function renderHeroDots(cameras) {
       heroDots.replaceChildren();
       const count = Math.min(cameras.length, 5);
@@ -625,11 +659,7 @@
         dot.type = 'button';
         dot.setAttribute('aria-label', `Show featured camera ${index + 1}`);
         dot.setAttribute('aria-pressed', index === activeHeroIndex ? 'true' : 'false');
-        dot.addEventListener('click', () => {
-          activeHeroIndex = index;
-          setHero(featuredCameras[index] || null);
-          renderHeroDots(featuredCameras);
-        });
+        dot.addEventListener('click', () => showHeroAt(index));
         heroDots.appendChild(dot);
       }
     }
@@ -640,6 +670,7 @@
       activeHeroIndex = Math.max(0, filtered.findIndex(camera => !!previewUrl(camera)));
       setHero(filtered[activeHeroIndex] || filtered[0] || null);
       renderHeroDots(filtered);
+      startHeroRotation();
       filtered.filter((camera, index) => index !== activeHeroIndex).slice(0, 6).forEach(camera => featuredRail.appendChild(makeCameraCard(camera)));
       if (!filtered.length) {
         featuredRail.appendChild(make('p', 'le-lc-empty le-lc-empty--inline', 'No public preview is ready to feature right now. Explore a region or search the directory below.'));
@@ -900,6 +931,28 @@
       if (lastEmptyPayload && !lastError) return lastEmptyPayload;
       throw lastError || new Error('Camera catalogue and regional map both returned no camera IDs. Open the connection details for endpoint counts.');
     }
+    async function hydrateCameras(cameras, signal, limit = 12) {
+      const rows = Array.isArray(cameras) ? cameras : [];
+      const candidates = rows.filter(camera => displayable(camera) &&
+        (typeof camera.is_free !== 'boolean' || !camera.view || !camera.view.render ||
+          (!camera.preview_url && !camera.view.url))).slice(0, limit);
+      if (!candidates.length) return rows;
+      const details = await Promise.allSettled(candidates.map(camera =>
+        requestJson(`/catalog/${encodeURIComponent(camera.id)}`, signal)
+      ));
+      const byId = new Map();
+      details.forEach((result, index) => {
+        if (result.status !== 'fulfilled') return;
+        const detail = result.value?.item || result.value;
+        if (detail && typeof detail === 'object') {
+          byId.set(candidates[index].id, { ...candidates[index], ...detail,
+            view: detail.view || candidates[index].view,
+            redistribution: detail.redistribution || candidates[index].redistribution });
+        }
+      });
+      return rows.map(camera => byId.get(camera.id) || camera);
+    }
+
     async function loadHome({ silent = false } = {}) {
       const request = startRequest();
       if (!silent) setStatus('Finding fresh camera windows around the world…');
@@ -936,6 +989,10 @@
             console.warn('[LIVE // EARTH] Random camera fallback unavailable:', randomError?.message || randomError);
           }
         }
+        // Featured and legacy catalogue rows can be lean. Resolve missing
+        // access/media metadata before deciding whether a camera can be opened.
+        cameras = await hydrateCameras(cameras, request.signal, 12);
+        if (disposed || request.signal.aborted) return;
         if (hasCategories) renderCategories(categoriesResult.value);
         renderFeatured(cameras);
         if (cameras.length) {
@@ -968,7 +1025,8 @@
         const payload = await requestCatalog(new URLSearchParams({ bbox: region.bbox, limit: '48', sort: 'fresh' }), request.signal);
         if (disposed || request.signal.aborted) return;
         paginationCursor = nextCursorFrom(payload);
-        const cameras = itemsFrom(payload).filter(displayable);
+        const cameras = await hydrateCameras(itemsFrom(payload).filter(displayable), request.signal, 12);
+        if (disposed || request.signal.aborted) return;
         renderResults(cameras, title);
         setStatus(cameras.length ? `${region.title}: ${cameraSummary(cameras)}${paginationCursor ? ' · more results available' : ''}`
           : `No camera IDs were returned for ${region.title}. Check the Camera connection details below before treating this as an empty region.`, cameras.length ? 'success' : 'error');
@@ -994,7 +1052,8 @@
       try {
         const payload = await requestCatalog(new URLSearchParams({ category, limit: '48', sort: 'fresh' }), request.signal);
         if (disposed || request.signal.aborted) return;
-        const cameras = itemsFrom(payload).filter(displayable);
+        const cameras = await hydrateCameras(itemsFrom(payload).filter(displayable), request.signal, 12);
+        if (disposed || request.signal.aborted) return;
         paginationCursor = nextCursorFrom(payload);
         renderResults(cameras, title);
         setStatus(cameras.length ? `${title}: ${cameraSummary(cameras)}`
@@ -1020,7 +1079,8 @@
       try {
         const payload = await requestCatalog(new URLSearchParams({ q: normalized, limit: '48', sort: 'fresh' }), request.signal);
         if (disposed || request.signal.aborted) return;
-        const cameras = itemsFrom(payload).filter(displayable);
+        const cameras = await hydrateCameras(itemsFrom(payload).filter(displayable), request.signal, 12);
+        if (disposed || request.signal.aborted) return;
         paginationCursor = nextCursorFrom(payload);
         renderResults(cameras, `Results for “${normalized}”`);
         setStatus(cameras.length ? `Search: ${cameraSummary(cameras)}`
@@ -1096,7 +1156,39 @@
     const onKeyDown = event => { if (event.key === 'Escape' && !modal.hidden) closeDetails(); };
     const onOnline = () => { setStatus('Connection restored. Refreshing camera directory…'); refreshCurrent(); };
     const onOffline = () => setStatus('You are offline. Live camera records are not shown from an old cache.', 'error');
-    const onVisibility = () => { if (!document.hidden && !disposed) refreshCurrent(); };
+    const onVisibility = () => {
+      if (!document.hidden && !disposed) { refreshCurrent(); startHeroRotation(); }
+      else stopHeroRotation();
+    };
+
+    heroButton.addEventListener('click', event => {
+      if (heroSwipeHandled) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        heroSwipeHandled = false;
+      }
+    }, true);
+    heroButton.addEventListener('pointerdown', event => {
+      heroTouchStartX = event.clientX;
+      heroTouchStartY = event.clientY;
+      heroTouchStartAt = Date.now();
+      stopHeroRotation();
+    }, { passive: true });
+    heroButton.addEventListener('pointerup', event => {
+      const dx = event.clientX - heroTouchStartX;
+      const dy = event.clientY - heroTouchStartY;
+      if (Date.now() - heroTouchStartAt < 900 && Math.abs(dx) > 42 && Math.abs(dx) > Math.abs(dy) * 1.25) {
+        heroSwipeHandled = true;
+        showHeroAt(activeHeroIndex + (dx < 0 ? 1 : -1));
+      } else {
+        startHeroRotation();
+      }
+    }, { passive: true });
+    heroButton.addEventListener('pointercancel', startHeroRotation, { passive: true });
+    heroButton.addEventListener('keydown', event => {
+      if (event.key === 'ArrowRight') { event.preventDefault(); showHeroAt(activeHeroIndex + 1); }
+      if (event.key === 'ArrowLeft') { event.preventDefault(); showHeroAt(activeHeroIndex - 1); }
+    });
 
     searchRow.addEventListener('submit', onSubmit);
     clearButton.addEventListener('click', onClear);
@@ -1122,6 +1214,7 @@
       activeRequest = null;
       if (refreshTimer) window.clearInterval(refreshTimer);
       refreshTimer = 0;
+      stopHeroRotation();
       searchRow.removeEventListener('submit', onSubmit);
       clearButton.removeEventListener('click', onClear);
       featuredRefresh.removeEventListener('click', onRefresh);

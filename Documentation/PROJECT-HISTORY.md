@@ -40,3 +40,13 @@ This is a short record of durable decisions, not a log of every experiment or pa
 - `LiveCams/live-cams-view.js` now owns the camera-directory discovery experience; its six discovery images live under `LiveCams/Assets/`.
 - The shared Stacks loader registers both modules independently. The shared Orb registry, Home Earth, dock and close lifecycle remain the common protected infrastructure.
 - The service-worker shell cache and repair path include the new Live Cams module and its assets.
+
+
+## 15 November — Live Cams preview and featured-window correction
+
+- Reviewed the installed-device screenshots showing a static featured camera and catalogue cards that could not open.
+- Found that the featured window had manual dots but no timed rotation or swipe handling.
+- Found that preview eligibility was narrower than the current OpenEye enriched catalogue contract: approved OpenEye-hosted previews could be hidden when a redundant permission flag or optional attribution object was absent; source-link rows with a verified directory poster were also not rendered.
+- Added metadata hydration for incomplete featured/search/category/region rows, then applied strict free-access, freshness and required-attribution checks before enabling media.
+- Added featured-window auto-rotation, swipe and keyboard navigation. Reduced-motion and hidden-document states pause rotation.
+- Live video/WHEP remains a distinct, potentially metered session and is not auto-started or paid for by this patch.

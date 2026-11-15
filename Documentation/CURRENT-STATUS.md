@@ -61,3 +61,14 @@ Never infer iPhone acceptance from a green Pages build. Report only checks actua
 - Both features register independently through the existing Stacks runtime. The Global Orb registry, shared Earth, Home, primary views and dock are not rewritten by this change.
 - The service-worker shell cache has a new build identity and includes the new Live Cams module and image assets.
 - This is a source-package checkpoint only. GitHub Actions, Pages deployment and installed-device open/close acceptance still require verification after the user uploads the ZIP.
+
+
+## Live Cams interaction and preview recovery checkpoint
+
+- The featured camera window now supports timed rotation, swipe navigation and keyboard arrow navigation; rotation pauses when the document is hidden or reduced motion is requested.
+- Live Cams now resolves missing access/media metadata from the per-camera catalogue endpoint before deciding whether a row can be opened.
+- Preview rendering follows the OpenEye catalogue contract: verified OpenEye image previews and permitted source-image previews can render; source-link cameras may use a verified directory poster while retaining the publisher as their destination.
+- Mandatory publisher attribution remains enforced when the API marks it required. Unknown-access and paid rows are never opened as free.
+- Live video uses a separate WHEP session and may be metered per second. This patch does not silently start or pay for video sessions; the current in-app preview path is still-image based.
+- The Live Cams service-worker cache identity was advanced to force the corrected module to refresh.
+- Source validation only at this checkpoint; GitHub extraction, Pages deployment and iPhone acceptance remain to be verified after upload.
