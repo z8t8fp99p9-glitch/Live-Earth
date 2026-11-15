@@ -19,7 +19,6 @@
 - Sun uses `Sun/sun-view-controller.js`; `Global/sky-view-controller.js` provides the shared sky host.
 - `Global/astronomy.js` is shared by the Moon and Sun controllers. `Home/moon-orbit.js` uses `Home/moon-surface-lroc-1536.jpg`.
 - Moon and Sun keep separate rendering and view-specific state.
-- The unreferenced `Earth/basic-map.html` / `Earth/basic-map.js` standalone prototype has been retired. The separate `Earth/location.html` / `Earth/earth-orb-globe.js` path remains active and must not be confused with that retired prototype.
 
 ## Stacks and secondary features
 
@@ -44,11 +43,12 @@ Current data sources: Weather uses Open-Meteo; Clouds uses NASA GIBS; Earthquake
 - `Weather/Art/service-worker-extension.js` is still imported by the service worker. Its paired Live Art compatibility file is inert; retain both until old-client compatibility is separately retired.
 - `Tests/` contains source and contract tests. A GitHub Actions regression runner is not currently configured.
 
-## Retained tools and dormant components
+## Retained tools, dormant components and archival assets
 
 - `Tools/LIVE-EARTH-LAYOUT-EDITOR.html` is a standalone developer tool that embeds `../index.html`; it is intentionally outside the normal app-shell navigation.
 - `Global/universal-pdf-viewer.js` is not in the current app startup or app-shell dependency path. It is recorded as dormant and preserved pending an explicit decision about its standalone utility role.
 - `Editorial-Engine/` contains the retained Universal Editorial Engine core, browser helper and text-intelligence utilities. The feature workspace is lazy-loaded by the update manager. Its former approved-record input contract is dormant without the removed upstream services.
+- The Weather Art folder is a preserved creative archive, not part of the current Weather renderer. Exact duplicate image blobs have been identified and documented; they remain preserved because they belong to the named production/master history.
 
 ## Dependency rule
 

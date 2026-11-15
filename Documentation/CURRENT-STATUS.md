@@ -2,14 +2,14 @@
 
 **Reviewed:** 15 November 2026  
 **Repository:** `z8t8fp99p9-glitch/Live-Earth` · `main`  
-**Inspected source baseline:** `31d02cbf28359f4fae0cda7e9a11d3f9339ae3ac`  
-**Baseline commit:** `Retire Unreferenced Earth Basic Map Prototype`
+**Latest inspected source baseline:** `c49e1c67f5e987270db4310ed9c60941c136dcc0`  
+**Baseline commit:** `Document Phase 3 Runtime Dependency Audit`
 
 ## Release state
 
-- The Phase 3 Earth Basic Map cleanup is on `main`.
-- ZIP extractor run `43670940091` succeeded.
-- GitHub Pages run `43670953725` succeeded for the inspected source baseline.
+- Phase 3 runtime dependency audit documentation is on `main`.
+- ZIP extractor run `43671534323` succeeded.
+- GitHub Pages run `43671549151` succeeded for the exact inspected source baseline.
 - This confirms repository processing and Pages deployment, not installed-iPhone acceptance.
 - The Weather rewrite is `Weather/weather-view.js`; the current view is a full-screen, responsive 2D Canvas atmosphere.
 - The service worker and update manager currently report `v132-residents-removed`.
@@ -33,18 +33,18 @@
 - GitHub Actions still do not run the repository test suite automatically.
 - Installed-iPhone checks remain outstanding: Portrait/Landscape, repeated open/close, switching between Stacks views, Location ON/OFF, stale fix, offline and reconnection.
 
-## Phase 3 runtime dependency audit
+## Phase 3 runtime and asset audit
 
-- `Earth/basic-map.html` and `Earth/basic-map.js` were unreferenced by the app shell, active controllers, tests and project documentation. They were retired in the first Phase 3 package.
-- `Earth/location.html` and `Earth/earth-orb-globe.js` are deliberately retained: the service worker stages them, the HTML loads the module, and the Earth Engine separation test checks canonical Engine usage.
-- The startup graph was traced through the Home shell, controlled-startup script loader, service-worker app shell, update manager, view registry and key view controllers.
-- `EarthEngine/Graphics/earth-engine-3d-graphics-engine.js` imports `earth-engine-3d-graphics-core.js`; both are required and retained.
-- `Home/moon-orbit.js` loads `Home/moon-surface-lroc-1536.jpg`; `Moon/moon-view-controller.js` and `Sun/sun-view-controller.js` use `Global/astronomy.js`. These dependencies are retained.
-- `Tools/LIVE-EARTH-LAYOUT-EDITOR.html` is a standalone developer tool that embeds the actual app in an iframe. It is not an app-shell page, but it is not an orphan.
-- `Global/universal-pdf-viewer.js` is not loaded by the current Home startup sequence, service-worker app shell, update manager or the inspected feature-view registration path. It remains **dormant and preserved**, not deleted; its future standalone utility role has not been ruled out.
-- `Weather/Art/service-worker-extension.js` remains imported by `sw.js`; its paired Live Art file is an inert compatibility stub. Do not remove this pair without separately checking old cached clients and the legacy-hook test.
-- Editorial Engine browser and Python utilities remain retained. The feature workspace is lazy-loaded by `Global/update-manager.js`; the old upstream collection/publishing contract remains dormant.
-- No additional code or asset deletion is justified by this audit checkpoint. Phase 3 remains open for the remaining asset inventory, duplicate-code review and final dependency cross-check.
+- The first Phase 3 cleanup retired only `Earth/basic-map.html` and `Earth/basic-map.js`, which had no app, test, documentation or standalone entry-point references.
+- The runtime startup, lazy-load, service-worker and feature-registration paths have been traced and recorded in `Documentation/PHASE-3-RUNTIME-AUDIT.md`.
+- `Global/universal-pdf-viewer.js` remains dormant and preserved. No deletion is authorized by the current evidence.
+- The asset inventory covers the Home/primary-view images, Earth and Three.js runtime resources, Moon/Sun textures and sky backgrounds, Stacks artwork, Traffic discovery imagery, and Weather art archive.
+- The repository contains two pairs of exact duplicate image blobs in the Weather archive:
+  - `clear-maple-pavilion-002-90pct-master-scale-proof.png` and `clear-maple-pavilion-002-90pct-preview.png`.
+  - `clear-maple-pavilion-master-003.jpg` and `clear-weather-master-001.jpg`.
+- These duplicate copies are intentionally preserved at this stage. The master-003 image is referenced by the historical schema-v3 artwork record; the clear-weather alias is represented in the archive's historical checksum record. The 90% pair are retained production-study artefacts. No artwork is removed solely to reduce repository size.
+- No additional asset or code deletion is justified by the audit. Runtime asset references and optional dependencies remain preserved.
+- No identical source-code blobs were found in the repository tree.
 
 ## Evidence rule
 
