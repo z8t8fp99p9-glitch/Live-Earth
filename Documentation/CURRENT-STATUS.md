@@ -2,15 +2,15 @@
 
 **Reviewed:** 15 November 2026  
 **Repository:** `z8t8fp99p9-glitch/Live-Earth` · `main`  
-**Inspected source baseline:** `47bb304bb7218151a15bd08b807897dfba5923a3`  
-**Baseline commit:** `Document Phase 3 Runtime and Asset Audit`
+**Inspected source baseline:** `5f320c9da0f877f679c4fcb1dc1715b108d77813`  
+**Baseline commit:** `Add in-app Live Cams WHEP video player`
 
 ## Release state
 
 - Phase 3 runtime and asset audit documentation is prepared on the inspected baseline.
 - The exact current Pages deployment and extractor status must be checked after the next upload; this checkpoint does not assume either has processed the pending package.
 - The Weather rewrite is `Weather/weather-view.js`; the current view is a full-screen, responsive 2D Canvas atmosphere.
-- The service worker and update manager currently report `v132-residents-removed`.
+- The service worker and Update Manager share the build identity `v137-github-pages-public-cameras`.
 
 ## Current application
 
@@ -69,7 +69,7 @@ Never infer iPhone acceptance from a green Pages build. Report only checks actua
 - Live Cams now resolves missing access/media metadata from the per-camera catalogue endpoint before deciding whether a row can be opened.
 - Preview rendering follows the OpenEye catalogue contract: verified OpenEye image previews and permitted source-image previews can render; source-link cameras may use a verified directory poster while retaining the publisher as their destination.
 - Mandatory publisher attribution remains enforced when the API marks it required. Unknown-access and paid rows are never opened as free.
-- Live video uses a separate WHEP session and may be metered per second. This patch does not silently start or pay for video sessions; the current in-app preview path is still-image based.
+- Live video uses a separate WHEP session and may be metered per second. Paid or access-unknown sessions remain blocked.
 - The Live Cams service-worker cache identity was advanced to force the corrected module to refresh.
 - Source validation only at this checkpoint; GitHub extraction, Pages deployment and iPhone acceptance remain to be verified after upload.
 
@@ -81,3 +81,35 @@ Never infer iPhone acceptance from a green Pages build. Report only checks actua
 - Rows without a permitted preview or confirmed public viewing route are excluded from playable result grids and reported as unavailable rather than presented as working feeds.
 - Preview, live/offline, and access labels are kept distinct; still-image previews are not represented as continuous video.
 - Service-worker cache identity: `v135-live-cams-embeddable-results`. Installed-device and provider-response validation remain required.
+
+
+## Live Cams in-app video engine checkpoint — 15 November 2026
+
+- Added `LiveCams/live-video-engine.js`, a small browser-native WebRTC/WHEP client for OpenEye's `POST /v1/streams/:id/whep/offer` endpoint.
+- The Live Cams details modal offers in-app playback only when the directory explicitly identifies the record as `feed_kind=live_video` (or the equivalent `kind`) and marks full-feed access as free and not offline.
+- Playback requires an explicit Play action. There is no autoplay at camera-card or modal-open time, no x402/MPP payment handling, and no attempt to start paid or access-unknown streams. HTTP 402 is surfaced as a no-payment error.
+- The player waits for ICE gathering, posts SDP, applies the SDP answer, attaches received tracks to an inline `<video>` element, and sends DELETE to an accepted same-origin WHEP session Location when stopped.
+- Closing camera details, switching away from the view, or backgrounding the app closes the local peer and attempts provider-session cleanup.
+- The module is lazy-loaded and listed in the service-worker essential shell with a new cache identity.
+- Provider-side WHEP CORS, the live-video record fields, a real `live_video` stream, and iPhone WebRTC playback still require end-to-end verification after deployment. If the endpoint requires credentials or billing preauthorization for a public stream, a server-side session broker and explicit billing design will be needed; no secret or payment credential is embedded in the app.
+
+
+## Current in-app Live Video Engine checkpoint — 15 November 2026
+
+- `LiveCams/live-video-engine.js` implements browser-native WebRTC/WHEP against OpenEye's documented `POST /v1/streams/:id/whep/offer` endpoint.
+- The camera details panel offers playback only when the record explicitly identifies `feed_kind=live_video` (or `kind=live_video`), is marked free, and is not marked offline. Live-video-only records can be listed even without a snapshot poster.
+- Playback requires an explicit user tap. Snapshot previews remain distinct from continuous video. The player waits for ICE gathering, posts SDP, applies the SDP answer, attaches the remote video track and attempts a same-origin session DELETE on close.
+- No x402 or MPP payment is implemented. Paid, unknown-access, and offline records are blocked; HTTP 402 is displayed without attempting payment. No provider API key is embedded in the app.
+- The service worker and Update Manager both use `v136-live-cams-whep-player`; the new engine is in the essential shell and startup script repair list.
+- Syntax and mocked WHEP handshake/cleanup checks passed locally. Real provider CORS/auth behaviour, an eligible free `live_video` camera, session cleanup through the deployed endpoint and iPhone playback still require end-to-end device verification.
+
+
+## Live Cams public-source expansion — GitHub Pages-only
+
+- Added browser-side direct adapters for Fintraffic Digitraffic, Hong Kong DATA.GOV.HK and Singapore data.gov.sg. Caltrans is deferred pending review of CWWP2 image terms; TfL is deferred pending API registration/key.
+- OpenEye remains optional rather than the sole camera catalogue.
+- The direct source adapter merges permitted agency snapshots into the existing Live Cams browsing and search flows.
+- Provider attribution and source links are retained. Snapshot feeds display their published refresh cadence rather than claiming continuous video.
+- Direct MP4 playback is offered only when the provider API explicitly returns a video URL and only after a user tap.
+- No backend, proxy, API secret, YouTube API key, paid WHEP session or automated payment was added.
+- Browser CORS, rate limits and live provider responses still require testing from the deployed GitHub Pages origin and iOS Safari.

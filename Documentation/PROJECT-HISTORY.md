@@ -59,3 +59,18 @@ This is a short record of durable decisions, not a log of every experiment or pa
 - Updated catalogue discovery to request OpenEye's documented `embeddable=1` filter and filtered results to a permitted preview or a confirmed public publisher route.
 - Approved preview images are displayable without opening a paid/full feed. Paid or unknown full-feed access remains closed. No WHEP/live-video session, payment handshake, or recurring paid stream is started by the UI.
 - Still preview frames and continuous live video remain distinct capabilities. This correction targets reliable still-frame previews and safe public-source links; WHEP video playback remains a separate implementation requiring explicit billing-aware design.
+
+
+## 15 November — Dedicated in-app Live Video Engine
+
+- Added a separate Live Video Engine using browser-native WebRTC and OpenEye's documented WHEP offer endpoint; snapshot previews remain a separate camera capability.
+- Added explicit in-app Play control in camera details for records positively identified as `live_video` and confirmed free/active. No session starts on card selection or modal open.
+- Added ICE gathering, SDP offer/answer, remote track attachment, connection state reporting, and WHEP session DELETE cleanup where the provider returns an accepted same-origin `Location`.
+- Paid, access-unknown, still-image, and publisher-only records do not start WHEP. HTTP 402 is reported without settling payment; API credentials are not embedded.
+- The engine is lazy-loaded and included in the service-worker shell/cache repair path. The Home globe and shared Orb navigation remain untouched.
+- End-to-end playback remains unverified until an eligible `live_video` camera is tested on the deployed iPhone app; provider CORS/auth/payment behavior may still require a server-side broker.
+
+
+### 2026-11-15 — Live Cams multi-source, GitHub Pages-only expansion
+
+User selected a GitHub Pages-only architecture. Added direct public-source adapters for Fintraffic Digitraffic, Hong Kong Transport Department and Singapore LTA. Caltrans remains deferred pending review of live-image terms; TfL remains deferred pending API registration/key. Existing OpenEye directory remains optional. Provider snapshots are explicitly labelled with their refresh cadence; direct video is enabled only when a provider API supplies a media URL. No backend or proxy is introduced. Browser CORS and device playback remain deployment verification items.

@@ -17,6 +17,8 @@ This is the single documentation front door. Read the root safeguards first, the
 - [`WORKING-RULES.md`](WORKING-RULES.md) — inspection, testing and release discipline.
 - [`EARTH-ENGINE.md`](EARTH-ENGINE.md) — Earth factory and viewpoint contract.
 - [`STACKS-FEATURE-VIEWS.md`](STACKS-FEATURE-VIEWS.md) — secondary-view contract and data sources.
+- [`LIVE-CAMS-PUBLIC-SOURCES.md`](LIVE-CAMS-PUBLIC-SOURCES.md) — GitHub Pages-only public camera adapters, permissions and browser limits.
+- [`LIVE-CAMS-VIDEO-ENGINE.md`](LIVE-CAMS-VIDEO-ENGINE.md) — in-app WebRTC/WHEP playback contract, access and verification.
 - [`../Weather/WEATHER-DESIGN-DIRECTION.md`](../Weather/WEATHER-DESIGN-DIRECTION.md) — current Weather view only.
 
 ## History

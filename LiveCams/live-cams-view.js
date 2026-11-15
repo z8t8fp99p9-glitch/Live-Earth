@@ -211,6 +211,10 @@
   }
   function cameraFreshnessLabel(camera) {
     const age = frameAgeSeconds(camera);
+    const refresh = Number(camera?.provider_refresh_sec);
+    if (!Number.isFinite(age) && Number.isFinite(refresh) && refresh > 0) {
+      return `SOURCE UPDATES ~${Math.round(refresh / 60)} MIN`;
+    }
     if (liveFlag(camera) === true && (!Number.isFinite(age) || age <= 7 * 86400)) return 'LIVE FRAME';
     if (Number.isFinite(age)) return 'RECENT FRAME';
     return 'FRAME · TIME UNKNOWN';
@@ -250,9 +254,9 @@
     return String(raw).trim().toLowerCase().replace(/[\s-]+/g, '_');
   }
   function isLiveVideoCamera(camera) {
-    // OpenEye's WHEP endpoint is explicitly limited to feed_kind=live_video.
-    // A still-image refresh feed or an HTML publisher page must never be guessed as video.
-    return cameraFeedKind(camera) === 'live_video';
+    // OpenEye WHEP and provider-published direct media are separate playback modes.
+    // A still-image refresh feed or an HTML publisher page is never guessed as video.
+    return cameraFeedKind(camera) === 'live_video' || cameraFeedKind(camera) === 'public_video';
   }
   function canStartLiveVideo(camera) {
     // The OpenEye catalogue's live flag is the provider's active-camera signal.
@@ -267,13 +271,15 @@
     return !!camera && typeof camera.id === 'string' && camera.id.trim().length > 0;
   }
   function hasDisplayRoute(camera) {
-    return !!previewUrl(camera) || (accessFlag(camera) === true && !!cameraDestinationUrl(camera)) || canStartLiveVideo(camera);
+    return !!previewUrl(camera) || !!safeHttps(camera?.public_stream_url) ||
+      (accessFlag(camera) === true && !!cameraDestinationUrl(camera)) || canStartLiveVideo(camera);
   }
   function cameraCardState(camera) {
     const access = accessFlag(camera);
     const live = liveFlag(camera);
     const imageUrl = previewUrl(camera);
     if (live === false) return imageUrl ? 'LAST FRAME · OFFLINE' : 'OFFLINE / STALE';
+    if (canStartLiveVideo(camera) && safeHttps(camera?.public_stream_url)) return 'PUBLIC LIVE VIDEO · TAP TO PLAY';
     if (canStartLiveVideo(camera)) return 'LIVE VIDEO · TAP TO PLAY';
     const age = frameAgeSeconds(camera);
     if (Number.isFinite(age) && age > 7 * 86400) return imageUrl ? 'OLD PREVIEW · NOT LIVE' : 'STALE · NOT LIVE';
@@ -325,6 +331,8 @@
     }
     const age = Number(camera?.last_frame_age_s);
     if (Number.isFinite(age)) return `Last frame ${Math.max(0, Math.round(age / 60))} min ago`;
+    const refresh = Number(camera?.provider_refresh_sec);
+    if (Number.isFinite(refresh) && refresh > 0) return `Provider updates approximately every ${Math.round(refresh / 60)} minutes`;
     return 'Capture time not supplied';
   }
 
@@ -829,6 +837,56 @@
       else modalVideoStatus.hidden = true;
     }
     async function startLiveVideo(camera, playButton) {
+      const directStream = safeHttps(camera?.public_stream_url);
+      if (directStream && canStartLiveVideo(camera)) {
+        stopLiveVideo();
+        const requestSerial = videoRequestSerial;
+        activeVideoPlayButton = playButton;
+        playButton.disabled = true;
+        playButton.textContent = 'Connecting…';
+        modalVideo.hidden = false;
+        modalVideo.poster = previewUrl(camera) || '';
+        modalVideoStatus.hidden = false;
+        setVideoStatus('Opening the publisher-provided video stream…');
+        const directPlayer = {
+          stop: async () => {
+            try { modalVideo.pause(); } catch (_) {}
+            modalVideo.removeAttribute('src');
+            modalVideo.load?.();
+          }
+        };
+        activeVideoPlayer = directPlayer;
+        modalVideo.src = directStream;
+        modalVideo.playsInline = true;
+        modalVideo.controls = true;
+        modalVideo.muted = true;
+        modalVideo.onloadedmetadata = () => {
+          if (requestSerial !== videoRequestSerial || disposed) return;
+          modalImage.hidden = true;
+          setVideoStatus('Video stream loaded. Starting playback…');
+        };
+        modalVideo.onplaying = () => {
+          if (requestSerial !== videoRequestSerial || disposed) return;
+          setVideoStatus('Live video playing in LIVE // EARTH.', 'success');
+          playButton.textContent = 'Live video playing';
+        };
+        modalVideo.onerror = () => {
+          if (requestSerial !== videoRequestSerial || disposed) return;
+          setVideoStatus('This browser could not play the publisher-provided stream. The camera may require a different format or access method.', 'error');
+          playButton.disabled = false;
+          playButton.textContent = 'Try live video again';
+        };
+        try {
+          const playback = modalVideo.play();
+          if (playback && typeof playback.catch === 'function') await playback.catch(() => {});
+        } catch (_) {}
+        if (requestSerial !== videoRequestSerial || disposed || modal.hidden) {
+          await directPlayer.stop();
+          return;
+        }
+        if (modalVideo.readyState >= 2) setVideoStatus('Live video ready in the in-app player.', 'success');
+        return;
+      }
       if (!canStartLiveVideo(camera)) {
         setVideoStatus('This camera is not confirmed as a free, active live_video stream. No video session was started.', 'error');
         return;
@@ -921,17 +979,35 @@
         link.rel = 'noopener noreferrer';
         modalCredit.appendChild(link);
       }
+      const licenseUrl = safeHttps(camera?.public_source_license_url);
+      if (licenseUrl) {
+        if (modalCredit.childNodes.length) modalCredit.appendChild(document.createTextNode(' · '));
+        const terms = make('a', '', 'Source terms');
+        terms.href = licenseUrl;
+        terms.target = '_blank';
+        terms.rel = 'noopener noreferrer';
+        modalCredit.appendChild(terms);
+      }
       modalActions.replaceChildren();
       modalVideo.hidden = true;
       modalVideoStatus.hidden = true;
       modalVideo.poster = imageUrl || '';
       if (isLiveVideoCamera(camera)) {
         if (canStartLiveVideo(camera)) {
-          const playButton = make('button', 'le-lc-secondary-button', 'Play live video here');
+          const playButton = make('button', 'le-lc-secondary-button', safeHttps(camera?.public_stream_url) ? 'Play live video here' : 'Play live video here');
           playButton.type = 'button';
           playButton.addEventListener('click', () => startLiveVideo(camera, playButton));
           modalActions.appendChild(playButton);
-          modalActions.appendChild(make('p', 'le-lc-modal-meta', 'In-app WebRTC playback. OpenEye documents WHEP live sessions as potentially metered at US$0.002 per second. Playback starts only after this tap; LIVE // EARTH does not submit payments or settle a 402 request.'));
+          modalActions.appendChild(make('p', 'le-lc-modal-meta', safeHttps(camera?.public_stream_url)
+            ? 'In-app playback of a video URL published by the camera provider. Playback starts only after your tap; no third-party page is opened.'
+            : 'In-app WebRTC playback. OpenEye documents WHEP live sessions as potentially metered. Playback starts only after this tap; LIVE // EARTH does not submit payments or settle a 402 request.'));
+          if (camera?.source_id && publisher) {
+            const sourceLink = make('a', '', 'Camera source and details');
+            sourceLink.href = publisher;
+            sourceLink.target = '_blank';
+            sourceLink.rel = 'noopener noreferrer';
+            modalActions.appendChild(sourceLink);
+          }
         } else {
           const reason = accessFlag(camera) === false
             ? 'This live-video stream is marked paid. Live Cams will not start a metered session or make a payment.'
@@ -1127,6 +1203,17 @@
       if (lastEmptyPayload && !lastError) return lastEmptyPayload;
       throw lastError || new Error('Camera catalogue and regional map both returned no camera IDs. Open the connection details for endpoint counts.');
     }
+    async function requestCatalogWithFallback(params, signal) {
+      try {
+        return await requestCatalog(params, signal);
+      } catch (error) {
+        if (signal?.aborted) throw error;
+        recordDiagnostic({ endpoint: 'OpenEye catalogue fallback', status: Number(error?.status) || 0,
+          error: error?.message || 'OpenEye catalogue unavailable; direct public sources will still be queried.' });
+        return { items: [], total: 0, next_cursor: null, source_fallback: true };
+      }
+    }
+
     async function hydrateCameras(cameras, signal, limit = 12) {
       const rows = Array.isArray(cameras) ? cameras : [];
       const candidates = rows.filter(camera => displayable(camera) &&
@@ -1148,6 +1235,27 @@
         }
       });
       return rows.map(camera => byId.get(camera.id) || camera);
+    }
+
+    async function mergeDirectPublicSources(existing, options = {}) {
+      const adapter = window.LiveEarthPublicCameraSources;
+      if (!adapter || typeof adapter.search !== 'function') return existing;
+      try {
+        const direct = await adapter.search({ ...options, limit: options.limit || 24 });
+        const rows = Array.isArray(direct?.items) ? direct.items : [];
+        if (direct?.diagnostics) {
+          Object.entries(direct.diagnostics).forEach(([source, detail]) => {
+            recordDiagnostic({ endpoint: `public-source:${source}`, status: detail.ok ? 200 : 0,
+              rows: Number(detail.rows) || 0, ms: Number(detail.ms) || 0,
+              error: detail.ok ? undefined : (detail.error || 'Direct public source unavailable (possibly CORS or network policy).') });
+          });
+        }
+        return mergeUnique(existing, rows.filter(displayable));
+      } catch (error) {
+        recordDiagnostic({ endpoint: 'public-camera-sources', status: 0,
+          error: error?.message || 'Direct public camera sources could not be loaded.' });
+        return existing;
+      }
     }
 
     async function loadHome({ silent = false } = {}) {
@@ -1186,6 +1294,9 @@
             console.warn('[LIVE // EARTH] Random camera fallback unavailable:', randomError?.message || randomError);
           }
         }
+        // Add independent public agency sources. OpenEye remains optional and is
+        // never the only way to populate the camera explorer.
+        cameras = await mergeDirectPublicSources(cameras, { limit: 24 });
         // Featured and legacy catalogue rows can be lean. Resolve missing
         // access/media metadata before deciding whether a camera can be opened.
         cameras = await hydrateCameras(cameras, request.signal, 12);
@@ -1193,7 +1304,7 @@
         // Never fill the featured rail with catalogue-only rows that cannot show
         // a provider-permitted preview or open a confirmed public source page.
         cameras = cameras.filter(hasDisplayRoute);
-        if (hasCategories) renderCategories(categoriesResult.value);
+        renderCategories(hasCategories ? categoriesResult.value : { items: [] });
         renderFeatured(cameras);
         if (cameras.length) {
           setStatus(cameraSummary(cameras), 'success');
@@ -1222,10 +1333,11 @@
       setStatus(`Opening the ${region.title} camera window…`);
       const request = startRequest();
       try {
-        const payload = await requestCatalog(new URLSearchParams({ bbox: region.bbox, limit: '48', sort: 'fresh' }), request.signal);
+        const payload = await requestCatalogWithFallback(new URLSearchParams({ bbox: region.bbox, limit: '48', sort: 'fresh' }), request.signal);
         if (disposed || request.signal.aborted) return;
         paginationCursor = nextCursorFrom(payload);
-        const resolved = await hydrateCameras(itemsFrom(payload).filter(displayable), request.signal, 12);
+        let resolved = await hydrateCameras(itemsFrom(payload).filter(displayable), request.signal, 12);
+        resolved = await mergeDirectPublicSources(resolved, { bbox: region.bbox, limit: 32 });
         if (disposed || request.signal.aborted) return;
         const cameras = resolved.filter(hasDisplayRoute);
         renderResults(cameras, title);
@@ -1251,9 +1363,10 @@
       loadingMore = false;
       const request = startRequest();
       try {
-        const payload = await requestCatalog(new URLSearchParams({ category, limit: '48', sort: 'fresh' }), request.signal);
+        const payload = await requestCatalogWithFallback(new URLSearchParams({ category, limit: '48', sort: 'fresh' }), request.signal);
         if (disposed || request.signal.aborted) return;
-        const resolved = await hydrateCameras(itemsFrom(payload).filter(displayable), request.signal, 12);
+        let resolved = await hydrateCameras(itemsFrom(payload).filter(displayable), request.signal, 12);
+        resolved = await mergeDirectPublicSources(resolved, { category, limit: 32 });
         if (disposed || request.signal.aborted) return;
         const cameras = resolved.filter(hasDisplayRoute);
         paginationCursor = nextCursorFrom(payload);
@@ -1279,9 +1392,10 @@
       loadingMore = false;
       const request = startRequest();
       try {
-        const payload = await requestCatalog(new URLSearchParams({ q: normalized, limit: '48', sort: 'fresh' }), request.signal);
+        const payload = await requestCatalogWithFallback(new URLSearchParams({ q: normalized, limit: '48', sort: 'fresh' }), request.signal);
         if (disposed || request.signal.aborted) return;
-        const resolved = await hydrateCameras(itemsFrom(payload).filter(displayable), request.signal, 12);
+        let resolved = await hydrateCameras(itemsFrom(payload).filter(displayable), request.signal, 12);
+        resolved = await mergeDirectPublicSources(resolved, { query: normalized, limit: 32 });
         if (disposed || request.signal.aborted) return;
         const cameras = resolved.filter(hasDisplayRoute);
         paginationCursor = nextCursorFrom(payload);
