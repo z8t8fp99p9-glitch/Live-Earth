@@ -22,11 +22,11 @@
 
 ## Stacks and secondary features
 
-`Stacks/stacks-feature-views.js` provides the shared feature runtime and retains Elevation. Separate feature modules live in `Weather/`, `Clouds/`, `Traffic/` and `Earthquakes/`. They mount into the existing full-screen stage below the shared three-Orb dock. The active feature Orb closes the view. Features must not create a parallel dock, close button or primary-view manager.
+`Stacks/stacks-feature-views.js` provides the shared feature runtime and retains Elevation. Separate feature modules live in `Weather/`, `Clouds/`, `Traffic/`, `LiveCams/` and `Earthquakes/`. They mount into the existing full-screen stage below the shared three-Orb dock. The active feature Orb closes the view. Features must not create a parallel dock, close button or primary-view manager.
 
-The primary registry is established by `Global/view-module-registry.js`. The Weather, Clouds, Traffic and Earthquakes modules register into the shared feature runtime; their source files are staged by the service worker. The Editorial Engine workspace is loaded lazily by `Global/update-manager.js`.
+The primary registry is established by `Global/view-module-registry.js`. The Weather, Clouds, Traffic, Live Cams and Earthquakes modules register into the shared feature runtime; their source files are staged by the service worker. The Editorial Engine workspace is loaded lazily by `Global/update-manager.js`.
 
-Current data sources: Weather uses Open-Meteo; Clouds uses NASA GIBS; Earthquakes uses USGS latest-day GeoJSON; Traffic/Live Cams uses its camera-directory integration. Missing or restricted data must be labelled honestly, never fabricated.
+Current data sources: Weather uses Open-Meteo; Clouds uses NASA GIBS; Earthquakes uses USGS latest-day GeoJSON; Live Cams uses its camera-directory integration. Traffic has no verified provider connected yet and must not display fabricated conditions. Missing or restricted data must be labelled honestly, never fabricated.
 
 ## Location, data and recovery
 

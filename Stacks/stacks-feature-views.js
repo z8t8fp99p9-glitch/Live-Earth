@@ -36,7 +36,8 @@
     weather: { title: 'Weather', symbol: '🌦', description: 'Online current-model weather for the existing enabled location; Location must be ON.' },
     elevation: { title: 'Elevation', symbol: '⛰', description: 'Online global relief imagery and a coordinate-based elevation lookup.' },
     earthquakes: { title: 'Earthquakes', symbol: '〰', description: 'Recent USGS earthquake events on the same Earth globe; refreshes while open.' },
-    traffic: { title: 'Traffic', symbol: '↗', description: 'Preview screen only. A verified live traffic source is not connected yet.' }
+    traffic: { title: 'Traffic', symbol: '↗', description: 'Independent traffic workspace; verified live traffic data is not connected yet.' },
+    'live-cams': { title: 'Live Cams', symbol: '◉', description: 'Explore public camera windows from around the world.' }
   };
 
   const style = document.createElement('style');
@@ -166,7 +167,8 @@
       weather: 'ONLINE · LOCATION REQUIRED',
       elevation: 'ONLINE · GLOBAL RELIEF',
       earthquakes: 'ONLINE · USGS FEED',
-      traffic: 'DATA SOURCE NOT CONNECTED'
+      traffic: 'DATA SOURCE NOT CONNECTED',
+      'live-cams': 'ONLINE · PUBLIC CAMERA DIRECTORY'
     };
     root.querySelector('.le-sfv-pill-text').textContent = pillLabels[id] || 'FEATURE VIEW';
     host.appendChild(root);
@@ -431,7 +433,8 @@
     { id: 'clouds', path: './Clouds/clouds-view.js' },
     { id: 'weather', path: './Weather/weather-view.js' },
     { id: 'earthquakes', path: './Earthquakes/earthquakes-view.js' },
-    { id: 'traffic', path: './Traffic/traffic-view.js' }
+    { id: 'traffic', path: './Traffic/traffic-view.js' },
+    { id: 'live-cams', path: './LiveCams/live-cams-view.js' }
   ];
   function loadFeatureModule(path) {
     return new Promise((resolve, reject) => {

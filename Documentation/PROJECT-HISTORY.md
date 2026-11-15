@@ -31,3 +31,12 @@ This is a short record of durable decisions, not a log of every experiment or pa
 - Weather was rebuilt as a full-screen, responsive 2D Canvas atmosphere driven by Open-Meteo conditions when an approved Location fix is available.
 - It uses labelled samples when live data cannot be used, and keeps its rendering lifecycle inside the existing Stacks runtime.
 - GitHub Pages build succeeded for commit `4c2dc6a95088fdebd0f99059b0c46d3989439395`. Installed-iPhone acceptance remains separate and open.
+
+
+## Independent Traffic and Live Cams modules
+
+- Split the former combined `Traffic/traffic-view.js` implementation into two independent feature modules.
+- `Traffic/traffic-view.js` now owns only the Traffic Orb and clearly reports that no verified traffic provider is connected.
+- `LiveCams/live-cams-view.js` now owns the camera-directory discovery experience; its six discovery images live under `LiveCams/Assets/`.
+- The shared Stacks loader registers both modules independently. The shared Orb registry, Home Earth, dock and close lifecycle remain the common protected infrastructure.
+- The service-worker shell cache and repair path include the new Live Cams module and its assets.

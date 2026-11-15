@@ -20,7 +20,7 @@
 - Earth View uses the shared Earth Engine; Moon and Sun remain independent views.
 - Location remains OFF unless explicitly enabled.
 - Stacks uses the shared feature runtime and three-Orb dock.
-- Weather, Clouds, Traffic/Live Cams and Earthquakes remain separate Stacks features.
+- Weather, Clouds, Traffic, Live Cams and Earthquakes are separate Stacks features. Traffic has no verified live-data provider connected; Live Cams owns the camera-directory integration.
 - The Universal Editorial Engine is retained as a utility; the former collection and publishing pipeline is not active.
 
 ## Weather and compatibility
@@ -35,7 +35,7 @@
 - The first Phase 3 cleanup retired only `Earth/basic-map.html` and `Earth/basic-map.js`, which had no app, test, documentation or standalone entry-point references.
 - The runtime startup, lazy-load, service-worker and feature-registration paths are traced in `Documentation/PHASE-3-RUNTIME-AUDIT.md`.
 - `Global/universal-pdf-viewer.js` remains dormant and preserved. No deletion is authorized by the current evidence.
-- The asset inventory covers the Home/primary-view images, Earth and Three.js runtime resources, Moon/Sun textures and sky backgrounds, Stacks artwork, Traffic discovery imagery, and Weather art archive.
+- The asset inventory covers the Home/primary-view images, Earth and Three.js runtime resources, Moon/Sun textures and sky backgrounds, Stacks artwork, Live Cams discovery imagery, and Weather art archive.
 - The repository contains two pairs of exact duplicate image blobs in the Weather archive:
   - `clear-maple-pavilion-002-90pct-master-scale-proof.png` and `clear-maple-pavilion-002-90pct-preview.png`.
   - `clear-maple-pavilion-master-003.jpg` and `clear-weather-master-001.jpg`.
@@ -52,3 +52,12 @@
 ## Evidence rule
 
 Never infer iPhone acceptance from a green Pages build. Report only checks actually performed.
+
+
+## Traffic / Live Cams separation checkpoint
+
+- The former combined Traffic module has been split into `Traffic/traffic-view.js` and `LiveCams/live-cams-view.js`.
+- The six camera-discovery image assets now live in `LiveCams/Assets/`; the previous `Traffic/Assets/live-cams-discovery/` copies are marked for deletion in the upload manifest.
+- Both features register independently through the existing Stacks runtime. The Global Orb registry, shared Earth, Home, primary views and dock are not rewritten by this change.
+- The service-worker shell cache has a new build identity and includes the new Live Cams module and image assets.
+- This is a source-package checkpoint only. GitHub Actions, Pages deployment and installed-device open/close acceptance still require verification after the user uploads the ZIP.

@@ -1,11 +1,11 @@
 /* LIVE // EARTH V127 — EarthEngine root-folder architecture. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v132-residents-removed";
-const CACHE_NAME = "live-earth-shell-v132-residents-removed";
+const BUILD_ID = "v133-independent-traffic-live-cams";
+const CACHE_NAME = "live-earth-shell-v133-independent-traffic-live-cams";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
- "./","./index.html","./ios-standalone-root-flow.js","./Global/orb-controls-v4.js","./EarthEngine/Core/earth-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-core.js","./EarthEngine/Assets/README.md","./Earth/earth-view-controller.js","./Global/view-manager.js","./Global/view-module-registry.js","./Stacks/stacks-feature-views.js","./Clouds/clouds-view.js","./Weather/weather-view.js","./Traffic/traffic-view.js","./Earthquakes/earthquakes-view.js","./Global/sky-view-controller.js","./Moon/moon-view-controller.js","./Moon/moon-lunar-interface.js","./Sun/sun-view-controller.js","./Sun/sun-surface-shared.webp",
+ "./","./index.html","./ios-standalone-root-flow.js","./Global/orb-controls-v4.js","./EarthEngine/Core/earth-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-core.js","./EarthEngine/Assets/README.md","./Earth/earth-view-controller.js","./Global/view-manager.js","./Global/view-module-registry.js","./Stacks/stacks-feature-views.js","./Clouds/clouds-view.js","./Weather/weather-view.js","./Traffic/traffic-view.js","./LiveCams/live-cams-view.js","./LiveCams/Assets/cities.jpg","./LiveCams/Assets/mountains.jpg","./LiveCams/Assets/night-skies.jpg","./LiveCams/Assets/oceans.jpg","./LiveCams/Assets/weather.jpg","./LiveCams/Assets/wildlife.jpg","./Earthquakes/earthquakes-view.js","./Global/sky-view-controller.js","./Moon/moon-view-controller.js","./Moon/moon-lunar-interface.js","./Sun/sun-view-controller.js","./Sun/sun-surface-shared.webp",
  "./Earth/location.html","./Earth/earth-orb-globe.js","./manifest.json","./Global/icon.svg","./Data/data-store.js","./Location/location.js",
  "./Global/astronomy.js","./Home/moon-orbit.js","./Data/dataset-manifest.json",
  "./Home/moon-surface-lroc-1536.jpg",
@@ -953,7 +953,7 @@ function injectStartupGate(html) {
     window.addEventListener('error', event => {
       if (event.target && event.target.tagName === 'SCRIPT') {
         const src = event.target.src || '';
-        const scriptPaths = ['./Global/orb-controls-v4.js','./EarthEngine/Core/earth-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-core.js','./Earth/earth-view-controller.js','./Global/view-manager.js','./Global/view-module-registry.js','./Stacks/stacks-feature-views.js','./Clouds/clouds-view.js','./Weather/weather-view.js','./Traffic/traffic-view.js','./Earthquakes/earthquakes-view.js','./Global/sky-view-controller.js','./Moon/moon-view-controller.js','./Sun/sun-view-controller.js','./Global/update-manager.js','./Data/data-recovery.js','./Location/location.js','./Home/moon-orbit.js','./Data/data-store.js'];
+        const scriptPaths = ['./Global/orb-controls-v4.js','./EarthEngine/Core/earth-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-core.js','./Earth/earth-view-controller.js','./Global/view-manager.js','./Global/view-module-registry.js','./Stacks/stacks-feature-views.js','./Clouds/clouds-view.js','./Weather/weather-view.js','./Traffic/traffic-view.js','./LiveCams/live-cams-view.js','./Earthquakes/earthquakes-view.js','./Global/sky-view-controller.js','./Moon/moon-view-controller.js','./Sun/sun-view-controller.js','./Global/update-manager.js','./Data/data-recovery.js','./Location/location.js','./Home/moon-orbit.js','./Data/data-store.js'];
         for (const path of scriptPaths) if (src.endsWith(path.slice(1))) knownBadPaths.push(path);
         sceneFailure = 'A required startup script failed to load.';
       } else if (event.error) {
