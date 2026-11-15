@@ -41,15 +41,19 @@ Current data sources: Weather uses Open-Meteo; Clouds uses NASA GIBS; Earthquake
 - Their build identifiers must match; current identity is `v132-residents-removed`.
 - Three.js module files and the Earth texture are staged as runtime dependencies for same-origin/offline module loading.
 - `Weather/Art/service-worker-extension.js` is still imported by the service worker. Its paired Live Art compatibility file is inert; retain both until old-client compatibility is separately retired.
-- `Tests/` contains source and contract tests. A GitHub Actions regression runner is not currently configured.
 
 ## Retained tools, dormant components and archival assets
 
 - `Tools/LIVE-EARTH-LAYOUT-EDITOR.html` is a standalone developer tool that embeds `../index.html`; it is intentionally outside the normal app-shell navigation.
 - `Global/universal-pdf-viewer.js` is not in the current app startup or app-shell dependency path. It is recorded as dormant and preserved pending an explicit decision about its standalone utility role.
 - `Editorial-Engine/` contains the retained Universal Editorial Engine core, browser helper and text-intelligence utilities. The feature workspace is lazy-loaded by the update manager. Its former approved-record input contract is dormant without the removed upstream services.
-- The Weather Art folder is a preserved creative archive, not part of the current Weather renderer. Exact duplicate image blobs have been identified and documented; they remain preserved because they belong to the named production/master history.
+- The Weather Art folder is a preserved creative archive, not part of the current Weather renderer. Exact duplicate image blobs have been identified and remain preserved as part of the named production/master history.
+- `.github/workflows/zip-extract-auto-upload.yml` is the protected ZIP extractor workflow. It must remain intact and is not changed by ordinary ZIP payloads.
+
+## Verification status
+
+The repository's `Tests/` directory has been retired by explicit user direction. There is no longer a checked-in automated regression suite. This does not mean the application engines were removed or that the app has passed device acceptance testing.
 
 ## Dependency rule
 
-A file referenced by `index.html`, the service worker, update manager, view registry, controller, module import, test or standalone tool is a dependency of that path even when it looks old. A file outside those paths is not automatically safe to delete; check tests, documentation and standalone entry points as well.
+A file referenced by `index.html`, the service worker, update manager, view registry, controller, module import or standalone tool is a dependency of that path even when it looks old. A missing test reference is not grounds to remove an application dependency.

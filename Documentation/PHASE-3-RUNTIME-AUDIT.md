@@ -3,7 +3,7 @@
 **Audit checkpoint:** 15 November 2026  
 **Repository:** `z8t8fp99p9-glitch/Live-Earth`  
 **Branch:** `main`  
-**Inspected baseline:** `c49e1c67f5e987270db4310ed9c60941c136dcc0`
+**Inspected baseline:** `47bb304bb7218151a15bd08b807897dfba5923a3`
 
 ## Purpose
 
@@ -30,9 +30,10 @@ Trace the runtime and asset dependency graph before removing old prototypes, dup
 | `Global/view-manager.js` | Sole primary-view transition authority. |
 | `Global/view-module-registry.js` and `Stacks/stacks-feature-views.js` | Shared secondary-view registry, lifecycle and feature runtime. |
 | `Global/update-manager.js` and `Editorial-Engine/engine-feature-views.js` | Lazy-load path for the Editorial Engine workspace. |
-| `Weather/Art/service-worker-extension.js` and `Weather/Art/live-art-online.js` | Service-worker import and inert compatibility stub; legacy-hook regression test remains. |
+| `Weather/Art/service-worker-extension.js` and `Weather/Art/live-art-online.js` | Service-worker import and inert compatibility stub; preserve for older cached-shell compatibility. |
 | `Tools/LIVE-EARTH-LAYOUT-EDITOR.html` | Standalone developer tool; embeds the actual app through an iframe. |
-| Editorial Engine JS/Python utilities and tests | Retained utility boundary documented in `Editorial-Engine/README.md`; the former upstream collection/publishing pipeline is not active. |
+| `Editorial-Engine/` utilities | Retained Editorial Engine core, browser helper and text-intelligence utilities. Do not confuse these engine utilities with the retired test suite. |
+| `.github/workflows/zip-extract-auto-upload.yml` | Protected ZIP extractor workflow; preserve unchanged. |
 
 ## Asset inventory
 
@@ -53,12 +54,10 @@ Git tree blob SHA values identify two exact duplicate pairs:
 1. `Weather/Art/References/clear-maple-pavilion-002-90pct-master-scale-proof.png` and `Weather/Art/References/clear-maple-pavilion-002-90pct-preview.png` — both 1,321,910 bytes and the same Git blob SHA.
 2. `Weather/Art/References/clear-maple-pavilion-master-003.jpg` and `Weather/Art/References/clear-weather-master-001.jpg` — both 483,948 bytes and the same Git blob SHA.
 
-These are exact byte duplicates, not visual guesses. They are **not deleted** in this audit:
+These are exact byte duplicates, not visual guesses. They remain preserved:
 - The master-003 image is referenced by the archived schema-v3 artwork record.
 - The clear-weather master filename is represented in the archive's historical checksum manifest.
 - The two 90% image filenames preserve separate production-study labels even though their bytes are identical.
-
-Preserve these until an explicit archive-curation decision can update all relevant records and history together.
 
 ## Dormant, but deliberately preserved
 
@@ -66,26 +65,28 @@ Preserve these until an explicit archive-curation decision can update all releva
 
 The Editorial Engine's former approved-record input contract is dormant because its upstream source and publishing services were removed. The retained utility and lazy-loaded workspace remain preserved.
 
-## Compatibility caution
+## Test-suite retirement
 
-`sw.js` still imports `Weather/Art/service-worker-extension.js`. The companion `live-art-online.js` is intentionally inert, and the Weather legacy-hook test checks this boundary. Do not remove these files or their import until old cached clients and the regression test are deliberately retired together.
+By explicit user direction, every file in the repository's `Tests/` directory is being removed. This includes the Weather-only runner, JavaScript source/contract tests and the two Python Editorial Engine test modules. The application engines, feature modules, Editorial Engine utility code, service worker, ZIP extractor and runtime controllers are not part of this deletion.
+
+After extraction there will be no checked-in automated regression tests. Do not report test-suite success or imply automated coverage. Continue to report syntax checks, source inspection, deployment checks and installed-device acceptance separately.
 
 ## Phase 3 audit result
 
 - Runtime dependency graph reviewed.
 - App-shell and optional runtime asset groups inventoried.
-- Exact duplicate image blobs identified and documented.
-- No identical source-code blobs were found in the Git tree.
-- No additional code or asset deletion is justified by current evidence.
-- No runtime, rendering, navigation, cache or data behaviour was changed in this audit checkpoint.
+- Exact duplicate image blobs identified and documented; all are preserved.
+- No identical source-code blobs were found in the inspected Git tree.
+- No runtime, rendering, navigation, cache or data behaviour is changed by this cleanup package.
+- The only application-adjacent change is removal of the test directory and documentation updates describing that explicit decision.
 
-## Remaining Phase 3 work
+## Remaining work
 
-- Final cross-check of service-worker optional caching and asset lifecycle rules against all current views.
-- Review non-identical near-duplicate assets only where their visual/content role can be compared without altering source artwork.
+- Finish any remaining service-worker optional-cache lifecycle review.
 - Confirm whether the dormant PDF viewer is intended to remain as a standalone utility; preserve it until that product decision is made.
-- Finish with regression/syntax checks and a final source-baseline/deployment checkpoint.
+- Continue with source-level and syntax verification without claiming an automated regression suite.
+- Complete installed-iPhone acceptance: Portrait/Landscape, repeated open/close, view switching, Location ON/OFF and stale-fix behaviour, offline/reconnection, update activation and render lifecycle.
 
 ## Evidence boundary
 
-This checkpoint records remote source inspection and Git tree blob identity analysis. It does not claim that the full repository test suite was executed locally, that GitHub Actions run the repository test suite, or that the app has passed iPhone acceptance testing.
+This checkpoint records remote source inspection and Git tree asset identity analysis. It does not claim that a full repository test suite was executed locally, that GitHub Actions run repository tests, or that the app has passed iPhone acceptance testing.
