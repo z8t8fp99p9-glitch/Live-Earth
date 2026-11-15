@@ -129,6 +129,10 @@
     .le-lc-modal-panel{position:relative;width:min(100%,560px);max-height:min(72vh,680px);overflow:auto;margin:0 auto;padding:13px;border:1px solid rgba(173,215,241,.22);border-radius:23px;background:linear-gradient(155deg,#122638,#07131f 75%);box-shadow:0 22px 70px #000a}
     .le-lc-modal-close{position:absolute;z-index:2;right:22px;top:22px;width:36px;height:36px;border:1px solid #ffffff55;border-radius:50%;background:#071522dd;color:#fff;font-size:20px;cursor:pointer}
     .le-lc-modal-image{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:15px;background:#0b1a26}.le-lc-modal-image[hidden]{display:none!important}
+    .le-lc-live-video{display:block;width:100%;max-height:48vh;aspect-ratio:16/9;object-fit:contain;border-radius:15px;background:#02070d;margin:0 0 10px}.le-lc-live-video[hidden],.le-lc-video-status[hidden]{display:none!important}
+    .le-lc-video-status{margin:0 2px 12px;padding:9px 11px;border:1px solid rgba(125,198,230,.18);border-radius:11px;background:rgba(4,13,23,.55);color:#acd2e8;font-size:10px;line-height:1.5}
+    .le-lc-video-status[data-kind="error"]{border-color:rgba(255,130,140,.28);color:#ffc0c5}
+    .le-lc-video-status[data-kind="success"]{border-color:rgba(103,213,180,.22);color:#a8e9d4}
     .le-lc-modal h3{margin:14px 44px 5px 2px;color:#fff;font:600 23px/1.08 Georgia,'Times New Roman',serif}
     .le-lc-modal-location{margin:0 2px 10px;color:#abc1d2;font:12px Georgia,'Times New Roman',serif}
     .le-lc-modal-meta{margin:0 2px 12px;color:#8faabd;font-size:10px;line-height:1.55}
@@ -241,6 +245,21 @@
     if (render === 'link') return safeHttps(view.url || sourceUrl(camera));
     return safeHttps(camera?.source_url || camera?.publisher_url || camera?.viewer_url || camera?.website);
   }
+  function cameraFeedKind(camera) {
+    const raw = camera?.feed_kind ?? camera?.kind ?? camera?.stream?.feed_kind ?? camera?.stream?.kind ?? '';
+    return String(raw).trim().toLowerCase().replace(/[\s-]+/g, '_');
+  }
+  function isLiveVideoCamera(camera) {
+    // OpenEye's WHEP endpoint is explicitly limited to feed_kind=live_video.
+    // A still-image refresh feed or an HTML publisher page must never be guessed as video.
+    return cameraFeedKind(camera) === 'live_video';
+  }
+  function canStartLiveVideo(camera) {
+    // The OpenEye catalogue's live flag is the provider's active-camera signal.
+    // A still-frame timestamp is not the health clock for a continuous video feed.
+    // Require an explicit live_video kind, free access, and live=true before WHEP.
+    return isLiveVideoCamera(camera) && accessFlag(camera) === true && liveFlag(camera) === true;
+  }
   function displayable(camera) {
     // A catalogue row is a directory result even when it is paid, stale, source-
     // only, missing an image, or missing optional health metadata. The UI labels
@@ -248,13 +267,14 @@
     return !!camera && typeof camera.id === 'string' && camera.id.trim().length > 0;
   }
   function hasDisplayRoute(camera) {
-    return !!previewUrl(camera) || (accessFlag(camera) === true && !!cameraDestinationUrl(camera));
+    return !!previewUrl(camera) || (accessFlag(camera) === true && !!cameraDestinationUrl(camera)) || canStartLiveVideo(camera);
   }
   function cameraCardState(camera) {
     const access = accessFlag(camera);
     const live = liveFlag(camera);
     const imageUrl = previewUrl(camera);
     if (live === false) return imageUrl ? 'LAST FRAME · OFFLINE' : 'OFFLINE / STALE';
+    if (canStartLiveVideo(camera)) return 'LIVE VIDEO · TAP TO PLAY';
     const age = frameAgeSeconds(camera);
     if (Number.isFinite(age) && age > 7 * 86400) return imageUrl ? 'OLD PREVIEW · NOT LIVE' : 'STALE · NOT LIVE';
     if (imageUrl && access === null) return 'PREVIEW PERMITTED · FEED ACCESS UNKNOWN';
@@ -462,18 +482,32 @@
     const modalImage = make('img', 'le-lc-modal-image');
     modalImage.alt = '';
     modalImage.referrerPolicy = 'no-referrer';
+    const modalVideo = make('video', 'le-lc-live-video');
+    modalVideo.hidden = true;
+    modalVideo.controls = true;
+    modalVideo.autoplay = true;
+    modalVideo.playsInline = true;
+    modalVideo.setAttribute('playsinline', '');
+    modalVideo.muted = true;
+    modalVideo.preload = 'none';
+    const modalVideoStatus = make('p', 'le-lc-video-status', 'Live video is not connected.');
+    modalVideoStatus.hidden = true;
     const modalTitle = make('h3', '');
     const modalLocation = make('p', 'le-lc-modal-location');
     const modalMeta = make('p', 'le-lc-modal-meta');
     const modalCredit = make('p', 'le-lc-modal-credit');
     const modalActions = make('div', 'le-lc-modal-actions');
-    modalPanel.append(closeButton, modalImage, modalTitle, modalLocation, modalMeta, modalCredit, modalActions);
+    modalPanel.append(closeButton, modalImage, modalVideo, modalVideoStatus, modalTitle, modalLocation, modalMeta, modalCredit, modalActions);
     modal.appendChild(modalPanel);
     root.appendChild(modal);
 
     let disposed = false;
     let activeRequest = null;
     let refreshTimer = 0;
+    let activeVideoPlayer = null;
+    let activeVideoPlayButton = null;
+    let videoEnginePromise = null;
+    let videoRequestSerial = 0;
     let currentCategory = '';
     let currentRegion = null;
     let currentQuery = '';
@@ -561,18 +595,20 @@
       }
       const imageUrl = previewUrl(camera);
       const destination = cameraDestinationUrl(camera);
-      heroButton.disabled = !imageUrl && !destination;
-      heroBadge.hidden = !imageUrl;
-      if (imageUrl) {
+      const videoAvailable = canStartLiveVideo(camera);
+      heroButton.disabled = !imageUrl && !destination && !videoAvailable;
+      heroBadge.hidden = !imageUrl && !videoAvailable;
+      if (imageUrl || videoAvailable) {
         heroBadge.replaceChildren(make('span', 'le-lc-live-dot'), make('span', '', cameraCardState(camera)));
       }
       heroFallback.style.backgroundImage = `linear-gradient(180deg,rgba(1,8,15,.10),rgba(1,8,15,.76)),url('${cameraArtwork(camera)}')`;
       heroFallback.textContent = imageUrl ? 'Camera preview temporarily unavailable'
-        : destination ? 'Open this camera at its publisher'
-          : accessFlag(camera) === false ? 'Paid camera · preview only'
-            : accessFlag(camera) === null ? 'Preview or source access is not confirmed'
-              : liveFlag(camera) === false ? 'Camera currently offline'
-                : 'No public preview or publisher view is available';
+        : videoAvailable ? 'Tap to open in-app live video'
+          : destination ? 'Open this camera at its publisher'
+            : accessFlag(camera) === false ? 'Paid camera · preview only'
+              : accessFlag(camera) === null ? 'Preview or source access is not confirmed'
+                : liveFlag(camera) === false ? 'Camera currently offline'
+                  : 'No public preview or publisher view is available';
       heroButton.onclick = () => openDetails(camera);
       heroImage.hidden = !imageUrl;
       heroFallback.hidden = !!imageUrl;
@@ -581,7 +617,7 @@
         heroFallback.hidden = false;
         heroFallback.textContent = destination ? 'Preview unavailable · open publisher camera' : 'Camera preview temporarily unavailable';
         heroBadge.hidden = true;
-        heroButton.disabled = !destination;
+        heroButton.disabled = !destination && !videoAvailable;
         heroDots.hidden = featuredCameras.length < 2;
       };
       if (imageUrl) heroImage.src = imageUrl;
@@ -605,13 +641,14 @@
       image.referrerPolicy = 'no-referrer';
       const imageUrl = previewUrl(camera);
       const destination = cameraDestinationUrl(camera);
-      const canOpen = !!imageUrl || (accessFlag(camera) === true && !!destination);
+      const videoAvailable = canStartLiveVideo(camera);
+      const canOpen = !!imageUrl || (accessFlag(camera) === true && !!destination) || videoAvailable;
       if (imageUrl) {
         image.src = imageUrl;
         image.onerror = () => {
           image.removeAttribute('src');
           image.hidden = true;
-          card.disabled = !destination;
+          card.disabled = !destination && !videoAvailable;
           card.classList.add('le-lc-card-no-image');
         };
       } else {
@@ -624,7 +661,7 @@
       const content = make('div', 'le-lc-card-content');
       const badge = make('span', 'le-lc-badge');
       const cardState = cameraCardState(camera);
-      if (imageUrl) badge.append(make('span', 'le-lc-live-dot'), make('span', '', cardState));
+      if (imageUrl || videoAvailable) badge.append(make('span', 'le-lc-live-dot'), make('span', '', cardState));
       else if (destination) badge.append(make('span', '', '↗'), make('span', '', cardState));
       else badge.append(make('span', '', '•'), make('span', '', cardState));
       const title = make('h3', 'le-lc-card-title', camera.title || camera.name || 'Live camera');
@@ -742,8 +779,121 @@
       loadMoreButton.disabled = loadingMore;
       loadMoreButton.textContent = loadingMore ? 'Loading…' : 'Load more cameras';
     }
+    function setVideoStatus(message, kind = '') {
+      modalVideoStatus.textContent = message;
+      modalVideoStatus.hidden = false;
+      if (kind) modalVideoStatus.dataset.kind = kind;
+      else modalVideoStatus.removeAttribute('data-kind');
+    }
+    function ensureVideoEngine() {
+      if (window.LiveEarthLiveVideoEngine) return Promise.resolve(window.LiveEarthLiveVideoEngine);
+      if (videoEnginePromise) return videoEnginePromise;
+      videoEnginePromise = new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[data-live-earth-video-engine="1"]');
+        if (existing) {
+          existing.addEventListener('load', () => window.LiveEarthLiveVideoEngine ? resolve(window.LiveEarthLiveVideoEngine) : reject(new Error('Live Video Engine loaded without registering.')), { once: true });
+          existing.addEventListener('error', () => reject(new Error('Live Video Engine could not be loaded.')), { once: true });
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = new URL('./LiveCams/live-video-engine.js', document.baseURI).href;
+        script.async = true;
+        script.dataset.liveEarthVideoEngine = '1';
+        script.onload = () => window.LiveEarthLiveVideoEngine
+          ? resolve(window.LiveEarthLiveVideoEngine)
+          : reject(new Error('Live Video Engine loaded without registering.'));
+        script.onerror = () => reject(new Error('Live Video Engine failed to load. Check the app update and network connection.'));
+        (document.head || document.documentElement).appendChild(script);
+      }).catch(error => {
+        videoEnginePromise = null;
+        throw error;
+      });
+      return videoEnginePromise;
+    }
+    function stopLiveVideo(message = '', kind = '') {
+      videoRequestSerial += 1;
+      const player = activeVideoPlayer;
+      activeVideoPlayer = null;
+      if (player) player.stop().catch(() => {});
+      if (activeVideoPlayButton?.isConnected) {
+        activeVideoPlayButton.disabled = false;
+        activeVideoPlayButton.textContent = 'Play live video here';
+      }
+      activeVideoPlayButton = null;
+      try { modalVideo.pause(); } catch (_) {}
+      modalVideo.srcObject = null;
+      modalVideo.removeAttribute('src');
+      modalVideo.load?.();
+      modalVideo.hidden = true;
+      if (message) setVideoStatus(message, kind);
+      else modalVideoStatus.hidden = true;
+    }
+    async function startLiveVideo(camera, playButton) {
+      if (!canStartLiveVideo(camera)) {
+        setVideoStatus('This camera is not confirmed as a free, active live_video stream. No video session was started.', 'error');
+        return;
+      }
+      stopLiveVideo();
+      const requestSerial = videoRequestSerial;
+      activeVideoPlayButton = playButton;
+      playButton.disabled = true;
+      playButton.textContent = 'Connecting…';
+      modalVideo.hidden = false;
+      modalVideo.poster = previewUrl(camera) || '';
+      modalVideoStatus.hidden = false;
+      setVideoStatus('Preparing a secure live-video connection…');
+      try {
+        const Engine = await ensureVideoEngine();
+        if (disposed || modal.hidden || requestSerial !== videoRequestSerial) return;
+        const player = new Engine({
+          streamId: camera.id,
+          videoElement: modalVideo,
+          onState: state => {
+            if (requestSerial !== videoRequestSerial || disposed) return;
+            if (state === 'preparing') setVideoStatus('Preparing WebRTC connection…');
+            else if (state === 'connecting') setVideoStatus('Negotiating with the camera…');
+            else if (state === 'connected') setVideoStatus('Live video connected.', 'success');
+            else if (state === 'disconnected') setVideoStatus('The live connection was interrupted. Waiting for recovery…');
+            else if (state === 'autoplay-blocked') setVideoStatus('Connected. Tap Play in the video controls to begin.', 'success');
+            else if (state === 'closed' && !modal.hidden && !modalVideoStatus.dataset.kind) setVideoStatus('Live video session closed.');
+          },
+          onTrack: () => {
+            if (requestSerial !== videoRequestSerial || disposed) return;
+            modalImage.hidden = true;
+            modalVideo.hidden = false;
+          },
+          onError: error => {
+            if (requestSerial !== videoRequestSerial || disposed) return;
+            const message = error?.message || 'The camera video session failed.';
+            setVideoStatus(message, 'error');
+            playButton.disabled = false;
+            playButton.textContent = 'Try live video again';
+          }
+        });
+        activeVideoPlayer = player;
+        await player.start();
+        if (requestSerial !== videoRequestSerial || disposed || modal.hidden) {
+          await player.stop();
+          return;
+        }
+        playButton.textContent = 'Live video requested';
+        playButton.disabled = true;
+        setVideoStatus('The video session is ready. Waiting for the live camera track…');
+      } catch (error) {
+        if (requestSerial !== videoRequestSerial || disposed) return;
+        activeVideoPlayer?.stop().catch(() => {});
+        activeVideoPlayer = null;
+        activeVideoPlayButton = null;
+        modalVideo.hidden = true;
+        playButton.disabled = false;
+        playButton.textContent = 'Try live video again';
+        setVideoStatus(error?.message || 'The live-video connection could not be started.', 'error');
+      }
+    }
+
     function openDetails(camera) {
       if (disposed || !displayable(camera)) return;
+      stopLiveVideo();
       lastFocused = document.activeElement;
       const imageUrl = previewUrl(camera);
       modalImage.hidden = !imageUrl;
@@ -772,14 +922,41 @@
         modalCredit.appendChild(link);
       }
       modalActions.replaceChildren();
-      if (publisher) {
+      modalVideo.hidden = true;
+      modalVideoStatus.hidden = true;
+      modalVideo.poster = imageUrl || '';
+      if (isLiveVideoCamera(camera)) {
+        if (canStartLiveVideo(camera)) {
+          const playButton = make('button', 'le-lc-secondary-button', 'Play live video here');
+          playButton.type = 'button';
+          playButton.addEventListener('click', () => startLiveVideo(camera, playButton));
+          modalActions.appendChild(playButton);
+          modalActions.appendChild(make('p', 'le-lc-modal-meta', 'In-app WebRTC playback. OpenEye documents WHEP live sessions as potentially metered at US$0.002 per second. Playback starts only after this tap; LIVE // EARTH does not submit payments or settle a 402 request.'));
+        } else {
+          const reason = accessFlag(camera) === false
+            ? 'This live-video stream is marked paid. Live Cams will not start a metered session or make a payment.'
+            : accessFlag(camera) === null
+              ? 'The provider has not confirmed free access for this live-video stream. No session was started.'
+              : liveFlag(camera) !== true || !isFresh(camera)
+                ? 'The provider has not confirmed a fresh, active video signal for this camera. No session was started.'
+                : 'This camera is not a supported live_video feed. No session was started.';
+          modalActions.appendChild(make('p', 'le-lc-modal-meta', reason));
+          if (publisher) {
+            const link = make('a', '', 'Open publisher (optional)');
+            link.href = publisher;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            modalActions.appendChild(link);
+          }
+        }
+      } else if (publisher) {
         const link = make('a', '', imageUrl ? 'Open publisher' : 'Open live camera at publisher');
         link.href = publisher;
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
         modalActions.appendChild(link);
       }
-      if (!publisher) {
+      if (!publisher && !isLiveVideoCamera(camera)) {
         const explanation = accessFlag(camera) === false
           ? 'This camera is a paid feed. Only the provider-approved preview is shown; Live Cams does not initiate paid frame or video sessions.'
           : accessFlag(camera) === null
@@ -795,6 +972,7 @@
       closeButton.focus?.();
     }
     function closeDetails() {
+      stopLiveVideo();
       modal.hidden = true;
       if (lastFocused?.focus) lastFocused.focus();
       lastFocused = null;
@@ -953,7 +1131,8 @@
       const rows = Array.isArray(cameras) ? cameras : [];
       const candidates = rows.filter(camera => displayable(camera) &&
         (typeof camera.is_free !== 'boolean' || !camera.view || !camera.view.render ||
-          (!camera.preview_url && !camera.view.url))).slice(0, limit);
+          (!camera.preview_url && !camera.view.url) ||
+          (!camera.feed_kind && !camera.kind && !camera.stream?.feed_kind && !camera.stream?.kind))).slice(0, limit);
       if (!candidates.length) return rows;
       const details = await Promise.allSettled(candidates.map(camera =>
         requestJson(`/catalog/${encodeURIComponent(camera.id)}`, signal)
@@ -1183,8 +1362,13 @@
     const onOnline = () => { setStatus('Connection restored. Refreshing camera directory…'); refreshCurrent(); };
     const onOffline = () => setStatus('You are offline. Live camera records are not shown from an old cache.', 'error');
     const onVisibility = () => {
-      if (!document.hidden && !disposed) { refreshCurrent(); startHeroRotation(); }
-      else stopHeroRotation();
+      if (document.hidden) {
+        stopHeroRotation();
+        if (activeVideoPlayer) stopLiveVideo('Live video paused because the app went into the background. Tap Play to reconnect.');
+      } else if (!disposed) {
+        refreshCurrent();
+        startHeroRotation();
+      }
     };
 
     heroButton.addEventListener('click', event => {
@@ -1236,6 +1420,7 @@
     return () => {
       if (disposed) return;
       disposed = true;
+      stopLiveVideo();
       activeRequest?.abort();
       activeRequest = null;
       if (refreshTimer) window.clearInterval(refreshTimer);

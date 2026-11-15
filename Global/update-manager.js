@@ -1,9 +1,9 @@
-/* LIVE // EARTH V128 update manager — Global Orb and view lifecycle. */
+/* LIVE // EARTH V136 update manager — Global Orb and view lifecycle. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v132-residents-removed";
+  const BUILD_ID = "v136-live-cams-whep-player";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
