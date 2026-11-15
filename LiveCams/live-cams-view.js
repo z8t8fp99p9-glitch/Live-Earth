@@ -190,18 +190,26 @@
     }
     return NaN;
   }
+  // Some upstream adapters serialize SQLite boolean columns as 0/1 or strings.
+  // Normalize only unambiguous boolean representations; unknown stays unknown.
+  function booleanFlag(value) {
+    if (value === true || value === 1 || value === '1' || value === 'true') return true;
+    if (value === false || value === 0 || value === '0' || value === 'false') return false;
+    return null;
+  }
+  function accessFlag(camera) { return booleanFlag(camera?.is_free); }
+  function liveFlag(camera) { return booleanFlag(camera?.live); }
   function isFresh(camera) {
-    if (camera?.live === false) return false;
+    if (liveFlag(camera) === false) return false;
     const age = frameAgeSeconds(camera);
     if (Number.isFinite(age)) return age >= 0 && age <= 7 * 86400;
-    // The API defines live:true as a recent-frame health signal. Do not discard
-    // an otherwise valid live directory row merely because an adapter omitted age.
-    return camera?.live === true;
+    return liveFlag(camera) === true;
   }
   function cameraFreshnessLabel(camera) {
     const age = frameAgeSeconds(camera);
-    if (Number.isFinite(age)) return age <= 86400 ? 'LIVE' : 'RECENT';
-    return camera?.live === true ? 'LIVE' : 'STATUS UNKNOWN';
+    if (liveFlag(camera) === true && (!Number.isFinite(age) || age <= 7 * 86400)) return 'LIVE FRAME';
+    if (Number.isFinite(age)) return 'RECENT FRAME';
+    return 'FRAME · TIME UNKNOWN';
   }
   function cameraArtwork(camera) {
     const category = String(camera?.category || '').toLowerCase();
@@ -209,28 +217,24 @@
     return discoveryImage(artwork);
   }
   function previewUrl(camera) {
-    if (camera?.is_free !== true || !isFresh(camera)) return '';
     const view = camera?.view || {};
     const render = String(view.render || '').toLowerCase();
-    // OpenEye can supply a verified poster for a source-link camera as well as
-    // a directly embeddable image. A poster never changes the click destination.
-    if (render !== 'image' && !(render === 'link' && camera?.preview_url)) return '';
-    const isOpenEyePreview = view.hosted === 'openeye' || camera?.redistribution?.preview_embed === true;
-    const isDirectSourceImage = render === 'image' && view.hosted === 'source' && view.url_type === 'image';
-    const isVerifiedDirectoryPoster = !!camera?.preview_url;
-    if (!isOpenEyePreview && !isDirectSourceImage && !isVerifiedDirectoryPoster) return '';
-    // Honour mandatory attribution, but do not suppress an approved preview
-    // merely because an optional attribution object is absent.
-    if (camera?.redistribution?.attribution?.required === true && !cameraCredit(camera)) return '';
+    const redistribution = camera?.redistribution || {};
+    const previewEmbedPermitted = redistribution.preview_embed === true;
+    const hasDirectoryPoster = !!safeHttps(camera?.preview_url);
+    const isPermittedPreviewImage = render === 'image' && previewEmbedPermitted;
+    const isDirectSourceImage = render === 'image' && view.hosted === 'source' && view.url_type === 'image' && redistribution.frame_reuse === 'fetch-from-source';
+    const isSignedDirectoryPoster = (render === 'image' || render === 'link') && hasDirectoryPoster && previewEmbedPermitted;
+    if (!isPermittedPreviewImage && !isDirectSourceImage && !isSignedDirectoryPoster) return '';
+    // Embedding permission is a separate contract from full-feed pricing.
+    // A permitted poster may be shown even when the access flag is omitted;
+    // the app still will not open a full source or start a metered video session.
+    if (redistribution.attribution?.required === true && !cameraCredit(camera)) return '';
     const declaredUrl = safeHttps(camera?.preview_url || view.url);
-    if (declaredUrl) return declaredUrl;
-    if (view.hosted === 'openeye' && camera?.id) {
-      return `${API_BASE}/streams/${encodeURIComponent(camera.id)}/preview.webp`;
-    }
-    return '';
+    return declaredUrl || '';
   }
   function cameraDestinationUrl(camera) {
-    if (camera?.is_free !== true) return '';
+    if (accessFlag(camera) !== true) return '';
     const view = camera?.view || {};
     const render = String(view.render || '').toLowerCase();
     if (render === 'none') return '';
@@ -243,16 +247,24 @@
     // those states explicitly and never opens a paid/restricted media endpoint.
     return !!camera && typeof camera.id === 'string' && camera.id.trim().length > 0;
   }
+  function hasDisplayRoute(camera) {
+    return !!previewUrl(camera) || (accessFlag(camera) === true && !!cameraDestinationUrl(camera));
+  }
   function cameraCardState(camera) {
-    if (camera?.is_free === false) return 'PAID FEED · NOT OPENED';
-    if (camera?.is_free !== true) return 'ACCESS UNCONFIRMED';
-    if (camera?.live === false) return 'OFFLINE / STALE';
+    const access = accessFlag(camera);
+    const live = liveFlag(camera);
+    const imageUrl = previewUrl(camera);
+    if (live === false) return imageUrl ? 'LAST FRAME · OFFLINE' : 'OFFLINE / STALE';
     const age = frameAgeSeconds(camera);
-    if (Number.isFinite(age) && age > 7 * 86400) return 'STALE · NOT LIVE';
-    if (previewUrl(camera)) return cameraFreshnessLabel(camera);
+    if (Number.isFinite(age) && age > 7 * 86400) return imageUrl ? 'OLD PREVIEW · NOT LIVE' : 'STALE · NOT LIVE';
+    if (imageUrl && access === null) return 'PREVIEW PERMITTED · FEED ACCESS UNKNOWN';
+    if (imageUrl && access === false) return 'PAID PREVIEW · FULL FEED LOCKED';
+    if (imageUrl) return cameraFreshnessLabel(camera);
+    if (access === false) return 'PAID FEED · NOT OPENED';
+    if (access !== true) return 'ACCESS UNCONFIRMED';
     if (cameraDestinationUrl(camera)) return 'OPEN SOURCE';
     if (String(camera?.view?.render || '').toLowerCase() === 'none') return 'NO PUBLIC VIEW';
-    return camera?.live === true ? 'PREVIEW UNAVAILABLE' : 'STATUS UNKNOWN';
+    return live === true ? 'PREVIEW UNAVAILABLE' : 'STATUS UNKNOWN';
   }
   function itemsFrom(payload) {
     if (Array.isArray(payload)) return payload;
@@ -487,6 +499,8 @@
         if (entry.ids !== undefined) details.push(`${entry.ids} IDs`);
         if (entry.live !== undefined) details.push(`${entry.live} live`);
         if (entry.images !== undefined) details.push(`${entry.images} images`);
+        if (entry.previewPermitted !== undefined) details.push(`${entry.previewPermitted} embed-approved`);
+        if (entry.signedPosters !== undefined) details.push(`${entry.signedPosters} signed posters`);
         if (entry.links !== undefined) details.push(`${entry.links} links`);
         if (entry.none !== undefined) details.push(`${entry.none} no-view`);
         if (entry.total !== undefined && entry.total !== null) details.push(`total ${entry.total}`);
@@ -517,12 +531,12 @@
 
     function cameraSummary(cameras) {
       const total = cameras.length;
-      const live = cameras.filter(camera => camera.live === true && isFresh(camera)).length;
+      const live = cameras.filter(camera => liveFlag(camera) === true && isFresh(camera)).length;
       const previews = cameras.filter(camera => !!previewUrl(camera)).length;
-      const publisher = cameras.filter(camera => camera.is_free === true && !!cameraDestinationUrl(camera)).length;
-      const paid = cameras.filter(camera => camera.is_free === false).length;
-      const inactive = cameras.filter(camera => camera.live === false || (Number.isFinite(frameAgeSeconds(camera)) && frameAgeSeconds(camera) > 7 * 86400)).length;
-      const unknown = cameras.filter(camera => camera.is_free !== true && camera.is_free !== false).length;
+      const publisher = cameras.filter(camera => accessFlag(camera) === true && !!cameraDestinationUrl(camera)).length;
+      const paid = cameras.filter(camera => accessFlag(camera) === false).length;
+      const inactive = cameras.filter(camera => liveFlag(camera) === false || (Number.isFinite(frameAgeSeconds(camera)) && frameAgeSeconds(camera) > 7 * 86400)).length;
+      const unknown = cameras.filter(camera => accessFlag(camera) === null).length;
       return `${total} directory records · ${live} live · ${previews} permitted image previews · ${publisher} publisher links · ${paid} paid · ${inactive} stale/offline${unknown ? ` · ${unknown} access unknown` : ''}`;
     }
 
@@ -550,14 +564,14 @@
       heroButton.disabled = !imageUrl && !destination;
       heroBadge.hidden = !imageUrl;
       if (imageUrl) {
-        heroBadge.replaceChildren(make('span', 'le-lc-live-dot'), make('span', '', `${cameraFreshnessLabel(camera)} WINDOW`));
+        heroBadge.replaceChildren(make('span', 'le-lc-live-dot'), make('span', '', cameraCardState(camera)));
       }
       heroFallback.style.backgroundImage = `linear-gradient(180deg,rgba(1,8,15,.10),rgba(1,8,15,.76)),url('${cameraArtwork(camera)}')`;
       heroFallback.textContent = imageUrl ? 'Camera preview temporarily unavailable'
         : destination ? 'Open this camera at its publisher'
-          : camera?.is_free === false ? 'Paid camera · not opened here'
-            : camera?.is_free !== true ? 'Camera listed · access not confirmed'
-              : camera?.live === false ? 'Camera currently offline'
+          : accessFlag(camera) === false ? 'Paid camera · preview only'
+            : accessFlag(camera) === null ? 'Preview or source access is not confirmed'
+              : liveFlag(camera) === false ? 'Camera currently offline'
                 : 'No public preview or publisher view is available';
       heroButton.onclick = () => openDetails(camera);
       heroImage.hidden = !imageUrl;
@@ -591,12 +605,13 @@
       image.referrerPolicy = 'no-referrer';
       const imageUrl = previewUrl(camera);
       const destination = cameraDestinationUrl(camera);
-      const canOpen = camera?.is_free === true && (!!destination || !!imageUrl);
+      const canOpen = !!imageUrl || (accessFlag(camera) === true && !!destination);
       if (imageUrl) {
         image.src = imageUrl;
         image.onerror = () => {
           image.removeAttribute('src');
           image.hidden = true;
+          card.disabled = !destination;
           card.classList.add('le-lc-card-no-image');
         };
       } else {
@@ -719,7 +734,7 @@
       resultCameras = append ? mergeUnique(resultCameras, filtered) : filtered;
       resultGrid.replaceChildren();
       if (!resultCameras.length) {
-        resultGrid.appendChild(make('p', 'le-lc-empty', 'No current public camera records were returned for this view. Try another subject or place.'));
+        resultGrid.appendChild(make('p', 'le-lc-empty', 'No camera with a permitted preview or confirmed public viewing page is available for this view. Try another subject or place.'));
       } else {
         resultCameras.forEach(camera => resultGrid.appendChild(makeCameraCard(camera)));
       }
@@ -741,10 +756,10 @@
       modalTitle.textContent = camera.title || camera.name || 'Live camera';
       modalLocation.textContent = countryLabel(camera);
       const publisher = cameraDestinationUrl(camera);
-      const accessLabel = camera?.is_free === false ? 'Paid feed — not opened in Live Cams'
-        : camera?.is_free !== true ? 'Access status not supplied'
-          : camera?.live === false ? 'Camera currently marked offline'
-            : imageUrl ? 'Public preview' : publisher ? 'Publisher-hosted camera' : 'Preview unavailable';
+      const accessLabel = accessFlag(camera) === false ? (imageUrl ? 'Paid feed — approved preview only; full feed not opened' : 'Paid feed — not opened in Live Cams')
+        : accessFlag(camera) === null ? (imageUrl ? 'Preview embedding is permitted; full-feed access is unconfirmed' : 'Access status not supplied')
+          : liveFlag(camera) === false ? 'Camera currently marked offline'
+            : imageUrl ? 'Approved camera preview' : publisher ? 'Publisher-hosted camera' : 'Preview unavailable';
       modalMeta.textContent = `${categoryLabel(camera)} · ${timeLabel(camera)} · ${accessLabel}`;
       modalCredit.replaceChildren();
       const credit = cameraCredit(camera);
@@ -765,11 +780,11 @@
         modalActions.appendChild(link);
       }
       if (!publisher) {
-        const explanation = camera?.is_free === false
-          ? 'This camera is a paid feed. Live Cams does not initiate paid frame or video sessions.'
-          : camera?.is_free !== true
-            ? 'The directory did not provide a confirmed free-access flag, so this camera is listed but not opened.'
-            : camera?.live === false
+        const explanation = accessFlag(camera) === false
+          ? 'This camera is a paid feed. Only the provider-approved preview is shown; Live Cams does not initiate paid frame or video sessions.'
+          : accessFlag(camera) === null
+            ? (imageUrl ? 'The provider permits this preview image, but full-feed access was not confirmed. No live session or publisher page is opened.' : 'The directory did not provide a confirmed access flag, so this camera is listed but not opened.')
+            : liveFlag(camera) === false
               ? 'The directory currently marks this camera offline. No live preview is shown.'
               : imageUrl
                 ? 'The preview is shown under its listed embed permission.'
@@ -830,10 +845,12 @@
           shape: payload?.mode || (clusters.length ? 'clusters' : Array.isArray(payload?.items) ? 'items' : Object.keys(payload || {}).slice(0, 6).join(',')),
           rows: allRows.length,
           ids: allRows.filter(row => typeof row?.id === 'string' && row.id.trim()).length,
-          live: allRows.filter(row => row?.live === true).length,
+          live: allRows.filter(row => liveFlag(row) === true).length,
           images: renderCounts.image || 0,
           links: renderCounts.link || 0,
           none: renderCounts.none || 0,
+          previewPermitted: allRows.filter(row => row?.redistribution?.preview_embed === true).length,
+          signedPosters: allRows.filter(row => !!safeHttps(row?.preview_url)).length,
           unknownRender: renderCounts.unknown || 0,
           total: Number.isFinite(Number(payload?.total)) ? Number(payload.total) : undefined,
           free: Number.isFinite(Number(payload?.free)) ? Number(payload.free) : undefined
@@ -856,10 +873,11 @@
     }
     async function requestCatalog(params, signal) {
       const original = new URLSearchParams(params);
-      const variants = [new URLSearchParams(original), new URLSearchParams(original), new URLSearchParams(original)];
+      // OpenEye's embeddable=1 filter returns only rows with a permitted visible
+      // preview or a usable public-view path, instead of source-only catalogue entries.
+      original.set('embeddable', '1');
+      const variants = [new URLSearchParams(original), new URLSearchParams(original)];
       variants[1].delete('sort');
-      variants[2].delete('sort');
-      variants[2].delete('embeddable');
       let lastError = null;
       let lastEmptyPayload = null;
       const seen = new Set();
@@ -916,7 +934,7 @@
           recordDiagnostic({ endpoint: '/catalog/map → /catalog/{id}', status: 200,
             ms: 0, shape: `${mapPayload?.mode || 'map'} · ${candidateIds.length} IDs · ${fulfilled.length} resolved`,
             rows: records.length, ids: records.length,
-            live: records.filter(record => record.live === true).length,
+            live: records.filter(record => liveFlag(record) === true).length,
             images: records.filter(record => String(record?.view?.render || '').toLowerCase() === 'image').length,
             links: records.filter(record => String(record?.view?.render || '').toLowerCase() === 'link').length,
             none: records.filter(record => String(record?.view?.render || '').toLowerCase() === 'none').length,
@@ -970,7 +988,7 @@
         // the curated featured endpoint is empty or temporarily incomplete.
         if (cameras.length < 6) {
           try {
-            const backfill = await requestCatalog(new URLSearchParams({ limit: '36', sort: 'fresh' }), request.signal);
+            const backfill = await requestCatalog(new URLSearchParams({ limit: '36', sort: 'fresh', embeddable: '1' }), request.signal);
             if (disposed || request.signal.aborted) return;
             cameras = mergeUnique(cameras, itemsFrom(backfill).filter(displayable));
           } catch (backfillError) {
@@ -993,6 +1011,9 @@
         // access/media metadata before deciding whether a camera can be opened.
         cameras = await hydrateCameras(cameras, request.signal, 12);
         if (disposed || request.signal.aborted) return;
+        // Never fill the featured rail with catalogue-only rows that cannot show
+        // a provider-permitted preview or open a confirmed public source page.
+        cameras = cameras.filter(hasDisplayRoute);
         if (hasCategories) renderCategories(categoriesResult.value);
         renderFeatured(cameras);
         if (cameras.length) {
@@ -1025,11 +1046,12 @@
         const payload = await requestCatalog(new URLSearchParams({ bbox: region.bbox, limit: '48', sort: 'fresh' }), request.signal);
         if (disposed || request.signal.aborted) return;
         paginationCursor = nextCursorFrom(payload);
-        const cameras = await hydrateCameras(itemsFrom(payload).filter(displayable), request.signal, 12);
+        const resolved = await hydrateCameras(itemsFrom(payload).filter(displayable), request.signal, 12);
         if (disposed || request.signal.aborted) return;
+        const cameras = resolved.filter(hasDisplayRoute);
         renderResults(cameras, title);
         setStatus(cameras.length ? `${region.title}: ${cameraSummary(cameras)}${paginationCursor ? ' · more results available' : ''}`
-          : `No camera IDs were returned for ${region.title}. Check the Camera connection details below before treating this as an empty region.`, cameras.length ? 'success' : 'error');
+          : `No camera with a permitted preview or confirmed public viewing page is available for ${region.title}. Check Camera connection details below for the provider response.`, cameras.length ? 'success' : 'error');
       } catch (error) {
         if (disposed || request.signal.aborted) return;
         renderResults([], title);
@@ -1052,12 +1074,13 @@
       try {
         const payload = await requestCatalog(new URLSearchParams({ category, limit: '48', sort: 'fresh' }), request.signal);
         if (disposed || request.signal.aborted) return;
-        const cameras = await hydrateCameras(itemsFrom(payload).filter(displayable), request.signal, 12);
+        const resolved = await hydrateCameras(itemsFrom(payload).filter(displayable), request.signal, 12);
         if (disposed || request.signal.aborted) return;
+        const cameras = resolved.filter(hasDisplayRoute);
         paginationCursor = nextCursorFrom(payload);
         renderResults(cameras, title);
         setStatus(cameras.length ? `${title}: ${cameraSummary(cameras)}`
-          : `No camera IDs were returned for ${title.toLowerCase()}. Check the Camera connection details below before treating this as an empty category.`, cameras.length ? 'success' : 'error');
+          : `No camera with a permitted preview or confirmed public viewing page is available for ${title.toLowerCase()}. Check Camera connection details below for the provider response.`, cameras.length ? 'success' : 'error');
       } catch (error) {
         if (disposed || request.signal.aborted) return;
         renderResults([], title);
@@ -1079,12 +1102,13 @@
       try {
         const payload = await requestCatalog(new URLSearchParams({ q: normalized, limit: '48', sort: 'fresh' }), request.signal);
         if (disposed || request.signal.aborted) return;
-        const cameras = await hydrateCameras(itemsFrom(payload).filter(displayable), request.signal, 12);
+        const resolved = await hydrateCameras(itemsFrom(payload).filter(displayable), request.signal, 12);
         if (disposed || request.signal.aborted) return;
+        const cameras = resolved.filter(hasDisplayRoute);
         paginationCursor = nextCursorFrom(payload);
         renderResults(cameras, `Results for “${normalized}”`);
         setStatus(cameras.length ? `Search: ${cameraSummary(cameras)}`
-          : 'No camera IDs matched that search. Check the Camera connection details below for HTTP status and API response counts.', cameras.length ? 'success' : 'error');
+          : 'No camera with a permitted preview or confirmed public viewing page matched that search. Check Camera connection details below for provider status and media counts.', cameras.length ? 'success' : 'error');
       } catch (error) {
         if (disposed || request.signal.aborted) return;
         renderResults([], `Results for “${normalized}”`);
@@ -1108,8 +1132,10 @@
         const payload = await requestCatalog(params, request.signal);
         if (disposed || request.signal.aborted) return;
         paginationCursor = nextCursorFrom(payload);
-        renderResults(itemsFrom(payload), title, { append: true });
-        setStatus(`Showing ${resultCameras.length} eligible previews${paginationCursor ? ' · more cameras are available' : ' · end of these results'}.`, 'success');
+        const resolved = await hydrateCameras(itemsFrom(payload).filter(displayable), request.signal, 12);
+        if (disposed || request.signal.aborted) return;
+        renderResults(resolved.filter(hasDisplayRoute), title, { append: true });
+        setStatus(`Showing ${resultCameras.length} cameras with permitted previews or confirmed public viewing pages${paginationCursor ? ' · more results are available' : ' · end of these results'}.`, 'success');
       } catch (error) {
         if (disposed || request.signal.aborted) return;
         setStatus(`Could not load more cameras. ${error?.message || 'Please try again.'}`, 'error');

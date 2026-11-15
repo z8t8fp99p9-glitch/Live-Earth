@@ -72,3 +72,12 @@ Never infer iPhone acceptance from a green Pages build. Report only checks actua
 - Live video uses a separate WHEP session and may be metered per second. This patch does not silently start or pay for video sessions; the current in-app preview path is still-image based.
 - The Live Cams service-worker cache identity was advanced to force the corrected module to refresh.
 - Source validation only at this checkpoint; GitHub extraction, Pages deployment and iPhone acceptance remain to be verified after upload.
+
+
+## 15 November — Live Cams provider-permission correction
+
+- Live Cams now requests the provider's documented `embeddable=1` catalogue projection for searchable camera results rather than filling result grids with directory-only/source-only rows.
+- Provider-permitted `redistribution.preview_embed` images can be displayed independently of the separate full-feed pricing flag. The application still does not open a publisher page or start any metered video session unless public access is confirmed.
+- Rows without a permitted preview or confirmed public viewing route are excluded from playable result grids and reported as unavailable rather than presented as working feeds.
+- Preview, live/offline, and access labels are kept distinct; still-image previews are not represented as continuous video.
+- Service-worker cache identity: `v135-live-cams-embeddable-results`. Installed-device and provider-response validation remain required.

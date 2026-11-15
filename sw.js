@@ -1,7 +1,7 @@
 /* LIVE // EARTH V127 — EarthEngine root-folder architecture. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v134-live-cams-preview-rotation";
-const CACHE_NAME = "live-earth-shell-v134-live-cams-preview-rotation";
+const BUILD_ID = "v135-live-cams-embeddable-results";
+const CACHE_NAME = "live-earth-shell-v135-live-cams-embeddable-results";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [

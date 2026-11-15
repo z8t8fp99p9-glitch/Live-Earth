@@ -50,3 +50,12 @@ This is a short record of durable decisions, not a log of every experiment or pa
 - Added metadata hydration for incomplete featured/search/category/region rows, then applied strict free-access, freshness and required-attribution checks before enabling media.
 - Added featured-window auto-rotation, swipe and keyboard navigation. Reduced-motion and hidden-document states pause rotation.
 - Live video/WHEP remains a distinct, potentially metered session and is not auto-started or paid for by this patch.
+
+
+## 15 November — Live Cams provider-permission correction
+
+- Follow-up device screenshots confirmed featured rotation was fixed, while featured and category cards still showed `ACCESS UNCONFIRMED` and scenic placeholders.
+- Compared the app's strict preview gate with the current OpenEye camera API and redistribution contract. Preview embedding permission (`redistribution.preview_embed`) is separate from the full-feed pricing flag (`is_free`); the former can authorise an image preview even when the latter is absent.
+- Updated catalogue discovery to request OpenEye's documented `embeddable=1` filter and filtered results to a permitted preview or a confirmed public publisher route.
+- Approved preview images are displayable without opening a paid/full feed. Paid or unknown full-feed access remains closed. No WHEP/live-video session, payment handshake, or recurring paid stream is started by the UI.
+- Still preview frames and continuous live video remain distinct capabilities. This correction targets reliable still-frame previews and safe public-source links; WHEP video playback remains a separate implementation requiring explicit billing-aware design.
