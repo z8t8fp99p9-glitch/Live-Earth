@@ -16,6 +16,7 @@
 - Moon uses `Moon/moon-view-controller.js` and `Moon/moon-lunar-interface.js`.
 - Sun uses `Sun/sun-view-controller.js`; `Global/sky-view-controller.js` provides the shared sky host.
 - Moon and Sun keep separate rendering and view-specific state.
+- The unreferenced `Earth/basic-map.html` / `Earth/basic-map.js` standalone prototype has been retired. The separate `Earth/location.html` / `Earth/earth-orb-globe.js` path remains staged and covered by the Earth Engine separation test; it is not classified as orphaned.
 
 ## Stacks and secondary features
 
@@ -42,4 +43,4 @@ Current data sources: Weather uses Open-Meteo; Clouds uses NASA GIBS; Earthquake
 
 ## Dependency rule
 
-A file referenced by `index.html`, the service worker, update manager, view registry, controller or lazy loader is a runtime dependency even when it looks old. Trace references before removing or moving anything.
+A file referenced by `index.html`, the service worker, update manager, view registry, controller or lazy loader is a runtime dependency even when it looks old. Trace references before removing or moving anything. A file outside those paths is not automatically safe to delete; check tests, documentation and standalone entry points as well.
