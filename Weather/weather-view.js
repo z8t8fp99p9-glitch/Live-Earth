@@ -487,6 +487,8 @@
       const fascia=box(house,timber,0,3.79,z,8.28,.25,.20);
       fascia.rotation.x=(z<0?1:-1)*.025;
     }
+    const gableMat=mat('#49362c',.94);
+    const gableTrim=mat('#8a6041',.78);
     // Layered fascia: a dark shadow line below the warm timber fascia gives
     // the eaves depth instead of reading as one thin flat slab.
     for(const z of [-2.91,2.91]){
@@ -532,8 +534,6 @@
       endCap.scale.set(1,.78,.72);endCap.position.set(0,5.15,z);house.add(endCap);
     }
     // Front and rear triangular gable panels sit beneath the open roof ends.
-    const gableMat=mat('#49362c',.94);
-    const gableTrim=mat('#8a6041',.78);
     function addGable(z,front=true){
       const faceZ=z+(front?.018:-.018);
       const g=new THREE.BufferGeometry();
@@ -797,4 +797,14 @@
    - Retained the established roof footprint, overall pavilion scale, camera,
      Shoji doors, interior, foundation, deck, stairs, rails, lanterns, lighting,
      water, weather systems, forecast UI and Location privacy boundary.
+*/
+
+
+/* LE-WEATHER-PAVILION-ROOF-RECOVERY-V25
+   Critical V24 runtime fix: gableMat and gableTrim were declared after the
+   eaveBracket() loops that use gableTrim. JavaScript therefore threw a
+   ReferenceError during createWorld(), preventing the entire Weather scene
+   from rendering. Moved both material declarations before the bracket helper
+   and its immediate calls. No roof geometry, house geometry, door interaction,
+   weather systems, camera or UI changes in this recovery patch.
 */
