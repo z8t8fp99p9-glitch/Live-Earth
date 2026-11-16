@@ -798,6 +798,18 @@
           }
         }
 
+        // V69 — modest fullness pass: extra sprays on existing wood only.
+        // This increases foliage density without creating new branch geometry.
+        for(let i=0;i<primaryPaths.length;i++)
+          addLeafCluster(primaryPaths[i].path,.56,3,i+1);
+        addLeafCluster(leaderPath,.58,3,2);
+        for(let i=0;i<upperPaths.length;i++)
+          addLeafCluster(upperPaths[i],.54,3,i+3);
+        for(let i=0;i<secondaryPaths.length;i++)
+          addLeafCluster(secondaryPaths[i].path,.54,3,i+2);
+        for(let i=0;i<tertiaryPaths.length;i++)
+          addLeafCluster(tertiaryPaths[i].path,.48,3,i+4);
+
         // Restrained upper accents; the tree's wood remains readable.
         for(let i=0;i<primaryPaths.length;i++){
           addLeafCluster(primaryPaths[i].path,.88,3,i);
@@ -889,7 +901,7 @@
         console.error('[LIVE // EARTH] Natural maple foliage build failed:',error);
       }
       maple.position.set(x,0,z);
-      maple.scale.setScalar(scale);
+      maple.scale.setScalar(scale*.85); // V69: 15% smaller overall maple, position unchanged.
       maple.userData.isMomiji=true;
       maple.userData.stage=renderedLeafCount?'natural-five-lobe-maple-foliage-v61':'branch-skeleton-fallback';
       maple.userData.foliageError=foliageError;
