@@ -967,7 +967,7 @@
         console.error('[LIVE // EARTH] Natural maple foliage build failed:',error);
       }
       maple.position.set(x,0,z);
-      maple.scale.setScalar(scale*.85); // V69: 15% smaller overall maple, position unchanged.
+      maple.scale.setScalar(scale*.765); // Final maple scale: 10% smaller than the previous 85% size.
       maple.userData.isMomiji=true;
       maple.userData.stage=renderedLeafCount?'natural-five-lobe-maple-foliage-v61':'branch-skeleton-fallback';
       maple.userData.foliageError=foliageError;
