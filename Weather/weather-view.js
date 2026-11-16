@@ -501,11 +501,32 @@
       for(let i=0;i<=samples;i++)points.push(roofPoint(face,1,i/samples,offset));
       return points;
     }
-    // Four continuous-looking curved eaves: warm timber, dark shadow and fine trim.
+    // A real timber fascia board gives the curved eave a substantial edge.
+    // Short overlapping mesh sections follow the sampled curve and keep
+    // the board's broad face aligned to the local eave tangent.
+    function addRoofFascia(face,offset=-.125,height=.17,depth=.22){
+      const points=roofEdgePoints(face,64,offset);
+      const axis=new THREE.Vector3(1,0,0);
+      for(let i=0;i<points.length-1;i++){
+        const a=points[i],b=points[i+1];
+        const direction=new THREE.Vector3().subVectors(b,a);
+        const length=direction.length();
+        if(length<.0001)continue;
+        const board=new THREE.Mesh(
+          new THREE.BoxGeometry(length+.018,height,depth),
+          timber
+        );
+        board.position.copy(a).add(b).multiplyScalar(.5);
+        board.quaternion.setFromUnitVectors(axis,direction.normalize());
+        house.add(board);
+      }
+    }
+    // Four layered eaves: rounded outer nosing, substantial timber fascia,
+    // and a fine lower shadow line.
     for(const face of ['left','right','front','back']){
       addRoofBeam(roofEdgePoints(face,64,-.035),.085,timber,8);
-      addRoofBeam(roofEdgePoints(face,64,-.125),.045,roof,7);
-      addRoofBeam(roofEdgePoints(face,64,-.185),.014,gableTrim,6);
+      addRoofFascia(face,-.125,.17,.22);
+      addRoofBeam(roofEdgePoints(face,64,-.225),.014,gableTrim,6);
     }
     // Brackets rise with the same edge profile, keeping the underside coherent.
     function eaveBracket(x,z,side='front',edgeY=roofEaveY){
@@ -926,4 +947,15 @@
    continuous 3D roof rather than separately bent trim pieces.
    Preserves the approved corner-lift function, roof footprint, ridge,
    tile materials, pavilion walls, doors, interior, stairs, rails and UI.
+*/
+
+
+/* LE-WEATHER-PAVILION-ROOF-FASCIA-STRUCTURE-V34
+   Adds a substantial segmented timber fascia board along all four curved
+   eaves. Each short board section follows the local roof-edge tangent,
+   creating a continuous-looking architectural fascia with visible height
+   and depth instead of relying on round tubes alone. Retains the rounded
+   outer nosing and fine lower shadow trim. Roof surface, sori profile,
+   gable, tiles, rafters, ridge, doors, interior, foundations, stairs,
+   rails, camera, scenery and weather UI remain unchanged.
 */
