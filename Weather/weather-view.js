@@ -463,8 +463,9 @@
         }
       }
 
-      // Fine branchlets and terminal twigs: this is the complete exposed
-      // skeleton stage. Every twig is tapered and individually curved.
+      // Fine branchlets and terminal twigs: retain their paths so foliage
+      // can grow directly from the slender wood rather than floating nearby.
+      const terminalPaths=[];
       const twigOffsets=[-.72,.82];
       let fineTwigCount=0;
       for(const parent of tertiaryPaths){
@@ -476,8 +477,9 @@
           const angle=horizontalAngle(tangent)+twigOffsets[j]+signed()*.34;
           const length=.27+rand()*.32;
           const rise=[.24,-.18,-.42,.06][(j+(fineTwigCount%4))%4]+signed()*.10;
-          growBranch(origin,angle,length,rise,signed()*.13,
+          const twigPath=growBranch(origin,angle,length,rise,signed()*.13,
             .0085+rand()*.0035,4,8,.20);
+          terminalPaths.push(twigPath);
           fineTwigCount++;
         }
       }
@@ -494,8 +496,9 @@
           const angle=horizontalAngle(tangent)+(rand()<.5?-.92:.84)+signed()*.22;
           const length=.42+rand()*.34;
           const rise=-.34-rand()*.34;
-          growBranch(origin,angle,length,rise,signed()*.16,
+          const sprayPath=growBranch(origin,angle,length,rise,signed()*.16,
             .014+rand()*.004,3,8,.19);
+          terminalPaths.push(sprayPath);
           hangingSprayCount++;
         }
       }
@@ -507,8 +510,9 @@
           const origin=pointAt(parent.path,t);
           const tangent=tangentAt(parent.path,t);
           const angle=horizontalAngle(tangent)+(rand()<.5?-.62:.71);
-          growBranch(origin,angle,.30+rand()*.19,.12+rand()*.22,
-            signed()*.10,.010,4,4,.10);
+          const forkPath=growBranch(origin,angle,.30+rand()*.19,.12+rand()*.22,
+            signed()*.10,.010,4,8,.16);
+          terminalPaths.push(forkPath);
           fineTwigCount++;
         }
       }
@@ -527,12 +531,130 @@
       barkMesh.receiveShadow=true;
       maple.add(barkMesh);
 
-      // No leaves or foliage meshes are created in V49 by design.
-      // This lets us approve the full woody silhouette before the canopy pass.
+      // V53 — SIX-SHAPE MOMIJI FOLIAGE.
+      // Each leaf is a light, individually-shaped palmate mesh with pointed
+      // lobes and subtle raised veins. Six InstancedMeshes keep draw calls low.
+      // Foliage is placed on the fine terminal twigs and hanging sprays so
+      // the branch skeleton remains visible through the canopy.
+      const leafShapes=[
+        // Five-lobed, broad classic momiji.
+        [[0,-.43],[-.15,-.28],[-.39,-.18],[-.25,-.04],[-.47,.10],[-.25,.20],[-.30,.40],[0,.59],[.30,.40],[.25,.20],[.47,.10],[.25,-.04],[.39,-.18],[.15,-.28]],
+        // Seven-lobed, narrow and deeply cut.
+        [[0,-.46],[-.12,-.31],[-.31,-.23],[-.22,-.11],[-.43,-.02],[-.27,.10],[-.48,.19],[-.25,.25],[-.31,.45],[0,.62],[.31,.45],[.25,.25],[.48,.19],[.27,.10],[.43,-.02],[.22,-.11],[.31,-.23],[.12,-.31]],
+        // Seven-lobed, long fingers with a taller central lobe.
+        [[0,-.45],[-.10,-.29],[-.34,-.20],[-.20,-.08],[-.44,.02],[-.25,.16],[-.38,.39],[0,.68],[.38,.39],[.25,.16],[.44,.02],[.20,-.08],[.34,-.20],[.10,-.29]],
+        // Five-lobed, compact and rounded at the shoulders.
+        [[0,-.40],[-.18,-.25],[-.42,-.12],[-.27,.02],[-.46,.18],[-.20,.24],[-.24,.42],[0,.56],[.24,.42],[.20,.24],[.46,.18],[.27,.02],[.42,-.12],[.18,-.25]],
+        // Seven-lobed, wide with long outer fingers.
+        [[0,-.44],[-.12,-.29],[-.40,-.20],[-.22,-.08],[-.51,.03],[-.27,.15],[-.43,.38],[0,.60],[.43,.38],[.27,.15],[.51,.03],[.22,-.08],[.40,-.20],[.12,-.29]],
+        // Nine-pointed, delicate narrow leaf for the outer sprays.
+        [[0,-.46],[-.09,-.31],[-.28,-.24],[-.18,-.13],[-.39,-.07],[-.22,.04],[-.45,.12],[-.23,.20],[-.34,.42],[0,.64],[.34,.42],[.23,.20],[.45,.12],[.22,.04],[.39,-.07],[.18,-.13],[.28,-.24],[.09,-.31]]
+      ];
+      const leafTints=['#b51f2c','#d3332b','#e34a28','#ef702b','#e7a33a','#8e2638','#c53c55'];
+      const veinTint=new THREE.Color('#563426');
+
+      function makeLeafGeometry(outline){
+        const shape=new THREE.Shape();
+        shape.moveTo(outline[0][0],outline[0][1]);
+        for(let i=1;i<outline.length;i++)shape.lineTo(outline[i][0],outline[i][1]);
+        shape.closePath();
+        const face=new THREE.ShapeGeometry(shape,2);
+        const fp=face.getAttribute('position');
+        const positions=[],colors=[];
+        for(let i=0;i<fp.count;i++){
+          const px=fp.getX(i),py=fp.getY(i);
+          positions.push(px,py,.004*(1-Math.abs(px)*1.4));
+          colors.push(1,1,1);
+        }
+        // Fine central vein and paired side veins are thin triangular strips
+        // integrated into the same geometry, not separate scene objects.
+        function vein(a,b,width){
+          const dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy)||1;
+          const nx=-dy/len*width,ny=dx/len*width;
+          const z=.010;
+          const v=[[a[0]+nx,a[1]+ny,z],[a[0]-nx,a[1]-ny,z],
+                   [b[0]-nx*.28,b[1]-ny*.28,z],[b[0]+nx*.28,b[1]+ny*.28,z]];
+          for(const q of [v[0],v[1],v[2],v[0],v[2],v[3]]){
+            positions.push(q[0],q[1],q[2]);
+            colors.push(veinTint.r,veinTint.g,veinTint.b);
+          }
+        }
+        vein([0,-.39],[0,.54],.009);
+        const sideTips=outline.filter(q=>Math.abs(q[0])>.30&&q[1]>-.12);
+        for(const tip of sideTips)vein([0,tip[1]*.43],tip,.0045);
+        const g=new THREE.BufferGeometry();
+        g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+        g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+        g.computeVertexNormals();
+        face.dispose();
+        return g;
+      }
+
+      const leafGeometries=leafShapes.map(makeLeafGeometry);
+      const leafMaterial=new THREE.MeshStandardMaterial({
+        color:'#ffffff',vertexColors:true,roughness:.88,metalness:0,
+        side:THREE.DoubleSide
+      });
+      const leafBuckets=leafShapes.map(()=>[]);
+      const leafAxis=new THREE.Vector3(0,1,0);
+      const leafDummy=new THREE.Object3D();
+      let leafIndex=0;
+      function addLeafCluster(path,t,clusterSize=2){
+        const origin=pointAt(path,t);
+        const tangent=tangentAt(path,t);
+        for(let k=0;k<clusterSize;k++){
+          const shapeIndex=(leafIndex*5+Math.floor(rand()*6))%leafShapes.length;
+          const direction=tangent.clone().add(new THREE.Vector3(
+            signed()*.54,.10+signed()*.42,signed()*.54)).normalize();
+          const jitter=new THREE.Vector3(signed()*.075,signed()*.065,signed()*.075);
+          leafDummy.position.copy(origin).add(jitter);
+          leafDummy.quaternion.setFromUnitVectors(leafAxis,direction);
+          leafDummy.rotateY(rand()*Math.PI*2);
+          leafDummy.rotateZ(signed()*.30);
+          const size=.72+rand()*.48;
+          const shapeAspect=[1.00,.92,1.08,.88,1.12,.96][shapeIndex];
+          leafDummy.scale.set(size*shapeAspect,size*(.92+rand()*.20),size*.72);
+          leafDummy.updateMatrix();
+          const tint=new THREE.Color(leafTints[Math.floor(rand()*leafTints.length)]);
+          leafBuckets[shapeIndex].push({matrix:leafDummy.matrix.clone(),tint});
+          leafIndex++;
+        }
+      }
+
+      // Three small clusters per fine twig create a connected, airy canopy.
+      for(const path of terminalPaths){
+        addLeafCluster(path,.56,2);
+        addLeafCluster(path,.82,2+(rand()<.38?1:0));
+        addLeafCluster(path,.98,2);
+      }
+      // A lighter touch on the outer tertiary tips fills gaps without hiding
+      // the branching structure or forming a continuous hedge-like blob.
+      for(const parent of tertiaryPaths){
+        addLeafCluster(parent,.84,2);
+      }
+
+      let renderedLeafCount=0;
+      for(let i=0;i<leafBuckets.length;i++){
+        const bucket=leafBuckets[i];
+        if(!bucket.length)continue;
+        const foliage=new THREE.InstancedMesh(leafGeometries[i],leafMaterial,bucket.length);
+        foliage.name='MomijiLeafShape'+(i+1);
+        foliage.castShadow=false;
+        foliage.receiveShadow=false;
+        for(let j=0;j<bucket.length;j++){
+          foliage.setMatrixAt(j,bucket[j].matrix);
+          foliage.setColorAt(j,bucket[j].tint);
+        }
+        foliage.instanceMatrix.needsUpdate=true;
+        if(foliage.instanceColor)foliage.instanceColor.needsUpdate=true;
+        maple.add(foliage);
+        renderedLeafCount+=bucket.length;
+      }
+
       maple.position.set(x,0,z);
       maple.scale.setScalar(scale);
       maple.userData.isMomiji=true;
-      maple.userData.stage='branch-skeleton';
+      maple.userData.stage='six-shape-maple-foliage';
       maple.userData.branchCount={
         trunk:1,
         roots:rootSpecs.length,
@@ -546,15 +668,16 @@
           1+upperSpecs.length+secondaryPaths.length+
           tertiaryPaths.length+fineTwigCount
       };
-      maple.userData.leafCount=0;
+      maple.userData.leafCount=renderedLeafCount;
+      maple.userData.leafShapeCount=leafShapes.length;
+      maple.userData.leafShapeInstances=leafBuckets.map(bucket=>bucket.length);
       maple.userData.branchPathCount=pathCount;
       scene.add(maple);
       return maple;
     }
-    // V52 — SMOOTH MAPLE WOOD: doubled radial tube resolution, denser curve
-    // sampling, restrained bark contour variation and softer branch taper.
-    // Large-limb collars remain; small branch junctions no longer form knobs.
-    // V51's multi-directional skeleton and tested tree placement are preserved.
+    // V53 — SIX-SHAPE MOMIJI FOLIAGE: five-, seven- and nine-point leaf
+    // silhouettes with size variation, integrated fine veins and autumn colour.
+    // Instanced on terminal twigs and hanging sprays; V52 smooth wood retained.
     const momiji=createMomiji(3.02,4.72,.92);trees.push(momiji);
 
     // Main architectural landmark: open pavilion with curved eaves, columns and lanterns.
