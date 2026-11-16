@@ -1,19 +1,19 @@
-# Weather 3D — Fuji Garden Scene v16
+# Weather 3D — Pavilion Rotation v17
 
-## Rear dark-green ridge refinement
-- Lower only the distant dark-green rolling ridge: its peak parameter changes from `13` to `8.5` (approximately 35% lower).
-- Preserve its horizontal span, depth range, continuous geometry, material and gently varied crest.
-- Keep the middle green ridge (`peak = 10`) and nearer green ridge (`peak = 7`) unchanged.
-- Retain the established three-layer rolling landscape and original green palette.
+## Pavilion refinement
+- Rotate the complete Japanese pavilion group 20 degrees clockwise around its vertical axis (`rotation.y = 20°`).
+- Apply rotation to the parent `house` group so the roof, eaves, walls, shoji divisions, columns and lanterns remain aligned as one structure.
+- Preserve the pavilion's existing position `(0, 0, -1.4)`, dimensions, materials and component geometry.
+- Do not rotate the camera, ground, hills, Mount Fuji, trees, water or weather layers.
 
-## Mount Fuji and composition lock
-- Preserve the approved Mount Fuji height (`0.54` vertical scale) and rightward position (`x = +3.75`).
-- Preserve Fuji depth (`z = -64`), grounded origin (`y = 6.048`), width, snow cap, colours and materials.
+## Approved scenery and composition lock
+- Preserve the V16 three-layer rolling hills and the lowered distant dark-green ridge.
+- Preserve Mount Fuji height (`0.54` vertical scale), rightward position (`x = +3.75`), depth (`z = -64`) and grounded origin (`y = 6.048`).
 - Preserve the approved front-facing camera: position `(0, 7.0, 27.7)`, target `(0, 2.5, -1.4)`, FOV `42°`.
 - Preserve the centred square canvas in Portrait and Landscape.
-- Do not move the pavilion, garden trees, water, stepping stones, clouds, lighting, weather effects, forecast UI or Location permission flow.
+- Keep forecast UI, weather effects, Location permission flow and feature lifecycle unchanged.
 
 ## Upgrade and verification
-- The service-worker extension upgrades an already-transformed V15 Weather module by locating the continuous-terrain marker and replacing the full terrain section up to the Fuji group.
-- Only the distant ridge height changes; the two nearer ridge definitions and all approved Fuji/camera values are retained.
-- The transformed module is returned only after checks confirm the lowered ridge, both unchanged ridge definitions, Fuji, camera and tree layout.
+- The service-worker extension upgrades an already-cached V16 Weather module by inserting the rotation on the existing `house` group anchor.
+- A refinement marker prevents duplicate rotation.
+- The transformed module is returned only after checks confirm the 20-degree rotation, pavilion marker, approved Fuji values, rear ridge and camera.
