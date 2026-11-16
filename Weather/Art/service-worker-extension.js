@@ -1,6 +1,6 @@
-/* LIVE // EARTH — Weather Fuji garden scenery refinement.
- * Preserves V9 camera, Fuji, garden trees, pavilion and square composition.
- * Rear green hills are reduced to 55% of their former vertical height.
+/* LIVE // EARTH — Weather V12 scenery refinement.
+ * Preserves the approved front-facing camera and square canvas.
+ * Reduces rear hills by 45% and Mount Fuji by 40%, keeping Fuji grounded.
  */
 (() => {
   'use strict';
@@ -11,15 +11,9 @@
   const weatherPath = new URL('./Weather/weather-view.js', self.registration.scope).pathname;
   const cameraMarker = 'LE-SQUARE-WORLD-CAMERA-V9';
   const sceneMarker = 'LE-WEATHER-FUJI-GARDEN-V2';
-  const hillMarker = 'LE-WEATHER-HILLS-HEIGHT-55-V1';
-  const fujiMarker = 'LE-WEATHER-FUJI-HEIGHT-60-V1';
-  const priorCameraMarkers = [
-    'LE-SQUARE-WORLD-CAMERA-V8','LE-SQUARE-WORLD-CAMERA-V7',
-    'LE-SQUARE-WORLD-CAMERA-V6','LE-SQUARE-WORLD-CAMERA-V5',
-    'LE-SQUARE-WORLD-CAMERA-V4','LE-SQUARE-WORLD-CAMERA-V3',
-    'LE-SQUARE-WORLD-CAMERA-V2','LE-SQUARE-WORLD-CAMERA-V1'
-  ];
-  const priorSceneMarkers = ['LE-WEATHER-FUJI-GARDEN-V1'];
+  const hillsMarker = 'LE-WEATHER-HILLS-HEIGHT-55-V2';
+  const fujiMarker = 'LE-WEATHER-FUJI-HEIGHT-60-V2';
+  const versionMarker = 'LE-WEATHER-SCENERY-V12';
 
   const originalCanvasRule =
     '.le-weather-v2 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:pan-y}';
@@ -37,14 +31,14 @@
   const sceneryBlock = [
     "    const groundMat=mat('#344e42'),hillMats=['#274a45','#315951','#3d665c'].map(c=>mat(c));",
     '    const ground=new THREE.Mesh(new THREE.PlaneGeometry(180,180),groundMat);ground.rotation.x=-Math.PI/2;ground.position.y=-.18;scene.add(ground);',
-    `    // ${sceneMarker}: Fuji is distant; ${hillMarker} preserves hill footprints while lowering their crests.`,
-    '    function hill(x,z,sx,sy,sz,index){const geo=new THREE.IcosahedronGeometry(1,2);const m=new THREE.Mesh(geo,hillMats[index%hillMats.length]);m.position.set(x,-.05*sy,z);m.scale.set(sx,.55*sy,sz);scene.add(m);return m;}',
+    `    // ${sceneMarker} ${hillsMarker}: preserve hill bases and footprints while lowering the crests.`,
+    '    function hill(x,z,sx,sy,sz,index){const geo=new THREE.IcosahedronGeometry(1,2);const m=new THREE.Mesh(geo,hillMats[index%hillMats.length]);m.position.set(x,0,z);m.scale.set(sx,.55*sy,sz);scene.add(m);return m;}',
     '    const rearHills=[',
     '      [-25,-34,12,7,8,0],[-17,-31,10,6,7,1],[-8,-36,12,7,8,2],[8,-35,13,7,8,0],[20,-32,11,6,8,1],[29,-36,13,7,9,2],',
     '      [-32,-25,9,5,7,1],[-20,-25,10,5.5,7,2],[20,-26,10,5.5,7,0],[33,-25,9,5,7,1]',
     '    ];',
     '    rearHills.forEach(([x,z,sx,sy,sz,index])=>hill(x,z,sx,sy,sz,index));',
-    '    const fujiGroup=new THREE.Group();fujiGroup.position.set(0,6.72,-64);fujiGroup.scale.y=.60;fujiGroup.userData.refinement='LE-WEATHER-FUJI-HEIGHT-60-V1';scene.add(fujiGroup);',
+    `    const fujiGroup=new THREE.Group();fujiGroup.position.set(0,6.72,-64);fujiGroup.scale.y=.60;fujiGroup.userData.refinement='${fujiMarker}';scene.add(fujiGroup);`,
     "    const fujiBodyMat=new THREE.MeshStandardMaterial({color:'#657985',roughness:1});",
     '    const fujiBody=new THREE.Mesh(new THREE.ConeGeometry(25,22,96,8),fujiBodyMat);fujiGroup.add(fujiBody);',
     '    const snowVertices=[0,11,0],snowIndices=[],snowSegments=96;',
@@ -70,25 +64,15 @@
   ].join('\n');
 
   function transformSource(source) {
-    if (source.includes(cameraMarker) && source.includes(sceneMarker) && source.includes(hillMarker) && source.includes(fujiMarker)) return null;
+    if (source.includes(versionMarker)) return null;
     let updated = source;
     let changed = false;
-
-    const hasOldCamera = priorCameraMarkers.some(m => updated.includes(m));
-    if (hasOldCamera) {
-      for (const marker of priorCameraMarkers) updated = updated.replaceAll(marker, cameraMarker);
-      changed = true;
-    }
-    const hasOldScene = priorSceneMarkers.some(m => updated.includes(m));
-    if (hasOldScene) {
-      for (const marker of priorSceneMarkers) updated = updated.replaceAll(marker, sceneMarker);
-      changed = true;
-    }
 
     updated = updated.replace(
       '\n      @media(orientation:landscape){.le-weather-v2 canvas{left:calc(50% - 30vw)!important}}',
       ''
     );
+
     if (updated.includes(originalCanvasRule) && !updated.includes(cameraMarker)) {
       updated = updated.replace(originalCanvasRule, centredCanvasRule);
       changed = true;
@@ -101,52 +85,52 @@
       changed = true;
     }
 
-    // Upgrade an already-patched V9 scene without rebuilding or moving other scenery.
-    const oldHillFunction = 'function hill(x,z,sx,sy,sz,index){const geo=new THREE.IcosahedronGeometry(1,2);const m=new THREE.Mesh(geo,hillMats[index%hillMats.length]);m.position.set(x,sy*.40,z);m.scale.set(sx,sy,sz);scene.add(m);return m;}';
-    const reducedHillFunction = 'function hill(x,z,sx,sy,sz,index){const geo=new THREE.IcosahedronGeometry(1,2);const m=new THREE.Mesh(geo,hillMats[index%hillMats.length]);m.position.set(x,-.05*sy,z);m.scale.set(sx,.55*sy,sz);scene.add(m);return m;}';
-    if (updated.includes(oldHillFunction) && !updated.includes(hillMarker)) {
-      updated = updated.replace(oldHillFunction, reducedHillFunction);
-      updated = updated.replace(sceneMarker + ': Fuji is distant; layered hills restore the original garden depth.',
-        sceneMarker + ': Fuji is distant; ' + hillMarker + ' preserves hill footprints while lowering their crests.');
+    // Upgrade a cached V9 scene in place, retaining all other scene objects.
+    const oldHillFunction = /function hill\(x,z,sx,sy,sz,index\)\{const (?:geo=new THREE\.IcosahedronGeometry\(1,2\);)?const m=new THREE\.Mesh\((?:new THREE\.IcosahedronGeometry\(1,2\)|geo),hillMats\[index%hillMats\.length\]\);m\.position\.set\(x,(?:sy\*\.40|sy\*\.45),z\);m\.scale\.set\(sx,sy,sz\);scene\.add\(m\);return m;\}/;
+    if (oldHillFunction.test(updated)) {
+      updated = updated.replace(oldHillFunction,
+        'function hill(x,z,sx,sy,sz,index){const geo=new THREE.IcosahedronGeometry(1,2);const m=new THREE.Mesh(geo,hillMats[index%hillMats.length]);m.position.set(x,0,z);m.scale.set(sx,.55*sy,sz);scene.add(m);return m;}');
+      updated = updated.replace(sceneMarker, sceneMarker + ' ' + hillsMarker);
       changed = true;
     }
 
-    // Lower Mount Fuji by 40% vertically while keeping its width and ground contact.
-    const oldFujiTransform = "const fujiGroup=new THREE.Group();fujiGroup.position.set(0,11.2,-64);scene.add(fujiGroup);";
-    const reducedFujiTransform = "const fujiGroup=new THREE.Group();fujiGroup.position.set(0,6.72,-64);fujiGroup.scale.y=.60;fujiGroup.userData.refinement='LE-WEATHER-FUJI-HEIGHT-60-V1';scene.add(fujiGroup);";
-    if (updated.includes(oldFujiTransform) && !updated.includes(fujiMarker)) {
-      updated = updated.replace(oldFujiTransform, reducedFujiTransform);
+    const oldFuji = "const fujiGroup=new THREE.Group();fujiGroup.position.set(0,11.2,-64);scene.add(fujiGroup);";
+    const reducedFuji = `const fujiGroup=new THREE.Group();fujiGroup.position.set(0,6.72,-64);fujiGroup.scale.y=.60;fujiGroup.userData.refinement='${fujiMarker}';scene.add(fujiGroup);`;
+    if (updated.includes(oldFuji)) {
+      updated = updated.replace(oldFuji, reducedFuji);
       changed = true;
     }
-    // Existing injected scenery block already carries the reduced Fuji transform.
-    if (updated.includes(reducedFujiTransform)) changed = true;
 
-    // Replace the rear landscape block when upgrading the original source.
+    // Transform the original procedural world block into the layered Fuji scene.
     const worldPattern = /    const groundMat=mat\('#344e42'\)(?:,[\s\S]*?)?;\n    const ground=new THREE\.Mesh\(new THREE\.PlaneGeometry\(180,180\),groundMat\);[\s\S]*?(?=    const waterMat=)/;
-    if (worldPattern.test(updated) && !updated.includes('fujiGroup.position.set(0,6.72,-64)') && updated.includes('fujiGroup.scale.y=.60')) {
+    if (worldPattern.test(updated) && !updated.includes('const fujiGroup=')) {
       updated = updated.replace(worldPattern, sceneryBlock + '\n');
       changed = true;
     }
 
-    const treePattern = /    const trees=\[\];[\s\S]*?(?=\n    \/\/ Main architectural landmark)/;
+    // Restore the balanced side-tree layout only when transforming the original tree loop.
+    const treePattern = /    const trees=\[\];for\(let i=0;i<18;i\+\+\)\{[\s\S]*?\}\n    \/\/ Main architectural landmark/;
     if (treePattern.test(updated) && !updated.includes('const treeLayout=')) {
-      updated = updated.replace(treePattern, treeBlock);
+      updated = updated.replace(treePattern, treeBlock + '\n    // Main architectural landmark');
       changed = true;
     }
 
     if (!changed) return null;
-    return updated.includes(cameraMarker) && updated.includes(sceneMarker) &&
-      updated.includes(hillMarker) && updated.includes(fujiMarker) && updated.includes(frontResize) &&
-      updated.includes('fujiGroup.position.set(0,6.72,-64)') && updated.includes('fujiGroup.scale.y=.60') &&
-      updated.includes('m.scale.set(sx,.55*sy,sz)') && updated.includes(fujiMarker) &&
-      updated.includes('const treeLayout=') &&
-      !updated.includes('left:calc(50% - 30vw)') ? updated : null;
+    const hasFuji = updated.includes(`fujiGroup.userData.refinement='${fujiMarker}'`) &&
+      updated.includes('fujiGroup.scale.y=.60') &&
+      updated.includes('fujiGroup.position.set(0,6.72,-64)');
+    const hasHills = updated.includes('m.scale.set(sx,.55*sy,sz)') && updated.includes(hillsMarker);
+    const hasCamera = updated.includes(frontResize) && updated.includes(cameraMarker);
+    const hasTrees = updated.includes('const treeLayout=');
+    if (!hasFuji || !hasHills || !hasCamera || !hasTrees ||
+        updated.includes('left:calc(50% - 30vw)')) return null;
+    return updated + `\n/* ${versionMarker} */\n`;
   }
 
   async function rewriteWeatherResponse(response) {
     if (!response || !response.ok || response.type === 'opaque') return null;
     const source = await response.clone().text();
-    if (source.includes(cameraMarker) && source.includes(sceneMarker) && source.includes(hillMarker) && source.includes(fujiMarker)) return null;
+    if (source.includes(versionMarker)) return null;
     const updated = transformSource(source);
     if (!updated) return null;
     const headers = new Headers(response.headers);
@@ -164,8 +148,8 @@
     if(patched)return patched;
     if(response.ok){
       const source=await response.clone().text();
-      if(!source.includes(cameraMarker)||!source.includes(sceneMarker)||!source.includes(hillMarker))
-        console.error('[LIVE // EARTH] Fuji garden/hill refinement did not match; original Weather response preserved.');
+      if(!source.includes(versionMarker))
+        console.error('[LIVE // EARTH] Weather V12 scenery transform did not match; original Weather response preserved.');
     }
     return response;
   };
