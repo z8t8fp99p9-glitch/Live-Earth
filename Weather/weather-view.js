@@ -1025,46 +1025,104 @@
     // all established tree placements remain untouched. Composition follows
     // the supplied reference: stone lantern on the left, sculpted green pine
     // as a quiet counterweight behind it.
+
     const gardenLantern=new THREE.Group();
-    const lanternStone=mat('#77776c',.94),lanternEdge=mat('#969184',.9),
-      lanternDark=mat('#343a39',.82),lanternGlow=new THREE.MeshStandardMaterial({
-        color:'#ffc66f',emissive:'#ff9a35',emissiveIntensity:2.15,
-        roughness:.48
-      });
+    const lanternStone=mat('#77766d',.97),lanternCutStone=mat('#8c897e',.94),
+      lanternShadow=mat('#343a38',.88),lanternBronze=mat('#665b49',.86);
+    const lanternGlow=new THREE.MeshStandardMaterial({
+      color:'#ffd28a',emissive:'#ff9e42',emissiveIntensity:1.65,
+      roughness:.52
+    });
+    const lanternLight=new THREE.PointLight(0xffb65f,1.05,4.8,2);
+    lanternLight.position.set(0,1.88,.05);gardenLantern.add(lanternLight);
     function lanternBox(parent,material,x,y,z,sx,sy,sz){
       const mesh=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),material);
       mesh.position.set(x,y,z);parent.add(mesh);return mesh;
     }
-    // Broad foot, tapered stone shaft and cap create a traditional yukimi-style
-    // garden lantern silhouette without relying on external models or textures.
-    const lanternFoot=new THREE.Mesh(new THREE.BoxGeometry(1.05,.22,.92),lanternStone);
-    lanternFoot.position.y=.12;gardenLantern.add(lanternFoot);
-    const lanternFootLip=new THREE.Mesh(new THREE.BoxGeometry(.91,.10,.78),lanternEdge);
-    lanternFootLip.position.y=.28;gardenLantern.add(lanternFootLip);
-    const lanternStem=new THREE.Mesh(new THREE.CylinderGeometry(.25,.39,1.02,8),lanternStone);
-    lanternStem.position.y=.84;gardenLantern.add(lanternStem);
-    const lanternCollar=new THREE.Mesh(new THREE.BoxGeometry(.86,.16,.78),lanternEdge);
-    lanternCollar.position.y=1.39;gardenLantern.add(lanternCollar);
-    const chamber=new THREE.Group();chamber.position.y=1.78;gardenLantern.add(chamber);
-    lanternBox(chamber,lanternDark,0,.28,0,.86,.66,.78);
-    lanternBox(chamber,lanternGlow,0,.28,.397,.48,.43,.018);
-    lanternBox(chamber,lanternGlow,0,.28,-.397,.48,.43,.018);
-    lanternBox(chamber,lanternGlow,.437,.28,0,.018,.43,.46);
-    lanternBox(chamber,lanternGlow,-.437,.28,0,.018,.43,.46);
-    for(const x of [-.36,.36])for(const z of [-.32,.32]){
-      const post=new THREE.Mesh(new THREE.BoxGeometry(.075,.72,.075),lanternEdge);
-      post.position.set(x,.28,z);chamber.add(post);
+    function lanternCylinder(parent,material,top,bottom,height,y,segments=8){
+      const mesh=new THREE.Mesh(new THREE.CylinderGeometry(top,bottom,height,segments),material);
+      mesh.position.y=y;parent.add(mesh);return mesh;
     }
-    const chamberTop=new THREE.Mesh(new THREE.BoxGeometry(1.02,.13,.94),lanternEdge);
-    chamberTop.position.y=.67;chamber.add(chamberTop);
-    const lanternRoof=new THREE.Mesh(new THREE.CylinderGeometry(.12,.78,.30,4,1),lanternStone);
-    lanternRoof.rotation.y=Math.PI/4;lanternRoof.position.y=2.52;gardenLantern.add(lanternRoof);
-    const roofCap=new THREE.Mesh(new THREE.BoxGeometry(1.48,.12,1.34),lanternEdge);
-    roofCap.position.y=2.65;gardenLantern.add(roofCap);
-    const roofCrown=new THREE.Mesh(new THREE.SphereGeometry(.16,8,6),lanternStone);
-    roofCrown.position.y=2.79;gardenLantern.add(roofCrown);
+    // KISO — broad, octagonal foundation with a softened two-step stone foot.
+    lanternCylinder(gardenLantern,lanternStone,.48,.53,.18,.12,8);
+    lanternCylinder(gardenLantern,lanternCutStone,.39,.44,.10,.25,8);
+    const footShoulder=new THREE.Mesh(new THREE.CylinderGeometry(.31,.39,.16,8),lanternStone);
+    footShoulder.position.y=.38;gardenLantern.add(footShoulder);
+    // SAO — subtly tapered shaft, with a restrained carved collar.
+    lanternCylinder(gardenLantern,lanternStone,.205,.285,.94,.91,8);
+    lanternCylinder(gardenLantern,lanternCutStone,.29,.31,.09,1.39,8);
+    lanternCylinder(gardenLantern,lanternBronze,.235,.235,.045,1.47,8);
+
+    // CHŪDAI — projecting lotus-like support platform beneath the firebox.
+    lanternCylinder(gardenLantern,lanternStone,.53,.48,.17,1.57,8);
+    lanternCylinder(gardenLantern,lanternCutStone,.47,.43,.075,1.69,8);
+    const chamber=new THREE.Group();chamber.position.y=1.73;gardenLantern.add(chamber);
+    // A dark, recessed six-sided chamber; the warm core sits behind real openings.
+    const chamberCore=new THREE.Mesh(new THREE.CylinderGeometry(.315,.315,.54,6),lanternShadow);
+    chamberCore.position.y=.31;chamber.add(chamberCore);
+    const glowingCore=new THREE.Mesh(new THREE.CylinderGeometry(.245,.245,.39,6),lanternGlow);
+    glowingCore.position.set(0,.31,0);chamber.add(glowingCore);
+    // Six stone corner piers and lintels leave generous open window bays.
+    for(let i=0;i<6;i++){
+      const a=i*Math.PI/3+Math.PI/6;
+      const x=Math.cos(a)*.39,z=Math.sin(a)*.39;
+      const pier=new THREE.Mesh(new THREE.BoxGeometry(.075,.66,.075),lanternCutStone);
+      pier.position.set(x,.31,z);pier.rotation.y=-a;chamber.add(pier);
+      const sill=new THREE.Mesh(new THREE.BoxGeometry(.17,.075,.075),lanternStone);
+      sill.position.set(x,.045,z);sill.rotation.y=-a;chamber.add(sill);
+    }
+    lanternCylinder(chamber,lanternCutStone,.48,.43,.105,.70,6);
+    lanternCylinder(chamber,lanternStone,.40,.43,.07,.77,6);
+    // Small cross-bars and a recessed lower lip give the openings architectural depth.
+    lanternCylinder(chamber,lanternShadow,.31,.31,.035,.08,6);
+
+    // KASA — a six-sided stone umbrella roof with raised corners and gently
+    // dipping eave centres, rather than a simple cone or flat cap.
+    const roofGeometry=new THREE.BufferGeometry();
+    const roofPositions=[],roofIndices=[];
+    const roofApex=[0,2.53,0];
+    const roofRing=[];
+    for(let i=0;i<12;i++){
+      const a=i*Math.PI/6+Math.PI/6;
+      const corner=i%2===0;
+      const radius=corner?.91:.78;
+      const y=corner?2.43:2.30;
+      roofRing.push([Math.cos(a)*radius,y,Math.sin(a)*radius]);
+    }
+    roofPositions.push(...roofApex);
+    roofRing.forEach(v=>roofPositions.push(...v));
+    for(let i=0;i<12;i++)roofIndices.push(0,i+1,((i+1)%12)+1);
+    roofGeometry.setAttribute('position',new THREE.Float32BufferAttribute(roofPositions,3));
+    roofGeometry.setIndex(roofIndices);roofGeometry.computeVertexNormals();
+    const roofMesh=new THREE.Mesh(roofGeometry,new THREE.MeshStandardMaterial({
+      color:'#77766d',roughness:.98,side:THREE.DoubleSide
+    }));
+    gardenLantern.add(roofMesh);
+    // Deep eave underside and stepped edge band.
+    const eaveBand=new THREE.Mesh(new THREE.CylinderGeometry(.87,.87,.105,6),lanternCutStone);
+    eaveBand.position.y=2.34;gardenLantern.add(eaveBand);
+    const eaveShadow=new THREE.Mesh(new THREE.CylinderGeometry(.79,.79,.045,6),lanternShadow);
+    eaveShadow.position.y=2.275;gardenLantern.add(eaveShadow);
+    // Slightly lifted tips at all six roof corners.
+    for(let i=0;i<6;i++){
+      const a=i*Math.PI/3+Math.PI/6;
+      const tip=new THREE.Mesh(new THREE.SphereGeometry(.075,7,5),lanternCutStone);
+      tip.position.set(Math.cos(a)*.89,2.43,Math.sin(a)*.89);
+      tip.scale.set(1.3,.55,1.3);gardenLantern.add(tip);
+    }
+    // UKEBANA and HŌJU — lotus boss and carved jewel finial.
+    lanternCylinder(gardenLantern,lanternCutStone,.19,.15,.09,2.48,8);
+    const jewel=new THREE.Mesh(new THREE.SphereGeometry(.115,8,7),lanternStone);
+    jewel.position.y=2.64;jewel.scale.set(.82,1.3,.82);gardenLantern.add(jewel);
+    const finialTip=new THREE.Mesh(new THREE.ConeGeometry(.075,.17,7),lanternCutStone);
+    finialTip.position.y=2.78;gardenLantern.add(finialTip);
+
+    // Restrained stone seams and a subtle warm spill at the foot.
+    const lanternBaseGlow=new THREE.PointLight(0xffa94d,.16,2.0,2);
+    lanternBaseGlow.position.set(0,.25,.18);gardenLantern.add(lanternBaseGlow);
     gardenLantern.position.set(-5.25,0,2.65);
     gardenLantern.scale.setScalar(.78);
+    gardenLantern.userData.style='Kasuga-inspired six-sided ishi-doro';
     scene.add(gardenLantern);
 
     // Low, layered evergreen with gently spreading, irregular pine pads.
