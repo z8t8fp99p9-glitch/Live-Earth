@@ -1,6 +1,6 @@
 /* LIVE // EARTH — Weather square-world camera extension.
- * Fixed 1:1 display-centric canvas with a pulled-back, house-centred camera.
- * The physical display remains a centred crop window into the square world.
+ * Fixed 1:1 display-centric canvas with a pulled-back camera.
+ * Landscape uses a temporary 30% leftward canvas offset; Portrait stays centred.
  */
 (() => {
   'use strict';
@@ -12,15 +12,19 @@
   if (!APP_SHELL.includes(rendererPath)) APP_SHELL.push(rendererPath);
 
   const weatherPath = new URL('./Weather/weather-view.js', self.registration.scope).pathname;
-  const patchMarker = 'LE-SQUARE-WORLD-CAMERA-V2';
-  const previousMarker = 'LE-SQUARE-WORLD-CAMERA-V1';
+  const patchMarker = 'LE-SQUARE-WORLD-CAMERA-V3';
+  const previousMarkers = [
+    'LE-SQUARE-WORLD-CAMERA-V2',
+    'LE-SQUARE-WORLD-CAMERA-V1'
+  ];
 
   const originalCanvasRule =
     '.le-weather-v2 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:pan-y}';
 
   const squareCanvasRule = originalCanvasRule + `
-      /* ${patchMarker}: fixed square stage, centred and cropped by the display */
-      .le-weather-v2 canvas{position:absolute!important;inset:auto!important;left:50%!important;top:50%!important;width:100vmax!important;height:100vmax!important;max-width:none!important;max-height:none!important;transform:translate(-50%,-50%)!important;display:block;z-index:0;touch-action:pan-y}`;
+      /* ${patchMarker}: square canvas; Landscape shifts the entire world left 30% */
+      .le-weather-v2 canvas{position:absolute!important;inset:auto!important;left:50%!important;top:50%!important;width:100vmax!important;height:100vmax!important;max-width:none!important;max-height:none!important;transform:translate(-50%,-50%)!important;display:block;z-index:0;touch-action:pan-y}
+      @media(orientation:landscape){.le-weather-v2 canvas{left:calc(50% - 30vw)!important}}`;
 
   const originalResize =
     'function resize(){const r=canvas.getBoundingClientRect();width=Math.max(1,r.width);height=Math.max(1,r.height);renderer.setSize(width,height,false);camera.aspect=width/height;camera.position.set(width>height?0:0, width>height?6.1:7.2, width>height?20:18);camera.fov=width>height?38:42;camera.updateProjectionMatrix();}';
@@ -28,21 +32,23 @@
   const previousSquareResize =
     'function resize(){const r=canvas.getBoundingClientRect();const side=Math.max(1,r.width,r.height);width=side;height=side;renderer.setSize(side,side,false);camera.aspect=1;camera.position.set(0,7.2,18);camera.fov=42;camera.lookAt(0,2.5,-1.4);camera.updateProjectionMatrix();}';
 
-  // Pull back 1.5x along the exact same camera ray. The target and viewing
-  // direction stay fixed, so the pavilion remains centred while more lake,
-  // garden and sky enter the square composition.
   const squareResize =
     'function resize(){const r=canvas.getBoundingClientRect();const side=Math.max(1,r.width,r.height);width=side;height=side;renderer.setSize(side,side,false);camera.aspect=1;camera.position.set(0,9.55,27.7);camera.fov=42;camera.lookAt(0,2.5,-1.4);camera.updateProjectionMatrix();}';
 
   function transformSource(source) {
     if (source.includes(patchMarker)) return null;
 
-    // Upgrade a client that already has the first square-world package cached.
-    if (source.includes(previousMarker) && source.includes(previousSquareResize)) {
-      const upgraded = source
-        .replaceAll(previousMarker, patchMarker)
-        .replace(previousSquareResize, squareResize);
-      return upgraded.includes(patchMarker) && upgraded.includes(squareResize) ? upgraded : null;
+    // Upgrade any previously installed square-world build, including V1.
+    for (const previousMarker of previousMarkers) {
+      if (!source.includes(previousMarker)) continue;
+      let updated = source.replaceAll(previousMarker, patchMarker);
+      if (updated.includes(previousSquareResize)) {
+        updated = updated.replace(previousSquareResize, squareResize);
+      }
+      if (updated.includes(patchMarker) && updated.includes(squareResize)) {
+        return updated;
+      }
+      return null;
     }
 
     // First installation from the original responsive-camera renderer.
@@ -73,8 +79,6 @@
     });
   }
 
-  // Patch the live network response before the main service worker caches it.
-  // All other requests pass through untouched.
   const nativeFetch = self.fetch.bind(self);
   self.fetch = async (input, init) => {
     const response = await nativeFetch(input, init);
@@ -93,14 +97,13 @@
     if (response.ok) {
       const source = await response.clone().text();
       if (!source.includes(patchMarker)) {
-        console.error('[LIVE // EARTH] Square-world Weather camera update did not match the expected renderer source. The original response was preserved.');
+        console.error('[LIVE // EARTH] Square-world Weather offset update did not match the expected renderer source. The original response was preserved.');
       }
     }
     return response;
   };
 
-  // Upgrade an already-cached Weather module too, including clients that
-  // currently have the first square-world camera package installed.
+  // Upgrade the already-cached Weather module too, including cached V1/V2.
   self.addEventListener('activate', event => {
     event.waitUntil((async () => {
       const cache = await caches.open(CACHE_NAME);

@@ -1,30 +1,27 @@
-# Weather 3D — Square World Composition v2
+# Weather 3D — Square World Composition v3 (temporary Landscape offset)
 
-**Decision:** retain the fixed display-centric 1:1 canvas and pull the camera back while keeping the pavilion centre-anchored.
+## Fixed world rules
 
-## Composition contract
+- Square canvas remains `100vmax × 100vmax`.
+- Camera remains 1:1 with the V2 pull-back: position `(0, 9.55, 27.7)`, target `(0, 2.5, -1.4)`, FOV `42°`.
+- House remains centred inside the square world.
+- Portrait remains display-centred and unchanged.
 
-- The 3D canvas remains `100vmax × 100vmax`.
-- The square canvas remains centred on the Weather view; the physical display is a centred crop window.
-- Camera aspect remains `1:1` in every orientation.
-- The camera target remains `(0, 2.5, -1.4)`, the centre of the Japanese pavilion composition.
-- Camera position moves from `(0, 7.2, 18)` to `(0, 9.55, 27.7)`. This is a 1.5× pull-back along the same camera ray from the fixed target, preserving the viewing direction and centre anchor.
-- Field of view remains `42°`; no orientation-specific camera presets are introduced.
-- The wider view is intended to restore more of the lake, garden and sky around the house without changing world scale or stretching the scene.
+## Temporary Landscape experiment
+
+- In Landscape only, shift the entire square canvas 30% of the viewport width to the left.
+- Implemented as `left: calc(50% - 30vw)` while retaining the canvas's `translate(-50%, -50%)`.
+- This moves the world composition and its house anchor left on screen without moving the house inside the world, changing the square canvas size, or changing camera framing.
+- Returning to Portrait removes the offset automatically.
 
 ## Preserved systems
 
-Scene geometry, weather-state lighting, rain/snow/cloud animation, hourly and 7-day forecasts, Open-Meteo data, Location permission checks, refresh lifecycle, feature registration, and view cleanup remain unchanged.
+All existing scene geometry, lighting/weather states, animation, forecasts, Location privacy checks, refresh behaviour, feature lifecycle, and shared app views remain untouched.
 
-## Upgrade compatibility
+## Compatibility
 
-The service-worker extension applies a guarded transformation to the original responsive camera source, and also upgrades the previous square-world V1 camera if that version is already cached. The transformation is idempotent. If the expected source does not match, the original response is preserved and a diagnostic is logged.
+The service-worker extension upgrades the original renderer and cached square-world V1/V2 variants. It is guarded and idempotent. If the expected source is not found, the original response is retained.
 
-## Device validation
+## Device review
 
-After automatic extraction, test both orientations:
-- Pavilion centre stays aligned to the centre of the square composition.
-- Roof no longer dominates the frame.
-- More sky and lake are visible around the pavilion.
-- Portrait and Landscape show different crops of the same square world.
-- Orb dock, safe areas, forecast controls, weather effects and view closing remain unaffected.
+Compare Landscape and Portrait after extraction. Confirm the Landscape house placement feels balanced, Portrait remains centred, and the shifted square world still provides a useful lake/sky/house composition. The 30% offset is intentionally experimental and can be adjusted or removed later.
