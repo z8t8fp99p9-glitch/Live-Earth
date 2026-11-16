@@ -13,7 +13,7 @@
   const sceneMarker = 'LE-WEATHER-FUJI-GARDEN-V2';
   const hillsMarker = 'LE-WEATHER-HILLS-HEIGHT-55-V2';
   const fujiMarker = 'LE-WEATHER-FUJI-HEIGHT-54-V3';
-  const versionMarker = 'LE-WEATHER-SCENERY-V23';
+  const versionMarker = 'LE-WEATHER-SCENERY-V24';
 
   const originalCanvasRule =
     '.le-weather-v2 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:pan-y}';
@@ -355,6 +355,28 @@
       changed=true;
     }
 
+
+    // V24: close the see-through gaps between the traditional stair treads with matching timber riser boards.
+    const stairInfillMarker='LE-WEATHER-PAVILION-STAIR-INFILL-V4';
+    if(updated.includes('LE-WEATHER-PAVILION-TRADITIONAL-STAIRS-PIERS-V3') && !updated.includes(stairInfillMarker)){
+      const stairInfill=` 
+    // Continuous vertical timber infill closes the exposed middle gaps between each tread.
+    for(let i=1;i<entranceSteps.length;i++){
+      const lower=entranceSteps[i-1];
+      const upper=entranceSteps[i];
+      const rise=Math.max(0,upper.front-lower.top);
+      if(rise>0){
+        box(house,timber,0,(lower.top+upper.front)/2,upper.z+.505,4.34,rise,.10);
+        box(house,deckPlank,0,(lower.top+upper.front)/2,upper.z+.562,4.38,rise*.72,.018);
+      }
+    }`;
+      const stairLoop=`      box(house,stepTop,0,step.top+.006,step.z+.035,4.38,.025,1.00);
+    }`;
+      if(updated.includes(stairLoop)){updated=updated.replace(stairLoop,stairLoop+stairInfill);changed=true;}
+      updated=updated.replace('LE-WEATHER-PAVILION-TRADITIONAL-STAIRS-PIERS-V3','LE-WEATHER-PAVILION-TRADITIONAL-STAIRS-PIERS-V3 '+stairInfillMarker);
+      changed=true;
+    }
+
     if (!changed) return null;
     const hasFuji = updated.includes(`fujiGroup.userData.refinement='${fujiMarker}'`) &&
       updated.includes('fujiGroup.scale.y=.54') &&
@@ -364,7 +386,7 @@
     const hasTrees = updated.includes('const treeLayout=');
     const hasHouseRotation = updated.includes('house.rotation.y=-15*Math.PI/180') && updated.includes('LE-WEATHER-PAVILION-ROTATION-CCW-15-V1');
     const hasControlsToggle = updated.includes('wx2-control-toggle') && updated.includes('wx2-controls-collapsed') && updated.includes('const controlsToggle=screen.querySelector') && updated.includes('.wx2-control-toggle{pointer-events:auto;position:absolute;');
-    const hasRaisedFoundation = updated.includes('LE-WEATHER-PAVILION-RAISED-FOUNDATION-V1') && updated.includes('box(house,timber,0,1.50,0,7.8,.15,5.6)') && updated.includes('LE-WEATHER-PAVILION-SLIM-FOUNDATION-V2') && updated.includes('LE-WEATHER-PAVILION-TRADITIONAL-STAIRS-PIERS-V3') && updated.includes('const entranceSteps=[') && updated.includes('box(house,dark,x,.72,z,.30,.88,.30)') && updated.includes('step.top-step.front,.98)') && updated.includes('const entranceSteps=') && updated.includes('foundationStone') && updated.includes('deckPlank');
+    const hasRaisedFoundation = updated.includes('LE-WEATHER-PAVILION-RAISED-FOUNDATION-V1') && updated.includes('box(house,timber,0,1.50,0,7.8,.15,5.6)') && updated.includes('LE-WEATHER-PAVILION-SLIM-FOUNDATION-V2') && updated.includes('LE-WEATHER-PAVILION-TRADITIONAL-STAIRS-PIERS-V3') && updated.includes('LE-WEATHER-PAVILION-STAIR-INFILL-V4') && updated.includes('Continuous vertical timber infill') && updated.includes('const entranceSteps=[') && updated.includes('box(house,dark,x,.72,z,.30,.88,.30)') && updated.includes('step.top-step.front,.98)') && updated.includes('const entranceSteps=') && updated.includes('foundationStone') && updated.includes('deckPlank');
     if (!hasFuji || !hasHills || !hasCamera || !hasTrees || !hasHouseRotation || !hasControlsToggle || !hasRaisedFoundation ||
         updated.includes('left:calc(50% - 30vw)')) return null;
     return updated + `\n/* ${versionMarker} */\n`;
