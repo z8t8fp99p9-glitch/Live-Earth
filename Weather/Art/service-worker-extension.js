@@ -1,4 +1,4 @@
-/* LIVE // EARTH — Weather V17 pavilion clockwise rotation.
+/* LIVE // EARTH — Weather V18 pavilion counter-clockwise correction.
  * Preserves the approved front-facing camera and square canvas.
  * Reduces rear hills by 45% and Mount Fuji by 40%, keeping Fuji grounded.
  */
@@ -13,7 +13,7 @@
   const sceneMarker = 'LE-WEATHER-FUJI-GARDEN-V2';
   const hillsMarker = 'LE-WEATHER-HILLS-HEIGHT-55-V2';
   const fujiMarker = 'LE-WEATHER-FUJI-HEIGHT-54-V3';
-  const versionMarker = 'LE-WEATHER-SCENERY-V17';
+  const versionMarker = 'LE-WEATHER-SCENERY-V18';
 
   const originalCanvasRule =
     '.le-weather-v2 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:pan-y}';
@@ -178,11 +178,16 @@
     }
 
 
-    // V17: rotate the complete pavilion group 20 degrees clockwise around its vertical axis.
+    // V18: orient the pavilion 15 degrees counter-clockwise from its original axis.
+    // Corrects the previous +20 degree turn by 35 degrees without changing position.
     const houseAnchor = "const house=new THREE.Group();scene.add(house);house.position.set(0,0,-1.4);";
-    const rotatedHouse = houseAnchor + "house.rotation.y=20*Math.PI/180;house.userData.refinement='LE-WEATHER-PAVILION-ROTATION-CW-20-V1';";
-    if (updated.includes(houseAnchor) && !updated.includes('LE-WEATHER-PAVILION-ROTATION-CW-20-V1')) {
-      updated = updated.replace(houseAnchor, rotatedHouse);
+    const priorRotation = "house.rotation.y=20*Math.PI/180;house.userData.refinement='LE-WEATHER-PAVILION-ROTATION-CW-20-V1';";
+    const correctedRotation = "house.rotation.y=-15*Math.PI/180;house.userData.refinement='LE-WEATHER-PAVILION-ROTATION-CCW-15-V1';";
+    if (updated.includes(priorRotation)) {
+      updated = updated.replace(priorRotation, correctedRotation);
+      changed = true;
+    } else if (updated.includes(houseAnchor) && !updated.includes('LE-WEATHER-PAVILION-ROTATION-CCW-15-V1')) {
+      updated = updated.replace(houseAnchor, houseAnchor + "house.rotation.y=-15*Math.PI/180;house.userData.refinement='LE-WEATHER-PAVILION-ROTATION-CCW-15-V1';");
       changed = true;
     }
 
@@ -193,7 +198,7 @@
     const hasHills = updated.includes('LE-WEATHER-HILLS-REAR-RIDGE-LOWERED-V1') && updated.includes('createRollingRidge(-43,15,8.5,.4,hillMats[0])') && updated.includes('createRollingRidge(-36,14,10,1.8,hillMats[1])') && updated.includes('createRollingRidge(-29,12,7,3.1,hillMats[2])');
     const hasCamera = updated.includes(frontResize) && updated.includes(cameraMarker);
     const hasTrees = updated.includes('const treeLayout=');
-    const hasHouseRotation = updated.includes('house.rotation.y=20*Math.PI/180') && updated.includes('LE-WEATHER-PAVILION-ROTATION-CW-20-V1');
+    const hasHouseRotation = updated.includes('house.rotation.y=-15*Math.PI/180') && updated.includes('LE-WEATHER-PAVILION-ROTATION-CCW-15-V1');
     if (!hasFuji || !hasHills || !hasCamera || !hasTrees || !hasHouseRotation ||
         updated.includes('left:calc(50% - 30vw)')) return null;
     return updated + `\n/* ${versionMarker} */\n`;
@@ -221,7 +226,7 @@
     if(response.ok){
       const source=await response.clone().text();
       if(!source.includes(versionMarker))
-        console.error('[LIVE // EARTH] Weather V17 pavilion rotation transform did not match; original Weather response preserved.');
+        console.error('[LIVE // EARTH] Weather V18 pavilion rotation transform did not match; original Weather response preserved.');
     }
     return response;
   };
