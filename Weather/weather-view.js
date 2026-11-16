@@ -188,9 +188,9 @@
         const angle=rand()*Math.PI*2;
         const radial=Math.cbrt(rand())*Math.sqrt(Math.max(.001,1-vertical*vertical));
         attractors.push(new THREE.Vector3(
-          .13+Math.cos(angle)*2.38*radial+.08*vertical,
-          4.72+vertical*1.18*radial,
-          .035+Math.sin(angle)*1.48*radial
+          .13+Math.cos(angle)*3.25*radial+.10*vertical,
+          4.78+vertical*1.22*radial,
+          .035+Math.sin(angle)*2.15*radial
         ));
       }
       const usedAttractors=new Set();
@@ -338,9 +338,9 @@
       addBranchPath(leaderPath,.082,.24,1);
       leafSites.push({position:leaderEnd,level:2});
 
-      // Twelve primary limbs depart at different heights and azimuths.
-      // Each grows two secondary arms; each secondary arm divides into fine twigs.
-      const primaryCount=7;
+      // Eleven primary limbs depart at different heights and azimuths.
+      // Each grows four secondary arms; each secondary arm divides into fine twigs.
+      const primaryCount=11;
       for(let i=0;i<primaryCount;i++){
         const angle=i*(Math.PI*2/primaryCount)+.17+signed()*.10;
         const height=[1.48,1.73,2.02,2.31,2.62,2.82][i%6]+signed()*.07;
@@ -348,13 +348,13 @@
         const radial=new THREE.Vector3(Math.cos(angle),0,Math.sin(angle));
         const desired=radial.clone().multiplyScalar(.92)
           .add(new THREE.Vector3(0,.28+rand()*.30,0));
-        const target=takeAttractor(start,desired,1.25,3.30,3.65+rand()*1.85);
+        const target=takeAttractor(start,desired,1.35,3.75,3.65+rand()*1.85);
         const primary=cubicPath(start,target,.18+rand()*.16,7);
-        addBranchPath(primary,.108+rand()*.014,.28,1);
+        addBranchPath(primary,.078+rand()*.010,.22,1);
         leafSites.push({position:target,level:1});
 
-        for(let j=0;j<2;j++){
-          const splitT=j===0?.43:.74;
+        for(let j=0;j<4;j++){
+          const splitT=[.28,.50,.70,.88][j];
           const splitIndex=Math.round(splitT*(primary.length-1));
           const origin=primary[splitIndex];
           const tangent=primary[Math.min(primary.length-1,splitIndex+1)]
@@ -368,28 +368,28 @@
             .addScaledVector(tangent,.24)
             .add(new THREE.Vector3(0,.24+rand()*.26,0))
             .addScaledVector(side,sign*(.18+rand()*.10));
-          const secondaryTarget=takeAttractor(origin,secondaryDirection,.70,1.72,3.75+rand()*1.55);
+          const secondaryTarget=takeAttractor(origin,secondaryDirection,.68,1.92,3.75+rand()*1.55);
           const secondary=cubicPath(origin,secondaryTarget,.13+rand()*.10,5);
-          addBranchPath(secondary,.056+rand()*.010,.26,2);
+          addBranchPath(secondary,.037+rand()*.007,.20,2);
           leafSites.push({position:secondaryTarget,level:2});
 
-          for(let k=0;k<2;k++){
-            const twigT=k===0?.56:.84;
+          for(let k=0;k<4;k++){
+            const twigT=[.40,.59,.76,.91][k];
             const twigIndex=Math.round(twigT*(secondary.length-1));
             const twigStart=secondary[twigIndex];
             const twigTangent=secondary[Math.min(secondary.length-1,twigIndex+1)]
               .clone().sub(secondary[Math.max(0,twigIndex-1)]).normalize();
             const twigSide=new THREE.Vector3(-twigTangent.z,0,twigTangent.x).normalize();
-            const twigSign=(k===0?1:-1)*(rand()<.5?1:-1);
+            const twigSign=(k<2?1:-1)*(rand()<.5?1:-1);
             const twigDirection=new THREE.Vector3(twigStart.x,.0,twigStart.z);
             if(twigDirection.lengthSq()<.05)twigDirection.copy(radial);
             twigDirection.normalize().multiplyScalar(.52)
-              .addScaledVector(twigTangent,.22)
-              .add(new THREE.Vector3(0,.32+rand()*.25,0))
-              .addScaledVector(twigSide,twigSign*(.34+rand()*.16));
-            const twigTarget=takeAttractor(twigStart,twigDirection,.42,1.18,4.05+rand()*1.35);
+              .addScaledVector(twigTangent,.18)
+              .add(new THREE.Vector3(0,.30+rand()*.24,0))
+              .addScaledVector(twigSide,twigSign*(.30+rand()*.18));
+            const twigTarget=takeAttractor(twigStart,twigDirection,.34,1.42,4.05+rand()*1.35);
             const twig=cubicPath(twigStart,twigTarget,.08+rand()*.08,4);
-            addBranchPath(twig,.026+rand()*.006,.18,rand()<.45?2:3);
+            addBranchPath(twig,.014+rand()*.004,.13,rand()<.45?2:3);
             leafSites.push({position:twigTarget,level:3});
           }
         }
@@ -453,8 +453,8 @@
       const allLeafMatrices=[];
       const dummy=new THREE.Object3D();
       for(const site of leafSites){
-        const count=site.level===1?6:site.level===2?10:15;
-        const radius=site.level===1?.29:site.level===2?.225:.18;
+        const count=site.level===1?11:site.level===2?19:29;
+        const radius=site.level===1?.38:site.level===2?.30:.245;
         for(let i=0;i<count;i++){
           const vertical=rand()*2-1,angle=rand()*Math.PI*2,rad=Math.cbrt(rand());
           dummy.position.set(
@@ -468,7 +468,7 @@
             signed()*1.55
           );
           const size=.78+rand()*.48;
-          dummy.scale.set(.225*size,.255*size,.05);
+          dummy.scale.set(.235*size,.27*size,.05);
           dummy.updateMatrix();
           const toneRoll=rand();
           const tone=toneRoll<.16?0:toneRoll<.57?1:toneRoll<.88?2:3;
@@ -516,11 +516,11 @@
       scene.add(maple);
       return maple;
     }
-    // V46 — REFINED JAPANESE MAPLE SILHOUETTE AND PORTRAIT-SAFE PLACEMENT.
-    // Uses fewer, slimmer scaffold limbs with a dominant central leader,
-    // progressively finer secondary branches and airy terminal foliage.
-    // The compact tree sits forward-right without overwhelming the pavilion facade.
-    const momiji=createMomiji(3.02,3.45,.86);trees.push(momiji);
+    // V48 — BROADER MOMIJI SPREAD, FINER BRANCHING, DENSER LEAVES, MORE FOREGROUND.
+    // Eleven slim scaffold limbs fan into four secondary arms and four fine twiglets
+    // per arm. A wider attractor envelope and denser instanced palmate leaves create
+    // a fuller, horizontally spreading crown. The tree moves slightly forward-right.
+    const momiji=createMomiji(3.02,4.72,.92);trees.push(momiji);
 
     // Main architectural landmark: open pavilion with curved eaves, columns and lanterns.
     const house=new THREE.Group();scene.add(house);house.position.set(0,0,-1.4);house.rotation.y=-15*Math.PI/180;house.userData.refinement='LE-WEATHER-PAVILION-ROTATION-CCW-15-V1';
@@ -1687,4 +1687,18 @@
    camera framing, while its canopy still frames the pavilion in landscape.
    No tree geometry, pavilion geometry, camera, UI, weather, Location or
    Stacks behavior is changed.
+*/
+
+
+/* LE-WEATHER-PAVILION-MOMIJI-CROWN-GROWTH-V48
+   Widens the Japanese maple crown envelope from 2.92 x 1.86 to 3.25 x 2.15
+   local units, giving the canopy a broader, more naturally spreading silhouette.
+   Increases the primary scaffold from nine to eleven limbs; each primary now
+   supports four secondary branches, each with four finer twiglets. Branch radii
+   are reduced progressively so the outer structure reads as delicate ramification.
+   Increases leaf instances at every branch tier and expands terminal clusters for
+   a denser red canopy. Moves the tree slightly farther forward on the pavilion's
+   front-right side while retaining its established scale and portrait framing.
+   Pavilion, roof, lanterns, Shoji doors, interior, foundation, deck, stairs, rails,
+   weather camera, forecast UI, Location privacy and Stacks lifecycle are unchanged.
 */
