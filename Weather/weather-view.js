@@ -188,9 +188,9 @@
         const angle=rand()*Math.PI*2;
         const radial=Math.cbrt(rand())*Math.sqrt(Math.max(.001,1-vertical*vertical));
         attractors.push(new THREE.Vector3(
-          .13+Math.cos(angle)*2.72*radial+.08*vertical,
-          4.55+vertical*1.34*radial,
-          .035+Math.sin(angle)*1.68*radial
+          .13+Math.cos(angle)*2.38*radial+.08*vertical,
+          4.72+vertical*1.18*radial,
+          .035+Math.sin(angle)*1.48*radial
         ));
       }
       const usedAttractors=new Set();
@@ -311,7 +311,7 @@
         new THREE.Vector3(.34,3.52,.08)
       ];
       const trunkPath=smoothPath(trunkControls,5);
-      addBranchPath(trunkPath,.345,.27,0);
+      addBranchPath(trunkPath,.265,.20,0);
       function trunkAt(height){
         for(let i=0;i<trunkPath.length-1;i++){
           const a=trunkPath[i],b=trunkPath[i+1];
@@ -328,19 +328,19 @@
         const end=new THREE.Vector3(Math.cos(angle)*.54,.025,Math.sin(angle)*.40);
         const start=new THREE.Vector3(-.035,.28,.01);
         const path=cubicPath(start,end,.10,4);
-        addBranchPath(path,.095,.26,0);
+        addBranchPath(path,.078,.22,0);
       }
       // A central leader rises through the crown; broad lateral branches form
       // the spreading architecture typical of the upright Japanese-maple form.
       const leaderEnd=takeAttractor(trunkPath[trunkPath.length-1],
         new THREE.Vector3(.08,1,.04),.85,2.2,5.52);
       const leaderPath=cubicPath(trunkPath[trunkPath.length-1],leaderEnd,.12,7);
-      addBranchPath(leaderPath,.105,.30,1);
+      addBranchPath(leaderPath,.082,.24,1);
       leafSites.push({position:leaderEnd,level:2});
 
       // Twelve primary limbs depart at different heights and azimuths.
       // Each grows two secondary arms; each secondary arm divides into fine twigs.
-      const primaryCount=12;
+      const primaryCount=7;
       for(let i=0;i<primaryCount;i++){
         const angle=i*(Math.PI*2/primaryCount)+.17+signed()*.10;
         const height=[1.48,1.73,2.02,2.31,2.62,2.82][i%6]+signed()*.07;
@@ -350,7 +350,7 @@
           .add(new THREE.Vector3(0,.28+rand()*.30,0));
         const target=takeAttractor(start,desired,1.25,3.30,3.65+rand()*1.85);
         const primary=cubicPath(start,target,.18+rand()*.16,7);
-        addBranchPath(primary,.158+rand()*.018,.34,1);
+        addBranchPath(primary,.108+rand()*.014,.28,1);
         leafSites.push({position:target,level:1});
 
         for(let j=0;j<2;j++){
@@ -370,7 +370,7 @@
             .addScaledVector(side,sign*(.18+rand()*.10));
           const secondaryTarget=takeAttractor(origin,secondaryDirection,.70,1.72,3.75+rand()*1.55);
           const secondary=cubicPath(origin,secondaryTarget,.13+rand()*.10,5);
-          addBranchPath(secondary,.082+rand()*.012,.31,2);
+          addBranchPath(secondary,.056+rand()*.010,.26,2);
           leafSites.push({position:secondaryTarget,level:2});
 
           for(let k=0;k<2;k++){
@@ -389,7 +389,7 @@
               .addScaledVector(twigSide,twigSign*(.34+rand()*.16));
             const twigTarget=takeAttractor(twigStart,twigDirection,.42,1.18,4.05+rand()*1.35);
             const twig=cubicPath(twigStart,twigTarget,.08+rand()*.08,4);
-            addBranchPath(twig,.037+rand()*.009,.22,rand()<.45?2:3);
+            addBranchPath(twig,.026+rand()*.006,.18,rand()<.45?2:3);
             leafSites.push({position:twigTarget,level:3});
           }
         }
@@ -403,7 +403,7 @@
         const direction=new THREE.Vector3(Math.cos(a)*.7,.62+rand()*.2,Math.sin(a)*.7);
         const target=takeAttractor(start,direction,.48,1.18,5.0+rand()*.65);
         const shoot=cubicPath(start,target,.07,4);
-        addBranchPath(shoot,.042,.23,3);
+        addBranchPath(shoot,.029,.18,3);
         leafSites.push({position:target,level:3});
       }
 
@@ -453,8 +453,8 @@
       const allLeafMatrices=[];
       const dummy=new THREE.Object3D();
       for(const site of leafSites){
-        const count=site.level===1?8:site.level===2?14:23;
-        const radius=site.level===1?.31:site.level===2?.255:.205;
+        const count=site.level===1?6:site.level===2?10:15;
+        const radius=site.level===1?.29:site.level===2?.225:.18;
         for(let i=0;i<count;i++){
           const vertical=rand()*2-1,angle=rand()*Math.PI*2,rad=Math.cbrt(rand());
           dummy.position.set(
@@ -467,8 +467,8 @@
             rand()*Math.PI*2,
             signed()*1.55
           );
-          const size=.82+rand()*.56;
-          dummy.scale.set(.245*size,.275*size,.055);
+          const size=.78+rand()*.48;
+          dummy.scale.set(.225*size,.255*size,.05);
           dummy.updateMatrix();
           const toneRoll=rand();
           const tone=toneRoll<.16?0:toneRoll<.57?1:toneRoll<.88?2:3;
@@ -516,12 +516,11 @@
       scene.add(maple);
       return maple;
     }
-    // V45 — BOTANICAL JAPANESE MAPLE AND PORTRAIT-FRIENDLY FRONT-RIGHT PLACEMENT.
-    // Rebuilds the former fixed branch list and seven round foliage masses as
-    // an attraction-guided crown, curved tapered branch hierarchy, exposed
-    // twig tips and instanced five-lobed autumn leaves. The base is moved inward
-    // and forward beside the pavilion's front-right corner for portrait framing.
-    const momiji=createMomiji(3.45,2.85,.96);trees.push(momiji);
+    // V46 — REFINED JAPANESE MAPLE SILHOUETTE AND PORTRAIT-SAFE PLACEMENT.
+    // Uses fewer, slimmer scaffold limbs with a dominant central leader,
+    // progressively finer secondary branches and airy terminal foliage.
+    // The compact tree sits forward-right without overwhelming the pavilion facade.
+    const momiji=createMomiji(3.02,3.45,.86);trees.push(momiji);
 
     // Main architectural landmark: open pavilion with curved eaves, columns and lanterns.
     const house=new THREE.Group();scene.add(house);house.position.set(0,0,-1.4);house.rotation.y=-15*Math.PI/180;house.userData.refinement='LE-WEATHER-PAVILION-ROTATION-CCW-15-V1';
