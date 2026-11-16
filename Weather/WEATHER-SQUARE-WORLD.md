@@ -1,20 +1,19 @@
-# Weather 3D — Square World Composition v7
+# Weather 3D — Fuji Garden Scene v8
 
-## Subtle front-facing camera adjustment
+## Mount Fuji background and smaller garden trees
 
-- Keep the approved square world and its centre anchor exactly as restored in V6.
+- Remove the oversized procedural hill row that crowded the background behind the pavilion.
+- Replace it with a distant, low-poly Mount Fuji silhouette, finished with a pale, irregular snow cap.
+- Keep Fuji behind the pavilion and centred on the scene's existing world axis.
+- Reduce and reposition the garden trees into smaller side groupings so they frame the pavilion rather than competing with it or covering the mountain.
+- Keep the water, stepping stones, pavilion geometry, weather effects, lighting, clouds, forecasts, Open-Meteo data and Location permission flow intact.
+
+## Camera and composition preserved
+
+- Keep the approved V7 front-facing camera exactly: position `(0, 7.0, 27.7)`, target `(0, 2.5, -1.4)`, FOV `42°`.
 - Keep the square canvas `100vmax × 100vmax`, centred on the display in both orientations.
-- Keep the camera horizontally centred at `X = 0` and preserve its distance from the scene at `Z = 27.7`.
-- Keep the field of view at `42°` and retain the same look-at target `(0, 2.5, -1.4)`.
-- Lower only the camera eye point from `Y = 9.55` to `Y = 7.0` to reduce the downward viewing pitch and reveal more of the pavilion's front elevation.
-- Do not move the house, shift the canvas, orbit the camera, or introduce orientation-specific framing.
-
-The camera's approximate downward pitch changes from 13.6° to 8.8°. This is a modest front-view adjustment, not a fully level/eye-height shot.
-
-## Preserved systems
-
-Scene geometry, weather animation, forecasts, Open-Meteo data, Location permission checks, refresh lifecycle, feature registration and shared views remain unchanged.
+- Keep the pavilion at the centre of the world. Do not shift the canvas or introduce orientation-specific framing.
 
 ## Upgrade behaviour
 
-The service-worker extension upgrades cached V1–V6 variants, including the current V6 centre-anchor restoration. It preserves the centred square canvas, replaces earlier camera resize functions with the V7 front-view framing, and remains guarded and idempotent.
+The service-worker extension upgrades cached V1–V7 Weather modules as well as fresh source responses. It keeps the V7 camera and centre anchor, replaces the exact old hill and tree blocks as one guarded scene update, and is idempotent after the Fuji garden marker is present.
