@@ -528,13 +528,41 @@
       addRoofFascia(face,-.125,.17,.22);
       addRoofBeam(roofEdgePoints(face,64,-.225),.014,gableTrim,6);
     }
-    // Brackets rise with the same edge profile, keeping the underside coherent.
+    // Japanese bracket assemblies (tokyo-inspired): vertical bearing post,
+    // outward cantilever, cross-arm and a compact bearing cap. The cantilever
+    // changes axis on side eaves so all four elevations project outward.
     function eaveBracket(x,z,side='front',edgeY=roofEaveY){
       const y=edgeY-.32;
+      const frontBack=side==='front'||side==='back';
+      const outward=side==='front'?1:side==='back'?-1:side==='right'?1:-1;
       box(house,timber,x,y,z,.14,.34,.16);
-      const arm=box(house,gableTrim,x,y+.09,z+(side==='front'?.10:-.10),.36,.085,.20);
-      box(house,timber,x,y+.19,z,.24,.075,.22);
-      arm.rotation.z=x===0?0:Math.sign(x)*-.035;
+
+      const cantilever=box(
+        house,gableTrim,
+        x+(frontBack?0:outward*.10),
+        y+.09,
+        z+(frontBack?outward*.10:0),
+        frontBack?.20:.38,.085,frontBack?.38:.20
+      );
+      const crossArm=box(
+        house,timber,x,y+.18,z,
+        frontBack?.34:.20,.075,frontBack?.20:.34
+      );
+      const bearingCap=box(house,gableTrim,x,y+.245,z,.22,.065,.22);
+
+      // A short timber haunch visually ties the cantilever back to its post.
+      const haunch=box(
+        house,timber,
+        x+(frontBack?0:outward*.055),
+        y+.055,
+        z+(frontBack?outward*.055:0),
+        frontBack?.16:.24,.12,frontBack?.24:.16
+      );
+      haunch.rotation.x=frontBack?outward*-.12:0;
+      haunch.rotation.z=frontBack?0:outward*.12;
+      cantilever.rotation.z=frontBack?(x===0?0:Math.sign(x)*-.018):0;
+      crossArm.rotation.y=frontBack?0:outward*-.018;
+      bearingCap.rotation.y=frontBack?0:outward*-.018;
     }
     for(const z of [-2.68,2.68])for(let i=0;i<9;i++){
       const x=-3.55+i*.8875,u=(x+roofHalfX)/(2*roofHalfX),face=z>0?'front':'back';
@@ -958,4 +986,15 @@
    outer nosing and fine lower shadow trim. Roof surface, sori profile,
    gable, tiles, rafters, ridge, doors, interior, foundations, stairs,
    rails, camera, scenery and weather UI remain unchanged.
+*/
+
+
+/* LE-WEATHER-PAVILION-ROOF-BRACKET-ASSEMBLY-V35
+   Refines the existing eave supports into layered Japanese timber bracket
+   assemblies: bearing post, outward cantilever, cross-arm, haunch and cap.
+   Corrects a directional defect in the former helper: side-eave arms now
+   project along the X axis while front/rear arms project along Z. The
+   assemblies remain positioned from the shared curved roof edge profile.
+   No roof skin, fascia, gable, tile, door, interior, foundation, stair,
+   rail, camera, scenery or weather UI geometry is changed.
 */
