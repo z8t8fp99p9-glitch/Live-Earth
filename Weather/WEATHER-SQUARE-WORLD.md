@@ -1,27 +1,32 @@
-# Weather 3D — Square World Composition v3 (temporary Landscape offset)
+# Weather 3D — Square World Composition v4
 
-## Fixed world rules
+## Change requested
 
-- Square canvas remains `100vmax × 100vmax`.
-- Camera remains 1:1 with the V2 pull-back: position `(0, 9.55, 27.7)`, target `(0, 2.5, -1.4)`, FOV `42°`.
-- House remains centred inside the square world.
-- Portrait remains display-centred and unchanged.
+Revert the temporary 30% Landscape canvas shift and apply a 30-degree horizontal camera orbit.
 
-## Temporary Landscape experiment
+## Fixed composition
 
-- In Landscape only, shift the entire square canvas 30% of the viewport width to the left.
-- Implemented as `left: calc(50% - 30vw)` while retaining the canvas's `translate(-50%, -50%)`.
-- This moves the world composition and its house anchor left on screen without moving the house inside the world, changing the square canvas size, or changing camera framing.
-- Returning to Portrait removes the offset automatically.
+- Canvas remains a centred `100vmax × 100vmax` square.
+- Portrait and Landscape use the same square canvas and camera.
+- No orientation-specific canvas position or size.
+- The house remains the camera's look target at `(0, 2.5, -1.4)`.
+
+## Camera
+
+- Retain the V2 pull-back distance and 42-degree field of view.
+- Rotate the camera 30 degrees around the vertical axis around the house target.
+- Camera position becomes `(14.55, 9.55, 23.81)`, looking at `(0, 2.5, -1.4)`.
+- This changes the horizontal viewing angle while preserving the camera-to-target distance and elevation.
+- The experiment reveals a three-quarter view of the pavilion without translating the square canvas.
+
+## Reversion
+
+The Landscape-only `left: calc(50% - 30vw)` rule is removed. The square canvas is restored to `left: 50%` in all orientations.
 
 ## Preserved systems
 
-All existing scene geometry, lighting/weather states, animation, forecasts, Location privacy checks, refresh behaviour, feature lifecycle, and shared app views remain untouched.
+Scene geometry, weather animation, forecasts, Open-Meteo data, Location permission checks, refresh lifecycle, feature registration, and shared views are unchanged.
 
-## Compatibility
+## Upgrade behaviour
 
-The service-worker extension upgrades the original renderer and cached square-world V1/V2 variants. It is guarded and idempotent. If the expected source is not found, the original response is retained.
-
-## Device review
-
-Compare Landscape and Portrait after extraction. Confirm the Landscape house placement feels balanced, Portrait remains centred, and the shifted square world still provides a useful lake/sky/house composition. The 30% offset is intentionally experimental and can be adjusted or removed later.
+The service-worker extension upgrades the V3 cached module as well as known earlier square-camera variants. It is idempotent and guarded: if the expected source does not match, the original response is preserved.
