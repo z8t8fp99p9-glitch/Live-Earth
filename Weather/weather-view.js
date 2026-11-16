@@ -764,17 +764,36 @@
         const x=roofHalfX*i/segments;
         rightShoulder.push(new THREE.Vector3(x,gableY(x),faceZ+.045));
       }
-      addRoofBeam(leftShoulder,.075,gableTrim,8);
-      addRoofBeam(rightShoulder,.075,gableTrim,8);
-      addRoofBeam(basePoints.map(p=>p.clone().add(new THREE.Vector3(0,0,.045))),.075,gableTrim,8);
+      // Primary gable frame: substantial curved shoulders and a deep tie beam.
+      addRoofBeam(leftShoulder,.092,gableTrim,8);
+      addRoofBeam(rightShoulder,.092,gableTrim,8);
+      addRoofBeam(basePoints.map(p=>p.clone().add(new THREE.Vector3(0,0,.045))),.088,gableTrim,8);
 
       function gableStrut(a,b,r,material=timber){
         const start=new THREE.Vector3(...a),end=new THREE.Vector3(...b);
         addRoofBeam([start,end],r,material,8);
       }
-      gableStrut([0,roofEaveY+.06,z+.065],[0,5.18,z+.065],.052,timber);
-      gableStrut([-2.0,4.02,z+.065],[0,4.88,z+.065],.043,timber);
-      gableStrut([2.0,4.02,z+.065],[0,4.88,z+.065],.043,timber);
+      // Main king post and the original pair of principal truss braces.
+      gableStrut([0,roofEaveY+.06,z+.065],[0,5.18,z+.065],.066,timber);
+      gableStrut([-2.0,4.02,z+.065],[0,4.88,z+.065],.052,timber);
+      gableStrut([2.0,4.02,z+.065],[0,4.88,z+.065],.052,timber);
+
+      // Secondary collar tie and short upper braces create a readable
+      // nested Japanese timber truss instead of a single triangular outline.
+      const collarY=4.48,collarHalf=1.32,frontZ=z+.105;
+      gableStrut([-collarHalf,collarY,frontZ],[collarHalf,collarY,frontZ],.047,gableTrim);
+      gableStrut([-collarHalf,collarY,frontZ],[0,5.08,frontZ],.039,timber);
+      gableStrut([collarHalf,collarY,frontZ],[0,5.08,frontZ],.039,timber);
+
+      // Exposed joinery blocks mark the collar-to-post and brace intersections.
+      for(const x of [-collarHalf,collarHalf]){
+        const joint=box(house,gableTrim,x,collarY,frontZ+.012,.145,.145,.105);
+        joint.rotation.z=Math.PI/4;
+      }
+      const crownJoint=box(house,gableTrim,0,5.075,frontZ+.018,.17,.17,.11);
+      crownJoint.rotation.z=Math.PI/4;
+      const tieJoint=box(house,gableTrim,0,4.02,z+.105,.19,.16,.12);
+      tieJoint.rotation.z=Math.PI/4;
       for(const x of [-2.65,-1.8,-.9,.9,1.8,2.65]){
         const u=(x+roofHalfX)/(2*roofHalfX);
         const bottom=roofEaveY+roofCornerLift*roofCornerFactor(u);
@@ -800,8 +819,16 @@
         const y=roofEaveY+roofCornerLift*roofCornerFactor(u);
         box(house,gableTrim,x,y+.015,z+.105,.17,.105,.12);
       }
-      const medallion=new THREE.Mesh(new THREE.SphereGeometry(.105,12,8),gold);
-      medallion.scale.set(1,.72,.34);medallion.position.set(0,4.62,z+.095);house.add(medallion);
+      // Restrained Japanese gable crest: layered diamond timber plaque and
+      // a small warm-metal centre, aligned to the king post.
+      const crestBase=box(house,gableTrim,0,4.67,z+.125,.245,.245,.095);
+      crestBase.rotation.z=Math.PI/4;
+      const crestInset=box(house,timber,0,4.67,z+.181,.145,.145,.045);
+      crestInset.rotation.z=Math.PI/4;
+      const medallion=new THREE.Mesh(new THREE.SphereGeometry(.064,12,8),gold);
+      medallion.scale.set(1,.82,.34);
+      medallion.position.set(0,4.67,z+.218);
+      house.add(medallion);
     }
     addGable(2.94);addGable(-2.94);
     // One sharp, mitred timber nose unifies the four roof-edge layers.
@@ -1219,4 +1246,17 @@
    gable, ridge ornaments, tile field, rafters, brackets, walls, Shoji doors,
    interior, foundations, deck, stairs, rails, camera, scenery and weather UI
    remain unchanged.
+*/
+
+
+/* LE-WEATHER-PAVILION-GABLE-TRUSS-AND-JOINERY-V41
+   Refines only the existing front and rear triangular gable assemblies.
+   Thickens the curved primary shoulder beams and tie beam, strengthens the
+   king post and principal braces, and adds a secondary collar tie with paired
+   upper braces to create a nested Japanese timber truss. Adds visible diamond
+   joinery blocks at structural intersections and replaces the simple round
+   gable medallion with a restrained layered timber crest and small metal centre.
+   The approved roof profile, V40 sharp corner tips, ridge, tiles, fascia,
+   rafters, brackets, Shoji doors, interior, foundation, deck, stairs, rails,
+   scenery, camera, forecast UI and Location privacy boundary are preserved.
 */
