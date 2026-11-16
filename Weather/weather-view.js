@@ -421,7 +421,7 @@
     const roofPitchLift=0;
     const roofCornerFactor=u=>Math.pow(Math.abs(2*u-1),roofCurvePower);
     const roofSmoothstep=t=>{const q=clamp((t-.58)/.42,0,1);return q*q*(3-2*q);};
-    const roofCrossProfile=t=>t-.065*Math.sin(Math.PI*t);
+    const roofCrossProfile=t=>t-.14*Math.sin(Math.PI*t);
     function roofPoint(face,t,u,lift=0){
       const profile=roofCrossProfile(t);
       const cornerRise=roofCornerLift*roofCornerFactor(u)*roofSmoothstep(t);
@@ -896,4 +896,15 @@
    cross-profile and corner-lift expression as the adjoining roof surface,
    eliminating the mismatch that made the gable appear to dip or kink.
    Retains the approved V28 outer eave sweep and all non-roof systems.
+*/
+
+
+/* LE-WEATHER-PAVILION-ROOF-CONTINUOUS-JAPANESE-SWEEP-V32
+   Gives the actual front/rear roof shoulders a clearly visible but restrained
+   continuous bow. The ridge and eave endpoints stay fixed; the slope rises
+   smoothly above its straight chord by 0.218 scene units at mid-span. The
+   profile remains monotonic (minimum derivative about 0.56), so it cannot
+   reverse into a sag or kink. Gable outline and roof plane share this one
+   profile function. Approved V28 corner lift, eave sweep, doors, interior,
+   stairs, rails and all non-roof systems remain unchanged.
 */
