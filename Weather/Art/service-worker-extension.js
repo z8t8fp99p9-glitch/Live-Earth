@@ -1,4 +1,4 @@
-/* LIVE // EARTH — Weather V12 scenery refinement.
+/* LIVE // EARTH — Weather V13 Fuji position refinement.
  * Preserves the approved front-facing camera and square canvas.
  * Reduces rear hills by 45% and Mount Fuji by 40%, keeping Fuji grounded.
  */
@@ -12,8 +12,8 @@
   const cameraMarker = 'LE-SQUARE-WORLD-CAMERA-V9';
   const sceneMarker = 'LE-WEATHER-FUJI-GARDEN-V2';
   const hillsMarker = 'LE-WEATHER-HILLS-HEIGHT-55-V2';
-  const fujiMarker = 'LE-WEATHER-FUJI-HEIGHT-60-V2';
-  const versionMarker = 'LE-WEATHER-SCENERY-V12';
+  const fujiMarker = 'LE-WEATHER-FUJI-HEIGHT-54-V3';
+  const versionMarker = 'LE-WEATHER-SCENERY-V13';
 
   const originalCanvasRule =
     '.le-weather-v2 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:pan-y}';
@@ -38,7 +38,7 @@
     '      [-32,-25,9,5,7,1],[-20,-25,10,5.5,7,2],[20,-26,10,5.5,7,0],[33,-25,9,5,7,1]',
     '    ];',
     '    rearHills.forEach(([x,z,sx,sy,sz,index])=>hill(x,z,sx,sy,sz,index));',
-    `    const fujiGroup=new THREE.Group();fujiGroup.position.set(0,6.72,-64);fujiGroup.scale.y=.60;fujiGroup.userData.refinement='${fujiMarker}';scene.add(fujiGroup);`,
+    `    const fujiGroup=new THREE.Group();fujiGroup.position.set(3.75,6.048,-64);fujiGroup.scale.y=.54;fujiGroup.userData.refinement='${fujiMarker}';scene.add(fujiGroup);`,
     "    const fujiBodyMat=new THREE.MeshStandardMaterial({color:'#657985',roughness:1});",
     '    const fujiBody=new THREE.Mesh(new THREE.ConeGeometry(25,22,96,8),fujiBodyMat);fujiGroup.add(fujiBody);',
     '    const snowVertices=[0,11,0],snowIndices=[],snowSegments=96;',
@@ -94,10 +94,14 @@
       changed = true;
     }
 
-    const oldFuji = "const fujiGroup=new THREE.Group();fujiGroup.position.set(0,11.2,-64);scene.add(fujiGroup);";
-    const reducedFuji = `const fujiGroup=new THREE.Group();fujiGroup.position.set(0,6.72,-64);fujiGroup.scale.y=.60;fujiGroup.userData.refinement='${fujiMarker}';scene.add(fujiGroup);`;
-    if (updated.includes(oldFuji)) {
-      updated = updated.replace(oldFuji, reducedFuji);
+    const priorV12Fuji = "const fujiGroup=new THREE.Group();fujiGroup.position.set(0,6.72,-64);fujiGroup.scale.y=.60;fujiGroup.userData.refinement='LE-WEATHER-FUJI-HEIGHT-60-V2';scene.add(fujiGroup);";
+    const priorV9Fuji = "const fujiGroup=new THREE.Group();fujiGroup.position.set(0,11.2,-64);scene.add(fujiGroup);";
+    const refinedFuji = `const fujiGroup=new THREE.Group();fujiGroup.position.set(3.75,6.048,-64);fujiGroup.scale.y=.54;fujiGroup.userData.refinement='${fujiMarker}';scene.add(fujiGroup);`;
+    if (updated.includes(priorV12Fuji)) {
+      updated = updated.replace(priorV12Fuji, refinedFuji);
+      changed = true;
+    } else if (updated.includes(priorV9Fuji)) {
+      updated = updated.replace(priorV9Fuji, refinedFuji);
       changed = true;
     }
 
@@ -117,8 +121,8 @@
 
     if (!changed) return null;
     const hasFuji = updated.includes(`fujiGroup.userData.refinement='${fujiMarker}'`) &&
-      updated.includes('fujiGroup.scale.y=.60') &&
-      updated.includes('fujiGroup.position.set(0,6.72,-64)');
+      updated.includes('fujiGroup.scale.y=.54') &&
+      updated.includes('fujiGroup.position.set(3.75,6.048,-64)');
     const hasHills = updated.includes('m.scale.set(sx,.55*sy,sz)') && updated.includes(hillsMarker);
     const hasCamera = updated.includes(frontResize) && updated.includes(cameraMarker);
     const hasTrees = updated.includes('const treeLayout=');
@@ -149,7 +153,7 @@
     if(response.ok){
       const source=await response.clone().text();
       if(!source.includes(versionMarker))
-        console.error('[LIVE // EARTH] Weather V12 scenery transform did not match; original Weather response preserved.');
+        console.error('[LIVE // EARTH] Weather V13 Fuji refinement transform did not match; original Weather response preserved.');
     }
     return response;
   };
