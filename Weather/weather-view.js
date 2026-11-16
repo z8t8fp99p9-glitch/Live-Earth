@@ -165,6 +165,103 @@
       [8.0,-5.0,.82],[10.8,1.5,.72],[8.8,8.2,.78],[13.0,-12.0,.88],[13.8,6.0,.70]
     ];
     for(const [x,z,scale] of treeLayout)trees.push(tree(x,z,scale));
+
+    // V43 — JAPANESE RED MAPLE (MOMIJI), BUILT AS REAL 3D SCENERY.
+    // A broad, irregular crown of individual five-lobed maple leaves sits on
+    // a visible branching trunk. Instanced leaves keep the foliage detailed
+    // without creating hundreds of separate draw calls. The tree frames the
+    // pavilion from the right and remains independent of the house geometry.
+    function createMomiji(x,z,scale=1){
+      const maple=new THREE.Group();
+      const barkMats=['#30251f','#493126','#5a3a29'].map(c=>mat(c,.96));
+      const branchMaterial=barkMats[1];
+      const barkDark=barkMats[0];
+      const barkLight=barkMats[2];
+      const branch=(a,b,r1,r2,material=branchMaterial)=>{
+        const start=new THREE.Vector3(...a),end=new THREE.Vector3(...b);
+        const direction=new THREE.Vector3().subVectors(end,start),length=direction.length();
+        const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r2,r1,length,7),material);
+        mesh.position.copy(start).add(end).multiplyScalar(.5);
+        mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),direction.normalize());
+        maple.add(mesh);return mesh;
+      };
+      // Slightly leaning, tapered trunk assembled from connected curved sections.
+      const trunkPoints=[[0,0,0],[-.10,.82,0],[-.02,1.68,.02],[.18,2.48,.04],[.34,3.28,.02]];
+      for(let i=0;i<trunkPoints.length-1;i++)
+        branch(trunkPoints[i],trunkPoints[i+1],.31-i*.052,.255-i*.052,i<2?barkDark:branchMaterial);
+      // Five major limbs spread laterally and rise into the crown.
+      const limbs=[
+        [[.08,1.72,.02],[-1.15,3.05,.10],.19,.105],
+        [[.14,2.12,.02],[-2.05,3.72,-.12],.145,.075],
+        [[.20,2.35,.04],[-.95,4.42,.24],.12,.055],
+        [[.20,2.30,.04],[1.18,3.35,.12],.16,.085],
+        [[.27,2.65,.02],[2.05,3.88,-.10],.13,.065],
+        [[.30,2.90,.02],[1.10,4.62,.22],.105,.05],
+        [[.32,3.10,.02],[-.05,4.82,.04],.10,.045]
+      ];
+      for(const [a,b,r1,r2] of limbs)branch(a,b,r1,r2);
+      // Fine secondary twigs make the branching visible through the leaves.
+      const twigs=[
+        [[-1.15,3.05,.10],[-1.78,3.55,.28]], [[-1.15,3.05,.10],[-.92,3.78,-.18]],
+        [[-2.05,3.72,-.12],[-2.52,4.12,.02]], [[-.95,4.42,.24],[-1.42,4.92,.35]],
+        [[1.18,3.35,.12],[1.78,3.72,.28]], [[1.18,3.35,.12],[.88,4.02,-.22]],
+        [[2.05,3.88,-.10],[2.55,4.30,.02]], [[1.10,4.62,.22],[1.55,5.12,.34]],
+        [[-.05,4.82,.04],[-.48,5.35,-.12]], [[-.05,4.82,.04],[.38,5.38,.20]]
+      ];
+      for(let i=0;i<twigs.length;i++)branch(twigs[i][0],twigs[i][1],.062,.022,i%3===0?barkLight:branchMaterial);
+
+      // One maple-leaf silhouette is instanced in three natural autumn tones.
+      const leafShape=new THREE.Shape();
+      leafShape.moveTo(0,-.48);leafShape.lineTo(-.075,-.18);leafShape.lineTo(-.29,-.29);
+      leafShape.lineTo(-.22,-.045);leafShape.lineTo(-.48,.035);leafShape.lineTo(-.22,.15);
+      leafShape.lineTo(-.30,.40);leafShape.lineTo(-.065,.29);leafShape.lineTo(0,.53);
+      leafShape.lineTo(.065,.29);leafShape.lineTo(.30,.40);leafShape.lineTo(.22,.15);
+      leafShape.lineTo(.48,.035);leafShape.lineTo(.22,-.045);leafShape.lineTo(.29,-.29);
+      leafShape.lineTo(.075,-.18);leafShape.closePath();
+      const leafGeometry=new THREE.ShapeGeometry(leafShape,1);
+      const leafMaterials=[
+        new THREE.MeshStandardMaterial({color:'#a91f2d',roughness:.94,side:THREE.DoubleSide,emissive:'#31060a',emissiveIntensity:.08}),
+        new THREE.MeshStandardMaterial({color:'#d42c36',roughness:.92,side:THREE.DoubleSide,emissive:'#3d080b',emissiveIntensity:.07}),
+        new THREE.MeshStandardMaterial({color:'#ef493c',roughness:.9,side:THREE.DoubleSide,emissive:'#4b1008',emissiveIntensity:.06}),
+        new THREE.MeshStandardMaterial({color:'#b9472d',roughness:.95,side:THREE.DoubleSide,emissive:'#351006',emissiveIntensity:.06})
+      ];
+      // Six overlapping, asymmetrical foliage masses create a natural maple crown.
+      const crown=[
+        [-1.48,4.52,.02,1.18,.92,.86],[-.42,5.18,.10,1.28,1.02,.92],
+        [.82,4.92,-.02,1.30,1.02,.92],[1.82,4.43,-.06,1.05,.88,.82],
+        [-.98,5.72,-.10,.92,.78,.76],[.72,5.78,.08,1.02,.82,.78],
+        [.08,4.38,.18,1.25,.82,.92]
+      ];
+      let seed=0x4d4f4d;
+      const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+      const leavesPerTone=245;
+      for(let tone=0;tone<leafMaterials.length;tone++){
+        const mesh=new THREE.InstancedMesh(leafGeometry,leafMaterials[tone],leavesPerTone);
+        const dummy=new THREE.Object3D();
+        for(let i=0;i<leavesPerTone;i++){
+          const c=crown[Math.floor(rand()*crown.length)];
+          const az=rand()*Math.PI*2,rad=Math.cbrt(rand());
+          const spreadX=Math.cos(az)*rad,spreadZ=Math.sin(az)*rad;
+          dummy.position.set(c[0]+spreadX*c[3],c[1]+(rand()*2-1)*rad*c[4],c[2]+spreadZ*c[5]);
+          dummy.rotation.set((rand()-.5)*2.5,(rand()-.5)*Math.PI*2,(rand()-.5)*2.8);
+          const size=.72+rand()*.72;
+          dummy.scale.set(.19*size,.24*size,.055);
+          dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);
+        }
+        mesh.instanceMatrix.needsUpdate=true;
+        mesh.frustumCulled=false;
+        maple.add(mesh);
+      }
+      // A restrained warm uplight gives the red leaves depth in night scenes.
+      const mapleGlow=new THREE.PointLight(0xff563c,.34,8,2);
+      mapleGlow.position.set(.1,3.1,.8);maple.add(mapleGlow);
+      maple.position.set(x,0,z);maple.scale.setScalar(scale);maple.userData.isMomiji=true;
+      scene.add(maple);return maple;
+    }
+    // Right-hand garden framing: trunk remains outside the pavilion footprint;
+    // canopy rises above the eaves without covering the ridge or front gable.
+    const momiji=createMomiji(8.25,1.15,1.12);trees.push(momiji);
+
     // Main architectural landmark: open pavilion with curved eaves, columns and lanterns.
     const house=new THREE.Group();scene.add(house);house.position.set(0,0,-1.4);house.rotation.y=-15*Math.PI/180;house.userData.refinement='LE-WEATHER-PAVILION-ROTATION-CCW-15-V1';
     const timber=mat('#684a35'),wall=mat('#e6ddc6'),roof=mat('#263b43',.72,.12),dark=mat('#293b38'),gold= new THREE.MeshStandardMaterial({color:'#d69b55',emissive:'#a35b1e',emissiveIntensity:.65});
@@ -1309,4 +1406,15 @@
    lower finials. Lantern positions and existing warm-light sources are retained.
    No roof, wall, door, foundation, deck, stair, rail, camera, scenery, weather UI,
    Location privacy or Stacks lifecycle code is changed.
+*/
+
+
+/* LE-WEATHER-PAVILION-JAPANESE-RED-MAPLE-V43
+   Adds a right-side Japanese momiji maple as genuine 3D scenery: a gently
+   leaning, tapered trunk; visible primary limbs and fine twigs; and a broad,
+   asymmetrical canopy made from 980 instanced five-lobed maple leaves in
+   layered crimson, scarlet and autumn-red tones. A subtle warm uplight gives
+   the foliage depth at night. The maple joins the existing wind-sway group.
+   Pavilion, roof, lanterns, Shoji doors, interior, foundation, deck, stairs,
+   rails, camera, forecast UI, Location privacy and Stacks lifecycle are unchanged.
 */
