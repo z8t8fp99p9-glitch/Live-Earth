@@ -210,12 +210,67 @@
     }
     // V12: no secondary stair-infill layer; the four thin riser boards above close the stair fronts.
     
-    // V3: no secondary joist layer or duplicate slab. The single perimeter frame supports the deck boards and piers.
-    // Restore the pavilion wall panel as real scene geometry (it was accidentally swallowed by the comment).
-    box(house,wall,0,2.55,-.08,5.9,2.0,3.7);
-    // Shoji divisions on the front elevation.
-    for(let i=0;i<7;i++){const x=-2.55+i*.85;box(house,timber,x,2.55,1.82,.075,1.9,.09);}
-    box(house,timber,0,1.62,1.88,6.15,.10,.12);box(house,timber,0,3.55,0,7.5,.22,5.2);
+    // V14 — PAVILION WALL FRAMEWORK.
+    // Replace the old opaque wall block with four readable elevations made from
+    // individual timber-framed Shoji panels. The foundation, deck, rails, posts,
+    // roof, camera and surrounding scenery remain untouched.
+    const shojiPaper=new THREE.MeshStandardMaterial({
+      color:'#e9e1ce',roughness:1,metalness:0,transparent:true,opacity:.84,
+      depthWrite:false,side:THREE.DoubleSide
+    });
+    const wallBottom=1.66,wallTop=3.43,wallHeight=wallTop-wallBottom;
+    const wallMid=(wallBottom+wallTop)/2;
+    const frameDepth=.105,frameWidth=.065;
+    const wallRailHeight=.075;
+    // Front/rear panels: a paper field held inside a real timber perimeter frame.
+    function frontShojiPanel(cx,panelWidth,z){
+      const innerW=panelWidth-frameWidth*2;
+      box(house,shojiPaper,cx,wallMid,z,innerW,wallHeight-frameWidth*2,.018);
+      for(const x of [cx-panelWidth/2+frameWidth/2,cx+panelWidth/2-frameWidth/2])
+        box(house,timber,x,wallMid,z,frameWidth,wallHeight,frameDepth);
+      for(const y of [wallBottom+frameWidth/2,wallTop-frameWidth/2])
+        box(house,timber,cx,y,z,panelWidth,frameWidth,frameDepth);
+      // Two horizontal rails and two fine vertical lattice members form a calm Shoji grid.
+      for(const y of [wallBottom+wallHeight/3,wallBottom+wallHeight*2/3])
+        box(house,timber,cx,y,z+.006,innerW,wallRailHeight,.045);
+      for(const x of [cx-panelWidth/6,cx+panelWidth/6])
+        box(house,timber,x,wallMid,z+.008,.038,wallHeight-frameWidth*2,.045);
+    }
+    // Side elevations use the same proportions, rotated into the pavilion depth.
+    function sideShojiPanel(x,cz,panelWidth){
+      const innerW=panelWidth-frameWidth*2;
+      box(house,shojiPaper,x,wallMid,cz,.018,wallHeight-frameWidth*2,innerW);
+      for(const z of [cz-panelWidth/2+frameWidth/2,cz+panelWidth/2-frameWidth/2])
+        box(house,timber,x,wallMid,z,frameDepth,wallHeight,frameWidth);
+      for(const y of [wallBottom+frameWidth/2,wallTop-frameWidth/2])
+        box(house,timber,x,y,cz,frameDepth,frameWidth,panelWidth);
+      for(const y of [wallBottom+wallHeight/3,wallBottom+wallHeight*2/3])
+        box(house,timber,x+.006,y,cz, .045,wallRailHeight,innerW);
+      for(const z of [cz-panelWidth/6,cz+panelWidth/6])
+        box(house,timber,x+.008,wallMid,z,.045,wallHeight-frameWidth*2,.038);
+    }
+    const bayWidth=5.9/4;
+    for(let i=0;i<4;i++){
+      const cx=-5.9/2+bayWidth*(i+.5);
+      frontShojiPanel(cx,bayWidth,1.82);  // four front sliding Shoji leaves
+      frontShojiPanel(cx,bayWidth,-1.82); // four rear Shoji bays
+    }
+    const sideBayWidth=3.64/2;
+    for(const x of [-2.96,2.96])for(let i=0;i<2;i++){
+      const cz=-1.82+sideBayWidth*(i+.5);
+      sideShojiPanel(x,cz,sideBayWidth);
+    }
+    // Continuous timber sill and head rails tie the separate panels into one wall system.
+    box(house,timber,0,wallBottom,1.82,5.98,.10,.14);
+    box(house,timber,0,wallTop,1.82,5.98,.10,.14);
+    box(house,timber,0,wallBottom,-1.82,5.98,.10,.14);
+    box(house,timber,0,wallTop,-1.82,5.98,.10,.14);
+    for(const x of [-2.96,2.96]){
+      box(house,timber,x,wallBottom,0,.14,.10,3.72);
+      box(house,timber,x,wallTop,0,.14,.10,3.72);
+    }
+    // Preserve the original upper timber beam and all four corner posts.
+    box(house,timber,0,3.55,0,7.5,.22,5.2);
     for(const x of [-3.15,3.15])for(const z of [-1.85,1.85])box(house,timber,x,2.5,z,.18,2.25,.18);
     const roofGeo=new THREE.ConeGeometry(5.2,1.55,4,1);roofGeo.rotateY(Math.PI/4);const roofMesh=new THREE.Mesh(roofGeo,roof);roofMesh.position.set(0,4.15,-.05);roofMesh.scale.set(1.05,1,.78);house.add(roofMesh);
     const eave=box(house,roof,0,3.55,.05,8.3,.18,5.9);eave.rotation.x=-.035;
@@ -321,4 +376,13 @@
    Four stair rises are equal; each closed riser meets the underside of a .055-thick tread.
    Treads are 1.00 deep with .055-deep risers and a restrained .05 overlap at the .95 pitch.
    The top tread remains at y=1.5725. Deck, beams, rails, house, roof, scenery, camera and UI remain unchanged.
+*/
+
+
+/* LE-WEATHER-PAVILION-SHOJI-WALLS-V14
+   Replaced the single opaque wall block with four elevations of separate Shoji panels:
+   four front sliding leaves, four rear bays and two bays on each side.
+   Each panel has a translucent paper field, timber perimeter, horizontal rails and
+   vertical lattice members. Continuous sill/head rails connect the panels.
+   Existing corner posts, roof/eaves, foundation, deck, rails, stairs, scenery and UI are unchanged.
 */
