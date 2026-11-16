@@ -24,11 +24,13 @@
     s.textContent=`
       .le-weather-v2{position:absolute;inset:0;overflow:hidden;isolation:isolate;background:#0a1c2b;color:#f7f5ed;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
       .le-weather-v2 *{box-sizing:border-box}.le-weather-v2 [hidden]{display:none!important}.le-weather-v2 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:pan-y}
+      /* LE-SQUARE-WORLD-CAMERA-V9: fixed square stage, centred and cropped by the display */
+      .le-weather-v2 canvas{position:absolute!important;inset:auto!important;left:50%!important;top:50%!important;width:100vmax!important;height:100vmax!important;max-width:none!important;max-height:none!important;transform:translate(-50%,-50%)!important;display:block;z-index:0;touch-action:pan-y}
       .le-weather-v2:after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(3,14,25,.30),transparent 28%,rgba(3,13,22,.10) 55%,rgba(2,10,18,.62));}
       .wx2-ui{position:absolute;z-index:2;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:calc(env(safe-area-inset-top) + 22px) clamp(18px,5vw,48px) calc(env(safe-area-inset-bottom) + var(--wx2-dock,132px));pointer-events:none;}
       .wx2-top{max-width:min(100%,580px);text-shadow:0 2px 22px #06152380}.wx2-brand{font-size:9px;font-weight:800;letter-spacing:.24em;color:#e8eee9c9}.wx2-place{margin-top:12px;font-size:11px;font-weight:750;letter-spacing:.16em;text-transform:uppercase}.wx2-date{margin-top:5px;font-size:11px;color:#f3f3e9b8}
       .wx2-temp-row{display:flex;align-items:flex-start;gap:4px;margin-top:clamp(18px,3vh,30px)}.wx2-temp{font-size:clamp(76px,19vw,126px);font-weight:220;letter-spacing:-.09em;line-height:.80;font-variant-numeric:tabular-nums}.wx2-deg{font-size:clamp(24px,5vw,40px);font-weight:300;margin:4px 0 0 3px}.wx2-condition{margin-top:13px;font-size:clamp(22px,5.2vw,36px);font-weight:450;letter-spacing:-.045em;line-height:1.04}.wx2-feels{margin-top:7px;font-size:12px;color:#f4f2e9c7}
-      .wx2-bottom{width:min(100%,780px);pointer-events:auto;text-shadow:0 2px 18px #06152380}.wx2-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px}.wx2-mode{display:flex;gap:5px;padding:4px;border:1px solid #ffffff35;border-radius:999px;background:#061a2a70;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}.wx2-mode button,.wx2-preview button{border:0;border-radius:999px;background:transparent;color:#f6f4eb;padding:8px 12px;font:700 9px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.07em;touch-action:manipulation}.wx2-mode button[aria-pressed="true"]{background:#f2f1e9;color:#122b3b}.wx2-preview{display:flex;align-items:center;gap:7px}.wx2-preview select{max-width:126px;border:1px solid #ffffff50;border-radius:999px;background:#061a2a9c;color:#fff;padding:9px 11px;font:700 9px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.07em;outline:none;color-scheme:dark;backdrop-filter:blur(14px)}.wx2-preview select:focus-visible,.wx2-mode button:focus-visible{outline:2px solid white;outline-offset:3px}
+      .wx2-bottom.wx2-controls-collapsed .wx2-toolbar,.wx2-bottom.wx2-controls-collapsed .wx2-section-head,.wx2-bottom.wx2-controls-collapsed .wx2-hours,.wx2-bottom.wx2-controls-collapsed .wx2-week{display:none!important}.wx2-control-toggle{pointer-events:auto;position:absolute;z-index:4;right:clamp(18px,5vw,48px);bottom:calc(env(safe-area-inset-bottom) + var(--wx2-dock,132px) - 2px);width:42px;height:42px;border:1px solid #ffffff70;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#d8eef0d9,#08283bdc);color:#f8f7ef;box-shadow:0 5px 22px #00131f80,inset 0 1px 4px #ffffff80;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font:600 22px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;touch-action:manipulation}.wx2-control-toggle:active{transform:scale(.94)}.wx2-control-toggle:focus-visible{outline:2px solid white;outline-offset:3px}.wx2-control-toggle span{display:block;transform:translateY(-1px)}.wx2-bottom{width:min(100%,780px);pointer-events:auto;text-shadow:0 2px 18px #06152380}.wx2-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px}.wx2-mode{display:flex;gap:5px;padding:4px;border:1px solid #ffffff35;border-radius:999px;background:#061a2a70;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}.wx2-mode button,.wx2-preview button{border:0;border-radius:999px;background:transparent;color:#f6f4eb;padding:8px 12px;font:700 9px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.07em;touch-action:manipulation}.wx2-mode button[aria-pressed="true"]{background:#f2f1e9;color:#122b3b}.wx2-preview{display:flex;align-items:center;gap:7px}.wx2-preview select{max-width:126px;border:1px solid #ffffff50;border-radius:999px;background:#061a2a9c;color:#fff;padding:9px 11px;font:700 9px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.07em;outline:none;color-scheme:dark;backdrop-filter:blur(14px)}.wx2-preview select:focus-visible,.wx2-mode button:focus-visible{outline:2px solid white;outline-offset:3px}
       .wx2-section-head{display:flex;justify-content:space-between;align-items:center;margin:0 1px 8px;color:#f4f3e9}.wx2-section-head strong{font-size:10px;letter-spacing:.14em;text-transform:uppercase}.wx2-section-head span{font-size:9px;color:#f2f1e9a8}
       .wx2-hours{display:flex;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scrollbar-width:none;padding:1px 1px 8px;touch-action:pan-x}.wx2-hours::-webkit-scrollbar{display:none}.wx2-hour{flex:0 0 66px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:7px;padding:10px 7px;border:1px solid #ffffff28;border-radius:15px;background:linear-gradient(150deg,#ffffff22,#071d2d88);backdrop-filter:blur(13px);-webkit-backdrop-filter:blur(13px)}.wx2-hour.is-now{border-color:#f8f3d6a8;background:linear-gradient(150deg,#f5f0d63b,#071d2d9c)}.wx2-hour time{font-size:9px;color:#f2f0e6c9}.wx2-hour .wx2-icon{font-size:19px;line-height:1}.wx2-hour b{font-size:14px;font-weight:650}.wx2-hour small{font-size:8px;color:#e9e8dfb8;white-space:nowrap}
       .wx2-week{display:grid;gap:6px}.wx2-day{display:grid;grid-template-columns:minmax(48px,1fr) 24px 32px 32px minmax(36px,.8fr) 34px;align-items:center;gap:8px;padding:9px 12px;border:1px solid #ffffff20;border-radius:13px;background:#061b2b80;backdrop-filter:blur(12px);font-size:10px}.wx2-day .wx2-dayname{font-weight:650}.wx2-day .wx2-icon{text-align:center;font-size:16px}.wx2-day .wx2-low{color:#d6e1e0a8}.wx2-day .wx2-rain{text-align:right;color:#c6e7f2}.wx2-bar{height:4px;border-radius:5px;background:linear-gradient(90deg,#a6c8d0,#f3d99a);opacity:.85}
@@ -43,7 +45,7 @@
   const dayLabel = value => {const d=new Date(value+'T12:00:00');return Number.isNaN(d.getTime())?'—':d.toLocaleDateString([], {weekday:'short'});};
   function makeScreen(){
     const root=document.createElement('main');root.className='le-weather-v2';root.setAttribute('aria-label','Immersive live weather and forecast');
-    root.innerHTML=`<canvas aria-hidden="true"></canvas><div class="wx2-ui"><header class="wx2-top"><div class="wx2-brand">LIVE // EARTH · WEATHER</div><div class="wx2-place" data-w="place">YOUR LOCATION</div><div class="wx2-date" data-w="date">—</div><div class="wx2-temp-row"><span class="wx2-temp" data-w="temp">—</span><span class="wx2-deg">°</span></div><div class="wx2-condition" data-w="condition">Loading weather</div><div class="wx2-feels" data-w="feels">Feels like —</div></header><section class="wx2-bottom"><div class="wx2-toolbar"><div class="wx2-mode" role="group" aria-label="Forecast range"><button type="button" data-range="hours" aria-pressed="true">TODAY</button><button type="button" data-range="week" aria-pressed="false">7 DAYS</button></div><div class="wx2-preview"><select aria-label="Temporary weather scene preview"><option value="auto">LIVE SCENE</option><option value="clear">CLEAR</option><option value="cloudy">CLOUDY</option><option value="rain">RAIN</option><option value="storm">STORM</option><option value="snow">SNOW</option><option value="fog">FOG</option><option value="wind">WIND</option><option value="hot">HEAT</option><option value="night">NIGHT</option></select></div></div><div class="wx2-section-head"><strong data-w="forecast-title">Today · Hourly</strong><span data-w="forecast-sub">Next hours</span></div><div class="wx2-hours" data-w="hours" aria-label="Hourly forecast"></div><div class="wx2-week" data-w="week" hidden aria-label="Seven day forecast"></div><div class="wx2-metrics"><div class="wx2-metric"><label>Humidity</label><b data-w="humidity">—</b></div><div class="wx2-metric"><label>Wind</label><b data-w="wind">—</b></div><div class="wx2-metric"><label>Rain chance</label><b data-w="rain">—</b></div><div class="wx2-metric"><label>UV index</label><b data-w="uv">—</b></div></div><div class="wx2-status" data-w="status" role="status" aria-live="polite">Waiting for location permission</div></section></div>`;
+    root.innerHTML=`<canvas aria-hidden="true"></canvas><div class="wx2-ui"><header class="wx2-top"><div class="wx2-brand">LIVE // EARTH · WEATHER</div><div class="wx2-place" data-w="place">YOUR LOCATION</div><div class="wx2-date" data-w="date">—</div><div class="wx2-temp-row"><span class="wx2-temp" data-w="temp">—</span><span class="wx2-deg">°</span></div><div class="wx2-condition" data-w="condition">Loading weather</div><div class="wx2-feels" data-w="feels">Feels like —</div></header><section class="wx2-bottom" id="wx2-bottom-controls"><div class="wx2-toolbar"><div class="wx2-mode" role="group" aria-label="Forecast range"><button type="button" data-range="hours" aria-pressed="true">TODAY</button><button type="button" data-range="week" aria-pressed="false">7 DAYS</button></div><div class="wx2-preview"><select aria-label="Temporary weather scene preview"><option value="auto">LIVE SCENE</option><option value="clear">CLEAR</option><option value="cloudy">CLOUDY</option><option value="rain">RAIN</option><option value="storm">STORM</option><option value="snow">SNOW</option><option value="fog">FOG</option><option value="wind">WIND</option><option value="hot">HEAT</option><option value="night">NIGHT</option></select></div></div><div class="wx2-section-head"><strong data-w="forecast-title">Today · Hourly</strong><span data-w="forecast-sub">Next hours</span></div><div class="wx2-hours" data-w="hours" aria-label="Hourly forecast"></div><div class="wx2-week" data-w="week" hidden aria-label="Seven day forecast"></div><div class="wx2-metrics"><div class="wx2-metric"><label>Humidity</label><b data-w="humidity">—</b></div><div class="wx2-metric"><label>Wind</label><b data-w="wind">—</b></div><div class="wx2-metric"><label>Rain chance</label><b data-w="rain">—</b></div><div class="wx2-metric"><label>UV index</label><b data-w="uv">—</b></div></div><div class="wx2-status" data-w="status" role="status" aria-live="polite">Waiting for location permission</div></section><button class="wx2-control-toggle" type="button" aria-label="Hide weather controls" aria-expanded="true" aria-controls="wx2-bottom-controls"><span aria-hidden="true">⌃</span></button></div>`;
     return root;
   }
   const put=(root,key,value)=>{const e=root.querySelector(`[data-w="${key}"]`);if(e)e.textContent=value;};
@@ -88,19 +90,126 @@
     const mat=(color,roughness=.86,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
     const groundMat=mat('#344e42'),hillMats=['#274a45','#315951','#3d665c'].map(c=>mat(c));
     const ground=new THREE.Mesh(new THREE.PlaneGeometry(180,180),groundMat);ground.rotation.x=-Math.PI/2;ground.position.y=-.18;scene.add(ground);
-    function hill(x,z,sx,sy,sz,index){const m=new THREE.Mesh(new THREE.IcosahedronGeometry(1,2),hillMats[index%3]);m.position.set(x,sy*.45,z);m.scale.set(sx,sy,sz);scene.add(m);return m;}
-    for(let i=0;i<14;i++){const x=(i-6.5)*7;hill(x,-23-(i%3)*2,5+(i%4)*1.7,5+(i%3)*1.5,4+(i%5),i);}
+    // LE-WEATHER-HILLS-TERRAIN-V2 LE-WEATHER-HILLS-REAR-RIDGE-LOWERED-V1: three continuous rolling ridges.
+    function createRollingRidge(zStart,depth,peak,phase,material){
+      const nx=112,nz=30,positions=[],indices=[];
+      for(let iz=0;iz<=nz;iz++){
+        const t=iz/nz;
+        for(let ix=0;ix<=nx;ix++){
+          const u=ix/nx,x=-48+u*96;
+          const crest=.68+.18*Math.sin(x*.105+phase)+.10*Math.sin(x*.19+phase*1.7);
+          const shoulder=Math.pow(Math.max(0,Math.sin(Math.PI*t)),.72);
+          const y=peak*.55*shoulder*Math.max(.28,crest);
+          const z=zStart+t*depth;
+          positions.push(x,y,z);
+          if(ix<nx&&iz<nz){const a=iz*(nx+1)+ix,b=a+1,c=a+(nx+1),d=c+1;indices.push(a,c,b,b,c,d);}
+        }
+      }
+      const geometry=new THREE.BufferGeometry();
+      geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+      geometry.setIndex(indices);geometry.computeVertexNormals();
+      const mesh=new THREE.Mesh(geometry,material);mesh.material.side=THREE.DoubleSide;scene.add(mesh);return mesh;
+    }
+    createRollingRidge(-43,15,8.5,.4,hillMats[0]);
+    createRollingRidge(-36,14,10,1.8,hillMats[1]);
+    createRollingRidge(-29,12,7,3.1,hillMats[2]);
+    const fujiGroup=new THREE.Group();fujiGroup.position.set(3.75,6.048,-64);fujiGroup.scale.y=.54;fujiGroup.userData.refinement='LE-WEATHER-FUJI-HEIGHT-54-V3';scene.add(fujiGroup);
+    const fujiBodyMat=new THREE.MeshStandardMaterial({color:'#657985',roughness:1});
+    const fujiBody=new THREE.Mesh(new THREE.ConeGeometry(25,22,96,8),fujiBodyMat);fujiGroup.add(fujiBody);
+    const snowVertices=[0,11,0],snowIndices=[],snowSegments=96;
+    for(let i=0;i<snowSegments;i++){const a=i/snowSegments*Math.PI*2;const edge=3.05+.48*Math.sin(a*4+.55)+.22*Math.sin(a*9+1.1)+.12*Math.sin(a*15);const radius=25*(11-edge)/22;snowVertices.push(radius*Math.cos(a),edge,radius*Math.sin(a));}
+    for(let i=0;i<snowSegments;i++)snowIndices.push(0,i+1,((i+1)%snowSegments)+1);
+    const snowGeometry=new THREE.BufferGeometry();snowGeometry.setAttribute('position',new THREE.Float32BufferAttribute(snowVertices,3));snowGeometry.setIndex(snowIndices);snowGeometry.computeVertexNormals();
+    const snowMaterial=new THREE.MeshStandardMaterial({color:'#e7eeee',roughness:1,side:THREE.DoubleSide});
+    fujiGroup.add(new THREE.Mesh(snowGeometry,snowMaterial));
     const waterMat=new THREE.MeshPhysicalMaterial({color:'#2c7180',roughness:.2,metalness:.15,clearcoat:.8,clearcoatRoughness:.18,transparent:true,opacity:.92});
     const water=new THREE.Mesh(new THREE.PlaneGeometry(90,36,40,20),waterMat);water.rotation.x=-Math.PI/2;water.position.set(0,.02,7);scene.add(water);
     // Layered procedural islands and Japanese garden trees: all actual 3D geometry.
     const trunk=mat('#4b392b'),leafMats=['#244d3c','#2f6249','#47745a'].map(c=>mat(c));
     function tree(x,z,scale=1){const g=new THREE.Group();const t=new THREE.Mesh(new THREE.CylinderGeometry(.10*scale,.18*scale,1.6*scale,7),trunk);t.position.y=.8*scale;g.add(t);for(let k=0;k<3;k++){const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(.9*scale-k*.12,1),leafMats[k]);crown.position.set((k-1)*.18*scale,(1.55+k*.46)*scale,0);crown.scale.set(1.0,.78,.85);g.add(crown);}g.position.set(x,0,z);scene.add(g);return g;}
-    const trees=[];for(let i=0;i<18;i++){const side=i%2?1:-1;trees.push(tree(side*(5.2+(i%4)*1.7),-2+(i%6)*2.2,.65+(i%3)*.18));}
+    // Fuller Japanese garden trees return as balanced side framing around the pavilion.
+    const trees=[];const treeLayout=[
+      [-8.0,-5.0,.82],[-10.8,1.5,.72],[-8.8,8.2,.78],[-13.0,-12.0,.88],[-13.8,6.0,.70],
+      [8.0,-5.0,.82],[10.8,1.5,.72],[8.8,8.2,.78],[13.0,-12.0,.88],[13.8,6.0,.70]
+    ];
+    for(const [x,z,scale] of treeLayout)trees.push(tree(x,z,scale));
     // Main architectural landmark: open pavilion with curved eaves, columns and lanterns.
-    const house=new THREE.Group();scene.add(house);house.position.set(0,0,-1.4);
+    const house=new THREE.Group();scene.add(house);house.position.set(0,0,-1.4);house.rotation.y=-15*Math.PI/180;house.userData.refinement='LE-WEATHER-PAVILION-ROTATION-CCW-15-V1';
     const timber=mat('#684a35'),wall=mat('#e6ddc6'),roof=mat('#263b43',.72,.12),dark=mat('#293b38'),gold= new THREE.MeshStandardMaterial({color:'#d69b55',emissive:'#a35b1e',emissiveIntensity:.65});
     function box(parent,m,x,y,z,sx,sy,sz){const o=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),m);o.position.set(x,y,z);parent.add(o);return o;}
-    box(house,timber,0,1.45,0,6.8,.25,4.5);box(house,wall,0,2.55,-.08,5.9,2.0,3.7);
+    // LE-WEATHER-PAVILION-RAISED-FOUNDATION-V1 LE-WEATHER-PAVILION-SLIM-FOUNDATION-V2 LE-WEATHER-PAVILION-TRADITIONAL-STAIRS-PIERS-V3 LE-WEATHER-PAVILION-STAIR-INFILL-V4 LE-WEATHER-PAVILION-FOUR-SIDE-RAILS-V8: raised engawa deck with visible undercroft and centred three-step approach.
+    const foundationStone=mat('#777465'),deckPlank=mat('#806044'),stepTop=mat('#98724f');
+    // Deep perimeter beams frame the wider platform.
+    box(house,timber,0,1.25,2.76,7.86,.15,.24);
+    box(house,timber,0,1.25,-2.76,7.86,.15,.24);
+    box(house,timber,-3.81,1.25,0,.24,.15,5.28);
+    box(house,timber,3.81,1.25,0,.24,.15,5.28);
+    // Stone pads and timber piers lift the deck visibly above the garden ground.
+    for(const x of [-3.42,0,3.42]){
+      for(const z of [-2.34,2.34]){
+        box(house,foundationStone,x,.14,z,.48,.28,.48);
+        box(house,dark,x,.72,z,.30,.88,.30);
+      }
+    }
+    for(const x of [-3.42,3.42]){
+      box(house,foundationStone,x,.14,0,.48,.28,.48);
+      box(house,dark,x,.72,0,.30,.88,.30);
+    }
+    // Fine deck boards are visible around the building as a veranda.
+    for(let i=0;i<10;i++){
+      const z=-2.46+i*.545;
+      box(house,deckPlank,0,1.565,z,7.58,.045,.50);
+    }
+    // Four traditional solid timber risers with deep, overhanging treads.
+    // Each step has a low vertical riser and a broad cap, creating a connected old-wood stair profile.
+    const entranceSteps=[
+      {z:4.20,front:.16,top:.34},
+      {z:3.25,front:.48,top:.68},
+      {z:2.30,front:.80,top:1.02},
+      {z:1.35,front:1.12,top:1.36}
+    ];
+    for(const step of entranceSteps){
+      box(house,timber,0,(step.front+step.top)/2,step.z,4.35,step.top-step.front,.98);
+      box(house,deckPlank,0,step.top-.035,step.z+.035,4.48,.07,1.10);
+      box(house,stepTop,0,step.top+.006,step.z+.035,4.38,.025,1.00);
+    } 
+    
+    // Left and right long sides: upper/lower rails and three vertical timber balusters per side.
+    for(const x of [-3.58,3.58]){
+      box(house,timber,x,2.35,0,.18,.16,5.05);
+      box(house,deckPlank,x,1.78,0,.13,.12,4.88);
+      for(const z of [-1.62,0,1.62]){
+        box(house,dark,x,2.06,z,.12,.56,.12);
+      }
+    }
+
+    // Rear short side: a continuous upper and lower rail with three vertical balusters.
+    box(house,timber,0,2.35,-2.52,7.02,.16,.18);
+    box(house,deckPlank,0,1.78,-2.52,7.02,.12,.14);
+    for(const x of [-2.55,0,2.55]){
+      box(house,dark,x,2.06,-2.52,.14,.56,.14);
+    }
+
+    // Front short side: matching rail returns leave the centred staircase entrance open.
+    for(const x of [-2.95,2.95]){
+      box(house,timber,x,2.35,2.52,1.26,.16,.18);
+      box(house,deckPlank,x,1.78,2.52,1.26,.12,.14);
+      for(const offset of [-.48,.48]){
+        box(house,dark,x+offset,2.06,2.52,.12,.56,.14);
+      }
+    }
+    // Continuous vertical timber infill closes the exposed middle gaps between each tread.
+    for(let i=1;i<entranceSteps.length;i++){
+      const lower=entranceSteps[i-1];
+      const upper=entranceSteps[i];
+      const rise=Math.max(0,upper.front-lower.top);
+      if(rise>0){
+        box(house,timber,0,(lower.top+upper.front)/2,upper.z+.505,4.34,rise,.10);
+        box(house,deckPlank,0,(lower.top+upper.front)/2,upper.z+.562,4.38,rise*.72,.018);
+      }
+    }
+    
+    box(house,timber,0,1.50,0,7.8,.15,5.6);box(house,wall,0,2.55,-.08,5.9,2.0,3.7);
     // Shoji divisions on the front elevation.
     for(let i=0;i<7;i++){const x=-2.55+i*.85;box(house,timber,x,2.55,1.82,.075,1.9,.09);}
     box(house,timber,0,1.62,1.88,6.15,.10,.12);box(house,timber,0,3.55,0,7.5,.22,5.2);
@@ -118,7 +227,7 @@
     const state={kind:'clear',phase:'day'};let raf=0,last=0,elapsed=0,disposed=false,visible=!document.hidden,width=1,height=1;
     const palettes={clear:['#7fb7c3','#d8c9a7'],cloudy:['#718d99','#9aa6a0'],rain:['#3f5e70','#637e84'],storm:['#1b2e43','#455b68'],snow:['#a6c5d1','#e2e7e0'],fog:['#a3b6b0','#d0d2c3'],wind:['#78a8b2','#d2c8a9'],hot:['#83b7bb','#e8c58e'],night:['#081a35','#273c55']};
     function setWeather(kind){state.kind=kind;const p=palettes[kind]||palettes.clear;scene.background.set(p[0]);scene.fog.color.set(p[1]);scene.fog.density=kind==='fog'?.035:kind==='rain'?.018:kind==='storm'?.024:.010;rain.visible=kind==='rain'||kind==='storm';snow.visible=kind==='snow';stars.visible=kind==='night';clouds.forEach((c,i)=>{c.visible=['cloudy','rain','storm','snow','fog'].includes(kind)||i<3;c.scale.setScalar(kind==='storm'?1.3:kind==='fog'?1.5:1);});sun.intensity=kind==='night'?.18:kind==='storm'?.55:kind==='cloudy'?1.1:kind==='rain'?1.35:3.1;fill.intensity=kind==='night'?.6:1.0;waterMat.roughness=kind==='storm'?.48:kind==='rain'?.34:.2;gold.emissiveIntensity=kind==='night'?1.7:.45;}
-    function resize(){const r=canvas.getBoundingClientRect();width=Math.max(1,r.width);height=Math.max(1,r.height);renderer.setSize(width,height,false);camera.aspect=width/height;camera.position.set(width>height?0:0, width>height?6.1:7.2, width>height?20:18);camera.fov=width>height?38:42;camera.updateProjectionMatrix();}
+    function resize(){const r=canvas.getBoundingClientRect();const side=Math.max(1,r.width,r.height);width=side;height=side;renderer.setSize(side,side,false);camera.aspect=1;camera.position.set(0,7.0,27.7);camera.fov=42;camera.lookAt(0,2.5,-1.4);camera.updateProjectionMatrix();}
     function frame(ts){if(disposed||!visible)return;raf=requestAnimationFrame(frame);const dt=Math.min(.05,(ts-last)/1000||0);last=ts;elapsed+=dt;const a=rain.geometry.attributes.position.array,b=snow.geometry.attributes.position.array;for(let i=0;i<rainCount;i++){a[i*3+1]-=dt*18;if(a[i*3+1]<0)a[i*3+1]=18;}rain.geometry.attributes.position.needsUpdate=true;for(let i=0;i<snowCount;i++){b[i*3+1]-=dt*1.7;if(b[i*3+1]<0)b[i*3+1]=18;b[i*3]+=Math.sin(elapsed+i)*dt*.18;}snow.geometry.attributes.position.needsUpdate=true;clouds.forEach((c,i)=>{c.position.x+=dt*(state.kind==='wind'?.42:.12)*(i%2?1:-1);if(c.position.x>28)c.position.x=-28;if(c.position.x< -28)c.position.x=28;});trees.forEach((t,i)=>{t.rotation.z=Math.sin(elapsed*.55+i)* (state.kind==='wind'?.06:.012);});waterMat.roughness=(state.kind==='storm'?.44:.2)+Math.sin(elapsed*1.2)*.025;renderer.render(scene,camera);}
     function start(){if(!disposed&&visible&&!raf)raf=requestAnimationFrame(frame);}function stop(){if(raf)cancelAnimationFrame(raf);raf=0;}
     const ro=new ResizeObserver(resize);ro.observe(canvas);const onResize=()=>resize();const onVisibility=()=>{visible=!document.hidden;if(visible){last=0;start();}else stop();};window.addEventListener('resize',onResize,{passive:true});document.addEventListener('visibilitychange',onVisibility);resize();setWeather('clear');start();
@@ -138,7 +247,16 @@
     async function init(){try{world=await createWorld(canvas);worldReady=true;if(disposed){world.dispose();return;}if(previewKind!=='auto')world.setWeather(previewKind);else if(liveData)world.setWeather(weatherKind(Number(liveData.current?.weather_code)));}catch(error){console.error('[LIVE // EARTH] Weather 3D renderer unavailable.',error);screen.classList.add('wx2-no-webgl');setStatus('3D rendering unavailable on this device. Forecast controls remain available.');}}
     init();
     const rangeButtons=[...screen.querySelectorAll('[data-range]')];function setRange(mode){forecastMode=mode;rangeButtons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.range===mode)));screen.querySelector('[data-w="hours"]').hidden=mode!=='hours';screen.querySelector('[data-w="week"]').hidden=mode!=='week';put(screen,'forecast-title',mode==='hours'?'Today · Hourly':'Your week');put(screen,'forecast-sub',mode==='hours'?'Scroll through the day':'7-day outlook');}
-    rangeButtons.forEach(b=>b.addEventListener('click',()=>setRange(b.dataset.range)));const select=screen.querySelector('.wx2-preview select');function onPreview(){const k=select.value;if(k==='auto'){manual=false;previewKind='auto';if(liveData&&!screen.dataset.preview){paint(liveData,false);put(screen,'place','YOUR LOCATION');setStatus('LIVE FORECAST · OPEN-METEO');}else if(window.liveEarthLocationAllowed?.()===true)fetchLive();else locationOff();return;}manual=true;serial++;abort?.abort();preview(k);}select.addEventListener('change',onPreview);
+    rangeButtons.forEach(b=>b.addEventListener('click',()=>setRange(b.dataset.range)));
+    const controlsToggle=screen.querySelector('.wx2-control-toggle');
+    const controlsPanel=screen.querySelector('.wx2-bottom');
+    controlsToggle?.addEventListener('click',()=>{
+      const collapsed=controlsPanel.classList.toggle('wx2-controls-collapsed');
+      controlsToggle.setAttribute('aria-expanded',String(!collapsed));
+      controlsToggle.setAttribute('aria-label',collapsed?'Show weather controls':'Hide weather controls');
+      const glyph=controlsToggle.querySelector('span');
+      if(glyph)glyph.textContent=collapsed?'⌄':'⌃';
+    });const select=screen.querySelector('.wx2-preview select');function onPreview(){const k=select.value;if(k==='auto'){manual=false;previewKind='auto';if(liveData&&!screen.dataset.preview){paint(liveData,false);put(screen,'place','YOUR LOCATION');setStatus('LIVE FORECAST · OPEN-METEO');}else if(window.liveEarthLocationAllowed?.()===true)fetchLive();else locationOff();return;}manual=true;serial++;abort?.abort();preview(k);}select.addEventListener('change',onPreview);
     function onLocation(e){if(e.detail?.enabled===true&&window.liveEarthLocationAllowed?.()===true&&!manual)fetchLive();else if(window.liveEarthLocationAllowed?.()!==true&&!manual){serial++;abort?.abort();locationOff();}}
     function onStop(){serial++;abort?.abort();if(!manual)locationOff();}function onOnline(){if(!manual&&window.liveEarthLocationAllowed?.()===true)fetchLive();}function onOffline(){serial++;abort?.abort();if(!manual)setStatus('OFFLINE · Live readings are not being refreshed.');}
     function onVisibility(){if(!document.hidden&&!manual&&window.liveEarthLocationAllowed?.()===true)fetchLive();}
@@ -149,3 +267,12 @@
   }
   runtime.registerFeature('weather',activateWeather);
 })();
+
+/* LE-WEATHER-SCENERY-V28 */
+
+/* LIVE-EARTH-WEATHER-REAL-SCENE-V1
+   The approved Weather scene is authored directly in this module.
+   Do not regenerate it from service-worker string replacements.
+   Pavilion guard rails are children of the rotated house group and are measured
+   from the top of the raised deck (deck surface approx. y=1.588).
+*/

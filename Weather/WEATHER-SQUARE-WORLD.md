@@ -1,37 +1,35 @@
-# Weather 3D — Scene Restoration and Four-Side Pavilion Rails v27
+# Weather 3D — Real Scene Source V1
 
-## Why V26 appeared to remove the scene
-- V26 contained a circular patch prerequisite: the V25 long-side rail insertion required the V26 four-side rail marker to exist first.
-- The V26 four-side insertion in turn required the V25 marker.
-- Starting from the V24 Weather module, neither marker existed, so neither rail patch ran and the extension returned no transformed module.
-- The browser was consequently served the unmodified Weather module, which explains why the Fuji, rolling hills, balanced trees, approved pavilion framing and refined architecture appeared to disappear.
-- V27 is rebuilt from the known V24 transformation and applies all four rails in one ordered patch. It does not depend on the broken V25/V26 marker chain.
+## Architecture correction
+The approved Weather scene is now authored directly in `Weather/weather-view.js`.
+`Weather/Art/service-worker-extension.js` no longer rewrites the Weather module,
+intercepts `fetch`, or applies a chain of string-based scene patches. It only keeps
+the existing Live Art renderer in the service-worker app shell.
 
-## V27 pavilion rails
-- Left and right long sides: upper and lower timber rails with three vertical balusters per side.
-- Rear short side: continuous upper and lower rails with three vertical balusters.
-- Front short side: matching rail returns split around the central entrance staircase.
-- All rails use existing house timber, deck and dark support materials and inherit the house's approved rotation.
+This removes the fragile runtime transformation layer that caused entire scene
+refinements to disappear when one marker or geometry assertion failed.
 
-## Preserved V24 scene
-- Three continuous rolling hills and lowered rear ridge.
-- Mount Fuji height, position and depth.
+## Preserved approved scene
+- Front-facing square camera and centered canvas.
+- Mount Fuji at the approved reduced height and right-shifted position.
+- Three continuous rolling hills, including the lowered rear ridge.
 - Balanced Japanese garden trees.
-- Pavilion rotation: 15 degrees counter-clockwise from original.
-- Raised slim foundation, shortened support piers, traditional four-step stair and closed stair infill.
-- Approved front-facing square camera and forecast controls toggle.
-- Weather UI, effects, water, Location permission flow and feature lifecycle.
+- Pavilion rotated 15 degrees counter-clockwise from its original orientation.
+- Slim raised foundation, shortened support piers and traditional four-step timber stairs.
+- Closed timber stair infill.
+- Forecast controls show/hide toggle and existing weather preview UI.
+- Existing weather effects, water, Location privacy boundary and Stacks feature lifecycle.
 
-## Verification
-- Runtime test applied V24 to the original Weather fixture, then applied V27 to the transformed V24 module.
-- Test confirmed the V27 marker, all four rail sections, stair infill, Fuji, three rolling ridges, pavilion rotation, camera and forecast toggle.
-- The final transformed Weather module passed JavaScript syntax parsing.
-- ZIP integrity, manifest payload list, sizes and SHA-256 digests are verified.
-- Device rendering still requires upload and user testing.
+## Pavilion guard rails
+All four rail runs are children of the same `house` group as the deck and walls.
+They therefore inherit the approved pavilion rotation and transform together.
+The rails are positioned above the deck surface (deck top approximately y=1.588):
+- Left and right long sides: continuous upper and lower rails with balusters.
+- Rear side: continuous upper and lower rails with balusters.
+- Front side: two matching rail returns, leaving the central stair entrance open.
 
-
-## V28 rail elevation correction
-- Raised all four foundation guard-rail runs to the pavilion deck/floor perimeter.
-- Raised lower rails and shortened balusters to form a coherent guard assembly above the deck, rather than below the floor.
-- Front rail remains split around the entrance staircase; rear and both long sides remain continuous.
-- Pavilion geometry, rotation, camera, Fuji, hills, garden, stairs and weather controls are unchanged.
+## Regression prevention
+Future refinements must edit the actual scene construction in `Weather/weather-view.js`.
+Do not restore service-worker source rewriting. A scene update is rejected if it removes
+the real-scene marker, Fuji/hill geometry, pavilion rotation, stair infill, rail layout,
+camera, or forecast control toggle.
