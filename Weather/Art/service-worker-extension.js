@@ -1,4 +1,4 @@
-/* LIVE // EARTH — Weather V20 toggle pointer interaction fix.
+/* LIVE // EARTH — Weather V21 raised Japanese pavilion foundation.
  * Preserves the approved front-facing camera and square canvas.
  * Reduces rear hills by 45% and Mount Fuji by 40%, keeping Fuji grounded.
  */
@@ -13,7 +13,7 @@
   const sceneMarker = 'LE-WEATHER-FUJI-GARDEN-V2';
   const hillsMarker = 'LE-WEATHER-HILLS-HEIGHT-55-V2';
   const fujiMarker = 'LE-WEATHER-FUJI-HEIGHT-54-V3';
-  const versionMarker = 'LE-WEATHER-SCENERY-V20';
+  const versionMarker = 'LE-WEATHER-SCENERY-V21';
 
   const originalCanvasRule =
     '.le-weather-v2 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:pan-y}';
@@ -239,6 +239,55 @@
       changed = true;
     }
 
+
+    // V21: raised Japanese engawa foundation, perimeter framing, piers and broad entrance steps.
+    const foundationMarker = 'LE-WEATHER-PAVILION-RAISED-FOUNDATION-V1';
+    if (updated.includes("function box(parent,m,x,y,z,sx,sy,sz){const o=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),m);o.position.set(x,y,z);parent.add(o);return o;}") &&
+        !updated.includes(foundationMarker)) {
+      const baseSlab = "box(house,timber,0,1.45,0,6.8,.25,4.5);";
+      const expandedSlab = "box(house,timber,0,1.45,0,7.8,.25,5.6);";
+      if (updated.includes(baseSlab)) {
+        updated = updated.replace(baseSlab, expandedSlab);
+        changed = true;
+      }
+      const boxHelper = "function box(parent,m,x,y,z,sx,sy,sz){const o=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),m);o.position.set(x,y,z);parent.add(o);return o;}";
+      const foundationParts = `
+    // ${foundationMarker}: raised engawa deck with visible undercroft and centred three-step approach.
+    const foundationStone=mat('#777465'),deckPlank=mat('#806044'),stepTop=mat('#98724f');
+    // Deep perimeter beams frame the wider platform.
+    box(house,timber,0,1.20,2.76,7.86,.25,.24);
+    box(house,timber,0,1.20,-2.76,7.86,.25,.24);
+    box(house,timber,-3.81,1.20,0,.24,.25,5.28);
+    box(house,timber,3.81,1.20,0,.24,.25,5.28);
+    // Stone pads and timber piers lift the deck visibly above the garden ground.
+    for(const x of [-3.42,0,3.42]){
+      for(const z of [-2.34,2.34]){
+        box(house,foundationStone,x,.14,z,.48,.28,.48);
+        box(house,dark,x,.73,z,.30,1.18,.30);
+      }
+    }
+    for(const x of [-3.42,3.42]){
+      box(house,foundationStone,x,.14,0,.48,.28,.48);
+      box(house,dark,x,.73,0,.30,1.18,.30);
+    }
+    // Fine deck boards are visible around the building as a veranda.
+    for(let i=0;i<10;i++){
+      const z=-2.46+i*.545;
+      box(house,deckPlank,0,1.565,z,7.58,.045,.50);
+    }
+    // Three broad solid timber steps meet the front edge of the raised deck.
+    const entranceSteps=[{z:4.35,h:.50},{z:3.25,h:1.00},{z:2.15,h:1.50}];
+    for(const step of entranceSteps){
+      box(house,timber,0,step.h/2,step.z,4.35,step.h,1.12);
+      box(house,stepTop,0,step.h+.025,step.z,4.28,.05,1.06);
+    }
+    `;
+      if (updated.includes(boxHelper)) {
+        updated = updated.replace(boxHelper, boxHelper + foundationParts);
+        changed = true;
+      }
+    }
+
     if (!changed) return null;
     const hasFuji = updated.includes(`fujiGroup.userData.refinement='${fujiMarker}'`) &&
       updated.includes('fujiGroup.scale.y=.54') &&
@@ -248,7 +297,8 @@
     const hasTrees = updated.includes('const treeLayout=');
     const hasHouseRotation = updated.includes('house.rotation.y=-15*Math.PI/180') && updated.includes('LE-WEATHER-PAVILION-ROTATION-CCW-15-V1');
     const hasControlsToggle = updated.includes('wx2-control-toggle') && updated.includes('wx2-controls-collapsed') && updated.includes('const controlsToggle=screen.querySelector') && updated.includes('.wx2-control-toggle{pointer-events:auto;position:absolute;');
-    if (!hasFuji || !hasHills || !hasCamera || !hasTrees || !hasHouseRotation || !hasControlsToggle ||
+    const hasRaisedFoundation = updated.includes('LE-WEATHER-PAVILION-RAISED-FOUNDATION-V1') && updated.includes('box(house,timber,0,1.45,0,7.8,.25,5.6)') && updated.includes('const entranceSteps=') && updated.includes('foundationStone') && updated.includes('deckPlank');
+    if (!hasFuji || !hasHills || !hasCamera || !hasTrees || !hasHouseRotation || !hasControlsToggle || !hasRaisedFoundation ||
         updated.includes('left:calc(50% - 30vw)')) return null;
     return updated + `\n/* ${versionMarker} */\n`;
   }
@@ -275,7 +325,7 @@
     if(response.ok){
       const source=await response.clone().text();
       if(!source.includes(versionMarker))
-        console.error('[LIVE // EARTH] Weather V20 toggle interaction transform did not match; original Weather response preserved.');
+        console.error('[LIVE // EARTH] Weather V21 raised foundation transform did not match; original Weather response preserved.');
     }
     return response;
   };
