@@ -222,20 +222,23 @@
     const wallMid=(wallBottom+wallTop)/2;
     const frameDepth=.105,frameWidth=.065;
     const wallRailHeight=.075;
-    // Front/rear panels: a paper field held inside a real timber perimeter frame.
-    function frontShojiPanel(cx,panelWidth,z){
+    // Build each Shoji leaf as its own group so the front doors can slide independently.
+    function frontShojiPanel(parent,cx,panelWidth,z){
+      const leaf=new THREE.Group();leaf.position.set(cx,0,z);parent.add(leaf);
       const innerW=panelWidth-frameWidth*2;
-      box(house,shojiPaper,cx,wallMid,z,innerW,wallHeight-frameWidth*2,.018);
-      for(const x of [cx-panelWidth/2+frameWidth/2,cx+panelWidth/2-frameWidth/2])
-        box(house,timber,x,wallMid,z,frameWidth,wallHeight,frameDepth);
+      box(leaf,shojiPaper,0,wallMid,0,innerW,wallHeight-frameWidth*2,.018);
+      for(const x of [-panelWidth/2+frameWidth/2,panelWidth/2-frameWidth/2])
+        box(leaf,timber,x,wallMid,0,frameWidth,wallHeight,frameDepth);
       for(const y of [wallBottom+frameWidth/2,wallTop-frameWidth/2])
-        box(house,timber,cx,y,z,panelWidth,frameWidth,frameDepth);
+        box(leaf,timber,0,y,0,panelWidth,frameWidth,frameDepth);
       // Two horizontal rails and two fine vertical lattice members form a calm Shoji grid.
       for(const y of [wallBottom+wallHeight/3,wallBottom+wallHeight*2/3])
-        box(house,timber,cx,y,z+.006,innerW,wallRailHeight,.045);
-      for(const x of [cx-panelWidth/6,cx+panelWidth/6])
-        box(house,timber,x,wallMid,z+.008,.038,wallHeight-frameWidth*2,.045);
+        box(leaf,timber,0,y,.006,innerW,wallRailHeight,.045);
+      for(const x of [-panelWidth/6,panelWidth/6])
+        box(leaf,timber,x,wallMid,.008,.038,wallHeight-frameWidth*2,.045);
+      return leaf;
     }
+    const shojiDoors=[];
     // Side elevations use the same proportions, rotated into the pavilion depth.
     function sideShojiPanel(x,cz,panelWidth){
       const innerW=panelWidth-frameWidth*2;
@@ -252,8 +255,15 @@
     const bayWidth=5.9/4;
     for(let i=0;i<4;i++){
       const cx=-5.9/2+bayWidth*(i+.5);
-      frontShojiPanel(cx,bayWidth,1.82);  // four front sliding Shoji leaves
-      frontShojiPanel(cx,bayWidth,-1.82); // four rear Shoji bays
+      // Four independent front leaves use two shallow tracks. The inner pair
+      // stacks behind the outer pair when opened, clearing the central entrance.
+      const frontLeaf=frontShojiPanel(house,cx,bayWidth,1.82+(i%2)*.045);
+      frontLeaf.userData.isShojiDoor=true;
+      frontLeaf.userData.closedX=cx;
+      frontLeaf.userData.openX=i===1?-5.9/2+bayWidth*.5:i===2?5.9/2-bayWidth*.5:cx;
+      frontLeaf.userData.doorIndex=i;
+      shojiDoors.push(frontLeaf);
+      frontShojiPanel(house,cx,bayWidth,-1.82); // fixed rear Shoji bays
     }
     const sideBayWidth=3.64/2;
     for(const x of [-2.96,2.96])for(let i=0;i<2;i++){
@@ -263,6 +273,11 @@
     // Continuous timber sill and head rails tie the separate panels into one wall system.
     box(house,timber,0,wallBottom,1.82,5.98,.10,.14);
     box(house,timber,0,wallTop,1.82,5.98,.10,.14);
+    // Twin guide rails let the front leaves pass one another without intersecting.
+    for(const z of [1.755,1.885]){
+      box(house,timber,0,wallBottom+.085,z,5.98,.035,.045);
+      box(house,timber,0,wallTop-.085,z,5.98,.035,.045);
+    }
     box(house,timber,0,wallBottom,-1.82,5.98,.10,.14);
     box(house,timber,0,wallTop,-1.82,5.98,.10,.14);
     for(const x of [-2.96,2.96]){
@@ -283,13 +298,34 @@
     const snowGeo=new THREE.BufferGeometry(),snowCount=250,snowPos=new Float32Array(snowCount*3);for(let i=0;i<snowCount;i++){snowPos[i*3]=(Math.random()-.5)*32;snowPos[i*3+1]=Math.random()*18;snowPos[i*3+2]=(Math.random()-.5)*28;}snowGeo.setAttribute('position',new THREE.BufferAttribute(snowPos,3));const snow=new THREE.Points(snowGeo,new THREE.PointsMaterial({color:0xffffff,size:.12,transparent:true,opacity:.9}));scene.add(snow);
     const stars=new THREE.Points(new THREE.BufferGeometry(),new THREE.PointsMaterial({color:0xe8f3ff,size:.11}));const starPos=new Float32Array(180*3);for(let i=0;i<180;i++){starPos[i*3]=(Math.random()-.5)*70;starPos[i*3+1]=12+Math.random()*20;starPos[i*3+2]=-25-Math.random()*35;}stars.geometry.setAttribute('position',new THREE.BufferAttribute(starPos,3));scene.add(stars);
     const state={kind:'clear',phase:'day'};let raf=0,last=0,elapsed=0,disposed=false,visible=!document.hidden,width=1,height=1;
+    // Doors begin closed. Tapping any front Shoji leaf smoothly opens or closes
+    // the pair; the inner leaves slide behind the outer leaves to reveal the centre.
+    let doorsOpen=false,doorProgress=0;
+    const doorRaycaster=new THREE.Raycaster(),doorPointer=new THREE.Vector2();
+    function toggleShojiDoors(){doorsOpen=!doorsOpen;}
+    function onDoorPointer(event){
+      const rect=canvas.getBoundingClientRect();
+      doorPointer.x=((event.clientX-rect.left)/rect.width)*2-1;
+      doorPointer.y=-((event.clientY-rect.top)/rect.height)*2+1;
+      doorRaycaster.setFromCamera(doorPointer,camera);
+      const hits=doorRaycaster.intersectObjects(shojiDoors,true);
+      if(!hits.length)return;
+      let node=hits[0].object;
+      while(node&&node!==house&&!node.userData.isShojiDoor)node=node.parent;
+      if(node?.userData.isShojiDoor)toggleShojiDoors();
+    }
+    canvas.addEventListener('pointerdown',onDoorPointer,{passive:true});
     const palettes={clear:['#7fb7c3','#d8c9a7'],cloudy:['#718d99','#9aa6a0'],rain:['#3f5e70','#637e84'],storm:['#1b2e43','#455b68'],snow:['#a6c5d1','#e2e7e0'],fog:['#a3b6b0','#d0d2c3'],wind:['#78a8b2','#d2c8a9'],hot:['#83b7bb','#e8c58e'],night:['#081a35','#273c55']};
     function setWeather(kind){state.kind=kind;const p=palettes[kind]||palettes.clear;scene.background.set(p[0]);scene.fog.color.set(p[1]);scene.fog.density=kind==='fog'?.035:kind==='rain'?.018:kind==='storm'?.024:.010;rain.visible=kind==='rain'||kind==='storm';snow.visible=kind==='snow';stars.visible=kind==='night';clouds.forEach((c,i)=>{c.visible=['cloudy','rain','storm','snow','fog'].includes(kind)||i<3;c.scale.setScalar(kind==='storm'?1.3:kind==='fog'?1.5:1);});sun.intensity=kind==='night'?.18:kind==='storm'?.55:kind==='cloudy'?1.1:kind==='rain'?1.35:3.1;fill.intensity=kind==='night'?.6:1.0;waterMat.roughness=kind==='storm'?.48:kind==='rain'?.34:.2;gold.emissiveIntensity=kind==='night'?1.7:.45;}
     function resize(){const r=canvas.getBoundingClientRect();const side=Math.max(1,r.width,r.height);width=side;height=side;renderer.setSize(side,side,false);camera.aspect=1;camera.position.set(0,7.0,27.7);camera.fov=42;camera.lookAt(0,2.5,-1.4);camera.updateProjectionMatrix();}
-    function frame(ts){if(disposed||!visible)return;raf=requestAnimationFrame(frame);const dt=Math.min(.05,(ts-last)/1000||0);last=ts;elapsed+=dt;const a=rain.geometry.attributes.position.array,b=snow.geometry.attributes.position.array;for(let i=0;i<rainCount;i++){a[i*3+1]-=dt*18;if(a[i*3+1]<0)a[i*3+1]=18;}rain.geometry.attributes.position.needsUpdate=true;for(let i=0;i<snowCount;i++){b[i*3+1]-=dt*1.7;if(b[i*3+1]<0)b[i*3+1]=18;b[i*3]+=Math.sin(elapsed+i)*dt*.18;}snow.geometry.attributes.position.needsUpdate=true;clouds.forEach((c,i)=>{c.position.x+=dt*(state.kind==='wind'?.42:.12)*(i%2?1:-1);if(c.position.x>28)c.position.x=-28;if(c.position.x< -28)c.position.x=28;});trees.forEach((t,i)=>{t.rotation.z=Math.sin(elapsed*.55+i)* (state.kind==='wind'?.06:.012);});waterMat.roughness=(state.kind==='storm'?.44:.2)+Math.sin(elapsed*1.2)*.025;renderer.render(scene,camera);}
+    function frame(ts){if(disposed||!visible)return;raf=requestAnimationFrame(frame);const dt=Math.min(.05,(ts-last)/1000||0);last=ts;elapsed+=dt;
+      doorProgress+=( (doorsOpen?1:0)-doorProgress )*Math.min(1,dt*5.5);
+      const doorEase=doorProgress*doorProgress*(3-2*doorProgress);
+      for(const leaf of shojiDoors)leaf.position.x=leaf.userData.closedX+(leaf.userData.openX-leaf.userData.closedX)*doorEase;
+      const a=rain.geometry.attributes.position.array,b=snow.geometry.attributes.position.array;for(let i=0;i<rainCount;i++){a[i*3+1]-=dt*18;if(a[i*3+1]<0)a[i*3+1]=18;}rain.geometry.attributes.position.needsUpdate=true;for(let i=0;i<snowCount;i++){b[i*3+1]-=dt*1.7;if(b[i*3+1]<0)b[i*3+1]=18;b[i*3]+=Math.sin(elapsed+i)*dt*.18;}snow.geometry.attributes.position.needsUpdate=true;clouds.forEach((c,i)=>{c.position.x+=dt*(state.kind==='wind'?.42:.12)*(i%2?1:-1);if(c.position.x>28)c.position.x=-28;if(c.position.x< -28)c.position.x=28;});trees.forEach((t,i)=>{t.rotation.z=Math.sin(elapsed*.55+i)* (state.kind==='wind'?.06:.012);});waterMat.roughness=(state.kind==='storm'?.44:.2)+Math.sin(elapsed*1.2)*.025;renderer.render(scene,camera);}
     function start(){if(!disposed&&visible&&!raf)raf=requestAnimationFrame(frame);}function stop(){if(raf)cancelAnimationFrame(raf);raf=0;}
     const ro=new ResizeObserver(resize);ro.observe(canvas);const onResize=()=>resize();const onVisibility=()=>{visible=!document.hidden;if(visible){last=0;start();}else stop();};window.addEventListener('resize',onResize,{passive:true});document.addEventListener('visibilitychange',onVisibility);resize();setWeather('clear');start();
-    return {setWeather,dispose(){disposed=true;stop();ro.disconnect();window.removeEventListener('resize',onResize);document.removeEventListener('visibilitychange',onVisibility);scene.traverse(o=>{o.geometry?.dispose?.();if(o.material){for(const m of (Array.isArray(o.material)?o.material:[o.material]))m.dispose?.();}});renderer.dispose();renderer.forceContextLoss?.();}};
+    return {setWeather,dispose(){disposed=true;stop();canvas.removeEventListener('pointerdown',onDoorPointer);ro.disconnect();window.removeEventListener('resize',onResize);document.removeEventListener('visibilitychange',onVisibility);scene.traverse(o=>{o.geometry?.dispose?.();if(o.material){for(const m of (Array.isArray(o.material)?o.material:[o.material]))m.dispose?.();}});renderer.dispose();renderer.forceContextLoss?.();}};
   }
   function activateWeather(){
     const view=mount('weather');if(!view)return;addStyles();const screen=makeScreen();view.root.replaceChildren(screen);
@@ -385,4 +421,11 @@
    Each panel has a translucent paper field, timber perimeter, horizontal rails and
    vertical lattice members. Continuous sill/head rails connect the panels.
    Existing corner posts, roof/eaves, foundation, deck, rails, stairs, scenery and UI are unchanged.
+*/
+
+/* LE-WEATHER-PAVILION-SHOJI-SLIDING-DOORS-V15
+   Four independently grouped front Shoji leaves now slide on twin timber tracks.
+   Tapping a visible front leaf toggles a smooth open/close motion; the inner pair
+   stacks behind the outer pair to reveal the central entrance. Rear and side panels
+   remain fixed. No foundation, deck, stair, rail, roof, camera, scenery or UI geometry changed.
 */
