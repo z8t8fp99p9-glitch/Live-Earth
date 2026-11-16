@@ -869,7 +869,47 @@
       shadow.rotation.y=sx===sz?Math.PI/4:-Math.PI/4;
     }
     for(const sx of [-1,1])for(const sz of [-1,1])addSharpRoofCorner(sx,sz);
-    for(const x of [-3.4,3.4]){const lantern=new THREE.Group();lantern.position.set(x,2.5,2.35);const body=new THREE.Mesh(new THREE.BoxGeometry(.38,.5,.38),gold);lantern.add(body);const cap=new THREE.Mesh(new THREE.ConeGeometry(.34,.18,4),dark);cap.position.y=.34;lantern.add(cap);house.add(lantern);}
+    // V42 — SUPPORTED EXTERIOR JAPANESE LANTERNS.
+    // Each lantern is now physically tied back to the nearest front corner post:
+    // a mounting block, diagonal timber cantilever, knee brace and hanging stem
+    // replace the unsupported floating box. The warm paper body keeps its glow.
+    const lanternFrameMat=mat('#65452f',.86,.02);
+    const lanternRoofMat=mat('#263b3a',.72,.06);
+    const lanternHardwareMat=mat('#8b7048',.48,.48);
+    for(const sx of [-1,1]){
+      const postX=sx*3.15,postZ=1.85,lanternX=sx*3.4,lanternZ=2.35;
+      // Timber saddle is visibly fixed to the face of the corner post.
+      box(house,timber,postX,3.16,postZ+.045,.23,.20,.19);
+      // Project the bracket diagonally out from the post, directly above the lantern.
+      const armLength=Math.hypot(lanternX-postX,lanternZ-postZ);
+      const arm=box(house,timber,(postX+lanternX)/2,3.16,(postZ+lanternZ)/2,.15,.14,armLength+.10);
+      arm.rotation.y=Math.atan2(lanternX-postX,lanternZ-postZ);
+      // A diagonal haunch carries the cantilever back into the corner post.
+      addRoofBeam([
+        new THREE.Vector3(postX,2.91,postZ+.075),
+        new THREE.Vector3(lanternX,3.105,lanternZ-.055)
+      ],.047,timber,7);
+      // Short dark suspension rod and bronze eye connect the arm to the lantern roof.
+      const hanger=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.30,8),lanternHardwareMat);
+      hanger.position.set(lanternX,2.99,lanternZ);house.add(hanger);
+      const eye=new THREE.Mesh(new THREE.TorusGeometry(.075,.018,7,14),lanternHardwareMat);
+      eye.rotation.x=Math.PI/2;eye.position.set(lanternX,2.825,lanternZ);house.add(eye);
+
+      const lantern=new THREE.Group();lantern.position.set(lanternX,2.42,lanternZ);house.add(lantern);
+      // Translucent warm washi paper sits inside a visible timber cage.
+      const body=new THREE.Mesh(new THREE.BoxGeometry(.34,.46,.34),warmPaper);lantern.add(body);
+      for(const px of [-.18,.18])for(const pz of [-.18,.18])
+        box(lantern,lanternFrameMat,px,0,pz,.045,.52,.045);
+      box(lantern,lanternFrameMat,0,.245,0,.42,.055,.42);
+      box(lantern,lanternFrameMat,0,-.245,0,.42,.055,.42);
+      // Low four-sided roof cap and a small lower finial finish the lantern silhouette.
+      const capPlate=new THREE.Mesh(new THREE.BoxGeometry(.43,.045,.43),lanternFrameMat);
+      capPlate.position.y=.275;lantern.add(capPlate);
+      const cap=new THREE.Mesh(new THREE.ConeGeometry(.30,.15,4),lanternRoofMat);
+      cap.position.y=.37;lantern.add(cap);
+      const finial=new THREE.Mesh(new THREE.ConeGeometry(.065,.12,6),lanternHardwareMat);
+      finial.rotation.x=Math.PI;finial.position.y=-.33;lantern.add(finial);
+    }
     // Foreground stepping stones and garden boulders.
     const stone=mat('#81918a');for(let i=0;i<7;i++){const s=new THREE.Mesh(new THREE.CylinderGeometry(.38,.45,.13,8),stone);s.position.set(-2.5+i*.78,.02,3.1+Math.sin(i*.8)*.25);s.rotation.y=i*.3;scene.add(s);}
     const cloudMat=new THREE.MeshStandardMaterial({color:'#edf3ee',transparent:true,opacity:.66,roughness:1});const clouds=[];
@@ -1259,4 +1299,14 @@
    The approved roof profile, V40 sharp corner tips, ridge, tiles, fascia,
    rafters, brackets, Shoji doors, interior, foundation, deck, stairs, rails,
    scenery, camera, forecast UI and Location privacy boundary are preserved.
+*/
+
+
+/* LE-WEATHER-PAVILION-SUPPORTED-EXTERIOR-LANTERNS-V42
+   Replaces the two unsupported exterior lantern boxes with complete Japanese-style
+   assemblies: corner-post mounting blocks, diagonal timber cantilevers, knee braces,
+   bronze suspension eyes, hanging rods, framed warm washi bodies, low roof caps and
+   lower finials. Lantern positions and existing warm-light sources are retained.
+   No roof, wall, door, foundation, deck, stair, rail, camera, scenery, weather UI,
+   Location privacy or Stacks lifecycle code is changed.
 */
