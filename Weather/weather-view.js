@@ -679,6 +679,25 @@
         const top=Math.max(bottom+.10,4.90-Math.abs(x)/roofHalfX*.72);
         gableStrut([x,bottom+.045,z+.075],[x,top,z+.075],.021,timber);
       }
+      // Exposed gable-end rafter tails sit beneath the curved tie beam.
+      // Their spacing follows the bowed eave rather than a flat straight line.
+      for(let i=0;i<=12;i++){
+        const x=-roofHalfX+.22+i*((roofHalfX*2-.44)/12);
+        const u=(x+roofHalfX)/(2*roofHalfX);
+        const y=roofEaveY+roofCornerLift*roofCornerFactor(u);
+        const tail=box(
+          house,timber,x,y-.105,z+.085,
+          .105,.19,.16
+        );
+        tail.rotation.z=(.5-u)*.16;
+      }
+      // Small bearing blocks make the meeting of the gable frame and eave
+      // beam read as joined timber instead of thin lines laid on a panel.
+      for(const x of [-2.65,-1.8,-.9,0,.9,1.8,2.65]){
+        const u=(x+roofHalfX)/(2*roofHalfX);
+        const y=roofEaveY+roofCornerLift*roofCornerFactor(u);
+        box(house,gableTrim,x,y+.015,z+.105,.17,.105,.12);
+      }
       const medallion=new THREE.Mesh(new THREE.SphereGeometry(.105,12,8),gold);
       medallion.scale.set(1,.72,.34);medallion.position.set(0,4.62,z+.095);house.add(medallion);
     }
@@ -1024,4 +1043,13 @@
    sampled from the existing shared roof profile. The roof skin, tile layout,
    ridge, gables, fascia, bracket assemblies, doors, interior, foundations,
    stairs, rails, camera, scenery and weather UI remain unchanged.
+*/
+
+
+/* LE-WEATHER-PAVILION-GABLE-RAFTER-TAILS-V37
+   Adds 13 exposed timber rafter tails beneath each curved front/rear gable
+   eave and seven compact bearing blocks per gable where the frame meets the
+   curved tie beam. Positions are sampled from the existing bowed eave profile.
+   No roof surface, tile, fascia, bracket, rafter/purlin, door, interior,
+   foundation, stair, rail, camera, scenery or weather UI geometry is changed.
 */
