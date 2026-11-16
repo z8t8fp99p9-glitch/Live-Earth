@@ -1,6 +1,6 @@
 /* LIVE // EARTH — Weather square-world camera extension.
- * Restores the proven V2 centred composition in every orientation.
- * No Landscape canvas translation, camera orbit, or target offset.
+ * Keeps the approved V2 centred composition and gently lowers the camera
+ * for a more front-facing pavilion view without moving the world anchor.
  */
 (() => {
   'use strict';
@@ -12,8 +12,9 @@
   if (!APP_SHELL.includes(rendererPath)) APP_SHELL.push(rendererPath);
 
   const weatherPath = new URL('./Weather/weather-view.js', self.registration.scope).pathname;
-  const patchMarker = 'LE-SQUARE-WORLD-CAMERA-V6';
+  const patchMarker = 'LE-SQUARE-WORLD-CAMERA-V7';
   const previousMarkers = [
+    'LE-SQUARE-WORLD-CAMERA-V6',
     'LE-SQUARE-WORLD-CAMERA-V5',
     'LE-SQUARE-WORLD-CAMERA-V4',
     'LE-SQUARE-WORLD-CAMERA-V3',
@@ -46,9 +47,10 @@
   const targetOffsetResize =
     'function resize(){const r=canvas.getBoundingClientRect();const side=Math.max(1,r.width,r.height);width=side;height=side;renderer.setSize(side,side,false);camera.aspect=1;camera.position.set(0,9.55,27.7);camera.fov=42;const landscape=window.matchMedia("(orientation: landscape)").matches;const distance=Math.hypot(0,9.55-2.5,27.7+1.4);const frameWidth=2*distance*Math.tan(42*Math.PI/360);const targetX=landscape?0.30*(window.innerWidth/side)*frameWidth:0;camera.lookAt(targetX,2.5,-1.4);camera.updateProjectionMatrix();}';
 
-  // Exact previously-approved V2 framing: front-facing, centred house anchor.
-  const centredResize =
-    'function resize(){const r=canvas.getBoundingClientRect();const side=Math.max(1,r.width,r.height);width=side;height=side;renderer.setSize(side,side,false);camera.aspect=1;camera.position.set(0,9.55,27.7);camera.fov=42;camera.lookAt(0,2.5,-1.4);camera.updateProjectionMatrix();}';
+  // V7: same centred target and distance, with a lower eye point for a
+  // gentler downward pitch and a clearer view of the pavilion front elevation.
+  const frontViewResize =
+    'function resize(){const r=canvas.getBoundingClientRect();const side=Math.max(1,r.width,r.height);width=side;height=side;renderer.setSize(side,side,false);camera.aspect=1;camera.position.set(0,7.0,27.7);camera.fov=42;camera.lookAt(0,2.5,-1.4);camera.updateProjectionMatrix();}';
 
   function transformSource(source) {
     if (source.includes(patchMarker)) return null;
@@ -61,7 +63,7 @@
       matched = true;
     }
 
-    // Remove the old CSS canvas translation, restoring the centred square.
+    // Remove any old Landscape-only CSS translation.
     updated = updated.replace(landscapeOffsetRule, '');
 
     // Restore square canvas CSS for the original responsive renderer.
@@ -70,7 +72,7 @@
       matched = true;
     }
 
-    // Replace any experimental or earlier camera resize with the known V2 view.
+    // Replace any earlier or experimental camera resize with the V7 front view.
     const knownResizes = [
       targetOffsetResize,
       angledResizeV4,
@@ -80,7 +82,7 @@
     ];
     for (const known of knownResizes) {
       if (updated.includes(known)) {
-        updated = updated.replace(known, centredResize);
+        updated = updated.replace(known, frontViewResize);
         matched = true;
         break;
       }
@@ -88,7 +90,7 @@
 
     if (!matched) return null;
     return updated.includes(patchMarker) &&
-      updated.includes(centredResize) &&
+      updated.includes(frontViewResize) &&
       !updated.includes('left:calc(50% - 30vw)')
       ? updated : null;
   }
@@ -129,13 +131,14 @@
     if (response.ok) {
       const source = await response.clone().text();
       if (!source.includes(patchMarker)) {
-        console.error('[LIVE // EARTH] Weather centre-anchor restoration did not match the expected renderer source. The original response was preserved.');
+        console.error('[LIVE // EARTH] Weather front-view camera patch did not match the expected renderer source. The original response was preserved.');
       }
     }
     return response;
   };
 
-  // Upgrade already-cached Weather modules, including the V5 target-offset build.
+  // Upgrade already-cached Weather modules from V1–V6, including the current
+  // centred V6 camera, so the framing updates without relying on a network fetch.
   self.addEventListener('activate', event => {
     event.waitUntil((async () => {
       const cache = await caches.open(CACHE_NAME);
