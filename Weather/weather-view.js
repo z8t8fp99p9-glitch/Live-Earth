@@ -137,7 +137,7 @@
     const house=new THREE.Group();scene.add(house);house.position.set(0,0,-1.4);house.rotation.y=-15*Math.PI/180;house.userData.refinement='LE-WEATHER-PAVILION-ROTATION-CCW-15-V1';
     const timber=mat('#684a35'),wall=mat('#e6ddc6'),roof=mat('#263b43',.72,.12),dark=mat('#293b38'),gold= new THREE.MeshStandardMaterial({color:'#d69b55',emissive:'#a35b1e',emissiveIntensity:.65});
     function box(parent,m,x,y,z,sx,sy,sz){const o=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),m);o.position.set(x,y,z);parent.add(o);return o;}
-    // LE-WEATHER-PAVILION-RAISED-FOUNDATION-V1 LE-WEATHER-PAVILION-SLIM-FOUNDATION-V2 LE-WEATHER-PAVILION-TRADITIONAL-STAIRS-PIERS-V3 LE-WEATHER-PAVILION-STAIR-INFILL-V4 LE-WEATHER-PAVILION-FOUR-SIDE-RAILS-V10: raised engawa deck with visible undercroft and centred three-step approach.
+    // LE-WEATHER-PAVILION-RAISED-FOUNDATION-V1 LE-WEATHER-PAVILION-SLIM-FOUNDATION-V2 LE-WEATHER-PAVILION-TRADITIONAL-STAIRS-PIERS-V3 LE-WEATHER-PAVILION-STAIR-INFILL-V4 LE-WEATHER-PAVILION-FOUR-SIDE-RAILS-V11: lowered proportionate guard rails; raised engawa deck with visible undercroft and centred three-step approach.
     const foundationStone=mat('#777465'),deckPlank=mat('#806044'),stepTop=mat('#98724f');
     // V3 SINGLE DECK ASSEMBLY: one perimeter frame directly supported by the existing piers.
     // Outer faces align with the single continuous deck-board footprint.
@@ -179,23 +179,23 @@
     // V3 perimeter guard: one upper handrail; balusters start directly at the deck.
     // Side-rail outer faces coincide with the deck's left/right outer edges.
     for(const x of [-3.70,3.70]){
-      box(house,timber,x,2.35,-.01,.18,.16,5.40);
+      box(house,timber,x,2.10,-.01,.18,.14,5.40);
       for(const z of [-1.71,-.01,1.69]){
-        box(house,dark,x,1.92,z,.12,.70,.12);
+        box(house,dark,x,1.83,z,.12,.48,.12);
       }
     }
 
     // Rear guard rail follows the full outer deck edge.
-    box(house,timber,0,2.35,-2.62,7.58,.16,.18);
+    box(house,timber,0,2.10,-2.62,7.58,.14,.18);
     for(const x of [-2.55,0,2.55]){
-      box(house,dark,x,1.92,-2.62,.14,.70,.14);
+      box(house,dark,x,1.83,-2.62,.14,.48,.14);
     }
 
     // Front rail returns align with the outer edge and leave the full stair opening clear.
     for(const x of [-3.015,3.015]){
-      box(house,timber,x,2.35,2.60,1.55,.16,.18);
+      box(house,timber,x,2.10,2.60,1.55,.14,.18);
       for(const offset of [-.52,.52]){
-        box(house,dark,x+offset,1.92,2.60,.12,.70,.14);
+        box(house,dark,x+offset,1.83,2.60,.12,.48,.14);
       }
     }
     // Continuous vertical timber infill closes the exposed middle gaps between each tread.
@@ -209,7 +209,9 @@
       }
     }
     
-    // V3: no secondary joist layer or duplicate slab. The single perimeter frame supports the deck boards and piers.box(house,wall,0,2.55,-.08,5.9,2.0,3.7);
+    // V3: no secondary joist layer or duplicate slab. The single perimeter frame supports the deck boards and piers.
+    // Restore the pavilion wall panel as real scene geometry (it was accidentally swallowed by the comment).
+    box(house,wall,0,2.55,-.08,5.9,2.0,3.7);
     // Shoji divisions on the front elevation.
     for(let i=0;i<7;i++){const x=-2.55+i*.85;box(house,timber,x,2.55,1.82,.075,1.9,.09);}
     box(house,timber,0,1.62,1.88,6.15,.10,.12);box(house,timber,0,3.55,0,7.5,.22,5.2);
@@ -290,4 +292,12 @@
    Guard rail outer faces match the deck perimeter on left, right, rear and front returns.
    Vertical balusters begin at the deck surface and meet the single upper handrail.
    Front handrail remains open across the central four-step entrance.
+*/
+
+/* LE-WEATHER-PAVILION-RAIL-HEIGHT-V11
+   Handrail centre lowered from y=2.35 to y=2.10.
+   Balusters shortened from 0.70 to 0.48 and lowered to y=1.83.
+   Deck top is approximately y=1.5725: balusters begin at y=1.59 and meet the handrail.
+   Outer rail alignment and central stair opening are unchanged.
+   Restored the pavilion wall panel as executable geometry.
 */
