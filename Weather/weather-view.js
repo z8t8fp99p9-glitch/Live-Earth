@@ -124,6 +124,38 @@
     fujiGroup.add(new THREE.Mesh(snowGeometry,snowMaterial));
     const waterMat=new THREE.MeshPhysicalMaterial({color:'#2c7180',roughness:.2,metalness:.15,clearcoat:.8,clearcoatRoughness:.18,transparent:true,opacity:.92});
     const water=new THREE.Mesh(new THREE.PlaneGeometry(90,36,40,20),waterMat);water.rotation.x=-Math.PI/2;water.position.set(0,.02,7);scene.add(water);
+    // V22 — SUBTLE WATER REFLECTION ACCENTS.
+    // Low-opacity warm glints and soft ripple rings sit just above the water surface
+    // in front of the pavilion. They suggest lantern reflections without a costly
+    // real-time reflection pass or changes to the existing water mesh.
+    const waterShimmers=[],waterRipples=[];
+    const shimmerPalette=[0xffd39a,0xe8c58e,0xb7d8d7,0xffe0b2];
+    for(let i=0;i<12;i++){
+      const material=new THREE.MeshBasicMaterial({
+        color:shimmerPalette[i%shimmerPalette.length],
+        transparent:true,opacity:.12,depthWrite:false
+      });
+      const length=.34+(i%4)*.22;
+      const glint=new THREE.Mesh(new THREE.BoxGeometry(length,.012,.035+(i%3)*.012),material);
+      glint.position.set(Math.sin(i*2.17)*(1.15+(i%3)*.42),.047,5.65+i*.38);
+      glint.rotation.y=Math.sin(i*1.31)*.12;
+      glint.userData.baseOpacity=.12;
+      glint.userData.phase=i*1.37;
+      scene.add(glint);waterShimmers.push(glint);
+    }
+    for(let i=0;i<4;i++){
+      const material=new THREE.MeshBasicMaterial({
+        color:0xe8c58e,transparent:true,opacity:.10,
+        depthWrite:false,side:THREE.DoubleSide
+      });
+      const ring=new THREE.Mesh(new THREE.RingGeometry(.24,.29,48),material);
+      ring.rotation.x=-Math.PI/2;
+      ring.position.set((i%2?1:-1)*(.72+(i%3)*.42),.049,6.0+Math.floor(i/2)*1.55);
+      ring.scale.set(1.65,1,1);
+      ring.userData.baseOpacity=.10;
+      ring.userData.phase=i*1.8;
+      scene.add(ring);waterRipples.push(ring);
+    }
     // Layered procedural islands and Japanese garden trees: all actual 3D geometry.
     const trunk=mat('#4b392b'),leafMats=['#244d3c','#2f6249','#47745a'].map(c=>mat(c));
     function tree(x,z,scale=1){const g=new THREE.Group();const t=new THREE.Mesh(new THREE.CylinderGeometry(.10*scale,.18*scale,1.6*scale,7),trunk);t.position.y=.8*scale;g.add(t);for(let k=0;k<3;k++){const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(.9*scale-k*.12,1),leafMats[k]);crown.position.set((k-1)*.18*scale,(1.55+k*.46)*scale,0);crown.scale.set(1.0,.78,.85);g.add(crown);}g.position.set(x,0,z);scene.add(g);return g;}
@@ -338,6 +370,24 @@
       baseCap.position.y=-.23;interiorLantern.add(baseCap);
       house.add(interiorLantern);
     }
+    // V22 — WARM PAVILION LIGHTING.
+    // Soft point lights sit inside the paper lanterns and beneath the Shoji wall.
+    // Their intensity follows the selected scene so they glow warmly at night
+    // without washing out the pavilion during daylight previews.
+    const pavilionLights=[];
+    function addPavilionLight(color,intensity,distance,x,y,z){
+      const light=new THREE.PointLight(color,intensity,distance,2);
+      light.position.set(x,y,z);
+      light.userData.dayIntensity=intensity*.22;
+      light.userData.nightIntensity=intensity;
+      house.add(light);
+      pavilionLights.push(light);
+    }
+    addPavilionLight(0xffc783,.58,7,-3.4,2.58,2.35);
+    addPavilionLight(0xffc783,.58,7, 3.4,2.58,2.35);
+    addPavilionLight(0xffd49a,.48,5,-2.34,2.02,-1.28);
+    addPavilionLight(0xffd49a,.48,5, 2.34,2.02,-1.28);
+    addPavilionLight(0xffc783,.22,6,0,2.0,.65);
     // Continuous timber sill and head rails tie the separate panels into one wall system.
     box(house,timber,0,wallBottom,1.82,5.98,.10,.14);
     box(house,timber,0,wallTop,1.82,5.98,.10,.14);
@@ -389,13 +439,13 @@
     }
     canvas.addEventListener('pointerup',onDoorPointer,{passive:true});
     const palettes={clear:['#7fb7c3','#d8c9a7'],cloudy:['#718d99','#9aa6a0'],rain:['#3f5e70','#637e84'],storm:['#1b2e43','#455b68'],snow:['#a6c5d1','#e2e7e0'],fog:['#a3b6b0','#d0d2c3'],wind:['#78a8b2','#d2c8a9'],hot:['#83b7bb','#e8c58e'],night:['#081a35','#273c55']};
-    function setWeather(kind){state.kind=kind;const p=palettes[kind]||palettes.clear;scene.background.set(p[0]);scene.fog.color.set(p[1]);scene.fog.density=kind==='fog'?.035:kind==='rain'?.018:kind==='storm'?.024:.010;rain.visible=kind==='rain'||kind==='storm';snow.visible=kind==='snow';stars.visible=kind==='night';clouds.forEach((c,i)=>{c.visible=['cloudy','rain','storm','snow','fog'].includes(kind)||i<3;c.scale.setScalar(kind==='storm'?1.3:kind==='fog'?1.5:1);});sun.intensity=kind==='night'?.18:kind==='storm'?.55:kind==='cloudy'?1.1:kind==='rain'?1.35:3.1;fill.intensity=kind==='night'?.6:1.0;waterMat.roughness=kind==='storm'?.48:kind==='rain'?.34:.2;gold.emissiveIntensity=kind==='night'?1.7:.45;}
+    function setWeather(kind){state.kind=kind;const p=palettes[kind]||palettes.clear;scene.background.set(p[0]);scene.fog.color.set(p[1]);scene.fog.density=kind==='fog'?.035:kind==='rain'?.018:kind==='storm'?.024:.010;rain.visible=kind==='rain'||kind==='storm';snow.visible=kind==='snow';stars.visible=kind==='night';clouds.forEach((c,i)=>{c.visible=['cloudy','rain','storm','snow','fog'].includes(kind)||i<3;c.scale.setScalar(kind==='storm'?1.3:kind==='fog'?1.5:1);});sun.intensity=kind==='night'?.18:kind==='storm'?.55:kind==='cloudy'?1.1:kind==='rain'?1.35:3.1;fill.intensity=kind==='night'?.6:1.0;waterMat.roughness=kind==='storm'?.48:kind==='rain'?.34:.2;gold.emissiveIntensity=kind==='night'?1.7:.45;const glow=kind==='night'?1:kind==='storm'?.82:kind==='rain'?.62:kind==='fog'?.5:.22;pavilionLights.forEach(light=>{light.intensity=light.userData.dayIntensity+(light.userData.nightIntensity-light.userData.dayIntensity)*glow;});warmPaper.emissiveIntensity=kind==='night'?.58:kind==='storm'?.42:.22;waterShimmers.forEach(o=>{o.userData.baseOpacity=kind==='night'?.20:kind==='storm'?.07:kind==='rain'?.09:.12;});waterRipples.forEach(o=>{o.userData.baseOpacity=kind==='night'?.15:kind==='storm'?.055:.085;});}
     function resize(){const r=canvas.getBoundingClientRect();const side=Math.max(1,r.width,r.height);width=side;height=side;renderer.setSize(side,side,false);camera.aspect=1;camera.position.set(0,7.0,27.7);camera.fov=42;camera.lookAt(0,2.5,-1.4);camera.updateProjectionMatrix();}
     function frame(ts){if(disposed||!visible)return;raf=requestAnimationFrame(frame);const dt=Math.min(.05,(ts-last)/1000||0);last=ts;elapsed+=dt;
       doorProgress+=( (doorsOpen?1:0)-doorProgress )*Math.min(1,dt*5.5);
       const doorEase=doorProgress*doorProgress*(3-2*doorProgress);
       for(const leaf of shojiDoors)leaf.position.x=leaf.userData.closedX+(leaf.userData.openX-leaf.userData.closedX)*doorEase;
-      const a=rain.geometry.attributes.position.array,b=snow.geometry.attributes.position.array;for(let i=0;i<rainCount;i++){a[i*3+1]-=dt*18;if(a[i*3+1]<0)a[i*3+1]=18;}rain.geometry.attributes.position.needsUpdate=true;for(let i=0;i<snowCount;i++){b[i*3+1]-=dt*1.7;if(b[i*3+1]<0)b[i*3+1]=18;b[i*3]+=Math.sin(elapsed+i)*dt*.18;}snow.geometry.attributes.position.needsUpdate=true;clouds.forEach((c,i)=>{c.position.x+=dt*(state.kind==='wind'?.42:.12)*(i%2?1:-1);if(c.position.x>28)c.position.x=-28;if(c.position.x< -28)c.position.x=28;});trees.forEach((t,i)=>{t.rotation.z=Math.sin(elapsed*.55+i)* (state.kind==='wind'?.06:.012);});waterMat.roughness=(state.kind==='storm'?.44:.2)+Math.sin(elapsed*1.2)*.025;renderer.render(scene,camera);}
+      const a=rain.geometry.attributes.position.array,b=snow.geometry.attributes.position.array;for(let i=0;i<rainCount;i++){a[i*3+1]-=dt*18;if(a[i*3+1]<0)a[i*3+1]=18;}rain.geometry.attributes.position.needsUpdate=true;for(let i=0;i<snowCount;i++){b[i*3+1]-=dt*1.7;if(b[i*3+1]<0)b[i*3+1]=18;b[i*3]+=Math.sin(elapsed+i)*dt*.18;}snow.geometry.attributes.position.needsUpdate=true;clouds.forEach((c,i)=>{c.position.x+=dt*(state.kind==='wind'?.42:.12)*(i%2?1:-1);if(c.position.x>28)c.position.x=-28;if(c.position.x< -28)c.position.x=28;});trees.forEach((t,i)=>{t.rotation.z=Math.sin(elapsed*.55+i)* (state.kind==='wind'?.06:.012);});waterShimmers.forEach(o=>{const pulse=.72+.28*Math.sin(elapsed*1.15+o.userData.phase);o.material.opacity=o.userData.baseOpacity*pulse;o.scale.x=1+.10*Math.sin(elapsed*.8+o.userData.phase);});waterRipples.forEach(o=>{const pulse=.65+.35*Math.sin(elapsed*.72+o.userData.phase);o.material.opacity=o.userData.baseOpacity*pulse;const swell=1+.12*Math.sin(elapsed*.72+o.userData.phase);o.scale.set(1.65*swell,swell,1);});waterMat.roughness=(state.kind==='storm'?.44:.2)+Math.sin(elapsed*1.2)*.025;renderer.render(scene,camera);}
     function start(){if(!disposed&&visible&&!raf)raf=requestAnimationFrame(frame);}function stop(){if(raf)cancelAnimationFrame(raf);raf=0;}
     const ro=new ResizeObserver(resize);ro.observe(canvas);const onResize=()=>resize();const onVisibility=()=>{visible=!document.hidden;if(visible){last=0;start();}else stop();};window.addEventListener('resize',onResize,{passive:true});document.addEventListener('visibilitychange',onVisibility);resize();setWeather('clear');start();
     return {setWeather,toggleDoors:toggleShojiDoors,dispose(){disposed=true;stop();canvas.removeEventListener('pointerup',onDoorPointer);ro.disconnect();window.removeEventListener('resize',onResize);document.removeEventListener('visibilitychange',onVisibility);scene.traverse(o=>{o.geometry?.dispose?.();if(o.material){for(const m of (Array.isArray(o.material)?o.material:[o.material]))m.dispose?.();}});renderer.dispose();renderer.forceContextLoss?.();}};
@@ -551,4 +601,14 @@
    knee-braces and small post-cap joinery collars beneath the existing upper frame.
    No dimensions or geometry were changed to the foundation, supports, beams, deck,
    stairs, rails, wall layout, roof, scenery, camera, Weather UI or door interaction.
+*/
+
+
+/* LE-WEATHER-PAVILION-WARM-ATMOSPHERE-V22
+   Added five soft warm point lights inside the pavilion and at its four lanterns.
+   Light intensity follows the weather scene: restrained in daylight, warmer at night.
+   Added low-opacity animated water glints and ripple rings in front of the pavilion
+   to suggest lantern reflections without a costly real-time reflection render pass.
+   Existing water geometry, pavilion architecture, Shoji interaction, camera, forecast
+   UI, Location privacy boundary and Stacks feature lifecycle are preserved.
 */
