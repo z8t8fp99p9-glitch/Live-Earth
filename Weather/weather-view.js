@@ -321,10 +321,10 @@
           .add(new THREE.Vector3(0,rise,0))
           .addScaledVector(side,bend*.18);
         const c1=start.clone().addScaledVector(dir,length*.29)
-          .add(new THREE.Vector3(0,.24+rise*.38,0))
+          .add(new THREE.Vector3(0,.10+rise*.42,0))
           .addScaledVector(side,bend);
         const c2=start.clone().addScaledVector(dir,length*.77)
-          .add(new THREE.Vector3(0,.10+rise*.84,0))
+          .add(new THREE.Vector3(0,.035+rise*.90,0))
           .addScaledVector(side,-bend*.38);
         const path=bezierPath(start,c1,c2,end,steps);
         addTubePath(path,radius,tipRatio,tone);
@@ -390,13 +390,13 @@
       // Primary scaffold: irregular heights and directions make a layered,
       // wide crown rather than a radial fan of equal-length limbs.
       const primarySpecs=[
-        {h:1.62,a:2.52,len:2.72,rise:.72,bend:.42,r:.145},
-        {h:2.02,a:3.10,len:2.82,rise:.98,bend:-.34,r:.142},
-        {h:2.48,a:-2.48,len:2.57,rise:1.16,bend:.31,r:.134},
-        {h:2.94,a:-1.82,len:2.46,rise:1.28,bend:-.29,r:.124},
-        {h:1.88,a:.63,len:2.70,rise:.70,bend:-.40,r:.145},
-        {h:2.34,a:.08,len:2.92,rise:.92,bend:.38,r:.145},
-        {h:3.12,a:-.78,len:2.53,rise:1.20,bend:-.33,r:.129}
+        {h:1.62,a:2.52,len:2.72,rise:.48,bend:.42,r:.145},
+        {h:2.02,a:3.10,len:2.82,rise:-.38,bend:-.34,r:.142},
+        {h:2.48,a:-2.48,len:2.57,rise:.86,bend:.31,r:.134},
+        {h:2.94,a:-1.82,len:2.46,rise:-.24,bend:-.29,r:.124},
+        {h:1.88,a:.63,len:2.70,rise:.12,bend:-.40,r:.145},
+        {h:2.34,a:.08,len:2.92,rise:.62,bend:.38,r:.145},
+        {h:3.12,a:-.78,len:2.53,rise:-.10,bend:-.33,r:.129}
       ];
       const primaryPaths=[];
       for(let i=0;i<primarySpecs.length;i++){
@@ -424,7 +424,7 @@
       // Four secondary boughs leave each primary at uneven intervals.
       // They curve out from the limb, with varied angles and a few gentle droops.
       const secondaryAngleOffsets=[-.86,.66,-.42,.93];
-      const secondaryRise=[.20,.43,-.06,.32];
+      const secondaryRise=[.34,-.24,-.56,.08];
       const secondaryPaths=[];
       for(let i=0;i<primaryPaths.length;i++){
         const parent=primaryPaths[i];
@@ -436,7 +436,7 @@
           const baseAngle=horizontalAngle(tangent);
           const angle=baseAngle+secondaryAngleOffsets[j]+signed()*.19;
           const length=.78+rand()*.52;
-          const rise=secondaryRise[j]+rand()*.25;
+          const rise=secondaryRise[j]+(j===1||j===2?-rand()*.16:rand()*.20);
           const bend=signed()*.26;
           const path=growBranch(origin,angle,length,rise,bend,
             .043+rand()*.010,2,6,.15);
@@ -456,7 +456,7 @@
           const tangent=tangentAt(parent.path,t);
           const angle=horizontalAngle(tangent)+tertiaryOffsets[j]+signed()*.26;
           const length=.48+rand()*.43;
-          const rise=(j===1?-.03:.16)+rand()*.31;
+          const rise=[-.34,.30,-.48][j]+(j===1?rand()*.16:-rand()*.14);
           const path=growBranch(origin,angle,length,rise,signed()*.18,
             .019+rand()*.005,3,5,.12);
           tertiaryPaths.push({path,angle});
@@ -475,10 +475,28 @@
           const tangent=tangentAt(parent.path,t);
           const angle=horizontalAngle(tangent)+twigOffsets[j]+signed()*.34;
           const length=.27+rand()*.32;
-          const rise=signed()*.24+.10;
+          const rise=[.24,-.18,-.42,.06][(j+(fineTwigCount%4))%4]+signed()*.10;
           growBranch(origin,angle,length,rise,signed()*.13,
             .0085+rand()*.0035,4,4,.10);
           fineTwigCount++;
+        }
+      }
+
+      // Hanging branch sprays descend from the undersides of the long boughs.
+      // They create the layered, irregular Japanese maple silhouette instead
+      // of the previous upward-only fan. Keep them slender and naturally tapered.
+      let hangingSprayCount=0;
+      for(let i=0;i<primaryPaths.length;i++){
+        const parent=primaryPaths[i];
+        for(const t of [.42,.68,.88]){
+          const origin=pointAt(parent.path,t);
+          const tangent=tangentAt(parent.path,t);
+          const angle=horizontalAngle(tangent)+(rand()<.5?-.92:.84)+signed()*.22;
+          const length=.42+rand()*.34;
+          const rise=-.34-rand()*.34;
+          growBranch(origin,angle,length,rise,signed()*.16,
+            .014+rand()*.004,3,5,.11);
+          hangingSprayCount++;
         }
       }
 
@@ -521,6 +539,7 @@
         primary:primarySpecs.length,
         upperLeaders:1+upperSpecs.length,
         secondary:secondaryPaths.length,
+        hangingSprays:hangingSprayCount,
         tertiary:tertiaryPaths.length,
         fineTwigs:fineTwigCount,
         total:1+rootSpecs.length+primarySpecs.length+
@@ -532,10 +551,10 @@
       scene.add(maple);
       return maple;
     }
-    // V50 — NATURAL MAPLE WOOD: irregular taper, basal flare, bark grain and
-    // overlapping branch collars soften the trunk and limb junctions. Primary
-    // take-off heights are staggered further to avoid a single forked hub.
-    // Branch-first stage remains leaf-free; tested tree placement is unchanged.
+    // V51 — MULTI-DIRECTION MAPLE SKELETON: primary, secondary and fine limbs
+    // now include upward, lateral and clearly descending growth. Added slender
+    // hanging sprays beneath the scaffold for a natural layered crown. Trunk
+    // refinement and tested front-right placement remain unchanged; no leaves.
     const momiji=createMomiji(3.02,4.72,.92);trees.push(momiji);
 
     // Main architectural landmark: open pavilion with curved eaves, columns and lanterns.
