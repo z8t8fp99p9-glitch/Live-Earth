@@ -1,16 +1,18 @@
-# Weather 3D — Fuji Garden Scene v13
+# Weather 3D — Fuji Garden Scene v14
 
-## Mount Fuji refinement
-- Reduce Mount Fuji by a further 10% relative to the current V12 scene: vertical scale changes from 0.60 to 0.54 (54% of the original height).
-- Move Mount Fuji 15% of its 25-unit base radius to the right: X position changes from 0 to +3.75.
-- Preserve its depth (`z = -64`), horizontal width, snow-cap geometry, colours and materials.
-- Lower the group origin proportionally from `y = 6.72` to `y = 6.048` so the cone remains grounded.
-- Retain the existing 45% reduction to the rear green hills.
+## Rear landscape redesign
+- Replace the low-poly icosahedron hill mounds with high-resolution smooth sphere-based hill forms (`48 × 32` segments).
+- Add subtle, deterministic surface variation to avoid perfect bubble-like domes while retaining soft natural contours.
+- Preserve the established layered hill layout, colours, relative depth and ground contact.
+- Keep the approved 45% reduction in hill height (`0.55` vertical scale).
+- The result should read as a continuous sequence of soft rolling hills rather than angular, overlapping polygon mounds.
 
-## Composition lock
+## Mount Fuji and composition lock
+- Preserve Mount Fuji's approved V13 height (`0.54` vertical scale) and rightward position (`x = +3.75`).
+- Preserve Fuji depth (`z = -64`), proportional grounded origin (`y = 6.048`), width, snow cap, colours and materials.
 - Preserve the approved front-facing camera: position `(0, 7.0, 27.7)`, target `(0, 2.5, -1.4)`, FOV `42°`.
 - Preserve the centred square canvas in Portrait and Landscape.
 - Do not move the pavilion, garden trees, water, stepping stones, clouds, lighting, weather effects, forecast UI or Location permission flow.
 
 ## Upgrade behaviour
-The service-worker extension upgrades an already-cached V12 Weather module in place and also retains the earlier V9 Fuji transform path. V13 markers prevent repeated application.
+The service-worker extension upgrades the already-cached V13 Weather module in place, replacing only the hill geometry function. It also uses the smooth hill geometry in the generated scenery block. V14 markers prevent repeated application.

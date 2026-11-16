@@ -1,4 +1,4 @@
-/* LIVE // EARTH — Weather V13 Fuji position refinement.
+/* LIVE // EARTH — Weather V14 rolling hill refinement.
  * Preserves the approved front-facing camera and square canvas.
  * Reduces rear hills by 45% and Mount Fuji by 40%, keeping Fuji grounded.
  */
@@ -13,7 +13,7 @@
   const sceneMarker = 'LE-WEATHER-FUJI-GARDEN-V2';
   const hillsMarker = 'LE-WEATHER-HILLS-HEIGHT-55-V2';
   const fujiMarker = 'LE-WEATHER-FUJI-HEIGHT-54-V3';
-  const versionMarker = 'LE-WEATHER-SCENERY-V13';
+  const versionMarker = 'LE-WEATHER-SCENERY-V14';
 
   const originalCanvasRule =
     '.le-weather-v2 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:pan-y}';
@@ -31,8 +31,8 @@
   const sceneryBlock = [
     "    const groundMat=mat('#344e42'),hillMats=['#274a45','#315951','#3d665c'].map(c=>mat(c));",
     '    const ground=new THREE.Mesh(new THREE.PlaneGeometry(180,180),groundMat);ground.rotation.x=-Math.PI/2;ground.position.y=-.18;scene.add(ground);',
-    `    // ${sceneMarker} ${hillsMarker}: preserve hill bases and footprints while lowering the crests.`,
-    '    function hill(x,z,sx,sy,sz,index){const geo=new THREE.IcosahedronGeometry(1,2);const m=new THREE.Mesh(geo,hillMats[index%hillMats.length]);m.position.set(x,0,z);m.scale.set(sx,.55*sy,sz);scene.add(m);return m;}',
+    `    // ${sceneMarker} ${hillsMarker} LE-WEATHER-HILLS-ROLLING-SMOOTH-V1: smooth layered contours with natural variation.`,
+    '    function hill(x,z,sx,sy,sz,index){const geo=new THREE.SphereGeometry(1,48,32);const p=geo.attributes.position;for(let i=0;i<p.count;i++){const px=p.getX(i),py=p.getY(i),pz=p.getZ(i);const ripple=1+.035*Math.sin(px*4.2+index*.8)*Math.cos(pz*3.6-index*.55)+.018*Math.sin(px*8.1+pz*5.2+index);p.setXYZ(i,px*ripple,py*(1+.018*Math.sin(px*3.1+pz*2.7+index)),pz*ripple);}geo.computeVertexNormals();const m=new THREE.Mesh(geo,hillMats[index%hillMats.length]);m.position.set(x,0,z);m.scale.set(sx,.55*sy,sz);scene.add(m);return m;}',
     '    const rearHills=[',
     '      [-25,-34,12,7,8,0],[-17,-31,10,6,7,1],[-8,-36,12,7,8,2],[8,-35,13,7,8,0],[20,-32,11,6,8,1],[29,-36,13,7,9,2],',
     '      [-32,-25,9,5,7,1],[-20,-25,10,5.5,7,2],[20,-26,10,5.5,7,0],[33,-25,9,5,7,1]',
@@ -85,11 +85,20 @@
       changed = true;
     }
 
+    // V14: replace angular low-poly mounds with continuous smooth rolling hill surfaces.
+    const oldV13HillGeometry = "function hill(x,z,sx,sy,sz,index){const geo=new THREE.IcosahedronGeometry(1,2);const m=new THREE.Mesh(geo,hillMats[index%hillMats.length]);m.position.set(x,0,z);m.scale.set(sx,.55*sy,sz);scene.add(m);return m;}";
+    const smoothHillGeometry = "function hill(x,z,sx,sy,sz,index){const geo=new THREE.SphereGeometry(1,48,32);const p=geo.attributes.position;for(let i=0;i<p.count;i++){const px=p.getX(i),py=p.getY(i),pz=p.getZ(i);const ripple=1+.035*Math.sin(px*4.2+index*.8)*Math.cos(pz*3.6-index*.55)+.018*Math.sin(px*8.1+pz*5.2+index);p.setXYZ(i,px*ripple,py*(1+.018*Math.sin(px*3.1+pz*2.7+index)),pz*ripple);}geo.computeVertexNormals();const m=new THREE.Mesh(geo,hillMats[index%hillMats.length]);m.position.set(x,0,z);m.scale.set(sx,.55*sy,sz);scene.add(m);return m;}";
+    if (updated.includes(oldV13HillGeometry)) {
+      updated = updated.replace(oldV13HillGeometry, smoothHillGeometry);
+      updated = updated.replace(hillsMarker, hillsMarker + ' LE-WEATHER-HILLS-ROLLING-SMOOTH-V1');
+      changed = true;
+    }
+
     // Upgrade a cached V9 scene in place, retaining all other scene objects.
     const oldHillFunction = /function hill\(x,z,sx,sy,sz,index\)\{const (?:geo=new THREE\.IcosahedronGeometry\(1,2\);)?const m=new THREE\.Mesh\((?:new THREE\.IcosahedronGeometry\(1,2\)|geo),hillMats\[index%hillMats\.length\]\);m\.position\.set\(x,(?:sy\*\.40|sy\*\.45),z\);m\.scale\.set\(sx,sy,sz\);scene\.add\(m\);return m;\}/;
     if (oldHillFunction.test(updated)) {
       updated = updated.replace(oldHillFunction,
-        'function hill(x,z,sx,sy,sz,index){const geo=new THREE.IcosahedronGeometry(1,2);const m=new THREE.Mesh(geo,hillMats[index%hillMats.length]);m.position.set(x,0,z);m.scale.set(sx,.55*sy,sz);scene.add(m);return m;}');
+        'function hill(x,z,sx,sy,sz,index){const geo=new THREE.SphereGeometry(1,48,32);const p=geo.attributes.position;for(let i=0;i<p.count;i++){const px=p.getX(i),py=p.getY(i),pz=p.getZ(i);const ripple=1+.035*Math.sin(px*4.2+index*.8)*Math.cos(pz*3.6-index*.55)+.018*Math.sin(px*8.1+pz*5.2+index);p.setXYZ(i,px*ripple,py*(1+.018*Math.sin(px*3.1+pz*2.7+index)),pz*ripple);}geo.computeVertexNormals();const m=new THREE.Mesh(geo,hillMats[index%hillMats.length]);m.position.set(x,0,z);m.scale.set(sx,.55*sy,sz);scene.add(m);return m;}');
       updated = updated.replace(sceneMarker, sceneMarker + ' ' + hillsMarker);
       changed = true;
     }
@@ -123,7 +132,7 @@
     const hasFuji = updated.includes(`fujiGroup.userData.refinement='${fujiMarker}'`) &&
       updated.includes('fujiGroup.scale.y=.54') &&
       updated.includes('fujiGroup.position.set(3.75,6.048,-64)');
-    const hasHills = updated.includes('m.scale.set(sx,.55*sy,sz)') && updated.includes(hillsMarker);
+    const hasHills = updated.includes('m.scale.set(sx,.55*sy,sz)') && updated.includes(hillsMarker) && updated.includes('LE-WEATHER-HILLS-ROLLING-SMOOTH-V1') && updated.includes('new THREE.SphereGeometry(1,48,32)');
     const hasCamera = updated.includes(frontResize) && updated.includes(cameraMarker);
     const hasTrees = updated.includes('const treeLayout=');
     if (!hasFuji || !hasHills || !hasCamera || !hasTrees ||
@@ -153,7 +162,7 @@
     if(response.ok){
       const source=await response.clone().text();
       if(!source.includes(versionMarker))
-        console.error('[LIVE // EARTH] Weather V13 Fuji refinement transform did not match; original Weather response preserved.');
+        console.error('[LIVE // EARTH] Weather V14 rolling-hill refinement transform did not match; original Weather response preserved.');
     }
     return response;
   };
