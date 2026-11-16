@@ -1,35 +1,38 @@
-# Weather 3D — Real Scene Source V2
+# Weather 3D — Single Deck and Aligned Perimeter Guard V3
 
-## Source-of-truth architecture
-The approved Weather scene is authored directly in `Weather/weather-view.js`.
-`Weather/Art/service-worker-extension.js` remains a runtime asset-registration file only.
-It must not rewrite or intercept the Weather module.
+## Diagnosis
+The committed V2 source drew three visibly distinct horizontal construction layers:
+1. The perimeter beam ring at y=1.25.
+2. Five intermediate cross-joists at y=1.43.
+3. Ten visible deck boards at y=1.565.
+It also drew a second low guard rail at y=1.78, creating another horizontal band just above the floor.
 
-## Pavilion floor correction
-- Removed the redundant full-area `7.8 × 5.6` solid slab beneath the veranda boards.
-- Retained the ten visible timber deck boards as the single walking surface.
-- Added five narrow cross-joists beneath the boards, spanning between the long perimeter support beams.
-- The joists replace the redundant slab as discreet structural support; they do not create a second visible floor.
+## V3 single-floor structure
+- Keep one visible walking surface made from ten close-laid timber boards.
+- Boards are edge-to-edge: 0.54-unit pitch and 0.54-unit board depth.
+- Replace the old lower perimeter beam ring and five internal joists with one four-beam
+  perimeter frame. The frame sits directly on the existing shortened support piers and
+  finishes immediately below the deck boards.
+- No intermediate joist row or second floor slab is generated.
 
-## Pavilion perimeter rail alignment
-The deck board footprint is approximately `x = -3.79..+3.79` and `z = -2.71..+2.695`.
-- Left and right long-side rail outer faces now align to the deck's left and right edges.
-- Long rails extend along the full deck depth.
-- Rear rail outer face aligns with the rear deck edge.
-- Front rail outer face aligns with the front deck edge.
-- Front rail is split into matching side sections, leaving the full central stair width open.
-- All rail geometry remains inside the rotated `house` group and inherits the approved 15° counter-clockwise pavilion rotation.
+## V3 perimeter guard
+- Remove the lower horizontal rail from all four sides.
+- Keep one upper handrail on left and right, the rear, and the front returns.
+- Vertical balusters start at the deck surface and connect to the upper handrail.
+- Rail outer faces align with the deck's outer footprint:
+  - left/right: x = -3.79 / +3.79
+  - rear/front: z = -2.71 / +2.69
+- Keep the central front opening clear for the existing four-step staircase.
 
-## Preserved approved scene
-- Mount Fuji at height scale `0.54`, position `(3.75, 6.048, -64)`.
-- Three continuous rolling ridges, including the lowered rear ridge.
-- Balanced Japanese garden trees.
-- Pavilion roof, eaves, walls, Shoji divisions and lanterns.
-- Slim raised foundation, shortened support piers, traditional four-step stairs and stair infill.
-- Approved square camera `(0, 7.0, 27.7)`, FOV `42°`, target `(0, 2.5, -1.4)`.
-- Forecast controls toggle, weather UI/effects, water, Location privacy boundary and Stacks feature lifecycle.
+## Protected scene elements
+Mount Fuji, all three rolling ridges, garden trees, pavilion rotation, roof, walls,
+Shoji divisions, lanterns, shortened support piers, traditional stairs and stair infill,
+square camera, forecast controls toggle, weather effects, water, Location privacy
+boundary and Stacks feature lifecycle are preserved.
 
-## Regression prevention
-Future refinements must modify the real scene in `Weather/weather-view.js`.
-The service-worker extension must remain free of Weather source rewriting.
-Any scene package must be checked for the Fuji, three ridges, trees, pavilion rotation, floorboards/joists, four rail sides, stair opening, camera and forecast toggle before delivery.
+## Validation
+Generated from the current `main` Weather source, Git blob SHA
+`ea7a8235ce4fba0b802eb12cde86d490acd17374`.
+JavaScript syntax, retained-scene regressions, single-deck assertions, rail outer-edge
+alignment, pier-to-frame contact, frame-to-board spacing and baluster-to-deck/handrail
+alignment were checked. Final visual confirmation requires testing the app.

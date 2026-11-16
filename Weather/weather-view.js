@@ -137,13 +137,14 @@
     const house=new THREE.Group();scene.add(house);house.position.set(0,0,-1.4);house.rotation.y=-15*Math.PI/180;house.userData.refinement='LE-WEATHER-PAVILION-ROTATION-CCW-15-V1';
     const timber=mat('#684a35'),wall=mat('#e6ddc6'),roof=mat('#263b43',.72,.12),dark=mat('#293b38'),gold= new THREE.MeshStandardMaterial({color:'#d69b55',emissive:'#a35b1e',emissiveIntensity:.65});
     function box(parent,m,x,y,z,sx,sy,sz){const o=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),m);o.position.set(x,y,z);parent.add(o);return o;}
-    // LE-WEATHER-PAVILION-RAISED-FOUNDATION-V1 LE-WEATHER-PAVILION-SLIM-FOUNDATION-V2 LE-WEATHER-PAVILION-TRADITIONAL-STAIRS-PIERS-V3 LE-WEATHER-PAVILION-STAIR-INFILL-V4 LE-WEATHER-PAVILION-FOUR-SIDE-RAILS-V9: raised engawa deck with visible undercroft and centred three-step approach.
+    // LE-WEATHER-PAVILION-RAISED-FOUNDATION-V1 LE-WEATHER-PAVILION-SLIM-FOUNDATION-V2 LE-WEATHER-PAVILION-TRADITIONAL-STAIRS-PIERS-V3 LE-WEATHER-PAVILION-STAIR-INFILL-V4 LE-WEATHER-PAVILION-FOUR-SIDE-RAILS-V10: raised engawa deck with visible undercroft and centred three-step approach.
     const foundationStone=mat('#777465'),deckPlank=mat('#806044'),stepTop=mat('#98724f');
-    // Deep perimeter beams frame the wider platform.
-    box(house,timber,0,1.25,2.76,7.86,.15,.24);
-    box(house,timber,0,1.25,-2.76,7.86,.15,.24);
-    box(house,timber,-3.81,1.25,0,.24,.15,5.28);
-    box(house,timber,3.81,1.25,0,.24,.15,5.28);
+    // V3 SINGLE DECK ASSEMBLY: one perimeter frame directly supported by the existing piers.
+    // Outer faces align with the single continuous deck-board footprint.
+    box(house,timber,0,1.34,2.57,7.58,.36,.24);
+    box(house,timber,0,1.34,-2.59,7.58,.36,.24);
+    box(house,timber,-3.67,1.34,-.01,.24,.36,5.16);
+    box(house,timber,3.67,1.34,-.01,.24,.36,5.16);
     // Stone pads and timber piers lift the deck visibly above the garden ground.
     for(const x of [-3.42,0,3.42]){
       for(const z of [-2.34,2.34]){
@@ -155,10 +156,11 @@
       box(house,foundationStone,x,.14,0,.48,.28,.48);
       box(house,dark,x,.72,0,.30,.88,.30);
     }
-    // Fine deck boards are visible around the building as a veranda.
+    // One continuous walking surface: ten close-laid boards with no open seams.
+    // Boards sit directly on the single perimeter support frame.
     for(let i=0;i<10;i++){
-      const z=-2.46+i*.545;
-      box(house,deckPlank,0,1.565,z,7.58,.045,.50);
+      const z=-2.44+i*.54;
+      box(house,deckPlank,0,1.55,z,7.58,.045,.54);
     }
     // Four traditional solid timber risers with deep, overhanging treads.
     // Each step has a low vertical riser and a broad cap, creating a connected old-wood stair profile.
@@ -174,28 +176,26 @@
       box(house,stepTop,0,step.top+.006,step.z+.035,4.38,.025,1.00);
     } 
     
-    // Left and right long sides: upper/lower rails and three vertical timber balusters per side.
+    // V3 perimeter guard: one upper handrail; balusters start directly at the deck.
+    // Side-rail outer faces coincide with the deck's left/right outer edges.
     for(const x of [-3.70,3.70]){
-      box(house,timber,x,2.35,0,.18,.16,5.40);
-      box(house,deckPlank,x,1.78,0,.13,.12,5.40);
-      for(const z of [-1.70,0,1.70]){
-        box(house,dark,x,2.06,z,.12,.56,.12);
+      box(house,timber,x,2.35,-.01,.18,.16,5.40);
+      for(const z of [-1.71,-.01,1.69]){
+        box(house,dark,x,1.92,z,.12,.70,.12);
       }
     }
 
-    // Rear short side: a continuous upper and lower rail with three vertical balusters.
+    // Rear guard rail follows the full outer deck edge.
     box(house,timber,0,2.35,-2.62,7.58,.16,.18);
-    box(house,deckPlank,0,1.78,-2.62,7.58,.12,.14);
     for(const x of [-2.55,0,2.55]){
-      box(house,dark,x,2.06,-2.62,.14,.56,.14);
+      box(house,dark,x,1.92,-2.62,.14,.70,.14);
     }
 
-    // Front short side: matching rail returns leave the centred staircase entrance open.
+    // Front rail returns align with the outer edge and leave the full stair opening clear.
     for(const x of [-3.015,3.015]){
-      box(house,timber,x,2.35,2.605,1.55,.16,.18);
-      box(house,deckPlank,x,1.78,2.605,1.55,.12,.14);
+      box(house,timber,x,2.35,2.60,1.55,.16,.18);
       for(const offset of [-.52,.52]){
-        box(house,dark,x+offset,2.06,2.605,.12,.56,.14);
+        box(house,dark,x+offset,1.92,2.60,.12,.70,.14);
       }
     }
     // Continuous vertical timber infill closes the exposed middle gaps between each tread.
@@ -209,11 +209,7 @@
       }
     }
     
-    // Single veranda floor: the ten timber deck boards above are the visible walking surface.
-    // Narrow joists replace the redundant full-area slab and bridge onto the perimeter beams.
-    for(const z of [-2.34,-1.25,-.16,.93,2.02]){
-      box(house,timber,0,1.43,z,7.52,.21,.14);
-    }box(house,wall,0,2.55,-.08,5.9,2.0,3.7);
+    // V3: no secondary joist layer or duplicate slab. The single perimeter frame supports the deck boards and piers.box(house,wall,0,2.55,-.08,5.9,2.0,3.7);
     // Shoji divisions on the front elevation.
     for(let i=0;i<7;i++){const x=-2.55+i*.85;box(house,timber,x,2.55,1.82,.075,1.9,.09);}
     box(house,timber,0,1.62,1.88,6.15,.10,.12);box(house,timber,0,3.55,0,7.5,.22,5.2);
@@ -285,4 +281,13 @@
    One deck surface: timber boards supported by discrete joists; redundant full slab removed.
    Four-side guard rails align their outer faces with the deck perimeter.
    Front guard rail remains split around the central stair opening.
+*/
+
+/* LIVE-EARTH-WEATHER-DECK-RAILS-V3
+   One visible deck surface: ten edge-to-edge timber boards.
+   One perimeter support frame: four beams, sitting directly on the existing piers.
+   Removed the five intermediate joists and all secondary lower guard rails.
+   Guard rail outer faces match the deck perimeter on left, right, rear and front returns.
+   Vertical balusters begin at the deck surface and meet the single upper handrail.
+   Front handrail remains open across the central four-step entrance.
 */
