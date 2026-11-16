@@ -626,15 +626,83 @@
         addRoofBeam(purlin,.047,gableTrim,8);
       }
     }
-    // Raised ridge and traditional rounded ridge caps.
+    // Raised ridge beam with overlapping Japanese half-round ceramic ridge tiles.
     box(house,timber,0,5.235,0,.28,.22,5.92);
-    for(let i=0;i<10;i++){
-      const cap=new THREE.Mesh(new THREE.CylinderGeometry(.15,.15,.61,12),roofTileMats[i%2]);
-      cap.rotation.x=Math.PI/2;cap.position.set(0,5.36,-2.745+i*.61);house.add(cap);
+    const ridgeTileMat=mat('#263b43',.58,.16);
+    const ridgeEdgeMat=mat('#1d3038',.52,.20);
+    const ridgeReliefMat=mat('#40565a',.55,.14);
+    function ridgeCapGeometry(radius=.205,length=.68,arcSteps=18,lengthSteps=4){
+      const positions=[],indices=[];
+      for(let j=0;j<=lengthSteps;j++){
+        const z=-length/2+length*j/lengthSteps;
+        for(let i=0;i<=arcSteps;i++){
+          const a=Math.PI*i/arcSteps;
+          positions.push(radius*Math.cos(a),radius*Math.sin(a),z);
+          if(i<arcSteps&&j<lengthSteps){
+            const p=j*(arcSteps+1)+i,q=p+1,r=p+(arcSteps+1),s=r+1;
+            indices.push(p,r,q,q,r,s);
+          }
+        }
+      }
+      const geometry=new THREE.BufferGeometry();
+      geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+      geometry.setIndex(indices);geometry.computeVertexNormals();
+      return geometry;
     }
-    for(const z of [-2.98,2.98]){
-      const endCap=new THREE.Mesh(new THREE.SphereGeometry(.20,12,8),roofTileMats[0]);
-      endCap.scale.set(1,.78,.72);endCap.position.set(0,5.36,z);house.add(endCap);
+    const ridgeSegments=11,ridgePitch=.54,ridgeLength=.64;
+    for(let i=0;i<ridgeSegments;i++){
+      const z=-2.70+i*ridgePitch;
+      const cap=new THREE.Mesh(ridgeCapGeometry(.205,ridgeLength),ridgeTileMat);
+      cap.material.side=THREE.DoubleSide;
+      cap.position.set(0,5.34,z);
+      house.add(cap);
+      // Fine raised ceramic beads finish both lower shoulders of each cap.
+      for(const side of [-1,1]){
+        const bead=new THREE.Mesh(
+          new THREE.CylinderGeometry(.026,.026,ridgeLength+.018,8),
+          ridgeEdgeMat
+        );
+        bead.rotation.x=Math.PI/2;
+        bead.position.set(side*.205,5.34,z);
+        house.add(bead);
+      }
+    }
+    // Restrained onigawara-inspired end plaques face the front and rear gables.
+    // A layered ceramic roundel and six-petal relief give the ridge a finished end.
+    for(const side of [-1,1]){
+      const z=side*3.015;
+      const plaque=new THREE.Mesh(
+        new THREE.CylinderGeometry(.235,.235,.13,16),
+        ridgeEdgeMat
+      );
+      plaque.rotation.x=Math.PI/2;
+      plaque.position.set(0,5.34,z);
+      house.add(plaque);
+      const inset=new THREE.Mesh(
+        new THREE.CylinderGeometry(.177,.177,.055,16),
+        ridgeTileMat
+      );
+      inset.rotation.x=Math.PI/2;
+      inset.position.set(0,5.34,z+side*.078);
+      house.add(inset);
+      const centre=new THREE.Mesh(new THREE.SphereGeometry(.052,12,8),gold);
+      centre.scale.set(1,.86,.42);
+      centre.position.set(0,5.34,z+side*.112);
+      house.add(centre);
+      for(let petal=0;petal<6;petal++){
+        const angle=petal*Math.PI/3;
+        const relief=new THREE.Mesh(
+          new THREE.SphereGeometry(.047,10,7),
+          ridgeReliefMat
+        );
+        relief.scale.set(1,.72,.42);
+        relief.position.set(
+          Math.cos(angle)*.105,
+          5.34+Math.sin(angle)*.105,
+          z+side*.112
+        );
+        house.add(relief);
+      }
     }
     // Front and rear gable infill follows the actual bowed roof pitch.
     // Its two rising shoulders use the same cross-section as the roof planes.
@@ -1090,4 +1158,15 @@
    spacing. No roof curvature, tile field, ridge, gable framing, exposed
    rafters, bracket assemblies, walls, doors, foundation, stairs, rails,
    camera, weather rendering or UI behavior is changed.
+*/
+
+
+/* LE-WEATHER-PAVILION-LAYERED-RIDGE-ORNAMENT-V39
+   Replaces the simple cylindrical ridge caps with eleven overlapping,
+   open half-round ceramic ridge tiles following the existing straight ridge.
+   Adds restrained raised edge beads and matching front/rear onigawara-inspired
+   end plaques with a small six-petal relief. The ridge beam, roof silhouette,
+   roof planes, tiles, gables, curved eaves, fascia, rafters, brackets, walls,
+   sliding doors, interior, foundation, deck, stairs, rails, camera, scenery,
+   forecast UI and Location privacy boundary are preserved.
 */
