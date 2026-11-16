@@ -418,10 +418,10 @@
     // sampled surface. No TubeGeometry or CatmullRomCurve3 runtime dependency.
     const roofTopY=5.28,roofEaveY=3.72,roofHalfX=4.15,roofHalfZ=2.95;
     const roofCornerLift=.22,roofCurvePower=5.5;
-    const roofPitchLift=.18;
+    const roofPitchLift=-.12;
     const roofCornerFactor=u=>Math.pow(Math.abs(2*u-1),roofCurvePower);
     const roofSmoothstep=t=>{const q=clamp((t-.58)/.42,0,1);return q*q*(3-2*q);};
-    const roofCrossProfile=t=>t-.065*Math.sin(Math.PI*t);
+    const roofCrossProfile=t=>t+.025*Math.sin(Math.PI*t);
     function roofPoint(face,t,u,lift=0){
       const profile=roofCrossProfile(t);
       const cornerRise=roofCornerLift*roofCornerFactor(u)*roofSmoothstep(t);
@@ -876,4 +876,14 @@
    Rebuilds front/rear gable infill and timber shoulder outlines to follow the
    same curved roof profile, while retaining the V28 curved base/eave line.
    All non-roof systems and door interaction remain unchanged.
+*/
+
+
+/* LE-WEATHER-PAVILION-ROOF-CONCAVE-JAPANESE-PROFILE-V30
+   Corrects the V29 roof-curve direction after visual review. The positive
+   mid-slope bow that produced a domed/boat-like gable is reversed into a subtle
+   concave Japanese roof sweep. The cross-profile interpolation is also adjusted
+   to avoid lifting the entire middle of the slope. The approved V28 outer eave
+   lift and V29 curved gable/roof continuity remain in place. No other scene,
+   house, door, weather, camera or UI systems are changed.
 */
