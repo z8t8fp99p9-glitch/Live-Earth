@@ -1,4 +1,4 @@
-/* LIVE // EARTH — Weather V26 perimeter timber rails around all four pavilion sides.
+/* LIVE // EARTH — Weather V27 restored scene with complete four-side pavilion rails.
  * Preserves the approved front-facing camera and square canvas.
  * Reduces rear hills by 45% and Mount Fuji by 40%, keeping Fuji grounded.
  */
@@ -13,7 +13,7 @@
   const sceneMarker = 'LE-WEATHER-FUJI-GARDEN-V2';
   const hillsMarker = 'LE-WEATHER-HILLS-HEIGHT-55-V2';
   const fujiMarker = 'LE-WEATHER-FUJI-HEIGHT-54-V3';
-  const versionMarker = 'LE-WEATHER-SCENERY-V26';
+  const versionMarker = 'LE-WEATHER-SCENERY-V27';
 
   const originalCanvasRule =
     '.le-weather-v2 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:pan-y}';
@@ -378,13 +378,12 @@
     }
 
 
-
-
-    // V25: add matching timber side rails and restrained vertical infill to close the exposed foundation sides.
-    const foundationSideRailsMarker='LE-WEATHER-PAVILION-SIDE-RAILS-V5';
-    if(updated.includes('LE-WEATHER-PAVILION-STAIR-INFILL-V4') && updated.includes('LE-WEATHER-PAVILION-FOUR-SIDE-RAILS-V6') && updated.includes('box(house,timber,0,.96,-2.52,7.02,.18,.18)') && updated.includes('box(house,timber,x,.96,2.52,1.26,.18,.18)') && !updated.includes(foundationSideRailsMarker)){
-      const sideRails=`
-    // Continuous side rails connect the raised veranda piers on both long sides.
+    // V27: add all four foundation rail sides in one ordered pass.
+    // The front rail is split around the entrance stairs; the rear rail remains continuous.
+    const fourSideRailsMarker='LE-WEATHER-PAVILION-FOUR-SIDE-RAILS-V7';
+    if(updated.includes('LE-WEATHER-PAVILION-STAIR-INFILL-V4') && !updated.includes(fourSideRailsMarker)){
+      const allSideRails=`
+    // Left and right long sides: upper/lower rails and three vertical timber balusters per side.
     for(const x of [-3.58,3.58]){
       box(house,timber,x,.96,0,.18,.18,5.05);
       box(house,deckPlank,x,.48,0,.13,.12,4.88);
@@ -392,31 +391,15 @@
         box(house,dark,x,.72,z,.12,.78,.12);
       }
     }
-    `;
-      const stairAnchor='// Continuous vertical timber infill closes the exposed middle gaps between each tread.';
-      if(updated.includes(stairAnchor)){
-        updated=updated.replace(stairAnchor,sideRails+stairAnchor);
-        changed=true;
-      }
-      updated=updated.replace('LE-WEATHER-PAVILION-STAIR-INFILL-V4','LE-WEATHER-PAVILION-STAIR-INFILL-V4 '+foundationSideRailsMarker);
-      changed=true;
-    }
 
-
-    // V26: add the rear and front perimeter rails after the foundation materials and before stair geometry.
-    // The front rail is intentionally split around the centred stair entry.
-    const fourSideRailsMarker='LE-WEATHER-PAVILION-FOUR-SIDE-RAILS-V6';
-    const stairGeometryAnchor='const entranceSteps=[';
-    if(updated.includes('LE-WEATHER-PAVILION-SIDE-RAILS-V5') &&
-       !updated.includes(fourSideRailsMarker) && updated.includes(stairGeometryAnchor)){
-      const endRails=`
-    // Rear short side: continuous rails with three restrained timber uprights.
+    // Rear short side: a continuous upper and lower rail with three vertical balusters.
     box(house,timber,0,.96,-2.52,7.02,.18,.18);
     box(house,deckPlank,0,.48,-2.52,7.02,.12,.14);
     for(const x of [-2.55,0,2.55]){
       box(house,dark,x,.72,-2.52,.14,.78,.14);
     }
-    // Front short side: rail returns flank the central entrance stair opening.
+
+    // Front short side: matching rail returns leave the centred staircase entrance open.
     for(const x of [-2.95,2.95]){
       box(house,timber,x,.96,2.52,1.26,.18,.18);
       box(house,deckPlank,x,.48,2.52,1.26,.12,.14);
@@ -425,8 +408,12 @@
       }
     }
     `;
-      updated=updated.replace(stairGeometryAnchor,endRails+stairGeometryAnchor);
-      updated=updated.replace('LE-WEATHER-PAVILION-SIDE-RAILS-V5','LE-WEATHER-PAVILION-SIDE-RAILS-V5 '+fourSideRailsMarker);
+      const stairAnchor='// Continuous vertical timber infill closes the exposed middle gaps between each tread.';
+      if(updated.includes(stairAnchor)){
+        updated=updated.replace(stairAnchor,allSideRails+stairAnchor);
+        changed=true;
+      }
+      updated=updated.replace('LE-WEATHER-PAVILION-STAIR-INFILL-V4','LE-WEATHER-PAVILION-STAIR-INFILL-V4 '+fourSideRailsMarker);
       changed=true;
     }
 
@@ -439,7 +426,7 @@
     const hasTrees = updated.includes('const treeLayout=');
     const hasHouseRotation = updated.includes('house.rotation.y=-15*Math.PI/180') && updated.includes('LE-WEATHER-PAVILION-ROTATION-CCW-15-V1');
     const hasControlsToggle = updated.includes('wx2-control-toggle') && updated.includes('wx2-controls-collapsed') && updated.includes('const controlsToggle=screen.querySelector') && updated.includes('.wx2-control-toggle{pointer-events:auto;position:absolute;');
-    const hasRaisedFoundation = updated.includes('LE-WEATHER-PAVILION-RAISED-FOUNDATION-V1') && updated.includes('box(house,timber,0,1.50,0,7.8,.15,5.6)') && updated.includes('LE-WEATHER-PAVILION-SLIM-FOUNDATION-V2') && updated.includes('LE-WEATHER-PAVILION-TRADITIONAL-STAIRS-PIERS-V3') && updated.includes('LE-WEATHER-PAVILION-STAIR-INFILL-V4') && updated.includes('LE-WEATHER-PAVILION-FOUR-SIDE-RAILS-V6') && updated.includes('box(house,timber,0,.96,-2.52,7.02,.18,.18)') && updated.includes('box(house,timber,x,.96,2.52,1.26,.18,.18)') && updated.includes('Continuous vertical timber infill') && updated.includes('const entranceSteps=[') && updated.includes('box(house,dark,x,.72,z,.30,.88,.30)') && updated.includes('step.top-step.front,.98)') && updated.includes('const entranceSteps=') && updated.includes('foundationStone') && updated.includes('deckPlank');
+    const hasRaisedFoundation = updated.includes('LE-WEATHER-PAVILION-RAISED-FOUNDATION-V1') && updated.includes('box(house,timber,0,1.50,0,7.8,.15,5.6)') && updated.includes('LE-WEATHER-PAVILION-SLIM-FOUNDATION-V2') && updated.includes('LE-WEATHER-PAVILION-TRADITIONAL-STAIRS-PIERS-V3') && updated.includes('LE-WEATHER-PAVILION-STAIR-INFILL-V4') && updated.includes('LE-WEATHER-PAVILION-FOUR-SIDE-RAILS-V7') && updated.includes('box(house,timber,x,.96,0,.18,.18,5.05)') && updated.includes('box(house,timber,0,.96,-2.52,7.02,.18,.18)') && updated.includes('box(house,timber,x,.96,2.52,1.26,.18,.18)') && updated.includes('Continuous vertical timber infill') && updated.includes('const entranceSteps=[') && updated.includes('box(house,dark,x,.72,z,.30,.88,.30)') && updated.includes('step.top-step.front,.98)') && updated.includes('const entranceSteps=') && updated.includes('foundationStone') && updated.includes('deckPlank');
     if (!hasFuji || !hasHills || !hasCamera || !hasTrees || !hasHouseRotation || !hasControlsToggle || !hasRaisedFoundation ||
         updated.includes('left:calc(50% - 30vw)')) return null;
     return updated + `\n/* ${versionMarker} */\n`;
@@ -467,7 +454,7 @@
     if(response.ok){
       const source=await response.clone().text();
       if(!source.includes(versionMarker))
-        console.error('[LIVE // EARTH] Weather V26 four-side foundation rail transform did not match; original Weather response preserved.');
+        console.error('[LIVE // EARTH] Weather V27 four-side pavilion rail refinement transform did not match; original Weather response preserved.');
     }
     return response;
   };
