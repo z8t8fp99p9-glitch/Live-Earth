@@ -171,147 +171,175 @@
     // a visible branching trunk. Instanced leaves keep the foliage detailed
     // without creating hundreds of separate draw calls. The tree frames the
     // pavilion from the right and remains independent of the house geometry.
+    // V49 — BRANCH-FIRST MOMIJI SKELETON.
+    // The current stage deliberately contains NO leaves. Build and approve the
+    // complete woody architecture before any foliage is introduced.
     function createMomiji(x,z,scale=1){
       const maple=new THREE.Group();
-      // Deterministic seed keeps the tree stable across weather previews and reloads.
       let seed=0x4d4f4d49;
       const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
       const signed=()=>rand()*2-1;
       const up=new THREE.Vector3(0,1,0);
 
-      // Research-guided crown envelope: attractor points describe a broad,
-      // slightly asymmetrical Japanese-maple crown and guide branch endpoints.
-      // This is an attraction-guided growth field, not a generic spherical canopy.
-      const attractors=[];
-      for(let i=0;i<960;i++){
-        const vertical=rand()*2-1;
-        const angle=rand()*Math.PI*2;
-        const radial=Math.cbrt(rand())*Math.sqrt(Math.max(.001,1-vertical*vertical));
-        attractors.push(new THREE.Vector3(
-          .13+Math.cos(angle)*3.25*radial+.10*vertical,
-          4.78+vertical*1.22*radial,
-          .035+Math.sin(angle)*2.15*radial
-        ));
-      }
-      const usedAttractors=new Set();
-      function takeAttractor(origin,direction,minDistance,maxDistance,preferredY){
-        const aim=direction.clone().normalize();
-        const middle=(minDistance+maxDistance)*.5;
-        let best=-1,bestScore=Infinity;
-        for(let i=0;i<attractors.length;i++){
-          if(usedAttractors.has(i))continue;
-          const delta=attractors[i].clone().sub(origin);
-          const distance=delta.length();
-          if(distance<minDistance||distance>maxDistance)continue;
-          const alignment=delta.normalize().dot(aim);
-          if(alignment<-.05)continue;
-          const score=Math.abs(distance-middle)*.28+
-            (1-alignment)*.78+
-            Math.abs(attractors[i].y-preferredY)*.13+
-            rand()*.035;
-          if(score<bestScore){best=i;bestScore=score;}
-        }
-        if(best>=0){
-          usedAttractors.add(best);
-          return attractors[best].clone();
-        }
-        return origin.clone().addScaledVector(aim,middle);
-      }
-
-      // One merged tapered-tube mesh carries the trunk, limbs and fine twigs.
-      // This keeps the denser botanical skeleton to a single bark draw call.
-      const branchPositions=[],branchColors=[],branchIndices=[];
-      const barkTones=['#30231d','#493126','#60432e','#3b2a22'].map(c=>new THREE.Color(c));
+      // All trunk, root, limb and twig surfaces are merged into one bark mesh.
+      const positions=[],colors=[],indices=[];
+      const barkPalette=[
+        '#2b211d','#392820','#493126','#58402e','#674b35','#332820'
+      ].map(c=>new THREE.Color(c));
       const radialSegments=7;
-      function addTubeSegment(a,b,radiusA,radiusB,tone=1){
-        const axis=new THREE.Vector3().subVectors(b,a);
-        if(axis.lengthSq()<1e-8)return;
-        const length=axis.length();
-        axis.normalize();
-        const reference=Math.abs(axis.y)>.92?new THREE.Vector3(1,0,0):up;
-        const u=new THREE.Vector3().crossVectors(axis,reference).normalize();
-        const v=new THREE.Vector3().crossVectors(axis,u).normalize();
-        const base=branchPositions.length/3;
-        const bark=barkTones[tone%barkTones.length];
-        const grain=.94+rand()*.12;
-        for(let i=0;i<=radialSegments;i++){
-          const angle=i/radialSegments*Math.PI*2;
-          const nx=u.x*Math.cos(angle)+v.x*Math.sin(angle);
-          const ny=u.y*Math.cos(angle)+v.y*Math.sin(angle);
-          const nz=u.z*Math.cos(angle)+v.z*Math.sin(angle);
-          branchPositions.push(
-            a.x+nx*radiusA,a.y+ny*radiusA,a.z+nz*radiusA,
-            b.x+nx*radiusB,b.y+ny*radiusB,b.z+nz*radiusB
-          );
-          const light=grain*(.91+.09*Math.cos(angle*2+tone));
-          for(let ring=0;ring<2;ring++)
-            branchColors.push(bark.r*light,bark.g*light,bark.b*light);
-          if(i<radialSegments){
-            const p=base+i*2,q=p+1,r=p+2,s=p+3;
-            branchIndices.push(p,r,q,q,r,s);
+      let pathCount=0;
+
+      function addTubePath(points,radius,tipRatio=.12,tone=1){
+        if(!points||points.length<2)return;
+        const count=points.length;
+        const tangents=[];
+        for(let i=0;i<count;i++){
+          const before=points[Math.max(0,i-1)];
+          const after=points[Math.min(count-1,i+1)];
+          const tangent=after.clone().sub(before);
+          if(tangent.lengthSq()<1e-9)tangent.set(0,1,0);
+          tangents.push(tangent.normalize());
+        }
+
+        // Parallel-transported ring frames prevent sudden twists along curved limbs.
+        const firstRef=Math.abs(tangents[0].y)>.92
+          ?new THREE.Vector3(1,0,0):up.clone();
+        let normal=new THREE.Vector3().crossVectors(tangents[0],firstRef).normalize();
+        let binormal=new THREE.Vector3().crossVectors(tangents[0],normal).normalize();
+        const base=positions.length/3;
+        const phase=rand()*Math.PI*2;
+        const bark=barkPalette[(tone+Math.floor(rand()*2))%barkPalette.length];
+
+        for(let i=0;i<count;i++){
+          const tangent=tangents[i];
+          if(i>0){
+            normal.addScaledVector(tangent,-normal.dot(tangent));
+            if(normal.lengthSq()<1e-8){
+              const ref=Math.abs(tangent.y)>.92?new THREE.Vector3(1,0,0):up;
+              normal.crossVectors(tangent,ref);
+            }
+            normal.normalize();
+            binormal.crossVectors(tangent,normal).normalize();
+          }
+          const t=i/(count-1);
+          const taper=tipRatio+(1-tipRatio)*Math.pow(1-t,1.12);
+          const localRadius=radius*taper;
+          const grain=.93+rand()*.14;
+          for(let j=0;j<=radialSegments;j++){
+            const a=j/radialSegments*Math.PI*2;
+            // Small irregularity keeps the bark from looking like smooth plumbing.
+            const rough=1+.035*Math.sin(a*3+phase)+.018*Math.sin(a*5+phase*1.7);
+            const nx=normal.x*Math.cos(a)+binormal.x*Math.sin(a);
+            const ny=normal.y*Math.cos(a)+binormal.y*Math.sin(a);
+            const nz=normal.z*Math.cos(a)+binormal.z*Math.sin(a);
+            positions.push(
+              points[i].x+nx*localRadius*rough,
+              points[i].y+ny*localRadius*rough,
+              points[i].z+nz*localRadius*rough
+            );
+            const light=grain*(.88+.12*Math.cos(a*2+tone));
+            colors.push(bark.r*light,bark.g*light,bark.b*light);
+            if(i<count-1&&j<radialSegments){
+              const a0=base+i*(radialSegments+1)+j;
+              const b0=a0+radialSegments+1;
+              indices.push(a0,b0,a0+1,a0+1,b0,b0+1);
+            }
           }
         }
+        // Close each fine tip with a small bark-coloured cap.
+        const tipIndex=positions.length/3;
+        const tip=points[count-1];
+        positions.push(tip.x,tip.y,tip.z);
+        colors.push(bark.r*.88,bark.g*.88,bark.b*.88);
+        const lastRing=base+(count-1)*(radialSegments+1);
+        for(let j=0;j<radialSegments;j++)
+          indices.push(tipIndex,lastRing+j,lastRing+j+1);
+        pathCount++;
       }
-      function addBranchPath(points,radius,tipRatio=.28,tone=1){
-        for(let i=0;i<points.length-1;i++){
-          const t0=i/(points.length-1),t1=(i+1)/(points.length-1);
-          const taper=t=>radius*(1-(1-tipRatio)*Math.pow(t,.88));
-          addTubeSegment(points[i],points[i+1],taper(t0),taper(t1),tone);
-        }
-      }
-      function cubicPath(start,end,bend,steps){
-        const direction=end.clone().sub(start);
-        const side=new THREE.Vector3(-direction.z,0,direction.x);
-        if(side.lengthSq()<1e-5)side.set(1,0,0);
-        side.normalize();
-        const c1=start.clone().addScaledVector(direction,.31)
-          .add(new THREE.Vector3(0,.13+bend*.18,0))
-          .addScaledVector(side,bend);
-        const c2=start.clone().addScaledVector(direction,.73)
-          .add(new THREE.Vector3(0,.09+bend*.10,0))
-          .addScaledVector(side,-bend*.42);
-        const points=[];
+
+      function bezierPath(p0,p1,p2,p3,steps=7){
+        const out=[];
         for(let i=0;i<=steps;i++){
           const t=i/steps,q=1-t;
-          points.push(new THREE.Vector3(
-            q*q*q*start.x+3*q*q*t*c1.x+3*q*t*t*c2.x+t*t*t*end.x,
-            q*q*q*start.y+3*q*q*t*c1.y+3*q*t*t*c2.y+t*t*t*end.y,
-            q*q*q*start.z+3*q*q*t*c1.z+3*q*t*t*c2.z+t*t*t*end.z
+          out.push(new THREE.Vector3(
+            q*q*q*p0.x+3*q*q*t*p1.x+3*q*t*t*p2.x+t*t*t*p3.x,
+            q*q*q*p0.y+3*q*q*t*p1.y+3*q*t*t*p2.y+t*t*t*p3.y,
+            q*q*q*p0.z+3*q*q*t*p1.z+3*q*t*t*p2.z+t*t*t*p3.z
           ));
         }
-        return points;
+        return out;
       }
-      function smoothPath(points,stepsPerSpan=5){
-        const result=[];
+
+      function catmullPath(points,stepsPerSpan=6){
+        const out=[];
         for(let i=0;i<points.length-1;i++){
           const p0=points[Math.max(0,i-1)],p1=points[i];
           const p2=points[i+1],p3=points[Math.min(points.length-1,i+2)];
           for(let j=0;j<stepsPerSpan;j++){
             const t=j/stepsPerSpan,t2=t*t,t3=t2*t;
-            const sample=new THREE.Vector3();
+            const p=new THREE.Vector3();
             for(const key of ['x','y','z']){
-              sample[key]=.5*((2*p1[key])+(-p0[key]+p2[key])*t+
+              p[key]=.5*((2*p1[key])+(-p0[key]+p2[key])*t+
                 (2*p0[key]-5*p1[key]+4*p2[key]-p3[key])*t2+
                 (-p0[key]+3*p1[key]-3*p2[key]+p3[key])*t3);
             }
-            result.push(sample);
+            out.push(p);
           }
         }
-        result.push(points[points.length-1].clone());
-        return result;
+        out.push(points[points.length-1].clone());
+        return out;
       }
-      const leafSites=[];
+
+      function pointAt(path,t){
+        const f=clamp(t,0,1)*(path.length-1);
+        const i=Math.min(path.length-2,Math.floor(f));
+        return path[i].clone().lerp(path[i+1],f-i);
+      }
+      function tangentAt(path,t){
+        const f=clamp(t,0,1)*(path.length-1);
+        const i=Math.min(path.length-2,Math.max(0,Math.floor(f)));
+        return path[Math.min(path.length-1,i+1)].clone()
+          .sub(path[Math.max(0,i-1)]).normalize();
+      }
+      function horizontalAngle(tangent){
+        const h=new THREE.Vector3(tangent.x,0,tangent.z);
+        if(h.lengthSq()<1e-7)h.set(1,0,0);
+        h.normalize();
+        return Math.atan2(h.z,h.x);
+      }
+      function growBranch(start,angle,length,rise,bend,radius,tone,steps=6,tipRatio=.13){
+        const dir=new THREE.Vector3(Math.cos(angle),0,Math.sin(angle));
+        const side=new THREE.Vector3(-dir.z,0,dir.x);
+        const end=start.clone().addScaledVector(dir,length)
+          .add(new THREE.Vector3(0,rise,0))
+          .addScaledVector(side,bend*.18);
+        const c1=start.clone().addScaledVector(dir,length*.29)
+          .add(new THREE.Vector3(0,.24+rise*.38,0))
+          .addScaledVector(side,bend);
+        const c2=start.clone().addScaledVector(dir,length*.77)
+          .add(new THREE.Vector3(0,.10+rise*.84,0))
+          .addScaledVector(side,-bend*.38);
+        const path=bezierPath(start,c1,c2,end,steps);
+        addTubePath(path,radius,tipRatio,tone);
+        return path;
+      }
+
+      // A single old, twisting central trunk with a clear taper and a slight S-curve.
       const trunkControls=[
-        new THREE.Vector3(0,.02,0),
-        new THREE.Vector3(-.10,.62,.025),
-        new THREE.Vector3(-.15,1.24,.035),
-        new THREE.Vector3(-.055,1.91,.025),
-        new THREE.Vector3(.14,2.57,.055),
-        new THREE.Vector3(.28,3.16,.045),
-        new THREE.Vector3(.34,3.52,.08)
+        new THREE.Vector3(0,-.16,0),
+        new THREE.Vector3(-.13,.28,.025),
+        new THREE.Vector3(-.25,.82,.055),
+        new THREE.Vector3(-.22,1.38,.085),
+        new THREE.Vector3(-.04,1.94,.105),
+        new THREE.Vector3(.17,2.48,.045),
+        new THREE.Vector3(.25,3.02,-.055),
+        new THREE.Vector3(.12,3.54,-.135),
+        new THREE.Vector3(-.06,4.02,-.19),
+        new THREE.Vector3(-.10,4.38,-.21)
       ];
-      const trunkPath=smoothPath(trunkControls,5);
-      addBranchPath(trunkPath,.265,.20,0);
+      const trunkPath=catmullPath(trunkControls,7);
+      addTubePath(trunkPath,.285,.19,1);
+
       function trunkAt(height){
         for(let i=0;i<trunkPath.length-1;i++){
           const a=trunkPath[i],b=trunkPath[i+1];
@@ -320,206 +348,180 @@
             return a.clone().lerp(b,t);
           }
         }
-        return trunkPath[Math.min(trunkPath.length-1,Math.max(0,Math.round(height/3.52*(trunkPath.length-1))))].clone();
+        return trunkPath[trunkPath.length-1].clone();
       }
-      // Low buttress roots flare from the trunk so the tree feels planted.
-      for(let i=0;i<6;i++){
-        const angle=i*Math.PI/3+.18;
-        const end=new THREE.Vector3(Math.cos(angle)*.54,.025,Math.sin(angle)*.40);
-        const start=new THREE.Vector3(-.035,.28,.01);
-        const path=cubicPath(start,end,.10,4);
-        addBranchPath(path,.078,.22,0);
+
+      // Exposed, tapered roots spread from the flare and meet the terrain surface.
+      const rootSpecs=[
+        {a:.15,l:.83,b:.16,r:.105},
+        {a:1.22,l:.66,b:-.12,r:.092},
+        {a:2.35,l:.91,b:.18,r:.112},
+        {a:3.42,l:.73,b:-.16,r:.088},
+        {a:4.62,l:.88,b:.12,r:.105},
+        {a:5.55,l:.59,b:-.10,r:.082},
+        {a:2.92,l:.52,b:.22,r:.073}
+      ];
+      for(const root of rootSpecs){
+        const start=new THREE.Vector3(-.045,.23,.012);
+        const dir=new THREE.Vector3(Math.cos(root.a),0,Math.sin(root.a));
+        const side=new THREE.Vector3(-dir.z,0,dir.x);
+        const end=new THREE.Vector3(0,-.165,0)
+          .addScaledVector(dir,root.l).addScaledVector(side,root.b);
+        const c1=start.clone().addScaledVector(dir,root.l*.35)
+          .add(new THREE.Vector3(0,-.12,0)).addScaledVector(side,root.b);
+        const c2=end.clone().addScaledVector(dir,-root.l*.22)
+          .add(new THREE.Vector3(0,.08,0));
+        addTubePath(bezierPath(start,c1,c2,end,6),root.r,.17,0);
       }
-      // A central leader rises through the crown; broad lateral branches form
-      // the spreading architecture typical of the upright Japanese-maple form.
-      const leaderEnd=takeAttractor(trunkPath[trunkPath.length-1],
-        new THREE.Vector3(.08,1,.04),.85,2.2,5.52);
-      const leaderPath=cubicPath(trunkPath[trunkPath.length-1],leaderEnd,.12,7);
-      addBranchPath(leaderPath,.082,.24,1);
-      leafSites.push({position:leaderEnd,level:2});
 
-      // Eleven primary limbs depart at different heights and azimuths.
-      // Each grows four secondary arms; each secondary arm divides into fine twigs.
-      const primaryCount=11;
-      for(let i=0;i<primaryCount;i++){
-        const angle=i*(Math.PI*2/primaryCount)+.17+signed()*.10;
-        const height=[1.48,1.73,2.02,2.31,2.62,2.82][i%6]+signed()*.07;
-        const start=trunkAt(height);
-        const radial=new THREE.Vector3(Math.cos(angle),0,Math.sin(angle));
-        const desired=radial.clone().multiplyScalar(.92)
-          .add(new THREE.Vector3(0,.28+rand()*.30,0));
-        const target=takeAttractor(start,desired,1.35,3.75,3.65+rand()*1.85);
-        const primary=cubicPath(start,target,.18+rand()*.16,7);
-        addBranchPath(primary,.078+rand()*.010,.22,1);
-        leafSites.push({position:target,level:1});
+      // Primary scaffold: irregular heights and directions make a layered,
+      // wide crown rather than a radial fan of equal-length limbs.
+      const primarySpecs=[
+        {h:1.88,a:2.52,len:2.72,rise:.72,bend:.34,r:.150},
+        {h:2.18,a:3.10,len:2.82,rise:.98,bend:-.28,r:.145},
+        {h:2.55,a:-2.48,len:2.57,rise:1.16,bend:.26,r:.137},
+        {h:2.77,a:-1.82,len:2.46,rise:1.28,bend:-.22,r:.127},
+        {h:2.08,a:.63,len:2.70,rise:.70,bend:-.33,r:.151},
+        {h:2.43,a:.08,len:2.92,rise:.92,bend:.31,r:.151},
+        {h:2.88,a:-.78,len:2.53,rise:1.20,bend:-.27,r:.132}
+      ];
+      const primaryPaths=[];
+      for(let i=0;i<primarySpecs.length;i++){
+        const spec=primarySpecs[i];
+        const start=trunkAt(spec.h);
+        const path=growBranch(start,spec.a,spec.len,spec.rise,spec.bend,
+          spec.r,1,8,.14);
+        primaryPaths.push({path,angle:spec.a});
+      }
 
+      // A slender central leader continues the S-curved trunk; small upper
+      // limbs emerge from different heights instead of radiating from one hub.
+      const leaderRoot=trunkPath[trunkPath.length-1].clone();
+      const leaderPath=growBranch(leaderRoot,-.48,.92,.78,.10,.074,2,9,.15);
+      const upperSpecs=[
+        {start:trunkAt(3.48),a:2.58,l:.82,rise:.54,bend:.16},
+        {start:trunkAt(3.86),a:-2.12,l:.76,rise:.42,bend:-.14},
+        {start:pointAt(leaderPath,.56),a:1.88,l:.66,rise:.39,bend:.12},
+        {start:pointAt(leaderPath,.82),a:-.92,l:.58,rise:.32,bend:-.11}
+      ];
+      for(const spec of upperSpecs){
+        growBranch(spec.start,spec.a,spec.l,spec.rise,spec.bend,.034,2,6,.14);
+      }
+
+      // Four secondary boughs leave each primary at uneven intervals.
+      // They curve out from the limb, with varied angles and a few gentle droops.
+      const secondaryAngleOffsets=[-.86,.66,-.42,.93];
+      const secondaryRise=[.20,.43,-.06,.32];
+      const secondaryPaths=[];
+      for(let i=0;i<primaryPaths.length;i++){
+        const parent=primaryPaths[i];
+        const positionsOnParent=[.30,.49,.69,.86];
         for(let j=0;j<4;j++){
-          const splitT=[.28,.50,.70,.88][j];
-          const splitIndex=Math.round(splitT*(primary.length-1));
-          const origin=primary[splitIndex];
-          const tangent=primary[Math.min(primary.length-1,splitIndex+1)]
-            .clone().sub(primary[Math.max(0,splitIndex-1)]).normalize();
-          const outward=new THREE.Vector3(origin.x,.0,origin.z);
-          if(outward.lengthSq()<.05)outward.copy(radial);
-          outward.normalize();
-          const side=new THREE.Vector3(-tangent.z,0,tangent.x).normalize();
-          const sign=j===0?-1:1;
-          const secondaryDirection=outward.multiplyScalar(.70)
-            .addScaledVector(tangent,.24)
-            .add(new THREE.Vector3(0,.24+rand()*.26,0))
-            .addScaledVector(side,sign*(.18+rand()*.10));
-          const secondaryTarget=takeAttractor(origin,secondaryDirection,.68,1.92,3.75+rand()*1.55);
-          const secondary=cubicPath(origin,secondaryTarget,.13+rand()*.10,5);
-          addBranchPath(secondary,.037+rand()*.007,.20,2);
-          leafSites.push({position:secondaryTarget,level:2});
-
-          for(let k=0;k<4;k++){
-            const twigT=[.40,.59,.76,.91][k];
-            const twigIndex=Math.round(twigT*(secondary.length-1));
-            const twigStart=secondary[twigIndex];
-            const twigTangent=secondary[Math.min(secondary.length-1,twigIndex+1)]
-              .clone().sub(secondary[Math.max(0,twigIndex-1)]).normalize();
-            const twigSide=new THREE.Vector3(-twigTangent.z,0,twigTangent.x).normalize();
-            const twigSign=(k<2?1:-1)*(rand()<.5?1:-1);
-            const twigDirection=new THREE.Vector3(twigStart.x,.0,twigStart.z);
-            if(twigDirection.lengthSq()<.05)twigDirection.copy(radial);
-            twigDirection.normalize().multiplyScalar(.52)
-              .addScaledVector(twigTangent,.18)
-              .add(new THREE.Vector3(0,.30+rand()*.24,0))
-              .addScaledVector(twigSide,twigSign*(.30+rand()*.18));
-            const twigTarget=takeAttractor(twigStart,twigDirection,.34,1.42,4.05+rand()*1.35);
-            const twig=cubicPath(twigStart,twigTarget,.08+rand()*.08,4);
-            addBranchPath(twig,.014+rand()*.004,.13,rand()<.45?2:3);
-            leafSites.push({position:twigTarget,level:3});
-          }
+          const t=positionsOnParent[j];
+          const origin=pointAt(parent.path,t);
+          const tangent=tangentAt(parent.path,t);
+          const baseAngle=horizontalAngle(tangent);
+          const angle=baseAngle+secondaryAngleOffsets[j]+signed()*.19;
+          const length=.78+rand()*.52;
+          const rise=secondaryRise[j]+rand()*.25;
+          const bend=signed()*.26;
+          const path=growBranch(origin,angle,length,rise,bend,
+            .043+rand()*.010,2,6,.15);
+          secondaryPaths.push({path,angle});
         }
       }
 
-      // A final set of subtle upper shoots fills the top silhouette without
-      // turning the crown into a perfect sphere.
-      for(let i=0;i<5;i++){
-        const start=leaderPath[Math.max(1,Math.round((.36+i*.12)*(leaderPath.length-1)))];
-        const a=i*Math.PI*2/5+.3;
-        const direction=new THREE.Vector3(Math.cos(a)*.7,.62+rand()*.2,Math.sin(a)*.7);
-        const target=takeAttractor(start,direction,.48,1.18,5.0+rand()*.65);
-        const shoot=cubicPath(start,target,.07,4);
-        addBranchPath(shoot,.029,.18,3);
-        leafSites.push({position:target,level:3});
-      }
-
-      const branchGeometry=new THREE.BufferGeometry();
-      branchGeometry.setAttribute('position',new THREE.Float32BufferAttribute(branchPositions,3));
-      branchGeometry.setAttribute('color',new THREE.Float32BufferAttribute(branchColors,3));
-      branchGeometry.setIndex(branchIndices);
-      branchGeometry.computeVertexNormals();
-      const branchMaterial=new THREE.MeshStandardMaterial({
-        color:'#ffffff',vertexColors:true,roughness:.96,metalness:0,side:THREE.DoubleSide
-      });
-      const branchMesh=new THREE.Mesh(branchGeometry,branchMaterial);
-      branchMesh.castShadow=true;branchMesh.receiveShadow=true;
-      maple.add(branchMesh);
-
-      // Five-lobed, finely notched palmate leaves replace the old generic star.
-      const leafShape=new THREE.Shape();
-      const outline=[
-        [0,-.52],[-.045,-.34],[-.15,-.31],[-.17,-.18],[-.33,-.22],
-        [-.25,-.07],[-.49,.02],[-.29,.12],[-.42,.32],[-.19,.25],
-        [-.10,.46],[0,.60],[.10,.46],[.19,.25],[.42,.32],
-        [.29,.12],[.49,.02],[.25,-.07],[.33,-.22],[.17,-.18],
-        [.15,-.31],[.045,-.34]
-      ];
-      leafShape.moveTo(outline[0][0],outline[0][1]);
-      for(let i=1;i<outline.length;i++)leafShape.lineTo(outline[i][0],outline[i][1]);
-      leafShape.closePath();
-      const leafGeometry=new THREE.ShapeGeometry(leafShape,1);
-      const leafVertices=leafGeometry.attributes.position;
-      for(let i=0;i<leafVertices.count;i++){
-        const lx=leafVertices.getX(i),ly=leafVertices.getY(i);
-        leafVertices.setZ(i,.018*(1-Math.min(1,Math.abs(lx)/.5))+
-          .008*Math.cos(ly*Math.PI*1.4));
-      }
-      leafVertices.needsUpdate=true;
-      leafGeometry.computeVertexNormals();
-
-      const leafMaterials=[
-        new THREE.MeshStandardMaterial({color:'#8f1c2b',roughness:.95,side:THREE.DoubleSide,emissive:'#25060a',emissiveIntensity:.055}),
-        new THREE.MeshStandardMaterial({color:'#bd2632',roughness:.93,side:THREE.DoubleSide,emissive:'#32080b',emissiveIntensity:.05}),
-        new THREE.MeshStandardMaterial({color:'#e44232',roughness:.92,side:THREE.DoubleSide,emissive:'#3a0b08',emissiveIntensity:.045}),
-        new THREE.MeshStandardMaterial({color:'#f06a36',roughness:.94,side:THREE.DoubleSide,emissive:'#421306',emissiveIntensity:.04})
-      ];
-      // Foliage grows from terminal twigs and secondary branch ends. Cluster
-      // radii overlap gently, but gaps remain so the branch architecture reads through.
-      const leafBuckets=[[],[],[],[]];
-      const allLeafMatrices=[];
-      const dummy=new THREE.Object3D();
-      for(const site of leafSites){
-        const count=site.level===1?11:site.level===2?19:29;
-        const radius=site.level===1?.38:site.level===2?.30:.245;
-        for(let i=0;i<count;i++){
-          const vertical=rand()*2-1,angle=rand()*Math.PI*2,rad=Math.cbrt(rand());
-          dummy.position.set(
-            site.position.x+Math.cos(angle)*rad*radius,
-            site.position.y+vertical*rad*radius*.82,
-            site.position.z+Math.sin(angle)*rad*radius*.78
-          );
-          dummy.rotation.set(
-            signed()*1.18,
-            rand()*Math.PI*2,
-            signed()*1.55
-          );
-          const size=.78+rand()*.48;
-          dummy.scale.set(.235*size,.27*size,.05);
-          dummy.updateMatrix();
-          const toneRoll=rand();
-          const tone=toneRoll<.16?0:toneRoll<.57?1:toneRoll<.88?2:3;
-          const matrix=dummy.matrix.clone();
-          leafBuckets[tone].push(matrix);
-          allLeafMatrices.push(matrix);
+      // Tertiary limbs split off the secondary boughs, alternating direction
+      // and height so the structure is not a repeated comb or bottle brush.
+      const tertiaryOffsets=[-.78,.72,-.24];
+      const tertiaryPaths=[];
+      for(const parent of secondaryPaths){
+        const positionsOnParent=[.39,.66,.87];
+        for(let j=0;j<3;j++){
+          const t=positionsOnParent[j];
+          const origin=pointAt(parent.path,t);
+          const tangent=tangentAt(parent.path,t);
+          const angle=horizontalAngle(tangent)+tertiaryOffsets[j]+signed()*.26;
+          const length=.48+rand()*.43;
+          const rise=(j===1?-.03:.16)+rand()*.31;
+          const path=growBranch(origin,angle,length,rise,signed()*.18,
+            .019+rand()*.005,3,5,.12);
+          tertiaryPaths.push({path,angle});
         }
       }
-      let totalLeaves=0;
-      for(let tone=0;tone<leafBuckets.length;tone++){
-        const matrices=leafBuckets[tone];
-        if(!matrices.length)continue;
-        const mesh=new THREE.InstancedMesh(leafGeometry,leafMaterials[tone],matrices.length);
-        for(let i=0;i<matrices.length;i++)mesh.setMatrixAt(i,matrices[i]);
-        mesh.instanceMatrix.needsUpdate=true;
-        mesh.frustumCulled=false;
-        maple.add(mesh);
-        totalLeaves+=matrices.length;
-      }
-      // A quiet central vein on each leaf helps the palmate shape read at close range.
-      const veinShape=new THREE.Shape();
-      veinShape.moveTo(-.006,-.42);veinShape.lineTo(.006,-.42);
-      veinShape.lineTo(.003,.39);veinShape.lineTo(0,.52);
-      veinShape.lineTo(-.003,.39);veinShape.closePath();
-      const veinGeometry=new THREE.ShapeGeometry(veinShape,1);
-      const veinPositions=veinGeometry.attributes.position;
-      for(let i=0;i<veinPositions.count;i++)veinPositions.setZ(i,.028);
-      veinPositions.needsUpdate=true;
-      const veinMaterial=new THREE.MeshBasicMaterial({
-        color:'#f4a06b',transparent:true,opacity:.25,depthWrite:false,side:THREE.DoubleSide
-      });
-      const veins=new THREE.InstancedMesh(veinGeometry,veinMaterial,allLeafMatrices.length);
-      for(let i=0;i<allLeafMatrices.length;i++)veins.setMatrixAt(i,allLeafMatrices[i]);
-      veins.instanceMatrix.needsUpdate=true;veins.frustumCulled=false;
-      maple.add(veins);
 
-      // A restrained warm uplight gives the red leaves depth at night.
-      const mapleGlow=new THREE.PointLight(0xff563c,.34,8,2);
-      mapleGlow.position.set(.1,3.1,.8);maple.add(mapleGlow);
+      // Fine branchlets and terminal twigs: this is the complete exposed
+      // skeleton stage. Every twig is tapered and individually curved.
+      const twigOffsets=[-.72,.82];
+      let fineTwigCount=0;
+      for(const parent of tertiaryPaths){
+        const positionsOnParent=[.57,.86];
+        for(let j=0;j<2;j++){
+          const t=positionsOnParent[j];
+          const origin=pointAt(parent.path,t);
+          const tangent=tangentAt(parent.path,t);
+          const angle=horizontalAngle(tangent)+twigOffsets[j]+signed()*.34;
+          const length=.27+rand()*.32;
+          const rise=signed()*.24+.10;
+          growBranch(origin,angle,length,rise,signed()*.13,
+            .0085+rand()*.0035,4,4,.10);
+          fineTwigCount++;
+        }
+      }
+
+      // A small number of extra terminal forks break up the outline of long boughs.
+      for(let i=0;i<primaryPaths.length;i++){
+        const parent=primaryPaths[i];
+        for(const t of [.91,.97]){
+          const origin=pointAt(parent.path,t);
+          const tangent=tangentAt(parent.path,t);
+          const angle=horizontalAngle(tangent)+(rand()<.5?-.62:.71);
+          growBranch(origin,angle,.30+rand()*.19,.12+rand()*.22,
+            signed()*.10,.010,4,4,.10);
+          fineTwigCount++;
+        }
+      }
+
+      const geometry=new THREE.BufferGeometry();
+      geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+      geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+      geometry.setIndex(indices);
+      geometry.computeVertexNormals();
+      const barkMaterial=new THREE.MeshStandardMaterial({
+        color:'#ffffff',vertexColors:true,roughness:.96,metalness:0,
+        side:THREE.DoubleSide
+      });
+      const barkMesh=new THREE.Mesh(geometry,barkMaterial);
+      barkMesh.castShadow=true;
+      barkMesh.receiveShadow=true;
+      maple.add(barkMesh);
+
+      // No leaves or foliage meshes are created in V49 by design.
+      // This lets us approve the full woody silhouette before the canopy pass.
       maple.position.set(x,0,z);
       maple.scale.setScalar(scale);
       maple.userData.isMomiji=true;
-      maple.userData.leafCount=totalLeaves;
-      maple.userData.branchSegments=branchIndices.length/(6*radialSegments);
+      maple.userData.stage='branch-skeleton';
+      maple.userData.branchCount={
+        trunk:1,
+        roots:rootSpecs.length,
+        primary:primarySpecs.length,
+        upperLeaders:1+upperSpecs.length,
+        secondary:secondaryPaths.length,
+        tertiary:tertiaryPaths.length,
+        fineTwigs:fineTwigCount,
+        total:1+rootSpecs.length+primarySpecs.length+
+          1+upperSpecs.length+secondaryPaths.length+
+          tertiaryPaths.length+fineTwigCount
+      };
+      maple.userData.leafCount=0;
+      maple.userData.branchPathCount=pathCount;
       scene.add(maple);
       return maple;
     }
-    // V48 — BROADER MOMIJI SPREAD, FINER BRANCHING, DENSER LEAVES, MORE FOREGROUND.
-    // Eleven slim scaffold limbs fan into four secondary arms and four fine twiglets
-    // per arm. A wider attractor envelope and denser instanced palmate leaves create
-    // a fuller, horizontally spreading crown. The tree moves slightly forward-right.
+    // V49 — BRANCHES FIRST: a complete exposed Japanese maple branch skeleton.
+    // Placement stays at the tested front-right location. Foliage will be added
+    // only after trunk, primary limbs, secondary branches and fine twigs are approved.
     const momiji=createMomiji(3.02,4.72,.92);trees.push(momiji);
 
     // Main architectural landmark: open pavilion with curved eaves, columns and lanterns.
@@ -1701,4 +1703,19 @@
    front-right side while retaining its established scale and portrait framing.
    Pavilion, roof, lanterns, Shoji doors, interior, foundation, deck, stairs, rails,
    weather camera, forecast UI, Location privacy and Stacks lifecycle are unchanged.
+*/
+
+
+/* LE-WEATHER-PAVILION-MOMIJI-BRANCH-SKELETON-V49
+   Branch-first rebuild guided by the supplied Japanese maple GLB and its
+   multi-angle reference screenshots. Builds a curved S-profile central trunk,
+   seven exposed buttress roots, seven irregular primary scaffold limbs,
+   a continuation leader with four offset upper limbs, 28 secondary boughs,
+   84 tertiary branches and 182 fine terminal twig forks. Branches use one
+   merged tapered bark mesh with low-sided cross-sections and vertex colour
+   variation. No foliage geometry is generated in this milestone so the full
+   woody architecture can be visually inspected before the leaf pass.
+   Tree placement remains at the tested front-right location. Pavilion,
+   roof, lanterns, doors, foundation, deck, stairs, rails, other scenery,
+   camera, Weather UI, Location privacy and Stacks lifecycle are unchanged.
 */
