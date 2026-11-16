@@ -1019,6 +1019,98 @@
       console.error('[LIVE // EARTH] Maple model failed; continuing with the Weather world.',mapleError);
     }
 
+
+    // V72 — JAPANESE GARDEN LANTERN + EVERGREEN PINE.
+    // Independent scenery additions: the existing maple, pavilion, camera and
+    // all established tree placements remain untouched. Composition follows
+    // the supplied reference: stone lantern on the left, sculpted green pine
+    // as a quiet counterweight behind it.
+    const gardenLantern=new THREE.Group();
+    const lanternStone=mat('#77776c',.94),lanternEdge=mat('#969184',.9),
+      lanternDark=mat('#343a39',.82),lanternGlow=new THREE.MeshStandardMaterial({
+        color:'#ffc66f',emissive:'#ff9a35',emissiveIntensity:2.15,
+        roughness:.48
+      });
+    function lanternBox(parent,material,x,y,z,sx,sy,sz){
+      const mesh=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),material);
+      mesh.position.set(x,y,z);parent.add(mesh);return mesh;
+    }
+    // Broad foot, tapered stone shaft and cap create a traditional yukimi-style
+    // garden lantern silhouette without relying on external models or textures.
+    const lanternFoot=new THREE.Mesh(new THREE.BoxGeometry(1.05,.22,.92),lanternStone);
+    lanternFoot.position.y=.12;gardenLantern.add(lanternFoot);
+    const lanternFootLip=new THREE.Mesh(new THREE.BoxGeometry(.91,.10,.78),lanternEdge);
+    lanternFootLip.position.y=.28;gardenLantern.add(lanternFootLip);
+    const lanternStem=new THREE.Mesh(new THREE.CylinderGeometry(.25,.39,1.02,8),lanternStone);
+    lanternStem.position.y=.84;gardenLantern.add(lanternStem);
+    const lanternCollar=new THREE.Mesh(new THREE.BoxGeometry(.86,.16,.78),lanternEdge);
+    lanternCollar.position.y=1.39;gardenLantern.add(lanternCollar);
+    const chamber=new THREE.Group();chamber.position.y=1.78;gardenLantern.add(chamber);
+    lanternBox(chamber,lanternDark,0,.28,0,.86,.66,.78);
+    lanternBox(chamber,lanternGlow,0,.28,.397,.48,.43,.018);
+    lanternBox(chamber,lanternGlow,0,.28,-.397,.48,.43,.018);
+    lanternBox(chamber,lanternGlow,.437,.28,0,.018,.43,.46);
+    lanternBox(chamber,lanternGlow,-.437,.28,0,.018,.43,.46);
+    for(const x of [-.36,.36])for(const z of [-.32,.32]){
+      const post=new THREE.Mesh(new THREE.BoxGeometry(.075,.72,.075),lanternEdge);
+      post.position.set(x,.28,z);chamber.add(post);
+    }
+    const chamberTop=new THREE.Mesh(new THREE.BoxGeometry(1.02,.13,.94),lanternEdge);
+    chamberTop.position.y=.67;chamber.add(chamberTop);
+    const lanternRoof=new THREE.Mesh(new THREE.CylinderGeometry(.12,.78,.30,4,1),lanternStone);
+    lanternRoof.rotation.y=Math.PI/4;lanternRoof.position.y=2.52;gardenLantern.add(lanternRoof);
+    const roofCap=new THREE.Mesh(new THREE.BoxGeometry(1.48,.12,1.34),lanternEdge);
+    roofCap.position.y=2.65;gardenLantern.add(roofCap);
+    const roofCrown=new THREE.Mesh(new THREE.SphereGeometry(.16,8,6),lanternStone);
+    roofCrown.position.y=2.79;gardenLantern.add(roofCrown);
+    gardenLantern.position.set(-5.25,0,2.65);
+    gardenLantern.scale.setScalar(.78);
+    scene.add(gardenLantern);
+
+    // Low, layered evergreen with gently spreading, irregular pine pads.
+    // Each pad is real 3D foliage geometry; the silhouette stays readable
+    // against the hills and does not compete with the red maple crown.
+    const pineGroup=new THREE.Group();
+    const pineBark=mat('#49382b',.96),
+      pineMats=['#183f35','#20513e','#2b6249','#3b7254'].map(c=>mat(c,.92));
+    const pineTrunk=new THREE.Mesh(new THREE.CylinderGeometry(.075,.19,3.15,7),pineBark);
+    pineTrunk.position.y=1.575;pineGroup.add(pineTrunk);
+    const pineTiers=[
+      {y:1.15,r:1.22,h:.70,lean:-.08,mat:0},
+      {y:1.78,r:1.08,h:.68,lean:.10,mat:1},
+      {y:2.38,r:.88,h:.62,lean:-.06,mat:2},
+      {y:2.91,r:.62,h:.54,lean:.08,mat:3},
+      {y:3.35,r:.36,h:.43,lean:-.04,mat:2}
+    ];
+    pineTiers.forEach((tier,index)=>{
+      const pad=new THREE.Mesh(
+        new THREE.ConeGeometry(tier.r,tier.h,9,2),
+        pineMats[tier.mat]
+      );
+      pad.position.set(tier.lean,tier.y,0);
+      pad.rotation.z=(index%2?-.055:.045);
+      pineGroup.add(pad);
+      // Flattened side bough pads give the tree a hand-shaped Japanese garden form.
+      for(let side=0;side<3;side++){
+        const angle=side*Math.PI*2/3+index*.47;
+        const branchPad=new THREE.Mesh(
+          new THREE.IcosahedronGeometry(tier.r*.48,1),
+          pineMats[(tier.mat+1)%pineMats.length]
+        );
+        branchPad.position.set(
+          Math.cos(angle)*tier.r*.48,
+          tier.y-.07+Math.sin(side*2.1)*.045,
+          Math.sin(angle)*tier.r*.48
+        );
+        branchPad.scale.set(1.12,.34,.82);
+        branchPad.rotation.y=-angle;
+        pineGroup.add(branchPad);
+      }
+    });
+    pineGroup.position.set(-7.25,0,-2.15);
+    pineGroup.scale.setScalar(.88);
+    scene.add(pineGroup);
+
     // Main architectural landmark: open pavilion with curved eaves, columns and lanterns.
     const house=new THREE.Group();scene.add(house);house.position.set(0,0,-1.4);house.rotation.y=-15*Math.PI/180;house.userData.refinement='LE-WEATHER-PAVILION-ROTATION-CCW-15-V1';
     const timber=mat('#684a35'),wall=mat('#e6ddc6'),roof=mat('#263b43',.72,.12),dark=mat('#293b38'),gold= new THREE.MeshStandardMaterial({color:'#d69b55',emissive:'#a35b1e',emissiveIntensity:.65});
