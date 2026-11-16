@@ -531,11 +531,10 @@
       barkMesh.receiveShadow=true;
       maple.add(barkMesh);
 
-      // V53 — SIX-SHAPE MOMIJI FOLIAGE.
-      // Each leaf is a light, individually-shaped palmate mesh with pointed
-      // lobes and subtle raised veins. Six InstancedMeshes keep draw calls low.
-      // Foliage is placed on the fine terminal twigs and hanging sprays so
-      // the branch skeleton remains visible through the canopy.
+      // V54 — FAULT-CONTAINED SIX-SHAPE MOMIJI FOLIAGE.
+      // Foliage is an optional layer: any leaf-generation failure is logged
+      // and isolated so it can never prevent the pavilion/world from rendering.
+      try {
       const leafShapes=[
         // Five-lobed, broad classic momiji.
         [[0,-.43],[-.15,-.28],[-.39,-.18],[-.25,-.04],[-.47,.10],[-.25,.20],[-.30,.40],[0,.59],[.30,.40],[.25,.20],[.47,.10],[.25,-.04],[.39,-.18],[.15,-.28]],
@@ -559,7 +558,10 @@
         for(let i=1;i<outline.length;i++)shape.lineTo(outline[i][0],outline[i][1]);
         shape.closePath();
         const face=new THREE.ShapeGeometry(shape,2);
-        const fp=face.getAttribute('position');
+        // ShapeGeometry may be indexed. Expand it before appending vein
+        // triangles so the combined leaf buffer has an unambiguous triangle list.
+        const faceTriangles=face.index?face.toNonIndexed():face;
+        const fp=faceTriangles.getAttribute('position');
         const positions=[],colors=[];
         for(let i=0;i<fp.count;i++){
           const px=fp.getX(i),py=fp.getY(i);
@@ -586,6 +588,7 @@
         g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
         g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
         g.computeVertexNormals();
+        if(faceTriangles!==face)faceTriangles.dispose();
         face.dispose();
         return g;
       }
@@ -633,7 +636,6 @@
         addLeafCluster(parent,.84,2);
       }
 
-      let renderedLeafCount=0;
       for(let i=0;i<leafBuckets.length;i++){
         const bucket=leafBuckets[i];
         if(!bucket.length)continue;
@@ -650,11 +652,14 @@
         maple.add(foliage);
         renderedLeafCount+=bucket.length;
       }
+      } catch(foliageError) {
+        console.error('[LIVE // EARTH] Maple foliage layer failed; keeping the branch structure and Weather world alive.',foliageError);
+      }
 
       maple.position.set(x,0,z);
       maple.scale.setScalar(scale);
       maple.userData.isMomiji=true;
-      maple.userData.stage='six-shape-maple-foliage';
+      maple.userData.stage=renderedLeafCount?'six-shape-maple-foliage':'branch-skeleton-fallback';
       maple.userData.branchCount={
         trunk:1,
         roots:rootSpecs.length,
@@ -675,10 +680,14 @@
       scene.add(maple);
       return maple;
     }
-    // V53 — SIX-SHAPE MOMIJI FOLIAGE: five-, seven- and nine-point leaf
-    // silhouettes with size variation, integrated fine veins and autumn colour.
-    // Instanced on terminal twigs and hanging sprays; V52 smooth wood retained.
-    const momiji=createMomiji(3.02,4.72,.92);trees.push(momiji);
+    // V54 — isolate the optional maple asset from the core Weather renderer.
+    // Even an unexpected tree-build error must not blank the pavilion/world.
+    try {
+      const momiji=createMomiji(3.02,4.72,.92);
+      trees.push(momiji);
+    } catch(mapleError) {
+      console.error('[LIVE // EARTH] Maple model failed; continuing with the Weather world.',mapleError);
+    }
 
     // Main architectural landmark: open pavilion with curved eaves, columns and lanterns.
     const house=new THREE.Group();scene.add(house);house.position.set(0,0,-1.4);house.rotation.y=-15*Math.PI/180;house.userData.refinement='LE-WEATHER-PAVILION-ROTATION-CCW-15-V1';
@@ -1861,6 +1870,17 @@
    weather camera, forecast UI, Location privacy and Stacks lifecycle are unchanged.
 */
 
+
+/* LE-WEATHER-MAPLE-LEAF-RENDER-RECOVERY-V54
+   Fixes the V53 failure boundary: leaf generation is now isolated so an
+   optional foliage error cannot abort createWorld() and remove the entire scene.
+   ShapeGeometry is expanded to a non-indexed triangle list before leaf veins
+   are appended, ensuring the leaf surface and vein buffers are well-formed.
+   Maple construction itself is also guarded so the pavilion/weather world
+   remains available if the optional tree model encounters a device-specific issue.
+   V52 smooth wood, V51 branch directions, V53 six leaf silhouettes, tree placement,
+   pavilion, weather UI, Location privacy and Stacks lifecycle are retained.
+*/
 
 /* LE-WEATHER-PAVILION-MOMIJI-BRANCH-SKELETON-V49
    Branch-first rebuild guided by the supplied Japanese maple GLB and its
