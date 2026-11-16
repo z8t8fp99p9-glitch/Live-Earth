@@ -28,3 +28,10 @@
 - The final transformed Weather module passed JavaScript syntax parsing.
 - ZIP integrity, manifest payload list, sizes and SHA-256 digests are verified.
 - Device rendering still requires upload and user testing.
+
+
+## V28 rail elevation correction
+- Raised all four foundation guard-rail runs to the pavilion deck/floor perimeter.
+- Raised lower rails and shortened balusters to form a coherent guard assembly above the deck, rather than below the floor.
+- Front rail remains split around the entrance staircase; rear and both long sides remain continuous.
+- Pavilion geometry, rotation, camera, Fuji, hills, garden, stairs and weather controls are unchanged.
