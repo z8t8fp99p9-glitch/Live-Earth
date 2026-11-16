@@ -547,83 +547,66 @@
       let renderedLeafCount=0;
       let leafShapeCount=0;
       let leafShapeInstances=[];
-      // V59 — BRANCH-ATTACHED MOMIJI FOLIAGE.
-      // Every terminal twig receives leaves along its own wood path. Tertiary
-      // and secondary branches also carry smaller clusters, while the primary
-      // scaffold and upper leader receive only sparse accents. No free-floating
-      // canopy particles are used: every leaf is emitted from a retained branch.
-      // Geometry and growth parameters above remain unchanged from V58.
-      // Bookkeeping variables remain in the V55 outer function scope.
+      // V60 — NATURAL FIVE-LOBE MOMIJI FOLIAGE.
+      // Preserve the V59 branch skeleton. Smaller leaves, open clusters,
+      // grouped colour and varied 3-D leaf planes replace the dense paper-card look.
       let foliageError=null;
       try {
+        // Palmate five-lobed Japanese maple silhouettes. Each template varies
+        // the lobe depth and serration slightly while retaining a clear leaf shape.
         const leafShapes=[
-          [[0,-.43],[-.15,-.28],[-.39,-.18],[-.25,-.04],[-.47,.10],[-.25,.20],[-.30,.40],[0,.59],[.30,.40],[.25,.20],[.47,.10],[.25,-.04],[.39,-.18],[.15,-.28]],
-          [[0,-.46],[-.12,-.31],[-.31,-.23],[-.22,-.11],[-.43,-.02],[-.27,.10],[-.48,.19],[-.25,.25],[-.31,.45],[0,.62],[.31,.45],[.25,.25],[.48,.19],[.27,.10],[.43,-.02],[.22,-.11],[.31,-.23],[.12,-.31]],
-          [[0,-.45],[-.10,-.29],[-.34,-.20],[-.20,-.08],[-.44,.02],[-.25,.16],[-.38,.39],[0,.68],[.38,.39],[.25,.16],[.44,.02],[.20,-.08],[.34,-.20],[.10,-.29]],
-          [[0,-.40],[-.18,-.25],[-.42,-.12],[-.27,.02],[-.46,.18],[-.20,.24],[-.24,.42],[0,.56],[.24,.42],[.20,.24],[.46,.18],[.27,.02],[.42,-.12],[.18,-.25]],
-          [[0,-.44],[-.12,-.29],[-.40,-.20],[-.22,-.08],[-.51,.03],[-.27,.15],[-.43,.38],[0,.60],[.43,.38],[.27,.15],[.51,.03],[.22,-.08],[.40,-.20],[.12,-.29]],
-          [[0,-.46],[-.09,-.31],[-.28,-.24],[-.18,-.13],[-.39,-.07],[-.22,.04],[-.45,.12],[-.23,.20],[-.34,.42],[0,.64],[.34,.42],[.23,.20],[.45,.12],[.22,.04],[.39,-.07],[.18,-.13],[.28,-.24],[.09,-.31]]
+          [[0,-.52],[-.08,-.34],[-.20,-.31],[-.25,-.19],[-.39,-.22],[-.36,-.08],[-.53,-.02],[-.39,.08],[-.43,.24],[-.25,.19],[-.13,.39],[0,.30],[.13,.39],[.25,.19],[.43,.24],[.39,.08],[.53,-.02],[.36,-.08],[.39,-.22],[.25,-.19],[.20,-.31],[.08,-.34]],
+          [[0,-.56],[-.07,-.35],[-.18,-.33],[-.28,-.18],[-.42,-.24],[-.38,-.07],[-.55,.02],[-.37,.12],[-.45,.28],[-.24,.20],[-.12,.42],[0,.32],[.12,.42],[.24,.20],[.45,.28],[.37,.12],[.55,.02],[.38,-.07],[.42,-.24],[.28,-.18],[.18,-.33],[.07,-.35]],
+          [[0,-.49],[-.10,-.32],[-.22,-.29],[-.24,-.16],[-.40,-.17],[-.34,-.03],[-.51,.04],[-.36,.14],[-.39,.27],[-.22,.22],[-.10,.38],[0,.29],[.10,.38],[.22,.22],[.39,.27],[.36,.14],[.51,.04],[.34,-.03],[.40,-.17],[.24,-.16],[.22,-.29],[.10,-.32]],
+          [[0,-.54],[-.06,-.36],[-.17,-.30],[-.29,-.22],[-.41,-.20],[-.35,-.05],[-.54,.00],[-.38,.11],[-.42,.25],[-.23,.18],[-.14,.40],[0,.33],[.14,.40],[.23,.18],[.42,.25],[.38,.11],[.54,.00],[.35,-.05],[.41,-.20],[.29,-.22],[.17,-.30],[.06,-.36]]
         ];
-        const leafTints=['#b51f2c','#d3332b','#e34a28','#ef702b','#e7a33a','#8e2638','#c53c55'];
-        const foliagePositions=[];
-        const foliageColors=[];
+        const palette=[
+          ['#a91f35','#bd2940','#cc3547'],
+          ['#bd2637','#d13a3b','#df5140'],
+          ['#c9432c','#df5a2e','#e97835'],
+          ['#d65a2d','#e77735','#ed9340'],
+          ['#a82c45','#c23b50','#d64b55'],
+          ['#c34a32','#d86636','#e58a3e']
+        ];
+        const foliagePositions=[],foliageColors=[];
         leafShapeInstances=leafShapes.map(()=>0);
         let leafIndex=0;
         const worldUp=new THREE.Vector3(0,1,0);
-        const fallbackAxis=new THREE.Vector3(1,0,0);
-        // resize() sets the settled Weather camera to this same world position.
-        // Using the camera point, rather than one fixed direction, gives leaves
-        // the correct perspective across the full width and height of the tree.
         const foliageCameraWorld=new THREE.Vector3(0,7.0,27.7);
 
-        function emitLeaf(path,t,shapeIndex,size,tintHex){
-          const origin=pointAt(path,t);
-          const tangent=tangentAt(path,t);
-          const worldOrigin=new THREE.Vector3(
-            x+origin.x*scale, origin.y*scale, z+origin.z*scale
-          );
-          const viewDirection=foliageCameraWorld.clone().sub(worldOrigin).normalize();
-          // Project the twig tangent into the camera-facing leaf plane. This
-          // preserves each twig's direction without allowing a leaf to turn
-          // edge-on when its branch points toward the camera.
-          let axis=tangent.clone().add(new THREE.Vector3(
-            signed()*.22,.08+signed()*.18,signed()*.22
-          ));
-          axis.addScaledVector(viewDirection,-axis.dot(viewDirection));
-          if(axis.lengthSq()<.0001){
-            axis.copy(worldUp).addScaledVector(viewDirection,-worldUp.dot(viewDirection));
-          }
-          if(axis.lengthSq()<.0001){
-            axis.copy(fallbackAxis).addScaledVector(viewDirection,-fallbackAxis.dot(viewDirection));
-          }
-          axis.normalize();
-          let side=new THREE.Vector3().crossVectors(axis,viewDirection);
-          if(side.lengthSq()<.0001)side.crossVectors(axis,worldUp);
-          side.normalize();
-          let normal=new THREE.Vector3().crossVectors(side,axis).normalize();
-          if(normal.dot(viewDirection)<0){side.negate();normal.negate();}
-          // Gentle natural twist keeps the canopy dimensional, while the leaf
-          // normal remains close to the actual camera direction.
-          const roll=signed()*.30, cr=Math.cos(roll), sr=Math.sin(roll);
-          const rolledSide=side.clone().multiplyScalar(cr).addScaledVector(normal,sr);
-          const rolledNormal=normal.clone().multiplyScalar(cr).addScaledVector(side,-sr);
+        function emitLeaf(path,t,shapeIndex,size,tintHex,clusterSide,clusterLift){
+          const origin=pointAt(path,clamp(t,.03,.99));
+          const tangent=tangentAt(path,clamp(t,.03,.99)).normalize();
+          const worldOrigin=new THREE.Vector3(x+origin.x*scale,origin.y*scale,z+origin.z*scale);
+          const toCamera=foliageCameraWorld.clone().sub(worldOrigin).normalize();
+          // Keep the leaf partly dimensional: face the camera, but let its
+          // normal retain a substantial component perpendicular to the twig.
+          let normal=new THREE.Vector3().crossVectors(tangent,worldUp);
+          if(normal.lengthSq()<.001) normal.set(1,0,0);
+          normal.normalize();
+          if(normal.dot(toCamera)<0) normal.negate();
+          normal.lerp(toCamera,.48).normalize();
+          let axis=tangent.clone().addScaledVector(normal,-tangent.dot(normal)).normalize();
+          if(axis.lengthSq()<.001) axis.copy(worldUp).addScaledVector(normal,-worldUp.dot(normal)).normalize();
+          const side=new THREE.Vector3().crossVectors(axis,normal).normalize();
+          const roll=signed()*.42, cr=Math.cos(roll), sr=Math.sin(roll);
+          const leafSide=side.clone().multiplyScalar(cr).addScaledVector(axis,sr);
+          const leafAxis=axis.clone().multiplyScalar(cr).addScaledVector(side,-sr);
+          // Cluster offsets are small and originate on the twig, never in free space.
+          const anchor=origin.clone()
+            .addScaledVector(side,clusterSide)
+            .addScaledVector(normal,.012+clusterLift);
           const outline=leafShapes[shapeIndex];
           const tint=new THREE.Color(tintHex);
-          const center=[0,.035];
-          // A tiny petiole lift makes the blade emerge from the twig surface,
-          // rather than appearing as a detached card beside the branch.
-          const petiole=origin.clone()
-            .addScaledVector(side,signed()*.018)
-            .addScaledVector(normal,.012+rand()*.012);
+          const center=[0,.015];
           function vertex(q){
-            const p=petiole.clone()
-              .addScaledVector(rolledSide,q[0]*size)
-              .addScaledVector(axis,(q[1]-center[1])*size)
-              .addScaledVector(rolledNormal,.012+Math.abs(q[0])*.014);
+            const p=anchor.clone()
+              .addScaledVector(leafSide,q[0]*size)
+              .addScaledVector(leafAxis,(q[1]-center[1])*size)
+              .addScaledVector(normal,.006+Math.abs(q[0])*.008);
             foliagePositions.push(p.x,p.y,p.z);
             foliageColors.push(tint.r,tint.g,tint.b);
           }
-          // Centre-fan triangles preserve all six pointed momiji silhouettes.
           for(let i=0;i<outline.length;i++){
             vertex(center); vertex(outline[i]); vertex(outline[(i+1)%outline.length]);
           }
@@ -631,47 +614,41 @@
           renderedLeafCount++;
         }
 
-        function addLeafCluster(path,t,count){
+        function addLeafCluster(path,t,count,dominant){
+          const family=palette[dominant%palette.length];
+          // Each cluster fans around a single twig junction. Staggering along
+          // the wood and across its depth prevents the overlapping-card effect.
           for(let k=0;k<count;k++){
-            const shapeIndex=(leafIndex*5+Math.floor(rand()*6))%leafShapes.length;
-            const size=.52+rand()*.30;
-            const tint=leafTints[Math.floor(rand()*leafTints.length)];
-            emitLeaf(path,t,shapeIndex,size,tint);
+            const spread=(k-(count-1)/2);
+            const along=spread*.075+(signed()*.018);
+            const leafT=clamp(t+along,.06,.985);
+            const shapeIndex=(leafIndex+Math.floor(rand()*leafShapes.length))%leafShapes.length;
+            const tint=family[Math.floor(rand()*family.length)];
+            const size=.19+rand()*.075;
+            const sideOffset=spread*.045+signed()*.018;
+            const lift=.008+rand()*.018;
+            emitLeaf(path,leafT,shapeIndex,size,tint,sideOffset,lift);
             leafIndex++;
           }
         }
 
-        // Sparse leaf accents on the large scaffold stop it reading as a bare
-        // frame, without hiding the trunk or the main woody architecture.
-        for(const parent of primaryPaths){
-          addLeafCluster(parent.path,.80,1);
-          addLeafCluster(parent.path,.96,1);
+        // Restrained upper accents; the tree's wood remains readable.
+        for(let i=0;i<primaryPaths.length;i++){
+          addLeafCluster(primaryPaths[i].path,.88,2,i);
         }
-        addLeafCluster(leaderPath,.66,1);
-        addLeafCluster(leaderPath,.94,1);
-        for(const path of upperPaths){
-          addLeafCluster(path,.76,1);
-          addLeafCluster(path,.96,1);
-        }
+        addLeafCluster(leaderPath,.90,2,1);
+        for(let i=0;i<upperPaths.length;i++) addLeafCluster(upperPaths[i],.88,2,i+2);
 
-        // Every secondary bough gets a small pair of clusters along its length.
-        for(const parent of secondaryPaths){
-          addLeafCluster(parent.path,.62,1);
-          addLeafCluster(parent.path,.94,2);
-        }
-        // Tertiary branches are leafy, with three anchored clusters apiece.
-        for(const parent of tertiaryPaths){
-          addLeafCluster(parent.path,.48,2);
-          addLeafCluster(parent.path,.76,2);
-          addLeafCluster(parent.path,.96,2);
-        }
-        // Every fine terminal twig and hanging spray is dressed from its own
-        // base-to-tip path, including the last few centimetres at the tip.
-        for(const path of terminalPaths){
-          addLeafCluster(path,.40,2);
-          addLeafCluster(path,.72,2);
-          addLeafCluster(path,.97,2);
-        }
+        // One compact cluster per secondary bough, two on each tertiary limb.
+        for(let i=0;i<secondaryPaths.length;i++)
+          addLeafCluster(secondaryPaths[i].path,.88,3,i+1);
+        for(let i=0;i<tertiaryPaths.length;i++)
+          addLeafCluster(tertiaryPaths[i].path,.78,3,i+2);
+
+        // Every terminal twig is still dressed, but with a small three-leaf
+        // spray instead of six oversized leaves repeated at three stations.
+        for(let i=0;i<terminalPaths.length;i++)
+          addLeafCluster(terminalPaths[i],.84,3,i+3);
 
         if(!renderedLeafCount||!foliagePositions.length)
           throw new Error('No maple leaf vertices were generated');
@@ -683,7 +660,7 @@
           vertexColors:true,side:THREE.DoubleSide,transparent:false
         });
         const foliage=new THREE.Mesh(foliageGeometry,foliageMaterial);
-        foliage.name='MomijiBranchAttachedTriangleFoliageV59';
+        foliage.name='MomijiNaturalFiveLobeFoliageV60';
         foliage.frustumCulled=false;
         foliage.castShadow=false;
         foliage.receiveShadow=false;
@@ -691,12 +668,12 @@
         leafShapeCount=leafShapes.length;
       } catch(error) {
         foliageError=String(error&&error.message||error);
-        console.error('[LIVE // EARTH] Branch-attached maple foliage build failed:',error);
+        console.error('[LIVE // EARTH] Natural maple foliage build failed:',error);
       }
       maple.position.set(x,0,z);
       maple.scale.setScalar(scale);
       maple.userData.isMomiji=true;
-      maple.userData.stage=renderedLeafCount?'branch-attached-maple-foliage-v59':'branch-skeleton-fallback';
+      maple.userData.stage=renderedLeafCount?'natural-five-lobe-maple-foliage-v60':'branch-skeleton-fallback';
       maple.userData.foliageError=foliageError;
       maple.userData.branchCount={
         trunk:1,
