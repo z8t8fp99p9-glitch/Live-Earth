@@ -531,6 +531,13 @@
       barkMesh.receiveShadow=true;
       maple.add(barkMesh);
 
+      // V55 — KEEP MAPLE FALLBACK STATE OUTSIDE THE OPTIONAL FOLIAGE SCOPE.
+      // The V54 catch protected leaf creation, but its bookkeeping variables
+      // were block-scoped inside try and then referenced after catch. That
+      // second ReferenceError still aborted createMomiji and hid the tree.
+      let renderedLeafCount=0;
+      let leafShapeCount=0;
+      let leafShapeInstances=[];
       // V54 — FAULT-CONTAINED SIX-SHAPE MOMIJI FOLIAGE.
       // Foliage is an optional layer: any leaf-generation failure is logged
       // and isolated so it can never prevent the pavilion/world from rendering.
@@ -549,6 +556,7 @@
         // Nine-pointed, delicate narrow leaf for the outer sprays.
         [[0,-.46],[-.09,-.31],[-.28,-.24],[-.18,-.13],[-.39,-.07],[-.22,.04],[-.45,.12],[-.23,.20],[-.34,.42],[0,.64],[.34,.42],[.23,.20],[.45,.12],[.22,.04],[.39,-.07],[.18,-.13],[.28,-.24],[.09,-.31]]
       ];
+      leafShapeCount=leafShapes.length;
       const leafTints=['#b51f2c','#d3332b','#e34a28','#ef702b','#e7a33a','#8e2638','#c53c55'];
       const veinTint=new THREE.Color('#563426');
 
@@ -599,6 +607,7 @@
         side:THREE.DoubleSide
       });
       const leafBuckets=leafShapes.map(()=>[]);
+      leafShapeInstances=leafBuckets.map(()=>0);
       const leafAxis=new THREE.Vector3(0,1,0);
       const leafDummy=new THREE.Object3D();
       let leafIndex=0;
@@ -651,6 +660,7 @@
         if(foliage.instanceColor)foliage.instanceColor.needsUpdate=true;
         maple.add(foliage);
         renderedLeafCount+=bucket.length;
+        leafShapeInstances[i]=bucket.length;
       }
       } catch(foliageError) {
         console.error('[LIVE // EARTH] Maple foliage layer failed; keeping the branch structure and Weather world alive.',foliageError);
@@ -674,8 +684,8 @@
           tertiaryPaths.length+fineTwigCount
       };
       maple.userData.leafCount=renderedLeafCount;
-      maple.userData.leafShapeCount=leafShapes.length;
-      maple.userData.leafShapeInstances=leafBuckets.map(bucket=>bucket.length);
+      maple.userData.leafShapeCount=leafShapeCount;
+      maple.userData.leafShapeInstances=leafShapeInstances;
       maple.userData.branchPathCount=pathCount;
       scene.add(maple);
       return maple;
@@ -1870,6 +1880,16 @@
    weather camera, forecast UI, Location privacy and Stacks lifecycle are unchanged.
 */
 
+
+/* LE-WEATHER-MAPLE-FALLBACK-SCOPE-FIX-V55
+   Fixes the remaining V54 failure: renderedLeafCount and leaf metadata were
+   declared inside the foliage try block but referenced after its catch. This
+   caused a second ReferenceError, so createMomiji still failed and the maple
+   was omitted even though the pavilion renderer recovered. Fallback counters
+   now live in the enclosing function scope; successful foliage updates them,
+   while a failed foliage pass safely retains the visible branch skeleton.
+   No other Weather scene, pavilion, camera, forecast or lifecycle code changes.
+*/
 
 /* LE-WEATHER-MAPLE-LEAF-RENDER-RECOVERY-V54
    Fixes the V53 failure boundary: leaf generation is now isolated so an
