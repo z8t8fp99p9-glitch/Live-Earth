@@ -1,4 +1,4 @@
-/* LIVE // EARTH — Weather V18 pavilion counter-clockwise correction.
+/* LIVE // EARTH — Weather V19 forecast controls toggle.
  * Preserves the approved front-facing camera and square canvas.
  * Reduces rear hills by 45% and Mount Fuji by 40%, keeping Fuji grounded.
  */
@@ -13,7 +13,7 @@
   const sceneMarker = 'LE-WEATHER-FUJI-GARDEN-V2';
   const hillsMarker = 'LE-WEATHER-HILLS-HEIGHT-55-V2';
   const fujiMarker = 'LE-WEATHER-FUJI-HEIGHT-54-V3';
-  const versionMarker = 'LE-WEATHER-SCENERY-V18';
+  const versionMarker = 'LE-WEATHER-SCENERY-V19';
 
   const originalCanvasRule =
     '.le-weather-v2 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:pan-y}';
@@ -191,6 +191,45 @@
       changed = true;
     }
 
+
+    // V19: add a compact floating toggle for forecast controls.
+    const bottomSection = '<section class="wx2-bottom">';
+    const identifiedBottom = '<section class="wx2-bottom" id="wx2-bottom-controls">';
+    if (updated.includes(bottomSection) && !updated.includes('id="wx2-bottom-controls"')) {
+      updated = updated.replace(bottomSection, identifiedBottom);
+      changed = true;
+    }
+
+    const closingUi = '</section></div>`;';
+    const toggleMarkup = '</section><button class="wx2-control-toggle" type="button" aria-label="Hide weather controls" aria-expanded="true" aria-controls="wx2-bottom-controls"><span aria-hidden="true">⌃</span></button></div>`;';
+    if (updated.includes(closingUi) && !updated.includes('wx2-control-toggle')) {
+      updated = updated.replace(closingUi, toggleMarkup);
+      changed = true;
+    }
+
+    const toolbarCssAnchor = '.wx2-bottom{width:min(100%,780px);pointer-events:auto;';
+    const toolbarCss = '.wx2-bottom.wx2-controls-collapsed .wx2-toolbar,.wx2-bottom.wx2-controls-collapsed .wx2-section-head,.wx2-bottom.wx2-controls-collapsed .wx2-hours,.wx2-bottom.wx2-controls-collapsed .wx2-week{display:none!important}.wx2-control-toggle{position:absolute;z-index:4;right:clamp(18px,5vw,48px);bottom:calc(env(safe-area-inset-bottom) + var(--wx2-dock,132px) - 2px);width:42px;height:42px;border:1px solid #ffffff70;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#d8eef0d9,#08283bdc);color:#f8f7ef;box-shadow:0 5px 22px #00131f80,inset 0 1px 4px #ffffff80;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font:600 22px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;touch-action:manipulation}.wx2-control-toggle:active{transform:scale(.94)}.wx2-control-toggle:focus-visible{outline:2px solid white;outline-offset:3px}.wx2-control-toggle span{display:block;transform:translateY(-1px)}' + toolbarCssAnchor;
+    if (updated.includes(toolbarCssAnchor) && !updated.includes('.wx2-control-toggle{')) {
+      updated = updated.replace(toolbarCssAnchor, toolbarCss);
+      changed = true;
+    }
+
+    const rangeBinding = "rangeButtons.forEach(b=>b.addEventListener('click',()=>setRange(b.dataset.range)));";
+    const toggleBinding = rangeBinding + `
+    const controlsToggle=screen.querySelector('.wx2-control-toggle');
+    const controlsPanel=screen.querySelector('.wx2-bottom');
+    controlsToggle?.addEventListener('click',()=>{
+      const collapsed=controlsPanel.classList.toggle('wx2-controls-collapsed');
+      controlsToggle.setAttribute('aria-expanded',String(!collapsed));
+      controlsToggle.setAttribute('aria-label',collapsed?'Show weather controls':'Hide weather controls');
+      const glyph=controlsToggle.querySelector('span');
+      if(glyph)glyph.textContent=collapsed?'⌄':'⌃';
+    });`;
+    if (updated.includes(rangeBinding) && !updated.includes("const controlsToggle=screen.querySelector")) {
+      updated = updated.replace(rangeBinding, toggleBinding);
+      changed = true;
+    }
+
     if (!changed) return null;
     const hasFuji = updated.includes(`fujiGroup.userData.refinement='${fujiMarker}'`) &&
       updated.includes('fujiGroup.scale.y=.54') &&
@@ -199,7 +238,8 @@
     const hasCamera = updated.includes(frontResize) && updated.includes(cameraMarker);
     const hasTrees = updated.includes('const treeLayout=');
     const hasHouseRotation = updated.includes('house.rotation.y=-15*Math.PI/180') && updated.includes('LE-WEATHER-PAVILION-ROTATION-CCW-15-V1');
-    if (!hasFuji || !hasHills || !hasCamera || !hasTrees || !hasHouseRotation ||
+    const hasControlsToggle = updated.includes('wx2-control-toggle') && updated.includes('wx2-controls-collapsed') && updated.includes('const controlsToggle=screen.querySelector');
+    if (!hasFuji || !hasHills || !hasCamera || !hasTrees || !hasHouseRotation || !hasControlsToggle ||
         updated.includes('left:calc(50% - 30vw)')) return null;
     return updated + `\n/* ${versionMarker} */\n`;
   }
@@ -226,7 +266,7 @@
     if(response.ok){
       const source=await response.clone().text();
       if(!source.includes(versionMarker))
-        console.error('[LIVE // EARTH] Weather V18 pavilion rotation transform did not match; original Weather response preserved.');
+        console.error('[LIVE // EARTH] Weather V19 forecast controls transform did not match; original Weather response preserved.');
     }
     return response;
   };
