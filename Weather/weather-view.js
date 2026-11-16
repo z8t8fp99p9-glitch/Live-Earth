@@ -398,13 +398,14 @@
       // Primary scaffold: irregular heights and directions make a layered,
       // wide crown rather than a radial fan of equal-length limbs.
       const primarySpecs=[
-        {h:1.62,a:2.52,len:2.72,rise:.48,bend:.42,r:.145},
-        {h:2.02,a:3.10,len:2.82,rise:-.38,bend:-.34,r:.142},
-        {h:2.48,a:-2.48,len:2.57,rise:.86,bend:.31,r:.134},
-        {h:2.94,a:-1.82,len:2.46,rise:-.24,bend:-.29,r:.124},
-        {h:1.88,a:.63,len:2.70,rise:.12,bend:-.40,r:.145},
-        {h:2.34,a:.08,len:2.92,rise:.62,bend:.38,r:.145},
-        {h:3.12,a:-.78,len:2.53,rise:-.10,bend:-.33,r:.129}
+        // Balanced world-depth scaffold: a rounded 3D crown, not a flat fan.
+        {h:1.62,a:2.48,len:2.48,rise:.42,bend:.42,r:.145},
+        {h:2.02,a:-2.34,len:2.42,rise:-.22,bend:-.34,r:.142},
+        {h:2.48,a:1.48,len:2.58,rise:.70,bend:.31,r:.134},
+        {h:2.94,a:-1.58,len:2.46,rise:-.12,bend:-.29,r:.124},
+        {h:1.88,a:.42,len:2.56,rise:.18,bend:-.40,r:.145},
+        {h:2.34,a:3.02,len:2.40,rise:.52,bend:.38,r:.145},
+        {h:3.12,a:-.48,len:2.38,rise:.02,bend:-.33,r:.129}
       ];
       const primaryPaths=[];
       for(let i=0;i<primarySpecs.length;i++){
@@ -432,7 +433,7 @@
 
       // Four secondary boughs leave each primary at uneven intervals.
       // They curve out from the limb, with varied angles and a few gentle droops.
-      const secondaryAngleOffsets=[-.86,.66,-.42,.93];
+      const secondaryAngleOffsets=[-1.08,.42,1.16,-.58];
       const secondaryRise=[.34,-.24,-.56,.08];
       const secondaryPaths=[];
       for(let i=0;i<primaryPaths.length;i++){
@@ -455,7 +456,7 @@
 
       // Tertiary limbs split off the secondary boughs, alternating direction
       // and height so the structure is not a repeated comb or bottle brush.
-      const tertiaryOffsets=[-.78,.72,-.24];
+      const tertiaryOffsets=[-1.02,.86,-.48];
       const tertiaryPaths=[];
       for(const parent of secondaryPaths){
         const positionsOnParent=[.39,.66,.87];
@@ -475,7 +476,7 @@
       // Fine branchlets and terminal twigs: retain their paths so foliage
       // can grow directly from the slender wood rather than floating nearby.
       const terminalPaths=[];
-      const twigOffsets=[-.72,.82];
+      const twigOffsets=[-.94,.98];
       let fineTwigCount=0;
       for(const parent of tertiaryPaths){
         const positionsOnParent=[.57,.86];
@@ -547,7 +548,7 @@
       let renderedLeafCount=0;
       let leafShapeCount=0;
       let leafShapeInstances=[];
-      // V61 — DENSER NATURAL FIVE-LOBE MOMIJI FOLIAGE.
+      // V62 — THREE-DIMENSIONAL BRANCH DISTRIBUTION; V61 FOLIAGE RETAINED.
       // Preserve the V59 branch skeleton and V60 leaf design. Slightly fuller clusters,
       // grouped colour and varied 3-D leaf planes replace the dense paper-card look.
       let foliageError=null;
