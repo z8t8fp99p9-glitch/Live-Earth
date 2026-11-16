@@ -418,20 +418,23 @@
     // sampled surface. No TubeGeometry or CatmullRomCurve3 runtime dependency.
     const roofTopY=5.28,roofEaveY=3.72,roofHalfX=4.15,roofHalfZ=2.95;
     const roofCornerLift=.22,roofCurvePower=5.5;
+    const roofPitchLift=.18;
     const roofCornerFactor=u=>Math.pow(Math.abs(2*u-1),roofCurvePower);
     const roofSmoothstep=t=>{const q=clamp((t-.58)/.42,0,1);return q*q*(3-2*q);};
+    const roofCrossProfile=t=>t-.065*Math.sin(Math.PI*t);
     function roofPoint(face,t,u,lift=0){
-      const profile=t-.065*Math.sin(Math.PI*t);
+      const profile=roofCrossProfile(t);
       const cornerRise=roofCornerLift*roofCornerFactor(u)*roofSmoothstep(t);
+      const pitchBow=roofPitchLift*Math.sin(Math.PI*t);
       let x,y,z;
       if(face==='left'||face==='right'){
         x=(face==='left'?-1:1)*roofHalfX*t;
         z=-roofHalfZ+2*roofHalfZ*u;
-        y=roofTopY+(roofEaveY-roofTopY)*profile+cornerRise;
+        y=roofTopY+(roofEaveY-roofTopY)*profile+cornerRise+pitchBow;
       }else{
         x=-roofHalfX+2*roofHalfX*u;
         z=(face==='front'?1:-1)*roofHalfZ;
-        y=roofTopY+(roofEaveY-roofTopY)*profile+cornerRise;
+        y=roofTopY+(roofEaveY-roofTopY)*profile+cornerRise+pitchBow;
       }
       return new THREE.Vector3(x,y+lift,z);
     }
@@ -532,34 +535,76 @@
       const endCap=new THREE.Mesh(new THREE.SphereGeometry(.20,12,8),roofTileMats[0]);
       endCap.scale.set(1,.78,.72);endCap.position.set(0,5.36,z);house.add(endCap);
     }
-    // Front and rear gable infill follows the lifted lower roof edge.
+    // Front and rear gable infill follows the actual bowed roof pitch.
+    // Its two rising shoulders use the same cross-section as the roof planes.
     function addGable(z){
-      const faceZ=z+(z>0?.028:-.028),apexY=roofTopY-.045,segments=24;
-      const positions=[0,apexY,faceZ],indices=[],basePoints=[];
+      const faceZ=z+(z>0?.028:-.028),segments=32;
+      const positions=[],indices=[],boundary=[];
+      const gableY=(x)=>{
+        const t=Math.abs(x)/roofHalfX;
+        const u=(x+roofHalfX)/(2*roofHalfX);
+        // At the front/rear roof boundary the plane's longitudinal factor is 1.
+        // Match that exact boundary lift so the curved gable shoulder meets the roof.
+        return roofTopY+(roofEaveY-roofTopY)*roofCrossProfile(t)
+          +roofCornerLift*roofSmoothstep(t)
+          +roofPitchLift*Math.sin(Math.PI*t);
+      };
+      // Left eave -> curved left shoulder -> ridge -> curved right shoulder -> right eave.
+      for(let i=0;i<=segments;i++){
+        const x=-roofHalfX+(roofHalfX*i/segments);
+        boundary.push(new THREE.Vector3(x,gableY(x),faceZ));
+      }
+      for(let i=1;i<=segments;i++){
+        const x=roofHalfX*i/segments;
+        boundary.push(new THREE.Vector3(x,gableY(x),faceZ));
+      }
+      // Close the gable along the already-curved eave line.
+      const basePoints=[];
       for(let i=0;i<=segments;i++){
         const u=i/segments,x=-roofHalfX+2*roofHalfX*u;
         const y=roofEaveY+roofCornerLift*roofCornerFactor(u);
-        positions.push(x,y,faceZ);basePoints.push(new THREE.Vector3(x,y,faceZ));
-        if(i<segments)indices.push(0,i+1,i+2);
+        basePoints.push(new THREE.Vector3(x,y,faceZ));
+      }
+      for(let i=segments-1;i>=1;i--)boundary.push(basePoints[i]);
+
+      // A centre-fan triangulation fills the curved perimeter without flattening it.
+      const centre=new THREE.Vector3(0,4.42,faceZ);
+      positions.push(centre.x,centre.y,centre.z);
+      for(const p of boundary)positions.push(p.x,p.y,p.z);
+      for(let i=0;i<boundary.length;i++){
+        const a=1+i,b=1+((i+1)%boundary.length);
+        indices.push(0,a,b);
       }
       const g=new THREE.BufferGeometry();
       g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
       g.setIndex(indices);g.computeVertexNormals();
       const panel=new THREE.Mesh(g,gableMat);panel.material.side=THREE.DoubleSide;house.add(panel);
-      const left=[-roofHalfX,roofEaveY+roofCornerLift,z+.045],right=[roofHalfX,roofEaveY+roofCornerLift,z+.045];
-      const apex=[0,apexY,z+.045];
-      addRoofBeam([new THREE.Vector3(...left),...basePoints.map(p=>p.clone().add(new THREE.Vector3(0,0,.045))),new THREE.Vector3(...right)],.075,gableTrim,8);
+
+      // Curved timber outlines follow both roof shoulders and the lower eave sweep.
+      const leftShoulder=[],rightShoulder=[];
+      for(let i=0;i<=segments;i++){
+        const x=-roofHalfX+(roofHalfX*i/segments);
+        leftShoulder.push(new THREE.Vector3(x,gableY(x),faceZ+.045));
+      }
+      for(let i=0;i<=segments;i++){
+        const x=roofHalfX*i/segments;
+        rightShoulder.push(new THREE.Vector3(x,gableY(x),faceZ+.045));
+      }
+      addRoofBeam(leftShoulder,.075,gableTrim,8);
+      addRoofBeam(rightShoulder,.075,gableTrim,8);
+      addRoofBeam(basePoints.map(p=>p.clone().add(new THREE.Vector3(0,0,.045))),.075,gableTrim,8);
+
       function gableStrut(a,b,r,material=timber){
         const start=new THREE.Vector3(...a),end=new THREE.Vector3(...b);
         addRoofBeam([start,end],r,material,8);
       }
-      gableStrut(left,apex,.075,gableTrim);gableStrut(apex,right,.075,gableTrim);
-      gableStrut([0,roofEaveY+.06,z+.065],[0,apexY-.10,z+.065],.052,timber);
+      gableStrut([0,roofEaveY+.06,z+.065],[0,5.18,z+.065],.052,timber);
       gableStrut([-2.0,4.02,z+.065],[0,4.88,z+.065],.043,timber);
       gableStrut([2.0,4.02,z+.065],[0,4.88,z+.065],.043,timber);
       for(const x of [-2.65,-1.8,-.9,.9,1.8,2.65]){
-        const u=(x+roofHalfX)/(2*roofHalfX),bottom=roofEaveY+roofCornerLift*roofCornerFactor(u);
-        const top=Math.max(bottom+.10,apexY-Math.abs(x)/roofHalfX*.72);
+        const u=(x+roofHalfX)/(2*roofHalfX);
+        const bottom=roofEaveY+roofCornerLift*roofCornerFactor(u);
+        const top=Math.max(bottom+.10,4.90-Math.abs(x)/roofHalfX*.72);
         gableStrut([x,bottom+.045,z+.075],[x,top,z+.075],.021,timber);
       }
       const medallion=new THREE.Mesh(new THREE.SphereGeometry(.105,12,8),gold);
@@ -822,4 +867,13 @@
    with a steeper easing exponent. Slims the curved fascia and shadow trim,
    removes the conflicting fixed-height fascia boxes, and reduces corner caps.
    Keeps the V27 core-geometry construction and all non-roof systems unchanged.
+*/
+
+
+/* LE-WEATHER-PAVILION-ROOF-CURVED-GABLE-PROFILE-V29
+   Keeps the approved V28 outer eave sweep unchanged. Adds a restrained 0.18-unit
+   bowed cross-section to the actual ridge-to-eave roof planes and tile courses.
+   Rebuilds front/rear gable infill and timber shoulder outlines to follow the
+   same curved roof profile, while retaining the V28 curved base/eave line.
+   All non-roof systems and door interaction remain unchanged.
 */
