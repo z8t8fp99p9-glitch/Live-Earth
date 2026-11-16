@@ -547,8 +547,8 @@
       let renderedLeafCount=0;
       let leafShapeCount=0;
       let leafShapeInstances=[];
-      // V60 — NATURAL FIVE-LOBE MOMIJI FOLIAGE.
-      // Preserve the V59 branch skeleton. Smaller leaves, open clusters,
+      // V61 — DENSER NATURAL FIVE-LOBE MOMIJI FOLIAGE.
+      // Preserve the V59 branch skeleton and V60 leaf design. Slightly fuller clusters,
       // grouped colour and varied 3-D leaf planes replace the dense paper-card look.
       let foliageError=null;
       try {
@@ -634,21 +634,21 @@
 
         // Restrained upper accents; the tree's wood remains readable.
         for(let i=0;i<primaryPaths.length;i++){
-          addLeafCluster(primaryPaths[i].path,.88,2,i);
+          addLeafCluster(primaryPaths[i].path,.88,3,i);
         }
-        addLeafCluster(leaderPath,.90,2,1);
-        for(let i=0;i<upperPaths.length;i++) addLeafCluster(upperPaths[i],.88,2,i+2);
+        addLeafCluster(leaderPath,.90,3,1);
+        for(let i=0;i<upperPaths.length;i++) addLeafCluster(upperPaths[i],.88,3,i+2);
 
         // One compact cluster per secondary bough, two on each tertiary limb.
         for(let i=0;i<secondaryPaths.length;i++)
-          addLeafCluster(secondaryPaths[i].path,.88,3,i+1);
+          addLeafCluster(secondaryPaths[i].path,.88,4,i+1);
         for(let i=0;i<tertiaryPaths.length;i++)
-          addLeafCluster(tertiaryPaths[i].path,.78,3,i+2);
+          addLeafCluster(tertiaryPaths[i].path,.78,4,i+2);
 
-        // Every terminal twig is still dressed, but with a small three-leaf
-        // spray instead of six oversized leaves repeated at three stations.
+        // Every terminal twig is still dressed with a compact four-leaf spray;
+        // the additional leaf restores canopy fullness without enlarging blades.
         for(let i=0;i<terminalPaths.length;i++)
-          addLeafCluster(terminalPaths[i],.84,3,i+3);
+          addLeafCluster(terminalPaths[i],.84,4,i+3);
 
         if(!renderedLeafCount||!foliagePositions.length)
           throw new Error('No maple leaf vertices were generated');
@@ -660,7 +660,7 @@
           vertexColors:true,side:THREE.DoubleSide,transparent:false
         });
         const foliage=new THREE.Mesh(foliageGeometry,foliageMaterial);
-        foliage.name='MomijiNaturalFiveLobeFoliageV60';
+        foliage.name='MomijiNaturalFiveLobeFoliageV61';
         foliage.frustumCulled=false;
         foliage.castShadow=false;
         foliage.receiveShadow=false;
@@ -673,7 +673,7 @@
       maple.position.set(x,0,z);
       maple.scale.setScalar(scale);
       maple.userData.isMomiji=true;
-      maple.userData.stage=renderedLeafCount?'natural-five-lobe-maple-foliage-v60':'branch-skeleton-fallback';
+      maple.userData.stage=renderedLeafCount?'natural-five-lobe-maple-foliage-v61':'branch-skeleton-fallback';
       maple.userData.foliageError=foliageError;
       maple.userData.branchCount={
         trunk:1,
