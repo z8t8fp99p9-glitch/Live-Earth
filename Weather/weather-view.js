@@ -489,7 +489,8 @@
     // continuous tube around the roof.
     const eaveCapMat=mat('#263b43',.62,.18);
     for(const face of ['left','right']){
-      for(let col=0;col<tileCols;col++){
+      // Reserve both ends of each side eave for a single pointed corner finish.
+      for(let col=1;col<tileCols-1;col++){
         const u0=col/tileCols+.008,u1=(col+1)/tileCols-.008;
         const a=roofPoint(face,.965,u0,.038);
         const b=roofPoint(face,.965,u1,.038);
@@ -525,16 +526,19 @@
         house.add(beam);
       }
     }
-    function roofEdgePoints(face,samples=24,offset=-.035){
+    function roofEdgePoints(face,samples=24,offset=-.035,trim=.0){
       const points=[];
-      for(let i=0;i<=samples;i++)points.push(roofPoint(face,1,i/samples,offset));
+      for(let i=0;i<=samples;i++){
+        const u=trim+(1-2*trim)*i/samples;
+        points.push(roofPoint(face,1,u,offset));
+      }
       return points;
     }
     // A real timber fascia board gives the curved eave a substantial edge.
     // Short overlapping mesh sections follow the sampled curve and keep
     // the board's broad face aligned to the local eave tangent.
-    function addRoofFascia(face,offset=-.125,height=.17,depth=.22){
-      const points=roofEdgePoints(face,64,offset);
+    function addRoofFascia(face,offset=-.125,height=.17,depth=.22,trim=.035){
+      const points=roofEdgePoints(face,64,offset,trim);
       const axis=new THREE.Vector3(1,0,0);
       for(let i=0;i<points.length-1;i++){
         const a=points[i],b=points[i+1];
@@ -553,9 +557,10 @@
     // Four layered eaves: rounded outer nosing, substantial timber fascia,
     // and a fine lower shadow line.
     for(const face of ['left','right','front','back']){
-      addRoofBeam(roofEdgePoints(face,64,-.035),.085,timber,8);
-      addRoofFascia(face,-.125,.17,.22);
-      addRoofBeam(roofEdgePoints(face,64,-.225),.014,gableTrim,6);
+      // Mitred ends leave a clean pocket for one unified pointed corner nose.
+      addRoofBeam(roofEdgePoints(face,64,-.035,.035),.085,timber,8);
+      addRoofFascia(face,-.125,.17,.22,.035);
+      addRoofBeam(roofEdgePoints(face,64,-.225,.05),.014,gableTrim,6);
     }
     // Japanese bracket assemblies (tokyo-inspired): vertical bearing post,
     // outward cantilever, cross-arm and a compact bearing cap. The cantilever
@@ -799,12 +804,44 @@
       medallion.scale.set(1,.72,.34);medallion.position.set(0,4.62,z+.095);house.add(medallion);
     }
     addGable(2.94);addGable(-2.94);
-    // Small corner finials sit at the raised eave tips.
-    for(const x of [-4.05,4.05])for(const z of [-2.82,2.82]){
-      const tip=new THREE.Mesh(new THREE.ConeGeometry(.075,.20,8),roofTileMats[0]);
-      tip.position.set(x,roofEaveY+roofCornerLift+.045,z);
-      tip.rotation.z=x<0?-.18:.18;tip.rotation.x=z<0?.10:-.10;house.add(tip);
+    // One sharp, mitred timber nose unifies the four roof-edge layers.
+    // The nose projects diagonally outward and slightly upward; a square
+    // tapered section hides the separate fascia/trim terminations behind it.
+    const roofCornerNoseMat=mat('#76543a',.72,.04);
+    function addSharpRoofCorner(sx,sz){
+      const face=sx<0?'left':'right',u=sz<0?0:1;
+      const corner=roofPoint(face,1,u,-.025);
+      const travel=new THREE.Vector3(sx*.36,.115,sz*.36);
+      const axis=travel.clone().normalize();
+      const sideA=new THREE.Vector3(-sz,0,sx).normalize();
+      const sideB=new THREE.Vector3().crossVectors(axis,sideA).normalize();
+      const baseCenter=corner.clone().addScaledVector(axis,-.055);
+      const halfWidth=.145,halfHeight=.082;
+      const vertices=[
+        baseCenter.clone().addScaledVector(sideA,-halfWidth).addScaledVector(sideB,-halfHeight),
+        baseCenter.clone().addScaledVector(sideA, halfWidth).addScaledVector(sideB,-halfHeight),
+        baseCenter.clone().addScaledVector(sideA, halfWidth).addScaledVector(sideB, halfHeight),
+        baseCenter.clone().addScaledVector(sideA,-halfWidth).addScaledVector(sideB, halfHeight),
+        corner.clone().add(travel)
+      ];
+      const positions=[];
+      for(const p of vertices)positions.push(p.x,p.y,p.z);
+      const geometry=new THREE.BufferGeometry();
+      geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+      geometry.setIndex([0,1,4,1,2,4,2,3,4,3,0,4,0,2,1,0,3,2]);
+      geometry.computeVertexNormals();
+      const nose=new THREE.Mesh(geometry,roofCornerNoseMat);
+      nose.material.side=THREE.DoubleSide;
+      house.add(nose);
+      // Small dark underside facet gives the point a clean shadow separation.
+      const shadow=box(
+        house,roof,
+        corner.x+sx*.075,corner.y-.075,corner.z+sz*.075,
+        .19,.045,.19
+      );
+      shadow.rotation.y=sx===sz?Math.PI/4:-Math.PI/4;
     }
+    for(const sx of [-1,1])for(const sz of [-1,1])addSharpRoofCorner(sx,sz);
     for(const x of [-3.4,3.4]){const lantern=new THREE.Group();lantern.position.set(x,2.5,2.35);const body=new THREE.Mesh(new THREE.BoxGeometry(.38,.5,.38),gold);lantern.add(body);const cap=new THREE.Mesh(new THREE.ConeGeometry(.34,.18,4),dark);cap.position.y=.34;lantern.add(cap);house.add(lantern);}
     // Foreground stepping stones and garden boulders.
     const stone=mat('#81918a');for(let i=0;i<7;i++){const s=new THREE.Mesh(new THREE.CylinderGeometry(.38,.45,.13,8),stone);s.position.set(-2.5+i*.78,.02,3.1+Math.sin(i*.8)*.25);s.rotation.y=i*.3;scene.add(s);}
@@ -1169,4 +1206,17 @@
    roof planes, tiles, gables, curved eaves, fascia, rafters, brackets, walls,
    sliding doors, interior, foundation, deck, stairs, rails, camera, scenery,
    forecast UI and Location privacy boundary are preserved.
+*/
+
+
+/* LE-WEATHER-PAVILION-SHARP-MITRED-ROOF-CORNERS-V40
+   Reworks only the four roof-corner terminations. The four perimeter edge
+   trims and fascia boards now stop short with a small mitre allowance, and
+   the two nearest ceramic end-cap modules are reserved out of each side
+   corner. Replaces the small rounded cone finials with one unified, square-
+   tapered timber nose at each corner, projecting diagonally outward and
+   slightly upward to a distinct point. The approved roof sweep, roof planes,
+   gable, ridge ornaments, tile field, rafters, brackets, walls, Shoji doors,
+   interior, foundations, deck, stairs, rails, camera, scenery and weather UI
+   remain unchanged.
 */
