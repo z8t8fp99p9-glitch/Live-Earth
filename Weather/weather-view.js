@@ -418,10 +418,10 @@
     // sampled surface. No TubeGeometry or CatmullRomCurve3 runtime dependency.
     const roofTopY=5.28,roofEaveY=3.72,roofHalfX=4.15,roofHalfZ=2.95;
     const roofCornerLift=.22,roofCurvePower=5.5;
-    const roofPitchLift=-.12;
+    const roofPitchLift=0;
     const roofCornerFactor=u=>Math.pow(Math.abs(2*u-1),roofCurvePower);
     const roofSmoothstep=t=>{const q=clamp((t-.58)/.42,0,1);return q*q*(3-2*q);};
-    const roofCrossProfile=t=>t+.025*Math.sin(Math.PI*t);
+    const roofCrossProfile=t=>t-.065*Math.sin(Math.PI*t);
     function roofPoint(face,t,u,lift=0){
       const profile=roofCrossProfile(t);
       const cornerRise=roofCornerLift*roofCornerFactor(u)*roofSmoothstep(t);
@@ -546,7 +546,7 @@
         // At the front/rear roof boundary the plane's longitudinal factor is 1.
         // Match that exact boundary lift so the curved gable shoulder meets the roof.
         return roofTopY+(roofEaveY-roofTopY)*roofCrossProfile(t)
-          +roofCornerLift*roofSmoothstep(t)
+          +roofCornerLift*roofCornerFactor(u)*roofSmoothstep(t)
           +roofPitchLift*Math.sin(Math.PI*t);
       };
       // Left eave -> curved left shoulder -> ridge -> curved right shoulder -> right eave.
@@ -886,4 +886,14 @@
    to avoid lifting the entire middle of the slope. The approved V28 outer eave
    lift and V29 curved gable/roof continuity remain in place. No other scene,
    house, door, weather, camera or UI systems are changed.
+*/
+
+
+/* LE-WEATHER-PAVILION-ROOF-GABLE-CURVE-ALIGNMENT-V31
+   Corrects the V30 sag visible in the mobile preview. Removes the negative
+   mid-slope bow and restores the approved gentle V28 cross-section. Most
+   importantly, the front/rear gable shoulder now uses the exact same
+   cross-profile and corner-lift expression as the adjoining roof surface,
+   eliminating the mismatch that made the gable appear to dip or kink.
+   Retains the approved V28 outer eave sweep and all non-roof systems.
 */
