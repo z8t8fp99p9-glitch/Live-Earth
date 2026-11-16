@@ -12,6 +12,7 @@
   const cameraMarker = 'LE-SQUARE-WORLD-CAMERA-V9';
   const sceneMarker = 'LE-WEATHER-FUJI-GARDEN-V2';
   const hillMarker = 'LE-WEATHER-HILLS-HEIGHT-55-V1';
+  const fujiMarker = 'LE-WEATHER-FUJI-HEIGHT-60-V1';
   const priorCameraMarkers = [
     'LE-SQUARE-WORLD-CAMERA-V8','LE-SQUARE-WORLD-CAMERA-V7',
     'LE-SQUARE-WORLD-CAMERA-V6','LE-SQUARE-WORLD-CAMERA-V5',
@@ -43,7 +44,7 @@
     '      [-32,-25,9,5,7,1],[-20,-25,10,5.5,7,2],[20,-26,10,5.5,7,0],[33,-25,9,5,7,1]',
     '    ];',
     '    rearHills.forEach(([x,z,sx,sy,sz,index])=>hill(x,z,sx,sy,sz,index));',
-    '    const fujiGroup=new THREE.Group();fujiGroup.position.set(0,11.2,-64);scene.add(fujiGroup);',
+    '    const fujiGroup=new THREE.Group();fujiGroup.position.set(0,6.72,-64);fujiGroup.scale.y=.60;fujiGroup.userData.refinement='LE-WEATHER-FUJI-HEIGHT-60-V1';scene.add(fujiGroup);',
     "    const fujiBodyMat=new THREE.MeshStandardMaterial({color:'#657985',roughness:1});",
     '    const fujiBody=new THREE.Mesh(new THREE.ConeGeometry(25,22,96,8),fujiBodyMat);fujiGroup.add(fujiBody);',
     '    const snowVertices=[0,11,0],snowIndices=[],snowSegments=96;',
@@ -69,7 +70,7 @@
   ].join('\n');
 
   function transformSource(source) {
-    if (source.includes(cameraMarker) && source.includes(sceneMarker) && source.includes(hillMarker)) return null;
+    if (source.includes(cameraMarker) && source.includes(sceneMarker) && source.includes(hillMarker) && source.includes(fujiMarker)) return null;
     let updated = source;
     let changed = false;
 
@@ -110,9 +111,19 @@
       changed = true;
     }
 
+    // Lower Mount Fuji by 40% vertically while keeping its width and ground contact.
+    const oldFujiTransform = "const fujiGroup=new THREE.Group();fujiGroup.position.set(0,11.2,-64);scene.add(fujiGroup);";
+    const reducedFujiTransform = "const fujiGroup=new THREE.Group();fujiGroup.position.set(0,6.72,-64);fujiGroup.scale.y=.60;fujiGroup.userData.refinement='LE-WEATHER-FUJI-HEIGHT-60-V1';scene.add(fujiGroup);";
+    if (updated.includes(oldFujiTransform) && !updated.includes(fujiMarker)) {
+      updated = updated.replace(oldFujiTransform, reducedFujiTransform);
+      changed = true;
+    }
+    // Existing injected scenery block already carries the reduced Fuji transform.
+    if (updated.includes(reducedFujiTransform)) changed = true;
+
     // Replace the rear landscape block when upgrading the original source.
     const worldPattern = /    const groundMat=mat\('#344e42'\)(?:,[\s\S]*?)?;\n    const ground=new THREE\.Mesh\(new THREE\.PlaneGeometry\(180,180\),groundMat\);[\s\S]*?(?=    const waterMat=)/;
-    if (worldPattern.test(updated) && !updated.includes('fujiGroup.position.set(0,11.2,-64)')) {
+    if (worldPattern.test(updated) && !updated.includes('fujiGroup.position.set(0,6.72,-64)') && updated.includes('fujiGroup.scale.y=.60')) {
       updated = updated.replace(worldPattern, sceneryBlock + '\n');
       changed = true;
     }
@@ -125,9 +136,9 @@
 
     if (!changed) return null;
     return updated.includes(cameraMarker) && updated.includes(sceneMarker) &&
-      updated.includes(hillMarker) && updated.includes(frontResize) &&
-      updated.includes('fujiGroup.position.set(0,11.2,-64)') &&
-      updated.includes('m.scale.set(sx,.55*sy,sz)') &&
+      updated.includes(hillMarker) && updated.includes(fujiMarker) && updated.includes(frontResize) &&
+      updated.includes('fujiGroup.position.set(0,6.72,-64)') && updated.includes('fujiGroup.scale.y=.60') &&
+      updated.includes('m.scale.set(sx,.55*sy,sz)') && updated.includes(fujiMarker) &&
       updated.includes('const treeLayout=') &&
       !updated.includes('left:calc(50% - 30vw)') ? updated : null;
   }
@@ -135,7 +146,7 @@
   async function rewriteWeatherResponse(response) {
     if (!response || !response.ok || response.type === 'opaque') return null;
     const source = await response.clone().text();
-    if (source.includes(cameraMarker) && source.includes(sceneMarker) && source.includes(hillMarker)) return null;
+    if (source.includes(cameraMarker) && source.includes(sceneMarker) && source.includes(hillMarker) && source.includes(fujiMarker)) return null;
     const updated = transformSource(source);
     if (!updated) return null;
     const headers = new Headers(response.headers);
