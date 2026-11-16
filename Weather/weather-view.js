@@ -572,12 +572,29 @@
       const u=(z+roofHalfZ)/(2*roofHalfZ),face=x>0?'right':'left';
       eaveBracket(x,z,face,roofPoint(face,1,u).y);
     }
-    // Curved rafters are segmented cylinders; their endpoints sit on the same roof profile.
+    // Exposed curved rafters: denser spacing gives the roof a readable
+    // traditional timber rhythm instead of a few isolated structural lines.
     for(const face of ['left','right']){
-      for(let i=0;i<=8;i++){
-        const u=.055+i*.111,points=[];
-        for(let j=0;j<=8;j++)points.push(roofPoint(face,.045+j*.1125,u,-.075));
-        addRoofBeam(points,.043,timber,7);
+      const outward=face==='left'?-1:1;
+      for(let i=0;i<=14;i++){
+        const u=.035+i*.93/14,points=[];
+        for(let j=0;j<=10;j++){
+          const t=.035+j*.091;
+          points.push(roofPoint(face,t,u,-.082));
+        }
+        // Each rafter continues just beyond the fascia and turns gently upward,
+        // creating a visible Japanese-style exposed rafter tail.
+        const eave=roofPoint(face,1,u,-.082);
+        points.push(eave.clone().add(new THREE.Vector3(outward*.075,.018,0)));
+        points.push(eave.clone().add(new THREE.Vector3(outward*.17,.052,0)));
+        addRoofBeam(points,.052,timber,8);
+      }
+      // Three continuous purlins sit beneath the rafters and follow the same
+      // curved roof section. Their intersections make the underside legible.
+      for(const t of [.30,.57,.82]){
+        const purlin=[];
+        for(let j=0;j<=64;j++)purlin.push(roofPoint(face,t,j/64,-.145));
+        addRoofBeam(purlin,.047,gableTrim,8);
       }
     }
     // Raised ridge and traditional rounded ridge caps.
@@ -997,4 +1014,14 @@
    assemblies remain positioned from the shared curved roof edge profile.
    No roof skin, fascia, gable, tile, door, interior, foundation, stair,
    rail, camera, scenery or weather UI geometry is changed.
+*/
+
+
+/* LE-WEATHER-PAVILION-ROOF-EXPOSED-RAFTERS-V36
+   Increases the exposed curved rafter rhythm from 9 to 15 members per roof
+   plane, extends each member beyond the fascia with a restrained upturned
+   tail, and adds three continuous curved purlins per slope. All members are
+   sampled from the existing shared roof profile. The roof skin, tile layout,
+   ridge, gables, fascia, bracket assemblies, doors, interior, foundations,
+   stairs, rails, camera, scenery and weather UI remain unchanged.
 */
