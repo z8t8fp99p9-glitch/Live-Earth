@@ -692,6 +692,63 @@
         }
       }
 
+      // V70 — RIGHT-HAND CROWN BALANCING (ADDITIVE ONLY).
+      // Select existing bough anchors on the tree's local +X side, which maps
+      // to the right side of the Weather camera. Grow new outward boughs and
+      // fine forks there only; V69's complete branch network is left intact.
+      const rightCrownPaths=[];
+      const rightCrownTwigPaths=[];
+      const rightCandidates=[];
+      function addRightCandidate(path,t,kind,index){
+        const point=pointAt(path,t);
+        if(point.x>.18&&point.y>1.35)
+          rightCandidates.push({path,t,kind,index,point});
+      }
+      for(let i=0;i<primaryPaths.length;i++)
+        addRightCandidate(primaryPaths[i].path,.72,'primary',i);
+      for(let i=0;i<secondaryPaths.length;i++)
+        addRightCandidate(secondaryPaths[i].path,.68,'secondary',i);
+      for(let i=0;i<raisedCrownPaths.length;i++)
+        addRightCandidate(raisedCrownPaths[i],.68,'raised',i);
+      for(let i=0;i<extendedCrownPaths.length;i++)
+        addRightCandidate(extendedCrownPaths[i],.68,'extended',i);
+      for(let i=0;i<canopyFillPaths.length;i++)
+        addRightCandidate(canopyFillPaths[i],.68,'fill',i);
+
+      rightCandidates.sort((a,b)=>b.point.x-a.point.x);
+      const selectedRightAnchors=[];
+      for(const candidate of rightCandidates){
+        if(selectedRightAnchors.length>=6)break;
+        if(selectedRightAnchors.every(item=>item.point.distanceTo(candidate.point)>.30))
+          selectedRightAnchors.push(candidate);
+      }
+      // In unusually narrow crowns, fill any remaining slots without modifying
+      // the selected paths; each addition still grows outward on local +X.
+      for(const candidate of rightCandidates){
+        if(selectedRightAnchors.length>=6)break;
+        if(!selectedRightAnchors.includes(candidate))
+          selectedRightAnchors.push(candidate);
+      }
+      for(let i=0;i<selectedRightAnchors.length;i++){
+        const anchor=selectedRightAnchors[i];
+        const origin=pointAt(anchor.path,anchor.t);
+        const azimuth=signed()*.40;
+        const length=.82+rand()*.24;
+        const rise=.18+rand()*.28;
+        const main=growBranch(origin,azimuth,length,rise,signed()*.16,
+          .016+rand()*.003,3,11,.15);
+        rightCrownPaths.push(main);
+        // Two new fine forks continue the rightward silhouette and add depth.
+        for(let j=0;j<2;j++){
+          const forkT=j===0?.54:.82;
+          const forkOrigin=pointAt(main,forkT);
+          const forkAngle=signed()*.72+(j===0?-.10:.10);
+          const fork=growBranch(forkOrigin,forkAngle,.42+rand()*.16,
+            .12+rand()*.16,signed()*.10,.0075+rand()*.0018,4,8,.17);
+          rightCrownTwigPaths.push(fork);
+        }
+      }
+
       const geometry=new THREE.BufferGeometry();
       geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
       geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
@@ -869,6 +926,15 @@
           addLeafCluster(extendedCrownTwigPaths[i],.94,3,i+5);
         }
 
+        // V70 right-side leaf sprays: two clusters on every new bough and
+        // one on each fine fork. Existing V69 foliage placement is unchanged.
+        for(let i=0;i<rightCrownPaths.length;i++){
+          addLeafCluster(rightCrownPaths[i],.58,4,i+7);
+          addLeafCluster(rightCrownPaths[i],.94,4,i+7);
+        }
+        for(let i=0;i<rightCrownTwigPaths.length;i++)
+          addLeafCluster(rightCrownTwigPaths[i],.88,4,i+9);
+
         // One compact cluster per secondary bough, two on each tertiary limb.
         for(let i=0;i<secondaryPaths.length;i++)
           addLeafCluster(secondaryPaths[i].path,.88,4,i+1);
@@ -924,6 +990,8 @@
       maple.userData.leafShapeInstances=leafShapeInstances;
       maple.userData.extendedCrownBoughs=extendedCrownPaths.length;
       maple.userData.extendedCrownForks=extendedCrownTwigPaths.length;
+      maple.userData.rightCrownBoughs=rightCrownPaths.length;
+      maple.userData.rightCrownTwigs=rightCrownTwigPaths.length;
       maple.userData.raisedCrownBoughs=raisedCrownPaths.length;
       maple.userData.raisedCrownTwigs=raisedCrownTwigPaths.length;
       maple.userData.crownBoughs=crownBoughPaths.length;
