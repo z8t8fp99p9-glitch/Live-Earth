@@ -423,15 +423,17 @@
       if(face==='left'||face==='right'){
         const sign=face==='left'?-1:1;
         x=sign*roofHalfX*t;
-        z=-roofRidgeHalfZ+u*(2*roofRidgeHalfZ+(roofHalfZ-roofRidgeHalfZ)*2*t);
+        // The two main roof planes now run continuously from front to rear.
+        // This creates a true gabled end instead of four shallow pyramid hips.
+        z=-roofHalfZ+u*(2*roofHalfZ);
         const edgeY=roofEaveY+roofCurveLift*Math.pow(Math.abs(2*u-1),2);
-        y=roofTopY+(edgeY-roofTopY)*t+.035*Math.sin(Math.PI*u)*t;
+        y=roofTopY+(edgeY-roofTopY)*t+.055*Math.sin(Math.PI*u)*t;
       }else{
         const sign=face==='front'?1:-1;
         x=(u*2-1)*roofHalfX*t;
-        z=sign*(roofRidgeHalfZ+(roofHalfZ-roofRidgeHalfZ)*t);
+        z=sign*roofHalfZ;
         const edgeY=roofEaveY+roofCurveLift*Math.pow(Math.abs(2*u-1),2);
-        y=roofTopY+(edgeY-roofTopY)*t+.035*(1-Math.pow(2*u-1,2))*t;
+        y=roofTopY+(edgeY-roofTopY)*t;
       }
       return new THREE.Vector3(x,y+lift,z);
     }
@@ -451,17 +453,17 @@
     }
     const roofUnderMat=mat('#263a40',.82,.08);
     const roofTileMats=[mat('#263b43',.72,.12),mat('#30464b',.78,.08)];
-    for(const face of ['left','right','front','back']){
+    for(const face of ['left','right']){
       const shell=new THREE.Mesh(roofFaceGeometry(face,24,32,-.025),roofUnderMat);
       shell.material.side=THREE.DoubleSide;house.add(shell);
     }
     // Individually separated tile courses are combined into two lightweight meshes.
     const tilePositions=[[],[]],tileIndices=[[],[]];
-    const tileRows=8,tileCols=10;
-    for(const face of ['left','right','front','back']){
+    const tileRows=12,tileCols=16;
+    for(const face of ['left','right']){
       for(let row=0;row<tileRows;row++)for(let col=0;col<tileCols;col++){
-        const t0=.075+row*.112,t1=t0+.095;
-        const u0=col/tileCols+.012,u1=(col+1)/tileCols-.012;
+        const t0=.035+row*.079,t1=t0+.067;
+        const u0=col/tileCols+.008,u1=(col+1)/tileCols-.008;
         const shade=(row+col+(face==='right'?1:0))%4===0?1:0;
         const verts=[roofPoint(face,t0,u0,.018),roofPoint(face,t1,u0,.018),
           roofPoint(face,t1,u1,.018),roofPoint(face,t0,u1,.018)];
@@ -485,6 +487,25 @@
       const fascia=box(house,timber,0,3.79,z,8.28,.25,.20);
       fascia.rotation.x=(z<0?1:-1)*.025;
     }
+    // Layered fascia: a dark shadow line below the warm timber fascia gives
+    // the eaves depth instead of reading as one thin flat slab.
+    for(const z of [-2.91,2.91]){
+      box(house,roof,0,3.635,z,8.20,.075,.24);
+      box(house,gold,0,3.535,z,7.82,.028,.09);
+    }
+    for(const x of [-4.10,4.10]){
+      box(house,roof,x,3.635,0,.24,.075,5.82);
+      box(house,gold,x,3.535,0,.09,.028,5.52);
+    }
+    // Repeated Japanese bracket blocks (tokyo/dougong-inspired) support the eaves.
+    function eaveBracket(x,z,side='front'){
+      const post=box(house,timber,x,3.48,z,.14,.34,.16);
+      const arm=box(house,gableTrim,x,3.57,z+(side==='front'?.10:-.10),.36,.085,.20);
+      const cap=box(house,timber,x,3.66,z,.24,.075,.22);
+      arm.rotation.z=x===0?0:Math.sign(x)*-.035;
+    }
+    for(const z of [-2.68,2.68])for(let i=0;i<9;i++)eaveBracket(-3.55+i*.8875,z,z>0?'front':'back');
+    for(const x of [-3.92,3.92])for(const z of [-1.95,-.65,.65,1.95])eaveBracket(x,z,x>0?'right':'left');
     // Exposed rafters run beneath each roof plane from ridge toward the eaves.
     function roofRafter(a,b,r=.052){
       const start=new THREE.Vector3(a.x,a.y-.075,a.z),end=new THREE.Vector3(b.x,b.y-.075,b.z);
@@ -501,11 +522,54 @@
       }
     }
     // A continuous ridge beam and segmented rounded ridge caps finish the crown.
-    box(house,timber,0,5.035,0,.24,.20,2.92);
-    for(let i=0;i<5;i++){
-      const cap=new THREE.Mesh(new THREE.CylinderGeometry(.145,.145,.66,10),roofTileMats[i%2]);
-      cap.rotation.x=Math.PI/2;cap.position.set(0,5.13,-1.32+i*.66);house.add(cap);
+    box(house,timber,0,5.035,0,.26,.22,5.92);
+    for(let i=0;i<10;i++){
+      const cap=new THREE.Mesh(new THREE.CylinderGeometry(.145,.145,.61,12),roofTileMats[i%2]);
+      cap.rotation.x=Math.PI/2;cap.position.set(0,5.15,-2.745+i*.61);house.add(cap);
     }
+    for(const z of [-2.98,2.98]){
+      const endCap=new THREE.Mesh(new THREE.SphereGeometry(.19,12,8),roofTileMats[0]);
+      endCap.scale.set(1,.78,.72);endCap.position.set(0,5.15,z);house.add(endCap);
+    }
+    // Front and rear triangular gable panels sit beneath the open roof ends.
+    const gableMat=mat('#49362c',.94);
+    const gableTrim=mat('#8a6041',.78);
+    function addGable(z,front=true){
+      const faceZ=z+(front?.018:-.018);
+      const g=new THREE.BufferGeometry();
+      g.setAttribute('position',new THREE.Float32BufferAttribute([
+        -4.02,3.82,faceZ, 4.02,3.82,faceZ, 0,5.02,faceZ
+      ],3));
+      g.setIndex([0,1,2]);g.computeVertexNormals();
+      const panel=new THREE.Mesh(g,gableMat);panel.material.side=THREE.DoubleSide;house.add(panel);
+      function beamBetween(a,b,r=.065,material=timber){
+        const start=new THREE.Vector3(...a),end=new THREE.Vector3(...b);
+        const d=new THREE.Vector3().subVectors(end,start);
+        const beam=new THREE.Mesh(new THREE.CylinderGeometry(r,r,d.length(),8),material);
+        beam.position.copy(start).add(end).multiplyScalar(.5);
+        beam.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());
+        house.add(beam);
+      }
+      const pL=[-4.02,3.82,z+.035],pR=[4.02,3.82,z+.035],pTop=[0,5.02,z+.035];
+      beamBetween(pL,pR,.085,gableTrim);
+      beamBetween(pL,pTop,.075,gableTrim);
+      beamBetween(pTop,pR,.075,gableTrim);
+      beamBetween([0,3.86,z+.055],[0,4.98,z+.055],.055,timber);
+      beamBetween([-2.0,3.88,z+.055],[0,4.62,z+.055],.045,timber);
+      beamBetween([2.0,3.88,z+.055],[0,4.62,z+.055],.045,timber);
+      beamBetween([-1.45,4.08,z+.06],[0,4.62,z+.06],.035,gableTrim);
+      beamBetween([1.45,4.08,z+.06],[0,4.62,z+.06],.035,gableTrim);
+      // Fine vertical lattice in the triangular tympanum.
+      for(const x of [-2.65,-1.8,-.9,.9,1.8,2.65]){
+        const topY=5.02-Math.abs(x)/4.02*1.20;
+        beamBetween([x,3.9,z+.065],[x,topY-.07,z+.065],.022,timber);
+      }
+      // Small central carved medallion.
+      const medallion=new THREE.Mesh(new THREE.SphereGeometry(.105,12,8),gold);
+      medallion.scale.set(1,.72,.34);medallion.position.set(0,4.38,z+.085);house.add(medallion);
+    }
+    addGable(2.94,true);
+    addGable(-2.94,false);
     // Small upturned corner finials complete the Japanese roof silhouette.
     for(const x of [-4.05,4.05])for(const z of [-2.82,2.82]){
       const tip=new THREE.Mesh(new THREE.ConeGeometry(.105,.34,6),roofTileMats[0]);
@@ -718,4 +782,19 @@
    upturned corner finials. Roof footprint and overall pavilion/camera composition
    are retained. Shoji doors, interior, supports, deck, stairs, rails, lighting,
    water, weather systems, forecast UI and Location privacy boundary are untouched.
+*/
+
+
+/* LE-WEATHER-PAVILION-ROOF-REFINEMENT-V24
+   Architectural roof refinement based on the tested V23 roof:
+   - Converted the shallow four-sided pyramid/hip appearance into two continuous
+     sloping roof planes with a pronounced front/rear gable silhouette.
+   - Added framed triangular gable tympanums with exposed truss members and a
+     restrained central medallion.
+   - Extended the ridge beam and segmented ridge caps along the full roof length.
+   - Increased tile-course density and rafter spacing for a richer roof surface.
+   - Added layered fascia/shadow lines and repeated bracket blocks beneath eaves.
+   - Retained the established roof footprint, overall pavilion scale, camera,
+     Shoji doors, interior, foundation, deck, stairs, rails, lanterns, lighting,
+     water, weather systems, forecast UI and Location privacy boundary.
 */
