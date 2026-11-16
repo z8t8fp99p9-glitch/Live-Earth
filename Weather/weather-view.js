@@ -417,7 +417,7 @@
     // Start from the known-working V25 pavilion and shape the roof with a
     // sampled surface. No TubeGeometry or CatmullRomCurve3 runtime dependency.
     const roofTopY=5.28,roofEaveY=3.72,roofHalfX=4.15,roofHalfZ=2.95;
-    const roofCornerLift=.62,roofCurvePower=3.0;
+    const roofCornerLift=.22,roofCurvePower=5.5;
     const roofCornerFactor=u=>Math.pow(Math.abs(2*u-1),roofCurvePower);
     const roofSmoothstep=t=>{const q=clamp((t-.58)/.42,0,1);return q*q*(3-2*q);};
     function roofPoint(face,t,u,lift=0){
@@ -494,9 +494,9 @@
     }
     // Four continuous-looking curved eaves: warm timber, dark shadow and fine trim.
     for(const face of ['left','right','front','back']){
-      addRoofBeam(roofEdgePoints(face,24,-.035),.135,timber,8);
-      addRoofBeam(roofEdgePoints(face,24,-.145),.072,roof,7);
-      addRoofBeam(roofEdgePoints(face,24,-.225),.021,gableTrim,6);
+      addRoofBeam(roofEdgePoints(face,32,-.035),.085,timber,8);
+      addRoofBeam(roofEdgePoints(face,32,-.125),.045,roof,7);
+      addRoofBeam(roofEdgePoints(face,32,-.185),.014,gableTrim,6);
     }
     // Brackets rise with the same edge profile, keeping the underside coherent.
     function eaveBracket(x,z,side='front',edgeY=roofEaveY){
@@ -568,9 +568,9 @@
     addGable(2.94);addGable(-2.94);
     // Small corner finials sit at the raised eave tips.
     for(const x of [-4.05,4.05])for(const z of [-2.82,2.82]){
-      const tip=new THREE.Mesh(new THREE.ConeGeometry(.105,.34,6),roofTileMats[0]);
-      tip.position.set(x,roofEaveY+roofCornerLift+.10,z);
-      tip.rotation.z=x<0?-.34:.34;tip.rotation.x=z<0?.20:-.20;house.add(tip);
+      const tip=new THREE.Mesh(new THREE.ConeGeometry(.075,.20,8),roofTileMats[0]);
+      tip.position.set(x,roofEaveY+roofCornerLift+.045,z);
+      tip.rotation.z=x<0?-.18:.18;tip.rotation.x=z<0?.10:-.10;house.add(tip);
     }
     for(const x of [-3.4,3.4]){const lantern=new THREE.Group();lantern.position.set(x,2.5,2.35);const body=new THREE.Mesh(new THREE.BoxGeometry(.38,.5,.38),gold);lantern.add(body);const cap=new THREE.Mesh(new THREE.ConeGeometry(.34,.18,4),dark);cap.position.y=.34;lantern.add(cap);house.add(lantern);}
     // Foreground stepping stones and garden boulders.
@@ -813,4 +813,13 @@
    rafters, brackets and gable base all share the same 0.62-unit upturned corner
    profile. The existing pavilion, doors, interior, foundation, deck, stairs, rails,
    lanterns, scene, camera, weather systems and forecast UI are preserved.
+*/
+
+
+/* LE-WEATHER-PAVILION-ROOF-GRACEFUL-EAVES-V28
+   Refines the V27 roof after visual review: reduces the corner lift from 0.62
+   to 0.22 scene units and concentrates it at the final portions of the eaves
+   with a steeper easing exponent. Slims the curved fascia and shadow trim,
+   removes the conflicting fixed-height fascia boxes, and reduces corner caps.
+   Keeps the V27 core-geometry construction and all non-roof systems unchanged.
 */
