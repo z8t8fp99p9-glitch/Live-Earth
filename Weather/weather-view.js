@@ -258,9 +258,12 @@
       maple.position.set(x,0,z);maple.scale.setScalar(scale);maple.userData.isMomiji=true;
       scene.add(maple);return maple;
     }
-    // Right-hand garden framing: trunk remains outside the pavilion footprint;
-    // canopy rises above the eaves without covering the ridge or front gable.
-    const momiji=createMomiji(8.25,1.15,1.12);trees.push(momiji);
+    // V44 — PORTRAIT-SAFE FRONT-RIGHT MAPLE PLACEMENT.
+    // Move the maple inward from the far-right landscape-only position and
+    // slightly toward the camera, beside the pavilion's front-right corner.
+    // The reduced scale keeps the full crown inside the square world camera
+    // in portrait while allowing the outer branches to frame the pavilion.
+    const momiji=createMomiji(5.35,2.45,.88);trees.push(momiji);
 
     // Main architectural landmark: open pavilion with curved eaves, columns and lanterns.
     const house=new THREE.Group();scene.add(house);house.position.set(0,0,-1.4);house.rotation.y=-15*Math.PI/180;house.userData.refinement='LE-WEATHER-PAVILION-ROTATION-CCW-15-V1';
@@ -1417,4 +1420,14 @@
    the foliage depth at night. The maple joins the existing wind-sway group.
    Pavilion, roof, lanterns, Shoji doors, interior, foundation, deck, stairs,
    rails, camera, forecast UI, Location privacy and Stacks lifecycle are unchanged.
+*/
+
+
+/* LE-WEATHER-PAVILION-MOMIJI-PORTRAIT-PLACEMENT-V44
+   Moves the Japanese red maple inward from x=8.25 to x=5.35, forward from
+   z=1.15 to z=2.45, and reduces scale from 1.12 to .88. The tree now sits
+   beside the pavilion's front-right corner and within the portrait square
+   camera framing, while its canopy still frames the pavilion in landscape.
+   No tree geometry, pavilion geometry, camera, UI, weather, Location or
+   Stacks behavior is changed.
 */
