@@ -1,3 +1,11 @@
+/* LE-WEATHER-MAPLE-FOLIAGE-MERGED-MESH-V56
+   Replaces InstancedMesh foliage with one merged BufferGeometry/Mesh. Each
+   leaf retains its own silhouette, transform and autumn vertex tint. This
+   removes instancing as a possible device/runtime failure point and reduces
+   foliage draw calls to one. Branch skeleton and all Weather/pavilion systems
+   remain unchanged.
+*/
+
 /* LIVE // EARTH — Weather View v2
    Full-screen Three.js weather world, forecast cards and temporary scene preview.
    Uses the existing Stacks feature runtime and Location privacy boundary. */
@@ -645,23 +653,49 @@
         addLeafCluster(parent,.84,2);
       }
 
+      // V56 — merge all foliage into one ordinary Mesh. This avoids device-
+      // specific InstancedMesh behaviour and keeps the canopy to one draw call.
+      const mergedLeafPositions=[];
+      const mergedLeafColors=[];
+      const leafVertex=new THREE.Vector3();
       for(let i=0;i<leafBuckets.length;i++){
         const bucket=leafBuckets[i];
-        if(!bucket.length)continue;
-        const foliage=new THREE.InstancedMesh(leafGeometries[i],leafMaterial,bucket.length);
-        foliage.name='MomijiLeafShape'+(i+1);
+        leafShapeInstances[i]=bucket.length;
+        const source=leafGeometries[i];
+        const sourcePositions=source.getAttribute('position');
+        const sourceColors=source.getAttribute('color');
+        for(const instance of bucket){
+          const matrix=instance.matrix;
+          const tint=instance.tint;
+          for(let v=0;v<sourcePositions.count;v++){
+            leafVertex.set(sourcePositions.getX(v),sourcePositions.getY(v),sourcePositions.getZ(v));
+            leafVertex.applyMatrix4(matrix);
+            mergedLeafPositions.push(leafVertex.x,leafVertex.y,leafVertex.z);
+            const baseR=sourceColors?sourceColors.getX(v):1;
+            const baseG=sourceColors?sourceColors.getY(v):1;
+            const baseB=sourceColors?sourceColors.getZ(v):1;
+            mergedLeafColors.push(baseR*tint.r,baseG*tint.g,baseB*tint.b);
+          }
+          renderedLeafCount++;
+        }
+      }
+      if(mergedLeafPositions.length){
+        const foliageGeometry=new THREE.BufferGeometry();
+        foliageGeometry.setAttribute('position',new THREE.Float32BufferAttribute(mergedLeafPositions,3));
+        foliageGeometry.setAttribute('color',new THREE.Float32BufferAttribute(mergedLeafColors,3));
+        foliageGeometry.computeVertexNormals();
+        const foliageMaterial=new THREE.MeshStandardMaterial({
+          color:'#ffffff',vertexColors:true,roughness:.88,metalness:0,
+          side:THREE.DoubleSide
+        });
+        const foliage=new THREE.Mesh(foliageGeometry,foliageMaterial);
+        foliage.name='MomijiMergedSixShapeFoliage';
         foliage.castShadow=false;
         foliage.receiveShadow=false;
-        for(let j=0;j<bucket.length;j++){
-          foliage.setMatrixAt(j,bucket[j].matrix);
-          foliage.setColorAt(j,bucket[j].tint);
-        }
-        foliage.instanceMatrix.needsUpdate=true;
-        if(foliage.instanceColor)foliage.instanceColor.needsUpdate=true;
         maple.add(foliage);
-        renderedLeafCount+=bucket.length;
-        leafShapeInstances[i]=bucket.length;
       }
+      leafShapeCount=leafShapes.length;
+      for(const geometry of leafGeometries)geometry.dispose();
       } catch(foliageError) {
         console.error('[LIVE // EARTH] Maple foliage layer failed; keeping the branch structure and Weather world alive.',foliageError);
       }
