@@ -270,6 +270,47 @@
       const cz=-1.82+sideBayWidth*(i+.5);
       sideShojiPanel(x,cz,sideBayWidth);
     }
+    // V16 — PAVILION INTERIOR.
+    // Quiet tatami flooring, a low tea table and floor cushions become visible
+    // through the independently sliding front Shoji doors. All pieces sit on
+    // the existing deck; no changes are made to the foundation, stairs or rails.
+    const tatamiMat=mat('#b9a77a',.98),tatamiEdge=mat('#574638',.96);
+    const tableWood=mat('#503a2d',.82),cushionMat=mat('#65766b',.96);
+    const warmPaper=new THREE.MeshStandardMaterial({
+      color:'#e9c98d',emissive:'#a66a2d',emissiveIntensity:.24,
+      roughness:1,transparent:true,opacity:.92,side:THREE.DoubleSide
+    });
+    // Six fitted tatami panels form a restrained 3-by-2 interior floor pattern.
+    for(const x of [-1.90,0,1.90])for(const z of [-.78,.78]){
+      box(house,tatamiMat,x,1.586,z,1.82,.025,1.48);
+      for(const edgeX of [x-.88,x+.88])
+        box(house,tatamiEdge,edgeX,1.602,z,.045,.012,1.48);
+      for(const edgeZ of [z-.72,z+.72])
+        box(house,tatamiEdge,x,1.602,edgeZ,1.82,.012,.045);
+    }
+    // Low tea table with four short legs, centred toward the rear half of the room.
+    const tableZ=-.48,tableTopY=2.02;
+    box(house,tableWood,0,tableTopY,tableZ,1.48,.105,.86);
+    for(const x of [-.61,.61])for(const z of [tableZ-.31,tableZ+.31])
+      box(house,tableWood,x,1.82,z,.095,.36,.095);
+    // Two simple floor cushions facing one another across the tea table.
+    for(const x of [-1.12,1.12]){
+      const cushion=box(house,cushionMat,x,1.665,tableZ,.66,.12,.66);
+      cushion.rotation.y=x<0?-.12:.12;
+      box(house,tableWood,x,1.728,tableZ,.52,.018,.52);
+    }
+    // Small warm interior lanterns at the rear corners, kept below the Shoji head rail.
+    for(const x of [-2.34,2.34]){
+      const interiorLantern=new THREE.Group();
+      interiorLantern.position.set(x,1.66,-1.28);
+      const glow=new THREE.Mesh(new THREE.BoxGeometry(.24,.42,.24),warmPaper);
+      interiorLantern.add(glow);
+      const topCap=new THREE.Mesh(new THREE.ConeGeometry(.19,.10,4),dark);
+      topCap.position.y=.26;interiorLantern.add(topCap);
+      const baseCap=new THREE.Mesh(new THREE.BoxGeometry(.27,.045,.27),tableWood);
+      baseCap.position.y=-.23;interiorLantern.add(baseCap);
+      house.add(interiorLantern);
+    }
     // Continuous timber sill and head rails tie the separate panels into one wall system.
     box(house,timber,0,wallBottom,1.82,5.98,.10,.14);
     box(house,timber,0,wallTop,1.82,5.98,.10,.14);
@@ -428,4 +469,12 @@
    Tapping a visible front leaf toggles a smooth open/close motion; the inner pair
    stacks behind the outer pair to reveal the central entrance. Rear and side panels
    remain fixed. No foundation, deck, stair, rail, roof, camera, scenery or UI geometry changed.
+*/
+
+
+/* LIVE-EARTH-WEATHER-PAVILION-INTERIOR-V16
+   Added six bordered tatami floor panels, a low timber tea table, two cushions,
+   and two warm interior lanterns, all placed on the existing raised deck.
+   Sliding Shoji doors and their animation remain unchanged.
+   Foundation, pillars, beams, deck, stairs, rails, walls, roof, scenery and UI are preserved.
 */
