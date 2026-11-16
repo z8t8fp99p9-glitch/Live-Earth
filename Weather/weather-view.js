@@ -554,6 +554,39 @@
         uprightBranchPaths.push(path);
       }
 
+      // V65 — ADDITIVE CANOPY-FILLING BOUGHS.
+      // V64's upright shoots were too short to create a fuller crown. These
+      // longer new boughs grow from existing secondary limbs into open canopy
+      // pockets, with paired tertiary forks. No existing path is modified.
+      const canopyFillPaths=[];
+      const canopyFillTwigPaths=[];
+      const fillCount=12;
+      for(let i=0;i<fillCount;i++){
+        const parent=secondaryPaths[(i*3+1)%secondaryPaths.length];
+        const attachT=[.34,.58,.76,.46,.68,.84][i%6];
+        const origin=pointAt(parent.path,attachT);
+        const tangent=tangentAt(parent.path,attachT);
+        const base=horizontalAngle(tangent);
+        const depthSign=(i%2===0?1:-1);
+        const angle=base+depthSign*(.72+(i%3)*.20)+signed()*.14;
+        const length=.82+rand()*.26;
+        const rise=.18+rand()*.28;
+        const bend=signed()*.22;
+        const path=growBranch(origin,angle,length,rise,bend,
+          .022+rand()*.004,3,10,.15);
+        canopyFillPaths.push(path);
+        for(let j=0;j<2;j++){
+          const forkT=j===0?.56:.82;
+          const forkOrigin=pointAt(path,forkT);
+          const forkTangent=tangentAt(path,forkT);
+          const forkAngle=horizontalAngle(forkTangent)+(j===0?-.82:.88)+signed()*.16;
+          const fork=growBranch(forkOrigin,forkAngle,.43+rand()*.18,
+            (j===0?.20:-.08)+signed()*.10,signed()*.12,
+            .0105+rand()*.002,4,8,.17);
+          canopyFillTwigPaths.push(fork);
+        }
+      }
+
       const geometry=new THREE.BufferGeometry();
       geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
       geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
@@ -674,6 +707,15 @@
           addLeafCluster(uprightBranchPaths[i],.94,4,i+1);
         }
 
+        // New canopy-fill boughs receive two sprays each; their new forks
+        // receive one spray each. Existing V64 leaf loops remain unchanged.
+        for(let i=0;i<canopyFillPaths.length;i++){
+          addLeafCluster(canopyFillPaths[i],.56,4,i+4);
+          addLeafCluster(canopyFillPaths[i],.91,4,i+4);
+        }
+        for(let i=0;i<canopyFillTwigPaths.length;i++)
+          addLeafCluster(canopyFillTwigPaths[i],.86,4,i+6);
+
         // One compact cluster per secondary bough, two on each tertiary limb.
         for(let i=0;i<secondaryPaths.length;i++)
           addLeafCluster(secondaryPaths[i].path,.88,4,i+1);
@@ -727,7 +769,9 @@
       maple.userData.leafCount=renderedLeafCount;
       maple.userData.leafShapeCount=leafShapeCount;
       maple.userData.leafShapeInstances=leafShapeInstances;
-      maple.userData.branchPathCount=pathCount;
+      maple.userData.canopyFillBoughs=canopyFillPaths.length;
+      maple.userData.canopyFillTwigs=canopyFillTwigPaths.length;
+      maple.userData.branchPathCount=pathCount+canopyFillPaths.length+canopyFillTwigPaths.length;
       maple.userData.leafCoverage={
         primary:primaryPaths.length,
         upper:1+upperPaths.length,
