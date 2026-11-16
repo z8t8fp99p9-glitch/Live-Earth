@@ -138,23 +138,29 @@
     const timber=mat('#684a35'),wall=mat('#e6ddc6'),roof=mat('#263b43',.72,.12),dark=mat('#293b38'),gold= new THREE.MeshStandardMaterial({color:'#d69b55',emissive:'#a35b1e',emissiveIntensity:.65});
     function box(parent,m,x,y,z,sx,sy,sz){const o=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),m);o.position.set(x,y,z);parent.add(o);return o;}
     // LE-WEATHER-PAVILION-RAISED-FOUNDATION-V1 LE-WEATHER-PAVILION-SLIM-FOUNDATION-V2 LE-WEATHER-PAVILION-TRADITIONAL-STAIRS-PIERS-V3 LE-WEATHER-PAVILION-STAIR-INFILL-V4 LE-WEATHER-PAVILION-FOUR-SIDE-RAILS-V11: lowered proportionate guard rails; raised engawa deck with visible undercroft and centred three-step approach.
-    const foundationStone=mat('#777465'),deckPlank=mat('#806044'),stepTop=mat('#98724f');
+    const foundationStone=mat('#777465'),deckPlank=mat('#806044');
     // V3 SINGLE DECK ASSEMBLY: one perimeter frame directly supported by the existing piers.
     // Outer faces align with the single continuous deck-board footprint.
-    box(house,timber,0,1.34,2.57,7.58,.36,.24);
-    box(house,timber,0,1.34,-2.59,7.58,.36,.24);
-    box(house,timber,-3.67,1.34,-.01,.24,.36,5.16);
-    box(house,timber,3.67,1.34,-.01,.24,.36,5.16);
+    // V12: slimmer perimeter beams; top remains at y=1.52 beneath the deck boards.
+    box(house,timber,0,1.385,2.57,7.58,.27,.24);
+    box(house,timber,0,1.385,-2.59,7.58,.27,.24);
+    box(house,timber,-3.67,1.385,-.01,.24,.27,5.16);
+    box(house,timber,3.67,1.385,-.01,.24,.27,5.16);
     // Stone pads and timber piers lift the deck visibly above the garden ground.
+    // Eight stepped stone footings and shorter timber support pillars.
+    // Stone footing: ground to y=.28; narrower stone socket: y=.28 to .59.
+    // Timber pillar: y=.59 to 1.25 (25% shorter than the previous .88-unit post).
     for(const x of [-3.42,0,3.42]){
       for(const z of [-2.34,2.34]){
         box(house,foundationStone,x,.14,z,.48,.28,.48);
-        box(house,dark,x,.72,z,.30,.88,.30);
+        box(house,foundationStone,x,.435,z,.38,.31,.38);
+        box(house,dark,x,.92,z,.30,.66,.30);
       }
     }
     for(const x of [-3.42,3.42]){
       box(house,foundationStone,x,.14,0,.48,.28,.48);
-      box(house,dark,x,.72,0,.30,.88,.30);
+      box(house,foundationStone,x,.435,0,.38,.31,.38);
+      box(house,dark,x,.92,0,.30,.66,.30);
     }
     // One continuous walking surface: ten close-laid boards with no open seams.
     // Boards sit directly on the single perimeter support frame.
@@ -162,19 +168,23 @@
       const z=-2.44+i*.54;
       box(house,deckPlank,0,1.55,z,7.58,.045,.54);
     }
-    // Four traditional solid timber risers with deep, overhanging treads.
-    // Each step has a low vertical riser and a broad cap, creating a connected old-wood stair profile.
+    // Four traditional timber steps: thin treads and thin closed riser boards.
+    // Tread material is .07 thick (about 26% thinner than the old stacked .095 caps).
+    // Riser faces are .07 deep rather than full .98-deep solid step blocks.
+    // The top tread finishes flush with the single deck surface at y=1.5725.
     const entranceSteps=[
-      {z:4.20,front:.16,top:.34},
-      {z:3.25,front:.48,top:.68},
-      {z:2.30,front:.80,top:1.02},
-      {z:1.35,front:1.12,top:1.36}
+      {z:4.20,front:.02,top:.39},
+      {z:3.25,front:.39,top:.78},
+      {z:2.30,front:.78,top:1.175},
+      {z:1.35,front:1.175,top:1.5725}
     ];
     for(const step of entranceSteps){
-      box(house,timber,0,(step.front+step.top)/2,step.z,4.35,step.top-step.front,.98);
-      box(house,deckPlank,0,step.top-.035,step.z+.035,4.48,.07,1.10);
-      box(house,stepTop,0,step.top+.006,step.z+.035,4.38,.025,1.00);
-    } 
+      const rise=step.top-step.front;
+      // Vertical closed riser at the forward edge of each tread.
+      box(house,timber,0,(step.front+step.top)/2,step.z+.515,4.35,rise,.07);
+      // One broad, slim timber tread; the nosing remains part of the same board.
+      box(house,deckPlank,0,step.top-.035,step.z,4.48,.07,1.10);
+    }
     
     // V3 perimeter guard: one upper handrail; balusters start directly at the deck.
     // Side-rail outer faces coincide with the deck's left/right outer edges.
@@ -198,16 +208,7 @@
         box(house,dark,x+offset,1.83,2.60,.12,.48,.14);
       }
     }
-    // Continuous vertical timber infill closes the exposed middle gaps between each tread.
-    for(let i=1;i<entranceSteps.length;i++){
-      const lower=entranceSteps[i-1];
-      const upper=entranceSteps[i];
-      const rise=Math.max(0,upper.front-lower.top);
-      if(rise>0){
-        box(house,timber,0,(lower.top+upper.front)/2,upper.z+.505,4.34,rise,.10);
-        box(house,deckPlank,0,(lower.top+upper.front)/2,upper.z+.562,4.38,rise*.72,.018);
-      }
-    }
+    // V12: no secondary stair-infill layer; the four thin riser boards above close the stair fronts.
     
     // V3: no secondary joist layer or duplicate slab. The single perimeter frame supports the deck boards and piers.
     // Restore the pavilion wall panel as real scene geometry (it was accidentally swallowed by the comment).
@@ -300,4 +301,16 @@
    Deck top is approximately y=1.5725: balusters begin at y=1.59 and meet the handrail.
    Outer rail alignment and central stair opening are unchanged.
    Restored the pavilion wall panel as executable geometry.
+*/
+
+
+/* LE-WEATHER-LOWER-STRUCTURE-PROPORTIONS-V12
+   Eight timber support pillars reduced from .88 to .66 units (25%).
+   Stone footing sockets bridge the shortened pillars to the perimeter beams.
+   Four perimeter beams reduced from .36 to .27 units (25%), with top alignment held.
+   Four traditional stair treads use .07-unit single boards, replacing stacked .095 caps.
+   Four thin closed riser boards replace the thick solid stair blocks and redundant infill.
+   Last stair tread top is exactly aligned to the deck surface at y=1.5725.
+   Main house, deck footprint, four-side rails, roof, walls, rotation, Fuji, hills, trees,
+   camera, forecast toggle and Weather feature lifecycle are preserved.
 */
