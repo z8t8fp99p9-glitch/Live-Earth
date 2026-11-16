@@ -623,6 +623,40 @@
         }
       }
 
+      // V67 — RAISED UMBRELLA CROWN (ADDITIVE).
+      // The previous additions accumulated below the scaffold and read as a
+      // hanging skirt. These new limbs start higher on the trunk/upper leader,
+      // spread laterally through the upper crown, then fork into fine sprays.
+      // No V66 branch path or leaf placement is changed.
+      const raisedCrownPaths=[];
+      const raisedCrownTwigPaths=[];
+      const raisedAnchors=[
+        trunkAt(2.62),trunkAt(2.98),trunkAt(3.34),trunkAt(3.70),
+        pointAt(leaderPath,.34),pointAt(leaderPath,.68),
+        ...upperPaths.map(path=>pointAt(path,.48))
+      ];
+      const raisedCount=12;
+      for(let i=0;i<raisedCount;i++){
+        const origin=raisedAnchors[i%raisedAnchors.length].clone();
+        const azimuth=(i/raisedCount)*Math.PI*2 + (i%2===0?.16:-.13);
+        const length=.98+rand()*.34;
+        const rise=.30+rand()*.34;
+        const bend=signed()*.18;
+        const bough=growBranch(origin,azimuth,length,rise,bend,
+          .024+rand()*.004,3,12,.14);
+        raisedCrownPaths.push(bough);
+        // Forks are biased outward and slightly upward, creating open pads.
+        for(let j=0;j<2;j++){
+          const t=j===0?.48:.78;
+          const forkOrigin=pointAt(bough,t);
+          const forkTangent=tangentAt(bough,t);
+          const forkAzimuth=horizontalAngle(forkTangent)+(j===0?-.72:.76)+signed()*.12;
+          const fork=growBranch(forkOrigin,forkAzimuth,.48+rand()*.20,
+            .16+rand()*.18,signed()*.10,.009+rand()*.002,4,9,.16);
+          raisedCrownTwigPaths.push(fork);
+        }
+      }
+
       const geometry=new THREE.BufferGeometry();
       geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
       geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
@@ -764,6 +798,18 @@
           addLeafCluster(crownTwigPaths[i],.94,4,i+5);
         }
 
+        // Raised crown foliage: leaf pads follow the new upper umbrella
+        // scaffold and fine forks, keeping the canopy above the hanging skirt.
+        for(let i=0;i<raisedCrownPaths.length;i++){
+          addLeafCluster(raisedCrownPaths[i],.42,4,i+2);
+          addLeafCluster(raisedCrownPaths[i],.76,4,i+2);
+          addLeafCluster(raisedCrownPaths[i],.96,3,i+2);
+        }
+        for(let i=0;i<raisedCrownTwigPaths.length;i++){
+          addLeafCluster(raisedCrownTwigPaths[i],.72,4,i+5);
+          addLeafCluster(raisedCrownTwigPaths[i],.96,3,i+5);
+        }
+
         // One compact cluster per secondary bough, two on each tertiary limb.
         for(let i=0;i<secondaryPaths.length;i++)
           addLeafCluster(secondaryPaths[i].path,.88,4,i+1);
@@ -817,6 +863,8 @@
       maple.userData.leafCount=renderedLeafCount;
       maple.userData.leafShapeCount=leafShapeCount;
       maple.userData.leafShapeInstances=leafShapeInstances;
+      maple.userData.raisedCrownBoughs=raisedCrownPaths.length;
+      maple.userData.raisedCrownTwigs=raisedCrownTwigPaths.length;
       maple.userData.crownBoughs=crownBoughPaths.length;
       maple.userData.crownFineTwigs=crownTwigPaths.length;
       maple.userData.canopyFillBoughs=canopyFillPaths.length;
