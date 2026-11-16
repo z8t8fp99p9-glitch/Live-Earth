@@ -657,6 +657,41 @@
         }
       }
 
+      // V68 — EXTENDED UPPER-CROWN RAMIFICATION (ADDITIVE ONLY).
+      // Extend the raised V67 canopy outward and slightly upward. These are
+      // new grafted limbs on the raised crown paths; no existing branch is
+      // moved, shortened, replaced, or regenerated.
+      const extendedCrownPaths=[];
+      const extendedCrownTwigPaths=[];
+      for(let i=0;i<raisedCrownPaths.length;i++){
+        const parent=raisedCrownPaths[i];
+        const attachT=[.38,.62,.46,.72][i%4];
+        const origin=pointAt(parent,attachT);
+        const tangent=tangentAt(parent,attachT);
+        const baseAngle=horizontalAngle(tangent);
+        // Alternate around the tree's depth axis to broaden the crown in 3D.
+        const side=i%2===0?1:-1;
+        const azimuth=baseAngle+side*(.66+(i%3)*.18)+signed()*.12;
+        const length=1.22+rand()*.38;
+        const rise=.26+rand()*.22;
+        const bend=signed()*.18;
+        const bough=growBranch(origin,azimuth,length,rise,bend,
+          .019+rand()*.003,3,12,.14);
+        extendedCrownPaths.push(bough);
+        // Longer, fine outward forks soften each new bough into a leaf pad.
+        for(let j=0;j<2;j++){
+          const forkT=j===0?.46:.78;
+          const forkOrigin=pointAt(bough,forkT);
+          const forkTangent=tangentAt(bough,forkT);
+          const forkAngle=horizontalAngle(forkTangent)+(j===0?-.78:.82)+signed()*.12;
+          const forkLength=.58+rand()*.18;
+          const forkRise=(j===0?.20:.10)+rand()*.10;
+          const fork=growBranch(forkOrigin,forkAngle,forkLength,forkRise,
+            signed()*.10,.0085+rand()*.0017,4,9,.16);
+          extendedCrownTwigPaths.push(fork);
+        }
+      }
+
       const geometry=new THREE.BufferGeometry();
       geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
       geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
@@ -810,6 +845,18 @@
           addLeafCluster(raisedCrownTwigPaths[i],.96,3,i+5);
         }
 
+        // V68 leaf sprays follow the new extended boughs and fine forks.
+        // Three small sprays along each bough, two along each fork.
+        for(let i=0;i<extendedCrownPaths.length;i++){
+          addLeafCluster(extendedCrownPaths[i],.34,4,i+3);
+          addLeafCluster(extendedCrownPaths[i],.68,4,i+3);
+          addLeafCluster(extendedCrownPaths[i],.95,4,i+3);
+        }
+        for(let i=0;i<extendedCrownTwigPaths.length;i++){
+          addLeafCluster(extendedCrownTwigPaths[i],.58,3,i+5);
+          addLeafCluster(extendedCrownTwigPaths[i],.94,3,i+5);
+        }
+
         // One compact cluster per secondary bough, two on each tertiary limb.
         for(let i=0;i<secondaryPaths.length;i++)
           addLeafCluster(secondaryPaths[i].path,.88,4,i+1);
@@ -863,6 +910,8 @@
       maple.userData.leafCount=renderedLeafCount;
       maple.userData.leafShapeCount=leafShapeCount;
       maple.userData.leafShapeInstances=leafShapeInstances;
+      maple.userData.extendedCrownBoughs=extendedCrownPaths.length;
+      maple.userData.extendedCrownForks=extendedCrownTwigPaths.length;
       maple.userData.raisedCrownBoughs=raisedCrownPaths.length;
       maple.userData.raisedCrownTwigs=raisedCrownTwigPaths.length;
       maple.userData.crownBoughs=crownBoughPaths.length;
