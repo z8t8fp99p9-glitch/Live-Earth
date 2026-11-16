@@ -137,7 +137,7 @@
     const house=new THREE.Group();scene.add(house);house.position.set(0,0,-1.4);house.rotation.y=-15*Math.PI/180;house.userData.refinement='LE-WEATHER-PAVILION-ROTATION-CCW-15-V1';
     const timber=mat('#684a35'),wall=mat('#e6ddc6'),roof=mat('#263b43',.72,.12),dark=mat('#293b38'),gold= new THREE.MeshStandardMaterial({color:'#d69b55',emissive:'#a35b1e',emissiveIntensity:.65});
     function box(parent,m,x,y,z,sx,sy,sz){const o=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),m);o.position.set(x,y,z);parent.add(o);return o;}
-    // LE-WEATHER-PAVILION-RAISED-FOUNDATION-V1 LE-WEATHER-PAVILION-SLIM-FOUNDATION-V2 LE-WEATHER-PAVILION-TRADITIONAL-STAIRS-PIERS-V3 LE-WEATHER-PAVILION-STAIR-INFILL-V4 LE-WEATHER-PAVILION-FOUR-SIDE-RAILS-V8: raised engawa deck with visible undercroft and centred three-step approach.
+    // LE-WEATHER-PAVILION-RAISED-FOUNDATION-V1 LE-WEATHER-PAVILION-SLIM-FOUNDATION-V2 LE-WEATHER-PAVILION-TRADITIONAL-STAIRS-PIERS-V3 LE-WEATHER-PAVILION-STAIR-INFILL-V4 LE-WEATHER-PAVILION-FOUR-SIDE-RAILS-V9: raised engawa deck with visible undercroft and centred three-step approach.
     const foundationStone=mat('#777465'),deckPlank=mat('#806044'),stepTop=mat('#98724f');
     // Deep perimeter beams frame the wider platform.
     box(house,timber,0,1.25,2.76,7.86,.15,.24);
@@ -175,27 +175,27 @@
     } 
     
     // Left and right long sides: upper/lower rails and three vertical timber balusters per side.
-    for(const x of [-3.58,3.58]){
-      box(house,timber,x,2.35,0,.18,.16,5.05);
-      box(house,deckPlank,x,1.78,0,.13,.12,4.88);
-      for(const z of [-1.62,0,1.62]){
+    for(const x of [-3.70,3.70]){
+      box(house,timber,x,2.35,0,.18,.16,5.40);
+      box(house,deckPlank,x,1.78,0,.13,.12,5.40);
+      for(const z of [-1.70,0,1.70]){
         box(house,dark,x,2.06,z,.12,.56,.12);
       }
     }
 
     // Rear short side: a continuous upper and lower rail with three vertical balusters.
-    box(house,timber,0,2.35,-2.52,7.02,.16,.18);
-    box(house,deckPlank,0,1.78,-2.52,7.02,.12,.14);
+    box(house,timber,0,2.35,-2.62,7.58,.16,.18);
+    box(house,deckPlank,0,1.78,-2.62,7.58,.12,.14);
     for(const x of [-2.55,0,2.55]){
-      box(house,dark,x,2.06,-2.52,.14,.56,.14);
+      box(house,dark,x,2.06,-2.62,.14,.56,.14);
     }
 
     // Front short side: matching rail returns leave the centred staircase entrance open.
-    for(const x of [-2.95,2.95]){
-      box(house,timber,x,2.35,2.52,1.26,.16,.18);
-      box(house,deckPlank,x,1.78,2.52,1.26,.12,.14);
-      for(const offset of [-.48,.48]){
-        box(house,dark,x+offset,2.06,2.52,.12,.56,.14);
+    for(const x of [-3.015,3.015]){
+      box(house,timber,x,2.35,2.605,1.55,.16,.18);
+      box(house,deckPlank,x,1.78,2.605,1.55,.12,.14);
+      for(const offset of [-.52,.52]){
+        box(house,dark,x+offset,2.06,2.605,.12,.56,.14);
       }
     }
     // Continuous vertical timber infill closes the exposed middle gaps between each tread.
@@ -209,7 +209,11 @@
       }
     }
     
-    box(house,timber,0,1.50,0,7.8,.15,5.6);box(house,wall,0,2.55,-.08,5.9,2.0,3.7);
+    // Single veranda floor: the ten timber deck boards above are the visible walking surface.
+    // Narrow joists replace the redundant full-area slab and bridge onto the perimeter beams.
+    for(const z of [-2.34,-1.25,-.16,.93,2.02]){
+      box(house,timber,0,1.43,z,7.52,.21,.14);
+    }box(house,wall,0,2.55,-.08,5.9,2.0,3.7);
     // Shoji divisions on the front elevation.
     for(let i=0;i<7;i++){const x=-2.55+i*.85;box(house,timber,x,2.55,1.82,.075,1.9,.09);}
     box(house,timber,0,1.62,1.88,6.15,.10,.12);box(house,timber,0,3.55,0,7.5,.22,5.2);
@@ -275,4 +279,10 @@
    Do not regenerate it from service-worker string replacements.
    Pavilion guard rails are children of the rotated house group and are measured
    from the top of the raised deck (deck surface approx. y=1.588).
+*/
+
+/* LIVE-EARTH-WEATHER-REAL-SCENE-V2
+   One deck surface: timber boards supported by discrete joists; redundant full slab removed.
+   Four-side guard rails align their outer faces with the deck perimeter.
+   Front guard rail remains split around the central stair opening.
 */
