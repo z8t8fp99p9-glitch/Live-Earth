@@ -222,13 +222,19 @@
             binormal.crossVectors(tangent,normal).normalize();
           }
           const t=i/(count-1);
-          const taper=tipRatio+(1-tipRatio)*Math.pow(1-t,1.12);
-          const localRadius=radius*taper;
-          const grain=.93+rand()*.14;
+          // A stronger natural taper, with a subtle basal flare and slow
+          // longitudinal swell. This avoids the uniform pipe-like trunk look.
+          const taper=tipRatio+(1-tipRatio)*Math.pow(1-t,1.34);
+          const basalFlare=1+.13*Math.exp(-Math.pow(t/.105,2));
+          const longitudinal=1+.022*Math.sin(t*10.5+phase);
+          const localRadius=radius*taper*basalFlare*longitudinal;
+          const grain=.91+rand()*.16;
           for(let j=0;j<=radialSegments;j++){
             const a=j/radialSegments*Math.PI*2;
             // Small irregularity keeps the bark from looking like smooth plumbing.
-            const rough=1+.035*Math.sin(a*3+phase)+.018*Math.sin(a*5+phase*1.7);
+            const rough=1+.060*Math.sin(a*3+phase)+
+              .030*Math.sin(a*5+phase*1.7)+
+              .018*Math.sin(a*2+t*8.5+phase);
             const nx=normal.x*Math.cos(a)+binormal.x*Math.sin(a);
             const ny=normal.y*Math.cos(a)+binormal.y*Math.sin(a);
             const nz=normal.z*Math.cos(a)+binormal.z*Math.sin(a);
@@ -237,7 +243,8 @@
               points[i].y+ny*localRadius*rough,
               points[i].z+nz*localRadius*rough
             );
-            const light=grain*(.88+.12*Math.cos(a*2+tone));
+            const light=grain*(.86+.14*Math.cos(a*2+tone))*
+              (.96+.04*Math.sin(t*15+phase));
             colors.push(bark.r*light,bark.g*light,bark.b*light);
             if(i<count-1&&j<radialSegments){
               const a0=base+i*(radialSegments+1)+j;
@@ -321,6 +328,12 @@
           .addScaledVector(side,-bend*.38);
         const path=bezierPath(start,c1,c2,end,steps);
         addTubePath(path,radius,tipRatio,tone);
+        // Branch collars swell gently where each limb leaves its parent.
+        // The short overlapping taper hides the hard cylinder-to-cylinder
+        // junction and suggests the natural shoulder of mature maple wood.
+        if(radius>=.034&&path.length>=4){
+          addTubePath(path.slice(0,4),radius*1.13,.80,tone);
+        }
         return path;
       }
 
@@ -377,13 +390,13 @@
       // Primary scaffold: irregular heights and directions make a layered,
       // wide crown rather than a radial fan of equal-length limbs.
       const primarySpecs=[
-        {h:1.88,a:2.52,len:2.72,rise:.72,bend:.34,r:.150},
-        {h:2.18,a:3.10,len:2.82,rise:.98,bend:-.28,r:.145},
-        {h:2.55,a:-2.48,len:2.57,rise:1.16,bend:.26,r:.137},
-        {h:2.77,a:-1.82,len:2.46,rise:1.28,bend:-.22,r:.127},
-        {h:2.08,a:.63,len:2.70,rise:.70,bend:-.33,r:.151},
-        {h:2.43,a:.08,len:2.92,rise:.92,bend:.31,r:.151},
-        {h:2.88,a:-.78,len:2.53,rise:1.20,bend:-.27,r:.132}
+        {h:1.62,a:2.52,len:2.72,rise:.72,bend:.42,r:.145},
+        {h:2.02,a:3.10,len:2.82,rise:.98,bend:-.34,r:.142},
+        {h:2.48,a:-2.48,len:2.57,rise:1.16,bend:.31,r:.134},
+        {h:2.94,a:-1.82,len:2.46,rise:1.28,bend:-.29,r:.124},
+        {h:1.88,a:.63,len:2.70,rise:.70,bend:-.40,r:.145},
+        {h:2.34,a:.08,len:2.92,rise:.92,bend:.38,r:.145},
+        {h:3.12,a:-.78,len:2.53,rise:1.20,bend:-.33,r:.129}
       ];
       const primaryPaths=[];
       for(let i=0;i<primarySpecs.length;i++){
@@ -519,9 +532,10 @@
       scene.add(maple);
       return maple;
     }
-    // V49 — BRANCHES FIRST: a complete exposed Japanese maple branch skeleton.
-    // Placement stays at the tested front-right location. Foliage will be added
-    // only after trunk, primary limbs, secondary branches and fine twigs are approved.
+    // V50 — NATURAL MAPLE WOOD: irregular taper, basal flare, bark grain and
+    // overlapping branch collars soften the trunk and limb junctions. Primary
+    // take-off heights are staggered further to avoid a single forked hub.
+    // Branch-first stage remains leaf-free; tested tree placement is unchanged.
     const momiji=createMomiji(3.02,4.72,.92);trees.push(momiji);
 
     // Main architectural landmark: open pavilion with curved eaves, columns and lanterns.
