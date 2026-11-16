@@ -413,8 +413,105 @@
       sideBrace.rotation.x=Math.sign(z)*.62;
       box(house,mat('#806047',.9),x,3.56,z,.205,.055,.205);
     }
-    const roofGeo=new THREE.ConeGeometry(5.2,1.55,4,1);roofGeo.rotateY(Math.PI/4);const roofMesh=new THREE.Mesh(roofGeo,roof);roofMesh.position.set(0,4.15,-.05);roofMesh.scale.set(1.05,1,.78);house.add(roofMesh);
-    const eave=box(house,roof,0,3.55,.05,8.3,.18,5.9);eave.rotation.x=-.035;
+    // V23 — TRADITIONAL HIPPED PAVILION ROOF.
+    // A long central ridge, four individually modelled roof planes and gently
+    // lifted eave corners replace the old pyramid cone and flat slab.
+    const roofTopY=5.08,roofEaveY=3.72,roofHalfX=4.15,roofHalfZ=2.95,roofRidgeHalfZ=1.34;
+    const roofCurveLift=.22;
+    function roofPoint(face,t,u,lift=0){
+      let x,y,z;
+      if(face==='left'||face==='right'){
+        const sign=face==='left'?-1:1;
+        x=sign*roofHalfX*t;
+        z=-roofRidgeHalfZ+u*(2*roofRidgeHalfZ+(roofHalfZ-roofRidgeHalfZ)*2*t);
+        const edgeY=roofEaveY+roofCurveLift*Math.pow(Math.abs(2*u-1),2);
+        y=roofTopY+(edgeY-roofTopY)*t+.035*Math.sin(Math.PI*u)*t;
+      }else{
+        const sign=face==='front'?1:-1;
+        x=(u*2-1)*roofHalfX*t;
+        z=sign*(roofRidgeHalfZ+(roofHalfZ-roofRidgeHalfZ)*t);
+        const edgeY=roofEaveY+roofCurveLift*Math.pow(Math.abs(2*u-1),2);
+        y=roofTopY+(edgeY-roofTopY)*t+.035*(1-Math.pow(2*u-1,2))*t;
+      }
+      return new THREE.Vector3(x,y+lift,z);
+    }
+    function roofFaceGeometry(face,rows=18,cols=24,offset=0){
+      const positions=[],indices=[];
+      for(let r=0;r<=rows;r++)for(let c=0;c<=cols;c++){
+        const p=roofPoint(face,r/rows,c/cols,offset);
+        positions.push(p.x,p.y,p.z);
+        if(r<rows&&c<cols){
+          const a=r*(cols+1)+c,b=a+1,d=(r+1)*(cols+1)+c,e=d+1;
+          indices.push(a,d,b,b,d,e);
+        }
+      }
+      const g=new THREE.BufferGeometry();
+      g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+      g.setIndex(indices);g.computeVertexNormals();return g;
+    }
+    const roofUnderMat=mat('#263a40',.82,.08);
+    const roofTileMats=[mat('#263b43',.72,.12),mat('#30464b',.78,.08)];
+    for(const face of ['left','right','front','back']){
+      const shell=new THREE.Mesh(roofFaceGeometry(face,24,32,-.025),roofUnderMat);
+      shell.material.side=THREE.DoubleSide;house.add(shell);
+    }
+    // Individually separated tile courses are combined into two lightweight meshes.
+    const tilePositions=[[],[]],tileIndices=[[],[]];
+    const tileRows=8,tileCols=10;
+    for(const face of ['left','right','front','back']){
+      for(let row=0;row<tileRows;row++)for(let col=0;col<tileCols;col++){
+        const t0=.075+row*.112,t1=t0+.095;
+        const u0=col/tileCols+.012,u1=(col+1)/tileCols-.012;
+        const shade=(row+col+(face==='right'?1:0))%4===0?1:0;
+        const verts=[roofPoint(face,t0,u0,.018),roofPoint(face,t1,u0,.018),
+          roofPoint(face,t1,u1,.018),roofPoint(face,t0,u1,.018)];
+        const arr=tilePositions[shade],idx=tileIndices[shade],base=arr.length/3;
+        for(const p of verts)arr.push(p.x,p.y,p.z);
+        idx.push(base,base+1,base+2,base,base+2,base+3);
+      }
+    }
+    for(let shade=0;shade<2;shade++){
+      const g=new THREE.BufferGeometry();
+      g.setAttribute('position',new THREE.Float32BufferAttribute(tilePositions[shade],3));
+      g.setIndex(tileIndices[shade]);g.computeVertexNormals();
+      const mesh=new THREE.Mesh(g,roofTileMats[shade]);mesh.material.side=THREE.DoubleSide;house.add(mesh);
+    }
+    // Deep timber fascia follows the four eaves; corner tips rise gently.
+    for(const x of [-4.12,4.12]){
+      const fascia=box(house,timber,x,3.79,0,.20,.25,5.92);
+      fascia.rotation.z=(x<0?1:-1)*.025;
+    }
+    for(const z of [-2.92,2.92]){
+      const fascia=box(house,timber,0,3.79,z,8.28,.25,.20);
+      fascia.rotation.x=(z<0?1:-1)*.025;
+    }
+    // Exposed rafters run beneath each roof plane from ridge toward the eaves.
+    function roofRafter(a,b,r=.052){
+      const start=new THREE.Vector3(a.x,a.y-.075,a.z),end=new THREE.Vector3(b.x,b.y-.075,b.z);
+      const direction=new THREE.Vector3().subVectors(end,start);
+      const beam=new THREE.Mesh(new THREE.CylinderGeometry(r,r,direction.length(),7),timber);
+      beam.position.copy(start).add(end).multiplyScalar(.5);
+      beam.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),direction.normalize());
+      house.add(beam);
+    }
+    for(const face of ['left','right','front','back']){
+      for(let i=0;i<=8;i++){
+        const u=.04+i*.115;
+        roofRafter(roofPoint(face,.035,u),roofPoint(face,.985,u),.043);
+      }
+    }
+    // A continuous ridge beam and segmented rounded ridge caps finish the crown.
+    box(house,timber,0,5.035,0,.24,.20,2.92);
+    for(let i=0;i<5;i++){
+      const cap=new THREE.Mesh(new THREE.CylinderGeometry(.145,.145,.66,10),roofTileMats[i%2]);
+      cap.rotation.x=Math.PI/2;cap.position.set(0,5.13,-1.32+i*.66);house.add(cap);
+    }
+    // Small upturned corner finials complete the Japanese roof silhouette.
+    for(const x of [-4.05,4.05])for(const z of [-2.82,2.82]){
+      const tip=new THREE.Mesh(new THREE.ConeGeometry(.105,.34,6),roofTileMats[0]);
+      tip.position.set(x,3.99,z);tip.rotation.z=x<0?-.28:.28;
+      tip.rotation.x=z<0?.20:-.20;house.add(tip);
+    }
     for(const x of [-3.4,3.4]){const lantern=new THREE.Group();lantern.position.set(x,2.5,2.35);const body=new THREE.Mesh(new THREE.BoxGeometry(.38,.5,.38),gold);lantern.add(body);const cap=new THREE.Mesh(new THREE.ConeGeometry(.34,.18,4),dark);cap.position.y=.34;lantern.add(cap);house.add(lantern);}
     // Foreground stepping stones and garden boulders.
     const stone=mat('#81918a');for(let i=0;i<7;i++){const s=new THREE.Mesh(new THREE.CylinderGeometry(.38,.45,.13,8),stone);s.position.set(-2.5+i*.78,.02,3.1+Math.sin(i*.8)*.25);s.rotation.y=i*.3;scene.add(s);}
@@ -611,4 +708,14 @@
    to suggest lantern reflections without a costly real-time reflection render pass.
    Existing water geometry, pavilion architecture, Shoji interaction, camera, forecast
    UI, Location privacy boundary and Stacks feature lifecycle are preserved.
+*/
+
+
+/* LE-WEATHER-PAVILION-ROOF-ARCHITECTURE-V23
+   Replaced the simple cone roof and flat eave slab with a four-plane hipped roof:
+   long central ridge, gently lifted eave corners, separated charcoal tile courses,
+   deep timber fascia, exposed underside rafters, segmented ridge caps and small
+   upturned corner finials. Roof footprint and overall pavilion/camera composition
+   are retained. Shoji doors, interior, supports, deck, stairs, rails, lighting,
+   water, weather systems, forecast UI and Location privacy boundary are untouched.
 */
