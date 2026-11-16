@@ -262,6 +262,23 @@
       frontLeaf.userData.closedX=cx;
       frontLeaf.userData.openX=i===1?-5.9/2+bayWidth*.5:i===2?5.9/2-bayWidth*.5:cx;
       frontLeaf.userData.doorIndex=i;
+      // Small bronze-toned recessed finger pulls sit near each leaf's meeting edge.
+      // They move with the Shoji leaf and remain understated at the pavilion's viewing scale.
+      const pullX=(i<2?1:-1)*(bayWidth/2-.13);
+      const pullOuter=new THREE.Mesh(
+        new THREE.CylinderGeometry(.072,.072,.026,16),
+        mat('#8b7048',.48,.52)
+      );
+      pullOuter.rotation.x=Math.PI/2;
+      pullOuter.position.set(pullX,wallMid,.075);
+      frontLeaf.add(pullOuter);
+      const pullInset=new THREE.Mesh(
+        new THREE.CylinderGeometry(.043,.043,.029,16),
+        mat('#302d27',.62,.22)
+      );
+      pullInset.rotation.x=Math.PI/2;
+      pullInset.position.set(pullX,wallMid,.091);
+      frontLeaf.add(pullInset);
       shojiDoors.push(frontLeaf);
       frontShojiPanel(house,cx,bayWidth,-1.82); // fixed rear Shoji bays
     }
@@ -337,7 +354,15 @@
     }
     // Preserve the original upper timber beam and all four corner posts.
     box(house,timber,0,3.55,0,7.5,.22,5.2);
-    for(const x of [-3.15,3.15])for(const z of [-1.85,1.85])box(house,timber,x,2.5,z,.18,2.25,.18);
+    for(const x of [-3.15,3.15])for(const z of [-1.85,1.85]){
+      box(house,timber,x,2.5,z,.18,2.25,.18);
+      // Traditional diagonal knee-brace tying each post into the upper frame.
+      const brace=box(house,timber,x-Math.sign(x)*.25,3.27,z,.115,.52,.115);
+      brace.rotation.z=-Math.sign(x)*.62;
+      const sideBrace=box(house,timber,x,3.27,z-Math.sign(z)*.25,.115,.52,.115);
+      sideBrace.rotation.x=Math.sign(z)*.62;
+      box(house,mat('#806047',.9),x,3.56,z,.205,.055,.205);
+    }
     const roofGeo=new THREE.ConeGeometry(5.2,1.55,4,1);roofGeo.rotateY(Math.PI/4);const roofMesh=new THREE.Mesh(roofGeo,roof);roofMesh.position.set(0,4.15,-.05);roofMesh.scale.set(1.05,1,.78);house.add(roofMesh);
     const eave=box(house,roof,0,3.55,.05,8.3,.18,5.9);eave.rotation.x=-.035;
     for(const x of [-3.4,3.4]){const lantern=new THREE.Group();lantern.position.set(x,2.5,2.35);const body=new THREE.Mesh(new THREE.BoxGeometry(.38,.5,.38),gold);lantern.add(body);const cap=new THREE.Mesh(new THREE.ConeGeometry(.34,.18,4),dark);cap.position.y=.34;lantern.add(cap);house.add(lantern);}
@@ -517,4 +542,13 @@
    for pointerup (completed touch) rather than pointerdown, and the canvas uses
    touch-action:manipulation with explicit pointer targeting. No visible door
    controls or pavilion geometry were added; direct touch remains the only control.
+*/
+
+
+/* LE-WEATHER-PAVILION-FINISHING-DETAILS-V21
+   Added subtle bronze-toned recessed finger pulls to all four front Shoji leaves,
+   so the hardware moves with each sliding panel. Added restrained diagonal timber
+   knee-braces and small post-cap joinery collars beneath the existing upper frame.
+   No dimensions or geometry were changed to the foundation, supports, beams, deck,
+   stairs, rails, wall layout, roof, scenery, camera, Weather UI or door interaction.
 */
