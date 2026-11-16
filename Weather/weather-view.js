@@ -587,6 +587,42 @@
         }
       }
 
+      // V66 — CONTINUOUS LAYERED MAPLE CROWN.
+      // Add a new fine-ramification network through open canopy volume.
+      // All V65 branches and foliage remain untouched; these are additional
+      // boughs, forks and leaf sprays, distributed across front/back and height.
+      const crownBoughPaths=[];
+      const crownTwigPaths=[];
+      const crownAnchorSpecs=[
+        ...primaryPaths.map((entry,i)=>({path:entry.path,t:[.34,.56,.76][i%3],tier:'primary',i})),
+        ...secondaryPaths.filter((entry,i)=>i%3===1).map((entry,i)=>({path:entry.path,t:[.38,.62,.82][i%3],tier:'secondary',i}))
+      ];
+      for(let i=0;i<18;i++){
+        const anchor=crownAnchorSpecs[(i*5+2)%crownAnchorSpecs.length];
+        const origin=pointAt(anchor.path,anchor.t);
+        const tangent=tangentAt(anchor.path,anchor.t);
+        const base=horizontalAngle(tangent);
+        const side=(i%2===0?1:-1);
+        const azimuth=base+side*(.54+(i%4)*.23)+signed()*.18;
+        const length=.68+rand()*.40;
+        const rise=[.36,.12,-.08,.28,.48,-.18][i%6]+signed()*.08;
+        const bend=signed()*.24;
+        const bough=growBranch(origin,azimuth,length,rise,bend,
+          .017+rand()*.004,3,11,.14);
+        crownBoughPaths.push(bough);
+        // Fine twigs fan from each new bough at unequal positions.
+        for(let j=0;j<2;j++){
+          const t=j===0?.48:.79;
+          const twigOrigin=pointAt(bough,t);
+          const twigTangent=tangentAt(bough,t);
+          const twigAngle=horizontalAngle(twigTangent)+(j===0?-.92:.86)+signed()*.18;
+          const twigRise=(j===0?.20:-.12)+signed()*.12;
+          const twig=growBranch(twigOrigin,twigAngle,.34+rand()*.22,twigRise,
+            signed()*.12,.0075+rand()*.0018,4,8,.18);
+          crownTwigPaths.push(twig);
+        }
+      }
+
       const geometry=new THREE.BufferGeometry();
       geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
       geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
@@ -716,6 +752,18 @@
         for(let i=0;i<canopyFillTwigPaths.length;i++)
           addLeafCluster(canopyFillTwigPaths[i],.86,4,i+6);
 
+        // Layered crown sprays: distribute compact clusters along the new
+        // boughs and their fine twigs, not just at branch tips.
+        for(let i=0;i<crownBoughPaths.length;i++){
+          addLeafCluster(crownBoughPaths[i],.34,4,i+2);
+          addLeafCluster(crownBoughPaths[i],.68,4,i+2);
+          addLeafCluster(crownBoughPaths[i],.94,4,i+2);
+        }
+        for(let i=0;i<crownTwigPaths.length;i++){
+          addLeafCluster(crownTwigPaths[i],.62,4,i+5);
+          addLeafCluster(crownTwigPaths[i],.94,4,i+5);
+        }
+
         // One compact cluster per secondary bough, two on each tertiary limb.
         for(let i=0;i<secondaryPaths.length;i++)
           addLeafCluster(secondaryPaths[i].path,.88,4,i+1);
@@ -769,6 +817,8 @@
       maple.userData.leafCount=renderedLeafCount;
       maple.userData.leafShapeCount=leafShapeCount;
       maple.userData.leafShapeInstances=leafShapeInstances;
+      maple.userData.crownBoughs=crownBoughPaths.length;
+      maple.userData.crownFineTwigs=crownTwigPaths.length;
       maple.userData.canopyFillBoughs=canopyFillPaths.length;
       maple.userData.canopyFillTwigs=canopyFillTwigPaths.length;
       maple.userData.branchPathCount=pathCount+canopyFillPaths.length+canopyFillTwigPaths.length;
