@@ -1,20 +1,13 @@
-# Weather 3D — Square World Composition v5
+# Weather 3D — Square World Composition v6
 
-## Revert
+## Reversion to the approved centre anchor
 
-- Remove the experimental 30% Landscape canvas translation.
+- Remove the Landscape-only 30vw canvas shift.
+- Remove the Landscape-only camera target offset.
 - Revert the 30-degree horizontal camera orbit.
-- Restore the V2 front-facing camera position `(0, 9.55, 27.7)`.
-- Keep camera target height/depth `(?, 2.5, -1.4)` and FOV `42°`.
-
-## New framing experiment
-
-- Keep the 1:1 canvas at the display centre in every orientation.
-- Keep the house fixed at the centre of the square world.
-- Portrait camera target remains `(0, 2.5, -1.4)`.
-- Landscape shifts only the camera look target right, so the stationary house appears toward the left side of the display.
-- Target offset is calculated to approximate a 30%-of-screen-width composition shift, scaled for the square canvas dimensions and camera field of view.
-- Camera position and camera-to-world geometry are not translated; no black strip can be introduced by moving the canvas.
+- Restore the approved V2 front-facing camera: position `(0, 9.55, 27.7)`, target `(0, 2.5, -1.4)`, FOV `42°`.
+- Keep the square canvas `100vmax × 100vmax`, centred on the display in both orientations.
+- Keep the house at the centre of the square world.
 
 ## Preserved systems
 
@@ -22,4 +15,4 @@ Scene geometry, weather animation, forecasts, Open-Meteo data, Location permissi
 
 ## Upgrade behaviour
 
-The service-worker extension upgrades cached V1–V4 camera variants. It removes the old Landscape CSS translation, restores the centred square canvas, resets the 30-degree orbit, and applies the Landscape-only look-target offset. The patch is idempotent and guarded.
+The service-worker extension upgrades cached V1–V5 variants, removes the old Landscape CSS translation, removes the camera target offset, and restores the exact V2 camera framing. The patch is idempotent and guarded.
