@@ -1,25 +1,19 @@
-# Weather 3D — Forecast Controls Toggle v19
+# Weather 3D — Forecast Controls Toggle Interaction Fix v20
 
 ## Floating controls toggle
-- Add a compact 42px circular floating button at the lower-right of the Weather view, positioned above the existing feature dock and respecting the device safe-area inset.
-- The button toggles the forecast controls as one group:
-  - Today / 7 Days range selector
-  - Weather scene selector
-  - Forecast section heading
-  - Hourly forecast cards
-  - Seven-day forecast rows
-- The default state remains expanded so the current Weather view opens exactly as before.
-- When collapsed, the temperature/condition header, weather metrics, status text, 3D scene, feature dock and navigation remain visible.
-- The button updates its chevron, accessible label and `aria-expanded` state on each toggle.
+- Preserve the compact 42px circular floating toggle at the lower-right of the Weather view, above the existing feature dock and respecting the safe-area inset.
+- Explicitly set `pointer-events: auto` on the button. The parent `.wx2-ui` intentionally uses `pointer-events: none`, so the toggle must opt back in to receive taps.
+- The button hides/restores only the forecast toolbar, range selector, scene selector, section heading, hourly cards and seven-day rows.
+- Temperature, condition, metrics, status, 3D scenery and feature dock remain visible.
+- The toggle retains its click handler, chevron update, accessible label and `aria-expanded` state.
 
 ## Approved composition lock
 - Preserve the V18 pavilion orientation: 15 degrees counter-clockwise from original (`rotation.y = -15°`).
 - Preserve Mount Fuji height (`0.54` vertical scale), rightward position (`x = +3.75`), depth (`z = -64`) and grounded origin (`y = 6.048`).
 - Preserve the three continuous rolling ridges and lowered distant dark-green ridge.
 - Preserve the approved front-facing camera: position `(0, 7.0, 27.7)`, target `(0, 2.5, -1.4)`, FOV `42°`.
-- Do not alter weather data, forecast generation, Location permission flow, weather effects, pavilion geometry, trees, water or feature lifecycle.
+- No weather data, forecast, location permission, weather effects, pavilion geometry, trees, water or feature lifecycle changes.
 
 ## Upgrade and verification
-- The service-worker extension upgrades an already-transformed V18 Weather module by adding the toggle markup, scoped CSS and click handler.
-- The controls begin expanded; tapping the floating button hides or restores only the requested forecast controls.
-- The transformed module is returned only after checks confirm the toggle markup, collapsed-state selectors, click handler, approved Fuji, pavilion rotation, hills and camera.
+- The service-worker extension upgrades an already-transformed V19 Weather module by adding explicit pointer interaction to the floating toggle.
+- Runtime verification confirms the V19-to-V20 patch retains the button markup and click handler and adds the pointer-events correction.

@@ -1,4 +1,4 @@
-/* LIVE // EARTH — Weather V19 forecast controls toggle.
+/* LIVE // EARTH — Weather V20 toggle pointer interaction fix.
  * Preserves the approved front-facing camera and square canvas.
  * Reduces rear hills by 45% and Mount Fuji by 40%, keeping Fuji grounded.
  */
@@ -13,7 +13,7 @@
   const sceneMarker = 'LE-WEATHER-FUJI-GARDEN-V2';
   const hillsMarker = 'LE-WEATHER-HILLS-HEIGHT-55-V2';
   const fujiMarker = 'LE-WEATHER-FUJI-HEIGHT-54-V3';
-  const versionMarker = 'LE-WEATHER-SCENERY-V19';
+  const versionMarker = 'LE-WEATHER-SCENERY-V20';
 
   const originalCanvasRule =
     '.le-weather-v2 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:pan-y}';
@@ -230,6 +230,15 @@
       changed = true;
     }
 
+
+    // V20: .wx2-ui intentionally ignores pointer input; opt the floating button back in.
+    const toggleCssBefore = '.wx2-control-toggle{position:absolute;';
+    const toggleCssAfter = '.wx2-control-toggle{pointer-events:auto;position:absolute;';
+    if (updated.includes(toggleCssBefore) && !updated.includes(toggleCssAfter)) {
+      updated = updated.replace(toggleCssBefore, toggleCssAfter);
+      changed = true;
+    }
+
     if (!changed) return null;
     const hasFuji = updated.includes(`fujiGroup.userData.refinement='${fujiMarker}'`) &&
       updated.includes('fujiGroup.scale.y=.54') &&
@@ -238,7 +247,7 @@
     const hasCamera = updated.includes(frontResize) && updated.includes(cameraMarker);
     const hasTrees = updated.includes('const treeLayout=');
     const hasHouseRotation = updated.includes('house.rotation.y=-15*Math.PI/180') && updated.includes('LE-WEATHER-PAVILION-ROTATION-CCW-15-V1');
-    const hasControlsToggle = updated.includes('wx2-control-toggle') && updated.includes('wx2-controls-collapsed') && updated.includes('const controlsToggle=screen.querySelector');
+    const hasControlsToggle = updated.includes('wx2-control-toggle') && updated.includes('wx2-controls-collapsed') && updated.includes('const controlsToggle=screen.querySelector') && updated.includes('.wx2-control-toggle{pointer-events:auto;position:absolute;');
     if (!hasFuji || !hasHills || !hasCamera || !hasTrees || !hasHouseRotation || !hasControlsToggle ||
         updated.includes('left:calc(50% - 30vw)')) return null;
     return updated + `\n/* ${versionMarker} */\n`;
@@ -266,7 +275,7 @@
     if(response.ok){
       const source=await response.clone().text();
       if(!source.includes(versionMarker))
-        console.error('[LIVE // EARTH] Weather V19 forecast controls transform did not match; original Weather response preserved.');
+        console.error('[LIVE // EARTH] Weather V20 toggle interaction transform did not match; original Weather response preserved.');
     }
     return response;
   };
