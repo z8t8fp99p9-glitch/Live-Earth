@@ -1,5 +1,5 @@
 /* LE-WEATHER-MAPLE-DIRECT-TRIANGLE-FOLIAGE-V57 */
-/* LE-WEATHER-MAPLE-FOLIAGE-MERGED-MESH-V56
+/* LE-WEATHER-MAPLE-FOLIAGE-CAMERA-FACING-V58
    Replaces InstancedMesh foliage with one merged BufferGeometry/Mesh. Each
    leaf retains its own silhouette, transform and autumn vertex tint. This
    removes instancing as a possible device/runtime failure point and reduces
@@ -547,7 +547,7 @@
       let renderedLeafCount=0;
       let leafShapeCount=0;
       let leafShapeInstances=[];
-      // V57 — DIRECT TRIANGLE FOLIAGE.
+      // V58 — CAMERA-FACING DIRECT TRIANGLE FOLIAGE.
       // Avoid ShapeGeometry, toNonIndexed and InstancedMesh entirely. Each
       // maple leaf is triangulated as a small centre fan and written directly
       // into one BufferGeometry. MeshBasicMaterial keeps foliage visible under
@@ -566,17 +566,26 @@
         const foliagePositions=[];
         const foliageColors=[];
         leafShapeInstances=leafShapes.map(()=>0);
-        const up=new THREE.Vector3(0,1,0);
+        // Leaves must face the actual pavilion camera, not lie flat in the
+        // horizontal plane. The old cross(axis, world-up) basis made most
+        // near-horizontal twig leaves edge-on from the front camera.
+        // This view vector follows the renderer's front-facing camera (+Z)
+        // with a small upward component; each leaf keeps natural roll variation.
+        const viewDirection=new THREE.Vector3(0,.20,1).normalize();
+        const worldUp=new THREE.Vector3(0,1,0);
         const fallbackAxis=new THREE.Vector3(1,0,0);
         function emitLeaf(path,t,shapeIndex,size,tintHex){
           const origin=pointAt(path,t);
           const tangent=tangentAt(path,t);
           const axis=tangent.clone().add(new THREE.Vector3(signed()*.30,.12+signed()*.24,signed()*.30)).normalize();
-          let side=new THREE.Vector3().crossVectors(axis,up);
+          let side=new THREE.Vector3().crossVectors(axis,viewDirection);
+          if(side.lengthSq()<.0001)side.crossVectors(axis,worldUp);
           if(side.lengthSq()<.0001)side.crossVectors(axis,fallbackAxis);
           side.normalize();
           let normal=new THREE.Vector3().crossVectors(side,axis).normalize();
-          const roll=signed()*.72, cr=Math.cos(roll), sr=Math.sin(roll);
+          // Keep the leaf plane broadly camera-facing while allowing a restrained
+          // +/- 22 degree natural twist so the canopy does not look like a flat card.
+          const roll=signed()*.38, cr=Math.cos(roll), sr=Math.sin(roll);
           const rolledSide=side.clone().multiplyScalar(cr).addScaledVector(normal,sr);
           const rolledNormal=normal.clone().multiplyScalar(cr).addScaledVector(side,-sr);
           const outline=leafShapes[shapeIndex];
@@ -628,7 +637,7 @@
           vertexColors:true,side:THREE.DoubleSide,transparent:false
         });
         const foliage=new THREE.Mesh(foliageGeometry,foliageMaterial);
-        foliage.name='MomijiDirectTriangleFoliageV57';
+        foliage.name='MomijiCameraFacingTriangleFoliageV58';
         foliage.frustumCulled=false;
         foliage.castShadow=false;
         foliage.receiveShadow=false;
@@ -641,7 +650,7 @@
       maple.position.set(x,0,z);
       maple.scale.setScalar(scale);
       maple.userData.isMomiji=true;
-      maple.userData.stage=renderedLeafCount?'six-shape-maple-foliage-v57':'branch-skeleton-fallback';
+      maple.userData.stage=renderedLeafCount?'six-shape-maple-foliage-v58':'branch-skeleton-fallback';
       maple.userData.foliageError=foliageError;
       maple.userData.branchCount={
         trunk:1,
