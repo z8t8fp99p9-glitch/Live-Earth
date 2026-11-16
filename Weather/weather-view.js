@@ -173,97 +173,355 @@
     // pavilion from the right and remains independent of the house geometry.
     function createMomiji(x,z,scale=1){
       const maple=new THREE.Group();
-      const barkMats=['#30251f','#493126','#5a3a29'].map(c=>mat(c,.96));
-      const branchMaterial=barkMats[1];
-      const barkDark=barkMats[0];
-      const barkLight=barkMats[2];
-      const branch=(a,b,r1,r2,material=branchMaterial)=>{
-        const start=new THREE.Vector3(...a),end=new THREE.Vector3(...b);
-        const direction=new THREE.Vector3().subVectors(end,start),length=direction.length();
-        const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r2,r1,length,7),material);
-        mesh.position.copy(start).add(end).multiplyScalar(.5);
-        mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),direction.normalize());
-        maple.add(mesh);return mesh;
-      };
-      // Slightly leaning, tapered trunk assembled from connected curved sections.
-      const trunkPoints=[[0,0,0],[-.10,.82,0],[-.02,1.68,.02],[.18,2.48,.04],[.34,3.28,.02]];
-      for(let i=0;i<trunkPoints.length-1;i++)
-        branch(trunkPoints[i],trunkPoints[i+1],.31-i*.052,.255-i*.052,i<2?barkDark:branchMaterial);
-      // Five major limbs spread laterally and rise into the crown.
-      const limbs=[
-        [[.08,1.72,.02],[-1.15,3.05,.10],.19,.105],
-        [[.14,2.12,.02],[-2.05,3.72,-.12],.145,.075],
-        [[.20,2.35,.04],[-.95,4.42,.24],.12,.055],
-        [[.20,2.30,.04],[1.18,3.35,.12],.16,.085],
-        [[.27,2.65,.02],[2.05,3.88,-.10],.13,.065],
-        [[.30,2.90,.02],[1.10,4.62,.22],.105,.05],
-        [[.32,3.10,.02],[-.05,4.82,.04],.10,.045]
-      ];
-      for(const [a,b,r1,r2] of limbs)branch(a,b,r1,r2);
-      // Fine secondary twigs make the branching visible through the leaves.
-      const twigs=[
-        [[-1.15,3.05,.10],[-1.78,3.55,.28]], [[-1.15,3.05,.10],[-.92,3.78,-.18]],
-        [[-2.05,3.72,-.12],[-2.52,4.12,.02]], [[-.95,4.42,.24],[-1.42,4.92,.35]],
-        [[1.18,3.35,.12],[1.78,3.72,.28]], [[1.18,3.35,.12],[.88,4.02,-.22]],
-        [[2.05,3.88,-.10],[2.55,4.30,.02]], [[1.10,4.62,.22],[1.55,5.12,.34]],
-        [[-.05,4.82,.04],[-.48,5.35,-.12]], [[-.05,4.82,.04],[.38,5.38,.20]]
-      ];
-      for(let i=0;i<twigs.length;i++)branch(twigs[i][0],twigs[i][1],.062,.022,i%3===0?barkLight:branchMaterial);
-
-      // One maple-leaf silhouette is instanced in three natural autumn tones.
-      const leafShape=new THREE.Shape();
-      leafShape.moveTo(0,-.48);leafShape.lineTo(-.075,-.18);leafShape.lineTo(-.29,-.29);
-      leafShape.lineTo(-.22,-.045);leafShape.lineTo(-.48,.035);leafShape.lineTo(-.22,.15);
-      leafShape.lineTo(-.30,.40);leafShape.lineTo(-.065,.29);leafShape.lineTo(0,.53);
-      leafShape.lineTo(.065,.29);leafShape.lineTo(.30,.40);leafShape.lineTo(.22,.15);
-      leafShape.lineTo(.48,.035);leafShape.lineTo(.22,-.045);leafShape.lineTo(.29,-.29);
-      leafShape.lineTo(.075,-.18);leafShape.closePath();
-      const leafGeometry=new THREE.ShapeGeometry(leafShape,1);
-      const leafMaterials=[
-        new THREE.MeshStandardMaterial({color:'#a91f2d',roughness:.94,side:THREE.DoubleSide,emissive:'#31060a',emissiveIntensity:.08}),
-        new THREE.MeshStandardMaterial({color:'#d42c36',roughness:.92,side:THREE.DoubleSide,emissive:'#3d080b',emissiveIntensity:.07}),
-        new THREE.MeshStandardMaterial({color:'#ef493c',roughness:.9,side:THREE.DoubleSide,emissive:'#4b1008',emissiveIntensity:.06}),
-        new THREE.MeshStandardMaterial({color:'#b9472d',roughness:.95,side:THREE.DoubleSide,emissive:'#351006',emissiveIntensity:.06})
-      ];
-      // Six overlapping, asymmetrical foliage masses create a natural maple crown.
-      const crown=[
-        [-1.48,4.52,.02,1.18,.92,.86],[-.42,5.18,.10,1.28,1.02,.92],
-        [.82,4.92,-.02,1.30,1.02,.92],[1.82,4.43,-.06,1.05,.88,.82],
-        [-.98,5.72,-.10,.92,.78,.76],[.72,5.78,.08,1.02,.82,.78],
-        [.08,4.38,.18,1.25,.82,.92]
-      ];
-      let seed=0x4d4f4d;
+      // Deterministic seed keeps the tree stable across weather previews and reloads.
+      let seed=0x4d4f4d49;
       const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
-      const leavesPerTone=245;
-      for(let tone=0;tone<leafMaterials.length;tone++){
-        const mesh=new THREE.InstancedMesh(leafGeometry,leafMaterials[tone],leavesPerTone);
-        const dummy=new THREE.Object3D();
-        for(let i=0;i<leavesPerTone;i++){
-          const c=crown[Math.floor(rand()*crown.length)];
-          const az=rand()*Math.PI*2,rad=Math.cbrt(rand());
-          const spreadX=Math.cos(az)*rad,spreadZ=Math.sin(az)*rad;
-          dummy.position.set(c[0]+spreadX*c[3],c[1]+(rand()*2-1)*rad*c[4],c[2]+spreadZ*c[5]);
-          dummy.rotation.set((rand()-.5)*2.5,(rand()-.5)*Math.PI*2,(rand()-.5)*2.8);
-          const size=.72+rand()*.72;
-          dummy.scale.set(.19*size,.24*size,.055);
-          dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);
+      const signed=()=>rand()*2-1;
+      const up=new THREE.Vector3(0,1,0);
+
+      // Research-guided crown envelope: attractor points describe a broad,
+      // slightly asymmetrical Japanese-maple crown and guide branch endpoints.
+      // This is an attraction-guided growth field, not a generic spherical canopy.
+      const attractors=[];
+      for(let i=0;i<960;i++){
+        const vertical=rand()*2-1;
+        const angle=rand()*Math.PI*2;
+        const radial=Math.cbrt(rand())*Math.sqrt(Math.max(.001,1-vertical*vertical));
+        attractors.push(new THREE.Vector3(
+          .13+Math.cos(angle)*2.72*radial+.08*vertical,
+          4.55+vertical*1.34*radial,
+          .035+Math.sin(angle)*1.68*radial
+        ));
+      }
+      const usedAttractors=new Set();
+      function takeAttractor(origin,direction,minDistance,maxDistance,preferredY){
+        const aim=direction.clone().normalize();
+        const middle=(minDistance+maxDistance)*.5;
+        let best=-1,bestScore=Infinity;
+        for(let i=0;i<attractors.length;i++){
+          if(usedAttractors.has(i))continue;
+          const delta=attractors[i].clone().sub(origin);
+          const distance=delta.length();
+          if(distance<minDistance||distance>maxDistance)continue;
+          const alignment=delta.normalize().dot(aim);
+          if(alignment<-.05)continue;
+          const score=Math.abs(distance-middle)*.28+
+            (1-alignment)*.78+
+            Math.abs(attractors[i].y-preferredY)*.13+
+            rand()*.035;
+          if(score<bestScore){best=i;bestScore=score;}
         }
+        if(best>=0){
+          usedAttractors.add(best);
+          return attractors[best].clone();
+        }
+        return origin.clone().addScaledVector(aim,middle);
+      }
+
+      // One merged tapered-tube mesh carries the trunk, limbs and fine twigs.
+      // This keeps the denser botanical skeleton to a single bark draw call.
+      const branchPositions=[],branchColors=[],branchIndices=[];
+      const barkTones=['#30231d','#493126','#60432e','#3b2a22'].map(c=>new THREE.Color(c));
+      const radialSegments=7;
+      function addTubeSegment(a,b,radiusA,radiusB,tone=1){
+        const axis=new THREE.Vector3().subVectors(b,a);
+        if(axis.lengthSq()<1e-8)return;
+        const length=axis.length();
+        axis.normalize();
+        const reference=Math.abs(axis.y)>.92?new THREE.Vector3(1,0,0):up;
+        const u=new THREE.Vector3().crossVectors(axis,reference).normalize();
+        const v=new THREE.Vector3().crossVectors(axis,u).normalize();
+        const base=branchPositions.length/3;
+        const bark=barkTones[tone%barkTones.length];
+        const grain=.94+rand()*.12;
+        for(let i=0;i<=radialSegments;i++){
+          const angle=i/radialSegments*Math.PI*2;
+          const nx=u.x*Math.cos(angle)+v.x*Math.sin(angle);
+          const ny=u.y*Math.cos(angle)+v.y*Math.sin(angle);
+          const nz=u.z*Math.cos(angle)+v.z*Math.sin(angle);
+          branchPositions.push(
+            a.x+nx*radiusA,a.y+ny*radiusA,a.z+nz*radiusA,
+            b.x+nx*radiusB,b.y+ny*radiusB,b.z+nz*radiusB
+          );
+          const light=grain*(.91+.09*Math.cos(angle*2+tone));
+          for(let ring=0;ring<2;ring++)
+            branchColors.push(bark.r*light,bark.g*light,bark.b*light);
+          if(i<radialSegments){
+            const p=base+i*2,q=p+1,r=p+2,s=p+3;
+            branchIndices.push(p,r,q,q,r,s);
+          }
+        }
+      }
+      function addBranchPath(points,radius,tipRatio=.28,tone=1){
+        for(let i=0;i<points.length-1;i++){
+          const t0=i/(points.length-1),t1=(i+1)/(points.length-1);
+          const taper=t=>radius*(1-(1-tipRatio)*Math.pow(t,.88));
+          addTubeSegment(points[i],points[i+1],taper(t0),taper(t1),tone);
+        }
+      }
+      function cubicPath(start,end,bend,steps){
+        const direction=end.clone().sub(start);
+        const side=new THREE.Vector3(-direction.z,0,direction.x);
+        if(side.lengthSq()<1e-5)side.set(1,0,0);
+        side.normalize();
+        const c1=start.clone().addScaledVector(direction,.31)
+          .add(new THREE.Vector3(0,.13+bend*.18,0))
+          .addScaledVector(side,bend);
+        const c2=start.clone().addScaledVector(direction,.73)
+          .add(new THREE.Vector3(0,.09+bend*.10,0))
+          .addScaledVector(side,-bend*.42);
+        const points=[];
+        for(let i=0;i<=steps;i++){
+          const t=i/steps,q=1-t;
+          points.push(new THREE.Vector3(
+            q*q*q*start.x+3*q*q*t*c1.x+3*q*t*t*c2.x+t*t*t*end.x,
+            q*q*q*start.y+3*q*q*t*c1.y+3*q*t*t*c2.y+t*t*t*end.y,
+            q*q*q*start.z+3*q*q*t*c1.z+3*q*t*t*c2.z+t*t*t*end.z
+          ));
+        }
+        return points;
+      }
+      function smoothPath(points,stepsPerSpan=5){
+        const result=[];
+        for(let i=0;i<points.length-1;i++){
+          const p0=points[Math.max(0,i-1)],p1=points[i];
+          const p2=points[i+1],p3=points[Math.min(points.length-1,i+2)];
+          for(let j=0;j<stepsPerSpan;j++){
+            const t=j/stepsPerSpan,t2=t*t,t3=t2*t;
+            const sample=new THREE.Vector3();
+            for(const key of ['x','y','z']){
+              sample[key]=.5*((2*p1[key])+(-p0[key]+p2[key])*t+
+                (2*p0[key]-5*p1[key]+4*p2[key]-p3[key])*t2+
+                (-p0[key]+3*p1[key]-3*p2[key]+p3[key])*t3);
+            }
+            result.push(sample);
+          }
+        }
+        result.push(points[points.length-1].clone());
+        return result;
+      }
+      const leafSites=[];
+      const trunkControls=[
+        new THREE.Vector3(0,.02,0),
+        new THREE.Vector3(-.10,.62,.025),
+        new THREE.Vector3(-.15,1.24,.035),
+        new THREE.Vector3(-.055,1.91,.025),
+        new THREE.Vector3(.14,2.57,.055),
+        new THREE.Vector3(.28,3.16,.045),
+        new THREE.Vector3(.34,3.52,.08)
+      ];
+      const trunkPath=smoothPath(trunkControls,5);
+      addBranchPath(trunkPath,.345,.27,0);
+      function trunkAt(height){
+        for(let i=0;i<trunkPath.length-1;i++){
+          const a=trunkPath[i],b=trunkPath[i+1];
+          if(height>=a.y&&height<=b.y){
+            const t=(height-a.y)/Math.max(.0001,b.y-a.y);
+            return a.clone().lerp(b,t);
+          }
+        }
+        return trunkPath[Math.min(trunkPath.length-1,Math.max(0,Math.round(height/3.52*(trunkPath.length-1))))].clone();
+      }
+      // Low buttress roots flare from the trunk so the tree feels planted.
+      for(let i=0;i<6;i++){
+        const angle=i*Math.PI/3+.18;
+        const end=new THREE.Vector3(Math.cos(angle)*.54,.025,Math.sin(angle)*.40);
+        const start=new THREE.Vector3(-.035,.28,.01);
+        const path=cubicPath(start,end,.10,4);
+        addBranchPath(path,.095,.26,0);
+      }
+      // A central leader rises through the crown; broad lateral branches form
+      // the spreading architecture typical of the upright Japanese-maple form.
+      const leaderEnd=takeAttractor(trunkPath[trunkPath.length-1],
+        new THREE.Vector3(.08,1,.04),.85,2.2,5.52);
+      const leaderPath=cubicPath(trunkPath[trunkPath.length-1],leaderEnd,.12,7);
+      addBranchPath(leaderPath,.105,.30,1);
+      leafSites.push({position:leaderEnd,level:2});
+
+      // Twelve primary limbs depart at different heights and azimuths.
+      // Each grows two secondary arms; each secondary arm divides into fine twigs.
+      const primaryCount=12;
+      for(let i=0;i<primaryCount;i++){
+        const angle=i*(Math.PI*2/primaryCount)+.17+signed()*.10;
+        const height=[1.48,1.73,2.02,2.31,2.62,2.82][i%6]+signed()*.07;
+        const start=trunkAt(height);
+        const radial=new THREE.Vector3(Math.cos(angle),0,Math.sin(angle));
+        const desired=radial.clone().multiplyScalar(.92)
+          .add(new THREE.Vector3(0,.28+rand()*.30,0));
+        const target=takeAttractor(start,desired,1.25,3.30,3.65+rand()*1.85);
+        const primary=cubicPath(start,target,.18+rand()*.16,7);
+        addBranchPath(primary,.158+rand()*.018,.34,1);
+        leafSites.push({position:target,level:1});
+
+        for(let j=0;j<2;j++){
+          const splitT=j===0?.43:.74;
+          const splitIndex=Math.round(splitT*(primary.length-1));
+          const origin=primary[splitIndex];
+          const tangent=primary[Math.min(primary.length-1,splitIndex+1)]
+            .clone().sub(primary[Math.max(0,splitIndex-1)]).normalize();
+          const outward=new THREE.Vector3(origin.x,.0,origin.z);
+          if(outward.lengthSq()<.05)outward.copy(radial);
+          outward.normalize();
+          const side=new THREE.Vector3(-tangent.z,0,tangent.x).normalize();
+          const sign=j===0?-1:1;
+          const secondaryDirection=outward.multiplyScalar(.70)
+            .addScaledVector(tangent,.24)
+            .add(new THREE.Vector3(0,.24+rand()*.26,0))
+            .addScaledVector(side,sign*(.18+rand()*.10));
+          const secondaryTarget=takeAttractor(origin,secondaryDirection,.70,1.72,3.75+rand()*1.55);
+          const secondary=cubicPath(origin,secondaryTarget,.13+rand()*.10,5);
+          addBranchPath(secondary,.082+rand()*.012,.31,2);
+          leafSites.push({position:secondaryTarget,level:2});
+
+          for(let k=0;k<2;k++){
+            const twigT=k===0?.56:.84;
+            const twigIndex=Math.round(twigT*(secondary.length-1));
+            const twigStart=secondary[twigIndex];
+            const twigTangent=secondary[Math.min(secondary.length-1,twigIndex+1)]
+              .clone().sub(secondary[Math.max(0,twigIndex-1)]).normalize();
+            const twigSide=new THREE.Vector3(-twigTangent.z,0,twigTangent.x).normalize();
+            const twigSign=(k===0?1:-1)*(rand()<.5?1:-1);
+            const twigDirection=new THREE.Vector3(twigStart.x,.0,twigStart.z);
+            if(twigDirection.lengthSq()<.05)twigDirection.copy(radial);
+            twigDirection.normalize().multiplyScalar(.52)
+              .addScaledVector(twigTangent,.22)
+              .add(new THREE.Vector3(0,.32+rand()*.25,0))
+              .addScaledVector(twigSide,twigSign*(.34+rand()*.16));
+            const twigTarget=takeAttractor(twigStart,twigDirection,.42,1.18,4.05+rand()*1.35);
+            const twig=cubicPath(twigStart,twigTarget,.08+rand()*.08,4);
+            addBranchPath(twig,.037+rand()*.009,.22,rand()<.45?2:3);
+            leafSites.push({position:twigTarget,level:3});
+          }
+        }
+      }
+
+      // A final set of subtle upper shoots fills the top silhouette without
+      // turning the crown into a perfect sphere.
+      for(let i=0;i<5;i++){
+        const start=leaderPath[Math.max(1,Math.round((.36+i*.12)*(leaderPath.length-1)))];
+        const a=i*Math.PI*2/5+.3;
+        const direction=new THREE.Vector3(Math.cos(a)*.7,.62+rand()*.2,Math.sin(a)*.7);
+        const target=takeAttractor(start,direction,.48,1.18,5.0+rand()*.65);
+        const shoot=cubicPath(start,target,.07,4);
+        addBranchPath(shoot,.042,.23,3);
+        leafSites.push({position:target,level:3});
+      }
+
+      const branchGeometry=new THREE.BufferGeometry();
+      branchGeometry.setAttribute('position',new THREE.Float32BufferAttribute(branchPositions,3));
+      branchGeometry.setAttribute('color',new THREE.Float32BufferAttribute(branchColors,3));
+      branchGeometry.setIndex(branchIndices);
+      branchGeometry.computeVertexNormals();
+      const branchMaterial=new THREE.MeshStandardMaterial({
+        color:'#ffffff',vertexColors:true,roughness:.96,metalness:0,side:THREE.DoubleSide
+      });
+      const branchMesh=new THREE.Mesh(branchGeometry,branchMaterial);
+      branchMesh.castShadow=true;branchMesh.receiveShadow=true;
+      maple.add(branchMesh);
+
+      // Five-lobed, finely notched palmate leaves replace the old generic star.
+      const leafShape=new THREE.Shape();
+      const outline=[
+        [0,-.52],[-.045,-.34],[-.15,-.31],[-.17,-.18],[-.33,-.22],
+        [-.25,-.07],[-.49,.02],[-.29,.12],[-.42,.32],[-.19,.25],
+        [-.10,.46],[0,.60],[.10,.46],[.19,.25],[.42,.32],
+        [.29,.12],[.49,.02],[.25,-.07],[.33,-.22],[.17,-.18],
+        [.15,-.31],[.045,-.34]
+      ];
+      leafShape.moveTo(outline[0][0],outline[0][1]);
+      for(let i=1;i<outline.length;i++)leafShape.lineTo(outline[i][0],outline[i][1]);
+      leafShape.closePath();
+      const leafGeometry=new THREE.ShapeGeometry(leafShape,1);
+      const leafVertices=leafGeometry.attributes.position;
+      for(let i=0;i<leafVertices.count;i++){
+        const lx=leafVertices.getX(i),ly=leafVertices.getY(i);
+        leafVertices.setZ(i,.018*(1-Math.min(1,Math.abs(lx)/.5))+
+          .008*Math.cos(ly*Math.PI*1.4));
+      }
+      leafVertices.needsUpdate=true;
+      leafGeometry.computeVertexNormals();
+
+      const leafMaterials=[
+        new THREE.MeshStandardMaterial({color:'#8f1c2b',roughness:.95,side:THREE.DoubleSide,emissive:'#25060a',emissiveIntensity:.055}),
+        new THREE.MeshStandardMaterial({color:'#bd2632',roughness:.93,side:THREE.DoubleSide,emissive:'#32080b',emissiveIntensity:.05}),
+        new THREE.MeshStandardMaterial({color:'#e44232',roughness:.92,side:THREE.DoubleSide,emissive:'#3a0b08',emissiveIntensity:.045}),
+        new THREE.MeshStandardMaterial({color:'#f06a36',roughness:.94,side:THREE.DoubleSide,emissive:'#421306',emissiveIntensity:.04})
+      ];
+      // Foliage grows from terminal twigs and secondary branch ends. Cluster
+      // radii overlap gently, but gaps remain so the branch architecture reads through.
+      const leafBuckets=[[],[],[],[]];
+      const allLeafMatrices=[];
+      const dummy=new THREE.Object3D();
+      for(const site of leafSites){
+        const count=site.level===1?8:site.level===2?14:23;
+        const radius=site.level===1?.31:site.level===2?.255:.205;
+        for(let i=0;i<count;i++){
+          const vertical=rand()*2-1,angle=rand()*Math.PI*2,rad=Math.cbrt(rand());
+          dummy.position.set(
+            site.position.x+Math.cos(angle)*rad*radius,
+            site.position.y+vertical*rad*radius*.82,
+            site.position.z+Math.sin(angle)*rad*radius*.78
+          );
+          dummy.rotation.set(
+            signed()*1.18,
+            rand()*Math.PI*2,
+            signed()*1.55
+          );
+          const size=.82+rand()*.56;
+          dummy.scale.set(.245*size,.275*size,.055);
+          dummy.updateMatrix();
+          const toneRoll=rand();
+          const tone=toneRoll<.16?0:toneRoll<.57?1:toneRoll<.88?2:3;
+          const matrix=dummy.matrix.clone();
+          leafBuckets[tone].push(matrix);
+          allLeafMatrices.push(matrix);
+        }
+      }
+      let totalLeaves=0;
+      for(let tone=0;tone<leafBuckets.length;tone++){
+        const matrices=leafBuckets[tone];
+        if(!matrices.length)continue;
+        const mesh=new THREE.InstancedMesh(leafGeometry,leafMaterials[tone],matrices.length);
+        for(let i=0;i<matrices.length;i++)mesh.setMatrixAt(i,matrices[i]);
         mesh.instanceMatrix.needsUpdate=true;
         mesh.frustumCulled=false;
         maple.add(mesh);
+        totalLeaves+=matrices.length;
       }
-      // A restrained warm uplight gives the red leaves depth in night scenes.
+      // A quiet central vein on each leaf helps the palmate shape read at close range.
+      const veinShape=new THREE.Shape();
+      veinShape.moveTo(-.006,-.42);veinShape.lineTo(.006,-.42);
+      veinShape.lineTo(.003,.39);veinShape.lineTo(0,.52);
+      veinShape.lineTo(-.003,.39);veinShape.closePath();
+      const veinGeometry=new THREE.ShapeGeometry(veinShape,1);
+      const veinPositions=veinGeometry.attributes.position;
+      for(let i=0;i<veinPositions.count;i++)veinPositions.setZ(i,.028);
+      veinPositions.needsUpdate=true;
+      const veinMaterial=new THREE.MeshBasicMaterial({
+        color:'#f4a06b',transparent:true,opacity:.25,depthWrite:false,side:THREE.DoubleSide
+      });
+      const veins=new THREE.InstancedMesh(veinGeometry,veinMaterial,allLeafMatrices.length);
+      for(let i=0;i<allLeafMatrices.length;i++)veins.setMatrixAt(i,allLeafMatrices[i]);
+      veins.instanceMatrix.needsUpdate=true;veins.frustumCulled=false;
+      maple.add(veins);
+
+      // A restrained warm uplight gives the red leaves depth at night.
       const mapleGlow=new THREE.PointLight(0xff563c,.34,8,2);
       mapleGlow.position.set(.1,3.1,.8);maple.add(mapleGlow);
-      maple.position.set(x,0,z);maple.scale.setScalar(scale);maple.userData.isMomiji=true;
-      scene.add(maple);return maple;
+      maple.position.set(x,0,z);
+      maple.scale.setScalar(scale);
+      maple.userData.isMomiji=true;
+      maple.userData.leafCount=totalLeaves;
+      maple.userData.branchSegments=branchIndices.length/(6*radialSegments);
+      scene.add(maple);
+      return maple;
     }
-    // V44 — PORTRAIT-SAFE FRONT-RIGHT MAPLE PLACEMENT.
-    // Move the maple inward from the far-right landscape-only position and
-    // slightly toward the camera, beside the pavilion's front-right corner.
-    // The reduced scale keeps the full crown inside the square world camera
-    // in portrait while allowing the outer branches to frame the pavilion.
-    const momiji=createMomiji(5.35,2.45,.88);trees.push(momiji);
+    // V45 — BOTANICAL JAPANESE MAPLE AND PORTRAIT-FRIENDLY FRONT-RIGHT PLACEMENT.
+    // Rebuilds the former fixed branch list and seven round foliage masses as
+    // an attraction-guided crown, curved tapered branch hierarchy, exposed
+    // twig tips and instanced five-lobed autumn leaves. The base is moved inward
+    // and forward beside the pavilion's front-right corner for portrait framing.
+    const momiji=createMomiji(3.45,2.85,.96);trees.push(momiji);
 
     // Main architectural landmark: open pavilion with curved eaves, columns and lanterns.
     const house=new THREE.Group();scene.add(house);house.position.set(0,0,-1.4);house.rotation.y=-15*Math.PI/180;house.userData.refinement='LE-WEATHER-PAVILION-ROTATION-CCW-15-V1';
