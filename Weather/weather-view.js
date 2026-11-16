@@ -421,7 +421,13 @@
     const roofPitchLift=0;
     const roofCornerFactor=u=>Math.pow(Math.abs(2*u-1),roofCurvePower);
     const roofSmoothstep=t=>{const q=clamp((t-.58)/.42,0,1);return q*q*(3-2*q);};
-    const roofCrossProfile=t=>t-.14*Math.sin(Math.PI*t);
+    const roofCrossProfile=t=>{
+      // Cubic architectural sori: a quiet departure from the ridge,
+      // a broad concave shoulder, and a steeper arrival at the eave.
+      // This is the master profile shared by roof skin, gable and framing.
+      const q=1-t;
+      return 3*q*q*t*.04+3*q*t*t*.42+t*t*t;
+    };
     function roofPoint(face,t,u,lift=0){
       const profile=roofCrossProfile(t);
       const cornerRise=roofCornerLift*roofCornerFactor(u)*roofSmoothstep(t);
@@ -455,7 +461,7 @@
     const roofUnderMat=mat('#263a40',.82,.08);
     const roofTileMats=[mat('#263b43',.72,.12),mat('#30464b',.78,.08)];
     for(const face of ['left','right']){
-      const shell=new THREE.Mesh(roofFaceGeometry(face,26,40,-.025),roofUnderMat);
+      const shell=new THREE.Mesh(roofFaceGeometry(face,48,64,-.025),roofUnderMat);
       shell.material.side=THREE.DoubleSide;house.add(shell);
     }
     // Dense, individually separated tile courses follow the curved roof surface.
@@ -497,9 +503,9 @@
     }
     // Four continuous-looking curved eaves: warm timber, dark shadow and fine trim.
     for(const face of ['left','right','front','back']){
-      addRoofBeam(roofEdgePoints(face,32,-.035),.085,timber,8);
-      addRoofBeam(roofEdgePoints(face,32,-.125),.045,roof,7);
-      addRoofBeam(roofEdgePoints(face,32,-.185),.014,gableTrim,6);
+      addRoofBeam(roofEdgePoints(face,64,-.035),.085,timber,8);
+      addRoofBeam(roofEdgePoints(face,64,-.125),.045,roof,7);
+      addRoofBeam(roofEdgePoints(face,64,-.185),.014,gableTrim,6);
     }
     // Brackets rise with the same edge profile, keeping the underside coherent.
     function eaveBracket(x,z,side='front',edgeY=roofEaveY){
@@ -521,7 +527,7 @@
     for(const face of ['left','right']){
       for(let i=0;i<=8;i++){
         const u=.055+i*.111,points=[];
-        for(let j=0;j<=5;j++)points.push(roofPoint(face,.045+j*.18,u,-.075));
+        for(let j=0;j<=8;j++)points.push(roofPoint(face,.045+j*.1125,u,-.075));
         addRoofBeam(points,.043,timber,7);
       }
     }
@@ -538,7 +544,7 @@
     // Front and rear gable infill follows the actual bowed roof pitch.
     // Its two rising shoulders use the same cross-section as the roof planes.
     function addGable(z){
-      const faceZ=z+(z>0?.028:-.028),segments=32;
+      const faceZ=z+(z>0?.028:-.028),segments=64;
       const positions=[],indices=[],boundary=[];
       const gableY=(x)=>{
         const t=Math.abs(x)/roofHalfX;
@@ -907,4 +913,17 @@
    reverse into a sag or kink. Gable outline and roof plane share this one
    profile function. Approved V28 corner lift, eave sweep, doors, interior,
    stairs, rails and all non-roof systems remain unchanged.
+*/
+
+
+/* LE-WEATHER-PAVILION-ROOF-ARCHITECTURAL-PROFILE-V33
+   Architectural roof pass based on the actual current main source.
+   Replaces the sine-wave adjustment with a cubic concave sori profile:
+   a controlled ridge departure, broad shoulder and stronger descent to
+   the eave. The exact same master profile is consumed by both roof planes
+   and front/rear gable outlines. Roof skin, gable outline, eave mouldings
+   and rafters receive denser sampling so the silhouette reads as one
+   continuous 3D roof rather than separately bent trim pieces.
+   Preserves the approved corner-lift function, roof footprint, ridge,
+   tile materials, pavilion walls, doors, interior, stairs, rails and UI.
 */
