@@ -1,6 +1,6 @@
 /* LIVE // EARTH — Weather square-world camera extension.
- * Restores a centred 1:1 canvas and applies a 30-degree horizontal camera orbit.
- * The camera keeps the pavilion centre as its target; no canvas offset is used.
+ * Reverts the experimental 30-degree orbit and 30vw canvas translation.
+ * Keeps the square canvas centred; Landscape shifts composition via camera target.
  */
 (() => {
   'use strict';
@@ -12,8 +12,9 @@
   if (!APP_SHELL.includes(rendererPath)) APP_SHELL.push(rendererPath);
 
   const weatherPath = new URL('./Weather/weather-view.js', self.registration.scope).pathname;
-  const patchMarker = 'LE-SQUARE-WORLD-CAMERA-V4';
-  const markers = [
+  const patchMarker = 'LE-SQUARE-WORLD-CAMERA-V5';
+  const previousMarkers = [
+    'LE-SQUARE-WORLD-CAMERA-V4',
     'LE-SQUARE-WORLD-CAMERA-V3',
     'LE-SQUARE-WORLD-CAMERA-V2',
     'LE-SQUARE-WORLD-CAMERA-V1'
@@ -32,57 +33,56 @@
   const originalResize =
     'function resize(){const r=canvas.getBoundingClientRect();width=Math.max(1,r.width);height=Math.max(1,r.height);renderer.setSize(width,height,false);camera.aspect=width/height;camera.position.set(width>height?0:0, width>height?6.1:7.2, width>height?20:18);camera.fov=width>height?38:42;camera.updateProjectionMatrix();}';
 
-  const oldSquareResizes = [
-    'function resize(){const r=canvas.getBoundingClientRect();const side=Math.max(1,r.width,r.height);width=side;height=side;renderer.setSize(side,side,false);camera.aspect=1;camera.position.set(0,7.2,18);camera.fov=42;camera.lookAt(0,2.5,-1.4);camera.updateProjectionMatrix();}',
-    'function resize(){const r=canvas.getBoundingClientRect();const side=Math.max(1,r.width,r.height);width=side;height=side;renderer.setSize(side,side,false);camera.aspect=1;camera.position.set(0,9.55,27.7);camera.fov=42;camera.lookAt(0,2.5,-1.4);camera.updateProjectionMatrix();}'
-  ];
+  const squareResizeV1 =
+    'function resize(){const r=canvas.getBoundingClientRect();const side=Math.max(1,r.width,r.height);width=side;height=side;renderer.setSize(side,side,false);camera.aspect=1;camera.position.set(0,7.2,18);camera.fov=42;camera.lookAt(0,2.5,-1.4);camera.updateProjectionMatrix();}';
 
-  // Orbit the camera 30 degrees around the house's vertical axis while
-  // preserving its distance, elevation, field of view and exact look target.
-  // Relative to target: (0, 7.05, 29.1) -> (14.55, 7.05, 25.21).
-  const angledSquareResize =
+  const squareResizeV2 =
+    'function resize(){const r=canvas.getBoundingClientRect();const side=Math.max(1,r.width,r.height);width=side;height=side;renderer.setSize(side,side,false);camera.aspect=1;camera.position.set(0,9.55,27.7);camera.fov=42;camera.lookAt(0,2.5,-1.4);camera.updateProjectionMatrix();}';
+
+  const angledResizeV4 =
     'function resize(){const r=canvas.getBoundingClientRect();const side=Math.max(1,r.width,r.height);width=side;height=side;renderer.setSize(side,side,false);camera.aspect=1;camera.position.set(14.55,9.55,23.81);camera.fov=42;camera.lookAt(0,2.5,-1.4);camera.updateProjectionMatrix();}';
+
+  // Camera position and distance return to the proven V2 front-facing view.
+  // Only the look target shifts right in Landscape. That makes the stationary
+  // pavilion appear left in the viewport. The offset is scaled to 30% of the
+  // visible display width while retaining the square render frame.
+  const targetOffsetResize =
+    'function resize(){const r=canvas.getBoundingClientRect();const side=Math.max(1,r.width,r.height);width=side;height=side;renderer.setSize(side,side,false);camera.aspect=1;camera.position.set(0,9.55,27.7);camera.fov=42;const landscape=window.matchMedia("(orientation: landscape)").matches;const distance=Math.hypot(0,9.55-2.5,27.7+1.4);const frameWidth=2*distance*Math.tan(42*Math.PI/360);const targetX=landscape?0.30*(window.innerWidth/side)*frameWidth:0;camera.lookAt(targetX,2.5,-1.4);camera.updateProjectionMatrix();}';
 
   function transformSource(source) {
     if (source.includes(patchMarker)) return null;
     let updated = source;
     let matched = false;
 
-    // The V3 package introduced the 30vw Landscape shift. Remove that exact
-    // rule and restore the canvas's 50% centre anchor.
-    if (updated.includes(markers[0])) {
-      updated = updated.replaceAll(markers[0], patchMarker);
-      updated = updated.replace(landscapeOffsetRule, '');
+    // Mark the source generation so this patch is idempotent.
+    const priorMarker = previousMarkers.find(marker => updated.includes(marker));
+    if (priorMarker) {
+      updated = updated.replaceAll(priorMarker, patchMarker);
       matched = true;
-    } else {
-      const prior = markers.find(marker => updated.includes(marker));
-      if (prior) {
-        updated = updated.replaceAll(prior, patchMarker);
-        matched = true;
-      }
     }
 
-    // If this is an original renderer, install the square canvas rule.
-    if (!matched && updated.includes(originalCanvasRule) && updated.includes(originalResize)) {
+    // Restore the centred square canvas and remove the former CSS shift.
+    updated = updated.replace(landscapeOffsetRule, '');
+    if (!updated.includes(patchMarker) &&
+        updated.includes(originalCanvasRule) &&
+        updated.includes(originalResize)) {
       updated = updated.replace(originalCanvasRule, centredCanvasRule);
       matched = true;
     }
 
-    // Replace whichever known square-camera baseline is present.
-    for (const oldResize of oldSquareResizes) {
-      if (updated.includes(oldResize)) {
-        updated = updated.replace(oldResize, angledSquareResize);
+    // Restore the front-facing camera and apply a landscape-only target shift.
+    const knownResizes = [angledResizeV4, squareResizeV2, squareResizeV1, originalResize];
+    for (const known of knownResizes) {
+      if (updated.includes(known)) {
+        updated = updated.replace(known, targetOffsetResize);
         matched = true;
         break;
       }
     }
 
     if (!matched) return null;
-
-    // Older cached variants may contain a Landscape offset without V3 marker.
-    updated = updated.replace(landscapeOffsetRule, '');
     return updated.includes(patchMarker) &&
-      updated.includes(angledSquareResize) &&
+      updated.includes(targetOffsetResize) &&
       !updated.includes('left:calc(50% - 30vw)')
       ? updated : null;
   }
@@ -123,13 +123,13 @@
     if (response.ok) {
       const source = await response.clone().text();
       if (!source.includes(patchMarker)) {
-        console.error('[LIVE // EARTH] Square-world 30-degree camera update did not match the expected renderer source. The original response was preserved.');
+        console.error('[LIVE // EARTH] Weather camera-target framing update did not match the expected renderer source. The original response was preserved.');
       }
     }
     return response;
   };
 
-  // Upgrade already-cached Weather modules during activation, including V3.
+  // Upgrade an already-cached Weather module, including the 30-degree V4 build.
   self.addEventListener('activate', event => {
     event.waitUntil((async () => {
       const cache = await caches.open(CACHE_NAME);
