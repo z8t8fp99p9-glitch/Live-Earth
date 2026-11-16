@@ -483,6 +483,35 @@
       g.setIndex(tileIndices[shade]);g.computeVertexNormals();
       const mesh=new THREE.Mesh(g,roofTileMats[shade]);mesh.material.side=THREE.DoubleSide;house.add(mesh);
     }
+    // Rounded ceramic kawara end caps finish the lower edge of each tiled
+    // roof plane. Each cap spans one tile module and follows the bowed eave
+    // tangent, producing a restrained scalloped silhouette without a giant
+    // continuous tube around the roof.
+    const eaveCapMat=mat('#263b43',.62,.18);
+    for(const face of ['left','right']){
+      for(let col=0;col<tileCols;col++){
+        const u0=col/tileCols+.008,u1=(col+1)/tileCols-.008;
+        const a=roofPoint(face,.965,u0,.038);
+        const b=roofPoint(face,.965,u1,.038);
+        const direction=new THREE.Vector3().subVectors(b,a);
+        const length=direction.length();
+        if(length<.001)continue;
+        const cap=new THREE.Mesh(
+          new THREE.CylinderGeometry(.052,.052,length+.012,10),
+          eaveCapMat
+        );
+        cap.position.copy(a).add(b).multiplyScalar(.5);
+        cap.quaternion.setFromUnitVectors(
+          new THREE.Vector3(0,1,0),direction.normalize()
+        );
+        house.add(cap);
+        // Small rounded ends soften the joints between adjacent tile caps.
+        for(const p of [a,b]){
+          const end=new THREE.Mesh(new THREE.SphereGeometry(.052,10,7),eaveCapMat);
+          end.position.copy(p);house.add(end);
+        }
+      }
+    }
     const gableMat=mat('#49362c',.94),gableTrim=mat('#8a6041',.78);
     // A simple segmented timber beam makes smooth bends without optional curve classes.
     function addRoofBeam(points,radius,material,radialSegments=7){
@@ -1052,4 +1081,13 @@
    curved tie beam. Positions are sampled from the existing bowed eave profile.
    No roof surface, tile, fascia, bracket, rafter/purlin, door, interior,
    foundation, stair, rail, camera, scenery or weather UI geometry is changed.
+*/
+
+
+/* LE-WEATHER-PAVILION-CERAMIC-EAVE-CAPS-V38
+   Adds segmented rounded ceramic end caps to the lower edge of the two tiled
+   roof planes. Cap modules follow the existing bowed eave geometry and tile
+   spacing. No roof curvature, tile field, ridge, gable framing, exposed
+   rafters, bracket assemblies, walls, doors, foundation, stairs, rails,
+   camera, weather rendering or UI behavior is changed.
 */
