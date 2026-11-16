@@ -1,4 +1,7 @@
 /* LE-WEATHER-MAPLE-DIRECT-TRIANGLE-FOLIAGE-V57 */
+/* LE-WEATHER-MAPLE-ADDITIVE-UPRIGHT-SHOOTS-V64
+   Adds 14 steep branch shoots with independent foliage sprays; prior
+   branch and foliage paths are retained without replacement. */
 /* LE-WEATHER-MAPLE-BRANCH-ATTACHED-FOLIAGE-V59
    Every terminal twig and each smaller supporting branch tier receives
    anchored autumn leaves. One merged BufferGeometry/Mesh retains all six
@@ -527,6 +530,30 @@
         }
       }
 
+      // V64 — ADDITIVE UPRIGHT SHOOTS ONLY.
+      // These are entirely new branches grafted onto existing secondary
+      // boughs. No existing primary/secondary/tertiary/terminal path is edited,
+      // moved, replaced, or regenerated. Their elevation is 65–85 degrees
+      // above horizontal; azimuths alternate so additions occupy depth as
+      // well as the visible left/right silhouette.
+      const uprightBranchPaths=[];
+      const uprightBranchCount=Math.min(14,Math.floor(secondaryPaths.length/2));
+      for(let i=0;i<uprightBranchCount;i++){
+        const parent=secondaryPaths[(i*2+1)%secondaryPaths.length];
+        const attachT=[.52,.66,.78,.59,.73,.86,.62][i%7];
+        const origin=pointAt(parent.path,attachT);
+        const tangent=tangentAt(parent.path,attachT);
+        const azimuthOffset=(i%2===0?-1:1)*(.62+(i%3)*.22);
+        const azimuth=horizontalAngle(tangent)+azimuthOffset+signed()*.10;
+        const inclinationDeg=65+(i%7)*3+rand()*2;
+        const inclination=inclinationDeg*Math.PI/180;
+        const rise=.60+rand()*.18;
+        const horizontalLength=rise/Math.tan(inclination);
+        const path=growBranch(origin,azimuth,horizontalLength,rise,
+          signed()*.14,.0125+rand()*.0025,3,9,.16);
+        uprightBranchPaths.push(path);
+      }
+
       const geometry=new THREE.BufferGeometry();
       geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
       geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
@@ -640,6 +667,13 @@
         addLeafCluster(leaderPath,.90,3,1);
         for(let i=0;i<upperPaths.length;i++) addLeafCluster(upperPaths[i],.88,3,i+2);
 
+        // New upright shoots receive their own leaves; existing leaf sprays
+        // below remain untouched and continue to use their original paths.
+        for(let i=0;i<uprightBranchPaths.length;i++){
+          addLeafCluster(uprightBranchPaths[i],.60,4,i+1);
+          addLeafCluster(uprightBranchPaths[i],.94,4,i+1);
+        }
+
         // One compact cluster per secondary bough, two on each tertiary limb.
         for(let i=0;i<secondaryPaths.length;i++)
           addLeafCluster(secondaryPaths[i].path,.88,4,i+1);
@@ -685,9 +719,10 @@
         hangingSprays:hangingSprayCount,
         tertiary:tertiaryPaths.length,
         fineTwigs:fineTwigCount,
+        addedUprightShoots:uprightBranchPaths.length,
         total:1+rootSpecs.length+primarySpecs.length+
           1+upperSpecs.length+secondaryPaths.length+
-          tertiaryPaths.length+fineTwigCount
+          tertiaryPaths.length+fineTwigCount+uprightBranchPaths.length
       };
       maple.userData.leafCount=renderedLeafCount;
       maple.userData.leafShapeCount=leafShapeCount;
@@ -698,7 +733,8 @@
         upper:1+upperPaths.length,
         secondary:secondaryPaths.length,
         tertiary:tertiaryPaths.length,
-        terminal:terminalPaths.length
+        terminal:terminalPaths.length,
+        addedUpright:uprightBranchPaths.length
       };
       scene.add(maple);
       return maple;
