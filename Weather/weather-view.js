@@ -398,14 +398,13 @@
       // Primary scaffold: irregular heights and directions make a layered,
       // wide crown rather than a radial fan of equal-length limbs.
       const primarySpecs=[
-        // Balanced world-depth scaffold: a rounded 3D crown, not a flat fan.
-        {h:1.62,a:2.48,len:2.48,rise:.42,bend:.42,r:.145},
-        {h:2.02,a:-2.34,len:2.42,rise:-.22,bend:-.34,r:.142},
-        {h:2.48,a:1.48,len:2.58,rise:.70,bend:.31,r:.134},
-        {h:2.94,a:-1.58,len:2.46,rise:-.12,bend:-.29,r:.124},
-        {h:1.88,a:.42,len:2.56,rise:.18,bend:-.40,r:.145},
-        {h:2.34,a:3.02,len:2.40,rise:.52,bend:.38,r:.145},
-        {h:3.12,a:-.48,len:2.38,rise:.02,bend:-.33,r:.129}
+        {h:1.62,a:2.52,len:2.72,rise:.48,bend:.42,r:.145},
+        {h:2.02,a:3.10,len:2.82,rise:-.38,bend:-.34,r:.142},
+        {h:2.48,a:-2.48,len:2.57,rise:.86,bend:.31,r:.134},
+        {h:2.94,a:-1.82,len:2.46,rise:-.24,bend:-.29,r:.124},
+        {h:1.88,a:.63,len:2.70,rise:.12,bend:-.40,r:.145},
+        {h:2.34,a:.08,len:2.92,rise:.62,bend:.38,r:.145},
+        {h:3.12,a:-.78,len:2.53,rise:-.10,bend:-.33,r:.129}
       ];
       const primaryPaths=[];
       for(let i=0;i<primarySpecs.length;i++){
@@ -414,6 +413,27 @@
         const path=growBranch(start,spec.a,spec.len,spec.rise,spec.bend,
           spec.r,1,14,.18);
         primaryPaths.push({path,angle:spec.a});
+      }
+
+      // V63 — STEEP UPWARD BRANCHES (65–85 DEGREES ABOVE HORIZONTAL).
+      // Add a restrained set of rising limbs from the existing scaffold. Their
+      // azimuths alternate through the depth axis so they are not another
+      // left/right fan. Vertical rise is kept bounded to preserve the crown.
+      const inclinedPaths=[];
+      let inclinedIndex=0;
+      for(const parent of primaryPaths){
+        for(const t of [.38,.72]){
+          const origin=pointAt(parent.path,t);
+          const tangent=tangentAt(parent.path,t);
+          const azimuth=horizontalAngle(tangent)+(inclinedIndex%2===0?-.54:.58)+signed()*.20;
+          const inclination=(65+rand()*20)*Math.PI/180;
+          const rise=.58+rand()*.24;
+          const horizontalLength=rise/Math.tan(inclination);
+          const branchPath=growBranch(origin,azimuth,horizontalLength,rise,
+            signed()*.12,.027+rand()*.004,2,9,.16);
+          inclinedPaths.push(branchPath);
+          inclinedIndex++;
+        }
       }
 
       // A slender central leader continues the S-curved trunk; small upper
@@ -433,7 +453,7 @@
 
       // Four secondary boughs leave each primary at uneven intervals.
       // They curve out from the limb, with varied angles and a few gentle droops.
-      const secondaryAngleOffsets=[-1.08,.42,1.16,-.58];
+      const secondaryAngleOffsets=[-.86,.66,-.42,.93];
       const secondaryRise=[.34,-.24,-.56,.08];
       const secondaryPaths=[];
       for(let i=0;i<primaryPaths.length;i++){
@@ -456,7 +476,7 @@
 
       // Tertiary limbs split off the secondary boughs, alternating direction
       // and height so the structure is not a repeated comb or bottle brush.
-      const tertiaryOffsets=[-1.02,.86,-.48];
+      const tertiaryOffsets=[-.78,.72,-.24];
       const tertiaryPaths=[];
       for(const parent of secondaryPaths){
         const positionsOnParent=[.39,.66,.87];
@@ -476,7 +496,7 @@
       // Fine branchlets and terminal twigs: retain their paths so foliage
       // can grow directly from the slender wood rather than floating nearby.
       const terminalPaths=[];
-      const twigOffsets=[-.94,.98];
+      const twigOffsets=[-.72,.82];
       let fineTwigCount=0;
       for(const parent of tertiaryPaths){
         const positionsOnParent=[.57,.86];
@@ -548,7 +568,7 @@
       let renderedLeafCount=0;
       let leafShapeCount=0;
       let leafShapeInstances=[];
-      // V62 — THREE-DIMENSIONAL BRANCH DISTRIBUTION; V61 FOLIAGE RETAINED.
+      // V61 — DENSER NATURAL FIVE-LOBE MOMIJI FOLIAGE.
       // Preserve the V59 branch skeleton and V60 leaf design. Slightly fuller clusters,
       // grouped colour and varied 3-D leaf planes replace the dense paper-card look.
       let foliageError=null;
@@ -640,6 +660,10 @@
         addLeafCluster(leaderPath,.90,3,1);
         for(let i=0;i<upperPaths.length;i++) addLeafCluster(upperPaths[i],.88,3,i+2);
 
+        // Each steep upward limb receives its own compact leaf spray.
+        for(let i=0;i<inclinedPaths.length;i++)
+          addLeafCluster(inclinedPaths[i],.78,4,i+5);
+
         // One compact cluster per secondary bough, two on each tertiary limb.
         for(let i=0;i<secondaryPaths.length;i++)
           addLeafCluster(secondaryPaths[i].path,.88,4,i+1);
@@ -692,9 +716,11 @@
       maple.userData.leafCount=renderedLeafCount;
       maple.userData.leafShapeCount=leafShapeCount;
       maple.userData.leafShapeInstances=leafShapeInstances;
-      maple.userData.branchPathCount=pathCount;
+      maple.userData.inclinedBranchCount=inclinedPaths.length;
+      maple.userData.branchPathCount=pathCount+inclinedPaths.length;
       maple.userData.leafCoverage={
         primary:primaryPaths.length,
+        steepUpward:inclinedPaths.length,
         upper:1+upperPaths.length,
         secondary:secondaryPaths.length,
         tertiary:tertiaryPaths.length,
