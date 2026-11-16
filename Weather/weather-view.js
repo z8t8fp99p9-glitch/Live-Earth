@@ -137,7 +137,7 @@
     const house=new THREE.Group();scene.add(house);house.position.set(0,0,-1.4);house.rotation.y=-15*Math.PI/180;house.userData.refinement='LE-WEATHER-PAVILION-ROTATION-CCW-15-V1';
     const timber=mat('#684a35'),wall=mat('#e6ddc6'),roof=mat('#263b43',.72,.12),dark=mat('#293b38'),gold= new THREE.MeshStandardMaterial({color:'#d69b55',emissive:'#a35b1e',emissiveIntensity:.65});
     function box(parent,m,x,y,z,sx,sy,sz){const o=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),m);o.position.set(x,y,z);parent.add(o);return o;}
-    // LE-WEATHER-PAVILION-RAISED-FOUNDATION-V1 LE-WEATHER-PAVILION-SLIM-FOUNDATION-V2 LE-WEATHER-PAVILION-TRADITIONAL-STAIRS-PIERS-V3 LE-WEATHER-PAVILION-STAIR-INFILL-V4 LE-WEATHER-PAVILION-FOUR-SIDE-RAILS-V11: lowered proportionate guard rails; raised engawa deck with visible undercroft and centred three-step approach.
+    // LE-WEATHER-PAVILION-RAISED-FOUNDATION-V1 LE-WEATHER-PAVILION-SLIM-FOUNDATION-V2 LE-WEATHER-PAVILION-TRADITIONAL-STAIRS-PIERS-V3 LE-WEATHER-PAVILION-STAIR-INFILL-V4 LE-WEATHER-PAVILION-FOUR-SIDE-RAILS-V11: lowered proportionate guard rails; raised engawa deck with visible undercroft and centred four-step approach.
     const foundationStone=mat('#777465'),deckPlank=mat('#806044');
     // V3 SINGLE DECK ASSEMBLY: one perimeter frame directly supported by the existing piers.
     // Outer faces align with the single continuous deck-board footprint.
@@ -146,21 +146,16 @@
     box(house,timber,0,1.385,-2.59,7.58,.27,.24);
     box(house,timber,-3.67,1.385,-.01,.24,.27,5.16);
     box(house,timber,3.67,1.385,-.01,.24,.27,5.16);
-    // Stone pads and timber piers lift the deck visibly above the garden ground.
-    // Eight stepped stone footings and shorter timber support pillars.
-    // Stone footing: ground to y=.28; narrower stone socket: y=.28 to .59.
-    // Timber pillar: y=.59 to 1.25 (25% shorter than the previous .88-unit post).
-    for(const x of [-3.42,0,3.42]){
-      for(const z of [-2.34,2.34]){
-        box(house,foundationStone,x,.14,z,.48,.28,.48);
-        box(house,foundationStone,x,.435,z,.38,.31,.38);
-        box(house,dark,x,.92,z,.30,.66,.30);
-      }
-    }
-    for(const x of [-3.42,3.42]){
-      box(house,foundationStone,x,.14,0,.48,.28,.48);
-      box(house,foundationStone,x,.435,0,.38,.31,.38);
-      box(house,dark,x,.92,0,.30,.66,.30);
+    // V13: one compact stone footing per pier; the timber remains the dominant support.
+    // Stone runs from ground level to y=.40. The timber pier continues directly to
+    // the unchanged perimeter-beam underside at y=1.25 (no stacked stone socket).
+    const pierFootingHeight=.40,pierPostHeight=1.25-pierFootingHeight;
+    const pierPositions=[];
+    for(const x of [-3.42,0,3.42])for(const z of [-2.34,2.34])pierPositions.push([x,z]);
+    for(const x of [-3.42,3.42])pierPositions.push([x,0]);
+    for(const [x,z] of pierPositions){
+      box(house,foundationStone,x,pierFootingHeight/2,z,.44,pierFootingHeight,.44);
+      box(house,dark,x,pierFootingHeight+pierPostHeight/2,z,.30,pierPostHeight,.30);
     }
     // One continuous walking surface: ten close-laid boards with no open seams.
     // Boards sit directly on the single perimeter support frame.
@@ -168,22 +163,27 @@
       const z=-2.44+i*.54;
       box(house,deckPlank,0,1.55,z,7.58,.045,.54);
     }
-    // Four traditional timber steps: thin treads and thin closed riser boards.
-    // Tread material is .07 thick (about 26% thinner than the old stacked .095 caps).
-    // Riser faces are .07 deep rather than full .98-deep solid step blocks.
-    // The top tread finishes flush with the single deck surface at y=1.5725.
+    // V13: four evenly-rising closed timber risers with slimmer, single-board treads.
+    // The 1.00-unit tread depth gives a restrained .05-unit overlap at the .95-unit pitch.
+    // Each riser finishes against the underside of its tread; no duplicate infill is needed.
+    // The final tread top remains exactly level with the single deck surface (y=1.5725).
+    const stairBottom=.02,stairDeckTop=1.5725,stairRise=(stairDeckTop-stairBottom)/4;
+    const treadThickness=.055,treadDepth=1.00,riserDepth=.055;
     const entranceSteps=[
-      {z:4.20,front:.02,top:.39},
-      {z:3.25,front:.39,top:.78},
-      {z:2.30,front:.78,top:1.175},
-      {z:1.35,front:1.175,top:1.5725}
+      {z:4.20,front:stairBottom,top:stairBottom+stairRise},
+      {z:3.25,front:stairBottom+stairRise,top:stairBottom+stairRise*2},
+      {z:2.30,front:stairBottom+stairRise*2,top:stairBottom+stairRise*3},
+      {z:1.35,front:stairBottom+stairRise*3,top:stairDeckTop}
     ];
     for(const step of entranceSteps){
       const rise=step.top-step.front;
-      // Vertical closed riser at the forward edge of each tread.
-      box(house,timber,0,(step.front+step.top)/2,step.z+.515,4.35,rise,.07);
-      // One broad, slim timber tread; the nosing remains part of the same board.
-      box(house,deckPlank,0,step.top-.035,step.z,4.48,.07,1.10);
+      const riserHeight=rise-treadThickness;
+      const riserCentreY=step.front+riserHeight/2;
+      const riserCentreZ=step.z+treadDepth/2-riserDepth/2;
+      // Thin closed riser terminates flush at the underside of the tread board.
+      box(house,timber,0,riserCentreY,riserCentreZ,4.35,riserHeight,riserDepth);
+      // One slim tread board with a small traditional nosing and exact finished height.
+      box(house,deckPlank,0,step.top-treadThickness/2,step.z,4.48,treadThickness,treadDepth);
     }
     
     // V3 perimeter guard: one upper handrail; balusters start directly at the deck.
@@ -313,4 +313,12 @@
    Last stair tread top is exactly aligned to the deck surface at y=1.5725.
    Main house, deck footprint, four-side rails, roof, walls, rotation, Fuji, hills, trees,
    camera, forecast toggle and Weather feature lifecycle are preserved.
+*/
+
+/* LE-WEATHER-LOWER-STRUCTURE-REFINEMENT-V13
+   Eight supports now use one compact .44 x .40 x .44 stone footing each.
+   Timber posts run continuously from y=.40 to the unchanged beam underside y=1.25 (.85 tall).
+   Four stair rises are equal; each closed riser meets the underside of a .055-thick tread.
+   Treads are 1.00 deep with .055-deep risers and a restrained .05 overlap at the .95 pitch.
+   The top tread remains at y=1.5725. Deck, beams, rails, house, roof, scenery, camera and UI remain unchanged.
 */
