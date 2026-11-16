@@ -23,7 +23,7 @@
     const s=document.createElement('style');s.id=STYLE_ID;
     s.textContent=`
       .le-weather-v2{position:absolute;inset:0;overflow:hidden;isolation:isolate;background:#0a1c2b;color:#f7f5ed;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
-      .le-weather-v2 *{box-sizing:border-box}.le-weather-v2 [hidden]{display:none!important}.le-weather-v2 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:pan-y}
+      .le-weather-v2 *{box-sizing:border-box}.le-weather-v2 [hidden]{display:none!important}.le-weather-v2 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:manipulation;pointer-events:auto!important}
       /* LE-SQUARE-WORLD-CAMERA-V9: fixed square stage, centred and cropped by the display */
       .le-weather-v2 canvas{position:absolute!important;inset:auto!important;left:50%!important;top:50%!important;width:100vmax!important;height:100vmax!important;max-width:none!important;max-height:none!important;transform:translate(-50%,-50%)!important;display:block;z-index:0;touch-action:pan-y}
       .le-weather-v2:after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(3,14,25,.30),transparent 28%,rgba(3,13,22,.10) 55%,rgba(2,10,18,.62));}
@@ -270,9 +270,10 @@
       transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide
     });
     const doorHitSurface=new THREE.Mesh(
-      new THREE.PlaneGeometry(5.88,wallHeight),doorHitMaterial
+      new THREE.BoxGeometry(5.98,wallHeight,.34),doorHitMaterial
     );
-    doorHitSurface.position.set(0,wallMid,1.945);
+    doorHitSurface.position.set(0,wallMid,1.79);
+    doorHitSurface.userData.isShojiDoorHitTarget=true;
     house.add(doorHitSurface);
     const sideBayWidth=3.64/2;
     for(const x of [-2.96,2.96])for(let i=0;i<2;i++){
@@ -361,7 +362,7 @@
       const hits=doorRaycaster.intersectObjects([doorHitSurface,...shojiDoors],true);
       if(hits.length)toggleShojiDoors();
     }
-    canvas.addEventListener('pointerdown',onDoorPointer,{passive:true});
+    canvas.addEventListener('pointerup',onDoorPointer,{passive:true});
     const palettes={clear:['#7fb7c3','#d8c9a7'],cloudy:['#718d99','#9aa6a0'],rain:['#3f5e70','#637e84'],storm:['#1b2e43','#455b68'],snow:['#a6c5d1','#e2e7e0'],fog:['#a3b6b0','#d0d2c3'],wind:['#78a8b2','#d2c8a9'],hot:['#83b7bb','#e8c58e'],night:['#081a35','#273c55']};
     function setWeather(kind){state.kind=kind;const p=palettes[kind]||palettes.clear;scene.background.set(p[0]);scene.fog.color.set(p[1]);scene.fog.density=kind==='fog'?.035:kind==='rain'?.018:kind==='storm'?.024:.010;rain.visible=kind==='rain'||kind==='storm';snow.visible=kind==='snow';stars.visible=kind==='night';clouds.forEach((c,i)=>{c.visible=['cloudy','rain','storm','snow','fog'].includes(kind)||i<3;c.scale.setScalar(kind==='storm'?1.3:kind==='fog'?1.5:1);});sun.intensity=kind==='night'?.18:kind==='storm'?.55:kind==='cloudy'?1.1:kind==='rain'?1.35:3.1;fill.intensity=kind==='night'?.6:1.0;waterMat.roughness=kind==='storm'?.48:kind==='rain'?.34:.2;gold.emissiveIntensity=kind==='night'?1.7:.45;}
     function resize(){const r=canvas.getBoundingClientRect();const side=Math.max(1,r.width,r.height);width=side;height=side;renderer.setSize(side,side,false);camera.aspect=1;camera.position.set(0,7.0,27.7);camera.fov=42;camera.lookAt(0,2.5,-1.4);camera.updateProjectionMatrix();}
@@ -372,7 +373,7 @@
       const a=rain.geometry.attributes.position.array,b=snow.geometry.attributes.position.array;for(let i=0;i<rainCount;i++){a[i*3+1]-=dt*18;if(a[i*3+1]<0)a[i*3+1]=18;}rain.geometry.attributes.position.needsUpdate=true;for(let i=0;i<snowCount;i++){b[i*3+1]-=dt*1.7;if(b[i*3+1]<0)b[i*3+1]=18;b[i*3]+=Math.sin(elapsed+i)*dt*.18;}snow.geometry.attributes.position.needsUpdate=true;clouds.forEach((c,i)=>{c.position.x+=dt*(state.kind==='wind'?.42:.12)*(i%2?1:-1);if(c.position.x>28)c.position.x=-28;if(c.position.x< -28)c.position.x=28;});trees.forEach((t,i)=>{t.rotation.z=Math.sin(elapsed*.55+i)* (state.kind==='wind'?.06:.012);});waterMat.roughness=(state.kind==='storm'?.44:.2)+Math.sin(elapsed*1.2)*.025;renderer.render(scene,camera);}
     function start(){if(!disposed&&visible&&!raf)raf=requestAnimationFrame(frame);}function stop(){if(raf)cancelAnimationFrame(raf);raf=0;}
     const ro=new ResizeObserver(resize);ro.observe(canvas);const onResize=()=>resize();const onVisibility=()=>{visible=!document.hidden;if(visible){last=0;start();}else stop();};window.addEventListener('resize',onResize,{passive:true});document.addEventListener('visibilitychange',onVisibility);resize();setWeather('clear');start();
-    return {setWeather,toggleDoors:toggleShojiDoors,dispose(){disposed=true;stop();canvas.removeEventListener('pointerdown',onDoorPointer);ro.disconnect();window.removeEventListener('resize',onResize);document.removeEventListener('visibilitychange',onVisibility);scene.traverse(o=>{o.geometry?.dispose?.();if(o.material){for(const m of (Array.isArray(o.material)?o.material:[o.material]))m.dispose?.();}});renderer.dispose();renderer.forceContextLoss?.();}};
+    return {setWeather,toggleDoors:toggleShojiDoors,dispose(){disposed=true;stop();canvas.removeEventListener('pointerup',onDoorPointer);ro.disconnect();window.removeEventListener('resize',onResize);document.removeEventListener('visibilitychange',onVisibility);scene.traverse(o=>{o.geometry?.dispose?.();if(o.material){for(const m of (Array.isArray(o.material)?o.material:[o.material]))m.dispose?.();}});renderer.dispose();renderer.forceContextLoss?.();}};
   }
   function activateWeather(){
     const view=mount('weather');if(!view)return;addStyles();const screen=makeScreen();view.root.replaceChildren(screen);
@@ -507,4 +508,13 @@
    Shoji doors now respond only to direct taps on the front door panels/opening
    through the dedicated 3D raycast hit surface. Door animation and pavilion
    structure, interior, rails, stairs, roof, scenery and forecast UI are preserved.
+*/
+
+
+/* LE-WEATHER-PAVILION-TOUCH-FIX-V20
+   Replaced the zero-thickness front-door raycast plane with a shallow invisible
+   hit volume spanning the complete Shoji doorway. Door activation now listens
+   for pointerup (completed touch) rather than pointerdown, and the canvas uses
+   touch-action:manipulation with explicit pointer targeting. No visible door
+   controls or pavilion geometry were added; direct touch remains the only control.
 */
