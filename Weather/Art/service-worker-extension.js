@@ -1,4 +1,4 @@
-/* LIVE // EARTH — Weather V14 rolling hill refinement.
+/* LIVE // EARTH — Weather V15 continuous rolling-hill redesign.
  * Preserves the approved front-facing camera and square canvas.
  * Reduces rear hills by 45% and Mount Fuji by 40%, keeping Fuji grounded.
  */
@@ -13,7 +13,7 @@
   const sceneMarker = 'LE-WEATHER-FUJI-GARDEN-V2';
   const hillsMarker = 'LE-WEATHER-HILLS-HEIGHT-55-V2';
   const fujiMarker = 'LE-WEATHER-FUJI-HEIGHT-54-V3';
-  const versionMarker = 'LE-WEATHER-SCENERY-V14';
+  const versionMarker = 'LE-WEATHER-SCENERY-V15';
 
   const originalCanvasRule =
     '.le-weather-v2 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:pan-y}';
@@ -31,13 +31,7 @@
   const sceneryBlock = [
     "    const groundMat=mat('#344e42'),hillMats=['#274a45','#315951','#3d665c'].map(c=>mat(c));",
     '    const ground=new THREE.Mesh(new THREE.PlaneGeometry(180,180),groundMat);ground.rotation.x=-Math.PI/2;ground.position.y=-.18;scene.add(ground);',
-    `    // ${sceneMarker} ${hillsMarker} LE-WEATHER-HILLS-ROLLING-SMOOTH-V1: smooth layered contours with natural variation.`,
-    '    function hill(x,z,sx,sy,sz,index){const geo=new THREE.SphereGeometry(1,48,32);const p=geo.attributes.position;for(let i=0;i<p.count;i++){const px=p.getX(i),py=p.getY(i),pz=p.getZ(i);const ripple=1+.035*Math.sin(px*4.2+index*.8)*Math.cos(pz*3.6-index*.55)+.018*Math.sin(px*8.1+pz*5.2+index);p.setXYZ(i,px*ripple,py*(1+.018*Math.sin(px*3.1+pz*2.7+index)),pz*ripple);}geo.computeVertexNormals();const m=new THREE.Mesh(geo,hillMats[index%hillMats.length]);m.position.set(x,0,z);m.scale.set(sx,.55*sy,sz);scene.add(m);return m;}',
-    '    const rearHills=[',
-    '      [-25,-34,12,7,8,0],[-17,-31,10,6,7,1],[-8,-36,12,7,8,2],[8,-35,13,7,8,0],[20,-32,11,6,8,1],[29,-36,13,7,9,2],',
-    '      [-32,-25,9,5,7,1],[-20,-25,10,5.5,7,2],[20,-26,10,5.5,7,0],[33,-25,9,5,7,1]',
-    '    ];',
-    '    rearHills.forEach(([x,z,sx,sy,sz,index])=>hill(x,z,sx,sy,sz,index));',
+    `    // LE-WEATHER-HILLS-TERRAIN-V2: continuous rolling ridgelines, not separate mound objects.\n    function createRollingRidge(zStart,depth,peak,phase,material){\n      const nx=112,nz=30,positions=[],indices=[];\n      for(let iz=0;iz<=nz;iz++){\n        const t=iz/nz;\n        for(let ix=0;ix<=nx;ix++){\n          const u=ix/nx,x=-48+u*96;\n          const broad=Math.sin(Math.PI*u);\n          const crest=.68+.18*Math.sin(x*.105+phase)+.10*Math.sin(x*.19+phase*1.7);\n          const shoulder=Math.pow(Math.max(0,Math.sin(Math.PI*t)),.72);\n          const y=peak*.55*shoulder*Math.max(.28,crest);\n          const z=zStart+t*depth;\n          positions.push(x,y,z);\n          if(ix<nx&&iz<nz){const a=iz*(nx+1)+ix,b=a+1,c=a+(nx+1),d=c+1;indices.push(a,c,b,b,c,d);}\n        }\n      }\n      const geometry=new THREE.BufferGeometry();\n      geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));\n      geometry.setIndex(indices);geometry.computeVertexNormals();\n      const mesh=new THREE.Mesh(geometry,material);mesh.material.side=THREE.DoubleSide;scene.add(mesh);return mesh;\n    }\n    createRollingRidge(-43,15,13,.4,hillMats[0]);\n    createRollingRidge(-36,14,10,1.8,hillMats[1]);\n    createRollingRidge(-29,12,7,3.1,hillMats[2]);`,
     `    const fujiGroup=new THREE.Group();fujiGroup.position.set(3.75,6.048,-64);fujiGroup.scale.y=.54;fujiGroup.userData.refinement='${fujiMarker}';scene.add(fujiGroup);`,
     "    const fujiBodyMat=new THREE.MeshStandardMaterial({color:'#657985',roughness:1});",
     '    const fujiBody=new THREE.Mesh(new THREE.ConeGeometry(25,22,96,8),fujiBodyMat);fujiGroup.add(fujiBody);',
@@ -128,11 +122,51 @@
       changed = true;
     }
 
+
+    // V15: upgrade an already-transformed V14 module by replacing the entire
+    // marked hill section up to (but not including) the approved Fuji group.
+    // This deliberately avoids fragile exact matching of minified hill functions.
+    if (updated.includes('LE-WEATHER-SCENERY-V14') &&
+        !updated.includes('LE-WEATHER-HILLS-TERRAIN-V2')) {
+      const markerAt = updated.indexOf(sceneMarker);
+      const hillLineStart = markerAt >= 0 ? updated.lastIndexOf('\n', markerAt) + 1 : -1;
+      const fujiAt = markerAt >= 0 ? updated.indexOf('const fujiGroup=', markerAt) : -1;
+      if (hillLineStart >= 0 && fujiAt > hillLineStart) {
+        const fujiLineStart = updated.lastIndexOf('\n', fujiAt) + 1;
+        const terrainCode = `    // LE-WEATHER-HILLS-TERRAIN-V2: continuous rolling ridgelines, not separate mound objects.
+    function createRollingRidge(zStart,depth,peak,phase,material){
+      const nx=112,nz=30,positions=[],indices=[];
+      for(let iz=0;iz<=nz;iz++){
+        const t=iz/nz;
+        for(let ix=0;ix<=nx;ix++){
+          const u=ix/nx,x=-48+u*96;
+          const broad=Math.sin(Math.PI*u);
+          const crest=.68+.18*Math.sin(x*.105+phase)+.10*Math.sin(x*.19+phase*1.7);
+          const shoulder=Math.pow(Math.max(0,Math.sin(Math.PI*t)),.72);
+          const y=peak*.55*shoulder*Math.max(.28,crest);
+          const z=zStart+t*depth;
+          positions.push(x,y,z);
+          if(ix<nx&&iz<nz){const a=iz*(nx+1)+ix,b=a+1,c=a+(nx+1),d=c+1;indices.push(a,c,b,b,c,d);}
+        }
+      }
+      const geometry=new THREE.BufferGeometry();
+      geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+      geometry.setIndex(indices);geometry.computeVertexNormals();
+      const mesh=new THREE.Mesh(geometry,material);mesh.material.side=THREE.DoubleSide;scene.add(mesh);return mesh;
+    }
+    createRollingRidge(-43,15,13,.4,hillMats[0]);
+    createRollingRidge(-36,14,10,1.8,hillMats[1]);
+    createRollingRidge(-29,12,7,3.1,hillMats[2]);\n`;
+        updated = updated.slice(0, hillLineStart) + terrainCode + updated.slice(fujiLineStart);
+        changed = true;
+      }
+    }
+
     if (!changed) return null;
     const hasFuji = updated.includes(`fujiGroup.userData.refinement='${fujiMarker}'`) &&
       updated.includes('fujiGroup.scale.y=.54') &&
       updated.includes('fujiGroup.position.set(3.75,6.048,-64)');
-    const hasHills = updated.includes('m.scale.set(sx,.55*sy,sz)') && updated.includes(hillsMarker) && updated.includes('LE-WEATHER-HILLS-ROLLING-SMOOTH-V1') && updated.includes('new THREE.SphereGeometry(1,48,32)');
+    const hasHills = updated.includes('LE-WEATHER-HILLS-TERRAIN-V2') && updated.includes('function createRollingRidge(') && updated.includes('createRollingRidge(-43,15,13,.4,hillMats[0])');
     const hasCamera = updated.includes(frontResize) && updated.includes(cameraMarker);
     const hasTrees = updated.includes('const treeLayout=');
     if (!hasFuji || !hasHills || !hasCamera || !hasTrees ||
@@ -162,7 +196,7 @@
     if(response.ok){
       const source=await response.clone().text();
       if(!source.includes(versionMarker))
-        console.error('[LIVE // EARTH] Weather V14 rolling-hill refinement transform did not match; original Weather response preserved.');
+        console.error('[LIVE // EARTH] Weather V15 continuous rolling-hill transform did not match; original Weather response preserved.');
     }
     return response;
   };
