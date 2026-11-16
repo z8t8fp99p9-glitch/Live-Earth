@@ -1,20 +1,21 @@
-# Weather 3D — Pavilion Stair Infill Refinement v24
+# Weather 3D — Four-Side Pavilion Foundation Rails v26
 
-## Stair refinement
-- Added matching vertical timber infill boards between each of the four traditional stair treads.
-- The new boards close the see-through horizontal gaps visible through the middle of the staircase.
-- Added a narrow deck-wood face detail to visually tie the infill into the tread caps.
-- Preserved the four-step profile, tread widths, broad overhanging caps and traditional timber materials.
+## Perimeter rail design
+- Retains the existing long-side foundation rails and vertical supports.
+- Adds a continuous upper and lower rail along the rear short side, with three restrained timber uprights.
+- Adds matching rail returns on the front short side, split into left and right sections so the central entrance staircase remains accessible.
+- Uses the existing pavilion timber, deck and dark support materials.
+- Keeps the rails inside the existing rotated house group.
 
 ## Preserved
-- V23's shortened veranda support piers and stone footings.
-- V22's slimmer foundation slab and perimeter beams.
+- Existing four-step traditional timber staircase and its closed risers.
+- Shortened veranda piers and stone footings.
+- Slim foundation slab and perimeter beams.
 - Pavilion rotation, walls, Shoji divisions, columns, roof, eaves and lanterns.
 - Mount Fuji position and height, layered hills and trees.
-- Approved camera, forecast controls toggle, weather UI, weather effects, water, Location permission flow and feature lifecycle.
+- Approved camera, forecast toggle, weather UI, weather effects, water, Location permission flow and feature lifecycle.
 
-## Verification
-- Applied V24 as a follow-on transformation to the V23 output.
-- Runtime checks confirm the stair-infill marker and geometry, while preserving the Fuji, hills, pavilion rotation, camera and forecast toggle.
-- The transformed Weather module passed JavaScript syntax parsing.
+## Validation
+- JavaScript syntax check passed for the service-worker extension.
 - ZIP integrity, manifest payload list, sizes and SHA-256 digests are verified.
+- Device rendering still requires the user's upload and test.
