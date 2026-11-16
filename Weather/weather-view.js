@@ -186,7 +186,7 @@
       const barkPalette=[
         '#2b211d','#392820','#493126','#58402e','#674b35','#332820'
       ].map(c=>new THREE.Color(c));
-      const radialSegments=7;
+      const radialSegments=14;
       let pathCount=0;
 
       function addTubePath(points,radius,tipRatio=.12,tone=1){
@@ -228,13 +228,13 @@
           const basalFlare=1+.13*Math.exp(-Math.pow(t/.105,2));
           const longitudinal=1+.022*Math.sin(t*10.5+phase);
           const localRadius=radius*taper*basalFlare*longitudinal;
-          const grain=.91+rand()*.16;
+          const grain=.965+rand()*.055;
           for(let j=0;j<=radialSegments;j++){
             const a=j/radialSegments*Math.PI*2;
             // Small irregularity keeps the bark from looking like smooth plumbing.
-            const rough=1+.060*Math.sin(a*3+phase)+
-              .030*Math.sin(a*5+phase*1.7)+
-              .018*Math.sin(a*2+t*8.5+phase);
+            const rough=1+.022*Math.sin(a*3+phase)+
+              .010*Math.sin(a*5+phase*1.7)+
+              .006*Math.sin(a*2+t*8.5+phase);
             const nx=normal.x*Math.cos(a)+binormal.x*Math.sin(a);
             const ny=normal.y*Math.cos(a)+binormal.y*Math.sin(a);
             const nz=normal.z*Math.cos(a)+binormal.z*Math.sin(a);
@@ -331,7 +331,7 @@
         // Branch collars swell gently where each limb leaves its parent.
         // The short overlapping taper hides the hard cylinder-to-cylinder
         // junction and suggests the natural shoulder of mature maple wood.
-        if(radius>=.034&&path.length>=4){
+        if(radius>=.090&&path.length>=4){
           addTubePath(path.slice(0,4),radius*1.13,.80,tone);
         }
         return path;
@@ -350,7 +350,7 @@
         new THREE.Vector3(-.06,4.02,-.19),
         new THREE.Vector3(-.10,4.38,-.21)
       ];
-      const trunkPath=catmullPath(trunkControls,7);
+      const trunkPath=catmullPath(trunkControls,12);
       addTubePath(trunkPath,.285,.19,1);
 
       function trunkAt(height){
@@ -384,7 +384,7 @@
           .add(new THREE.Vector3(0,-.12,0)).addScaledVector(side,root.b);
         const c2=end.clone().addScaledVector(dir,-root.l*.22)
           .add(new THREE.Vector3(0,.08,0));
-        addTubePath(bezierPath(start,c1,c2,end,6),root.r,.17,0);
+        addTubePath(bezierPath(start,c1,c2,end,11),root.r,.19,0);
       }
 
       // Primary scaffold: irregular heights and directions make a layered,
@@ -403,7 +403,7 @@
         const spec=primarySpecs[i];
         const start=trunkAt(spec.h);
         const path=growBranch(start,spec.a,spec.len,spec.rise,spec.bend,
-          spec.r,1,8,.14);
+          spec.r,1,14,.18);
         primaryPaths.push({path,angle:spec.a});
       }
 
@@ -418,7 +418,7 @@
         {start:pointAt(leaderPath,.82),a:-.92,l:.58,rise:.32,bend:-.11}
       ];
       for(const spec of upperSpecs){
-        growBranch(spec.start,spec.a,spec.l,spec.rise,spec.bend,.034,2,6,.14);
+        growBranch(spec.start,spec.a,spec.l,spec.rise,spec.bend,.034,2,11,.18);
       }
 
       // Four secondary boughs leave each primary at uneven intervals.
@@ -439,7 +439,7 @@
           const rise=secondaryRise[j]+(j===1||j===2?-rand()*.16:rand()*.20);
           const bend=signed()*.26;
           const path=growBranch(origin,angle,length,rise,bend,
-            .043+rand()*.010,2,6,.15);
+            .043+rand()*.010,2,10,.18);
           secondaryPaths.push({path,angle});
         }
       }
@@ -458,7 +458,7 @@
           const length=.48+rand()*.43;
           const rise=[-.34,.30,-.48][j]+(j===1?rand()*.16:-rand()*.14);
           const path=growBranch(origin,angle,length,rise,signed()*.18,
-            .019+rand()*.005,3,5,.12);
+            .019+rand()*.005,3,9,.18);
           tertiaryPaths.push({path,angle});
         }
       }
@@ -477,7 +477,7 @@
           const length=.27+rand()*.32;
           const rise=[.24,-.18,-.42,.06][(j+(fineTwigCount%4))%4]+signed()*.10;
           growBranch(origin,angle,length,rise,signed()*.13,
-            .0085+rand()*.0035,4,4,.10);
+            .0085+rand()*.0035,4,8,.20);
           fineTwigCount++;
         }
       }
@@ -495,7 +495,7 @@
           const length=.42+rand()*.34;
           const rise=-.34-rand()*.34;
           growBranch(origin,angle,length,rise,signed()*.16,
-            .014+rand()*.004,3,5,.11);
+            .014+rand()*.004,3,8,.19);
           hangingSprayCount++;
         }
       }
@@ -551,10 +551,10 @@
       scene.add(maple);
       return maple;
     }
-    // V51 — MULTI-DIRECTION MAPLE SKELETON: primary, secondary and fine limbs
-    // now include upward, lateral and clearly descending growth. Added slender
-    // hanging sprays beneath the scaffold for a natural layered crown. Trunk
-    // refinement and tested front-right placement remain unchanged; no leaves.
+    // V52 — SMOOTH MAPLE WOOD: doubled radial tube resolution, denser curve
+    // sampling, restrained bark contour variation and softer branch taper.
+    // Large-limb collars remain; small branch junctions no longer form knobs.
+    // V51's multi-directional skeleton and tested tree placement are preserved.
     const momiji=createMomiji(3.02,4.72,.92);trees.push(momiji);
 
     // Main architectural landmark: open pavilion with curved eaves, columns and lanterns.
