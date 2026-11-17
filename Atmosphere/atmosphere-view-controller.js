@@ -159,8 +159,8 @@ async function initializeEngineView(view, viewId) {
   let renderQueued = false;
   let resizeObserver = null;
   let defaultCameraDistance = 3.15;
-  const ATMOSPHERE_ZOOM_FACTOR = 2;
-  let zoomFactor = ATMOSPHERE_ZOOM_FACTOR;
+  const ATMOSPHERE_MAX_ZOOM = 1.5;
+  let zoomFactor = 1;
   const layers = new Map();
   const maxPixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);
 
@@ -183,8 +183,7 @@ async function initializeEngineView(view, viewId) {
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
     defaultCameraDistance = getDefaultCameraDistance({ width, height, radius: 1, fieldOfView: 38, diameterFraction: 0.75 });
-    camera.position.z = defaultCameraDistance / ATMOSPHERE_ZOOM_FACTOR;
-    zoomFactor = ATMOSPHERE_ZOOM_FACTOR;
+    camera.position.z = defaultCameraDistance / zoomFactor;
     requestRender();
   }
 
@@ -199,7 +198,7 @@ async function initializeEngineView(view, viewId) {
     const height = Math.max(1, rect.height || window.innerHeight || 1);
     camera = new T.PerspectiveCamera(38, width / height, 0.1, 100);
     defaultCameraDistance = getDefaultCameraDistance({ width, height, radius: 1, fieldOfView: 38, diameterFraction: 0.75 });
-    camera.position.set(0, 0, defaultCameraDistance / ATMOSPHERE_ZOOM_FACTOR);
+    camera.position.set(0, 0, defaultCameraDistance);
     camera.lookAt(0, 0, 0);
     scene.add(new T.AmbientLight(0x8aa7c8, 0.28));
     const key = new T.DirectionalLight(0xffffff, 2.0);
@@ -226,14 +225,18 @@ async function initializeEngineView(view, viewId) {
       zoom: {
         enabled: true,
         getDistance: () => camera.position.z,
-        setDistance: () => {
-          camera.position.z = defaultCameraDistance / ATMOSPHERE_ZOOM_FACTOR;
-          zoomFactor = ATMOSPHERE_ZOOM_FACTOR;
+        setDistance: distance => {
+          const nextDistance = Math.max(
+            defaultCameraDistance / ATMOSPHERE_MAX_ZOOM,
+            Math.min(defaultCameraDistance, distance)
+          );
+          camera.position.z = nextDistance;
+          zoomFactor = defaultCameraDistance / nextDistance;
           camera.lookAt(0, 0, 0);
           requestRender();
         },
-        minDistance: () => defaultCameraDistance / ATMOSPHERE_ZOOM_FACTOR,
-        maxDistance: () => defaultCameraDistance / ATMOSPHERE_ZOOM_FACTOR
+        minDistance: () => defaultCameraDistance / ATMOSPHERE_MAX_ZOOM,
+        maxDistance: () => defaultCameraDistance
       },
       onRotate: requestRender,
       onZoom: requestRender
