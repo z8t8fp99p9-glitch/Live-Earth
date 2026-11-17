@@ -429,7 +429,15 @@
     registerFeature,
     mount, el, setStatus, button, card, attribution,
     attachLayer, isActive, globe,
-    fetchImageBlob, textureFromBlob, getEarthRaster, timeLabel
+    fetchImageBlob, textureFromBlob, getEarthRaster, timeLabel,
+    // One shared numerical-grid renderer; it never changes the Earth base mesh.
+    createGridRenderingSkin: (...args) => {
+      const skin = window.LiveEarthGridRenderingSkin;
+      if (!skin || typeof skin.create !== 'function') {
+        throw new Error('The shared globe grid-rendering skin is not available.');
+      }
+      return skin.create(...args);
+    }
   });
 
   // Elevation remains in the shared Stacks feature module. Registration order
@@ -470,6 +478,14 @@
     }, false);
   }
   (async () => {
+    // Load the universal grid renderer once before the six numerical-world controllers.
+    // Failure leaves the existing disconnected-data views safely available.
+    try {
+      await loadFeatureModule('./EarthEngine/Graphics/earth-grid-rendering-skin.js');
+    } catch (error) {
+      console.error('[LIVE // EARTH] Shared grid-rendering skin could not be loaded.', error);
+    }
+
     for (let index = 0; index < externalModules.length; index++) {
       // Preserve the original catalog order: Clouds, Weather, Elevation,
       // Earthquakes and Traffic. The numerical worlds follow those five entries.
