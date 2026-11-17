@@ -1,5 +1,5 @@
 /* LIVE // EARTH V118 — Clouds full-screen feature view.
-   Uses the shared Stacks feature runtime and existing Home Earth layer contract.
+   Uses the shared Stacks feature runtime and the explicit Prime Earth layer contract.
    The Global three-Orb dock and its lifecycle remain owned by the Global registry. */
 (() => {
   'use strict';
@@ -104,7 +104,7 @@
         loading = false; refresh.disabled = false;
       }
     }
-    function globeContextThree() { return window.LiveEarthScene?.getTHREE?.() || null; }
+    function globeContextThree() { return window.LiveEarthPrimeScene?.getTHREE?.() || null; }
     // Get THREE from the shared layer contract; older cached contracts fail gracefully.
     if (!cloudMaterial || !globe()?.getTHREE) {
       setCloudStatus('The shared Earth layer interface is unavailable. Your original Earth stays intact.', 'error');

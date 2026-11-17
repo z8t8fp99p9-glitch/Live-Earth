@@ -20,7 +20,7 @@ Every feature must:
 | Clouds | `Clouds/clouds-view.js` | NASA GIBS cloud-fraction imagery |
 | Traffic | `Traffic/traffic-view.js` | Independent traffic workspace; show traffic data only after a verified provider is connected |
 | Earthquakes | `Earthquakes/earthquakes-view.js` | USGS latest-day GeoJSON |
-| Elevation | `Stacks/stacks-feature-views.js` | Retained elevation workspace using the shared Home Earth layer |
+| Elevation | `Stacks/stacks-feature-views.js` | Retained elevation workspace using the shared Prime Earth layer |
 
 Missing, stale, restricted or unsupported data must be presented honestly. Do not fabricate live traffic or weather readings.
 

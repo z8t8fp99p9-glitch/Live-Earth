@@ -108,7 +108,7 @@ function incomingGroupFor(owner) {
   if (!owner) return null;
   const exact = earthGroupsByOwner.get(owner);
   if (exact) return exact;
-  // Existing Stacks views are overlays on the persistent Home Earth scene.
+  // Existing Stacks features currently overlay Prime Earth. Independent views must create their own globe with createEarthGlobe().
   // A Secondary view with its own Engine globe takes precedence above.
   if (owner.startsWith("secondary:")) return earthGroupsByOwner.get("primary:home") || null;
   return null;

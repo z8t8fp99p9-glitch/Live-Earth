@@ -201,9 +201,9 @@ async function runtimeResponse(request, dependency) {
 
 function injectSameGlobeAPI(html) {
   const anchor = "// LIVE_EARTH_HOME_RENDERER_HOOKS";
-  if (html.includes(anchor) && !html.includes("window.LiveEarthScene")) {
+  if (html.includes(anchor) && !html.includes("window.LiveEarthPrimeScene")) {
     const api = `
-window.LiveEarthScene = (() => {
+window.LiveEarthPrimeScene = (() => {
   // Home Location marker is parented to the exact Engine surface so it
   // follows the shared globe rotation without changing Earth geometry.
   const locationVector = new T.Vector3();
@@ -310,6 +310,9 @@ window.LiveEarthScene = (() => {
     requestRender: draw
   });
 })();
+// Compatibility alias for older feature modules. New code must use PrimeEarthScene.
+window.LiveEarthScene = window.LiveEarthPrimeScene;
+window.dispatchEvent(new Event("live-earth-prime-scene-ready"));
 window.dispatchEvent(new Event("live-earth-scene-ready"));
 `;
     html = html.replace(anchor, api + "\n" + anchor);
@@ -707,7 +710,7 @@ function injectStartupGate(html) {
     }
     function getMissingControllers() {
       const paths = [...knownBadPaths];
-      if (!window.LiveEarthScene) paths.push('./vendor/three.module.js','./vendor/three.core.js','./EarthEngine/Assets/earth-land-ocean-ice-2048.png');
+      if (!window.LiveEarthPrimeScene) paths.push('./vendor/three.module.js','./vendor/three.core.js','./EarthEngine/Assets/earth-land-ocean-ice-2048.png');
       if (!window.LiveEarthEngine) paths.push('./EarthEngine/Core/earth-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-core.js');
       if (window.__liveEarthEarthRendererInstalled !== true) paths.push('./Earth/earth-view-controller.js');
       if (!window.LiveEarthViewManager) paths.push('./Global/view-manager.js');
@@ -763,7 +766,7 @@ function injectStartupGate(html) {
       const imagesReady = orbImages.length === 5 && orbImages.every(img => img.complete && img.naturalWidth > 0);
       const modules = window.LiveEarthViewModules;
       return document.readyState === 'complete' &&
-        !!window.LiveEarthScene && !!window.LiveEarthEngine && !!window.LiveEarthGlobalViewpoint && !!window.LiveEarthOrbSystem && window.__liveEarthEarthRendererInstalled === true &&
+        !!window.LiveEarthPrimeScene && !!window.LiveEarthScene && !!window.LiveEarthEngine && !!window.LiveEarthGlobalViewpoint && !!window.LiveEarthOrbSystem && window.__liveEarthEarthRendererInstalled === true &&
         !!window.LiveEarthViewManager && !!modules && modules.has('earth-independent-renderer') &&
         modules.has('sky-container') && modules.has('moon-lunar-interface') &&
         window.__liveEarthMoonRendererInstalled === true && window.__liveEarthStacksFeatureViewsInstalled === true && !!window.LiveEarthSkyViews &&

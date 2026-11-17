@@ -20,7 +20,7 @@ CURRENT POSITION
 
 PROTECT
 - Five Home Orbs and the shared three-Orb feature dock.
-- Home Earth composition, Earth Engine ownership, independent Moon and Sun views.
+- Prime Earth composition, Earth Engine ownership, independent Moon and Sun views.
 - Location OFF by default; no automatic GPS permission.
 - Stacks lifecycle, offline startup, service-worker/update safeguards and local recovery.
 - User data, IndexedDB and Cache Storage.

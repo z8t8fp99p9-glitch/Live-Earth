@@ -38,7 +38,7 @@ This is a short record of durable decisions, not a log of every experiment or pa
 - Split the former combined `Traffic/traffic-view.js` implementation into two independent feature modules.
 - `Traffic/traffic-view.js` now owns only the Traffic Orb and clearly reports that no verified traffic provider is connected.
 - `LiveCams/live-cams-view.js` now owns the camera-directory discovery experience; its six discovery images live under `LiveCams/Assets/`.
-- The shared Stacks loader registers both modules independently. The shared Orb registry, Home Earth, dock and close lifecycle remain the common protected infrastructure.
+- The shared Stacks loader registers both modules independently. The shared Orb registry, Prime Earth, dock and close lifecycle remain the common protected infrastructure.
 - The service-worker shell cache and repair path include the new Live Cams module and its assets.
 
 
@@ -67,7 +67,7 @@ This is a short record of durable decisions, not a log of every experiment or pa
 - Added explicit in-app Play control in camera details for records positively identified as `live_video` and confirmed free/active. No session starts on card selection or modal open.
 - Added ICE gathering, SDP offer/answer, remote track attachment, connection state reporting, and WHEP session DELETE cleanup where the provider returns an accepted same-origin `Location`.
 - Paid, access-unknown, still-image, and publisher-only records do not start WHEP. HTTP 402 is reported without settling payment; API credentials are not embedded.
-- The engine is lazy-loaded and included in the service-worker shell/cache repair path. The Home globe and shared Orb navigation remain untouched.
+- The engine is lazy-loaded and included in the service-worker shell/cache repair path. The Prime Earth globe and shared Orb navigation remain untouched.
 - End-to-end playback remains unverified until an eligible `live_video` camera is tested on the deployed iPhone app; provider CORS/auth/payment behavior may still require a server-side broker.
 
 

@@ -22,7 +22,7 @@ This document contains the safeguards that apply to every task. Current code is 
 
 ## Protected Home and iOS behaviour
 
-Home Earth framing, size, texture, baseline geometry, Moon orbit, star field and five-Orb layout are protected. `ios-standalone-root-flow.js` and orientation recovery in `Global/orb-controls-v4.js` are deliberate safeguards. A historically identified hidden Home visual has not been conclusively mapped; do not remove it or related assets without tracing and installed-iPhone testing.
+Prime Earth framing, size, texture, baseline geometry, Moon orbit, star field and five-Orb layout are protected. `ios-standalone-root-flow.js` and orientation recovery in `Global/orb-controls-v4.js` are deliberate safeguards. A historically identified hidden Home visual has not been conclusively mapped; do not remove it or related assets without tracing and installed-iPhone testing.
 
 ## Shared architecture boundaries
 

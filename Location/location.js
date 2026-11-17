@@ -19,7 +19,7 @@
   const statusNode = document.querySelector("#status");
 
   function globe() {
-    return window.LiveEarthScene || null;
+    return window.LiveEarthPrimeScene || null;
   }
 
   function isFreshFix() {

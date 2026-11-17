@@ -8,7 +8,7 @@
 
   function readyControllersPresent() {
     return Boolean(
-      window.LiveEarthScene && window.LiveEarthEngine && window.LiveEarthGlobalViewpoint && window.LiveEarthViewManager && window.LiveEarthViewModules && window.LiveEarthOrbSystem &&
+      window.LiveEarthPrimeScene && window.LiveEarthEngine && window.LiveEarthGlobalViewpoint && window.LiveEarthViewManager && window.LiveEarthViewModules && window.LiveEarthOrbSystem &&
       window.LiveEarthViewModules.has("sky-container") &&
       window.LiveEarthViewModules.has("earth-independent-renderer") &&
       window.__liveEarthEarthRendererInstalled === true &&

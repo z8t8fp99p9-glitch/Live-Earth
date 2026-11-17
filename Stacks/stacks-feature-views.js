@@ -1,5 +1,5 @@
 /* LIVE // EARTH V118 — modular full-screen Stacks feature views over the existing shared Earth.
-   Uses the existing LiveEarthFeatureViews contract and LiveEarthScene Earth.
+   Uses the existing LiveEarthFeatureViews contract and Prime Earth scene.
    No second Earth is created. Location-based weather uses only an already-enabled fix.
    Live-data views do not display old cached data as current while offline. */
 (() => {
@@ -114,7 +114,7 @@
   let currentCleanup = null;
   const stage = () => document.getElementById('le-feature-stage');
   const stageCard = () => stage()?.querySelector('.le-feature-stage-card');
-  const globe = () => window.LiveEarthScene || null;
+  const globe = () => window.LiveEarthPrimeScene || null;
 
   function el(tag, className, textContent) {
     const node = document.createElement(tag);
@@ -415,7 +415,7 @@
         } catch (error) {
           console.error(`[LIVE // EARTH] ${id} view failed to open.`, error);
           const view = mount(id);
-          if (view) view.body.appendChild(el('p', 'le-sfv-status', `This view could not initialize. The Home Earth is preserved. ${error?.message || ''}`));
+          if (view) view.body.appendChild(el('p', 'le-sfv-status', `This view could not initialize. Prime Earth is preserved. ${error?.message || ''}`));
           currentCleanup = () => {};
         }
       },
@@ -462,7 +462,7 @@
     registerFeature(id, () => {
       const view = mount(id);
       if (view) {
-        const status = el('p', 'le-sfv-status', `${VIEW_META[id].title} view module is unavailable. The Home Earth and Global Orb controls remain untouched. ${reason || ''}`);
+        const status = el('p', 'le-sfv-status', `${VIEW_META[id].title} view module is unavailable. Prime Earth and Global Orb controls remain untouched. ${reason || ''}`);
         status.dataset.state = 'error';
         view.body.appendChild(status);
       }

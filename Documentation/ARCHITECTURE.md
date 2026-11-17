@@ -8,9 +8,18 @@
 - `Global/orb-controls-v4.js` owns protected Home Orb interactions and orientation recovery.
 - `ios-standalone-root-flow.js` supports iOS full-screen behaviour.
 
+## Earth ownership and naming
+
+- **Prime Earth** is the Home-owned globe and scene. It is not the Earth Engine.
+- **Earth Engine** (`EarthEngine/Core/earth-engine.js`) is the reusable factory for independent Earth globe instances.
+- **Earth View** creates its own Engine globe, scene, camera and renderer.
+- Existing Stacks features currently attach to Prime Earth through `window.LiveEarthPrimeScene`.
+- `window.LiveEarthScene` is a temporary compatibility alias only. New code must use `window.LiveEarthPrimeScene` when it intentionally targets Prime Earth.
+- A view requesting an independent Earth must call `createEarthGlobe()` and own its instance lifecycle. It must never silently fall back to Prime Earth.
+
 ## Primary views
 
-- Home owns its Earth scene, locked framing, Moon orbit and Home presentation.
+- Prime Earth owns its scene, locked framing, Moon orbit and Home presentation.
 - `Earth/earth-view-controller.js` owns the independent full-screen Earth View.
 - `EarthEngine/Core/earth-engine.js` creates reusable Earth globe objects and manages quaternion-only viewpoint continuity.
 - `EarthEngine/Graphics/earth-engine-3d-graphics-engine.js` imports `earth-engine-3d-graphics-core.js`; both are runtime dependencies.

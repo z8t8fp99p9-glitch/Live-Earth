@@ -1,5 +1,5 @@
 /* LIVE // EARTH V118 — Earthquakes full-screen feature view.
-   Uses the shared Stacks feature runtime and existing Home Earth layer contract.
+   Uses the shared Stacks feature runtime and the explicit Prime Earth layer contract.
    The Global three-Orb dock and its lifecycle remain owned by the Global registry. */
 (() => {
   'use strict';

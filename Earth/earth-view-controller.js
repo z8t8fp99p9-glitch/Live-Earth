@@ -217,7 +217,7 @@
   function syncLocationMarker() {
     if (!locationMarker) return;
     const allowed = window.liveEarthLocationAllowed?.() === true;
-    const api = window.LiveEarthScene;
+    const api = window.LiveEarthPrimeScene; // Prime Earth is consulted only for the approved location marker.
     const position = allowed ? api?.getLocation?.() : null;
     if (!position || !Number.isFinite(position.latitude) || !Number.isFinite(position.longitude)) {
       locationMarker.visible = false;
@@ -403,7 +403,7 @@
     })().catch(error => {
       initPromise = null;
       console.error("[LIVE // EARTH] Independent Earth renderer could not initialize.", error);
-      showStatus("Earth View could not load its local 3D resources. Home Earth remains untouched.", 6000);
+      showStatus("Earth View could not load its local 3D resources. Prime Earth remains untouched.", 6000);
       throw error;
     });
     return initPromise;

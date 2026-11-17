@@ -95,7 +95,7 @@ export function createMoonOrbit(T, earthGroup, options = {}) {
   dust.name = 'moonOrbitStardustGrains'; system.add(dust);
 
   // Moon Orbit owns only its Moon/orbit objects. It must never look up or mutate
-  // the Home Earth surface, transform, material, texture, camera or viewpoint.
+  // the Prime Earth surface, transform, material, texture, camera or viewpoint.
   const moonGeometry = new T.SphereGeometry(earthRadius * displayMoonRadius, 56, 40);
   const texture = loadSharedMoonSurfaceTexture(T);
   const material = new T.MeshStandardMaterial({ map: texture, color: 0xffffff, roughness: 1, metalness: 0 });
