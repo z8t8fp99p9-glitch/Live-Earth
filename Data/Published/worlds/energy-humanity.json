@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "world": "energy-humanity",
+  "status": "awaiting-source",
+  "generatedAt": null,
+  "data": {
+    "source": null,
+    "sourceUrl": null,
+    "events": [],
+    "timeline": []
+  },
+  "message": "No live measurements are published until a verified collector has produced them."
+}

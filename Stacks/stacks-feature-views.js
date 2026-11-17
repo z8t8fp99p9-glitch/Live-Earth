@@ -480,6 +480,7 @@
     // They are appended after the original five entries so existing orb order stays intact.
     try {
       await loadFeatureModule('./Data/data-worlds.js');
+      await loadFeatureModule('./Data/data-worlds-live.js');
     } catch (error) {
       console.error('[LIVE // EARTH] Numerical discovery worlds could not be loaded.', error);
     }

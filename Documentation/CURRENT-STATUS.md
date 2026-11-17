@@ -102,3 +102,14 @@ Never infer iPhone acceptance from a green Pages build. Report only checks actua
 - Set the six worlds to preview status because numerical source adapters and verified live data are not connected yet.
 - Advanced the matching service-worker and Update Manager identity to `v140-data-world-orb-registry` so installed clients request the corrected files.
 - Syntax, registry-id matching, runtime registration smoke checks and ZIP manifest integrity are checked in this correction package. Installed-device confirmation remains pending until the corrected build is deployed and tested.
+
+
+## Numerical Earth Intelligence — GitHub-only rebuild
+
+- Replaces the Cloudflare Worker/D1 proposal with GitHub Actions, a private GitHub archive repository and curated public snapshots.
+- The public `Live-Earth` repository must never contain the raw one-year archive because the repository is public.
+- A private GitHub vault stores daily JSONL archive partitions with a rolling 365-day retention policy.
+- The public app reads only curated Publisher JSON snapshots and lets the user choose 24h, 7d, 30d, 90d or 1y.
+- First connected source adapter: USGS Earthquake GeoJSON for Earth Activity. Remaining worlds are intentionally marked as awaiting approved source adapters.
+- The new scheduled workflow is supplied separately because the existing ZIP extractor protects `.github/` paths and cannot install it.
+- Deployment is not complete until the private vault, repository secrets and manual workflow are configured and the first scheduled run succeeds.

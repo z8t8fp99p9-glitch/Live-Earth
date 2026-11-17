@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "world": "earth-activity",
+  "status": "awaiting-first-collection",
+  "generatedAt": null,
+  "data": {
+    "source": "USGS Earthquake GeoJSON",
+    "sourceUrl": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php",
+    "events": [],
+    "timeline": []
+  },
+  "message": "No live measurements are published until a verified collector has produced them."
+}

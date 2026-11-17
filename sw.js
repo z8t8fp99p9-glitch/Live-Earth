@@ -1,11 +1,11 @@
 /* LIVE // EARTH V127 — EarthEngine root-folder architecture. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v140-data-world-orb-registry";
-const CACHE_NAME = "live-earth-shell-v140-data-world-orb-registry";
+const BUILD_ID = "v141-github-native-earth-intelligence";
+const CACHE_NAME = "live-earth-shell-v141-github-native-earth-intelligence";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
- "./","./index.html","./ios-standalone-root-flow.js","./Global/orb-controls-v4.js","./EarthEngine/Core/earth-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-core.js","./EarthEngine/Assets/README.md","./Earth/earth-view-controller.js","./Global/view-manager.js","./Global/view-module-registry.js","./Stacks/stacks-feature-views.js","./Data/data-worlds.js","./Clouds/clouds-view.js","./Weather/weather-view.js","./Traffic/traffic-view.js","./Earthquakes/earthquakes-view.js","./Global/sky-view-controller.js","./Moon/moon-view-controller.js","./Moon/moon-lunar-interface.js","./Sun/sun-view-controller.js","./Sun/sun-surface-shared.webp",
+ "./","./index.html","./ios-standalone-root-flow.js","./Global/orb-controls-v4.js","./EarthEngine/Core/earth-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-core.js","./EarthEngine/Assets/README.md","./Earth/earth-view-controller.js","./Global/view-manager.js","./Global/view-module-registry.js","./Stacks/stacks-feature-views.js","./Data/data-worlds.js","./Data/data-worlds-live.js","./Clouds/clouds-view.js","./Weather/weather-view.js","./Traffic/traffic-view.js","./Earthquakes/earthquakes-view.js","./Global/sky-view-controller.js","./Moon/moon-view-controller.js","./Moon/moon-lunar-interface.js","./Sun/sun-view-controller.js","./Sun/sun-surface-shared.webp",
  "./Earth/location.html","./Earth/earth-orb-globe.js","./manifest.json","./Global/icon.svg","./Data/data-store.js","./Location/location.js",
  "./Global/astronomy.js","./Home/moon-orbit.js","./Data/dataset-manifest.json",
  "./Home/moon-surface-lroc-1536.jpg",

@@ -83,3 +83,14 @@ The repository's `Tests/` directory has been retired by explicit user direction.
 ## Dependency rule
 
 A file referenced by `index.html`, the service worker, update manager, view registry, controller, module import or standalone tool is a dependency of that path even when it looks old. A missing test reference is not grounds to remove an application dependency.
+
+
+## Numerical Earth Intelligence — GitHub-native pipeline
+
+- Six numerical worlds remain registered through the shared Stacks feature runtime.
+- `Backend/GitHub-Intelligence/` contains the scheduled collector, rolling archive manager, publisher and tests.
+- The full one-year archive lives in a separate private GitHub repository; it is never copied into the public Pages output.
+- The public app repository contains only curated `Data/Published/worlds/*.json` snapshots.
+- `Data/data-worlds-live.js` reads only those snapshots and offers 24-hour, 7-day, 30-day, 90-day and 1-year display windows.
+- No Cloudflare Worker, D1 database, external hosting platform, or browser-local intelligence database is used.
+- The first connected source is the USGS earthquake GeoJSON feed for Earth Activity. Other worlds remain explicitly pending source approval; no synthetic values are published.
