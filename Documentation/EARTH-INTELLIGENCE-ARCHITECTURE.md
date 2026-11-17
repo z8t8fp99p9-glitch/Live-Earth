@@ -1,37 +1,36 @@
-# LIVE // EARTH — Numerical database foundation
+# LIVE // EARTH — Numerical-world database foundation
 
-## Current decision
+## Current phase
 
-Keep the six numerical-world Stacks Orbs. Remove the experimental data-collection and backend implementations. Prepare one provider-neutral PostgreSQL database schema first.
+Keep the six numerical-world Stacks Orbs. The database foundation is prepared separately from the application views. No live database host, data source, collector, API or scheduler is connected in this phase.
 
-No Cloudflare Worker, D1 database, GitHub archive, public snapshot pipeline, API, collector, scheduler or numerical-world data UI is active in this phase.
+## Application structure
 
-## Six retained worlds
+Each numerical Orb has its own folder and dedicated JavaScript View Controller:
 
-1. Atmosphere
-2. Oceans
-3. Land
-4. Water & Ice
-5. Earth Activity
-6. Energy & Humanity
+- `Atmosphere/atmosphere-view-controller.js`
+- `Oceans/oceans-view-controller.js`
+- `Land/land-view-controller.js`
+- `Water-Ice/water-ice-view-controller.js`
+- `Earth-Activity/earth-activity-view-controller.js`
+- `Energy-Humanity/energy-humanity-view-controller.js`
 
-The six Orbs remain registered in the existing shared Stacks feature registry. Tapping one displays a simple database-preparation status. Existing Home Orbs and all existing app views remain untouched.
+`Data/data-worlds.js` is only a sequential loader for these six controllers. It does not render or own any Orb view.
 
-## Database plan
+The existing `Stacks/stacks-feature-views.js` remains the shared Stacks registry and view-shell runtime. It owns registration, navigation, shared Earth stage mounting and cleanup. Each dedicated controller owns its own feature activation. The original five Stacks features and their registration order remain unchanged; the six numerical Orbs are appended after them in their existing order.
 
-- One PostgreSQL 16+ database shared by all six worlds.
-- Initial planning volume: approximately five million numerical observation rows per year.
-- Target retention: 365 days for observations and derived events.
-- Source-file metadata and checksums are stored; original large files are not stored as database blobs.
-- Every observation is traceable to its dataset, source record, timestamp, unit, quality state and optional location/uncertainty.
-- Derived events link back to supporting observations.
+## Database
 
-The schema is at `Database/PostgreSQL/001_initial_schema.sql`.
+- One PostgreSQL 16+ database shared by all six numerical worlds.
+- Target retention: 365 days for numerical observations and derived events.
+- Source-file metadata, provenance and checksums are tracked.
+- No sample measurements or fabricated events are included.
+- The schema is `Database/PostgreSQL/001_initial_schema.sql`.
 
-## Phase boundary
+The database is not provisioned or connected yet. The schema is prepared only.
 
-This package prepares the schema only. It does not choose a hosting provider or create a live database. After a PostgreSQL host is selected, apply the schema and verify it. Only then design the approved file-based source acquisition and ingestion process.
+## Preservation boundaries
 
-## Preservation
+This change does not alter Home, Earth, Moon, Sun, Location, Weather, Clouds, Elevation, Earthquakes, Traffic, the shared Stacks registry, or the existing Earth/Moon/Sun engines and controllers. It does not alter the existing `Data/data-store.js` or `Data/dataset-manifest.json`.
 
-The existing primary five Home Orbs, shared Stacks registry, original five Stacks features, Earth/Moon/Sun views, Weather, Location, Traffic and Earthquakes are outside this change and must remain untouched.
+No new imagery, visual feeds, browser database, or local persistence is used by these numerical-world placeholders.

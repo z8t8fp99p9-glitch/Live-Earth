@@ -1,44 +1,41 @@
-/* LIVE // EARTH — six numerical-world Orb placeholders.
-   Preserve the six Stacks Orbs while the central database is prepared.
-   No collectors, API calls, local storage or sample measurements are used. */
+/* LIVE // EARTH — numerical-world controller loader.
+   Each numerical Orb owns its folder and dedicated View Controller.
+   This file only loads those controllers in the established Stacks order. */
 (() => {
   'use strict';
-  const runtime = window.LiveEarthStacksFeatureRuntime;
-  if (!runtime || typeof runtime.registerFeature !== 'function') {
-    console.warn('[LIVE // EARTH] Numerical-world Orbs are waiting for the shared Stacks runtime.');
-    return;
-  }
-  if (window.__liveEarthDataWorldsRegistered) return;
-  window.__liveEarthDataWorldsRegistered = true;
+  if (window.__liveEarthNumericalWorldControllersLoading) return;
+  window.__liveEarthNumericalWorldControllersLoading = true;
 
-  const WORLDS = [
-    { id: 'atmosphere', title: 'Atmosphere', symbol: '◉' },
-    { id: 'oceans', title: 'Oceans', symbol: '≈' },
-    { id: 'land', title: 'Land', symbol: '⌁' },
-    { id: 'water-ice', title: 'Water & Ice', symbol: '❄' },
-    { id: 'earth-activity', title: 'Earth Activity', symbol: '✧' },
-    { id: 'energy-humanity', title: 'Energy & Humanity', symbol: '✺' }
+  const controllers = [
+    './Atmosphere/atmosphere-view-controller.js',
+    './Oceans/oceans-view-controller.js',
+    './Land/land-view-controller.js',
+    './Water-Ice/water-ice-view-controller.js',
+    './Earth-Activity/earth-activity-view-controller.js',
+    './Energy-Humanity/energy-humanity-view-controller.js'
   ];
 
-  function openPlaceholder(world) {
-    const view = runtime.mount(world.id);
-    if (!view) return () => {};
-    const heading = runtime.el('h2', '', world.title);
-    const status = runtime.el(
-      'p',
-      'le-sfv-status',
-      'Database foundation is being prepared. No source data has been connected or imported yet.'
-    );
-    status.dataset.state = 'success';
-    view.body.append(heading, status);
-    return () => {};
-  }
-
-  WORLDS.forEach(world => {
-    runtime.registerFeature(world.id, () => openPlaceholder(world), false);
+  const load = path => new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = new URL(path, document.baseURI).href;
+    script.async = false;
+    script.onload = () => resolve(path);
+    script.onerror = () => reject(new Error(`Numerical-world controller failed to load: ${path}`));
+    (document.head || document.documentElement).appendChild(script);
   });
 
-  window.dispatchEvent(new CustomEvent('live-earth-data-worlds-ready', {
-    detail: { count: WORLDS.length, state: 'database-preparation' }
-  }));
+  (async () => {
+    for (const path of controllers) {
+      try {
+        await load(path);
+      } catch (error) {
+        console.error('[LIVE // EARTH] Numerical-world controller unavailable.', error);
+      }
+    }
+    window.__liveEarthNumericalWorldControllersLoading = false;
+    window.__liveEarthNumericalWorldControllersReady = true;
+    window.dispatchEvent(new CustomEvent('live-earth-data-worlds-ready', {
+      detail: { count: controllers.length, state: 'database-preparation' }
+    }));
+  })();
 })();
