@@ -10,7 +10,8 @@ TASKS = [
     ('land', [sys.executable, str(ROOT/'Data/Scientific/world_collectors.py'), 'land']),
     ('water_ice', [sys.executable, str(ROOT/'Data/Scientific/world_collectors.py'), 'water_ice']),
     ('earth_activity', [sys.executable, str(ROOT/'Data/Scientific/world_collectors.py'), 'earth_activity']),
-    ('energy_humanity', [sys.executable, str(ROOT/'Data/Scientific/world_collectors.py'), 'energy_humanity']),
+    # Use a dedicated entry point so the required NASA POWER community is explicit.
+    ('energy_humanity', [sys.executable, str(ROOT/'Data/Scientific/energy_humanity_collector.py')]),
 ]
 
 def main():
