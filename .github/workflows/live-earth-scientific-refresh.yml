@@ -21,6 +21,7 @@ jobs:
 
     steps:
       - name: Checkout repository
+        id: checkout
         uses: actions/checkout@v4
         with:
           ref: main
@@ -36,10 +37,13 @@ jobs:
           python -m pip install -r Data/Scientific/requirements-refresh.txt
 
       - name: Collect and validate all six worlds
+        id: collect
+        continue-on-error: true
         run: |
           python Data/Scientific/refresh_all.py
 
-      - name: Commit updated snapshots
+      - name: Commit successful world snapshots
+        if: always() && steps.checkout.outcome == 'success'
         run: |
           if [[ -n "$(git status --porcelain)" ]]; then
             git config user.name "github-actions[bot]"
@@ -47,8 +51,18 @@ jobs:
 
             git add atmosphere oceans land water_ice earth_activity energy_humanity
 
-            git commit -m "Refresh latest scientific data snapshots"
-            git push origin HEAD:main
+            if ! git diff --cached --quiet; then
+              git commit -m "Refresh latest scientific data snapshots"
+              git push origin HEAD:main
+            else
+              echo "No verified dataset changes to commit."
+            fi
           else
             echo "No verified dataset changes."
           fi
+
+      - name: Report collection failures
+        if: steps.collect.outcome == 'failure'
+        run: |
+          echo "::error::One or more scientific world collectors failed. Successful world snapshots were still given an opportunity to publish."
+          exit 1
