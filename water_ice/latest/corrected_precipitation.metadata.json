@@ -6,7 +6,7 @@
   "product": "Daily PRECTOTCORR point samples (AG community)",
   "source_url": "https://power.larc.nasa.gov/api/temporal/daily/point",
   "valid_time_utc": "2026-11-15T00:00:00Z",
-  "retrieved_at_utc": "2026-11-17T14:58:07.370775Z",
+  "retrieved_at_utc": "2026-11-17T18:39:38.491645Z",
   "units": "mm/day",
   "source_record_count": 6,
   "source_payload_format": "CSV",

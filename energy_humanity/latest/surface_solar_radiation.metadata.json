@@ -6,7 +6,7 @@
   "product": "Daily ALLSKY_SFC_SW_DWN point samples (RE community)",
   "source_url": "https://power.larc.nasa.gov/api/temporal/daily/point",
   "valid_time_utc": "2026-08-31T00:00:00Z",
-  "retrieved_at_utc": "2026-11-17T14:58:11.207936Z",
+  "retrieved_at_utc": "2026-11-17T18:39:44.348231Z",
   "units": "kWh/m^2/day",
   "source_record_count": 6,
   "source_payload_format": "CSV",
