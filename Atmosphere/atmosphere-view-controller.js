@@ -159,7 +159,8 @@ async function initializeEngineView(view, viewId) {
   let renderQueued = false;
   let resizeObserver = null;
   let defaultCameraDistance = 3.15;
-  let zoomFactor = 1;
+  const ATMOSPHERE_ZOOM_FACTOR = 2;
+  let zoomFactor = ATMOSPHERE_ZOOM_FACTOR;
   const layers = new Map();
   const maxPixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);
 
@@ -182,7 +183,8 @@ async function initializeEngineView(view, viewId) {
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
     defaultCameraDistance = getDefaultCameraDistance({ width, height, radius: 1, fieldOfView: 38, diameterFraction: 0.75 });
-    camera.position.z = defaultCameraDistance / zoomFactor;
+    camera.position.z = defaultCameraDistance / ATMOSPHERE_ZOOM_FACTOR;
+    zoomFactor = ATMOSPHERE_ZOOM_FACTOR;
     requestRender();
   }
 
@@ -197,7 +199,7 @@ async function initializeEngineView(view, viewId) {
     const height = Math.max(1, rect.height || window.innerHeight || 1);
     camera = new T.PerspectiveCamera(38, width / height, 0.1, 100);
     defaultCameraDistance = getDefaultCameraDistance({ width, height, radius: 1, fieldOfView: 38, diameterFraction: 0.75 });
-    camera.position.set(0, 0, defaultCameraDistance);
+    camera.position.set(0, 0, defaultCameraDistance / ATMOSPHERE_ZOOM_FACTOR);
     camera.lookAt(0, 0, 0);
     scene.add(new T.AmbientLight(0x8aa7c8, 0.28));
     const key = new T.DirectionalLight(0xffffff, 2.0);
@@ -224,15 +226,14 @@ async function initializeEngineView(view, viewId) {
       zoom: {
         enabled: true,
         getDistance: () => camera.position.z,
-        setDistance: distance => {
-          const nextDistance = Math.max(defaultCameraDistance / 5, Math.min(defaultCameraDistance, distance));
-          camera.position.z = nextDistance;
-          zoomFactor = defaultCameraDistance / nextDistance;
+        setDistance: () => {
+          camera.position.z = defaultCameraDistance / ATMOSPHERE_ZOOM_FACTOR;
+          zoomFactor = ATMOSPHERE_ZOOM_FACTOR;
           camera.lookAt(0, 0, 0);
           requestRender();
         },
-        minDistance: () => defaultCameraDistance / 5,
-        maxDistance: () => defaultCameraDistance
+        minDistance: () => defaultCameraDistance / ATMOSPHERE_ZOOM_FACTOR,
+        maxDistance: () => defaultCameraDistance / ATMOSPHERE_ZOOM_FACTOR
       },
       onRotate: requestRender,
       onZoom: requestRender
@@ -345,12 +346,10 @@ function installStyles() {
     // are deliberately not requested until the user chooses a dataset.
     const hudToggle = runtime.el('button', 'le-atmo-hud-toggle', 'Hide controls');
     hudToggle.type = 'button';
-    hudToggle.setAttribute('aria-controls', 'le-atmo-hud-panel le-feature-dock');
+    hudToggle.setAttribute('aria-controls', 'le-atmo-hud-panel');
     hudToggle.setAttribute('aria-expanded', 'true');
-    const featureDock = document.getElementById('le-feature-dock');
     hudToggle.addEventListener('click', () => {
       const hidden = view.panel.classList.toggle('le-atmo-hud-hidden');
-      if (featureDock) featureDock.hidden = hidden;
       hudToggle.textContent = hidden ? 'Show controls' : 'Hide controls';
       hudToggle.setAttribute('aria-expanded', String(!hidden));
       hudToggle.setAttribute('aria-label', hidden ? 'Show Atmosphere controls' : 'Hide Atmosphere controls');
