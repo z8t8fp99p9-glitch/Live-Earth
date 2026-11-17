@@ -1,7 +1,7 @@
 /* LIVE // EARTH V127 — EarthEngine root-folder architecture. */
 const CACHE_PREFIX = "live-earth-shell-";
 const BUILD_ID = "v146-atmosphere-globe-first";
-const CACHE_NAME = "live-earth-shell-v146-atmosphere-globe-first";
+const CACHE_NAME = "live-earth-shell-v147-atmosphere-location-marker";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [

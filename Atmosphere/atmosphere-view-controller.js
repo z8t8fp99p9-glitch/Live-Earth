@@ -155,6 +155,10 @@ async function initializeEngineView(view, viewId) {
   let camera = null;
   let earthGlobe = null;
   let interactions = null;
+  let locationMarker = null;
+  let locationHalo = null;
+  let locationDot = null;
+  let locationVector = null;
   let disposed = false;
   let renderQueued = false;
   let resizeObserver = null;
@@ -218,6 +222,49 @@ async function initializeEngineView(view, viewId) {
     });
     if (disposed) { earthGlobe.dispose(); throw new Error("The world view closed while its Engine globe was loading."); }
     scene.add(earthGlobe.group);
+
+    // Match the Home Earth location marker: a small red halo and dot attached
+    // directly to this view's Earth surface, so it follows every globe rotation.
+    locationVector = new T.Vector3();
+    locationMarker = new T.Group();
+    locationMarker.name = "liveEarthAtmosphereLocationMarker";
+    locationHalo = new T.Mesh(
+      new T.SphereGeometry(0.031, 16, 12),
+      new T.MeshBasicMaterial({ color: 0xff234d, transparent: true, opacity: 0.28, depthWrite: false })
+    );
+    locationDot = new T.Mesh(
+      new T.SphereGeometry(0.014, 16, 12),
+      new T.MeshBasicMaterial({ color: 0xff183f, depthWrite: false })
+    );
+    locationMarker.add(locationHalo, locationDot);
+    locationMarker.visible = false;
+    earthGlobe.surface.add(locationMarker);
+
+    function syncAtmosphereLocation() {
+      const fix = window.liveEarthGetLocationState?.() === true
+        ? window.liveEarthGetLocationFix?.()
+        : null;
+      if (!fix || !locationMarker || !locationVector) {
+        if (locationMarker) locationMarker.visible = false;
+        requestRender();
+        return;
+      }
+      const phi = fix.latitude * Math.PI / 180;
+      const lambda = fix.longitude * Math.PI / 180;
+      locationVector.set(
+        Math.cos(phi) * Math.cos(lambda),
+        Math.sin(phi),
+        -Math.cos(phi) * Math.sin(lambda)
+      ).normalize();
+      locationHalo.position.copy(locationVector).multiplyScalar(1.006);
+      locationDot.position.copy(locationVector).multiplyScalar(1.019);
+      locationMarker.visible = true;
+      requestRender();
+    }
+    window.addEventListener("live-earth-location-fix", syncAtmosphereLocation);
+    window.addEventListener("live-earth-location-state", syncAtmosphereLocation);
+    syncAtmosphereLocation();
+
     interactions = earthGlobe.attachInteractions({
       element: canvas,
       enabled: () => !disposed && root.isConnected && runtime.isActive(viewId),
@@ -283,8 +330,14 @@ async function initializeEngineView(view, viewId) {
       window.removeEventListener("resize", resize);
       window.removeEventListener("orientationchange", resize);
       resizeObserver?.disconnect(); resizeObserver = null;
+      window.removeEventListener("live-earth-location-fix", syncAtmosphereLocation);
+      window.removeEventListener("live-earth-location-state", syncAtmosphereLocation);
       interactions?.dispose?.(); interactions = null;
       for (const id of [...layers.keys()]) removeLayer(id);
+      if (locationMarker?.parent) locationMarker.parent.remove(locationMarker);
+      locationHalo?.geometry?.dispose?.(); locationHalo?.material?.dispose?.();
+      locationDot?.geometry?.dispose?.(); locationDot?.material?.dispose?.();
+      locationMarker = null; locationHalo = null; locationDot = null; locationVector = null;
       earthGlobe?.dispose?.(); earthGlobe = null;
       renderer?.dispose?.(); renderer?.forceContextLoss?.(); renderer = null;
       canvas.remove();

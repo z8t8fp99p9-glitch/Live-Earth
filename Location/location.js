@@ -11,6 +11,7 @@
   const MAX_FUTURE_SKEW = 30000;
   let requested = false;
   let hasFreshFix = false;
+  let latestCoordinates = null;
   let watchId = null;
   let lastFixAt = 0;
   let staleTimer = 0;
@@ -31,6 +32,11 @@
   window.liveEarthLocationAllowed = isFreshFix;
   window.liveEarthGetLocationState = isFreshFix;
   window.liveEarthLocationPending = () => requested && !isFreshFix();
+  // Shared, read-only access for views that need to place a marker on their own globe.
+  window.liveEarthGetLocationFix = () => {
+    if (!isFreshFix() || !latestCoordinates) return null;
+    return { ...latestCoordinates, capturedAt: lastFixAt };
+  };
 
   function showStatus(message, duration = 2800) {
     if (!statusNode) return;
@@ -80,6 +86,8 @@
     if (api && typeof api.setLocationEnabled === "function") {
       api.setLocationEnabled(false);
     }
+    latestCoordinates = null;
+    window.dispatchEvent(new CustomEvent("live-earth-location-fix", { detail: null }));
   }
 
   function stopWatch() {
@@ -95,7 +103,9 @@
   function clearRequestState() {
     requested = false;
     hasFreshFix = false;
+    latestCoordinates = null;
     lastFixAt = 0;
+    window.dispatchEvent(new CustomEvent("live-earth-location-fix", { detail: null }));
     stopWatch();
     hideForNoFreshFix();
     paintLocationOrbs();
@@ -137,8 +147,12 @@
 
     const wasFresh = isFreshFix();
     lastFixAt = fixTimestamp;
+    latestCoordinates = { latitude, longitude };
     hasFreshFix = true;
     api.setLocationEnabled(true);
+    window.dispatchEvent(new CustomEvent("live-earth-location-fix", {
+      detail: { latitude, longitude, capturedAt: lastFixAt }
+    }));
 
     if (!wasFresh) {
       // This is the first point at which the app announces Location as ON.
@@ -250,6 +264,7 @@
       if (Date.now() - lastFixAt <= MAX_FIX_AGE) return;
 
       hasFreshFix = false;
+      latestCoordinates = null;
       hideForNoFreshFix();
       publishState(false, "stale");
       paintLocationOrbs();
