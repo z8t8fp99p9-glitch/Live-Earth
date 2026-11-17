@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
   refresh:
+    name: Collect and publish scientific snapshots
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -32,6 +33,7 @@ jobs:
       - name: Install scientific data tools
         run: |
           python -m pip install --upgrade pip
+          python -m pip install -r Data/Scientific/requirements-refresh.txt
 
       - name: Collect and validate all six worlds
         run: |
