@@ -1,0 +1,71 @@
+
+name: LIVE // EARTH Earth Intelligence
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live-earth-intelligence
+  cancel-in-progress: false
+
+jobs:
+  collect-process-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out public LIVE // EARTH app
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: app
+          persist-credentials: true
+
+      - name: Check out private intelligence vault
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.EARTH_INTELLIGENCE_VAULT_REPO }}
+          token: ${{ secrets.EARTH_INTELLIGENCE_VAULT_TOKEN }}
+          ref: main
+          path: vault
+          persist-credentials: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Collect, retain, analyse and publish
+        working-directory: app
+        run: |
+          node Backend/GitHub-Intelligence/src/run.mjs --vault ../vault --publish Data/Published/worlds
+
+      - name: Commit private one-year archive
+        working-directory: vault
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add archive
+          if ! git diff --cached --quiet; then
+            git commit -m "Update Earth Intelligence archive"
+            git push origin HEAD:main
+          else
+            echo "No archive changes."
+          fi
+
+      - name: Commit curated public snapshots
+        working-directory: app
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Data/Published/worlds
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish curated Earth Intelligence snapshots"
+            git push origin HEAD:main
+          else
+            echo "No published snapshot changes."
+          fi
