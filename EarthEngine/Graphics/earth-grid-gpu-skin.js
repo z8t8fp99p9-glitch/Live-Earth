@@ -44,13 +44,22 @@
         uContourStrength: { value: isAtmosphereTemperature ? 0.34 : (Number.isFinite(options.contourStrength) ? options.contourStrength : 0.22) },
         uTemperaturePalette: { value: isAtmosphereTemperature ? 1 : 0 },
         uMin: { value: min },
-        uMax: { value: max }
+        uMax: { value: max },
+        // Convert globe UV coordinates into the source grid's declared
+        // geographic coordinate system. This avoids a 180-degree shift
+        // and east/west reversal for NOAA's 0..360 east-positive grid.
+        uLongitudeOffset: { value: (180 - d.lonStart) / (d.lonStep * d.width) },
+        uLongitudeScale: { value: -360 / (d.lonStep * d.width) },
+        uLatitudeOffset: { value: (-90 - d.latStart) / (d.latStep * (d.height - 1)) },
+        uLatitudeScale: { value: 180 / (d.latStep * (d.height - 1)) }
       },
       vertexShader: `varying vec2 vUv; varying vec3 vNormalView; void main(){ vUv=uv; vNormalView=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
       fragmentShader: `
         uniform sampler2D uGrid; uniform float uOpacity;
         uniform float uTime; uniform float uContours; uniform float uContourStrength;
         uniform float uTemperaturePalette; uniform float uMin; uniform float uMax;
+        uniform float uLongitudeOffset; uniform float uLongitudeScale;
+        uniform float uLatitudeOffset; uniform float uLatitudeScale;
         varying vec2 vUv; varying vec3 vNormalView;
 
         vec3 temperatureRamp(float t) {
@@ -82,8 +91,14 @@
         }
 
         void main(){
-          vec2 uv=vec2(fract(vUv.x), clamp(vUv.y,0.0,1.0));
-          vec4 sampleValue=texture2D(uGrid,uv);
+          // SphereGeometry's U axis runs opposite to east-positive longitude.
+          // Its centre meridian is 0 degrees; source grid metadata supplies
+          // the first longitude/latitude and signed grid steps.
+          vec2 gridUv = vec2(
+            fract(uLongitudeOffset + uLongitudeScale * vUv.x),
+            clamp(uLatitudeOffset + uLatitudeScale * vUv.y, 0.0, 1.0)
+          );
+          vec4 sampleValue=texture2D(uGrid,gridUv);
           if(sampleValue.a<0.5) discard;
           float t=sampleValue.r;
           vec3 colour = uTemperaturePalette > 0.5 ? temperatureRamp(t) : genericRamp(t);
