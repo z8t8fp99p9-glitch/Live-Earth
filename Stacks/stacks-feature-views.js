@@ -468,6 +468,13 @@
         registerUnavailableFeature(item.id, error?.message || '');
       }
     }
+    // Six numerical discovery worlds register through the same Stacks registry.
+    // They are appended after the original five entries so existing orb order stays intact.
+    try {
+      await loadFeatureModule('./Data/data-worlds.js');
+    } catch (error) {
+      console.error('[LIVE // EARTH] Numerical discovery worlds could not be loaded.', error);
+    }
     // Startup readiness is set only after every feature is registered (or receives
     // a safe unavailable-state view). The service worker caches every module offline.
     window.__liveEarthStacksFeatureViewsInstalled = true;

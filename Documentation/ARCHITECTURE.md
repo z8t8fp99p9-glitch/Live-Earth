@@ -39,6 +39,15 @@ Current data sources: Weather uses Open-Meteo; Clouds uses NASA GIBS; Earthquake
 - Weather data continues to use Open-Meteo. `Location/location.js` remains the sole owner of explicit permission and fresh-fix lifecycle. Weather consumes the approved location state only; Location remains OFF unless the user enables it.
 - The existing shared stage, feature lifecycle and three-Orb dock remain authoritative. Weather must not add another dock, close action, view registry or location-permission path.
 
+## Numerical discovery worlds — initial visual implementation
+
+- Six new Stacks feature Orbs are registered by `Data/data-worlds.js`: Atmosphere, Oceans, Land, Water & Ice, Earth Activity, and Energy & Humanity.
+- Each opens a distinct procedural animated visual environment and a shared Discover / Signals / Timeline / Compare interaction pattern.
+- The six worlds are appended after the existing five Stacks features. They use the existing feature registry, full-screen stage, close lifecycle and three-Orb dock; they do not modify Home or create another navigation system.
+- This first implementation is a visual and interaction foundation. Numeric source adapters, verified event detection, time-series playback and regional comparison are not connected yet. The UI explicitly labels those states as not connected and does not fabricate measurements or events.
+- The visual scenes are generated locally from canvas geometry and particles; they do not use satellite imagery, webcam feeds or third-party visual feeds.
+- `Data/data-worlds.js` is included in the service-worker app shell. The matching service-worker and Update Manager build identity is `v139-six-data-worlds`.
+
 ## Location, data and recovery
 
 - `Location/location.js` owns explicit browser permission, GPS watch and fresh-fix lifecycle. Other views consume approved state only.

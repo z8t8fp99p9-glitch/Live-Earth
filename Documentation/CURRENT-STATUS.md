@@ -81,3 +81,14 @@ Never infer iPhone acceptance from a green Pages build. Report only checks actua
 - Removed all nine Live Cams paths from the service-worker app shell and all three Live Cams script paths from startup repair diagnostics. Advanced the service-worker/Update Manager build ID to `v138-core-essential-shell` so installed clients can replace the old shell.
 - Kept Traffic independent, with no provider or camera dependency. Historical Live Cams documentation and the prior decision trail are retained as archived records, not active code or current architecture.
 - Source-defined startup total is 45 resources (42 app-shell entries plus 3 shared runtime dependencies). Installed-device confirmation remains pending until after upload/deployment.
+
+
+## Six numerical discovery worlds — 17 November 2026
+
+- Added six new Stacks feature Orbs: Atmosphere, Oceans, Land, Water & Ice, Earth Activity, and Energy & Humanity.
+- Each world has its own locally generated animated visual identity, responsive portrait/landscape composition, and contextual Discover / Signals / Timeline / Compare controls.
+- The six entries use the existing shared Stacks registry and feature lifecycle. Home's five Orbs, primary-view manager, Earth Engine, Moon, Sun and the shared dock were not modified.
+- This is the visual/UX foundation only. Numeric provider adapters, verified event intelligence, timeline playback and comparisons remain future backend work. The interface labels disconnected functions honestly and does not invent data or events.
+- No imagery data, satellite feeds or webcam feeds are used by these new visual scenes.
+- Service-worker and Update Manager build identity advanced together to `v139-six-data-worlds`.
+- Source syntax checks passed for the four changed/new JavaScript files. Installed-device visual acceptance and data integration remain outstanding.
