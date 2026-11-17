@@ -77,6 +77,10 @@
       .le-atmo-range { display:flex; align-items:baseline; flex-wrap:wrap; gap:5px 10px; }
       .le-atmo-range strong { color:#f2fbff; font-size:clamp(23px,6vw,31px); letter-spacing:-.035em; font-weight:760; }
       .le-atmo-range span { color:#a9c6d8; font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
+      .le-atmo-legend { margin:10px 0 2px; padding:9px 10px; border:1px solid rgba(159,211,249,.13); border-radius:12px; background:rgba(1,8,17,.34); }
+      .le-atmo-legend-title { display:block; margin-bottom:7px; color:#a9c6d8; font-size:8px; font-weight:750; letter-spacing:.12em; text-transform:uppercase; }
+      .le-atmo-legend-bar { height:9px; border-radius:999px; background:linear-gradient(90deg,#0e1b57 0%,#1f57c7 14%,#33b3d6 29%,#47b38c 43%,#b8c957 57%,#f5c73d 71%,#f06429 84%,#c71f33 94%,#7a1357 100%); box-shadow:inset 0 0 0 1px rgba(255,255,255,.12); }
+      .le-atmo-legend-ticks { display:flex; justify-content:space-between; gap:5px; margin-top:5px; color:#b8cbd8; font-size:8px; font-variant-numeric:tabular-nums; }
       .le-atmo-details { margin-top:10px; border-top:1px solid rgba(165,208,235,.14); padding-top:8px; }
       .le-atmo-details summary { list-style:none; cursor:pointer; color:#b7d8e9; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; display:flex; justify-content:space-between; align-items:center; min-height:26px; }
       .le-atmo-details summary::-webkit-details-marker { display:none; }
@@ -126,10 +130,14 @@
     await loadScript(SCRIPT_PATHS[0], () => !!window.LiveEarthUniversalGridSystem?.loadSnapshot);
     await loadScript(SCRIPT_PATHS[1], () => !!window.LiveEarthGpuGridSkin?.create);
   }
+  // Match Moon and Sun: display each absolute timestamp in the device's
+  // local timezone. The source instant remains UTC and is never shifted.
   function formatTime(value) {
     if (!value) return 'Time unavailable';
     const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? 'Time unavailable' : date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }) + ' UTC';
+    return Number.isNaN(date.getTime())
+      ? 'Time unavailable'
+      : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
   }
   // This controller calls the shared Earth Engine directly and owns its view renderer.
 async function initializeEngineView(view, viewId) {
@@ -590,6 +598,15 @@ function installStyles() {
     range.appendChild(rangeValue);
     range.appendChild(runtime.el('span', '', 'Verified global range · °C'));
     details.appendChild(range);
+    const legend = runtime.el('div', 'le-atmo-legend');
+    legend.setAttribute('role', 'img');
+    legend.setAttribute('aria-label', 'Temperature colour scale in degrees Celsius, from minus 80 to plus 45');
+    legend.appendChild(runtime.el('span', 'le-atmo-legend-title', 'Temperature colour scale · °C'));
+    legend.appendChild(runtime.el('div', 'le-atmo-legend-bar'));
+    const legendTicks = runtime.el('div', 'le-atmo-legend-ticks');
+    for (const tick of ['−80°', '−40°', '0°', '20°', '45°']) legendTicks.appendChild(runtime.el('span', '', tick));
+    legend.appendChild(legendTicks);
+    details.appendChild(legend);
     const disclosure = runtime.el('details', 'le-atmo-details');
     disclosure.appendChild(runtime.el('summary', '', 'Data details & provenance'));
     const metric = runtime.el('div', 'le-sfv-metric-grid');
@@ -714,6 +731,11 @@ function installStyles() {
             contours: true, contourStrength: 0.24,
             name: 'NOAA-GFS-2m-air-temperature'
           });
+          // Atmosphere-only visual tuning: reveal more of the Earth Engine's
+          // geographic texture while keeping the 5 °C measured isolines legible.
+          const temperatureUniforms = gridHandle.mesh?.material?.uniforms;
+          if (temperatureUniforms?.uOpacity) temperatureUniforms.uOpacity.value = 0.70;
+          if (temperatureUniforms?.uContourStrength) temperatureUniforms.uContourStrength.value = 0.30;
           gridRoot.add(gridHandle.mesh);
           earth.add(gridRoot);
           return () => {
