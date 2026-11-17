@@ -7,7 +7,7 @@ falls back to one documented point in that same region. NOAA OISST is retained
 as its original daily global NetCDF file; USGS earthquakes remain an event feed.
 """
 from __future__ import annotations
-import csv, datetime as dt, gzip, hashlib, io, json, os, sys, tempfile, time
+import csv, datetime as dt, gzip, hashlib, io, json, os, re, sys, tempfile, time
 from pathlib import Path
 import requests
 
@@ -168,100 +168,127 @@ def power_point_request(parameter, community, start_day, end_day, tile):
         'end':end_day.strftime('%Y%m%d'),
         'time-standard':'UTC', 'format':'JSON'
     }
-    response = fetch(url, params, max_bytes=4 * 1024 * 1024, attempts=3)
+    response = fetch(url, params, max_bytes=12 * 1024 * 1024, attempts=3)
     values = parse_power_point_json(response.content, parameter, tile, start_day, end_day)
     return values, response.url
 
 
-def power_points(world, dataset, parameter, units, note, community,
-                 newest_age_days=3, oldest_age_days=10):
-    """Collect one common observation day for all six fixed sample points."""
-    # One multi-day point request per region. Different POWER products have
-    # different publication latency, so callers may widen the date window while
-    # the selected observation remains the newest common valid date.
-    end_day = now().date() - dt.timedelta(days=newest_age_days)
-    start_day = now().date() - dt.timedelta(days=oldest_age_days)
-    values_by_tile, sources = {}, {}
-    errors = []
+def power_points(world, dataset, parameter, units, note, community):
+    """Collect each regional point's newest valid NASA POWER observation.
+
+    POWER's Daily endpoint requires a start/end range rather than a latest flag.
+    We request the full available daily history and select the newest non-fill
+    observation independently for each point. There is no hard-coded freshness
+    window and points do not need to share the same observation date.
+    """
+    end_day = now().date()
+    start_day = dt.date(1981, 1, 1)
+    values_by_tile, sources, errors = {}, {}, []
     for tile in POWER_TILES:
         try:
-            values, source_url = power_point_request(parameter, community, start_day, end_day, tile)
-            values_by_tile[tile['id']] = values
+            values, source_url = power_point_request(
+                parameter, community, start_day, end_day, tile)
+            selected = max(values)
+            values_by_tile[tile['id']] = (selected, values[selected])
             sources[tile['id']] = source_url
         except Exception as exc:
             errors.append(f"{tile['id']}: {exc}")
 
     if len(values_by_tile) != len(POWER_TILES):
         raise RuntimeError(
-            f'NASA POWER did not return a valid {parameter} series for all six sample points. '
-            + ' | '.join(errors[-6:])
-        )
+            f"NASA POWER did not return a valid {parameter} observation for all six sample points. "
+            + ' | '.join(errors[-6:]))
 
-    common_dates = set.intersection(*(set(values_by_tile[t['id']]) for t in POWER_TILES))
-    if not common_dates:
-        available = {key: sorted(value.keys())[-3:] for key, value in values_by_tile.items()}
-        raise RuntimeError(f'No common valid observation date across all six points for {parameter}; recent dates: {available}')
-
-    selected_day = max(common_dates)
     out = io.StringIO()
     fields = ['YEAR','MO','DY','LAT','LON',parameter,'SAMPLE_TILE_ID','SAMPLE_MODE']
     writer = csv.DictWriter(out, fieldnames=fields, lineterminator='\n')
     writer.writeheader()
-    tile_counts = {}
+    tile_dates, ages = {}, {}
     for tile in POWER_TILES:
-        value = values_by_tile[tile['id']][selected_day]
+        selected_day, value = values_by_tile[tile['id']]
+        day_obj = dt.datetime.strptime(selected_day, '%Y%m%d').date()
         writer.writerow({
             'YEAR':selected_day[:4], 'MO':selected_day[4:6], 'DY':selected_day[6:8],
             'LAT':tile['lat'], 'LON':tile['lon'], parameter:value,
             'SAMPLE_TILE_ID':tile['id'], 'SAMPLE_MODE':'NASA_POWER_daily_point_JSON'
         })
-        tile_counts[tile['id']] = 1
+        tile_dates[tile['id']] = selected_day
+        ages[tile['id']] = (end_day - day_obj).days
 
-    coverage = 'six fixed point samples on one common observation day; sparse regional samples, not a complete global grid'
+    latest_day = max(tile_dates.values())
+    oldest_day = min(tile_dates.values())
     payload = out.getvalue().encode('utf-8')
-    valid_time = f'{selected_day[:4]}-{selected_day[4:6]}-{selected_day[6:8]}T00:00:00Z'
+    valid_time = f"{latest_day[:4]}-{latest_day[4:6]}-{latest_day[6:8]}T00:00:00Z"
     publish(world, dataset, payload,
             'https://power.larc.nasa.gov/api/temporal/daily/point', 'NASA POWER',
             f'Daily {parameter} point samples ({community} community)', units,
-            valid_time, note + ' Coverage is ' + coverage + '.', len(POWER_TILES),
+            valid_time,
+            note + ' Each regional sample uses its own newest valid source observation; dates may differ. '
+                  'Coverage is six sparse regional point samples, not a complete global grid.',
+            len(POWER_TILES),
             extra={'parameter':parameter, 'community':community,
                    'coverage_mode':'six_sparse_regional_point_samples',
-                   'sample_tiles':POWER_TILES, 'records_per_tile':tile_counts,
-                   'request_mode':'point_json', 'request_urls':sources,
-                   'selected_source_day':selected_day,
-                   'observation_age_days':(now().date() - dt.datetime.strptime(selected_day,'%Y%m%d').date()).days})
+                   'sample_tiles':POWER_TILES, 'records_per_tile':{k:1 for k in tile_dates},
+                   'request_mode':'point_json_full_available_history', 'request_urls':sources,
+                   'selected_source_days':tile_dates, 'observation_age_days_by_tile':ages,
+                   'oldest_sample_day':oldest_day, 'newest_sample_day':latest_day})
 
 
 def oceans():
-    # NOAA/NCEI OISST v2.1 final product has publication latency. Search a
-    # bounded recent window; do not silently accept a 20+ day old snapshot.
-    last_error = None
-    for back in range(14, 19):
-        day = now().date() - dt.timedelta(days=back)
-        ymd = day.strftime('%Y%m%d'); ym = day.strftime('%Y%m')
-        url = f'https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/v2.1/access/avhrr/{ym}/oisst-avhrr-v02r01.{ymd}.nc'
+    # NCEI publishes daily files into month directories. Read the directory
+    # indexes (a few small requests), discover the newest file actually present,
+    # then download only that file instead of probing many dates with 404s.
+    base = 'https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/v2.1/access/avhrr'
+    today = now().date()
+    months = []
+    for offset in range(4):
+        month_index = today.year * 12 + today.month - 1 - offset
+        year, month0 = divmod(month_index, 12)
+        months.append(f'{year:04d}{month0 + 1:02d}')
+    candidates = []
+    for ym in months:
+        listing_url = f'{base}/{ym}/'
         try:
-            response = fetch(url, max_bytes=12*1024*1024)
+            listing = fetch(listing_url, max_bytes=2 * 1024 * 1024, attempts=2).text
+        except Exception as exc:
+            print(f'OISST directory {ym} unavailable: {exc}', file=sys.stderr)
+            continue
+        for ymd in re.findall(r'oisst-avhrr-v02r01\.(\d{8})\.nc', listing):
+            try:
+                day = dt.datetime.strptime(ymd, '%Y%m%d').date()
+            except ValueError:
+                continue
+            if day <= today:
+                candidates.append((day, ymd, ym))
+    if not candidates:
+        raise RuntimeError('NCEI directory listings contained no published OISST daily files in the latest four months')
+
+    last_error = None
+    for day, ymd, ym in sorted(set(candidates), reverse=True):
+        url = f'{base}/{ym}/oisst-avhrr-v02r01.{ymd}.nc'
+        try:
+            response = fetch(url, max_bytes=12*1024*1024, attempts=2)
             data = response.content
             if not (data.startswith(b'CDF\x01') or data.startswith(b'CDF\x02') or data.startswith(b'\x89HDF\r\n\x1a\n')):
                 raise RuntimeError('NOAA response is not a recognized NetCDF file')
             if len(data) < 100_000:
                 raise RuntimeError(f'NetCDF payload unexpectedly small: {len(data)} bytes')
+            age = (today - day).days
             publish('oceans', 'sea_surface_temperature', data, url, 'NOAA/NCEI',
                     'Daily Optimum Interpolation Sea Surface Temperature Analysis v2.1 Final',
                     'degree_C', day.isoformat()+'T12:00:00Z',
-                    'Original daily global 0.25-degree OISST NetCDF source file; final analysis publication latency applies.',
+                    'Original daily global 0.25-degree OISST NetCDF source file; newest published final analysis discovered from the NCEI directory index.',
                     1, fmt='NetCDF4',
                     extra={'source_dataset_id':'OISST v2.1 AVHRR',
                            'native_grid_spacing_degrees':0.25,
                            'coverage_mode':'global_native_grid',
                            'source_file':url.rsplit('/',1)[-1],
-                           'observation_age_days':back}, extension='nc')
+                           'observation_age_days':age}, extension='nc')
             return
         except Exception as exc:
             last_error = str(exc)
             print(f'OISST candidate {ymd}: {exc}', file=sys.stderr)
-    raise RuntimeError('No valid NOAA OISST final daily NetCDF found within the 14–18 day freshness window: '+str(last_error))
+    raise RuntimeError('No valid NOAA OISST final daily NetCDF could be downloaded from the newest published candidates: '+str(last_error))
 
 
 def earth_activity():
@@ -310,13 +337,8 @@ def water_ice():
                  'NASA POWER daily observationally corrected precipitation, AG community; precipitation forcing, not flood extent, groundwater, or reservoir level.', 'AG')
 
 def energy_humanity():
-    # NASA POWER combines CERES SYN1deg (about 3–4 months latency) with
-    # CERES FLASHFlux (about 5–7 days latency). Request a wider 7–30 day
-    # window to bridge gaps in the low-latency stream, then publish only the
-    # newest date shared by all six points. The metadata records actual age.
     power_points('energy_humanity', 'surface_solar_radiation', 'ALLSKY_SFC_SW_DWN', 'kWh/m^2/day',
-                 'NASA POWER daily all-sky surface shortwave downward irradiance, RE community; selected from the newest common valid date in a 7–30 day window because the satellite flux products have publication latency.', 'RE',
-                 newest_age_days=7, oldest_age_days=30)
+                 'NASA POWER daily all-sky surface shortwave downward irradiance, RE community; each point uses its newest valid observation returned by the source.')
 
 
 TASKS = {'oceans':oceans, 'land':land, 'water_ice':water_ice,
