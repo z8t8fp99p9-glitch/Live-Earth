@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "world": "oceans",
+  "dataset": "sea_surface_temperature",
+  "provider": "NOAA/NCEI",
+  "product": "Daily Optimum Interpolation Sea Surface Temperature Analysis v2.1 Final",
+  "source_url": "https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/v2.1/access/avhrr/202610/oisst-avhrr-v02r01.20261031.nc",
+  "valid_time_utc": "2026-10-31T12:00:00Z",
+  "retrieved_at_utc": "2026-11-17T14:41:38.207749Z",
+  "units": "degree_C",
+  "source_record_count": 1,
+  "source_payload_format": "NetCDF4",
+  "sha256_source_payload": "6ded3cadc0dd84f0b8d11293681ece9c84fe47cb3662fa865f9a82d4ada27ea9",
+  "stored_bytes": 1501149,
+  "quality_status": "downloaded_and_basic_schema_validated",
+  "note": "Original daily global 0.25-degree OISST NetCDF source file; newest published final analysis discovered from the NCEI directory index.",
+  "source_dataset_id": "OISST v2.1 AVHRR",
+  "native_grid_spacing_degrees": 0.25,
+  "coverage_mode": "global_native_grid",
+  "source_file": "oisst-avhrr-v02r01.20261031.nc",
+  "observation_age_days": 17
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "world": "earth_activity",
+  "dataset": "earthquakes",
+  "provider": "USGS ComCat",
+  "product": "All earthquakes past 24 hours GeoJSON feed",
+  "source_url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson",
+  "valid_time_utc": "2026-11-17T14:40:53Z",
+  "retrieved_at_utc": "2026-11-17T14:41:47.250831Z",
+  "units": "magnitude; depth_km",
+  "source_record_count": 176,
+  "source_payload_format": "GeoJSON feature records",
+  "sha256_source_payload": "d5a67c74972d65eb47cb0bf197c75d9c4f631415bdf4611847f222f20d7c4af1",
+  "stored_bytes": 8545,
+  "quality_status": "downloaded_and_basic_schema_validated",
+  "note": "Event feed, not a continuous global geophysical field.",
+  "feed_window": "past_24_hours",
+  "geojson_count": 176
+}
