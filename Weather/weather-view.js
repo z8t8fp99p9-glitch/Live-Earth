@@ -1175,49 +1175,112 @@
     gardenLantern.userData.style='Kasuga-inspired six-sided ishi-doro';
     scene.add(gardenLantern);
 
-    // Low, layered evergreen with gently spreading, irregular pine pads.
-    // Each pad is real 3D foliage geometry; the silhouette stays readable
-    // against the hills and does not compete with the red maple crown.
+
+    // V78 — MATURE NIWAKI PINE
+    // Original procedural model informed by the Medium Niwaki Pine asset
+    // specifications: approx. 3.95 x 4.33 x 3.93 m, static PBR mesh,
+    // layered cloud pads, exposed branching and a naturally asymmetrical crown.
+    // Built in-scene; no external asset or decoder dependency.
     const pineGroup=new THREE.Group();
-    const pineBark=mat('#49382b',.96),
-      pineMats=['#183f35','#20513e','#2b6249','#3b7254'].map(c=>mat(c,.92));
-    const pineTrunk=new THREE.Mesh(new THREE.CylinderGeometry(.075,.19,3.15,7),pineBark);
-    pineTrunk.position.y=1.575;pineGroup.add(pineTrunk);
-    const pineTiers=[
-      {y:1.15,r:1.22,h:.70,lean:-.08,mat:0},
-      {y:1.78,r:1.08,h:.68,lean:.10,mat:1},
-      {y:2.38,r:.88,h:.62,lean:-.06,mat:2},
-      {y:2.91,r:.62,h:.54,lean:.08,mat:3},
-      {y:3.35,r:.36,h:.43,lean:-.04,mat:2}
+    const pineBark=mat('#49372a',.94), pineBarkLight=mat('#604936',.96),
+      pineCut=mat('#806047',.94);
+    const pineNeedleMats=[
+      mat('#173d30',.94),mat('#1d4937',.93),mat('#285740',.92),
+      mat('#356849',.91),mat('#477653',.90)
     ];
-    pineTiers.forEach((tier,index)=>{
-      const pad=new THREE.Mesh(
-        new THREE.ConeGeometry(tier.r,tier.h,9,2),
-        pineMats[tier.mat]
-      );
-      pad.position.set(tier.lean,tier.y,0);
-      pad.rotation.z=(index%2?-.055:.045);
-      pineGroup.add(pad);
-      // Flattened side bough pads give the tree a hand-shaped Japanese garden form.
-      for(let side=0;side<3;side++){
-        const angle=side*Math.PI*2/3+index*.47;
-        const branchPad=new THREE.Mesh(
-          new THREE.IcosahedronGeometry(tier.r*.48,1),
-          pineMats[(tier.mat+1)%pineMats.length]
-        );
-        branchPad.position.set(
-          Math.cos(angle)*tier.r*.48,
-          tier.y-.07+Math.sin(side*2.1)*.045,
-          Math.sin(angle)*tier.r*.48
-        );
-        branchPad.scale.set(1.12,.34,.82);
-        branchPad.rotation.y=-angle;
-        pineGroup.add(branchPad);
+    const pineShadow=mat('#102d25',.98);
+    const pineBranchMaterial=pineBark;
+    function pineTube(points,radius,material,sides=6){
+      const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(p[0],p[1],p[2])));
+      const mesh=new THREE.Mesh(new THREE.TubeGeometry(curve,Math.max(5,points.length*4),radius,sides,false),material);
+      pineGroup.add(mesh);return mesh;
+    }
+    function pineLimb(start,end,r0,r1,material=pineBranchMaterial){
+      const a=new THREE.Vector3(...start),b=new THREE.Vector3(...end),d=b.clone().sub(a);
+      const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r1,r0,d.length(),7,1),material);
+      mesh.position.copy(a).add(b).multiplyScalar(.5);
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());
+      pineGroup.add(mesh);return mesh;
+    }
+    // A subtly leaning, tapering trunk with old-tree movement rather than a pole.
+    pineTube([[0,.05,0],[-.08,.62,.02],[-.19,1.28,.04],[-.12,1.92,.02],
+      [.05,2.55,-.03],[.13,3.18,-.05],[.04,3.78,-.08],[.16,4.27,-.10]],.145,pineBark,8);
+    pineTube([[-.03,.32,.01],[-.13,.95,.03],[-.22,1.52,.02]],.052,pineBarkLight,6);
+    // Exposed primary scaffold: sweeping, slightly rising boughs distributed in depth.
+    const pinePads=[];
+    const primary=[
+      {end:[-1.78,2.02,.10],via:[-.72,2.05,.08],pad:[-1.58,2.18,.12],size:[.91,.22,.66],rot:-.12},
+      {end:[1.82,2.25,.18],via:[.76,2.30,.08],pad:[1.55,2.42,.18],size:[.92,.23,.66],rot:.13},
+      {end:[-.08,2.48,1.50],via:[-.08,2.43,.66],pad:[-.08,2.58,1.27],size:[.72,.21,.73],rot:.04},
+      {end:[.10,2.62,-1.58],via:[.10,2.55,-.66],pad:[.12,2.74,-1.30],size:[.76,.22,.68],rot:-.08},
+      {end:[-1.38,3.02,-.72],via:[-.58,2.88,-.28],pad:[-1.18,3.12,-.68],size:[.78,.22,.59],rot:-.20},
+      {end:[1.48,3.15,.82],via:[.66,3.00,.34],pad:[1.25,3.26,.76],size:[.79,.23,.62],rot:.17},
+      {end:[-.22,3.62,.12],via:[-.06,3.32,.08],pad:[-.22,3.75,.16],size:[.65,.20,.60],rot:-.04},
+      {end:[.72,3.92,-.62],via:[.30,3.70,-.30],pad:[.70,4.02,-.60],size:[.52,.18,.48],rot:.12}
+    ];
+    primary.forEach((b,i)=>{
+      const junction=[-.12+(i%3)*.08,1.85+Math.floor(i/3)*.38,-.02];
+      pineTube([junction,b.via,b.end],.052-(i%3)*.004,pineBranchMaterial,6);
+      // Fine secondary forks are visible between trunk and foliage pad.
+      const tip=b.pad;
+      for(let f=0;f<3;f++){
+        const t=.42+f*.17;
+        const sx=b.via[0]*(1-t)+b.end[0]*t, sy=b.via[1]*(1-t)+b.end[1]*t,
+          sz=b.via[2]*(1-t)+b.end[2]*t;
+        const sign=(f%2?1:-1);
+        const forkEnd=[sx+sign*(.18+(i%2)*.035),sy+.10+(f%2)*.04,sz+sign*.14];
+        pineTube([[sx,sy,sz],[(sx+forkEnd[0])*.5,sy+.08,(sz+forkEnd[2])*.5],forkEnd],
+          .018,pineBarkLight,5);
+      }
+      pinePads.push({center:tip,size:b.size,rot:b.rot,seed:i});
+    });
+    // Secondary crown shelves fill the spaces between the larger pads while
+    // retaining open windows through the crown and the visible branch framework.
+    const secondary=[
+      {c:[-.92,2.63,.72],s:[.58,.17,.48],r:-.18},
+      {c:[.92,2.76,-.78],s:[.61,.18,.48],r:.16},
+      {c:[-.72,3.42,-.72],s:[.54,.16,.43],r:.10},
+      {c:[.82,3.50,.70],s:[.55,.17,.44],r:-.12},
+      {c:[-.12,1.92,1.02],s:[.48,.16,.44],r:.04},
+      {c:[.32,2.05,-1.00],s:[.48,.16,.43],r:-.08}
+    ];
+    secondary.forEach((p,i)=>pinePads.push({center:p.c,size:p.s,rot:p.r,seed:i+10}));
+    // Build each cloud pad from a low, irregular cushion plus smaller overlapping
+    // lobes. These are sculpted needle masses, not spheres on branch tips.
+    pinePads.forEach((p,idx)=>{
+      const [cx,cy,cz]=p.center,[sx,sy,sz]=p.size;
+      const base=new THREE.Mesh(new THREE.IcosahedronGeometry(1,2),pineNeedleMats[idx%4]);
+      base.position.set(cx,cy,cz);base.scale.set(sx,sy,sz);base.rotation.y=p.rot;
+      pineGroup.add(base);
+      const lobes=5;
+      for(let k=0;k<lobes;k++){
+        const a=(k/lobes)*Math.PI*2+p.seed*.73;
+        const rr=.52+((k*7+p.seed)%4)*.055;
+        const lobe=new THREE.Mesh(new THREE.IcosahedronGeometry(1,1),pineNeedleMats[(idx+k+1)%5]);
+        lobe.position.set(cx+Math.cos(a)*sx*rr,cy+Math.sin(k*2.4+p.seed)*sy*.38,
+          cz+Math.sin(a)*sz*rr);
+        lobe.scale.set(sx*(.36+(k%2)*.07),sy*(.68+(k%3)*.12),sz*(.34+(k%2)*.08));
+        lobe.rotation.y=p.rot+a*.12;pineGroup.add(lobe);
+      }
+      // Fine outward needle sprays add a soft silhouette and catch highlights.
+      for(let n=0;n<9;n++){
+        const a=(n/9)*Math.PI*2+p.seed*.41;
+        const origin=[cx+Math.cos(a)*sx*.52,cy+((n%3)-1)*sy*.35,cz+Math.sin(a)*sz*.52];
+        const tip=[origin[0]+Math.cos(a)*(.16+(n%3)*.035),
+          origin[1]-.025+(n%2)*.045,
+          origin[2]+Math.sin(a)*(.15+(n%3)*.03)];
+        pineLimb(origin,tip,.012,.002,pineNeedleMats[(idx+n)%5]);
       }
     });
-    // V77: shift the evergreen inward toward the stair approach, keeping the lantern clear.
+    // Small exposed roots anchor the sculpted trunk to the garden ground.
+    [[-.72,.08,.10],[.68,.07,.18],[-.22,.06,.62],[.18,.06,-.58]].forEach((r,i)=>{
+      pineTube([[0,.18,0],[r[0]*.48,.10,r[2]*.48],[r[0],r[1],r[2]]],.055-i*.006,pineBark,6);
+    });
+    // Retain the established stair-side placement and footprint.
     pineGroup.position.set(-3.95,0,2.85);
     pineGroup.scale.setScalar(.88);
+    pineGroup.userData.style='Mature Niwaki pine — layered asymmetric cloud pads';
+    pineGroup.userData.approxDimensionsMeters={width:3.95,height:4.33,depth:3.93};
     scene.add(pineGroup);
 
     // Main architectural landmark: open pavilion with curved eaves, columns and lanterns.
