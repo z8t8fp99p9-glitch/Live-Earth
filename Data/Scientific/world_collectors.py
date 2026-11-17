@@ -13,7 +13,7 @@ import requests
 
 ROOT = Path(__file__).resolve().parents[2]
 S = requests.Session()
-S.headers.update({'User-Agent':'LIVE-EARTH-scientific-collector/1.3 (open-data research visualization)'})
+S.headers.update({'User-Agent':'LIVE-EARTH-scientific-collector/1.4 (open-data research visualization)'})
 MAX_BYTES = 35 * 1024 * 1024
 UTC = dt.timezone.utc
 
@@ -33,12 +33,12 @@ def now(): return dt.datetime.now(UTC)
 def stamp(d): return d.isoformat().replace('+00:00','Z')
 
 
-def fetch(url, params=None, max_bytes=MAX_BYTES, attempts=4):
-    """Retry transient upstream/network errors; never retry ordinary 4xx errors."""
+def fetch(url, params=None, max_bytes=MAX_BYTES, attempts=3):
+    """Retry transient network/server errors without repeating validation failures."""
     last_error = None
     for attempt in range(attempts):
         try:
-            r = S.get(url, params=params, timeout=(20, 240))
+            r = S.get(url, params=params, timeout=(15, 120))
             if r.status_code == 429 or 500 <= r.status_code <= 599:
                 detail = (r.text or '')[:500].replace('\n', ' ')
                 last_error = RuntimeError(f'HTTP {r.status_code} from {r.url}: {detail}')
@@ -112,116 +112,123 @@ def publish(world, dataset, payload, source_url, provider, product, units,
                       'valid_time_utc':valid_time}, indent=2))
 
 
-def parse_power_csv(content, parameter):
-    """Find POWER's metadata-prefixed CSV header and retain only real numeric rows."""
-    text = content.decode('utf-8-sig', errors='replace')
-    lines = text.splitlines()
-    target = parameter.strip().upper()
-    header_index = None
-    for i, line in enumerate(lines):
-        cols = [c.strip().strip('"').upper() for c in line.split(',')]
-        if target in cols and any(c in ('LAT', 'LATITUDE') for c in cols) and any(c in ('LON', 'LONGITUDE') for c in cols):
-            header_index = i
-            break
-    if header_index is None:
-        raise RuntimeError(f'NASA POWER CSV header not recognized for {parameter}. Response starts: {lines[:8]}')
-    reader = csv.DictReader(lines[header_index:])
-    rows = []
-    for row in reader:
-        if not row: continue
-        value = next((v for k, v in row.items() if k and k.strip().strip('"').upper() == target), None)
-        try: number = float(value)
-        except (ValueError, TypeError): continue
-        if not (-1e6 < number < 1e6) or number in (-999.0, -9999.0): continue
-        # Require usable coordinates as well as the measurement.
-        try:
-            lat = float(row.get('LAT') or row.get('LATITUDE'))
-            lon = float(row.get('LON') or row.get('LONGITUDE'))
-        except (ValueError, TypeError): continue
-        if not (-90 <= lat <= 90 and -180 <= lon <= 180): continue
-        rows.append(row)
-    if not rows:
-        raise RuntimeError(f'NASA POWER returned no valid {parameter} observations')
-    payload = ('\n'.join(lines[header_index:]) + '\n').encode()
-    return payload, rows
-
-
-def power_tile_request(parameter, community, day, tile):
-    """Try the 4.5-degree regional API, then the centre-point API for that tile."""
-    date = day.strftime('%Y%m%d')
-    regional_url = 'https://power.larc.nasa.gov/api/temporal/daily/regional'
-    regional_params = {
-        'latitude-min':tile['lat']-2.25, 'latitude-max':tile['lat']+2.25,
-        'longitude-min':tile['lon']-2.25, 'longitude-max':tile['lon']+2.25,
-        'parameters':parameter, 'community':community, 'start':date, 'end':date,
-        'time-standard':'UTC', 'format':'CSV'
-    }
+def parse_power_point_json(content, parameter, tile, start_day, end_day):
+    """Parse NASA POWER's documented point JSON response into dated numeric values."""
     try:
-        response = fetch(regional_url, regional_params)
-        payload, rows = parse_power_csv(response.content, parameter)
-        return payload, rows, response.url, 'regional_4.5_degree_sample'
-    except Exception as regional_error:
-        point_url = 'https://power.larc.nasa.gov/api/temporal/daily/point'
-        point_params = {
-            'latitude':tile['lat'], 'longitude':tile['lon'],
-            'parameters':parameter, 'community':community,
-            'start':date, 'end':date, 'time-standard':'UTC', 'format':'CSV'
-        }
+        obj = json.loads(content.decode('utf-8-sig'))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f'NASA POWER returned invalid JSON: {exc}')
+
+    if not isinstance(obj, dict):
+        raise RuntimeError('NASA POWER JSON root is not an object')
+    properties = obj.get('properties') or {}
+    parameters = properties.get('parameter') or {}
+    series = parameters.get(parameter)
+    if not isinstance(series, dict):
+        available = sorted(parameters.keys()) if isinstance(parameters, dict) else []
+        raise RuntimeError(f'NASA POWER JSON has no {parameter} series; available: {available}')
+
+    # Point responses carry their location in GeoJSON geometry. Validate it
+    # against the requested sample point; do not infer coordinates from rows.
+    geometry = obj.get('geometry') or {}
+    coordinates = geometry.get('coordinates') or []
+    if len(coordinates) < 2:
+        raise RuntimeError('NASA POWER point JSON has no GeoJSON coordinates')
+    try:
+        response_lon, response_lat = float(coordinates[0]), float(coordinates[1])
+    except (TypeError, ValueError):
+        raise RuntimeError('NASA POWER point JSON has invalid GeoJSON coordinates')
+    if abs(response_lat - tile['lat']) > 0.02 or abs(response_lon - tile['lon']) > 0.02:
+        raise RuntimeError(f'NASA POWER returned unexpected point ({response_lat}, {response_lon}) for {tile['id']}')
+
+    values = {}
+    for date_key, raw_value in series.items():
         try:
-            response = fetch(point_url, point_params)
-            payload, rows = parse_power_csv(response.content, parameter)
-            return payload, rows, response.url, 'point_fallback'
-        except Exception as point_error:
-            raise RuntimeError(f"{tile['id']} regional request failed ({regional_error}); point fallback failed ({point_error})")
-
-
-def power_csv(world, dataset, parameter, units, note, community):
-    # POWER daily products may lag and may temporarily publish fill values.
-    # Search recent dates, newest first, and never treat -999 fill values as data.
-    errors = []
-    for back in range(3, 11):
-        day = now().date() - dt.timedelta(days=back)
-        collected, sources, dates, tile_counts, modes = [], [], [], {}, {}
-        for tile in POWER_TILES:
-            try:
-                payload, rows, source_url, mode = power_tile_request(parameter, community, day, tile)
-                reader = csv.DictReader(payload.decode().splitlines())
-                tile_rows = rows  # only validated numeric rows; exclude POWER fill-value rows
-                for row in tile_rows:
-                    row['SAMPLE_TILE_ID'] = tile['id']
-                    row['SAMPLE_MODE'] = mode
-                    collected.append(row)
-                sources.append(source_url)
-                tile_counts[tile['id']] = len(rows)
-                modes[tile['id']] = mode
-                for row in rows:
-                    y = row.get('YEAR', '')
-                    m = row.get('MO', '')
-                    d = row.get('DY', '')
-                    if y and m and d: dates.append(f'{y}{m.zfill(2)}{d.zfill(2)}')
-            except Exception as exc:
-                errors.append(f'{tile["id"]} {day.isoformat()}: {exc}')
-        # Publish only a complete six-region sample set for one observation day.
-        if len(tile_counts) != len(POWER_TILES) or not collected:
+            day = dt.datetime.strptime(str(date_key), '%Y%m%d').date()
+            number = float(raw_value)
+        except (TypeError, ValueError):
             continue
-        fields = list(dict.fromkeys(k for row in collected for k in row.keys()))
-        out = io.StringIO()
-        writer = csv.DictWriter(out, fieldnames=fields, lineterminator='\n')
-        writer.writeheader(); writer.writerows(collected)
-        valid = max(dates) if dates else day.strftime('%Y%m%d')
-        coverage = 'six fixed regional samples; a mix of regional grids and centre-point fallbacks; not a complete global grid'
-        publish(world, dataset, out.getvalue().encode(),
-                'https://power.larc.nasa.gov/api/temporal/daily', 'NASA POWER',
-                f'Daily {parameter} sampled regional product', units,
-                valid[:4]+'-'+valid[4:6]+'-'+valid[6:8]+'T00:00:00Z',
-                note + ' Coverage is ' + coverage + '.', len(collected),
-                extra={'parameter':parameter, 'community':community,
-                       'coverage_mode':'sparse_regional_samples',
-                       'sample_tiles':POWER_TILES, 'records_per_tile':tile_counts,
-                       'request_modes':modes, 'request_urls':sources,
-                       'selected_source_day':valid})
-        return
-    raise RuntimeError(f'NASA POWER could not provide valid {parameter} rows in the last 3–10 day window. Last errors: ' + ' | '.join(errors[-8:]))
+        if day < start_day or day > end_day:
+            continue
+        if not (-1e6 < number < 1e6) or number in (-999.0, -9999.0):
+            continue
+        values[day.strftime('%Y%m%d')] = number
+    if not values:
+        raise RuntimeError(f'NASA POWER has no valid {parameter} values in requested date window')
+    return values
+
+
+def power_point_request(parameter, community, start_day, end_day, tile):
+    """Fetch one compact multi-day point series for a documented regional sample."""
+    url = 'https://power.larc.nasa.gov/api/temporal/daily/point'
+    params = {
+        'latitude':tile['lat'], 'longitude':tile['lon'],
+        'parameters':parameter, 'community':community,
+        'start':start_day.strftime('%Y%m%d'),
+        'end':end_day.strftime('%Y%m%d'),
+        'time-standard':'UTC', 'format':'JSON'
+    }
+    response = fetch(url, params, max_bytes=4 * 1024 * 1024, attempts=3)
+    values = parse_power_point_json(response.content, parameter, tile, start_day, end_day)
+    return values, response.url
+
+
+def power_points(world, dataset, parameter, units, note, community):
+    """Collect one common, recent observation day for all six fixed sample points."""
+    # A single 8-day response per point is faster and gentler on NASA POWER than
+    # retrying separate regional rectangles and individual dates. The selected
+    # day is the newest date available at all six points, 3–10 days behind NRT.
+    end_day = now().date() - dt.timedelta(days=3)
+    start_day = now().date() - dt.timedelta(days=10)
+    values_by_tile, sources = {}, {}
+    errors = []
+    for tile in POWER_TILES:
+        try:
+            values, source_url = power_point_request(parameter, community, start_day, end_day, tile)
+            values_by_tile[tile['id']] = values
+            sources[tile['id']] = source_url
+        except Exception as exc:
+            errors.append(f"{tile['id']}: {exc}")
+
+    if len(values_by_tile) != len(POWER_TILES):
+        raise RuntimeError(
+            f'NASA POWER did not return a valid {parameter} series for all six sample points. '
+            + ' | '.join(errors[-6:])
+        )
+
+    common_dates = set.intersection(*(set(values_by_tile[t['id']]) for t in POWER_TILES))
+    if not common_dates:
+        available = {key: sorted(value.keys())[-3:] for key, value in values_by_tile.items()}
+        raise RuntimeError(f'No common valid observation date across all six points for {parameter}; recent dates: {available}')
+
+    selected_day = max(common_dates)
+    out = io.StringIO()
+    fields = ['YEAR','MO','DY','LAT','LON',parameter,'SAMPLE_TILE_ID','SAMPLE_MODE']
+    writer = csv.DictWriter(out, fieldnames=fields, lineterminator='\n')
+    writer.writeheader()
+    tile_counts = {}
+    for tile in POWER_TILES:
+        value = values_by_tile[tile['id']][selected_day]
+        writer.writerow({
+            'YEAR':selected_day[:4], 'MO':selected_day[4:6], 'DY':selected_day[6:8],
+            'LAT':tile['lat'], 'LON':tile['lon'], parameter:value,
+            'SAMPLE_TILE_ID':tile['id'], 'SAMPLE_MODE':'NASA_POWER_daily_point_JSON'
+        })
+        tile_counts[tile['id']] = 1
+
+    coverage = 'six fixed point samples on one common observation day; sparse regional samples, not a complete global grid'
+    payload = out.getvalue().encode('utf-8')
+    valid_time = f'{selected_day[:4]}-{selected_day[4:6]}-{selected_day[6:8]}T00:00:00Z'
+    publish(world, dataset, payload,
+            'https://power.larc.nasa.gov/api/temporal/daily/point', 'NASA POWER',
+            f'Daily {parameter} point samples ({community} community)', units,
+            valid_time, note + ' Coverage is ' + coverage + '.', len(POWER_TILES),
+            extra={'parameter':parameter, 'community':community,
+                   'coverage_mode':'six_sparse_regional_point_samples',
+                   'sample_tiles':POWER_TILES, 'records_per_tile':tile_counts,
+                   'request_mode':'point_json', 'request_urls':sources,
+                   'selected_source_day':selected_day,
+                   'observation_age_days':(now().date() - dt.datetime.strptime(selected_day,'%Y%m%d').date()).days})
 
 
 def oceans():
@@ -291,16 +298,19 @@ def earth_activity():
 
 
 def land():
-    power_csv('land', 'land_surface_temperature', 'TSURF', 'degree_C',
-              'NASA POWER daily surface temperature regional product; reanalysis-derived grid, not direct station observations.', 'HY')
+    # T2M is a supported daily air-temperature measurement, not skin/surface temperature.
+    # The dataset name and metadata therefore state the actual variable precisely.
+    power_points('land', 'near_surface_air_temperature', 'T2M', 'degree_C',
+                 'NASA POWER daily temperature at 2 metres, AG community; reanalysis-derived near-surface air temperature, not land-surface skin temperature or a station observation.', 'AG')
 
 def water_ice():
-    power_csv('water_ice', 'precipitation', 'PRECTOT', 'mm/day',
-              'NASA POWER daily precipitation regional product; not a flood extent or groundwater observation.', 'HY')
+    # PRECTOTCORR is the observationally corrected daily precipitation field.
+    power_points('water_ice', 'corrected_precipitation', 'PRECTOTCORR', 'mm/day',
+                 'NASA POWER daily observationally corrected precipitation, AG community; precipitation forcing, not flood extent, groundwater, or reservoir level.', 'AG')
 
 def energy_humanity():
-    power_csv('energy_humanity', 'surface_solar_radiation', 'ALLSKY_SFC_SW_DWN', 'kWh/m^2/day',
-              'NASA POWER all-sky surface shortwave downward radiation daily regional product.', 'RE')
+    power_points('energy_humanity', 'surface_solar_radiation', 'ALLSKY_SFC_SW_DWN', 'kWh/m^2/day',
+                 'NASA POWER daily all-sky surface shortwave downward irradiance, RE community.', 'RE')
 
 
 TASKS = {'oceans':oceans, 'land':land, 'water_ice':water_ice,
