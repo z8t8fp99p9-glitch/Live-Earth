@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "world": "energy_humanity",
+  "datasets": [
+    {
+      "dataset_id": "ENERGY_HUMANITY_01",
+      "name": "solar_radiation",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "ENERGY_HUMANITY_02",
+      "name": "earth_albedo",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "ENERGY_HUMANITY_03",
+      "name": "outgoing_radiation",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "ENERGY_HUMANITY_04",
+      "name": "night_lights",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "ENERGY_HUMANITY_05",
+      "name": "population_distribution",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "ENERGY_HUMANITY_06",
+      "name": "land_use",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "ENERGY_HUMANITY_07",
+      "name": "energy_indicators",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    }
+  ]
+}

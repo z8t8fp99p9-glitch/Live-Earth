@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "world": "water_ice",
+  "datasets": [
+    {
+      "dataset_id": "WATER_ICE_01",
+      "name": "rainfall",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "WATER_ICE_02",
+      "name": "snow_cover",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "WATER_ICE_03",
+      "name": "glaciers",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "WATER_ICE_04",
+      "name": "ice_sheets",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "WATER_ICE_05",
+      "name": "groundwater_indicators",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "WATER_ICE_06",
+      "name": "surface_water",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "WATER_ICE_07",
+      "name": "flood_extent",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "WATER_ICE_08",
+      "name": "evapotranspiration",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "WATER_ICE_09",
+      "name": "water_storage",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "world": "oceans",
+  "datasets": [
+    {
+      "dataset_id": "OCEANS_01",
+      "name": "sea_temperature",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "OCEANS_02",
+      "name": "ocean_currents",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "OCEANS_03",
+      "name": "salinity",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "OCEANS_04",
+      "name": "sea_level",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "OCEANS_05",
+      "name": "wave_height",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "OCEANS_06",
+      "name": "chlorophyll",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "OCEANS_07",
+      "name": "ocean_colour",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "OCEANS_08",
+      "name": "marine_productivity",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "OCEANS_09",
+      "name": "ocean_heat",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "OCEANS_10",
+      "name": "sea_ice",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    }
+  ]
+}

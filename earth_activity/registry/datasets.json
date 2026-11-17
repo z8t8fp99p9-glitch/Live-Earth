@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "world": "earth_activity",
+  "datasets": [
+    {
+      "dataset_id": "EARTH_ACTIVITY_01",
+      "name": "wildfires",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "EARTH_ACTIVITY_02",
+      "name": "earthquakes",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "EARTH_ACTIVITY_03",
+      "name": "volcanoes",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "EARTH_ACTIVITY_04",
+      "name": "cyclones",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "EARTH_ACTIVITY_05",
+      "name": "dust_storms",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "EARTH_ACTIVITY_06",
+      "name": "landslides",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "EARTH_ACTIVITY_07",
+      "name": "algal_blooms",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "EARTH_ACTIVITY_08",
+      "name": "lightning",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "world": "atmosphere",
+  "datasets": [
+    {
+      "dataset_id": "ATMOSPHERE_01",
+      "name": "air_temperature",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "ATMOSPHERE_02",
+      "name": "atmospheric_pressure",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "ATMOSPHERE_03",
+      "name": "wind_speed",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "ATMOSPHERE_04",
+      "name": "wind_direction",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "ATMOSPHERE_05",
+      "name": "humidity",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "ATMOSPHERE_06",
+      "name": "water_vapour",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "ATMOSPHERE_07",
+      "name": "cloud_properties",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "ATMOSPHERE_08",
+      "name": "co2_concentration",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "ATMOSPHERE_09",
+      "name": "methane",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "ATMOSPHERE_10",
+      "name": "ozone",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "ATMOSPHERE_11",
+      "name": "carbon_monoxide",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    },
+    {
+      "dataset_id": "ATMOSPHERE_12",
+      "name": "aerosols_dust",
+      "status": "source_not_configured",
+      "grid_id": null,
+      "latest_snapshot": null
+    }
+  ]
+}
