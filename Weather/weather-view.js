@@ -1027,13 +1027,14 @@
     // as a quiet counterweight behind it.
 
     const gardenLantern=new THREE.Group();
-    const lanternStone=mat('#77766d',.97),lanternCutStone=mat('#8c897e',.94),
-      lanternShadow=mat('#343a38',.88),lanternBronze=mat('#665b49',.86);
+    const lanternStone=mat('#77766d',.99),lanternCutStone=mat('#8c897e',.96),
+      lanternShadow=mat('#343a38',.9),lanternBronze=mat('#665b49',.9),
+      lanternMoss=mat('#465b3c',1),lanternMossLight=mat('#61704a',1);
     const lanternGlow=new THREE.MeshStandardMaterial({
-      color:'#ffd28a',emissive:'#ff9e42',emissiveIntensity:1.65,
+      color:'#ffd9a0',emissive:'#ffad55',emissiveIntensity:1.35,
       roughness:.52
     });
-    const lanternLight=new THREE.PointLight(0xffb65f,1.05,4.8,2);
+    const lanternLight=new THREE.PointLight(0xffbd72,.82,4.2,2);
     lanternLight.position.set(0,1.88,.05);gardenLantern.add(lanternLight);
     function lanternBox(parent,material,x,y,z,sx,sy,sz){
       const mesh=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),material);
@@ -1086,7 +1087,7 @@
       const a=i*Math.PI/6+Math.PI/6;
       const corner=i%2===0;
       const radius=corner?.91:.78;
-      const y=corner?2.43:2.30;
+      const y=corner?2.47:2.285;
       roofRing.push([Math.cos(a)*radius,y,Math.sin(a)*radius]);
     }
     roofPositions.push(...roofApex);
@@ -1098,11 +1099,26 @@
       color:'#77766d',roughness:.98,side:THREE.DoubleSide
     }));
     gardenLantern.add(roofMesh);
-    // Deep eave underside and stepped edge band.
-    const eaveBand=new THREE.Mesh(new THREE.CylinderGeometry(.87,.87,.105,6),lanternCutStone);
-    eaveBand.position.y=2.34;gardenLantern.add(eaveBand);
-    const eaveShadow=new THREE.Mesh(new THREE.CylinderGeometry(.79,.79,.045,6),lanternShadow);
-    eaveShadow.position.y=2.275;gardenLantern.add(eaveShadow);
+    // Deep carved eave: a continuous six-sided sweep follows the lifted corners
+    // and gently dipping centres of the umbrella roof.
+    const eavePoints=[];
+    roofRing.forEach(v=>eavePoints.push(new THREE.Vector3(v[0],v[1]-.035,v[2])));
+    eavePoints.push(eavePoints[0].clone());
+    const eaveCurve=new THREE.CatmullRomCurve3(eavePoints,false,'centripetal');
+    const eaveBand=new THREE.Mesh(
+      new THREE.TubeGeometry(eaveCurve,72,.052,7,false),lanternCutStone
+    );
+    gardenLantern.add(eaveBand);
+    const eaveShadow=new THREE.Mesh(
+      new THREE.TubeGeometry(eaveCurve,72,.018,6,false),lanternShadow
+    );
+    eaveShadow.position.y=-.065;gardenLantern.add(eaveShadow);
+    // Fine underside lip catches the warm chamber light.
+    const innerEave=new THREE.Mesh(
+      new THREE.TorusGeometry(.64,.018,5,48),lanternBronze
+    );
+    innerEave.rotation.x=Math.PI/2;innerEave.position.y=2.285;
+    gardenLantern.add(innerEave);
     // Slightly lifted tips at all six roof corners.
     for(let i=0;i<6;i++){
       const a=i*Math.PI/3+Math.PI/6;
@@ -1117,8 +1133,39 @@
     const finialTip=new THREE.Mesh(new THREE.ConeGeometry(.075,.17,7),lanternCutStone);
     finialTip.position.y=2.78;gardenLantern.add(finialTip);
 
+    // Fine, shallow stone grain: restrained irregular seams, not decorative stripes.
+    for(let i=0;i<7;i++){
+      const a=i*2.399;
+      const grain=new THREE.Mesh(
+        new THREE.BoxGeometry(.012,.012,.18+(i%3)*.055),
+        i%2?lanternCutStone:lanternBronze
+      );
+      grain.position.set(Math.cos(a)*(.30+(i%3)*.018),.88+(i%4)*.19,
+        Math.sin(a)*(.30+(i%3)*.018));
+      grain.rotation.y=-a;grain.rotation.x=(i%2?.16:-.12);
+      gardenLantern.add(grain);
+    }
+    // Moss gathers only in sheltered stone joints and at the foot.
+    for(let i=0;i<9;i++){
+      const a=i*2.399;
+      const patch=new THREE.Mesh(
+        new THREE.IcosahedronGeometry(.075+(i%3)*.018,1),
+        i%2?lanternMoss:lanternMossLight
+      );
+      patch.position.set(Math.cos(a)*(.43+(i%2)*.045),.245+(i%3)*.018,
+        Math.sin(a)*(.40+(i%2)*.04));
+      patch.scale.set(1.45,.28,.82);patch.rotation.y=-a;
+      gardenLantern.add(patch);
+    }
+    // A few tiny moss flecks in the sheltered roof edge, kept deliberately subtle.
+    for(let i=0;i<4;i++){
+      const a=.5+i*1.7;
+      const fleck=new THREE.Mesh(new THREE.IcosahedronGeometry(.035,1),lanternMoss);
+      fleck.position.set(Math.cos(a)*.78,2.31,Math.sin(a)*.78);
+      fleck.scale.set(1.5,.35,.8);gardenLantern.add(fleck);
+    }
     // Restrained stone seams and a subtle warm spill at the foot.
-    const lanternBaseGlow=new THREE.PointLight(0xffa94d,.16,2.0,2);
+    const lanternBaseGlow=new THREE.PointLight(0xffb45d,.12,1.8,2);
     lanternBaseGlow.position.set(0,.25,.18);gardenLantern.add(lanternBaseGlow);
     gardenLantern.position.set(-5.25,0,2.65);
     gardenLantern.scale.setScalar(.78);
