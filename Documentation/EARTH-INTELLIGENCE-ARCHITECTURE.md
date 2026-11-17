@@ -1,24 +1,37 @@
-# LIVE // EARTH — Central Earth Intelligence (v143)
+# LIVE // EARTH — Numerical database foundation
 
-## Agreed architecture
+## Current decision
 
-One GitHub repository (`Live-Earth`), one Cloudflare Worker API and one Cloudflare D1 database shared by all six numerical worlds. The browser requests bounded curated responses only. Collection, validation, period filtering, counts, equal-window comparisons and retention cleanup run centrally. No browser database or second GitHub repository is used.
+Keep the six numerical-world Stacks Orbs. Remove the experimental data-collection and backend implementations. Prepare one provider-neutral PostgreSQL database schema first.
 
-## Source connection status
+No Cloudflare Worker, D1 database, GitHub archive, public snapshot pipeline, API, collector, scheduler or numerical-world data UI is active in this phase.
 
-- **Earth Activity:** connected to the USGS Earthquake Hazards Program past-7-day GeoJSON feed, collected hourly. Only source-reported earthquake catalogue records are published in this release.
-- **Atmosphere, Oceans, Land, Water & Ice, Energy & Humanity:** registered, but awaiting approved numerical source adapters. The API reports them as unavailable; no values are fabricated.
+## Six retained worlds
 
-## Data and retention
+1. Atmosphere
+2. Oceans
+3. Land
+4. Water & Ice
+5. Earth Activity
+6. Energy & Humanity
 
-The shared schema records world, source, source-record identifier, signal, observation time, ingestion time, location coordinates when supplied, numeric value, unit, quality flag and source metadata. Unique source-record IDs prevent duplicate inserts when a rolling source feed is recollected. Observations and ingestion-run records older than 365 days are pruned daily.
+The six Orbs remain registered in the existing shared Stacks feature registry. Tapping one displays a simple database-preparation status. Existing Home Orbs and all existing app views remain untouched.
 
-API periods are `1d`, `7d` and `1y`. Responses are bounded to 100 recent events plus a daily timeline. The previous equal-length comparison is returned for 1-day and 7-day windows only; the prior one-year interval lies outside the one-year retention window and is not represented as available.
+## Database plan
 
-## Operational constraints
+- One PostgreSQL 16+ database shared by all six worlds.
+- Initial planning volume: approximately five million numerical observation rows per year.
+- Target retention: 365 days for observations and derived events.
+- Source-file metadata and checksums are stored; original large files are not stored as database blobs.
+- Every observation is traceable to its dataset, source record, timestamp, unit, quality state and optional location/uncertainty.
+- Derived events link back to supporting observations.
 
-Cloudflare D1 currently supports up to 500 MB per database on Free and 10 GB on Workers Paid, and each database processes queries single-threaded. Keep the requested single-database architecture initially and monitor real usage. Consider partitioning only when measured storage or throughput justifies it. See [Cloudflare D1 limits](https://developers.cloudflare.com/d1/platform/limits/).
+The schema is at `Database/PostgreSQL/001_initial_schema.sql`.
 
-## Deployment and protection
+## Phase boundary
 
-Follow `Backend/Earth-Intelligence/README.md`. The Worker requires one D1 binding and an exact app-origin allowlist value. Keep the existing app views, feature registry and Stacks module loader intact. The service-worker cache and update-manager build IDs are advanced together to v143. No new GitHub Actions workflow is included.
+This package prepares the schema only. It does not choose a hosting provider or create a live database. After a PostgreSQL host is selected, apply the schema and verify it. Only then design the approved file-based source acquisition and ingestion process.
+
+## Preservation
+
+The existing primary five Home Orbs, shared Stacks registry, original five Stacks features, Earth/Moon/Sun views, Weather, Location, Traffic and Earthquakes are outside this change and must remain untouched.
