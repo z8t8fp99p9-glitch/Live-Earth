@@ -154,7 +154,7 @@ async function initializeEngineView(view, viewId) {
   let scene = null;
   let camera = null;
   let earthGlobe = null;
-  let interactions = null;
+  let gestureController = null;
   let locationMarker = null;
   let locationHalo = null;
   let locationDot = null;
@@ -274,29 +274,134 @@ async function initializeEngineView(view, viewId) {
     window.addEventListener("live-earth-location-state", syncAtmosphereLocation);
     syncAtmosphereLocation();
 
-    interactions = earthGlobe.attachInteractions({
-      element: canvas,
-      enabled: () => !disposed && root.isConnected && runtime.isActive(viewId),
-      rotation: { anchored: true, minPitch: -1.25, maxPitch: 1.25 },
-      zoom: {
-        enabled: true,
-        getDistance: () => camera.position.z,
-        setDistance: distance => {
-          const nextDistance = Math.max(
-            defaultCameraDistance / ATMOSPHERE_MAX_ZOOM,
-            Math.min(defaultCameraDistance, distance)
-          );
-          camera.position.z = nextDistance;
-          zoomFactor = defaultCameraDistance / nextDistance;
-          camera.lookAt(0, 0, 0);
-          requestRender();
-        },
-        minDistance: () => defaultCameraDistance / ATMOSPHERE_MAX_ZOOM,
-        maxDistance: () => defaultCameraDistance
-      },
-      onRotate: requestRender,
-      onZoom: requestRender
-    });
+    // Atmosphere owns its gestures. A geographic surface point is picked once
+    // on pointer-down; every drag move rotates the globe until that same local
+    // point intersects the camera ray beneath the finger.
+    gestureController = (() => {
+      const raycaster = new T.Raycaster();
+      const pointerNdc = new T.Vector2();
+      const anchorLocal = new T.Vector3();
+      const anchorWorld = new T.Vector3();
+      const targetWorld = new T.Vector3();
+      const sphere = new T.Sphere(new T.Vector3(0, 0, 0), 1.001);
+      const deltaRotation = new T.Quaternion();
+      const pointers = new Map();
+      let activePointerId = null;
+      let pinchStartDistance = 0;
+      let pinchStartZoom = 1;
+      let hasAnchor = false;
+
+      const isEnabled = () => !disposed && root.isConnected && runtime.isActive(viewId);
+      const updatePointerRay = (x, y) => {
+        const rect = canvas.getBoundingClientRect();
+        if (!(rect.width > 0 && rect.height > 0)) return false;
+        pointerNdc.set(
+          ((x - rect.left) / rect.width) * 2 - 1,
+          -((y - rect.top) / rect.height) * 2 + 1
+        );
+        raycaster.setFromCamera(pointerNdc, camera);
+        return true;
+      };
+      const pickSurfacePoint = (x, y, target) => {
+        if (!updatePointerRay(x, y)) return false;
+        const hits = raycaster.intersectObject(earthGlobe.surface, true);
+        if (!hits.length) return false;
+        earthGlobe.group.updateMatrixWorld(true);
+        target.copy(hits[0].point);
+        earthGlobe.group.worldToLocal(target);
+        return target.lengthSq() > 0;
+      };
+      const pointerRayToSphere = (x, y, target) => {
+        if (!updatePointerRay(x, y)) return false;
+        const hit = raycaster.ray.intersectSphere(sphere, target);
+        if (!hit) return false;
+        target.normalize();
+        return true;
+      };
+      const pointerDistance = () => {
+        const values = [...pointers.values()];
+        if (values.length < 2) return 0;
+        return Math.hypot(values[0].x - values[1].x, values[0].y - values[1].y);
+      };
+      const setZoom = value => {
+        zoomFactor = Math.max(1, Math.min(ATMOSPHERE_MAX_ZOOM, value));
+        camera.position.z = defaultCameraDistance / zoomFactor;
+        camera.lookAt(0, 0, 0);
+        requestRender();
+      };
+      const beginAnchor = pointer => {
+        hasAnchor = pickSurfacePoint(pointer.x, pointer.y, anchorLocal);
+        activePointerId = hasAnchor ? pointer.id : null;
+      };
+      const onPointerDown = event => {
+        if (!isEnabled()) return;
+        if (event.pointerType === "mouse" && event.button !== 0) return;
+        pointers.set(event.pointerId, { id: event.pointerId, x: event.clientX, y: event.clientY });
+        try { canvas.setPointerCapture(event.pointerId); } catch (_) {}
+        if (pointers.size === 1) {
+          beginAnchor(pointers.get(event.pointerId));
+        } else if (pointers.size === 2) {
+          hasAnchor = false;
+          activePointerId = null;
+          pinchStartDistance = Math.max(1, pointerDistance());
+          pinchStartZoom = zoomFactor;
+        }
+        event.preventDefault();
+      };
+      const onPointerMove = event => {
+        if (!isEnabled() || !pointers.has(event.pointerId)) return;
+        const pointer = pointers.get(event.pointerId);
+        pointer.x = event.clientX;
+        pointer.y = event.clientY;
+        if (pointers.size >= 2) {
+          const distance = pointerDistance();
+          if (pinchStartDistance > 0) setZoom(pinchStartZoom * distance / pinchStartDistance);
+          event.preventDefault();
+          return;
+        }
+        if (pointers.size !== 1 || event.pointerId !== activePointerId || !hasAnchor) return;
+        if (!pointerRayToSphere(pointer.x, pointer.y, targetWorld)) return;
+
+        earthGlobe.group.updateMatrixWorld(true);
+        anchorWorld.copy(anchorLocal).applyQuaternion(earthGlobe.group.quaternion).normalize();
+        deltaRotation.setFromUnitVectors(anchorWorld, targetWorld);
+        earthGlobe.group.quaternion.premultiply(deltaRotation).normalize();
+        earthGlobe.group.updateMatrixWorld(true);
+        requestRender();
+        event.preventDefault();
+      };
+      const onPointerUp = event => {
+        if (!pointers.has(event.pointerId)) return;
+        pointers.delete(event.pointerId);
+        try { if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId); } catch (_) {}
+        hasAnchor = false;
+        activePointerId = null;
+        if (pointers.size === 1) {
+          const remaining = [...pointers.values()][0];
+          beginAnchor(remaining);
+        } else if (pointers.size >= 2) {
+          pinchStartDistance = Math.max(1, pointerDistance());
+          pinchStartZoom = zoomFactor;
+        }
+      };
+      const onPointerCancel = event => onPointerUp(event);
+      canvas.addEventListener("pointerdown", onPointerDown, { passive: false });
+      canvas.addEventListener("pointermove", onPointerMove, { passive: false });
+      canvas.addEventListener("pointerup", onPointerUp);
+      canvas.addEventListener("pointercancel", onPointerCancel);
+      canvas.addEventListener("lostpointercapture", onPointerCancel);
+      return {
+        dispose() {
+          canvas.removeEventListener("pointerdown", onPointerDown);
+          canvas.removeEventListener("pointermove", onPointerMove);
+          canvas.removeEventListener("pointerup", onPointerUp);
+          canvas.removeEventListener("pointercancel", onPointerCancel);
+          canvas.removeEventListener("lostpointercapture", onPointerCancel);
+          pointers.clear();
+          hasAnchor = false;
+        }
+      };
+    })();
     resize();
     if (typeof ResizeObserver === "function") {
       resizeObserver = new ResizeObserver(resize);
@@ -341,7 +446,7 @@ async function initializeEngineView(view, viewId) {
       resizeObserver?.disconnect(); resizeObserver = null;
       window.removeEventListener("live-earth-location-fix", syncAtmosphereLocation);
       window.removeEventListener("live-earth-location-state", syncAtmosphereLocation);
-      interactions?.dispose?.(); interactions = null;
+      gestureController?.dispose?.(); gestureController = null;
       for (const id of [...layers.keys()]) removeLayer(id);
       if (locationMarker?.parent) locationMarker.parent.remove(locationMarker);
       locationHalo?.geometry?.dispose?.(); locationHalo?.material?.dispose?.();
@@ -371,7 +476,7 @@ async function initializeEngineView(view, viewId) {
   } catch (error) {
     disposed = true;
     resizeObserver?.disconnect();
-    interactions?.dispose?.();
+    gestureController?.dispose?.();
     earthGlobe?.dispose?.();
     renderer?.dispose?.();
     canvas.remove();
