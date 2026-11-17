@@ -48,6 +48,11 @@ Current data sources: Weather uses Open-Meteo; Clouds uses NASA GIBS; Earthquake
 - The visual scenes are generated locally from canvas geometry and particles; they do not use satellite imagery, webcam feeds or third-party visual feeds.
 - `Data/data-worlds.js` is included in the service-worker app shell. The matching service-worker and Update Manager build identity is `v139-six-data-worlds`.
 
+### Registry contract for numerical worlds
+
+- Every Stacks feature id must have a matching `VIEW_META` entry in `Stacks/stacks-feature-views.js`; `registerFeature()` rejects undeclared ids. The six numerical-world ids are declared there.
+- The worlds are registered as preview views until numeric source adapters are connected, so the Stacks library shows `View preview` rather than implying live data integration.
+
 ## Location, data and recovery
 
 - `Location/location.js` owns explicit browser permission, GPS watch and fresh-fix lifecycle. Other views consume approved state only.

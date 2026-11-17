@@ -176,6 +176,7 @@
     return ()=>{stopDraw();};
   }
 
-  WORLDS.forEach(world=>runtime.registerFeature(world.id,()=>activate(world),true));
+  // These are available visual previews; numerical data adapters are not connected yet.
+  WORLDS.forEach(world=>runtime.registerFeature(world.id,()=>activate(world),false));
   window.dispatchEvent(new CustomEvent('live-earth-data-worlds-ready',{detail:{count:WORLDS.length}}));
 })();

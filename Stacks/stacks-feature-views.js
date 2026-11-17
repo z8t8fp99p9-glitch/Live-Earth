@@ -36,7 +36,15 @@
     weather: { title: 'Weather', symbol: '🌦', description: 'Online current-model weather for the existing enabled location; Location must be ON.' },
     elevation: { title: 'Elevation', symbol: '⛰', description: 'Online global relief imagery and a coordinate-based elevation lookup.' },
     earthquakes: { title: 'Earthquakes', symbol: '〰', description: 'Recent USGS earthquake events on the same Earth globe; refreshes while open.' },
-    traffic: { title: 'Traffic', symbol: '↗', description: 'Independent traffic workspace; verified live traffic data is not connected yet.' }
+    traffic: { title: 'Traffic', symbol: '↗', description: 'Independent traffic workspace; verified live traffic data is not connected yet.' },
+    // Numerical discovery worlds are catalogue entries as well as runtime modules.
+    // registerFeature intentionally rejects ids that are not declared here.
+    atmosphere: { title: 'Atmosphere', symbol: '◉', description: 'A visual preview of numerical atmospheric systems: temperature, pressure, wind, moisture and composition.' },
+    oceans: { title: 'Oceans', symbol: '≈', description: 'A visual preview of numerical ocean systems: currents, heat, salinity, sea level and marine productivity.' },
+    land: { title: 'Land', symbol: '⌁', description: 'A visual preview of numerical land systems: terrain, soils, vegetation and land-cover change.' },
+    'water-ice': { title: 'Water & Ice', symbol: '❄', description: 'A visual preview of freshwater and cryosphere systems: rainfall, snow, glaciers, ice and water storage.' },
+    'earth-activity': { title: 'Earth Activity', symbol: '✧', description: 'A visual preview of measured geophysical and environmental activity, including earthquakes, volcanoes and fires.' },
+    'energy-humanity': { title: 'Energy & Humanity', symbol: '✺', description: 'A visual preview of planetary energy and human activity indicators, including radiation, night lights and land use.' }
   };
 
   const style = document.createElement('style');

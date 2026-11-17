@@ -92,3 +92,13 @@ Never infer iPhone acceptance from a green Pages build. Report only checks actua
 - No imagery data, satellite feeds or webcam feeds are used by these new visual scenes.
 - Service-worker and Update Manager build identity advanced together to `v139-six-data-worlds`.
 - Source syntax checks passed for the four changed/new JavaScript files. Installed-device visual acceptance and data integration remain outstanding.
+
+
+### 17 November — Numerical-world Orb registration correction (v140)
+
+- Device review showed the six numerical-world Orbs were absent from the Stacks library even though the v139 module had been loaded.
+- Root cause: `registerFeature()` requires every feature id to be declared in `VIEW_META`; the six ids were missing, so their registrations were rejected.
+- Added metadata for Atmosphere, Oceans, Land, Water & Ice, Earth Activity, and Energy & Humanity. Kept the original five feature entries and their ordering unchanged.
+- Set the six worlds to preview status because numerical source adapters and verified live data are not connected yet.
+- Advanced the matching service-worker and Update Manager identity to `v140-data-world-orb-registry` so installed clients request the corrected files.
+- Syntax, registry-id matching, runtime registration smoke checks and ZIP manifest integrity are checked in this correction package. Installed-device confirmation remains pending until the corrected build is deployed and tested.

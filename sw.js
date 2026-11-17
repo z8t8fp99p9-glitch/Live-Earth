@@ -1,7 +1,7 @@
 /* LIVE // EARTH V127 — EarthEngine root-folder architecture. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v139-six-data-worlds";
-const CACHE_NAME = "live-earth-shell-v139-six-data-worlds";
+const BUILD_ID = "v140-data-world-orb-registry";
+const CACHE_NAME = "live-earth-shell-v140-data-world-orb-registry";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
