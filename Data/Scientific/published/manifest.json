@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-17T06:53:00.413362+00:00",
+  "retention_days": 365,
+  "storage_bytes": 0,
+  "storage_limit_bytes": 47185920,
+  "staged_sources": [],
+  "partitions": [],
+  "records_added_or_refreshed": 0,
+  "note": "Only explicitly staged CSV data is included; no network/API calls are made."
+}
