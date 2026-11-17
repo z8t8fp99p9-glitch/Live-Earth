@@ -6,7 +6,7 @@
   "product": "Daily Optimum Interpolation Sea Surface Temperature Analysis v2.1 Final",
   "source_url": "https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/v2.1/access/avhrr/202610/oisst-avhrr-v02r01.20261031.nc",
   "valid_time_utc": "2026-10-31T12:00:00Z",
-  "retrieved_at_utc": "2026-11-17T14:41:38.207749Z",
+  "retrieved_at_utc": "2026-11-17T14:58:00.926027Z",
   "units": "degree_C",
   "source_record_count": 1,
   "source_payload_format": "NetCDF4",

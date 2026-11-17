@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "world": "energy_humanity",
+  "dataset": "surface_solar_radiation",
+  "provider": "NASA POWER",
+  "product": "Daily ALLSKY_SFC_SW_DWN point samples (RE community)",
+  "source_url": "https://power.larc.nasa.gov/api/temporal/daily/point",
+  "valid_time_utc": "2026-08-31T00:00:00Z",
+  "retrieved_at_utc": "2026-11-17T14:58:11.207936Z",
+  "units": "kWh/m^2/day",
+  "source_record_count": 6,
+  "source_payload_format": "CSV",
+  "sha256_source_payload": "82514b75c67eeb61869904ff63788aab19f2eac1175c2767be9eb5a73e17bd2b",
+  "stored_bytes": 231,
+  "quality_status": "downloaded_and_basic_schema_validated",
+  "note": "NASA POWER daily all-sky surface shortwave downward irradiance, RE community; each point uses its newest valid observation returned by the source. Each regional sample uses its own newest valid source observation; dates may differ. Coverage is six sparse regional point samples, not a complete global grid.",
+  "parameter": "ALLSKY_SFC_SW_DWN",
+  "community": "RE",
+  "coverage_mode": "six_sparse_regional_point_samples",
+  "sample_tiles": [
+    {
+      "id": "north_america",
+      "lat": 40.0,
+      "lon": -100.0
+    },
+    {
+      "id": "south_america",
+      "lat": -15.0,
+      "lon": -60.0
+    },
+    {
+      "id": "europe_north_africa",
+      "lat": 35.0,
+      "lon": 15.0
+    },
+    {
+      "id": "east_africa",
+      "lat": 0.0,
+      "lon": 35.0
+    },
+    {
+      "id": "south_asia",
+      "lat": 20.0,
+      "lon": 80.0
+    },
+    {
+      "id": "east_asia_pacific",
+      "lat": 25.0,
+      "lon": 125.0
+    }
+  ],
+  "records_per_tile": {
+    "north_america": 1,
+    "south_america": 1,
+    "europe_north_africa": 1,
+    "east_africa": 1,
+    "south_asia": 1,
+    "east_asia_pacific": 1
+  },
+  "request_mode": "point_json_full_available_history",
+  "request_urls": {
+    "north_america": "https://power.larc.nasa.gov/api/temporal/daily/point?latitude=40.0&longitude=-100.0&parameters=ALLSKY_SFC_SW_DWN&community=RE&start=19810101&end=20261117&time-standard=UTC&format=JSON",
+    "south_america": "https://power.larc.nasa.gov/api/temporal/daily/point?latitude=-15.0&longitude=-60.0&parameters=ALLSKY_SFC_SW_DWN&community=RE&start=19810101&end=20261117&time-standard=UTC&format=JSON",
+    "europe_north_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?latitude=35.0&longitude=15.0&parameters=ALLSKY_SFC_SW_DWN&community=RE&start=19810101&end=20261117&time-standard=UTC&format=JSON",
+    "east_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?latitude=0.0&longitude=35.0&parameters=ALLSKY_SFC_SW_DWN&community=RE&start=19810101&end=20261117&time-standard=UTC&format=JSON",
+    "south_asia": "https://power.larc.nasa.gov/api/temporal/daily/point?latitude=20.0&longitude=80.0&parameters=ALLSKY_SFC_SW_DWN&community=RE&start=19810101&end=20261117&time-standard=UTC&format=JSON",
+    "east_asia_pacific": "https://power.larc.nasa.gov/api/temporal/daily/point?latitude=25.0&longitude=125.0&parameters=ALLSKY_SFC_SW_DWN&community=RE&start=19810101&end=20261117&time-standard=UTC&format=JSON"
+  },
+  "selected_source_days": {
+    "north_america": "20260831",
+    "south_america": "20260831",
+    "europe_north_africa": "20260831",
+    "east_africa": "20260831",
+    "south_asia": "20260831",
+    "east_asia_pacific": "20260831"
+  },
+  "observation_age_days_by_tile": {
+    "north_america": 78,
+    "south_america": 78,
+    "europe_north_africa": 78,
+    "east_africa": 78,
+    "south_asia": 78,
+    "east_asia_pacific": 78
+  },
+  "oldest_sample_day": "20260831",
+  "newest_sample_day": "20260831"
+}
