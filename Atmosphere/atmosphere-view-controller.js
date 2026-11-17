@@ -285,6 +285,14 @@ async function initializeEngineView(view, viewId) {
       const targetWorld = new T.Vector3();
       const sphere = new T.Sphere(new T.Vector3(0, 0, 0), 1.001);
       const deltaRotation = new T.Quaternion();
+      // Match Home/Earth's shared north-south tilt limits. Horizontal heading
+      // remains unrestricted; only the globe's vertical tilt is clamped.
+      const MIN_GLOBE_TILT = -1.15;
+      const MAX_GLOBE_TILT = 1.15;
+      const worldXAxis = new T.Vector3(1, 0, 0);
+      const localYAxis = new T.Vector3(0, 1, 0);
+      const tiltRotation = new T.Quaternion();
+      const headingRotation = new T.Quaternion();
       const pointers = new Map();
       let activePointerId = null;
       let pinchStartDistance = 0;
@@ -317,6 +325,23 @@ async function initializeEngineView(view, viewId) {
         if (!hit) return false;
         target.normalize();
         return true;
+      };
+      const clampGlobeTilt = () => {
+        const q = earthGlobe.group.quaternion;
+        // Decompose using the same q = qX(tilt) * qY(heading) convention
+        // used by Earth Engine's standard globe gestures.
+        const headingHalf = Math.atan2(q.y, q.w);
+        const sinHalfTilt = q.x * Math.cos(headingHalf) + q.z * Math.sin(headingHalf);
+        const cosHalfTilt = Math.hypot(q.w, q.y);
+        const tilt = 2 * Math.atan2(sinHalfTilt, cosHalfTilt);
+        const boundedTilt = Math.max(MIN_GLOBE_TILT, Math.min(MAX_GLOBE_TILT, tilt));
+        const heading = 2 * headingHalf;
+
+        // Rebuild without roll so the poles can never turn over, while heading
+        // can continue through a complete 360 degrees in either direction.
+        tiltRotation.setFromAxisAngle(worldXAxis, boundedTilt);
+        headingRotation.setFromAxisAngle(localYAxis, heading);
+        q.copy(tiltRotation).multiply(headingRotation).normalize();
       };
       const pointerDistance = () => {
         const values = [...pointers.values()];
@@ -366,6 +391,7 @@ async function initializeEngineView(view, viewId) {
         anchorWorld.copy(anchorLocal).applyQuaternion(earthGlobe.group.quaternion).normalize();
         deltaRotation.setFromUnitVectors(anchorWorld, targetWorld);
         earthGlobe.group.quaternion.premultiply(deltaRotation).normalize();
+        clampGlobeTilt();
         earthGlobe.group.updateMatrixWorld(true);
         requestRender();
         event.preventDefault();
