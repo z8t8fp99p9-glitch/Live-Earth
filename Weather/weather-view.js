@@ -1245,33 +1245,90 @@
       {c:[.32,2.05,-1.00],s:[.48,.16,.43],r:-.08}
     ];
     secondary.forEach((p,i)=>pinePads.push({center:p.c,size:p.s,rot:p.r,seed:i+10}));
-    // Build each cloud pad from a low, irregular cushion plus smaller overlapping
-    // lobes. These are sculpted needle masses, not spheres on branch tips.
+
+    // V79 — NEEDLE-REFINED NIWAKI FOLIAGE
+    // Keep the cloud-pad structure, but soften its silhouette and replace the
+    // obvious smooth "pancake" look with many fine, individually tapered needles.
+    const pineNeedleGeometry=new THREE.ConeGeometry(.008,.145,4,1);
+    const pineNeedleMaterial=new THREE.MeshStandardMaterial({
+      color:'#477653',roughness:.94,metalness:0
+    });
+    const pineNeedleCount=pinePads.length*11*5*2;
+    const pineNeedleInstances=new THREE.InstancedMesh(
+      pineNeedleGeometry,pineNeedleMaterial,pineNeedleCount
+    );
+    pineNeedleInstances.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+    const pineNeedleDummy=new THREE.Object3D();
+    const pineNeedlePalette=[
+      new THREE.Color('#173d30'),new THREE.Color('#20513a'),
+      new THREE.Color('#2d6345'),new THREE.Color('#3c7650'),
+      new THREE.Color('#527f55')
+    ];
+    let pineNeedleIndex=0;
     pinePads.forEach((p,idx)=>{
       const [cx,cy,cz]=p.center,[sx,sy,sz]=p.size;
+      // A restrained dark core remains visible through the sprays, giving depth.
       const base=new THREE.Mesh(new THREE.IcosahedronGeometry(1,2),pineNeedleMats[idx%4]);
-      base.position.set(cx,cy,cz);base.scale.set(sx,sy,sz);base.rotation.y=p.rot;
+      base.position.set(cx,cy,cz);
+      base.scale.set(sx*.78,sy*.68,sz*.78);
+      base.rotation.y=p.rot;
       pineGroup.add(base);
-      const lobes=5;
-      for(let k=0;k<lobes;k++){
-        const a=(k/lobes)*Math.PI*2+p.seed*.73;
-        const rr=.52+((k*7+p.seed)%4)*.055;
-        const lobe=new THREE.Mesh(new THREE.IcosahedronGeometry(1,1),pineNeedleMats[(idx+k+1)%5]);
-        lobe.position.set(cx+Math.cos(a)*sx*rr,cy+Math.sin(k*2.4+p.seed)*sy*.38,
-          cz+Math.sin(a)*sz*rr);
-        lobe.scale.set(sx*(.36+(k%2)*.07),sy*(.68+(k%3)*.12),sz*(.34+(k%2)*.08));
-        lobe.rotation.y=p.rot+a*.12;pineGroup.add(lobe);
-      }
-      // Fine outward needle sprays add a soft silhouette and catch highlights.
-      for(let n=0;n<9;n++){
-        const a=(n/9)*Math.PI*2+p.seed*.41;
-        const origin=[cx+Math.cos(a)*sx*.52,cy+((n%3)-1)*sy*.35,cz+Math.sin(a)*sz*.52];
-        const tip=[origin[0]+Math.cos(a)*(.16+(n%3)*.035),
-          origin[1]-.025+(n%2)*.045,
-          origin[2]+Math.sin(a)*(.15+(n%3)*.03)];
-        pineLimb(origin,tip,.012,.002,pineNeedleMats[(idx+n)%5]);
+
+      // Eleven small branchlets per pad, staggered in height and depth.
+      // Their directions are deterministic so the model remains stable on reload.
+      for(let spray=0;spray<11;spray++){
+        const angle=(spray/11)*Math.PI*2+p.seed*.713;
+        const radial=.34+((spray*7+p.seed*3)%6)*.075;
+        const localX=Math.cos(angle)*sx*radial;
+        const localZ=Math.sin(angle)*sz*radial;
+        const localY=(((spray*5+p.seed*2)%7)-3)*sy*.17;
+        const origin=[cx+localX,cy+localY,cz+localZ];
+        const reach=.20+((spray+p.seed)%4)*.035;
+        const rise=.045+((spray*3+p.seed)%4)*.025;
+        const end=[origin[0]+Math.cos(angle)*reach,
+          origin[1]+rise,origin[2]+Math.sin(angle)*reach];
+        pineTube([origin,
+          [(origin[0]+end[0])*.5,origin[1]+rise*.35,(origin[2]+end[2])*.5],
+          end],.009,pineBarkLight,4);
+
+        // Five paired needles along each fine branchlet. Each blade is a
+        // tapered 3D needle, angled outward and slightly upward from its twig.
+        for(let pair=0;pair<5;pair++){
+          const t=.16+pair*.17;
+          const stemX=origin[0]+(end[0]-origin[0])*t;
+          const stemY=origin[1]+(end[1]-origin[1])*t;
+          const stemZ=origin[2]+(end[2]-origin[2])*t;
+          for(let side=-1;side<=1;side+=2){
+            const sideAngle=angle+side*(.78+pair*.035);
+            const direction=new THREE.Vector3(
+              Math.cos(sideAngle)*.72,
+              .42+((pair+spray)%3)*.08,
+              Math.sin(sideAngle)*.72
+            ).normalize();
+            const length=.105+((pair+spray+idx)%3)*.018;
+            pineNeedleDummy.position.set(
+              stemX+direction.x*length*.34,
+              stemY+direction.y*length*.34,
+              stemZ+direction.z*length*.34
+            );
+            pineNeedleDummy.quaternion.setFromUnitVectors(
+              new THREE.Vector3(0,1,0),direction
+            );
+            pineNeedleDummy.scale.set(1,length/.145,1);
+            pineNeedleDummy.updateMatrix();
+            pineNeedleInstances.setMatrixAt(pineNeedleIndex,pineNeedleDummy.matrix);
+            const shade=(pair+spray*2+idx)%pineNeedlePalette.length;
+            pineNeedleInstances.setColorAt(pineNeedleIndex,pineNeedlePalette[shade]);
+            pineNeedleIndex++;
+          }
+        }
       }
     });
+    pineNeedleInstances.count=pineNeedleIndex;
+    pineNeedleInstances.instanceMatrix.needsUpdate=true;
+    if(pineNeedleInstances.instanceColor)pineNeedleInstances.instanceColor.needsUpdate=true;
+    pineGroup.add(pineNeedleInstances);
+
     // Small exposed roots anchor the sculpted trunk to the garden ground.
     [[-.72,.08,.10],[.68,.07,.18],[-.22,.06,.62],[.18,.06,-.58]].forEach((r,i)=>{
       pineTube([[0,.18,0],[r[0]*.48,.10,r[2]*.48],[r[0],r[1],r[2]]],.055-i*.006,pineBark,6);
