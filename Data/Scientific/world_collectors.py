@@ -173,13 +173,14 @@ def power_point_request(parameter, community, start_day, end_day, tile):
     return values, response.url
 
 
-def power_points(world, dataset, parameter, units, note, community):
-    """Collect one common, recent observation day for all six fixed sample points."""
-    # A single 8-day response per point is faster and gentler on NASA POWER than
-    # retrying separate regional rectangles and individual dates. The selected
-    # day is the newest date available at all six points, 3–10 days behind NRT.
-    end_day = now().date() - dt.timedelta(days=3)
-    start_day = now().date() - dt.timedelta(days=10)
+def power_points(world, dataset, parameter, units, note, community,
+                 newest_age_days=3, oldest_age_days=10):
+    """Collect one common observation day for all six fixed sample points."""
+    # One multi-day point request per region. Different POWER products have
+    # different publication latency, so callers may widen the date window while
+    # the selected observation remains the newest common valid date.
+    end_day = now().date() - dt.timedelta(days=newest_age_days)
+    start_day = now().date() - dt.timedelta(days=oldest_age_days)
     values_by_tile, sources = {}, {}
     errors = []
     for tile in POWER_TILES:
@@ -309,8 +310,13 @@ def water_ice():
                  'NASA POWER daily observationally corrected precipitation, AG community; precipitation forcing, not flood extent, groundwater, or reservoir level.', 'AG')
 
 def energy_humanity():
+    # NASA POWER combines CERES SYN1deg (about 3–4 months latency) with
+    # CERES FLASHFlux (about 5–7 days latency). Request a wider 7–30 day
+    # window to bridge gaps in the low-latency stream, then publish only the
+    # newest date shared by all six points. The metadata records actual age.
     power_points('energy_humanity', 'surface_solar_radiation', 'ALLSKY_SFC_SW_DWN', 'kWh/m^2/day',
-                 'NASA POWER daily all-sky surface shortwave downward irradiance, RE community.', 'RE')
+                 'NASA POWER daily all-sky surface shortwave downward irradiance, RE community; selected from the newest common valid date in a 7–30 day window because the satellite flux products have publication latency.', 'RE',
+                 newest_age_days=7, oldest_age_days=30)
 
 
 TASKS = {'oceans':oceans, 'land':land, 'water_ice':water_ice,

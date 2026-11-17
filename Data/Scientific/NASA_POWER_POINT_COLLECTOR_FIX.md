@@ -24,3 +24,7 @@ The run logs showed the Daily point endpoint rejecting `community=HY` with HTTP 
 Python syntax compilation passed. Offline fixture tests passed for all three parameter/community combinations, six-point row generation, common-date selection, fill-value rejection, and coordinate validation.
 
 Live NASA POWER requests were not executable in the local build environment. The next GitHub Actions run is the live-source verification step.
+
+
+## Follow-up correction — solar latency window
+The next live run showed that temperature and corrected precipitation were valid at all six sample points, but solar irradiance had no usable values in the 3–10 day window. NASA's Energy Fluxes documentation explains that daily solar fluxes combine CERES SYN1deg (roughly 3–4 months behind near-real-time) with CERES FLASHFlux (roughly 5–7 days latency). The energy collector now requests 7–30 days and selects the newest date common to all six points. The actual selected date and observation age remain recorded in metadata; no missing values are substituted.
