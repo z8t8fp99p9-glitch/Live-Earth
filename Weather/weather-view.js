@@ -1020,6 +1020,8 @@
     }
 
 
+    // V75 — MOVE THE GARDEN ACCENTS CLOSER TO THE PAVILION FRONT.
+    // Only the two group positions below change; lantern and pine geometry remain intact.
     // V72 — JAPANESE GARDEN LANTERN + EVERGREEN PINE.
     // Independent scenery additions: the existing maple, pavilion, camera and
     // all established tree placements remain untouched. Composition follows
@@ -1167,7 +1169,7 @@
     // Restrained stone seams and a subtle warm spill at the foot.
     const lanternBaseGlow=new THREE.PointLight(0xffb45d,.12,1.8,2);
     lanternBaseGlow.position.set(0,.25,.18);gardenLantern.add(lanternBaseGlow);
-    gardenLantern.position.set(-5.25,0,2.65);
+    gardenLantern.position.set(-4.70,0,3.10);
     gardenLantern.scale.setScalar(.78);
     gardenLantern.userData.style='Kasuga-inspired six-sided ishi-doro';
     scene.add(gardenLantern);
@@ -1212,7 +1214,7 @@
         pineGroup.add(branchPad);
       }
     });
-    pineGroup.position.set(-7.25,0,-2.15);
+    pineGroup.position.set(-6.15,0,-0.95);
     pineGroup.scale.setScalar(.88);
     scene.add(pineGroup);
 
