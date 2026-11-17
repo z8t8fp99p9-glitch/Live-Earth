@@ -15,9 +15,11 @@ Each numerical Orb has its own folder and dedicated JavaScript View Controller:
 - `Earth-Activity/earth-activity-view-controller.js`
 - `Energy-Humanity/energy-humanity-view-controller.js`
 
-`Data/data-worlds.js` is only a sequential loader for these six controllers. It does not render or own any Orb view.
+The six controllers are loaded directly by the existing `externalModules` sequence in `Stacks/stacks-feature-views.js`. There is no separate Data-folder loader or configuration script for these Orbs.
 
-The existing `Stacks/stacks-feature-views.js` remains the shared Stacks registry and view-shell runtime. It owns registration, navigation, shared Earth stage mounting and cleanup. Each dedicated controller owns its own feature activation. The original five Stacks features and their registration order remain unchanged; the six numerical Orbs are appended after them in their existing order.
+The existing Global Feature Orb Contract and shared Orb controls remain in `Global/view-module-registry.js` and `Global/orb-controls-v4.js`. The Stacks feature runtime remains the owner of feature metadata, registration, the shared view shell, Earth-stage mounting and cleanup. Each dedicated numerical-world controller self-registers through `window.LiveEarthStacksFeatureRuntime` and owns its feature activation.
+
+The original Stacks feature order remains unchanged: Clouds, Weather, Elevation, Earthquakes and Traffic. The six numerical worlds are appended after those entries in this order: Atmosphere, Oceans, Land, Water & Ice, Earth Activity, Energy & Humanity. They use the existing sequential Stacks module loader and its unavailable-module fallback; no second loader is introduced.
 
 ## Database
 
@@ -27,10 +29,12 @@ The existing `Stacks/stacks-feature-views.js` remains the shared Stacks registry
 - No sample measurements or fabricated events are included.
 - The schema is `Database/PostgreSQL/001_initial_schema.sql`.
 
-The database is not provisioned or connected yet. The schema is prepared only.
+The database is not provisioned or connected yet. The schema is prepared only. No provider, live database host, source API, collector or scheduler is configured.
 
 ## Preservation boundaries
 
-This change does not alter Home, Earth, Moon, Sun, Location, Weather, Clouds, Elevation, Earthquakes, Traffic, the shared Stacks registry, or the existing Earth/Moon/Sun engines and controllers. It does not alter the existing `Data/data-store.js` or `Data/dataset-manifest.json`.
+This correction only extends the existing Stacks module list, removes obsolete Data-loader references from the service-worker shell, and aligns this document with the implemented loading architecture. It does not refactor the Global Orb contract or controls, Home, Earth, Moon, Sun, Location, Weather, Clouds, Elevation, Earthquakes, Traffic, or the existing Earth/Moon/Sun engines and controllers.
 
-No new imagery, visual feeds, browser database, or local persistence is used by these numerical-world placeholders.
+The existing `Data/data-store.js`, `Data/dataset-manifest.json`, and PostgreSQL schema remain untouched. The existing 32-day news-feed retention policy is unrelated and remains unchanged.
+
+No imagery, satellite imagery, webcam frames, visual feeds, browser database, or local persistence is used as numerical data input. Numerical-world controllers remain placeholders until an approved database and verified numerical data sources are connected.

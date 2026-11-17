@@ -439,7 +439,14 @@
     { id: 'clouds', path: './Clouds/clouds-view.js' },
     { id: 'weather', path: './Weather/weather-view.js' },
     { id: 'earthquakes', path: './Earthquakes/earthquakes-view.js' },
-    { id: 'traffic', path: './Traffic/traffic-view.js' }
+    { id: 'traffic', path: './Traffic/traffic-view.js' },
+    // Numerical-world controllers use this same Stacks loader and registry.
+    { id: 'atmosphere', path: './Atmosphere/atmosphere-view-controller.js' },
+    { id: 'oceans', path: './Oceans/oceans-view-controller.js' },
+    { id: 'land', path: './Land/land-view-controller.js' },
+    { id: 'water-ice', path: './Water-Ice/water-ice-view-controller.js' },
+    { id: 'earth-activity', path: './Earth-Activity/earth-activity-view-controller.js' },
+    { id: 'energy-humanity', path: './Energy-Humanity/energy-humanity-view-controller.js' }
   ];
   function loadFeatureModule(path) {
     return new Promise((resolve, reject) => {
@@ -464,8 +471,8 @@
   }
   (async () => {
     for (let index = 0; index < externalModules.length; index++) {
-      // Preserve the original feature catalog order exactly: Clouds, Weather,
-      // Elevation, Earthquakes, Traffic. The scatter positions derive from it.
+      // Preserve the original catalog order: Clouds, Weather, Elevation,
+      // Earthquakes and Traffic. The numerical worlds follow those five entries.
       if (index === 2) registerFeature('elevation', activateElevation);
       const item = externalModules[index];
       try {
@@ -476,16 +483,8 @@
         registerUnavailableFeature(item.id, error?.message || '');
       }
     }
-    // Six numerical discovery worlds register through the same Stacks registry.
-    // They are appended after the original five entries so existing orb order stays intact.
-    try {
-      await loadFeatureModule('./Data/earth-intelligence-config.js');
-      await loadFeatureModule('./Data/data-worlds.js');
-    } catch (error) {
-      console.error('[LIVE // EARTH] Numerical discovery worlds could not be loaded.', error);
-    }
     // Startup readiness is set only after every feature is registered (or receives
-    // a safe unavailable-state view). The service worker caches every module offline.
+    // a safe unavailable-state view), including the six numerical-world controllers.
     window.__liveEarthStacksFeatureViewsInstalled = true;
     window.__liveEarthStacksFeatureViewsLoading = false;
     window.dispatchEvent(new Event('live-earth-stacks-feature-views-ready'));
