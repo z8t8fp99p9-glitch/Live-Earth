@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "live-earth-intelligence-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-17",
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "EARTH_INTELLIGENCE_DB",
+      "database_name": "live-earth-intelligence",
+      "database_id": "REPLACE_WITH_CLOUDFLARE_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "triggers": {
+    "crons": ["17 2 * * *"]
+  },
+  "vars": {
+    "APP_ORIGIN": "https://REPLACE-WITH-YOUR-LIVE-EARTH-PAGES-DOMAIN",
+    "RETENTION_DAYS": "365"
+  }
+}
