@@ -23,19 +23,23 @@
     style.textContent = `
       /* Atmosphere: keep the centre of the shared globe visually clear. */
       .le-sfv--atmosphere .le-sfv-panel {
-        background: radial-gradient(ellipse at 50% 48%, rgba(4,13,25,.02), rgba(2,7,15,.16) 62%, rgba(2,7,15,.48));
-        backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
-        padding-top: calc(env(safe-area-inset-top) + clamp(66px,9vmin,82px));
+        display:flex; flex-direction:column; align-items:stretch;
+        overflow:hidden;
+        background:transparent;
+        backdrop-filter:none; -webkit-backdrop-filter:none;
+        padding:calc(env(safe-area-inset-top) + clamp(66px,9vmin,82px))
+          clamp(15px,4vw,32px) 0;
       }
       .le-sfv--atmosphere .le-sfv-head { margin-bottom: 9px; }
       .le-atmo-hud-toggle {
-        position:absolute; z-index:5; right:max(14px,env(safe-area-inset-right));
-        bottom:max(18px,env(safe-area-inset-bottom)); min-height:40px;
+        position:absolute; z-index:5; top:calc(env(safe-area-inset-top) + 14px);
+        right:max(14px,env(safe-area-inset-right)); min-height:40px;
         padding:9px 13px; border:1px solid rgba(151,210,238,.34);
-        border-radius:999px; color:#eaf7ff; background:rgba(4,16,29,.82);
+        border-radius:999px; color:#eaf7ff; background:rgba(4,16,29,.86);
         box-shadow:0 6px 22px rgba(0,0,0,.28); backdrop-filter:blur(12px);
-        -webkit-backdrop-filter:blur(12px); font:600 11px/1.1 inherit;
-        cursor:pointer; touch-action:manipulation;
+        -webkit-backdrop-filter:blur(12px); font-family:inherit;
+        font-size:11px; font-weight:650; line-height:1.1;
+        cursor:pointer; touch-action:manipulation; pointer-events:auto;
       }
       .le-atmo-hud-toggle:focus-visible { outline:2px solid #80d9f5; outline-offset:3px; }
       .le-sfv--atmosphere .le-sfv-panel.le-atmo-hud-hidden {
@@ -44,8 +48,17 @@
       .le-sfv--atmosphere .le-sfv-panel { transition:opacity .2s ease,visibility .2s ease; }
 
       .le-sfv--atmosphere .le-sfv-pill { margin-bottom: 10px; }
-      .le-sfv--atmosphere .le-sfv-body {
-        display:block; width:min(100%,680px); margin:clamp(205px,36vh,360px) auto 0;
+      .le-sfv--atmosphere.le-world-engine-host .le-sfv-body {
+        display:block; box-sizing:border-box; width:min(100%,680px);
+        margin:auto auto 0; min-height:0;
+        max-height:min(48dvh,540px); overflow-y:auto; overflow-x:hidden;
+        overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+        padding-bottom:calc(env(safe-area-inset-bottom) + 144px);
+        scrollbar-width:none;
+      }
+      .le-sfv--atmosphere.le-world-engine-host .le-sfv-body::-webkit-scrollbar { display:none; }
+      @media (orientation:landscape) {
+        .le-sfv--atmosphere.le-world-engine-host .le-sfv-body { max-height:min(48dvh,350px); }
       }
       .le-sfv--atmosphere .le-sfv-status {
         display:inline-block; width:auto; max-width:100%; margin:0 0 9px;
@@ -86,11 +99,11 @@
       .le-atmo-dataset-option.is-unavailable .le-atmo-dataset-state { color:#91a4b4; }
       @media (max-width:360px) { .le-atmo-dataset-grid { grid-template-columns:1fr; } }
       @media (max-height:700px) {
-        .le-sfv--atmosphere .le-sfv-body { margin-top:clamp(145px,28vh,230px); }
+        .le-sfv--atmosphere.le-world-engine-host .le-sfv-body { margin-top:clamp(145px,28vh,230px); }
         .le-sfv--atmosphere .le-sfv-panel { padding-bottom:calc(env(safe-area-inset-bottom) + 112px); }
       }
       @media (orientation:landscape) {
-        .le-sfv--atmosphere .le-sfv-body { width:min(70vw,620px); margin-top:clamp(105px,22vh,190px); }
+        .le-sfv--atmosphere.le-world-engine-host .le-sfv-body { width:min(70vw,620px); margin-top:clamp(105px,22vh,190px); }
       }
     `;
     document.head.appendChild(style);
@@ -307,8 +320,11 @@ function installStyles() {
   const style = document.createElement("style");
   style.id = "le-world-engine-canvas-style";
   style.textContent = `
+    /* Atmosphere is an exclusive full-screen world, not a transparent Home overlay. */
+    body.le-atmosphere-fullscreen-open #scene{visibility:hidden!important;pointer-events:none!important}
+    .le-sfv--atmosphere.le-world-engine-host{position:absolute;inset:0;isolation:isolate;background:radial-gradient(ellipse at 50% 43%,#0a1b2b 0%,#030914 58%,#010308 100%);pointer-events:none}
     .le-world-engine-host{isolation:isolate;background:radial-gradient(ellipse at 50% 42%,rgba(15,47,75,.22),rgba(2,6,13,.88) 76%)}
-    .le-world-engine-canvas{position:absolute;inset:0;z-index:0;width:100%;height:100%;display:block;touch-action:none;outline:none;-webkit-tap-highlight-color:transparent}
+    .le-world-engine-canvas{position:absolute;inset:0;z-index:0;width:100%;height:100%;display:block;pointer-events:auto;touch-action:none;outline:none;-webkit-tap-highlight-color:transparent}
     .le-world-engine-host .le-sfv-panel{z-index:1;pointer-events:none;overflow:hidden;background:linear-gradient(180deg,rgba(3,12,23,.48),rgba(3,9,18,.16) 48%,rgba(2,7,14,.62));backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
     .le-world-engine-host .le-sfv-head,.le-world-engine-host .le-sfv-body{pointer-events:auto}
     .le-world-engine-host .le-sfv-body{max-height:calc(100% - 150px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
@@ -323,15 +339,18 @@ function installStyles() {
     installHudStyle();
     const view = runtime.mount(ATMOSPHERE_VIEW.id);
     if (!view) return () => {};
+    document.body.classList.add('le-atmosphere-fullscreen-open');
 
     // The globe is the view's immediate baseline. Scientific tools and data
     // are deliberately not requested until the user chooses a dataset.
     const hudToggle = runtime.el('button', 'le-atmo-hud-toggle', 'Hide controls');
     hudToggle.type = 'button';
-    hudToggle.setAttribute('aria-controls', 'le-atmo-hud-panel');
+    hudToggle.setAttribute('aria-controls', 'le-atmo-hud-panel le-feature-dock');
     hudToggle.setAttribute('aria-expanded', 'true');
+    const featureDock = document.getElementById('le-feature-dock');
     hudToggle.addEventListener('click', () => {
       const hidden = view.panel.classList.toggle('le-atmo-hud-hidden');
+      if (featureDock) featureDock.hidden = hidden;
       hudToggle.textContent = hidden ? 'Show controls' : 'Hide controls';
       hudToggle.setAttribute('aria-expanded', String(!hidden));
       hudToggle.setAttribute('aria-label', hidden ? 'Show Atmosphere controls' : 'Hide Atmosphere controls');
@@ -391,6 +410,7 @@ function installStyles() {
     const cleanup = () => {
       if (closed) return;
       closed = true;
+      document.body.classList.remove('le-atmosphere-fullscreen-open');
       hudToggle.remove();
       dataRequest?.abort();
       try { gridHandle?.dispose?.(); } catch (_) {}
