@@ -1,32 +1,23 @@
 #!/usr/bin/env python3
-"""Orchestrate independent latest-snapshot collectors for the six LIVE // EARTH worlds."""
+"""Run the six independent LIVE // EARTH world collectors; fail if any configured world fails."""
 from __future__ import annotations
 import subprocess, sys
 from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[2]
-COLLECTORS = [
-    ("atmosphere", ROOT / "Data/Scientific/atmosphere_gfs_collector.py"),
-    ("oceans", ROOT / "Data/Scientific/oceans_collector.py"),
-    ("land", ROOT / "Data/Scientific/land_collector.py"),
-    ("water_ice", ROOT / "Data/Scientific/water_ice_collector.py"),
-    ("earth_activity", ROOT / "Data/Scientific/earth_activity_collector.py"),
-    ("energy_humanity", ROOT / "Data/Scientific/energy_humanity_collector.py"),
+ROOT=Path(__file__).resolve().parents[2]
+TASKS=[
+ ('atmosphere',[sys.executable,str(ROOT/'Data/Scientific/atmosphere_gfs_collector.py')]),
+ ('oceans',[sys.executable,str(ROOT/'Data/Scientific/world_collectors.py'),'oceans']),
+ ('land',[sys.executable,str(ROOT/'Data/Scientific/world_collectors.py'),'land']),
+ ('water_ice',[sys.executable,str(ROOT/'Data/Scientific/world_collectors.py'),'water_ice']),
+ ('earth_activity',[sys.executable,str(ROOT/'Data/Scientific/world_collectors.py'),'earth_activity']),
+ ('energy_humanity',[sys.executable,str(ROOT/'Data/Scientific/world_collectors.py'),'energy_humanity']),
 ]
-
 def main():
-    failures = []
-    for world, script in COLLECTORS:
-        if not script.exists():
-            print(f"{world}: collector not configured yet; store left unchanged.")
-            continue
-        print(f"Starting {world} collector...")
-        result = subprocess.run([sys.executable, str(script)], cwd=ROOT)
-        if result.returncode:
-            failures.append(world)
-    if failures:
-        raise SystemExit("Collectors failed: " + ", ".join(failures))
-    print("Configured collectors completed. Unconfigured worlds were safely skipped.")
-
-if __name__ == "__main__":
-    main()
+ failures=[]
+ for world,cmd in TASKS:
+  print(f'\n===== {world.upper()} =====',flush=True)
+  result=subprocess.run(cmd,cwd=ROOT)
+  if result.returncode: failures.append(world)
+ if failures: raise SystemExit('One or more world collectors failed: '+', '.join(failures))
+ print('\nAll six configured world collectors completed successfully.')
+if __name__=='__main__': main()

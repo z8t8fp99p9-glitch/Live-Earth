@@ -5,7 +5,7 @@
     {
       "dataset_id": "ATMOSPHERE_01",
       "name": "air_temperature",
-      "status": "source_not_configured",
+      "status": "collector_configured_pending_first_success",
       "grid_id": null,
       "latest_snapshot": null
     },
