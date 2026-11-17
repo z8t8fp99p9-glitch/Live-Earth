@@ -279,10 +279,16 @@ function createEarthInteractions(THREE, group, options = {}) {
   const yawDelta = new THREE.Quaternion();
   const sensitivityX = Number.isFinite(rotation.sensitivityX) ? rotation.sensitivityX : 0.009;
   const sensitivityY = Number.isFinite(rotation.sensitivityY) ? rotation.sensitivityY : 0.0055;
+  const anchoredRotation = rotation.anchored === true;
+  const trackballPrevious = new THREE.Vector3();
+  const trackballCurrent = new THREE.Vector3();
+  const trackballDelta = new THREE.Quaternion();
+  const dragStartQuaternion = new THREE.Quaternion();
   const minPitch = Number.isFinite(rotation.minPitch) ? rotation.minPitch : -1.15;
   const maxPitch = Number.isFinite(rotation.maxPitch) ? rotation.maxPitch : 1.15;
   let dragPitch = 0;
   let pinchDistance = 0;
+  let hasTrackballAnchor = false;
   let disposed = false;
 
   function pitchFromQuaternion(quaternion) {
@@ -300,6 +306,25 @@ function createEarthInteractions(THREE, group, options = {}) {
     return Math.hypot(a.x - b.x, a.y - b.y);
   }
 
+  // Map the finger to a virtual sphere fitted to the actual canvas. Rotating
+  // from the previous surface vector to the current one makes the touched
+  // point follow the finger instead of applying a fixed degrees-per-pixel rate.
+  function setTrackballVector(target, clientX, clientY) {
+    const rect = element.getBoundingClientRect?.();
+    if (!rect || !(rect.width > 0) || !(rect.height > 0)) return false;
+    const size = Math.min(rect.width, rect.height);
+    let x = ((clientX - rect.left - rect.width / 2) * 2) / size;
+    let y = (-(clientY - rect.top - rect.height / 2) * 2) / size;
+    const lengthSquared = x * x + y * y;
+    if (lengthSquared <= 1) {
+      target.set(x, y, Math.sqrt(1 - lengthSquared));
+    } else {
+      const inverseLength = 1 / Math.sqrt(lengthSquared);
+      target.set(x * inverseLength, y * inverseLength, 0);
+    }
+    return true;
+  }
+
   function consume(event) {
     event.preventDefault?.();
     event.stopImmediatePropagation?.();
@@ -313,7 +338,11 @@ function createEarthInteractions(THREE, group, options = {}) {
     if (pointers.size === 1) {
       dragPitch = pitchFromQuaternion(group.quaternion);
       pinchDistance = 0;
+      hasTrackballAnchor = anchoredRotation &&
+        setTrackballVector(trackballPrevious, event.clientX, event.clientY);
+      if (anchoredRotation) dragStartQuaternion.copy(group.quaternion);
     } else if (pointers.size === 2) {
+      hasTrackballAnchor = false;
       const [a, b] = [...pointers.values()];
       pinchDistance = distanceBetween(a, b);
     }
@@ -350,7 +379,14 @@ function createEarthInteractions(THREE, group, options = {}) {
       return;
     }
 
-    if (rotation.enabled !== false) {
+    if (rotation.enabled !== false && anchoredRotation) {
+      if (hasTrackballAnchor && setTrackballVector(trackballCurrent, current.x, current.y)) {
+        trackballDelta.setFromUnitVectors(trackballCurrent, trackballPrevious);
+        group.quaternion.copy(trackballDelta).multiply(dragStartQuaternion).normalize();
+        trackballPrevious.copy(trackballCurrent);
+        options.onRotate?.(group.quaternion, event);
+      }
+    } else if (rotation.enabled !== false) {
       const dx = current.x - previous.x;
       const dy = current.y - previous.y;
       let changed = false;
@@ -382,8 +418,14 @@ function createEarthInteractions(THREE, group, options = {}) {
     pointers.delete(event.pointerId);
     if (pointers.size < 2) pinchDistance = 0;
     if (pointers.size === 1) {
-      // A remaining finger can continue rotating without a position jump.
+      // Re-anchor the remaining finger after a pinch without a rotation jump.
       dragPitch = pitchFromQuaternion(group.quaternion);
+      const remaining = [...pointers.values()][0];
+      hasTrackballAnchor = anchoredRotation &&
+        setTrackballVector(trackballPrevious, remaining.x, remaining.y);
+      if (anchoredRotation) dragStartQuaternion.copy(group.quaternion);
+    } else {
+      hasTrackballAnchor = false;
     }
     if (enabled()) consume(event);
   }
@@ -392,6 +434,7 @@ function createEarthInteractions(THREE, group, options = {}) {
     pointers.clear();
     pinchDistance = 0;
     dragPitch = pitchFromQuaternion(group.quaternion);
+    hasTrackballAnchor = false;
   }
 
   function dispose() {

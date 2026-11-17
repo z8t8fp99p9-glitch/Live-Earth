@@ -159,7 +159,7 @@ async function initializeEngineView(view, viewId) {
   let renderQueued = false;
   let resizeObserver = null;
   let defaultCameraDistance = 3.15;
-  const ATMOSPHERE_MAX_ZOOM = 2;
+  const ATMOSPHERE_MAX_ZOOM = 3;
   let zoomFactor = 1;
   const layers = new Map();
   const maxPixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);
@@ -221,7 +221,7 @@ async function initializeEngineView(view, viewId) {
     interactions = earthGlobe.attachInteractions({
       element: canvas,
       enabled: () => !disposed && root.isConnected && runtime.isActive(viewId),
-      rotation: { sensitivityX: 0.008, sensitivityY: 0.006, minPitch: -1.25, maxPitch: 1.25 },
+      rotation: { anchored: true, minPitch: -1.25, maxPitch: 1.25 },
       zoom: {
         enabled: true,
         getDistance: () => camera.position.z,
