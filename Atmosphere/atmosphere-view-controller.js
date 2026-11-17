@@ -28,6 +28,21 @@
         padding-top: calc(env(safe-area-inset-top) + clamp(66px,9vmin,82px));
       }
       .le-sfv--atmosphere .le-sfv-head { margin-bottom: 9px; }
+      .le-atmo-hud-toggle {
+        position:absolute; z-index:5; right:max(14px,env(safe-area-inset-right));
+        bottom:max(18px,env(safe-area-inset-bottom)); min-height:40px;
+        padding:9px 13px; border:1px solid rgba(151,210,238,.34);
+        border-radius:999px; color:#eaf7ff; background:rgba(4,16,29,.82);
+        box-shadow:0 6px 22px rgba(0,0,0,.28); backdrop-filter:blur(12px);
+        -webkit-backdrop-filter:blur(12px); font:600 11px/1.1 inherit;
+        cursor:pointer; touch-action:manipulation;
+      }
+      .le-atmo-hud-toggle:focus-visible { outline:2px solid #80d9f5; outline-offset:3px; }
+      .le-sfv--atmosphere .le-sfv-panel.le-atmo-hud-hidden {
+        opacity:0; visibility:hidden; pointer-events:none; transition:opacity .2s ease,visibility .2s ease;
+      }
+      .le-sfv--atmosphere .le-sfv-panel { transition:opacity .2s ease,visibility .2s ease; }
+
       .le-sfv--atmosphere .le-sfv-pill { margin-bottom: 10px; }
       .le-sfv--atmosphere .le-sfv-body {
         display:block; width:min(100%,680px); margin:clamp(205px,36vh,360px) auto 0;
@@ -109,6 +124,8 @@ async function initializeEngineView(view, viewId) {
   const T = await import("../vendor/three.module.js");
   const engine = await import("../EarthEngine/Core/earth-engine.js");
   const createEarthGlobe = engine.createEarthGlobe || engine.createGlobe;
+  const getDefaultCameraDistance = engine.getDefaultCameraDistance;
+  if (typeof getDefaultCameraDistance !== "function") throw new Error("Earth Engine default framing API is unavailable.");
   if (typeof createEarthGlobe !== "function") throw new Error("The reusable Earth Engine factory is unavailable.");
 
   const root = view.root;
@@ -128,6 +145,8 @@ async function initializeEngineView(view, viewId) {
   let disposed = false;
   let renderQueued = false;
   let resizeObserver = null;
+  let defaultCameraDistance = 3.15;
+  let zoomFactor = 1;
   const layers = new Map();
   const maxPixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);
 
@@ -149,6 +168,8 @@ async function initializeEngineView(view, viewId) {
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
+    defaultCameraDistance = getDefaultCameraDistance({ width, height, radius: 1, fieldOfView: 38, diameterFraction: 0.75 });
+    camera.position.z = defaultCameraDistance / zoomFactor;
     requestRender();
   }
 
@@ -162,7 +183,8 @@ async function initializeEngineView(view, viewId) {
     const width = Math.max(1, rect.width || window.innerWidth || 1);
     const height = Math.max(1, rect.height || window.innerHeight || 1);
     camera = new T.PerspectiveCamera(38, width / height, 0.1, 100);
-    camera.position.set(0, 0, 3.15);
+    defaultCameraDistance = getDefaultCameraDistance({ width, height, radius: 1, fieldOfView: 38, diameterFraction: 0.75 });
+    camera.position.set(0, 0, defaultCameraDistance);
     camera.lookAt(0, 0, 0);
     scene.add(new T.AmbientLight(0x8aa7c8, 0.28));
     const key = new T.DirectionalLight(0xffffff, 2.0);
@@ -189,9 +211,15 @@ async function initializeEngineView(view, viewId) {
       zoom: {
         enabled: true,
         getDistance: () => camera.position.z,
-        setDistance: distance => { camera.position.z = Math.max(1.45, Math.min(4.2, distance)); camera.lookAt(0, 0, 0); requestRender(); },
-        minDistance: 1.45,
-        maxDistance: 4.2
+        setDistance: distance => {
+          const nextDistance = Math.max(defaultCameraDistance / 5, Math.min(defaultCameraDistance, distance));
+          camera.position.z = nextDistance;
+          zoomFactor = defaultCameraDistance / nextDistance;
+          camera.lookAt(0, 0, 0);
+          requestRender();
+        },
+        minDistance: () => defaultCameraDistance / 5,
+        maxDistance: () => defaultCameraDistance
       },
       onRotate: requestRender,
       onZoom: requestRender
@@ -298,6 +326,18 @@ function installStyles() {
 
     // The globe is the view's immediate baseline. Scientific tools and data
     // are deliberately not requested until the user chooses a dataset.
+    const hudToggle = runtime.el('button', 'le-atmo-hud-toggle', 'Hide controls');
+    hudToggle.type = 'button';
+    hudToggle.setAttribute('aria-controls', 'le-atmo-hud-panel');
+    hudToggle.setAttribute('aria-expanded', 'true');
+    hudToggle.addEventListener('click', () => {
+      const hidden = view.panel.classList.toggle('le-atmo-hud-hidden');
+      hudToggle.textContent = hidden ? 'Show controls' : 'Hide controls';
+      hudToggle.setAttribute('aria-expanded', String(!hidden));
+      hudToggle.setAttribute('aria-label', hidden ? 'Show Atmosphere controls' : 'Hide Atmosphere controls');
+    });
+    view.root.appendChild(hudToggle);
+    view.panel.id = 'le-atmo-hud-panel';
     const status = runtime.el('p', 'le-sfv-status', 'Opening the Earth Engine globe…');
     status.dataset.state = 'neutral';
     view.body.appendChild(status);
@@ -351,6 +391,7 @@ function installStyles() {
     const cleanup = () => {
       if (closed) return;
       closed = true;
+      hudToggle.remove();
       dataRequest?.abort();
       try { gridHandle?.dispose?.(); } catch (_) {}
       gridHandle = null;
