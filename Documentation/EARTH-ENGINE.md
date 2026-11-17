@@ -41,3 +41,17 @@ Earth View drag handling must preserve the inherited quaternion and use quaterni
 ## Verification
 
 Test Prime Earth startup and locked framing; independent Earth View construction and teardown; Prime Earth layer registration/cleanup; Engine per-view scene isolation; shared texture disposal; quaternion continuity; drag orientation; Moon/Prime Earth isolation; service-worker dependency paths; and repeated Stacks open/close. Source checks do not replace installed-iPhone transition testing.
+
+## Six Data Worlds — direct shared-engine integration (17 Nov 2026)
+
+Each numerical-world controller imports `EarthEngine/Core/earth-engine.js` directly and calls its existing `createEarthGlobe()` / `createGlobe()` factory. The controller owns its own canvas, Three.js scene, camera, renderer, interactions and cleanup. No additional globe-runtime helper module is used.
+
+The shared numerical pipeline has three reusable systems:
+
+1. `EarthEngine/Core/earth-engine.js` — creates the globe instance.
+2. `EarthEngine/Graphics/universal-grid-system.js` — loads, validates, decodes and normalizes approved numerical grid snapshots. Persistent storage remains in the scientific databases.
+3. `EarthEngine/Graphics/earth-grid-gpu-skin.js` — renders a prepared regular grid as a GPU texture skin on the globe.
+
+Each world controller selects its own dataset, colour range, opacity, labels, legends, controls and interactions. `Stacks/stacks-feature-views.js` remains the feature-view shell and continues to provide Prime Earth overlays for the pre-existing Stacks features; it does not create numerical-world globes. Home and Earth View remain unchanged.
+
+The Atmosphere controller is the first verified consumer of the Universal Grid System and GPU Grid Skin. The other five controllers now load the same universal APIs and establish their own Engine globe/lifecycle, but remain explicitly in a waiting state until their approved dataset adapters are connected. Earth Activity is point/event data and must use an appropriate point renderer rather than being forced into a continuous grid.

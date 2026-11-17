@@ -1,44 +1,26 @@
 # Numerical World Grid-Skin View Lifecycle
 
-## Architecture
+## Shared universal systems
 
-The universal renderer remains a shared utility at
-`EarthEngine/Graphics/earth-grid-rendering-skin.js`, but it is no longer loaded
-by `Stacks/stacks-feature-views.js`.
+The six numerical worlds use the same three reusable systems:
 
-Each numerical-world controller loads the renderer lazily from its own
-`activateView()` callback. The first world opened loads the script; subsequent
-worlds reuse the same renderer API and browser load promise.
+1. `EarthEngine/Core/earth-engine.js` creates each view's globe through `createEarthGlobe()` / `createGlobe()`.
+2. `EarthEngine/Graphics/universal-grid-system.js` loads, validates, decodes and normalizes numerical grid data. Persistent data storage remains in the scientific databases.
+3. `EarthEngine/Graphics/earth-grid-gpu-skin.js` converts a prepared regular grid into a GPU texture skin on the globe.
 
-## View ownership
+Each world controller owns its view canvas, Three.js scene, camera, renderer, interactions, data selection, colours, legends and lifecycle cleanup. The six controllers call the Earth Engine directly; there is no extra `independent-world-globe.js` runtime/helper layer.
 
-When a numerical world opens:
-1. Its controller mounts its existing view through the established feature-view contract.
-2. It loads the shared grid-rendering skin only if it is not already available.
-3. It attaches a world-specific layer group through the existing shared Earth layer interface.
-4. It reports that the renderer is ready but waits for verified grid data.
+## View lifecycle
 
-When the view closes:
-1. The controller's returned cleanup callback runs.
-2. Any grid handle is disposed.
-3. The world-specific layer registration is removed.
-4. The view-owned group is detached.
-5. The shared Earth base mesh and all other views remain untouched.
+When a numerical world opens, its controller mounts the feature UI, loads the shared grid APIs as needed, creates its own Three.js view renderer, calls the shared Earth Engine factory, and attaches the world-specific GPU skin to the Engine-created globe. It displays only verified data.
 
-## Boundaries preserved
+When the view closes, its controller aborts pending requests, disposes the GPU skin and layer resources, disposes its Engine-created globe, releases its renderer and removes its canvas. Home's globe and existing Stacks layers remain untouched.
 
-- `Stacks/stacks-feature-views.js` is restored to the version in the user's
-  working ZIP. It does not load or expose the numerical grid renderer.
-- The existing shared Earth and Earth Engine remain unchanged.
-- All six numerical worlds use the same renderer implementation.
-- No numerical measurements, network requests, fake values or persistent state
-  are introduced.
-- The existing Earthquakes Orb remains independent and unchanged.
-- The current renderer is still a first-pass grid-cell mesh implementation;
-  full-resolution scientific grids require GPU texture rendering and device
-  performance validation before production use.
+## Boundaries
 
-## Not yet connected
-
-No world has a verified data adapter or actual grid payload connected. The
-controllers establish view-scoped loading and disposal only.
+- `Stacks/stacks-feature-views.js` remains the feature-view shell and legacy Prime Earth layer interface.
+- `EarthEngine/Core/earth-engine.js` is not modified.
+- The shared Universal Grid System and GPU Grid Skin remain the only numerical-grid preparation/rendering systems.
+- World controllers own dataset-specific presentation and controls.
+- Point datasets such as earthquakes must use a point-data renderer, not be fabricated into a continuous grid.
+- No sample or placeholder measurements are displayed.

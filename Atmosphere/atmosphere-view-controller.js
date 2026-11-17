@@ -92,6 +92,194 @@
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? 'Time unavailable' : date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }) + ' UTC';
   }
+  // This controller calls the shared Earth Engine directly and owns its view renderer.
+async function initializeEngineView(view, worldId) {
+  if (!view?.root || !view?.panel || !worldId) throw new TypeError("A mounted world view and stable world id are required.");
+  const T = await import("../vendor/three.module.js");
+  const engine = await import("../EarthEngine/Core/earth-engine.js");
+  const createEarthGlobe = engine.createEarthGlobe || engine.createGlobe;
+  if (typeof createEarthGlobe !== "function") throw new Error("The reusable Earth Engine factory is unavailable.");
+
+  const root = view.root;
+  root.classList.add("le-world-engine-host");
+  const canvas = document.createElement("canvas");
+  canvas.className = "le-world-engine-canvas";
+  canvas.setAttribute("aria-label", `${worldId} independent interactive Earth globe`);
+  canvas.setAttribute("role", "img");
+  root.insertBefore(canvas, root.firstChild);
+  installStyles();
+
+  let renderer = null;
+  let scene = null;
+  let camera = null;
+  let earthGlobe = null;
+  let interactions = null;
+  let disposed = false;
+  let renderQueued = false;
+  let resizeObserver = null;
+  const layers = new Map();
+  const maxPixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);
+
+  function requestRender() {
+    if (disposed || renderQueued) return;
+    renderQueued = true;
+    requestAnimationFrame(() => {
+      renderQueued = false;
+      if (!disposed && renderer && scene && camera) renderer.render(scene, camera);
+    });
+  }
+
+  function resize() {
+    if (disposed || !renderer || !camera) return;
+    const rect = root.getBoundingClientRect();
+    const width = Math.max(1, Math.round(rect.width || window.innerWidth || 1));
+    const height = Math.max(1, Math.round(rect.height || window.innerHeight || 1));
+    renderer.setPixelRatio(maxPixelRatio);
+    renderer.setSize(width, height, false);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    requestRender();
+  }
+
+  try {
+    renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "low-power" });
+    renderer.outputColorSpace = T.SRGBColorSpace;
+    renderer.setClearColor(0x02050b, 0);
+    scene = new T.Scene();
+    scene.background = null;
+    const rect = root.getBoundingClientRect();
+    const width = Math.max(1, rect.width || window.innerWidth || 1);
+    const height = Math.max(1, rect.height || window.innerHeight || 1);
+    camera = new T.PerspectiveCamera(38, width / height, 0.1, 100);
+    camera.position.set(0, 0, 3.15);
+    camera.lookAt(0, 0, 0);
+    scene.add(new T.AmbientLight(0x8aa7c8, 0.28));
+    const key = new T.DirectionalLight(0xffffff, 2.0);
+    key.position.set(-3, 2, 4);
+    scene.add(key);
+    const fill = new T.DirectionalLight(0x245b9b, 0.10);
+    fill.position.set(4, -2, -3);
+    scene.add(fill);
+
+    earthGlobe = await createEarthGlobe({
+      THREE: T,
+      radius: 1,
+      textureUrl: "./EarthEngine/Assets/earth-land-ocean-ice-2048.png",
+      geometryDetail: "standard",
+      maxAnisotropy: renderer.capabilities.getMaxAnisotropy(),
+      atmosphere: true
+    });
+    if (disposed) { earthGlobe.dispose(); throw new Error("The world view closed while its Engine globe was loading."); }
+    scene.add(earthGlobe.group);
+    interactions = earthGlobe.attachInteractions({
+      element: canvas,
+      enabled: () => !disposed && root.isConnected && runtime.isActive(worldId),
+      rotation: { sensitivityX: 0.008, sensitivityY: 0.006, minPitch: -1.25, maxPitch: 1.25 },
+      zoom: {
+        enabled: true,
+        getDistance: () => camera.position.z,
+        setDistance: distance => { camera.position.z = Math.max(1.45, Math.min(4.2, distance)); camera.lookAt(0, 0, 0); requestRender(); },
+        minDistance: 1.45,
+        maxDistance: 4.2
+      },
+      onRotate: requestRender,
+      onZoom: requestRender
+    });
+    resize();
+    if (typeof ResizeObserver === "function") {
+      resizeObserver = new ResizeObserver(resize);
+      resizeObserver.observe(root);
+    }
+    window.addEventListener("resize", resize, { passive: true });
+    window.addEventListener("orientationchange", resize, { passive: true });
+
+    function attachLayer(id, factory) {
+      if (disposed) throw new Error("This world globe has already been disposed.");
+      if (typeof id !== "string" || !id.trim() || typeof factory !== "function") throw new TypeError("A layer needs an id and factory.");
+      removeLayer(id);
+      const cleanup = factory({
+        THREE: T,
+        scene,
+        earth: earthGlobe.surface,
+        group: earthGlobe.group,
+        camera,
+        renderer,
+        redraw: requestRender,
+        requestRender
+      });
+      if (typeof cleanup === "function") layers.set(id, cleanup);
+      requestRender();
+      return () => removeLayer(id);
+    }
+
+    function removeLayer(id) {
+      const cleanup = layers.get(id);
+      if (!cleanup) return false;
+      layers.delete(id);
+      try { cleanup(); } catch (error) { console.warn(`[LIVE // EARTH] ${worldId} layer cleanup failed:`, error); }
+      requestRender();
+      return true;
+    }
+
+    function dispose() {
+      if (disposed) return;
+      disposed = true;
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("orientationchange", resize);
+      resizeObserver?.disconnect(); resizeObserver = null;
+      interactions?.dispose?.(); interactions = null;
+      for (const id of [...layers.keys()]) removeLayer(id);
+      earthGlobe?.dispose?.(); earthGlobe = null;
+      renderer?.dispose?.(); renderer?.forceContextLoss?.(); renderer = null;
+      canvas.remove();
+      scene = null; camera = null;
+      root.classList.remove("le-world-engine-host");
+    }
+
+    requestRender();
+    return Object.freeze({
+      THREE: T,
+      scene,
+      camera,
+      renderer,
+      canvas,
+      globe: earthGlobe,
+      earth: earthGlobe.surface,
+      attachLayer,
+      removeLayer,
+      requestRender,
+      dispose
+    });
+  } catch (error) {
+    disposed = true;
+    resizeObserver?.disconnect();
+    interactions?.dispose?.();
+    earthGlobe?.dispose?.();
+    renderer?.dispose?.();
+    canvas.remove();
+    root.classList.remove("le-world-engine-host");
+    throw error;
+  }
+}
+
+
+function installStyles() {
+  if (document.getElementById("le-world-engine-canvas-style")) return;
+  const style = document.createElement("style");
+  style.id = "le-world-engine-canvas-style";
+  style.textContent = `
+    .le-world-engine-host{isolation:isolate;background:radial-gradient(ellipse at 50% 42%,rgba(15,47,75,.22),rgba(2,6,13,.88) 76%)}
+    .le-world-engine-canvas{position:absolute;inset:0;z-index:0;width:100%;height:100%;display:block;touch-action:none;outline:none;-webkit-tap-highlight-color:transparent}
+    .le-world-engine-host .le-sfv-panel{z-index:1;pointer-events:none;overflow:hidden;background:linear-gradient(180deg,rgba(3,12,23,.48),rgba(3,9,18,.16) 48%,rgba(2,7,14,.62));backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+    .le-world-engine-host .le-sfv-head,.le-world-engine-host .le-sfv-body{pointer-events:auto}
+    .le-world-engine-host .le-sfv-body{max-height:calc(100% - 150px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+    .le-world-engine-host .le-sfv-head{ text-shadow:0 2px 18px rgba(0,0,0,.85) }
+    .le-world-engine-host .le-sfv-card{background:rgba(4,13,24,.58);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  `;
+  document.head.appendChild(style);
+}
+
+
   function activateView() {
     installHudStyle();
     const view = runtime.mount(WORLD.id);
@@ -121,7 +309,7 @@
     const source = runtime.el('p', 'le-sfv-attribution', 'NOAA NCEP · Global Forecast System · GFS 0.25° analysis · model analysis, not direct thermometer readings');
     view.body.appendChild(source);
 
-    let closed = false, layerDispose = null, gridHandle = null, gridRoot = null;
+    let closed = false, layerDispose = null, gridHandle = null, gridRoot = null, worldGlobe = null;
     const abortController = new AbortController();
     const cleanup = () => {
       if (closed) return;
@@ -132,6 +320,8 @@
       layerDispose = null;
       try { gridRoot?.removeFromParent?.(); } catch (_) {}
       gridRoot = null;
+      try { worldGlobe?.dispose?.(); } catch (error) { console.warn('[LIVE // EARTH] Atmosphere Engine globe cleanup failed.', error); }
+      worldGlobe = null;
     };
     (async () => {
       try {
@@ -146,21 +336,22 @@
         makeMetric('Observed / valid time', formatTime(grid.observedAt));
         makeMetric('Snapshot published', formatTime(grid.retrievedAt));
         makeMetric('Verified range', `${grid.min.toFixed(1)} to ${grid.max.toFixed(1)}`, '°C');
-        const globe = runtime.globe();
-        if (!globe || typeof globe.getTHREE !== 'function' || typeof globe.registerLayer !== 'function') throw new Error('The existing shared Earth layer interface is unavailable.');
-        layerDispose = runtime.attachLayer(WORLD.id, ({ THREE, earth }) => {
-          if (!THREE || !earth?.add) throw new Error('The shared Earth layer did not provide its Three.js surface.');
+        worldGlobe = await initializeEngineView(view, WORLD.id);
+        if (closed || !runtime.isActive(WORLD.id)) { worldGlobe?.dispose?.(); worldGlobe = null; return; }
+        if (!worldGlobe || typeof worldGlobe.attachLayer !== 'function') throw new Error('The Earth Engine globe could not be created.');
+        layerDispose = worldGlobe.attachLayer(WORLD.id, ({ THREE, earth }) => {
+          if (!THREE || !earth?.add) throw new Error('The Earth Engine did not provide its Three.js surface.');
           gridRoot = new THREE.Group(); gridRoot.name = 'liveEarth-atmosphere-universal-grid-layer';
           gridHandle = window.LiveEarthGpuGridSkin.create({ THREE, grid, radius: 1.009, opacity: 0.86, min: -80, max: 45, name: 'NOAA-GFS-2m-air-temperature' });
           gridRoot.add(gridHandle.mesh); earth.add(gridRoot);
           return () => { try { gridHandle?.dispose?.(); } catch (_) {} gridHandle = null; try { gridRoot?.removeFromParent?.(); } catch (_) {} gridRoot = null; };
         });
         if (closed) { layerDispose?.(); layerDispose = null; return; }
-        if (typeof layerDispose !== 'function') throw new Error('The verified NOAA grid could not attach to the existing Earth.');
+        if (typeof layerDispose !== 'function') throw new Error('The verified NOAA grid could not attach to the Atmosphere Engine globe.');
         view.root.dataset.gridRenderingSkin = 'gpu-ready';
         view.root.dataset.gridData = 'verified-noaa-gfs';
-        runtime.setStatus(status, 'NOAA grid verified · live layer attached to Earth.', 'success');
-        globe.requestRender?.();
+        runtime.setStatus(status, 'NOAA grid verified · live layer attached to the independent Atmosphere globe.', 'success');
+        worldGlobe.requestRender?.();
       } catch (error) {
         if (!closed && runtime.isActive(WORLD.id)) runtime.setStatus(status, `Atmosphere data could not be displayed. No placeholder values were used. ${error?.message || ''}`, 'error');
       }
