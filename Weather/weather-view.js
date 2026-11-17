@@ -1215,8 +1215,8 @@
         pineGroup.add(branchPad);
       }
     });
-    // V76: bring the evergreen forward and closer to the pavilion, clear of the stair path.
-    pineGroup.position.set(-5.10,0,1.65);
+    // V77: shift the evergreen inward toward the stair approach, keeping the lantern clear.
+    pineGroup.position.set(-3.95,0,2.85);
     pineGroup.scale.setScalar(.88);
     scene.add(pineGroup);
 
