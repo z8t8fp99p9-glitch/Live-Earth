@@ -15,6 +15,36 @@ const earthGroupsByOwner = new Map();
 const viewRuntimesByOwner = new Map();
 let lifecycleInstalled = false;
 
+// Universal default globe framing.
+// The Engine provides the starting distance; views retain camera ownership.
+export const EARTH_DEFAULT_FRAMING = Object.freeze({
+  diameterFraction: 0.75,
+  fieldOfView: 34
+});
+
+export function getDefaultCameraDistance({
+  width,
+  height,
+  radius = 1,
+  fieldOfView = EARTH_DEFAULT_FRAMING.fieldOfView,
+  diameterFraction = EARTH_DEFAULT_FRAMING.diameterFraction
+} = {}) {
+  const values = [width, height, radius, fieldOfView, diameterFraction];
+
+  if (!values.every(Number.isFinite) ||
+      width <= 0 || height <= 0 || radius <= 0 ||
+      fieldOfView <= 0 || fieldOfView >= 180 ||
+      diameterFraction <= 0 || diameterFraction > 1) {
+    throw new TypeError("Earth Engine requires valid viewport and framing values.");
+  }
+
+  const shortestSide = Math.min(width, height);
+  const halfFovRadians = fieldOfView * Math.PI / 360;
+
+  return radius * height /
+    (diameterFraction * shortestSide * Math.tan(halfFovRadians));
+}
+
 function validQuaternion(value) {
   return !!value && [value.x, value.y, value.z, value.w].every(Number.isFinite);
 }
@@ -456,9 +486,11 @@ export async function createEarthGlobe(options = {}) {
 
 export const createGlobe = createEarthGlobe;
 export const EarthEngine = Object.freeze({
-  version: "2.4.0",
+  version: "2.5.0",
   createGlobe: createEarthGlobe,
   createEarthGlobe,
+  getDefaultCameraDistance,
+  defaultFraming: EARTH_DEFAULT_FRAMING,
   getGlobalViewpoint: getSnapshot,
   getActiveViewOwner: getCurrentOwner
 });
