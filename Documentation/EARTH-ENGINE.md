@@ -44,7 +44,7 @@ Test Prime Earth startup and locked framing; independent Earth View construction
 
 ## Six Data Worlds — direct shared-engine integration (17 Nov 2026)
 
-Each numerical-world controller imports `EarthEngine/Core/earth-engine.js` directly and calls its existing `createEarthGlobe()` / `createGlobe()` factory. The controller owns its own canvas, Three.js scene, camera, renderer, interactions and cleanup. No additional globe-runtime helper module is used.
+Each numerical-world view controller imports `EarthEngine/Core/earth-engine.js` directly and calls its existing `createEarthGlobe()` / `createGlobe()` factory. The controller owns its own canvas, Three.js scene, camera, renderer, interactions and cleanup. No additional globe-runtime helper module is used.
 
 The shared numerical pipeline has three reusable systems:
 
@@ -52,6 +52,11 @@ The shared numerical pipeline has three reusable systems:
 2. `EarthEngine/Graphics/universal-grid-system.js` — loads, validates, decodes and normalizes approved numerical grid snapshots. Persistent storage remains in the scientific databases.
 3. `EarthEngine/Graphics/earth-grid-gpu-skin.js` — renders a prepared regular grid as a GPU texture skin on the globe.
 
-Each world controller selects its own dataset, colour range, opacity, labels, legends, controls and interactions. `Stacks/stacks-feature-views.js` remains the feature-view shell and continues to provide Prime Earth overlays for the pre-existing Stacks features; it does not create numerical-world globes. Home and Earth View remain unchanged.
+Each view controller selects its own dataset, colour range, opacity, labels, legends, controls and interactions. `Stacks/stacks-feature-views.js` remains the feature-view shell and continues to provide Prime Earth overlays for the pre-existing Stacks features; it does not create numerical-world globes. Home and Earth View remain unchanged.
 
-The Atmosphere controller is the first verified consumer of the Universal Grid System and GPU Grid Skin. The other five controllers now load the same universal APIs and establish their own Engine globe/lifecycle, but remain explicitly in a waiting state until their approved dataset adapters are connected. Earth Activity is point/event data and must use an appropriate point renderer rather than being forced into a continuous grid.
+The Atmosphere View Controller is the first verified consumer of the Universal Grid System and GPU Grid Skin. The other five controllers now load the same universal APIs and establish their own Engine globe/lifecycle, but remain explicitly in a waiting state until their approved dataset adapters are connected. Earth Activity is point/event data and must use an appropriate point renderer rather than being forced into a continuous grid.
+
+
+## Atmosphere — globe-first, dataset-on-demand interaction (17 Nov 2026)
+
+Opening the Atmosphere feature creates its Engine globe before requesting any scientific grid scripts or snapshot data. The initial view presents the clean globe and dataset selector. Selecting Temperature then loads the Universal Grid System and GPU Grid Renderer dependencies, verifies the NOAA GFS snapshot, and attaches the temperature skin to the already-running globe. Changing or refreshing a dataset must replace only the active skin; it must not rebuild the globe. Pressure, Wind, Moisture and Composition remain visible as unavailable choices until their own approved, verified adapters exist. No placeholder data or simulated values are displayed.

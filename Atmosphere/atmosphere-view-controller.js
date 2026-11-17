@@ -11,7 +11,7 @@
     console.warn('[LIVE // EARTH] Atmosphere controller is waiting for the feature-view runtime.');
     return;
   }
-  const WORLD = { id: 'atmosphere', title: 'Atmosphere', symbol: '◉' };
+  const ATMOSPHERE_VIEW = { id: 'atmosphere', title: 'Atmosphere', symbol: '◉' };
   const MANIFEST_URL = 'https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/atmosphere/manifest.json';
   const DATASET_ID = 'ATMOSPHERE_01';
   const SCRIPT_PATHS = ['./EarthEngine/Graphics/universal-grid-system.js','./EarthEngine/Graphics/earth-grid-gpu-skin.js'];
@@ -59,6 +59,17 @@
       .le-sfv--atmosphere .le-sfv-metric-label { font-size:8px; margin-bottom:4px; }
       .le-sfv--atmosphere .le-sfv-metric-value { font-size:clamp(13px,3.5vw,17px); }
       .le-sfv--atmosphere .le-sfv-attribution { margin:7px 2px 0; font-size:8px; color:#8da9bc; }
+      .le-sfv--atmosphere .le-atmo-dataset-card { margin-bottom:9px; }
+      .le-atmo-dataset-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+      .le-atmo-dataset-option { appearance:none; display:flex; flex-direction:column; align-items:flex-start; gap:4px; min-width:0; min-height:66px; padding:10px 11px; border:1px solid rgba(130,197,230,.22); border-radius:13px; color:#eaf7ff; text-align:left; background:linear-gradient(145deg,rgba(16,43,65,.82),rgba(4,13,25,.82)); cursor:pointer; font:inherit; transition:border-color .18s ease,background .18s ease,transform .18s ease; }
+      .le-atmo-dataset-option:active:not(:disabled) { transform:scale(.985); }
+      .le-atmo-dataset-option.is-selected { border-color:rgba(91,222,190,.8); background:linear-gradient(145deg,rgba(15,76,75,.78),rgba(4,24,35,.92)); box-shadow:inset 0 0 0 1px rgba(91,222,190,.14),0 0 18px rgba(62,218,181,.12); }
+      .le-atmo-dataset-option:disabled { opacity:.48; cursor:not-allowed; }
+      .le-atmo-dataset-name { font-size:12px; letter-spacing:.02em; }
+      .le-atmo-dataset-detail { color:#a9c6d8; font-size:9px; line-height:1.35; }
+      .le-atmo-dataset-state { margin-top:auto; color:#80d9c1; font-size:7px; font-weight:800; letter-spacing:.1em; }
+      .le-atmo-dataset-option.is-unavailable .le-atmo-dataset-state { color:#91a4b4; }
+      @media (max-width:360px) { .le-atmo-dataset-grid { grid-template-columns:1fr; } }
       @media (max-height:700px) {
         .le-sfv--atmosphere .le-sfv-body { margin-top:clamp(145px,28vh,230px); }
         .le-sfv--atmosphere .le-sfv-panel { padding-bottom:calc(env(safe-area-inset-bottom) + 112px); }
@@ -93,8 +104,8 @@
     return Number.isNaN(date.getTime()) ? 'Time unavailable' : date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }) + ' UTC';
   }
   // This controller calls the shared Earth Engine directly and owns its view renderer.
-async function initializeEngineView(view, worldId) {
-  if (!view?.root || !view?.panel || !worldId) throw new TypeError("A mounted world view and stable world id are required.");
+async function initializeEngineView(view, viewId) {
+  if (!view?.root || !view?.panel || !viewId) throw new TypeError("A mounted world view and stable world id are required.");
   const T = await import("../vendor/three.module.js");
   const engine = await import("../EarthEngine/Core/earth-engine.js");
   const createEarthGlobe = engine.createEarthGlobe || engine.createGlobe;
@@ -104,7 +115,7 @@ async function initializeEngineView(view, worldId) {
   root.classList.add("le-world-engine-host");
   const canvas = document.createElement("canvas");
   canvas.className = "le-world-engine-canvas";
-  canvas.setAttribute("aria-label", `${worldId} independent interactive Earth globe`);
+  canvas.setAttribute("aria-label", `${viewId} independent interactive Earth globe`);
   canvas.setAttribute("role", "img");
   root.insertBefore(canvas, root.firstChild);
   installStyles();
@@ -173,7 +184,7 @@ async function initializeEngineView(view, worldId) {
     scene.add(earthGlobe.group);
     interactions = earthGlobe.attachInteractions({
       element: canvas,
-      enabled: () => !disposed && root.isConnected && runtime.isActive(worldId),
+      enabled: () => !disposed && root.isConnected && runtime.isActive(viewId),
       rotation: { sensitivityX: 0.008, sensitivityY: 0.006, minPitch: -1.25, maxPitch: 1.25 },
       zoom: {
         enabled: true,
@@ -216,7 +227,7 @@ async function initializeEngineView(view, worldId) {
       const cleanup = layers.get(id);
       if (!cleanup) return false;
       layers.delete(id);
-      try { cleanup(); } catch (error) { console.warn(`[LIVE // EARTH] ${worldId} layer cleanup failed:`, error); }
+      try { cleanup(); } catch (error) { console.warn(`[LIVE // EARTH] ${viewId} layer cleanup failed:`, error); }
       requestRender();
       return true;
     }
@@ -282,12 +293,44 @@ function installStyles() {
 
   function activateView() {
     installHudStyle();
-    const view = runtime.mount(WORLD.id);
+    const view = runtime.mount(ATMOSPHERE_VIEW.id);
     if (!view) return () => {};
-    const status = runtime.el('p', 'le-sfv-status', 'Connecting to the verified NOAA atmospheric snapshot…');
+
+    // The globe is the view's immediate baseline. Scientific tools and data
+    // are deliberately not requested until the user chooses a dataset.
+    const status = runtime.el('p', 'le-sfv-status', 'Opening the Earth Engine globe…');
     status.dataset.state = 'neutral';
     view.body.appendChild(status);
-    const details = runtime.card('NOAA · Global air temperature', '');
+
+    const selector = runtime.card('Atmosphere datasets', 'Choose a verified atmospheric field to render on the globe. The Earth remains available while datasets load.');
+    selector.classList.add('le-atmo-dataset-card');
+    const datasetGrid = runtime.el('div', 'le-atmo-dataset-grid');
+    const datasetOptions = [
+      { id: 'temperature', label: 'Temperature', detail: 'Global air temperature · NOAA GFS', available: true },
+      { id: 'pressure', label: 'Pressure', detail: 'Awaiting verified pressure adapter', available: false },
+      { id: 'wind', label: 'Wind', detail: 'Awaiting verified wind adapter', available: false },
+      { id: 'moisture', label: 'Moisture', detail: 'Awaiting verified moisture adapter', available: false },
+      { id: 'composition', label: 'Composition', detail: 'Awaiting verified composition adapter', available: false }
+    ];
+    const datasetButtons = new Map();
+    let selectedDataset = null;
+    for (const item of datasetOptions) {
+      const button = runtime.el('button', `le-atmo-dataset-option${item.available ? '' : ' is-unavailable'}`);
+      button.type = 'button';
+      button.disabled = !item.available;
+      button.dataset.dataset = item.id;
+      const name = runtime.el('strong', 'le-atmo-dataset-name', item.label);
+      const description = runtime.el('span', 'le-atmo-dataset-detail', item.detail);
+      const state = runtime.el('span', 'le-atmo-dataset-state', item.available ? 'AVAILABLE' : 'COMING WHEN VERIFIED');
+      button.append(name, description, state);
+      datasetGrid.appendChild(button);
+      datasetButtons.set(item.id, button);
+    }
+    selector.appendChild(datasetGrid);
+    view.body.appendChild(selector);
+
+    const details = runtime.card('NOAA · Global air temperature', 'Select Temperature to load the verified GFS field.');
+    details.hidden = true;
     const range = runtime.el('div', 'le-atmo-range');
     const rangeValue = runtime.el('strong', '', '—');
     range.appendChild(rangeValue);
@@ -296,24 +339,19 @@ function installStyles() {
     const disclosure = runtime.el('details', 'le-atmo-details');
     disclosure.appendChild(runtime.el('summary', '', 'Data details & provenance'));
     const metric = runtime.el('div', 'le-sfv-metric-grid');
-    const makeMetric = (label, value, unit = '') => {
-      const item = runtime.el('div', 'le-sfv-metric');
-      item.appendChild(runtime.el('span', 'le-sfv-metric-label', label));
-      const v = runtime.el('strong', 'le-sfv-metric-value', value);
-      if (unit) v.appendChild(runtime.el('span', 'le-sfv-metric-unit', ` ${unit}`));
-      item.appendChild(v); metric.appendChild(item);
-    };
     disclosure.appendChild(metric);
     details.appendChild(disclosure);
     view.body.appendChild(details);
     const source = runtime.el('p', 'le-sfv-attribution', 'NOAA NCEP · Global Forecast System · GFS 0.25° analysis · model analysis, not direct thermometer readings');
+    source.hidden = true;
     view.body.appendChild(source);
 
     let closed = false, layerDispose = null, gridHandle = null, gridRoot = null, worldGlobe = null;
-    const abortController = new AbortController();
+    let dataRequest = null;
     const cleanup = () => {
       if (closed) return;
-      closed = true; abortController.abort();
+      closed = true;
+      dataRequest?.abort();
       try { gridHandle?.dispose?.(); } catch (_) {}
       gridHandle = null;
       try { layerDispose?.(); } catch (error) { console.warn('[LIVE // EARTH] Atmosphere layer cleanup failed.', error); }
@@ -323,43 +361,119 @@ function installStyles() {
       try { worldGlobe?.dispose?.(); } catch (error) { console.warn('[LIVE // EARTH] Atmosphere Engine globe cleanup failed.', error); }
       worldGlobe = null;
     };
-    (async () => {
+
+    function setSelectedDataset(id) {
+      selectedDataset = id;
+      for (const [key, button] of datasetButtons) {
+        const active = key === id;
+        button.classList.toggle('is-selected', active);
+        button.setAttribute('aria-pressed', String(active));
+      }
+    }
+
+    async function selectTemperature() {
+      if (closed || !runtime.isActive(ATMOSPHERE_VIEW.id) || selectedDataset === 'temperature' && layerDispose) return;
+      setSelectedDataset('temperature');
+      details.hidden = false;
+      source.hidden = false;
+      dataRequest?.abort();
+      const controller = new AbortController();
+      dataRequest = controller;
+      runtime.setStatus(status, 'Loading and verifying NOAA temperature data…', 'neutral');
+      datasetButtons.get('temperature').disabled = true;
       try {
         await loadSharedGridTools();
-        if (closed || !runtime.isActive(WORLD.id)) return;
-        const grid = await window.LiveEarthUniversalGridSystem.loadSnapshot({ manifestUrl: MANIFEST_URL, datasetId: DATASET_ID, signal: abortController.signal });
-        if (closed || !runtime.isActive(WORLD.id)) return;
-        if (grid.definition.width !== 1440 || grid.definition.height !== 721 || grid.units !== 'degree_Celsius') throw new Error('The NOAA grid dimensions or units differ from the approved dataset contract.');
+        if (closed || controller.signal.aborted || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
+        const grid = await window.LiveEarthUniversalGridSystem.loadSnapshot({
+          manifestUrl: MANIFEST_URL, datasetId: DATASET_ID, signal: controller.signal
+        });
+        if (closed || controller.signal.aborted || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
+        if (grid.definition.width !== 1440 || grid.definition.height !== 721 || grid.units !== 'degree_Celsius') {
+          throw new Error('The NOAA grid dimensions or units differ from the approved dataset contract.');
+        }
+
+        // Replace only the active dataset skin; never recreate the Engine globe.
+        if (typeof layerDispose === 'function') {
+          layerDispose(); layerDispose = null;
+        }
+        try { gridHandle?.dispose?.(); } catch (_) {}
+        gridHandle = null;
+        try { gridRoot?.removeFromParent?.(); } catch (_) {}
+        gridRoot = null;
+
         rangeValue.textContent = `${grid.min.toFixed(1)}° — ${grid.max.toFixed(1)}°`;
+        metric.replaceChildren();
+        const makeMetric = (label, value, unit = '') => {
+          const item = runtime.el('div', 'le-sfv-metric');
+          item.appendChild(runtime.el('span', 'le-sfv-metric-label', label));
+          const v = runtime.el('strong', 'le-sfv-metric-value', value);
+          if (unit) v.appendChild(runtime.el('span', 'le-sfv-metric-unit', ` ${unit}`));
+          item.appendChild(v); metric.appendChild(item);
+        };
         makeMetric('Grid resolution', '0.25°', 'global');
         makeMetric('Valid cells', grid.validCount.toLocaleString(), 'of ' + (grid.definition.width * grid.definition.height).toLocaleString());
         makeMetric('Observed / valid time', formatTime(grid.observedAt));
         makeMetric('Snapshot published', formatTime(grid.retrievedAt));
         makeMetric('Verified range', `${grid.min.toFixed(1)} to ${grid.max.toFixed(1)}`, '°C');
-        worldGlobe = await initializeEngineView(view, WORLD.id);
-        if (closed || !runtime.isActive(WORLD.id)) { worldGlobe?.dispose?.(); worldGlobe = null; return; }
-        if (!worldGlobe || typeof worldGlobe.attachLayer !== 'function') throw new Error('The Earth Engine globe could not be created.');
-        layerDispose = worldGlobe.attachLayer(WORLD.id, ({ THREE, earth }) => {
+
+        if (closed || controller.signal.aborted || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
+        if (!worldGlobe || typeof worldGlobe.attachLayer !== 'function') throw new Error('The Earth Engine globe is not ready.');
+        layerDispose = worldGlobe.attachLayer('atmosphere-temperature', ({ THREE, earth }) => {
           if (!THREE || !earth?.add) throw new Error('The Earth Engine did not provide its Three.js surface.');
-          gridRoot = new THREE.Group(); gridRoot.name = 'liveEarth-atmosphere-universal-grid-layer';
-          gridHandle = window.LiveEarthGpuGridSkin.create({ THREE, grid, radius: 1.009, opacity: 0.86, min: -80, max: 45, name: 'NOAA-GFS-2m-air-temperature' });
-          gridRoot.add(gridHandle.mesh); earth.add(gridRoot);
-          return () => { try { gridHandle?.dispose?.(); } catch (_) {} gridHandle = null; try { gridRoot?.removeFromParent?.(); } catch (_) {} gridRoot = null; };
+          gridRoot = new THREE.Group();
+          gridRoot.name = 'liveEarth-atmosphere-temperature-layer';
+          gridHandle = window.LiveEarthGpuGridSkin.create({
+            THREE, grid, radius: 1.009, opacity: 0.86, min: -80, max: 45,
+            name: 'NOAA-GFS-2m-air-temperature'
+          });
+          gridRoot.add(gridHandle.mesh);
+          earth.add(gridRoot);
+          return () => {
+            try { gridHandle?.dispose?.(); } catch (_) {}
+            gridHandle = null;
+            try { gridRoot?.removeFromParent?.(); } catch (_) {}
+            gridRoot = null;
+          };
         });
-        if (closed) { layerDispose?.(); layerDispose = null; return; }
-        if (typeof layerDispose !== 'function') throw new Error('The verified NOAA grid could not attach to the Atmosphere Engine globe.');
+        if (closed || controller.signal.aborted) { layerDispose?.(); layerDispose = null; return; }
+        if (typeof layerDispose !== 'function') throw new Error('The verified NOAA temperature layer could not attach.');
         view.root.dataset.gridRenderingSkin = 'gpu-ready';
         view.root.dataset.gridData = 'verified-noaa-gfs';
-        runtime.setStatus(status, 'NOAA grid verified · live layer attached to the independent Atmosphere globe.', 'success');
+        runtime.setStatus(status, 'Temperature · NOAA grid verified and rendered on the existing Earth Engine globe.', 'success');
         worldGlobe.requestRender?.();
       } catch (error) {
-        if (!closed && runtime.isActive(WORLD.id)) runtime.setStatus(status, `Atmosphere data could not be displayed. No placeholder values were used. ${error?.message || ''}`, 'error');
+        if (!closed && !controller.signal.aborted && runtime.isActive(ATMOSPHERE_VIEW.id)) {
+          runtime.setStatus(status, `Temperature data could not be displayed. The base globe remains active. ${error?.message || ''}`, 'error');
+        }
+      } finally {
+        if (dataRequest === controller) {
+          dataRequest = null;
+          datasetButtons.get('temperature').disabled = false;
+        }
+      }
+    }
+
+    datasetButtons.get('temperature').addEventListener('click', selectTemperature);
+
+    (async () => {
+      try {
+        worldGlobe = await initializeEngineView(view, ATMOSPHERE_VIEW.id);
+        if (closed || !runtime.isActive(ATMOSPHERE_VIEW.id)) { worldGlobe?.dispose?.(); worldGlobe = null; return; }
+        if (!worldGlobe || typeof worldGlobe.attachLayer !== 'function') throw new Error('The Earth Engine globe could not be created.');
+        view.root.dataset.globeEngine = 'ready';
+        runtime.setStatus(status, 'Earth Engine globe ready · choose an atmospheric dataset to add its live layer.', 'success');
+        worldGlobe.requestRender?.();
+      } catch (error) {
+        if (!closed && runtime.isActive(ATMOSPHERE_VIEW.id)) {
+          runtime.setStatus(status, `The Earth Engine globe could not open. ${error?.message || ''}`, 'error');
+        }
       }
     })();
+
     return cleanup;
   }
-  if (runtime.registerFeature(WORLD.id, activateView, false)) {
+  if (runtime.registerFeature(ATMOSPHERE_VIEW.id, activateView, false)) {
     window[flag] = true;
-    window.dispatchEvent(new CustomEvent('live-earth-world-controller-ready', { detail: { id: WORLD.id } }));
+    window.dispatchEvent(new CustomEvent('live-earth-atmosphere-view-controller-ready', { detail: { id: ATMOSPHERE_VIEW.id } }));
   }
 })();
