@@ -166,7 +166,7 @@ async function initializeEngineView(view, viewId) {
   const ATMOSPHERE_MAX_ZOOM = 3;
   let zoomFactor = 1;
   const layers = new Map();
-  const maxPixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);
+  const maxPixelRatio = Math.min(window.devicePixelRatio || 1, 2);
 
   function requestRender() {
     if (disposed || renderQueued) return;
