@@ -34,10 +34,17 @@
     texture.unpackAlignment = 1;
     const geometry = new T.SphereGeometry(Number(options.radius) || 1.008, 256, 128);
     const material = new T.ShaderMaterial({
-      uniforms: { uGrid: { value: texture }, uOpacity: { value: Number.isFinite(options.opacity) ? options.opacity : 0.88 } },
+      uniforms: {
+        uGrid: { value: texture },
+        uOpacity: { value: Number.isFinite(options.opacity) ? options.opacity : 0.88 },
+        uTime: { value: 0 },
+        uContours: { value: options.contours === true ? 1 : 0 },
+        uContourStrength: { value: Number.isFinite(options.contourStrength) ? options.contourStrength : 0.22 }
+      },
       vertexShader: `varying vec2 vUv; varying vec3 vNormalView; void main(){ vUv=uv; vNormalView=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
       fragmentShader: `
         uniform sampler2D uGrid; uniform float uOpacity;
+        uniform float uTime; uniform float uContours; uniform float uContourStrength;
         varying vec2 vUv; varying vec3 vNormalView;
         vec3 ramp(float t){
           vec3 a=vec3(0.055,0.16,0.48), b=vec3(0.02,0.66,0.88), c=vec3(0.18,0.86,0.66), d=vec3(1.0,0.79,0.28), e=vec3(0.91,0.25,0.17);
@@ -52,6 +59,17 @@
           if(sampleValue.a<0.5) discard;
           float t=sampleValue.r;
           vec3 colour=ramp(t);
+
+          // Optional scientific contour treatment. Lines follow the actual
+          // normalized grid values; the slow pulse is a presentation accent,
+          // not a simulated wind/current or changing measurement.
+          float contourPhase = fract(t * 18.0);
+          float contourDistance = min(contourPhase, 1.0 - contourPhase);
+          float contourLine = 1.0 - smoothstep(0.018, 0.055, contourDistance);
+          float contourPulse = 0.82 + 0.18 * sin(uTime * 1.15 + t * 9.0);
+          vec3 contourColour = mix(vec3(0.55, 0.91, 1.0), vec3(0.88, 0.98, 1.0), contourPulse);
+          colour = mix(colour, contourColour, contourLine * uContours * uContourStrength);
+
           float edge=pow(1.0-abs(vNormalView.z),2.0);
           float glow=0.90+0.10*edge;
           gl_FragColor=vec4(colour*glow,uOpacity);

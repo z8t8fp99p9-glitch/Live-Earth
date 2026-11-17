@@ -159,7 +159,7 @@ async function initializeEngineView(view, viewId) {
   let renderQueued = false;
   let resizeObserver = null;
   let defaultCameraDistance = 3.15;
-  const ATMOSPHERE_MAX_ZOOM = 1.5;
+  const ATMOSPHERE_MAX_ZOOM = 2;
   let zoomFactor = 1;
   const layers = new Map();
   const maxPixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);
@@ -409,9 +409,39 @@ function installStyles() {
 
     let closed = false, layerDispose = null, gridHandle = null, gridRoot = null, worldGlobe = null;
     let dataRequest = null;
+    let contourFrame = 0;
+    let contourStartedAt = 0;
+    const stopContourAnimation = () => {
+      if (contourFrame) cancelAnimationFrame(contourFrame);
+      contourFrame = 0;
+      contourStartedAt = 0;
+    };
+    const startContourAnimation = () => {
+      stopContourAnimation();
+      if (!gridHandle?.mesh?.material?.uniforms?.uTime) return;
+      contourStartedAt = performance.now();
+      const animateContours = now => {
+        if (closed || document.hidden || !runtime.isActive(ATMOSPHERE_VIEW.id) ||
+            !gridHandle?.mesh?.material?.uniforms?.uTime) {
+          contourFrame = 0;
+          return;
+        }
+        gridHandle.mesh.material.uniforms.uTime.value = (now - contourStartedAt) / 1000;
+        worldGlobe?.requestRender?.();
+        contourFrame = requestAnimationFrame(animateContours);
+      };
+      contourFrame = requestAnimationFrame(animateContours);
+    };
+    const onVisibilityChange = () => {
+      if (document.hidden) stopContourAnimation();
+      else if (gridHandle) startContourAnimation();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
     const cleanup = () => {
       if (closed) return;
       closed = true;
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      stopContourAnimation();
       document.body.classList.remove('le-atmosphere-fullscreen-open');
       hudToggle.remove();
       dataRequest?.abort();
@@ -456,6 +486,7 @@ function installStyles() {
         }
 
         // Replace only the active dataset skin; never recreate the Engine globe.
+        stopContourAnimation();
         if (typeof layerDispose === 'function') {
           layerDispose(); layerDispose = null;
         }
@@ -487,6 +518,7 @@ function installStyles() {
           gridRoot.name = 'liveEarth-atmosphere-temperature-layer';
           gridHandle = window.LiveEarthGpuGridSkin.create({
             THREE, grid, radius: 1.009, opacity: 0.86, min: -80, max: 45,
+            contours: true, contourStrength: 0.24,
             name: 'NOAA-GFS-2m-air-temperature'
           });
           gridRoot.add(gridHandle.mesh);
@@ -502,7 +534,8 @@ function installStyles() {
         if (typeof layerDispose !== 'function') throw new Error('The verified NOAA temperature layer could not attach.');
         view.root.dataset.gridRenderingSkin = 'gpu-ready';
         view.root.dataset.gridData = 'verified-noaa-gfs';
-        runtime.setStatus(status, 'Temperature · NOAA grid verified and rendered on the existing Earth Engine globe.', 'success');
+        runtime.setStatus(status, 'Temperature · NOAA grid verified. Isotherm contours show the measured temperature pattern.', 'success');
+        startContourAnimation();
         worldGlobe.requestRender?.();
       } catch (error) {
         if (!closed && !controller.signal.aborted && runtime.isActive(ATMOSPHERE_VIEW.id)) {
