@@ -48,10 +48,10 @@
         // Convert globe UV coordinates into the source grid's declared
         // geographic coordinate system. This avoids a 180-degree shift
         // and east/west reversal for NOAA's 0..360 east-positive grid.
-        uLongitudeOffset: { value: (180 - d.lonStart) / (d.lonStep * d.width) },
-        uLongitudeScale: { value: -360 / (d.lonStep * d.width) },
-        uLatitudeOffset: { value: (90 - d.latStart) / (d.latStep * (d.height - 1)) },
-        uLatitudeScale: { value: -180 / (d.latStep * (d.height - 1)) }
+        uLongitudeOffset: { value: (-180 - d.lonStart) / (d.lonStep * d.width) },
+        uLongitudeScale: { value: 360 / (d.lonStep * d.width) },
+        uLatitudeOffset: { value: (-90 - d.latStart) / (d.latStep * (d.height - 1)) },
+        uLatitudeScale: { value: 180 / (d.latStep * (d.height - 1)) }
       },
       vertexShader: `varying vec2 vUv; varying vec3 vNormalView; void main(){ vUv=uv; vNormalView=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
       fragmentShader: `
