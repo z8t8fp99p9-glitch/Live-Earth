@@ -479,8 +479,8 @@
     // Six numerical discovery worlds register through the same Stacks registry.
     // They are appended after the original five entries so existing orb order stays intact.
     try {
+      await loadFeatureModule('./Data/earth-intelligence-config.js');
       await loadFeatureModule('./Data/data-worlds.js');
-      await loadFeatureModule('./Data/data-worlds-live.js');
     } catch (error) {
       console.error('[LIVE // EARTH] Numerical discovery worlds could not be loaded.', error);
     }

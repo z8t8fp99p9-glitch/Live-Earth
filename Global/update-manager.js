@@ -3,7 +3,7 @@
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v141-github-native-earth-intelligence";
+  const BUILD_ID = "v143-cloudflare-earth-intelligence";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {

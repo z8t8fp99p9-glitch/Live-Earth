@@ -11,6 +11,8 @@
   if (window.__liveEarthDataWorldsRegistered) return;
   window.__liveEarthDataWorldsRegistered = true;
 
+  const API_BASE = (window.LIVE_EARTH_INTELLIGENCE_API || "").replace(/\/$/, "");
+  const PERIODS = [{id:"1d",label:"1 DAY"},{id:"7d",label:"7 DAYS"},{id:"1y",label:"1 YEAR"}];
   const WORLDS = [
     { id:'atmosphere', title:'Atmosphere', symbol:'◉', subtitle:'The moving skin of our planet', accent:'#73dfff', rgb:[76,207,255], mode:'air',
       intro:'Pressure, heat, moisture and wind — interacting as one living system.',
@@ -59,7 +61,7 @@
     .le-data-world .le-dw-detail h2{margin:0 0 8px;font-size:19px;font-weight:650;letter-spacing:-.025em}
     .le-data-world .le-dw-detail p{margin:0;color:#b6ccdc;font-size:11px;line-height:1.6}
     .le-data-world .le-dw-signal-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:14px}
-    .le-data-world .le-dw-signal{padding:9px 7px;border:1px solid rgba(var(--dw-rgb),.16);border-radius:11px;background:rgba(var(--dw-rgb),.055);color:#dcecf7;text-align:center;font-size:9px;line-height:1.35}
+    .le-data-world .le-dw-periods{display:flex;gap:6px;justify-content:center;margin:0 0 12px}.le-data-world .le-dw-period{border:1px solid rgba(var(--dw-rgb),.3);border-radius:999px;padding:7px 11px;background:#071725;color:#cde8f8;font:650 9px -apple-system,BlinkMacSystemFont,sans-serif;letter-spacing:.08em}.le-data-world .le-dw-period[aria-pressed=true]{background:rgba(var(--dw-rgb),.2);border-color:var(--dw-accent);color:#fff}.le-data-world .le-dw-event{display:block;padding:9px;margin:6px 0;border:1px solid rgba(var(--dw-rgb),.2);border-radius:10px;color:#eaf7ff;text-decoration:none;text-align:left}.le-data-world .le-dw-event strong{display:block;font-size:11px}.le-data-world .le-dw-event small{display:block;margin-top:4px;color:#9db8ca;font-size:9px}.le-data-world .le-dw-signal{padding:9px 7px;border:1px solid rgba(var(--dw-rgb),.16);border-radius:11px;background:rgba(var(--dw-rgb),.055);color:#dcecf7;text-align:center;font-size:9px;line-height:1.35}
     .le-data-world .le-dw-note{margin-top:13px!important;padding-top:12px;border-top:1px solid rgba(210,235,250,.12);font-size:10px!important;color:#8faabd!important}
     @keyframes dw-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
     @media(orientation:landscape){.le-data-world .le-dw-hero{top:clamp(76px,13vh,112px);left:32%;right:32%}.le-data-world .le-dw-symbol{font-size:28px;margin-bottom:8px}.le-data-world .le-dw-title{font-size:clamp(28px,5vw,48px)}.le-data-world .le-dw-subtitle{margin-top:7px}.le-data-world .le-dw-bottom{bottom:calc(env(safe-area-inset-bottom) + 72px)}.le-data-world .le-dw-detail{left:auto;right:22px;top:calc(env(safe-area-inset-top) + 66px);width:min(390px,42vw);max-height:calc(100% - 150px)}}
@@ -146,7 +148,7 @@
       <div class="le-dw-top"><span class="le-dw-kicker">LIVE // EARTH · PLANETARY INTELLIGENCE</span><span class="le-dw-index">WORLD ${String(WORLDS.indexOf(world)+1).padStart(2,'0')} / 06</span></div>
       <header class="le-dw-hero"><div class="le-dw-symbol" aria-hidden="true">${world.symbol}</div><h1 class="le-dw-title">${world.title}</h1><p class="le-dw-subtitle">${world.subtitle}</p></header>
       <div class="le-dw-orbit-label">NUMERICAL EARTH SYSTEMS</div>
-      <section class="le-dw-detail" aria-live="polite"><h2></h2><p class="le-dw-detail-copy"></p><div class="le-dw-signal-grid"></div><p class="le-dw-note">Data connection is the next phase. No live measurements or events are being simulated or invented in this visual prototype.</p></section>
+      <section class="le-dw-detail" aria-live="polite"><h2></h2><p class="le-dw-detail-copy"></p><div class="le-dw-periods" aria-label="Data period"></div><div class="le-dw-signal-grid"></div><p class="le-dw-note">Connecting to the central LIVE // EARTH database. No local data store is used.</p></section>
       <footer class="le-dw-bottom"><p class="le-dw-intro">${world.intro}</p><nav class="le-dw-actions" aria-label="${world.title} exploration">
         <button class="le-dw-action" data-tab="discover" aria-pressed="true">Discover</button>
         <button class="le-dw-action" data-tab="signals" aria-pressed="false">Signals</button>
@@ -157,26 +159,65 @@
     const stopDraw=drawWorld(canvas,world,window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     const detail=panel.querySelector('.le-dw-detail');
     const heading=detail.querySelector('h2'),copy=detail.querySelector('.le-dw-detail-copy'),grid=detail.querySelector('.le-dw-signal-grid');
-    const content={
-      discover:['Discovery','A live event will appear here when verified numerical observations reveal a meaningful pattern.','No event is being presented until its source data, location, time window and confidence can be checked.'],
-      signals:['Numerical signals',`This world is organised around ${world.signals.length} numerical signal families.`, 'Select a signal family in the next data-connection phase to inspect its units, source, spatial coverage and update cadence.'],
-      timeline:['Evolution over time','Explore how a verified pattern develops, strengthens, weakens or resolves.','Timeline playback will be driven by timestamped observations — not decorative or fabricated values.'],
-      compare:['Compare systems','Compare regions, time windows or related Earth systems using aligned numerical measurements.','Comparisons will expose units, missing data and uncertainty before drawing conclusions.']
-    };
-    function selectTab(tab){
-      panel.querySelectorAll('[data-tab]').forEach(btn=>btn.setAttribute('aria-pressed',String(btn.dataset.tab===tab)));
-      const item=content[tab];heading.textContent=item[0];copy.textContent=item[1];
-      grid.replaceChildren();
-      if(tab==='signals')world.signals.forEach(signal=>{const chip=document.createElement('div');chip.className='le-dw-signal';chip.textContent=signal;grid.appendChild(chip);});
-      else {const chip=document.createElement('div');chip.className='le-dw-signal';chip.textContent=tab==='discover'?'VERIFIED EVENT FEED · NOT CONNECTED':tab==='timeline'?'TIME-SERIES PLAYBACK · NOT CONNECTED':'REGIONAL COMPARISON · NOT CONNECTED';grid.appendChild(chip);}
-      detail.classList.add('is-open');
+    const databaseNote=detail.querySelector('.le-dw-note');
+    const periods=detail.querySelector('.le-dw-periods');
+    let activeTab='discover',activePeriod='7d',payload=null,requestSeq=0;
+    function metric(label,value,unit=''){
+      const card=document.createElement('div');card.className='le-dw-signal';
+      card.textContent=`${label}: ${value}${unit?' '+unit:''}`;grid.appendChild(card);
     }
+    function renderData(){
+      grid.replaceChildren();
+      if(!API_BASE){heading.textContent='Connect Earth Intelligence';copy.textContent='The central database API address has not been configured yet.';databaseNote.textContent='BACKEND URL REQUIRED · NO LOCAL DATABASE';return;}
+      if(!payload){heading.textContent='Loading numerical intelligence';copy.textContent='Requesting verified source observations from the central database.';databaseNote.textContent='ONLINE DATABASE · 365-DAY RETENTION';return;}
+      if(payload.error){heading.textContent='Central database unavailable';copy.textContent='The live numerical data service could not complete this request. Check the connection and try again.';metric('Connection','Unavailable');metric('Storage','Online D1 database');databaseNote.textContent='NO LOCAL FALLBACK · NO FABRICATED MEASUREMENTS';return;}
+      if(!payload.available){heading.textContent='Source connection pending';copy.textContent=`${world.title} is ready, but an approved numerical source adapter is not connected yet.`;metric('World',world.title);metric('Status','Awaiting source');databaseNote.textContent='NO FABRICATED MEASUREMENTS · CENTRAL DATABASE';return;}
+      const data=payload.data||{};const events=Array.isArray(data.events)?data.events:[];const timeline=Array.isArray(data.timeline)?data.timeline:[];
+      if(activeTab==='discover'){
+        heading.textContent='Recent Earth activity';copy.textContent=`${data.recordCount||0} USGS catalog records in the selected ${activePeriod==='1d'?'1 day':activePeriod==='7d'?'7 days':'1 year'} window.`;
+        if(!events.length)metric('Records','No events in this window');
+        events.slice(0,20).forEach(event=>{const a=document.createElement('a');a.className='le-dw-event';a.href=event.url||data.sourceUrl;a.target='_blank';a.rel='noopener noreferrer';const strong=document.createElement('strong');strong.textContent=`M${Number(event.magnitude).toFixed(1)} · ${event.place||'Location unavailable'}`;const small=document.createElement('small');small.textContent=`${new Date(event.time).toLocaleString()} · Depth ${event.depthKm??'—'} km`;a.append(strong,small);grid.appendChild(a);});
+      }else if(activeTab==='signals'){
+        heading.textContent='Measured signals';copy.textContent='Source-reported earthquake catalogue observations. These are observations, not predictions.';
+        metric('Catalog records',data.recordCount||0);metric('Largest magnitude',data.largestMagnitude==null?'—':`M${Number(data.largestMagnitude).toFixed(1)}`);metric('Source','USGS');
+      }else if(activeTab==='timeline'){
+        heading.textContent='Activity through time';copy.textContent='Daily USGS earthquake catalogue counts, calculated by the central backend.';
+        timeline.slice(-30).forEach(point=>metric(point.date,point.count,'records'));
+      }else{
+        heading.textContent='Compare activity';
+        metric('Selected window',data.recordCount||0,'records');
+        metric('Period',activePeriod==='1d'?'1 day':activePeriod==='7d'?'7 days':'1 year');
+        if(data.comparisonAvailable && data.previousRecordCount!==null){
+          metric('Previous equal window',data.previousRecordCount,'records');
+          const delta=(Number(data.recordCount)||0)-(Number(data.previousRecordCount)||0);
+          metric('Difference',`${delta>0?'+':''}${delta} records`);
+          metric('Change',data.changePercent===null?'Baseline is zero':`${data.changePercent>0?'+':''}${data.changePercent}%`);
+          copy.textContent='Counts are compared with the immediately preceding window of equal length. They describe catalogue volume, not risk or prediction.';
+        }else{
+          metric('Comparison','Outside retention window');
+          metric('Archive','365 days maximum');
+          copy.textContent='A previous one-year window falls outside the archive’s 365-day retention limit, so no two-year comparison is invented.';
+        }
+      }
+      databaseNote.textContent=`SOURCE: USGS EARTHQUAKE HAZARDS PROGRAM · UPDATED ${payload.generatedAt?new Date(payload.generatedAt).toLocaleString():'—'} · RETENTION 365 DAYS`;
+    }
+    async function loadData(){
+      const seq=++requestSeq;payload=null;renderData();
+      if(!API_BASE)return;
+      try{const response=await fetch(`${API_BASE}/v1/worlds/${world.id}?period=${activePeriod}`,{cache:'no-store',credentials:'omit'});if(!response.ok)throw new Error(`API ${response.status}`);const result=await response.json();if(seq!==requestSeq)return;payload=result;root.dataset.earthIntelligenceDatabase='online';}
+      catch(error){if(seq!==requestSeq)return;payload={available:false,error:String(error)};root.dataset.earthIntelligenceDatabase='offline';databaseNote.textContent='CENTRAL DATABASE UNAVAILABLE · CHECK CONNECTION';console.warn('[LIVE // EARTH] Intelligence API unavailable.',error);}
+      renderData();
+    }
+    function selectTab(tab){
+      activeTab=tab;panel.querySelectorAll('[data-tab]').forEach(btn=>btn.setAttribute('aria-pressed',String(btn.dataset.tab===tab)));detail.classList.add('is-open');renderData();
+    }
+    PERIODS.forEach(option=>{const button=document.createElement('button');button.type='button';button.className='le-dw-period';button.textContent=option.label;button.setAttribute('aria-pressed',String(option.id===activePeriod));button.addEventListener('click',()=>{activePeriod=option.id;periods.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));loadData();});periods.appendChild(button);});
     panel.querySelectorAll('[data-tab]').forEach(btn=>btn.addEventListener('click',()=>selectTab(btn.dataset.tab)));
-    selectTab('discover');
-    return ()=>{stopDraw();};
+    selectTab('discover');loadData();
+    return ()=>{requestSeq++;stopDraw();};
   }
 
-  // These are available visual previews; numerical data adapters are not connected yet.
+  // Six numerical worlds share the central Earth Intelligence API; only approved source adapters return data.
   WORLDS.forEach(world=>runtime.registerFeature(world.id,()=>activate(world),false));
   window.dispatchEvent(new CustomEvent('live-earth-data-worlds-ready',{detail:{count:WORLDS.length}}));
 })();
