@@ -383,6 +383,10 @@ function createEarthInteractions(THREE, group, options = {}) {
       if (hasTrackballAnchor && setTrackballVector(trackballCurrent, current.x, current.y)) {
         trackballDelta.setFromUnitVectors(trackballCurrent, trackballPrevious);
         group.quaternion.copy(trackballDelta).multiply(dragStartQuaternion).normalize();
+        // Advance the anchor after every move. Keeping the pointer-down quaternion
+        // here makes later deltas overwrite one another, which feels like slipping
+        // or shaking when the globe is zoomed in.
+        dragStartQuaternion.copy(group.quaternion);
         trackballPrevious.copy(trackballCurrent);
         options.onRotate?.(group.quaternion, event);
       }

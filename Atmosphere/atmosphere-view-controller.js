@@ -230,12 +230,21 @@ async function initializeEngineView(view, viewId) {
     locationMarker.name = "liveEarthAtmosphereLocationMarker";
     locationHalo = new T.Mesh(
       new T.SphereGeometry(0.031, 16, 12),
-      new T.MeshBasicMaterial({ color: 0xff234d, transparent: true, opacity: 0.28, depthWrite: false })
+      new T.MeshBasicMaterial({
+        color: 0xff234d, transparent: true, opacity: 0.28,
+        depthTest: false, depthWrite: false
+      })
     );
     locationDot = new T.Mesh(
       new T.SphereGeometry(0.014, 16, 12),
-      new T.MeshBasicMaterial({ color: 0xff183f, depthWrite: false })
+      new T.MeshBasicMaterial({
+        color: 0xff183f, depthTest: false, depthWrite: false
+      })
     );
+    // The universal temperature skin renders at order 4. Draw the Home-style
+    // location marker afterward so the data surface cannot cover it.
+    locationHalo.renderOrder = 20;
+    locationDot.renderOrder = 21;
     locationMarker.add(locationHalo, locationDot);
     locationMarker.visible = false;
     earthGlobe.surface.add(locationMarker);
