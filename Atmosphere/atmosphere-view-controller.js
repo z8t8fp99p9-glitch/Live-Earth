@@ -14,7 +14,7 @@
   const ATMOSPHERE_VIEW = { id: 'atmosphere', title: 'Atmosphere', symbol: '◉' };
   const MANIFEST_URL = 'https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/atmosphere/manifest.json';
   const DATASET_ID = 'ATMOSPHERE_01';
-  const SCRIPT_PATHS = ['./EarthEngine/Graphics/universal-grid-system.js','./EarthEngine/Graphics/earth-grid-gpu-skin.js','./Atmosphere/temperature-numeral-rays.js'];
+  const SCRIPT_PATHS = ['./EarthEngine/Graphics/universal-grid-system.js','./EarthEngine/Graphics/earth-grid-gpu-skin.js'];
 
   function installHudStyle() {
     if (document.getElementById('le-atmosphere-cinematic-hud')) return;
@@ -129,7 +129,6 @@
   async function loadSharedGridTools() {
     await loadScript(SCRIPT_PATHS[0], () => !!window.LiveEarthUniversalGridSystem?.loadSnapshot);
     await loadScript(SCRIPT_PATHS[1], () => !!window.LiveEarthGpuGridSkin?.create);
-    await loadScript(SCRIPT_PATHS[2], () => !!window.LiveEarthTemperatureNumeralRays?.create);
   }
   // Match Moon and Sun: display each absolute timestamp in the device's
   // local timezone. The source instant remains UTC and is never shifted.
@@ -618,7 +617,7 @@ function installStyles() {
     source.hidden = true;
     view.body.appendChild(source);
 
-    let closed = false, layerDispose = null, gridHandle = null, thermalRaysHandle = null, gridRoot = null, worldGlobe = null;
+    let closed = false, layerDispose = null, gridHandle = null, gridRoot = null, worldGlobe = null;
     let dataRequest = null;
     let contourFrame = 0;
     let contourStartedAt = 0;
@@ -629,19 +628,15 @@ function installStyles() {
     };
     const startContourAnimation = () => {
       stopContourAnimation();
-      const hasContourClock = !!gridHandle?.mesh?.material?.uniforms?.uTime;
-      if (!hasContourClock && !thermalRaysHandle) return;
+      if (!gridHandle?.mesh?.material?.uniforms?.uTime) return;
       contourStartedAt = performance.now();
       const animateContours = now => {
-        const contourClock = gridHandle?.mesh?.material?.uniforms?.uTime;
         if (closed || document.hidden || !runtime.isActive(ATMOSPHERE_VIEW.id) ||
-            (!contourClock && !thermalRaysHandle)) {
+            !gridHandle?.mesh?.material?.uniforms?.uTime) {
           contourFrame = 0;
           return;
         }
-        const elapsedSeconds = (now - contourStartedAt) / 1000;
-        if (contourClock) contourClock.value = elapsedSeconds;
-        thermalRaysHandle?.update?.(elapsedSeconds);
+        gridHandle.mesh.material.uniforms.uTime.value = (now - contourStartedAt) / 1000;
         worldGlobe?.requestRender?.();
         contourFrame = requestAnimationFrame(animateContours);
       };
@@ -660,8 +655,6 @@ function installStyles() {
       document.body.classList.remove('le-atmosphere-fullscreen-open');
       hudToggle.remove();
       dataRequest?.abort();
-      try { thermalRaysHandle?.dispose?.(); } catch (_) {}
-      thermalRaysHandle = null;
       try { gridHandle?.dispose?.(); } catch (_) {}
       gridHandle = null;
       try { layerDispose?.(); } catch (error) { console.warn('[LIVE // EARTH] Atmosphere layer cleanup failed.', error); }
@@ -707,8 +700,6 @@ function installStyles() {
         if (typeof layerDispose === 'function') {
           layerDispose(); layerDispose = null;
         }
-        try { thermalRaysHandle?.dispose?.(); } catch (_) {}
-        thermalRaysHandle = null;
         try { gridHandle?.dispose?.(); } catch (_) {}
         gridHandle = null;
         try { gridRoot?.removeFromParent?.(); } catch (_) {}
@@ -745,16 +736,9 @@ function installStyles() {
           const temperatureUniforms = gridHandle.mesh?.material?.uniforms;
           if (temperatureUniforms?.uOpacity) temperatureUniforms.uOpacity.value = 0.70;
           if (temperatureUniforms?.uContourStrength) temperatureUniforms.uContourStrength.value = 0.30;
-          // Atmosphere-only light rays: sample the same verified NOAA grid and
-          // attach every beam and numeral to its real geographic point on Earth.
-          thermalRaysHandle = window.LiveEarthTemperatureNumeralRays.create({
-            THREE, earth, grid, maximumLabels: 16
-          });
           gridRoot.add(gridHandle.mesh);
           earth.add(gridRoot);
           return () => {
-            try { thermalRaysHandle?.dispose?.(); } catch (_) {}
-            thermalRaysHandle = null;
             try { gridHandle?.dispose?.(); } catch (_) {}
             gridHandle = null;
             try { gridRoot?.removeFromParent?.(); } catch (_) {}
@@ -765,7 +749,7 @@ function installStyles() {
         if (typeof layerDispose !== 'function') throw new Error('The verified NOAA temperature layer could not attach.');
         view.root.dataset.gridRenderingSkin = 'gpu-ready';
         view.root.dataset.gridData = 'verified-noaa-gfs';
-        runtime.setStatus(status, 'Temperature · NOAA grid verified. Glowing rays and numerals show sampled temperatures in 5 °C steps.', 'success');
+        runtime.setStatus(status, 'Temperature · NOAA grid verified. Isotherm contours show the measured temperature pattern.', 'success');
         startContourAnimation();
         worldGlobe.requestRender?.();
       } catch (error) {
