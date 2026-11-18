@@ -13,6 +13,17 @@
   }
   const ATMOSPHERE_VIEW = { id: 'atmosphere', title: 'Atmosphere', symbol: '◉' };
   const MANIFEST_URL = 'https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/Data/Central-Database/published/atmosphere/manifest.json';
+  // Temperature's visual identity follows the earlier numerical rendering skin:
+  // deep blue -> ocean cyan -> living green -> warm gold -> ember red.
+  // The universal GPU renderer remains dataset-agnostic.
+  const TEMPERATURE_COLOR_STOPS = [
+    [0.00, 0.125, 0.231, 0.541],
+    [0.25, 0.086, 0.537, 0.722],
+    [0.50, 0.271, 0.725, 0.471],
+    [0.75, 0.941, 0.776, 0.294],
+    [1.00, 0.784, 0.247, 0.212]
+  ];
+  const TEMPERATURE_LEGEND = 'linear-gradient(90deg,#203b8a 0%,#1689b8 25%,#45b978 50%,#f0c64b 75%,#c83f36 100%)';
   const SCRIPT_PATHS = ['./EarthEngine/Graphics/universal-grid-system.js','./EarthEngine/Graphics/earth-grid-gpu-skin.js','./Atmosphere/temperature-numeral-rays.js'];
 
   function installHudStyle() {
@@ -78,7 +89,7 @@
       .le-atmo-range span { color:#a9c6d8; font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
       .le-atmo-legend { margin:10px 0 2px; padding:9px 10px; border:1px solid rgba(159,211,249,.13); border-radius:12px; background:rgba(1,8,17,.34); }
       .le-atmo-legend-title { display:block; margin-bottom:7px; color:#a9c6d8; font-size:8px; font-weight:750; letter-spacing:.12em; text-transform:uppercase; }
-      .le-atmo-legend-bar { height:9px; border-radius:999px; background:linear-gradient(90deg,#0e1b57 0%,#1f57c7 14%,#33b3d6 29%,#47b38c 43%,#b8c957 57%,#f5c73d 71%,#f06429 84%,#c71f33 94%,#7a1357 100%); box-shadow:inset 0 0 0 1px rgba(255,255,255,.12); }
+      .le-atmo-legend-bar { height:9px; border-radius:999px; background:linear-gradient(90deg,#203b8a,#1689b8,#45b978,#f0c64b,#c83f36); box-shadow:inset 0 0 0 1px rgba(255,255,255,.12); }
       .le-atmo-legend-ticks { display:flex; justify-content:space-between; gap:5px; margin-top:5px; color:#b8cbd8; font-size:8px; font-variant-numeric:tabular-nums; }
       .le-atmo-details { margin-top:10px; border-top:1px solid rgba(165,208,235,.14); padding-top:8px; }
       .le-atmo-details summary { list-style:none; cursor:pointer; color:#b7d8e9; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; display:flex; justify-content:space-between; align-items:center; min-height:26px; }
@@ -574,30 +585,7 @@ function installStyles() {
       { id: 'moisture', label: 'Moisture', detail: '2 m relative humidity · %' }
     ];
     const FIELD_CONFIG = {
-      temperature: {
-        ids: ['earth.atmosphere.air_temperature'],
-        title: 'NOAA · 2 m air temperature',
-        units: 'degree_Celsius', displayUnits: '°C',
-        min: -80, max: 45,
-        ticks: ['−80°', '−50°', '−20°', '10°', '45°'],
-        // Temperature's scientific visual identity belongs to this View Controller.
-        colorStops: [
-          [0.00, 0.018, 0.045, 0.20],
-          [0.16, 0.035, 0.16, 0.52],
-          [0.32, 0.025, 0.48, 0.82],
-          [0.47, 0.025, 0.78, 0.88],
-          [0.60, 0.18, 0.78, 0.66],
-          [0.72, 0.92, 0.86, 0.38],
-          [0.84, 1.00, 0.48, 0.16],
-          [1.00, 0.62, 0.035, 0.20]
-        ],
-        legendGradient: 'linear-gradient(90deg,#050b33 0%,#092985 16%,#087bd1 32%,#06c7e0 47%,#2fc7a8 60%,#ebdc62 72%,#ff7b29 85%,#9e092f 100%)',
-        contourInterval: 5,
-        contourStrength: 0.24,
-        contourColor: [0.72, 0.91, 1.00],
-        opacity: 0.82,
-        source: 'NOAA NCEP · GFS 0.25° analysis · 2 m air temperature'
-      },
+      temperature: { ids: ['earth.atmosphere.air_temperature'], title: 'NOAA · 2 m air temperature', units: 'degree_Celsius', displayUnits: '°C', min: -80, max: 45, ticks: ['−80°','−40°','0°','20°','45°'], source: 'NOAA NCEP · GFS 0.25° analysis · 2 m air temperature' },
       pressure: { ids: ['earth.atmosphere.atmospheric_pressure'], title: 'NOAA · Mean sea-level pressure', units: 'kilopascal', displayUnits: 'kPa', min: null, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · mean sea-level pressure' },
       wind: { ids: ['earth.atmosphere.wind_speed','earth.atmosphere.wind_direction'], title: 'NOAA · 10 m wind', units: 'metre_per_second', displayUnits: 'm/s', min: 0, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · 10 m wind speed and direction derived from U/V components' },
       moisture: { ids: ['earth.atmosphere.humidity'], title: 'NOAA · 2 m relative humidity', units: 'percent', displayUnits: '%', min: 0, max: 100, ticks: ['0%','25%','50%','75%','100%'], source: 'NOAA NCEP · GFS 0.25° analysis · 2 m relative humidity' }
@@ -728,9 +716,9 @@ function installStyles() {
       const min = config.min === null ? grid.min : config.min;
       const max = config.max === null ? grid.max : config.max;
       legendTitle.textContent = `${config.title.replace('NOAA · ','')} · ${config.displayUnits}`;
-      legendTicks.replaceChildren();
       const legendBar = legend.querySelector('.le-atmo-legend-bar');
-      if (legendBar && config.legendGradient) legendBar.style.background = config.legendGradient;
+      if (legendBar) legendBar.style.background = config === FIELD_CONFIG.temperature ? TEMPERATURE_LEGEND : '';
+      legendTicks.replaceChildren();
       const ticks = config.ticks || Array.from({ length: 5 }, (_, index) => {
         const value = min + (max - min) * index / 4;
         return `${formatFieldValue(value)} ${config.displayUnits}`;
@@ -850,13 +838,13 @@ function installStyles() {
           const colorMin = datasetKey === 'temperature' ? -80 : (datasetKey === 'moisture' ? 0 : bounds.min);
           const colorMax = datasetKey === 'temperature' ? 45 : (datasetKey === 'moisture' ? 100 : bounds.max);
           gridHandle = window.LiveEarthGpuGridSkin.create({
-            THREE, grid, radius: datasetKey === 'temperature' ? 1.011 : 1.009,
-            opacity: config.opacity ?? 0.80,
+            THREE, grid, radius: 1.009,
+            opacity: datasetKey === 'temperature' ? 0.76 : 0.78,
             min: colorMin, max: colorMax,
-            colorStops: config.colorStops,
-            contourInterval: config.contourInterval ?? 0,
-            contourStrength: config.contourStrength ?? 0.16,
-            contourColor: config.contourColor,
+            colorStops: datasetKey === 'temperature' ? TEMPERATURE_COLOR_STOPS : undefined,
+            contourInterval: datasetKey === 'temperature' ? 5 : 0,
+            contourStrength: datasetKey === 'temperature' ? 0.13 : 0.16,
+            contourColor: [0.055, 0.105, 0.16],
             name: `NOAA-GFS-${datasetKey}`
           });
           if (datasetKey === 'temperature' && window.LiveEarthTemperatureNumeralRays?.create) {

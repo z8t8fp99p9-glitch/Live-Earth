@@ -162,13 +162,13 @@
     let disposed = false;
     return {
       count: records.length,
-      update(seconds) {
+      // Static light treatment: no pulsing, breathing, or beacon animation.
+      update() {
         if (disposed) return;
-        const pulse = 0.5 + 0.5 * Math.sin(seconds * 1.7);
         for (const r of records) {
-          r.halo.material.opacity = 0.15 + pulse * 0.12;
-          r.core.material.opacity = 0.76 + pulse * 0.18;
-          r.sprite.material.opacity = 0.88 + pulse * 0.12;
+          r.halo.material.opacity = 0.18;
+          r.core.material.opacity = 0.86;
+          r.sprite.material.opacity = 0.96;
         }
       },
       dispose() {
