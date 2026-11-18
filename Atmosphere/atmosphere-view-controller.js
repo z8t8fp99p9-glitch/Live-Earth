@@ -574,7 +574,30 @@ function installStyles() {
       { id: 'moisture', label: 'Moisture', detail: '2 m relative humidity · %' }
     ];
     const FIELD_CONFIG = {
-      temperature: { ids: ['earth.atmosphere.air_temperature'], title: 'NOAA · 2 m air temperature', units: 'degree_Celsius', displayUnits: '°C', min: -80, max: 45, ticks: ['−80°','−40°','0°','20°','45°'], source: 'NOAA NCEP · GFS 0.25° analysis · 2 m air temperature' },
+      temperature: {
+        ids: ['earth.atmosphere.air_temperature'],
+        title: 'NOAA · 2 m air temperature',
+        units: 'degree_Celsius', displayUnits: '°C',
+        min: -80, max: 45,
+        ticks: ['−80°', '−50°', '−20°', '10°', '45°'],
+        // Temperature's scientific visual identity belongs to this View Controller.
+        colorStops: [
+          [0.00, 0.018, 0.045, 0.20],
+          [0.16, 0.035, 0.16, 0.52],
+          [0.32, 0.025, 0.48, 0.82],
+          [0.47, 0.025, 0.78, 0.88],
+          [0.60, 0.18, 0.78, 0.66],
+          [0.72, 0.92, 0.86, 0.38],
+          [0.84, 1.00, 0.48, 0.16],
+          [1.00, 0.62, 0.035, 0.20]
+        ],
+        legendGradient: 'linear-gradient(90deg,#050b33 0%,#092985 16%,#087bd1 32%,#06c7e0 47%,#2fc7a8 60%,#ebdc62 72%,#ff7b29 85%,#9e092f 100%)',
+        contourInterval: 5,
+        contourStrength: 0.24,
+        contourColor: [0.72, 0.91, 1.00],
+        opacity: 0.82,
+        source: 'NOAA NCEP · GFS 0.25° analysis · 2 m air temperature'
+      },
       pressure: { ids: ['earth.atmosphere.atmospheric_pressure'], title: 'NOAA · Mean sea-level pressure', units: 'kilopascal', displayUnits: 'kPa', min: null, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · mean sea-level pressure' },
       wind: { ids: ['earth.atmosphere.wind_speed','earth.atmosphere.wind_direction'], title: 'NOAA · 10 m wind', units: 'metre_per_second', displayUnits: 'm/s', min: 0, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · 10 m wind speed and direction derived from U/V components' },
       moisture: { ids: ['earth.atmosphere.humidity'], title: 'NOAA · 2 m relative humidity', units: 'percent', displayUnits: '%', min: 0, max: 100, ticks: ['0%','25%','50%','75%','100%'], source: 'NOAA NCEP · GFS 0.25° analysis · 2 m relative humidity' }
@@ -706,6 +729,8 @@ function installStyles() {
       const max = config.max === null ? grid.max : config.max;
       legendTitle.textContent = `${config.title.replace('NOAA · ','')} · ${config.displayUnits}`;
       legendTicks.replaceChildren();
+      const legendBar = legend.querySelector('.le-atmo-legend-bar');
+      if (legendBar && config.legendGradient) legendBar.style.background = config.legendGradient;
       const ticks = config.ticks || Array.from({ length: 5 }, (_, index) => {
         const value = min + (max - min) * index / 4;
         return `${formatFieldValue(value)} ${config.displayUnits}`;
@@ -825,14 +850,15 @@ function installStyles() {
           const colorMin = datasetKey === 'temperature' ? -80 : (datasetKey === 'moisture' ? 0 : bounds.min);
           const colorMax = datasetKey === 'temperature' ? 45 : (datasetKey === 'moisture' ? 100 : bounds.max);
           gridHandle = window.LiveEarthGpuGridSkin.create({
-            THREE, grid, radius: 1.009, opacity: 0.80,
+            THREE, grid, radius: datasetKey === 'temperature' ? 1.011 : 1.009,
+            opacity: config.opacity ?? 0.80,
             min: colorMin, max: colorMax,
-            contours: true, contourStrength: datasetKey === 'temperature' ? 0.28 : 0.16,
+            colorStops: config.colorStops,
+            contourInterval: config.contourInterval ?? 0,
+            contourStrength: config.contourStrength ?? 0.16,
+            contourColor: config.contourColor,
             name: `NOAA-GFS-${datasetKey}`
           });
-          const uniforms = gridHandle.mesh?.material?.uniforms;
-          if (uniforms?.uOpacity) uniforms.uOpacity.value = datasetKey === 'temperature' ? 0.70 : 0.78;
-          if (uniforms?.uContourStrength && datasetKey === 'temperature') uniforms.uContourStrength.value = 0.30;
           if (datasetKey === 'temperature' && window.LiveEarthTemperatureNumeralRays?.create) {
             thermalRaysHandle = window.LiveEarthTemperatureNumeralRays.create({ THREE, earth, grid, maximumLabels: 16 });
           }
