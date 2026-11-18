@@ -1,0 +1,13 @@
+{
+  "dataset_id": "earth.atmosphere.air_temperature",
+  "status": "success",
+  "normalized_paths": [
+    "normalized/earth.atmosphere.air_temperature/2026-11-18/20261118T124216-c453ce70.jsonl"
+  ],
+  "record_count": 1,
+  "raw_sha256": "c609b4b308b1c98d757f09c6ad67a58871664355265cc47c0eddbe313196c87a",
+  "data_kind": null,
+  "published_path": "published/atmosphere/manifest.json",
+  "retrieval_id": "20261118T124216-c453ce70",
+  "recorded_at": "2026-11-18T12:42:18.097881+00:00"
+}
