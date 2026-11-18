@@ -11,16 +11,16 @@
       ],
       "status": "collector_configured_pending_first_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "native_sources",
+        "source_id": "noaa_ncep_gfs",
+        "cadence": "hourly"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "degree_Celsius",
+        "spatial_coverage": "global_native_0.25_degree_grid",
+        "temporal_resolution": "source_native"
       },
       "provenance_required": true
     },
@@ -263,16 +263,16 @@
       ],
       "status": "collector_configured_pending_first_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "native_sources",
+        "source_id": "noaa_ncei_oisst",
+        "cadence": "daily"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "degree_C",
+        "spatial_coverage": "global_native_0.25_degree_grid",
+        "temporal_resolution": "source_native"
       },
       "provenance_required": true
     },
@@ -473,16 +473,16 @@
       ],
       "status": "collector_configured_pending_first_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "native_sources",
+        "source_id": "nasa_power_daily",
+        "cadence": "daily"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "degree_C",
+        "spatial_coverage": "six_sparse_regional_point_samples",
+        "temporal_resolution": "source_native"
       },
       "provenance_required": true
     },
@@ -683,16 +683,16 @@
       ],
       "status": "collector_configured_pending_first_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "native_sources",
+        "source_id": "nasa_power_daily",
+        "cadence": "daily"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "mm/day",
+        "spatial_coverage": "six_sparse_regional_point_samples",
+        "temporal_resolution": "source_native"
       },
       "provenance_required": true
     },
@@ -893,16 +893,16 @@
       ],
       "status": "collector_configured_pending_first_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "native_sources",
+        "source_id": "usgs_comcat",
+        "cadence": "hourly"
       },
       "data_contract": {
         "measurement_type": "event",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "magnitude",
+        "spatial_coverage": "USGS_all_day_event_feed",
+        "temporal_resolution": "source_native"
       },
       "provenance_required": true
     },
@@ -1040,16 +1040,16 @@
       ],
       "status": "collector_configured_pending_first_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "native_sources",
+        "source_id": "nasa_power_daily",
+        "cadence": "daily"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "kWh/m^2/day",
+        "spatial_coverage": "six_sparse_regional_point_samples",
+        "temporal_resolution": "source_native"
       },
       "provenance_required": true
     },
