@@ -46,7 +46,7 @@ async function loadBoundaryData() {
 }
 
 export async function createCountryBordersSkin({
-  THREE, earthGroup, radius = 1.012, color = 0xa8d8e8,
+  THREE, earthGroup, radius = 1.010, color = 0xa8d8e8,
   opacity = 0.52, renderOrder = 10, enabled = true
 } = {}) {
   if (!THREE || !earthGroup?.add) throw new TypeError("Three.js and the Earth surface are required.");

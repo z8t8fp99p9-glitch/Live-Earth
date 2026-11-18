@@ -20,7 +20,7 @@ This is intentionally different from the numerical Grid Rendering Skin's
 local +Z central meridian. The satellite texture and its Earth Engine mapping
 are the alignment reference for this Atmosphere overlay.
 
-The overlay is attached to the Atmosphere globe's existing Earth surface, so it inherits the same globe rotation. It is offset to radius 1.012, just above the numerical grid layer at radius 1.009. Antimeridian-crossing segments are not bridged.
+The overlay is attached to the Atmosphere globe's existing Earth surface, so it inherits the same globe rotation. It is offset to radius 1.010, just above the numerical grid layer at radius 1.009. Antimeridian-crossing segments are not bridged.
 
 The line object disables raycasting so recursive gesture picking continues to hit the actual Earth surface rather than decorative border lines. The Atmosphere controller owns creation and disposal.
 

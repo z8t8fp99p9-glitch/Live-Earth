@@ -218,7 +218,7 @@ async function initializeEngineView(view, viewId) {
   }
 
   try {
-    renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "low-power" });
+    renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
     renderer.outputColorSpace = T.SRGBColorSpace;
     renderer.setClearColor(0x02050b, 0);
     scene = new T.Scene();
@@ -255,9 +255,9 @@ async function initializeEngineView(view, viewId) {
       countryBorders = await createCountryBordersSkin({
         THREE: T,
         earthGroup: earthGlobe.surface,
-        // Sit just above the numerical grid skin (radius 1.009) while
-        // sharing the exact Earth-surface coordinate frame.
-        radius: 1.012,
+        // Minimal clearance above the numerical grid skin (radius 1.009)
+        // to reduce the visible floating effect while preserving depth ordering.
+        radius: 1.010,
         color: 0xa8d8e8,
         opacity: 0.52,
         renderOrder: 10
