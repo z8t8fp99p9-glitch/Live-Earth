@@ -13,22 +13,23 @@
   }
   const ATMOSPHERE_VIEW = { id: 'atmosphere', title: 'Atmosphere', symbol: '◉' };
   const MANIFEST_URL = 'https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/Data/Central-Database/published/atmosphere/manifest.json';
-  // Temperature keeps the classic LIVE // EARTH thermal identity, but the
-  // stops are anchored to meaningful Celsius thresholds across the full view
-  // range. This preserves cold/warm contrast without clipping values at 60 C.
-  // The universal GPU renderer remains dataset-agnostic.
+  // Temperature uses an expanded cold-to-hot scale. The original deep blue
+  // remains anchored at -60 C; values below it progress into midnight blues.
+  // The original green and gold identity is retained; values above 45 C deepen
+  // through crimson to burgundy at +60 C. GPU renderer remains unchanged.
   const TEMPERATURE_COLOR_STOPS = [
-    [0.000000, 0.1255, 0.2314, 0.5412], // -80 C · deep cobalt
-    [0.178571, 0.0863, 0.5373, 0.7216], // -55 C · ocean blue
-    [0.357143, 0.1098, 0.7725, 0.8196], // -30 C · electric cyan
-    [0.500000, 0.2706, 0.7255, 0.4706], // -10 C · living green
-    [0.642857, 0.6078, 0.7804, 0.3569], // +10 C · lime
-    [0.750000, 0.9412, 0.7765, 0.2941], // +25 C · warm gold
-    [0.821429, 0.9412, 0.3922, 0.1608], // +35 C · ember orange
-    [0.892857, 0.7843, 0.2471, 0.2118], // +45 C · crimson
-    [1.000000, 0.4784, 0.0745, 0.3412]  // +60 C · hot magenta
+    [0.000000, 0.0314, 0.0510, 0.1725], // -80 C · midnight navy
+    [0.071429, 0.0627, 0.1098, 0.3137], // -70 C · polar indigo
+    [0.142857, 0.1255, 0.2314, 0.5412], // -60 C · original deep blue
+    [0.321429, 0.0863, 0.5373, 0.7216], // -35 C · original blue-cyan
+    [0.500000, 0.2706, 0.7255, 0.4706], // -10 C · original green
+    [0.678571, 0.9412, 0.7765, 0.2941], // +15 C · original gold
+    [0.821429, 0.9412, 0.3922, 0.1608], // +35 C · orange
+    [0.892857, 0.7843, 0.2471, 0.2118], // +45 C · original red
+    [0.946429, 0.5451, 0.0824, 0.1647], // +52.5 C · deep crimson
+    [1.000000, 0.2706, 0.0157, 0.0902]  // +60 C · dark burgundy
   ];
-  const TEMPERATURE_LEGEND = 'linear-gradient(90deg,#203b8a 0%,#1689b8 17.8571%,#1cc5d1 35.7143%,#45b978 50%,#9bc75b 64.2857%,#f0c64b 75%,#f06429 82.1429%,#c83f36 89.2857%,#7a1357 100%)';
+  const TEMPERATURE_LEGEND = 'linear-gradient(90deg,#080d2c 0%,#101c50 7.1429%,#203b8a 14.2857%,#1689b8 32.1429%,#45b978 50%,#f0c64b 67.8571%,#f06429 82.1429%,#c83f36 89.2857%,#8b152a 94.6429%,#450417 100%)';
   const SCRIPT_PATHS = ['./EarthEngine/Graphics/universal-grid-system.js','./EarthEngine/Graphics/earth-grid-gpu-skin.js'];
 
   function installHudStyle() {
@@ -589,7 +590,7 @@ function installStyles() {
       { id: 'moisture', label: 'Moisture', detail: '2 m relative humidity · %' }
     ];
     const FIELD_CONFIG = {
-      temperature: { ids: ['earth.atmosphere.air_temperature'], title: 'NOAA · 2 m air temperature', units: 'degree_Celsius', displayUnits: '°C', min: -80, max: 60, ticks: ['−80°','−45°','−10°','25°','60°'], source: 'NOAA NCEP · GFS 0.25° analysis · 2 m air temperature' },
+      temperature: { ids: ['earth.atmosphere.air_temperature'], title: 'NOAA · 2 m air temperature', units: 'degree_Celsius', displayUnits: '°C', min: -80, max: 60, ticks: ['−80°','−60°','−10°','45°','60°'], source: 'NOAA NCEP · GFS 0.25° analysis · 2 m air temperature' },
       pressure: { ids: ['earth.atmosphere.atmospheric_pressure'], title: 'NOAA · Mean sea-level pressure', units: 'kilopascal', displayUnits: 'kPa', min: null, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · mean sea-level pressure' },
       wind: { ids: ['earth.atmosphere.wind_speed','earth.atmosphere.wind_direction'], title: 'NOAA · 10 m wind', units: 'metre_per_second', displayUnits: 'm/s', min: 0, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · 10 m wind speed and direction derived from U/V components' },
       moisture: { ids: ['earth.atmosphere.humidity'], title: 'NOAA · 2 m relative humidity', units: 'percent', displayUnits: '%', min: 0, max: 100, ticks: ['0%','25%','50%','75%','100%'], source: 'NOAA NCEP · GFS 0.25° analysis · 2 m relative humidity' }
