@@ -1,0 +1,1183 @@
+{
+  "schema_version": 1,
+  "registry_type": "global_dataset_registry",
+  "identity_rule": "dataset_id is globally stable and independent of World assignment",
+  "datasets": [
+    {
+      "dataset_id": "earth.atmosphere.air_temperature",
+      "name": "air_temperature",
+      "legacy_ids": [
+        "ATMOSPHERE_01"
+      ],
+      "status": "collector_configured_pending_first_success",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.atmosphere.atmospheric_pressure",
+      "name": "atmospheric_pressure",
+      "legacy_ids": [
+        "ATMOSPHERE_02"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.atmosphere.wind_speed",
+      "name": "wind_speed",
+      "legacy_ids": [
+        "ATMOSPHERE_03"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.atmosphere.wind_direction",
+      "name": "wind_direction",
+      "legacy_ids": [
+        "ATMOSPHERE_04"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.atmosphere.humidity",
+      "name": "humidity",
+      "legacy_ids": [
+        "ATMOSPHERE_05"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.atmosphere.water_vapour",
+      "name": "water_vapour",
+      "legacy_ids": [
+        "ATMOSPHERE_06"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.atmosphere.cloud_properties",
+      "name": "cloud_properties",
+      "legacy_ids": [
+        "ATMOSPHERE_07"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.atmosphere.co2_concentration",
+      "name": "co2_concentration",
+      "legacy_ids": [
+        "ATMOSPHERE_08"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.atmosphere.methane",
+      "name": "methane",
+      "legacy_ids": [
+        "ATMOSPHERE_09"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.atmosphere.ozone",
+      "name": "ozone",
+      "legacy_ids": [
+        "ATMOSPHERE_10"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.atmosphere.carbon_monoxide",
+      "name": "carbon_monoxide",
+      "legacy_ids": [
+        "ATMOSPHERE_11"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.atmosphere.aerosols_dust",
+      "name": "aerosols_dust",
+      "legacy_ids": [
+        "ATMOSPHERE_12"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.oceans.sea_temperature",
+      "name": "sea_temperature",
+      "legacy_ids": [
+        "OCEANS_01"
+      ],
+      "status": "collector_configured_pending_first_success",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.oceans.ocean_currents",
+      "name": "ocean_currents",
+      "legacy_ids": [
+        "OCEANS_02"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.oceans.salinity",
+      "name": "salinity",
+      "legacy_ids": [
+        "OCEANS_03"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.oceans.sea_level",
+      "name": "sea_level",
+      "legacy_ids": [
+        "OCEANS_04"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.oceans.wave_height",
+      "name": "wave_height",
+      "legacy_ids": [
+        "OCEANS_05"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.oceans.chlorophyll",
+      "name": "chlorophyll",
+      "legacy_ids": [
+        "OCEANS_06"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.oceans.ocean_colour",
+      "name": "ocean_colour",
+      "legacy_ids": [
+        "OCEANS_07"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.oceans.marine_productivity",
+      "name": "marine_productivity",
+      "legacy_ids": [
+        "OCEANS_08"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.oceans.ocean_heat",
+      "name": "ocean_heat",
+      "legacy_ids": [
+        "OCEANS_09"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.oceans.sea_ice",
+      "name": "sea_ice",
+      "legacy_ids": [
+        "OCEANS_10"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.land.land_temperature",
+      "name": "land_temperature",
+      "legacy_ids": [
+        "LAND_01"
+      ],
+      "status": "collector_configured_pending_first_success",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.land.soil_moisture",
+      "name": "soil_moisture",
+      "legacy_ids": [
+        "LAND_02"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.land.soil_properties",
+      "name": "soil_properties",
+      "legacy_ids": [
+        "LAND_03"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.land.elevation",
+      "name": "elevation",
+      "legacy_ids": [
+        "LAND_04"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.land.terrain",
+      "name": "terrain",
+      "legacy_ids": [
+        "LAND_05"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.land.land_cover",
+      "name": "land_cover",
+      "legacy_ids": [
+        "LAND_06"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.land.vegetation_health",
+      "name": "vegetation_health",
+      "legacy_ids": [
+        "LAND_07"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.land.forest_change",
+      "name": "forest_change",
+      "legacy_ids": [
+        "LAND_08"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.land.surface_reflectance",
+      "name": "surface_reflectance",
+      "legacy_ids": [
+        "LAND_09"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.land.urban_expansion",
+      "name": "urban_expansion",
+      "legacy_ids": [
+        "LAND_10"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.water_ice.rainfall",
+      "name": "rainfall",
+      "legacy_ids": [
+        "WATER_ICE_01"
+      ],
+      "status": "collector_configured_pending_first_success",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.water_ice.snow_cover",
+      "name": "snow_cover",
+      "legacy_ids": [
+        "WATER_ICE_02"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.water_ice.glaciers",
+      "name": "glaciers",
+      "legacy_ids": [
+        "WATER_ICE_03"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.water_ice.ice_sheets",
+      "name": "ice_sheets",
+      "legacy_ids": [
+        "WATER_ICE_04"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.water_ice.groundwater_indicators",
+      "name": "groundwater_indicators",
+      "legacy_ids": [
+        "WATER_ICE_05"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.water_ice.surface_water",
+      "name": "surface_water",
+      "legacy_ids": [
+        "WATER_ICE_06"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.water_ice.flood_extent",
+      "name": "flood_extent",
+      "legacy_ids": [
+        "WATER_ICE_07"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.water_ice.evapotranspiration",
+      "name": "evapotranspiration",
+      "legacy_ids": [
+        "WATER_ICE_08"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.water_ice.water_storage",
+      "name": "water_storage",
+      "legacy_ids": [
+        "WATER_ICE_09"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.earth_activity.wildfires",
+      "name": "wildfires",
+      "legacy_ids": [
+        "EARTH_ACTIVITY_01"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "event",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.earth_activity.earthquakes",
+      "name": "earthquakes",
+      "legacy_ids": [
+        "EARTH_ACTIVITY_02"
+      ],
+      "status": "collector_configured_pending_first_success",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "event",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.earth_activity.volcanoes",
+      "name": "volcanoes",
+      "legacy_ids": [
+        "EARTH_ACTIVITY_03"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "event",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.earth_activity.cyclones",
+      "name": "cyclones",
+      "legacy_ids": [
+        "EARTH_ACTIVITY_04"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "event",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.earth_activity.dust_storms",
+      "name": "dust_storms",
+      "legacy_ids": [
+        "EARTH_ACTIVITY_05"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "event",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.earth_activity.landslides",
+      "name": "landslides",
+      "legacy_ids": [
+        "EARTH_ACTIVITY_06"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "event",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.earth_activity.algal_blooms",
+      "name": "algal_blooms",
+      "legacy_ids": [
+        "EARTH_ACTIVITY_07"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "event",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.earth_activity.lightning",
+      "name": "lightning",
+      "legacy_ids": [
+        "EARTH_ACTIVITY_08"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "event",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.energy_humanity.solar_radiation",
+      "name": "solar_radiation",
+      "legacy_ids": [
+        "ENERGY_HUMANITY_01"
+      ],
+      "status": "collector_configured_pending_first_success",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.energy_humanity.earth_albedo",
+      "name": "earth_albedo",
+      "legacy_ids": [
+        "ENERGY_HUMANITY_02"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.energy_humanity.outgoing_radiation",
+      "name": "outgoing_radiation",
+      "legacy_ids": [
+        "ENERGY_HUMANITY_03"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.energy_humanity.night_lights",
+      "name": "night_lights",
+      "legacy_ids": [
+        "ENERGY_HUMANITY_04"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.energy_humanity.population_distribution",
+      "name": "population_distribution",
+      "legacy_ids": [
+        "ENERGY_HUMANITY_05"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.energy_humanity.land_use",
+      "name": "land_use",
+      "legacy_ids": [
+        "ENERGY_HUMANITY_06"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    },
+    {
+      "dataset_id": "earth.energy_humanity.energy_indicators",
+      "name": "energy_indicators",
+      "legacy_ids": [
+        "ENERGY_HUMANITY_07"
+      ],
+      "status": "source_not_configured",
+      "collection": {
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
+      },
+      "data_contract": {
+        "measurement_type": "field_or_indicator",
+        "units": null,
+        "spatial_coverage": "unverified",
+        "temporal_resolution": "unverified"
+      },
+      "provenance_required": true
+    }
+  ]
+}

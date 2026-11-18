@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://live-earth.invalid/schemas/observation.schema.json",
+  "title": "LIVE // EARTH Normalized Observation",
+  "type": "object",
+  "required": [
+    "dataset_id",
+    "source_id",
+    "observed_at",
+    "retrieved_at",
+    "value",
+    "unit",
+    "provenance"
+  ],
+  "properties": {
+    "dataset_id": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "retrieved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "value": {},
+    "unit": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "latitude": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": -90,
+      "maximum": 90
+    },
+    "longitude": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": -180,
+      "maximum": 180
+    },
+    "geometry": {},
+    "dimensions": {
+      "type": "object"
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "source_url",
+        "retrieval_id",
+        "raw_sha256"
+      ]
+    },
+    "quality": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

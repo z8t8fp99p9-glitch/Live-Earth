@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "worlds": [
+    {
+      "world_id": "atmosphere",
+      "name": "Atmosphere",
+      "status": "active",
+      "controller_binding": "resolve_through_existing_app_registry",
+      "dataset_assignments_source": "../registry/world-dataset-assignments.json"
+    },
+    {
+      "world_id": "oceans",
+      "name": "Oceans",
+      "status": "active",
+      "controller_binding": "resolve_through_existing_app_registry",
+      "dataset_assignments_source": "../registry/world-dataset-assignments.json"
+    },
+    {
+      "world_id": "land",
+      "name": "Land",
+      "status": "active",
+      "controller_binding": "resolve_through_existing_app_registry",
+      "dataset_assignments_source": "../registry/world-dataset-assignments.json"
+    },
+    {
+      "world_id": "water_ice",
+      "name": "Water & Ice",
+      "status": "active",
+      "controller_binding": "resolve_through_existing_app_registry",
+      "dataset_assignments_source": "../registry/world-dataset-assignments.json"
+    },
+    {
+      "world_id": "earth_activity",
+      "name": "Earth Activity",
+      "status": "active",
+      "controller_binding": "resolve_through_existing_app_registry",
+      "dataset_assignments_source": "../registry/world-dataset-assignments.json"
+    },
+    {
+      "world_id": "energy_humanity",
+      "name": "Energy & Humanity",
+      "status": "active",
+      "controller_binding": "resolve_through_existing_app_registry",
+      "dataset_assignments_source": "../registry/world-dataset-assignments.json"
+    },
+    {
+      "world_id": "atmospheric_composition",
+      "name": "Atmospheric Composition",
+      "status": "active_no_dataset_assignments",
+      "controller_binding": "resolve_through_existing_app_registry",
+      "dataset_assignments_source": "../registry/world-dataset-assignments.json"
+    }
+  ]
+}

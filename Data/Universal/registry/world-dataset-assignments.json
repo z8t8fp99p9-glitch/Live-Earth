@@ -1,0 +1,398 @@
+{
+  "schema_version": 1,
+  "relationship": "many_to_many",
+  "assignments": [
+    {
+      "dataset_id": "earth.atmosphere.air_temperature",
+      "world_id": "atmosphere",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 1
+    },
+    {
+      "dataset_id": "earth.atmosphere.atmospheric_pressure",
+      "world_id": "atmosphere",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 2
+    },
+    {
+      "dataset_id": "earth.atmosphere.wind_speed",
+      "world_id": "atmosphere",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 3
+    },
+    {
+      "dataset_id": "earth.atmosphere.wind_direction",
+      "world_id": "atmosphere",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 4
+    },
+    {
+      "dataset_id": "earth.atmosphere.humidity",
+      "world_id": "atmosphere",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 5
+    },
+    {
+      "dataset_id": "earth.atmosphere.water_vapour",
+      "world_id": "atmosphere",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 6
+    },
+    {
+      "dataset_id": "earth.atmosphere.cloud_properties",
+      "world_id": "atmosphere",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 7
+    },
+    {
+      "dataset_id": "earth.atmosphere.co2_concentration",
+      "world_id": "atmosphere",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 8
+    },
+    {
+      "dataset_id": "earth.atmosphere.methane",
+      "world_id": "atmosphere",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 9
+    },
+    {
+      "dataset_id": "earth.atmosphere.ozone",
+      "world_id": "atmosphere",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 10
+    },
+    {
+      "dataset_id": "earth.atmosphere.carbon_monoxide",
+      "world_id": "atmosphere",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 11
+    },
+    {
+      "dataset_id": "earth.atmosphere.aerosols_dust",
+      "world_id": "atmosphere",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 12
+    },
+    {
+      "dataset_id": "earth.oceans.sea_temperature",
+      "world_id": "oceans",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 1
+    },
+    {
+      "dataset_id": "earth.oceans.ocean_currents",
+      "world_id": "oceans",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 2
+    },
+    {
+      "dataset_id": "earth.oceans.salinity",
+      "world_id": "oceans",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 3
+    },
+    {
+      "dataset_id": "earth.oceans.sea_level",
+      "world_id": "oceans",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 4
+    },
+    {
+      "dataset_id": "earth.oceans.wave_height",
+      "world_id": "oceans",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 5
+    },
+    {
+      "dataset_id": "earth.oceans.chlorophyll",
+      "world_id": "oceans",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 6
+    },
+    {
+      "dataset_id": "earth.oceans.ocean_colour",
+      "world_id": "oceans",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 7
+    },
+    {
+      "dataset_id": "earth.oceans.marine_productivity",
+      "world_id": "oceans",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 8
+    },
+    {
+      "dataset_id": "earth.oceans.ocean_heat",
+      "world_id": "oceans",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 9
+    },
+    {
+      "dataset_id": "earth.oceans.sea_ice",
+      "world_id": "oceans",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 10
+    },
+    {
+      "dataset_id": "earth.land.land_temperature",
+      "world_id": "land",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 1
+    },
+    {
+      "dataset_id": "earth.land.soil_moisture",
+      "world_id": "land",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 2
+    },
+    {
+      "dataset_id": "earth.land.soil_properties",
+      "world_id": "land",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 3
+    },
+    {
+      "dataset_id": "earth.land.elevation",
+      "world_id": "land",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 4
+    },
+    {
+      "dataset_id": "earth.land.terrain",
+      "world_id": "land",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 5
+    },
+    {
+      "dataset_id": "earth.land.land_cover",
+      "world_id": "land",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 6
+    },
+    {
+      "dataset_id": "earth.land.vegetation_health",
+      "world_id": "land",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 7
+    },
+    {
+      "dataset_id": "earth.land.forest_change",
+      "world_id": "land",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 8
+    },
+    {
+      "dataset_id": "earth.land.surface_reflectance",
+      "world_id": "land",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 9
+    },
+    {
+      "dataset_id": "earth.land.urban_expansion",
+      "world_id": "land",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 10
+    },
+    {
+      "dataset_id": "earth.water_ice.rainfall",
+      "world_id": "water_ice",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 1
+    },
+    {
+      "dataset_id": "earth.water_ice.snow_cover",
+      "world_id": "water_ice",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 2
+    },
+    {
+      "dataset_id": "earth.water_ice.glaciers",
+      "world_id": "water_ice",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 3
+    },
+    {
+      "dataset_id": "earth.water_ice.ice_sheets",
+      "world_id": "water_ice",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 4
+    },
+    {
+      "dataset_id": "earth.water_ice.groundwater_indicators",
+      "world_id": "water_ice",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 5
+    },
+    {
+      "dataset_id": "earth.water_ice.surface_water",
+      "world_id": "water_ice",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 6
+    },
+    {
+      "dataset_id": "earth.water_ice.flood_extent",
+      "world_id": "water_ice",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 7
+    },
+    {
+      "dataset_id": "earth.water_ice.evapotranspiration",
+      "world_id": "water_ice",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 8
+    },
+    {
+      "dataset_id": "earth.water_ice.water_storage",
+      "world_id": "water_ice",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 9
+    },
+    {
+      "dataset_id": "earth.earth_activity.wildfires",
+      "world_id": "earth_activity",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 1
+    },
+    {
+      "dataset_id": "earth.earth_activity.earthquakes",
+      "world_id": "earth_activity",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 2
+    },
+    {
+      "dataset_id": "earth.earth_activity.volcanoes",
+      "world_id": "earth_activity",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 3
+    },
+    {
+      "dataset_id": "earth.earth_activity.cyclones",
+      "world_id": "earth_activity",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 4
+    },
+    {
+      "dataset_id": "earth.earth_activity.dust_storms",
+      "world_id": "earth_activity",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 5
+    },
+    {
+      "dataset_id": "earth.earth_activity.landslides",
+      "world_id": "earth_activity",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 6
+    },
+    {
+      "dataset_id": "earth.earth_activity.algal_blooms",
+      "world_id": "earth_activity",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 7
+    },
+    {
+      "dataset_id": "earth.earth_activity.lightning",
+      "world_id": "earth_activity",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 8
+    },
+    {
+      "dataset_id": "earth.energy_humanity.solar_radiation",
+      "world_id": "energy_humanity",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 1
+    },
+    {
+      "dataset_id": "earth.energy_humanity.earth_albedo",
+      "world_id": "energy_humanity",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 2
+    },
+    {
+      "dataset_id": "earth.energy_humanity.outgoing_radiation",
+      "world_id": "energy_humanity",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 3
+    },
+    {
+      "dataset_id": "earth.energy_humanity.night_lights",
+      "world_id": "energy_humanity",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 4
+    },
+    {
+      "dataset_id": "earth.energy_humanity.population_distribution",
+      "world_id": "energy_humanity",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 5
+    },
+    {
+      "dataset_id": "earth.energy_humanity.land_use",
+      "world_id": "energy_humanity",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 6
+    },
+    {
+      "dataset_id": "earth.energy_humanity.energy_indicators",
+      "world_id": "energy_humanity",
+      "role": "primary",
+      "enabled": true,
+      "display_order": 7
+    }
+  ]
+}

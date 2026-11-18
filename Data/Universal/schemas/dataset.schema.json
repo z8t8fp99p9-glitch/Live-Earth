@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://live-earth.invalid/schemas/dataset.schema.json",
+  "title": "LIVE // EARTH Dataset Registry Entry",
+  "type": "object",
+  "required": [
+    "dataset_id",
+    "name",
+    "status",
+    "collection",
+    "data_contract",
+    "provenance_required"
+  ],
+  "properties": {
+    "dataset_id": {
+      "type": "string",
+      "pattern": "^earth\\.[a-z0-9_]+\\.[a-z0-9_]+$"
+    },
+    "name": {
+      "type": "string"
+    },
+    "legacy_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "enum": [
+        "source_not_configured",
+        "collector_configured_pending_first_success",
+        "active",
+        "paused",
+        "retired",
+        "error"
+      ]
+    },
+    "collection": {
+      "type": "object",
+      "required": [
+        "enabled",
+        "adapter_id",
+        "source_id",
+        "cadence"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "adapter_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cadence": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "data_contract": {
+      "type": "object"
+    },
+    "provenance_required": {
+      "const": true
+    }
+  },
+  "additionalProperties": true
+}
