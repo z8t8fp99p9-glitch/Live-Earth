@@ -1,0 +1,13 @@
+{
+  "dataset_id": "earth.land.land_temperature",
+  "status": "success",
+  "normalized_paths": [
+    "normalized/earth.land.land_temperature/2026-11-15/20261118T083435-4a47b94c.jsonl"
+  ],
+  "record_count": 6,
+  "raw_sha256": "e8d55a8dddc6fc290401c4f30e7c8373cd8dbf069b7fcc47d7a4a6bd23258f15",
+  "data_kind": "point_samples",
+  "published_path": null,
+  "retrieval_id": "20261118T083435-4a47b94c",
+  "recorded_at": "2026-11-18T08:34:38.632398+00:00"
+}

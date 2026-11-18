@@ -1,0 +1,14 @@
+{
+  "dataset_id": "earth.earth_activity.earthquakes",
+  "status": "success",
+  "normalized_paths": [
+    "normalized/earth.earth_activity.earthquakes/2026-11-17/20261118T083441-6be0bab9.jsonl",
+    "normalized/earth.earth_activity.earthquakes/2026-11-18/20261118T083441-6be0bab9.jsonl"
+  ],
+  "record_count": 218,
+  "raw_sha256": "ab0a03b1a7656ede7ec73b7a2faf911dd254d494de9091a24674eaa52cac94c9",
+  "data_kind": "events",
+  "published_path": null,
+  "retrieval_id": "20261118T083441-6be0bab9",
+  "recorded_at": "2026-11-18T08:34:41.114180+00:00"
+}
