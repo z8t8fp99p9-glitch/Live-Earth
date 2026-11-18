@@ -128,6 +128,7 @@ export async function createCountryBordersSkin({
       if (disposed) return;
       if (style.color !== undefined) material.color.set(style.color);
       if (Number.isFinite(style.opacity)) material.opacity = Math.max(0, Math.min(1, style.opacity));
+      if (Number.isFinite(style.renderOrder)) lines.renderOrder = style.renderOrder;
       material.needsUpdate = true;
     },
     dispose() {

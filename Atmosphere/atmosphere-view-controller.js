@@ -258,8 +258,8 @@ async function initializeEngineView(view, viewId) {
         // Hug the satellite surface (radius 1.000) with only 0.0015 clearance.
         // This prevents the country overlay from protruding beyond the globe limb.
         radius: 1.0015,
-        color: 0xa8d8e8,
-        opacity: 0.62,
+        color: 0x3a5568,
+        opacity: 0.20,
         lineWidth: 0.0048,
         renderOrder: 10
       });
@@ -697,6 +697,15 @@ function installStyles() {
 
     function setSelectedDataset(id) {
       selectedDataset = id;
+      if (countryBorders) {
+        if (id === "temperature") {
+          // Temperature overlay sits at renderOrder 4. Keep borders beneath it.
+          countryBorders.setStyle({ color: 0x263746, opacity: 0.20, renderOrder: 3 });
+        } else {
+          // Satellite/base view: subdued guides above the imagery, without glow.
+          countryBorders.setStyle({ color: 0x3a5568, opacity: 0.20, renderOrder: 10 });
+        }
+      }
       for (const [key, button] of datasetButtons) {
         const active = key === id;
         button.classList.toggle('is-selected', active);

@@ -27,3 +27,11 @@ The line object disables raycasting so recursive gesture picking continues to hi
 ## Styling
 
 Default boundary colour: `#a8d8e8`; opacity: `0.62`; spherical ribbon width: `0.0048` world units. The skin uses a single indexed triangle mesh rather than WebGL line primitives because mobile browsers often ignore line width. Temperature grid opacity remains `0.75`. Atmosphere WebGL requests `high-performance` for the interactive globe; actual frame rate remains device-dependent.
+
+
+## Adaptive border presentation
+
+- Satellite/base mode: `#3A5568` at 20% opacity, render order 10.
+- Temperature mode: `#263746` at 20% opacity, render order 3 (beneath the temperature GPU skin at render order 4).
+- Both modes retain the same 0.0048 world-unit ribbon geometry and no glow.
+- `Atmosphere/atmosphere-view-controller.js` switches the style when the selected dataset changes.
