@@ -3,8 +3,17 @@ name: LIVE // EARTH Universal Data Refresh
 
 on:
   schedule:
-    - cron: "17 * * * *"
+    # Automatic refresh every hour, at minute 23 UTC.
+    - cron: "23 * * * *"
+
+  # Manual refresh through GitHub Actions → Run workflow.
   workflow_dispatch:
+    inputs:
+      refresh_reason:
+        description: "Reason for manual refresh"
+        required: false
+        default: "Manual data refresh"
+        type: string
 
 permissions:
   contents: write
