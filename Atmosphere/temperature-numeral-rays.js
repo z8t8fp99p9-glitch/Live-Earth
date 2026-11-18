@@ -23,7 +23,7 @@
     const col = ((Math.round((lon - d.lonStart) / d.lonStep) % d.width) + d.width) % d.width;
     const row = Math.round((lat - d.latStart) / d.latStep);
     if (row < 0 || row >= d.height) return null;
-    const value = d.values[row * d.width + col];
+    const value = grid.values[row * d.width + col];
     return Number.isFinite(value) && value !== d.noDataValue ? value : null;
   }
 
@@ -79,7 +79,7 @@
   }
 
   function create({ THREE, earth, grid, maximumLabels = 16 } = {}) {
-    if (!THREE || !earth?.add || !grid?.definition?.values) {
+    if (!THREE || !earth?.add || !grid?.values) {
       throw new TypeError('A Three.js Earth surface and verified NOAA grid are required.');
     }
     const root = new THREE.Group();
