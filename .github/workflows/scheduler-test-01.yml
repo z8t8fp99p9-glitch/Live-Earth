@@ -1,0 +1,19 @@
+
+name: LIVE EARTH Scheduler Test 01
+
+on:
+  schedule:
+    - cron: "10 * * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  scheduler-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report scheduled trigger
+        run: |
+          echo "SCHEDULER TEST 01"
+          echo "UTC: $(date -u)"
+          echo "GitHub schedule trigger received."
