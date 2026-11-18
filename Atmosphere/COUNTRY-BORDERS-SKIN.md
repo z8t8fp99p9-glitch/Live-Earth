@@ -26,4 +26,4 @@ The line object disables raycasting so recursive gesture picking continues to hi
 
 ## Styling
 
-Default boundary colour: `#a8d8e8`; opacity: `0.52`. Temperature grid opacity remains `0.75`.
+Default boundary colour: `#a8d8e8`; opacity: `0.62`; spherical ribbon width: `0.0048` world units. The skin uses a single indexed triangle mesh rather than WebGL line primitives because mobile browsers often ignore line width. Temperature grid opacity remains `0.75`. Atmosphere WebGL requests `high-performance` for the interactive globe; actual frame rate remains device-dependent.

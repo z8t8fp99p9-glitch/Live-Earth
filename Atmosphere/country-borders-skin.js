@@ -46,18 +46,23 @@ async function loadBoundaryData() {
 }
 
 export async function createCountryBordersSkin({
-  THREE, earthGroup, radius = 1.010, color = 0xa8d8e8,
-  opacity = 0.52, renderOrder = 10, enabled = true
+  THREE, earthGroup, radius = 1.0015, color = 0xa8d8e8,
+  opacity = 0.62, lineWidth = 0.0048, renderOrder = 10, enabled = true
 } = {}) {
   if (!THREE || !earthGroup?.add) throw new TypeError("Three.js and the Earth surface are required.");
-  if (!Number.isFinite(radius) || radius <= 1.009) {
-    throw new RangeError("Country borders must sit above the numerical grid overlay.");
+  if (!Number.isFinite(radius) || radius <= 1.0) {
+    throw new RangeError("Country borders must sit just above the Earth surface radius of 1.0.");
   }
   if (!enabled) return Object.freeze({ visible: false, dispose() {} });
 
   const data = await loadBoundaryData();
   const positions = [];
+  const indices = [];
   let segmentCount = 0;
+  const halfWidth = Math.max(0.0005, lineWidth * 0.5);
+  const radial = new THREE.Vector3();
+  const direction = new THREE.Vector3();
+  const side = new THREE.Vector3();
 
   for (const line of data.coordinates) {
     for (let i = 1; i < line.length; i++) {
@@ -70,7 +75,23 @@ export async function createCountryBordersSkin({
 
       const a = positionOnEarth(THREE, latA, lonA, radius);
       const b = positionOnEarth(THREE, latB, lonB, radius);
-      positions.push(a.x, a.y, a.z, b.x, b.y, b.z);
+      direction.subVectors(b, a);
+      radial.copy(a).add(b).normalize();
+      side.crossVectors(radial, direction).normalize();
+      if (side.lengthSq() < 1e-10) continue;
+
+      // Build one camera-independent ribbon quad per geographic segment.
+      // This creates genuinely thicker spherical lines; WebGL LineBasicMaterial
+      // linewidth is ignored on many mobile browsers.
+      const offset = side.multiplyScalar(halfWidth);
+      const base = positions.length / 3;
+      positions.push(
+        a.x + offset.x, a.y + offset.y, a.z + offset.z,
+        a.x - offset.x, a.y - offset.y, a.z - offset.z,
+        b.x + offset.x, b.y + offset.y, b.z + offset.z,
+        b.x - offset.x, b.y - offset.y, b.z - offset.z
+      );
+      indices.push(base, base + 1, base + 2, base + 2, base + 1, base + 3);
       segmentCount++;
     }
   }
@@ -78,13 +99,15 @@ export async function createCountryBordersSkin({
 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
   geometry.computeBoundingSphere();
 
-  const material = new THREE.LineBasicMaterial({
+  const material = new THREE.MeshBasicMaterial({
     color, transparent: true, opacity: Math.max(0, Math.min(1, opacity)),
-    depthTest: true, depthWrite: false, toneMapped: false
+    depthTest: true, depthWrite: false, side: THREE.DoubleSide, toneMapped: false
   });
-  const lines = new THREE.LineSegments(geometry, material);
+  const lines = new THREE.Mesh(geometry, material);
   lines.name = "LIVE_EARTH_ATMOSPHERE_COUNTRY_BORDERS_50M";
   lines.renderOrder = renderOrder;
   lines.frustumCulled = true;
@@ -99,6 +122,7 @@ export async function createCountryBordersSkin({
   return Object.freeze({
     object: lines,
     segmentCount,
+    lineWidth,
     setVisible(value) { if (!disposed) lines.visible = !!value; },
     setStyle(style = {}) {
       if (disposed) return;
@@ -117,7 +141,7 @@ export async function createCountryBordersSkin({
 }
 
 export const CountryBordersSkin = Object.freeze({
-  version: "1.1.0",
+  version: "1.2.0",
   source: "Natural Earth 1:50m Admin 0 boundary lines land",
   coordinateReference: "Earth Graphics Engine texture geographic frame",
   create: createCountryBordersSkin

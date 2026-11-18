@@ -255,11 +255,12 @@ async function initializeEngineView(view, viewId) {
       countryBorders = await createCountryBordersSkin({
         THREE: T,
         earthGroup: earthGlobe.surface,
-        // Minimal clearance above the numerical grid skin (radius 1.009)
-        // to reduce the visible floating effect while preserving depth ordering.
-        radius: 1.010,
+        // Hug the satellite surface (radius 1.000) with only 0.0015 clearance.
+        // This prevents the country overlay from protruding beyond the globe limb.
+        radius: 1.0015,
         color: 0xa8d8e8,
-        opacity: 0.52,
+        opacity: 0.62,
+        lineWidth: 0.0048,
         renderOrder: 10
       });
       if (countryBorders) root.dataset.countryBorders = "natural-earth-50m";
