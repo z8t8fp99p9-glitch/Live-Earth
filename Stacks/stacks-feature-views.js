@@ -39,7 +39,8 @@
     traffic: { title: 'Traffic', symbol: '↗', description: 'Independent traffic workspace; verified live traffic data is not connected yet.' },
     // Numerical discovery worlds are catalogue entries as well as runtime modules.
     // registerFeature intentionally rejects ids that are not declared here.
-    atmosphere: { title: 'Atmosphere', symbol: '◉', description: 'A visual preview of numerical atmospheric systems: temperature, pressure, wind, moisture and composition.' },
+    atmosphere: { title: 'Atmosphere', symbol: '◉', description: 'A numerical view of atmospheric conditions: temperature, pressure, wind and moisture.' },
+    'atmospheric-composition': { title: 'Atmospheric Composition', symbol: '◌', description: 'A dedicated world for verified atmospheric constituents and chemistry, including greenhouse gases, ozone, aerosols and particulates.' },
     oceans: { title: 'Oceans', symbol: '≈', description: 'A visual preview of numerical ocean systems: currents, heat, salinity, sea level and marine productivity.' },
     land: { title: 'Land', symbol: '⌁', description: 'A visual preview of numerical land systems: terrain, soils, vegetation and land-cover change.' },
     'water-ice': { title: 'Water & Ice', symbol: '❄', description: 'A visual preview of freshwater and cryosphere systems: rainfall, snow, glaciers, ice and water storage.' },
@@ -442,6 +443,7 @@
     { id: 'traffic', path: './Traffic/traffic-view.js' },
     // Numerical-world controllers use this same Stacks loader and registry.
     { id: 'atmosphere', path: './Atmosphere/atmosphere-view-controller.js' },
+    { id: 'atmospheric-composition', path: './Atmospheric-Composition/atmospheric-composition-view-controller.js' },
     { id: 'oceans', path: './Oceans/oceans-view-controller.js' },
     { id: 'land', path: './Land/land-view-controller.js' },
     { id: 'water-ice', path: './Water-Ice/water-ice-view-controller.js' },

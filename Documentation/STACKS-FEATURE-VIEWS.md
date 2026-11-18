@@ -22,6 +22,17 @@ Every feature must:
 | Earthquakes | `Earthquakes/earthquakes-view.js` | USGS latest-day GeoJSON |
 | Elevation | `Stacks/stacks-feature-views.js` | Retained elevation workspace using the shared Prime Earth layer |
 
+## Numerical worlds
+
+The numerical-world controllers use the same Stacks runtime and the same shared three-Orb dock. Atmosphere and Atmospheric Composition are separate worlds:
+
+| World | Controller | Scope |
+|---|---|---|
+| Atmosphere | `Atmosphere/atmosphere-view-controller.js` | Temperature, pressure, wind and moisture |
+| Atmospheric Composition | `Atmospheric-Composition/atmospheric-composition-view-controller.js` | Atmospheric constituents and chemistry, including greenhouse gases, ozone, aerosols and particulates |
+
+Atmospheric Composition has its own catalogue ID (`atmospheric-composition`), Orb (`◌`), controller and lifecycle. It reuses the shared Earth Engine, Universal Grid System and GPU Grid Skin. Its verified data adapter is not connected yet, so it must not display sample or placeholder measurements. Its controller is included in the service-worker app shell.
+
 Missing, stale, restricted or unsupported data must be presented honestly. Do not fabricate live traffic or weather readings.
 
 ## Testing

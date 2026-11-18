@@ -2,7 +2,7 @@
 
 ## Shared universal systems
 
-The six numerical worlds use the same three reusable systems:
+The numerical worlds use the same three reusable systems:
 
 1. `EarthEngine/Core/earth-engine.js` creates each view's globe through `createEarthGlobe()` / `createGlobe()`.
 2. `EarthEngine/Graphics/universal-grid-system.js` loads, validates, decodes and normalizes numerical grid data. Persistent data storage remains in the scientific databases.
@@ -24,3 +24,8 @@ When the view closes, its controller aborts pending requests, disposes the GPU s
 - World controllers own dataset-specific presentation and controls.
 - Point datasets such as earthquakes must use a point-data renderer, not be fabricated into a continuous grid.
 - No sample or placeholder measurements are displayed.
+
+
+## Atmospheric Composition separation
+
+`Atmospheric-Composition/atmospheric-composition-view-controller.js` is a distinct Stacks world from `Atmosphere/atmosphere-view-controller.js`. It has its own controller, world ID, Orb registration and view lifecycle, while reusing the same Earth Engine, Universal Grid System and GPU Grid Skin. Its data adapter is intentionally pending; until verified composition datasets are connected, the view displays readiness/status information only and no fabricated measurements.

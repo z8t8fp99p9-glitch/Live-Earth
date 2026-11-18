@@ -40,3 +40,15 @@ Read this file, `GLOBAL-STANDARDS.md`, `PROTECTED-DECISIONS.md` and the ZIP stan
 ## Documentation policy
 
 Keep current guidance short and canonical. Put only durable decisions in `Documentation/PROJECT-HISTORY.md`. Old experiments and one-off patch notes are not current specifications; Git history retains deleted documentation. Never delete runtime source, assets, tests or recovery data as part of documentation cleanup.
+
+
+## 18 November 2026 — Atmospheric Composition world separation
+
+- Added `Atmospheric-Composition/atmospheric-composition-view-controller.js` as a separate Stacks world with ID `atmospheric-composition`, title **Atmospheric Composition**, and Orb symbol `◌`.
+- Registered the world in `Stacks/stacks-feature-views.js` catalogue and sequential module loader, immediately after Atmosphere.
+- Added the controller to `sw.js` app-shell cache so the module is available for offline startup.
+- Kept Atmosphere distinct and narrowed its catalogue description to temperature, pressure, wind and moisture. Composition is no longer listed as an Atmosphere topic.
+- The new controller follows the established numerical-world lifecycle: its own Engine-created globe/view renderer and cleanup, while reusing the shared Earth Engine, Universal Grid System and GPU Grid Skin. It does not create another globe framework or navigation dock.
+- No composition data adapter or measurements are connected in this separation phase. The view must remain honest and show readiness only until approved, verified datasets are connected.
+- Updated architecture, Stacks feature and numerical-world lifecycle documentation.
+- Package is prepared for the user's ZIP upload workflow; no direct GitHub changes were made.

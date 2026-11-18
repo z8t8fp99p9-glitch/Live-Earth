@@ -16,6 +16,7 @@ This is the single documentation front door. Read the root safeguards first, the
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — app, views, shared runtime and data boundaries.
 - [`WORKING-RULES.md`](WORKING-RULES.md) — inspection, testing and release discipline.
 - [`EARTH-ENGINE.md`](EARTH-ENGINE.md) — Earth factory and viewpoint contract.
+- [`NUMERICAL-WORLD-GRID-SKIN-LIFECYCLE.md`](NUMERICAL-WORLD-GRID-SKIN-LIFECYCLE.md) — shared grid systems and world-controller lifecycle.
 - [`STACKS-FEATURE-VIEWS.md`](STACKS-FEATURE-VIEWS.md) — secondary-view contract and data sources.
 - [`../Weather/WEATHER-DESIGN-DIRECTION.md`](../Weather/WEATHER-DESIGN-DIRECTION.md) — current Weather view only.
 

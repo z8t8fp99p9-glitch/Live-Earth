@@ -33,6 +33,14 @@
 
 `Stacks/stacks-feature-views.js` provides the shared feature runtime and retains Elevation. Separate feature modules live in `Weather/`, `Clouds/`, `Traffic/` and `Earthquakes/`. They mount into the existing full-screen stage below the shared three-Orb dock. The active feature Orb closes the view. Features must not create a parallel dock, close button or primary-view manager.
 
+### Atmospheric Composition world separation
+
+- **Atmosphere** (`Atmosphere/atmosphere-view-controller.js`) remains the world for atmospheric conditions such as temperature, pressure, wind and moisture.
+- **Atmospheric Composition** (`Atmospheric-Composition/atmospheric-composition-view-controller.js`) is a separate Stacks world with ID `atmospheric-composition` and its own registered Orb (`◌`).
+- The new world owns its own controller, independent Engine-created globe instance and view lifecycle. It reuses the same Earth Engine, Universal Grid System and GPU Grid Skin; it does not create a second shared infrastructure stack or a second navigation dock.
+- Its data adapter is not connected yet. It must show no invented or placeholder composition measurements. Approved future datasets may cover greenhouse gases, ozone, aerosols, particulates and other atmospheric constituents.
+- The new controller is registered in the Stacks catalogue and loader and included in the service-worker app shell so its controller is available offline.
+
 The primary registry is established by `Global/view-module-registry.js`. The Weather, Clouds, Traffic and Earthquakes modules register into the shared feature runtime; their source files are staged by the service worker. The Editorial Engine workspace is loaded lazily by `Global/update-manager.js`.
 
 Current data sources: Weather uses Open-Meteo; Clouds uses NASA GIBS; Earthquakes uses USGS latest-day GeoJSON. Traffic has no verified provider connected yet and must not display fabricated conditions. Missing or restricted data must be labelled honestly, never fabricated.
