@@ -1,0 +1,53 @@
+{
+  "data_kind": "point_samples",
+  "format": "jsonl",
+  "coverage_mode": "six_sparse_regional_point_samples",
+  "source_name": "NASA POWER daily all-sky surface shortwave radiation at six regional sample points",
+  "parameter": "ALLSKY_SFC_SW_DWN",
+  "community": "RE",
+  "sample_tiles": [
+    {
+      "id": "north_america",
+      "lat": 40.0,
+      "lon": -100.0
+    },
+    {
+      "id": "south_america",
+      "lat": -15.0,
+      "lon": -60.0
+    },
+    {
+      "id": "europe_north_africa",
+      "lat": 35.0,
+      "lon": 15.0
+    },
+    {
+      "id": "east_africa",
+      "lat": 0.0,
+      "lon": 35.0
+    },
+    {
+      "id": "south_asia",
+      "lat": 20.0,
+      "lon": 80.0
+    },
+    {
+      "id": "east_asia_pacific",
+      "lat": 25.0,
+      "lon": 125.0
+    }
+  ],
+  "request_urls": {
+    "north_america": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=-100.0&latitude=40.0&start=19810101&end=20261118&format=JSON",
+    "south_america": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=-60.0&latitude=-15.0&start=19810101&end=20261118&format=JSON",
+    "europe_north_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=15.0&latitude=35.0&start=19810101&end=20261118&format=JSON",
+    "east_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=35.0&latitude=0.0&start=19810101&end=20261118&format=JSON",
+    "south_asia": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=80.0&latitude=20.0&start=19810101&end=20261118&format=JSON",
+    "east_asia_pacific": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=125.0&latitude=25.0&start=19810101&end=20261118&format=JSON"
+  },
+  "units": "kWh/m^2/day",
+  "source_id": "nasa_power_daily",
+  "raw_sha256": "c29de33ea6404906d5cd2105ad82c8e3ccfa7112bd72b9d633ee899819a28cfe",
+  "raw_bytes": 3156,
+  "retrieval_id": "20261118T205648-874996ba"
+}

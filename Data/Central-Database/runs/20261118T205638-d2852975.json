@@ -1,0 +1,13 @@
+{
+  "dataset_id": "earth.atmosphere.wind_speed",
+  "status": "success",
+  "normalized_paths": [
+    "normalized/earth.atmosphere.wind_speed/2026-11-18/20261118T205638-d2852975.jsonl"
+  ],
+  "record_count": 1,
+  "raw_sha256": "1f5d1c592ad7bb91664558066c9a2ab96e6d27cd0164d31b0cbe08cd39c12c63",
+  "data_kind": null,
+  "published_path": "published/atmosphere/manifest.json",
+  "retrieval_id": "20261118T205638-d2852975",
+  "recorded_at": "2026-11-18T20:56:39.114272+00:00"
+}

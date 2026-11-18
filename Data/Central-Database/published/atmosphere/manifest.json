@@ -6,47 +6,47 @@
       "dataset_id": "earth.atmosphere.air_temperature",
       "dataset": "air_temperature",
       "grid_id": "GRID_NOAA_GFS_025_V1",
-      "data": "../../raw/earth.atmosphere.air_temperature/20261118T124216-c453ce70/source.bin",
-      "metadata": "../../raw/earth.atmosphere.air_temperature/20261118T124216-c453ce70/metadata.json",
-      "sha256_uncompressed_values": "7714b380be024025966e0aabfea1e16d27ea6d9546ff33f7f96aa43b98a298b6",
-      "valid_time_utc": "2026-11-18T06:00:00Z"
+      "data": "../../raw/earth.atmosphere.air_temperature/20261118T205636-010e4eed/source.bin",
+      "metadata": "../../raw/earth.atmosphere.air_temperature/20261118T205636-010e4eed/metadata.json",
+      "sha256_uncompressed_values": "62a2b476c5957fcd0dce2d3a5948ec36772bc8e6cc9c31803a9ca7caeb150fe7",
+      "valid_time_utc": "2026-11-18T12:00:00Z"
     },
     {
       "dataset_id": "earth.atmosphere.atmospheric_pressure",
       "dataset": "atmospheric_pressure",
       "grid_id": "GRID_NOAA_GFS_025_V1",
-      "data": "../../raw/earth.atmosphere.atmospheric_pressure/20261118T124218-8c8fffc2/source.bin",
-      "metadata": "../../raw/earth.atmosphere.atmospheric_pressure/20261118T124218-8c8fffc2/metadata.json",
-      "sha256_uncompressed_values": "9ec0a2a6854f2b30985eb75992d20d2f4494107f472999193d1faa0f0b93838b",
-      "valid_time_utc": "2026-11-18T06:00:00Z"
+      "data": "../../raw/earth.atmosphere.atmospheric_pressure/20261118T205638-ad64f345/source.bin",
+      "metadata": "../../raw/earth.atmosphere.atmospheric_pressure/20261118T205638-ad64f345/metadata.json",
+      "sha256_uncompressed_values": "fc10866fc0dd3b0cfd7dbbf79aac3c3ba61ad3e8fc41075c6399a1b8958d869e",
+      "valid_time_utc": "2026-11-18T12:00:00Z"
     },
     {
       "dataset_id": "earth.atmosphere.humidity",
       "dataset": "humidity",
       "grid_id": "GRID_NOAA_GFS_025_V1",
-      "data": "../../raw/earth.atmosphere.humidity/20261118T124219-fbc5fc33/source.bin",
-      "metadata": "../../raw/earth.atmosphere.humidity/20261118T124219-fbc5fc33/metadata.json",
-      "sha256_uncompressed_values": "b80a37c4632cdab5ad642a8ad845bba7f190339dbd59498b59b443994cba8270",
-      "valid_time_utc": "2026-11-18T06:00:00Z"
+      "data": "../../raw/earth.atmosphere.humidity/20261118T205639-9e205724/source.bin",
+      "metadata": "../../raw/earth.atmosphere.humidity/20261118T205639-9e205724/metadata.json",
+      "sha256_uncompressed_values": "047f13ad41fa56dee79a14ac440d9f67236f1c6395e747e90c81b68d288bf198",
+      "valid_time_utc": "2026-11-18T12:00:00Z"
     },
     {
       "dataset_id": "earth.atmosphere.wind_direction",
       "dataset": "wind_direction",
       "grid_id": "GRID_NOAA_GFS_025_V1",
-      "data": "../../raw/earth.atmosphere.wind_direction/20261118T124219-41032a8b/source.bin",
-      "metadata": "../../raw/earth.atmosphere.wind_direction/20261118T124219-41032a8b/metadata.json",
-      "sha256_uncompressed_values": "ec85b2d106d55707da7081f8d4b4c346a073249d37f0785feea465ac6c8fe8a5",
-      "valid_time_utc": "2026-11-18T06:00:00Z"
+      "data": "../../raw/earth.atmosphere.wind_direction/20261118T205639-ec3ad1ae/source.bin",
+      "metadata": "../../raw/earth.atmosphere.wind_direction/20261118T205639-ec3ad1ae/metadata.json",
+      "sha256_uncompressed_values": "92f6ba9ea83036e94d26f76ea92953951b7c5092eb32358958e1ef38e613fe03",
+      "valid_time_utc": "2026-11-18T12:00:00Z"
     },
     {
       "dataset_id": "earth.atmosphere.wind_speed",
       "dataset": "wind_speed",
       "grid_id": "GRID_NOAA_GFS_025_V1",
-      "data": "../../raw/earth.atmosphere.wind_speed/20261118T124218-12b4653d/source.bin",
-      "metadata": "../../raw/earth.atmosphere.wind_speed/20261118T124218-12b4653d/metadata.json",
-      "sha256_uncompressed_values": "f9bf13a310983c3fb09762d485f312dbe7ba33546c9ea2e54f1eebfd46918843",
-      "valid_time_utc": "2026-11-18T06:00:00Z"
+      "data": "../../raw/earth.atmosphere.wind_speed/20261118T205638-d2852975/source.bin",
+      "metadata": "../../raw/earth.atmosphere.wind_speed/20261118T205638-d2852975/metadata.json",
+      "sha256_uncompressed_values": "7a1f641fc905cd252dc83b87849368a06bd0a3a6116e0a2703d07e893892edfc",
+      "valid_time_utc": "2026-11-18T12:00:00Z"
     }
   ],
-  "updated_at_utc": "2026-11-18T12:42:19.600818Z"
+  "updated_at_utc": "2026-11-18T20:56:39.600714Z"
 }
