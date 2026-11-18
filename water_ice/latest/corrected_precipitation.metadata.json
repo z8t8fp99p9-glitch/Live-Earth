@@ -5,13 +5,13 @@
   "provider": "NASA POWER",
   "product": "Daily PRECTOTCORR point samples (AG community)",
   "source_url": "https://power.larc.nasa.gov/api/temporal/daily/point",
-  "valid_time_utc": "2026-11-15T00:00:00Z",
-  "retrieved_at_utc": "2026-11-17T18:39:38.491645Z",
+  "valid_time_utc": "2026-11-16T00:00:00Z",
+  "retrieved_at_utc": "2026-11-18T01:40:33.200914Z",
   "units": "mm/day",
   "source_record_count": 6,
   "source_payload_format": "CSV",
-  "sha256_source_payload": "86393adccf66f35187e82a06ffb0e742d8c434d72808ffea30d64425fefb37c1",
-  "stored_bytes": 213,
+  "sha256_source_payload": "ef2794e4f4e9ac34f8a6d3c3dd0157d5ebaefc2ca52683e54bbf562e5797d6f6",
+  "stored_bytes": 214,
   "quality_status": "downloaded_and_basic_schema_validated",
   "note": "NASA POWER daily observationally corrected precipitation, AG community; precipitation forcing, not flood extent, groundwater, or reservoir level. Each regional sample uses its own newest valid source observation; dates may differ. Coverage is six sparse regional point samples, not a complete global grid.",
   "parameter": "PRECTOTCORR",
@@ -59,20 +59,20 @@
   },
   "request_mode": "point_json_full_available_history",
   "request_urls": {
-    "north_america": "https://power.larc.nasa.gov/api/temporal/daily/point?latitude=40.0&longitude=-100.0&parameters=PRECTOTCORR&community=AG&start=19810101&end=20261117&time-standard=UTC&format=JSON",
-    "south_america": "https://power.larc.nasa.gov/api/temporal/daily/point?latitude=-15.0&longitude=-60.0&parameters=PRECTOTCORR&community=AG&start=19810101&end=20261117&time-standard=UTC&format=JSON",
-    "europe_north_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?latitude=35.0&longitude=15.0&parameters=PRECTOTCORR&community=AG&start=19810101&end=20261117&time-standard=UTC&format=JSON",
-    "east_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?latitude=0.0&longitude=35.0&parameters=PRECTOTCORR&community=AG&start=19810101&end=20261117&time-standard=UTC&format=JSON",
-    "south_asia": "https://power.larc.nasa.gov/api/temporal/daily/point?latitude=20.0&longitude=80.0&parameters=PRECTOTCORR&community=AG&start=19810101&end=20261117&time-standard=UTC&format=JSON",
-    "east_asia_pacific": "https://power.larc.nasa.gov/api/temporal/daily/point?latitude=25.0&longitude=125.0&parameters=PRECTOTCORR&community=AG&start=19810101&end=20261117&time-standard=UTC&format=JSON"
+    "north_america": "https://power.larc.nasa.gov/api/temporal/daily/point?latitude=40.0&longitude=-100.0&parameters=PRECTOTCORR&community=AG&start=19810101&end=20261118&time-standard=UTC&format=JSON",
+    "south_america": "https://power.larc.nasa.gov/api/temporal/daily/point?latitude=-15.0&longitude=-60.0&parameters=PRECTOTCORR&community=AG&start=19810101&end=20261118&time-standard=UTC&format=JSON",
+    "europe_north_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?latitude=35.0&longitude=15.0&parameters=PRECTOTCORR&community=AG&start=19810101&end=20261118&time-standard=UTC&format=JSON",
+    "east_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?latitude=0.0&longitude=35.0&parameters=PRECTOTCORR&community=AG&start=19810101&end=20261118&time-standard=UTC&format=JSON",
+    "south_asia": "https://power.larc.nasa.gov/api/temporal/daily/point?latitude=20.0&longitude=80.0&parameters=PRECTOTCORR&community=AG&start=19810101&end=20261118&time-standard=UTC&format=JSON",
+    "east_asia_pacific": "https://power.larc.nasa.gov/api/temporal/daily/point?latitude=25.0&longitude=125.0&parameters=PRECTOTCORR&community=AG&start=19810101&end=20261118&time-standard=UTC&format=JSON"
   },
   "selected_source_days": {
-    "north_america": "20261115",
-    "south_america": "20261115",
-    "europe_north_africa": "20261115",
-    "east_africa": "20261115",
-    "south_asia": "20261115",
-    "east_asia_pacific": "20261115"
+    "north_america": "20261116",
+    "south_america": "20261116",
+    "europe_north_africa": "20261116",
+    "east_africa": "20261116",
+    "south_asia": "20261116",
+    "east_asia_pacific": "20261116"
   },
   "observation_age_days_by_tile": {
     "north_america": 2,
@@ -82,6 +82,6 @@
     "south_asia": 2,
     "east_asia_pacific": 2
   },
-  "oldest_sample_day": "20261115",
-  "newest_sample_day": "20261115"
+  "oldest_sample_day": "20261116",
+  "newest_sample_day": "20261116"
 }

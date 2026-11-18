@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "world": "land",
-  "updated_at_utc": "2026-11-17T18:39:33.535269Z",
+  "updated_at_utc": "2026-11-18T01:40:29.374031Z",
   "snapshots": [
     {
       "dataset": "near_surface_air_temperature",
       "data": "latest/near_surface_air_temperature.source.csv.gz",
       "metadata": "latest/near_surface_air_temperature.metadata.json",
-      "sha256_source_payload": "48089a98d7d04385d05bff593e8e6275ff7009f30cf782983df1f483a419e6ca",
-      "valid_time_utc": "2026-11-15T00:00:00Z"
+      "sha256_source_payload": "9d54b571dffe4e1a1fb19875ddc663c809cffc40b55a82bdc228306398130fc3",
+      "valid_time_utc": "2026-11-16T00:00:00Z"
     }
   ]
 }

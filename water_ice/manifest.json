@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "world": "water_ice",
-  "updated_at_utc": "2026-11-17T18:39:38.491645Z",
+  "updated_at_utc": "2026-11-18T01:40:33.200914Z",
   "snapshots": [
     {
       "dataset": "corrected_precipitation",
       "data": "latest/corrected_precipitation.source.csv.gz",
       "metadata": "latest/corrected_precipitation.metadata.json",
-      "sha256_source_payload": "86393adccf66f35187e82a06ffb0e742d8c434d72808ffea30d64425fefb37c1",
-      "valid_time_utc": "2026-11-15T00:00:00Z"
+      "sha256_source_payload": "ef2794e4f4e9ac34f8a6d3c3dd0157d5ebaefc2ca52683e54bbf562e5797d6f6",
+      "valid_time_utc": "2026-11-16T00:00:00Z"
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "world": "oceans",
-  "updated_at_utc": "2026-11-17T18:39:28.806821Z",
+  "updated_at_utc": "2026-11-18T01:40:25.184476Z",
   "snapshots": [
     {
       "dataset": "sea_surface_temperature",
