@@ -1,13 +1,20 @@
-# LIVE // EARTH — Six GitHub Data Stores
+# LIVE // EARTH — Universal Collector Fix Package v4
 
-These are six independent logical databases stored as repository files. They are not six hosted database servers.
+This archive is formatted for the repository's manifest-validated ZIP extractor.
 
-Each database has:
-- `registry/datasets.json`: dataset IDs and names
-- `latest/`: latest verified snapshot files (empty until a collector successfully publishes data)
-- `manifest.json`: current snapshot pointers and provenance
-- `README.md`: storage contract
+## Included complete replacements
+- `Data/Universal/engine/collector.py`
+- `Data/Universal/engine/bootstrap.py`
+- `EarthEngine/Graphics/earth-grid-gpu-skin.js` — generic, dataset-agnostic GPU grid renderer
+- `.gitignore`
 
-## Important
-No measurements are fabricated in this package. Empty `latest/` folders mean no live data has been ingested yet.
-The existing ZIP upload workflow blocks `.github/workflows` changes. The companion workflow file must be installed separately at `.github/workflows/live-earth-scientific-refresh.yml` before scheduled collection can run.
+## Important scope
+This v4 package contains complete file replacements only. It intentionally does not include `.patch` files: the repository ZIP extractor writes archive entries as files and does not execute `git apply`. The adapter and Atmosphere View Controller refinements from the prior draft are therefore not represented as completed changes in this archive.
+
+The renderer is generic. Dataset-specific palettes, ranges, units, and contour settings belong in the relevant View Controller, not in the universal renderer.
+
+## Upload
+Place this ZIP at the repository root and let the existing manifest-validated extractor workflow process it. The manifest supplies the commit title:
+`Fix universal collector scheduling and generic grid rendering`
+
+Do not unzip into a wrapper directory. The archive already contains repository-relative paths.

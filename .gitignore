@@ -1,0 +1,18 @@
+# Python runtime and test artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local environments and temporary downloads
+.venv/
+venv/
+.env
+*.grib
+*.grib2
+*.nc
+*.tmp
