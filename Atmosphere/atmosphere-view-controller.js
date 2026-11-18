@@ -564,15 +564,14 @@ function installStyles() {
     status.dataset.state = 'neutral';
     view.body.appendChild(status);
 
-    const selector = runtime.card('Atmosphere datasets', 'Choose a verified atmospheric field to render on the globe. The Earth remains available while datasets load.');
+    const selector = runtime.card('Atmosphere datasets', 'Choose an atmospheric field group. Additional fields will unlock after their data and visual layers are verified.');
     selector.classList.add('le-atmo-dataset-card');
     const datasetGrid = runtime.el('div', 'le-atmo-dataset-grid');
     const datasetOptions = [
       { id: 'temperature', label: 'Temperature', detail: 'Global air temperature · NOAA GFS', available: true },
-      { id: 'pressure', label: 'Pressure', detail: 'Awaiting verified pressure adapter', available: false },
-      { id: 'wind', label: 'Wind', detail: 'Awaiting verified wind adapter', available: false },
-      { id: 'moisture', label: 'Moisture', detail: 'Awaiting verified moisture adapter', available: false },
-      { id: 'composition', label: 'Composition', detail: 'Awaiting verified composition adapter', available: false }
+      { id: 'pressure', label: 'Pressure', detail: 'NOAA GFS mean sea-level pressure · collector configured', available: false },
+      { id: 'wind', label: 'Wind', detail: 'NOAA GFS 10 m wind components · collector configured', available: false },
+      { id: 'moisture', label: 'Moisture & Clouds', detail: 'Humidity · dew point · precipitable water · cloud cover', available: false }
     ];
     const datasetButtons = new Map();
     let selectedDataset = null;

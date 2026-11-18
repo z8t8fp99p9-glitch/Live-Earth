@@ -1,90 +1,109 @@
 {
   "schema_version": 1,
   "world": "atmosphere",
+  "provider_family": "NOAA NCEP GFS 0.25 degree analysis",
+  "grid_id": "GRID_NOAA_GFS_025_V1",
   "datasets": [
     {
       "dataset_id": "ATMOSPHERE_01",
       "name": "air_temperature",
-      "status": "collector_configured_pending_first_success",
-      "grid_id": null,
-      "latest_snapshot": null
+      "category": "temperature",
+      "source_variable": "TMP",
+      "source_level": "2 m above ground",
+      "units": "degree_Celsius",
+      "status": "active_existing_snapshot",
+      "grid_id": "GRID_NOAA_GFS_025_V1",
+      "latest_snapshot": "latest/air_temperature.bin.gz"
     },
     {
       "dataset_id": "ATMOSPHERE_02",
-      "name": "atmospheric_pressure",
-      "status": "source_not_configured",
-      "grid_id": null,
+      "name": "mean_sea_level_pressure",
+      "category": "pressure",
+      "source_variable": "PRMSL",
+      "source_level": "mean sea level",
+      "units": "kilopascal",
+      "status": "collector_configured_pending_first_success",
+      "grid_id": "GRID_NOAA_GFS_025_V1",
       "latest_snapshot": null
     },
     {
       "dataset_id": "ATMOSPHERE_03",
-      "name": "wind_speed",
-      "status": "source_not_configured",
-      "grid_id": null,
-      "latest_snapshot": null
+      "name": "wind_u_component",
+      "category": "wind",
+      "source_variable": "UGRD",
+      "source_level": "10 m above ground",
+      "units": "metre_per_second",
+      "status": "collector_configured_pending_first_success",
+      "grid_id": "GRID_NOAA_GFS_025_V1",
+      "latest_snapshot": null,
+      "derived_fields": [
+        "wind_speed",
+        "wind_direction"
+      ]
     },
     {
       "dataset_id": "ATMOSPHERE_04",
-      "name": "wind_direction",
-      "status": "source_not_configured",
-      "grid_id": null,
-      "latest_snapshot": null
+      "name": "wind_v_component",
+      "category": "wind",
+      "source_variable": "VGRD",
+      "source_level": "10 m above ground",
+      "units": "metre_per_second",
+      "status": "collector_configured_pending_first_success",
+      "grid_id": "GRID_NOAA_GFS_025_V1",
+      "latest_snapshot": null,
+      "derived_fields": [
+        "wind_speed",
+        "wind_direction"
+      ]
     },
     {
       "dataset_id": "ATMOSPHERE_05",
-      "name": "humidity",
-      "status": "source_not_configured",
-      "grid_id": null,
+      "name": "relative_humidity",
+      "category": "moisture",
+      "source_variable": "RH",
+      "source_level": "2 m above ground",
+      "units": "percent",
+      "status": "collector_configured_pending_first_success",
+      "grid_id": "GRID_NOAA_GFS_025_V1",
       "latest_snapshot": null
     },
     {
       "dataset_id": "ATMOSPHERE_06",
-      "name": "water_vapour",
-      "status": "source_not_configured",
-      "grid_id": null,
+      "name": "dew_point_temperature",
+      "category": "moisture",
+      "source_variable": "DPT",
+      "source_level": "2 m above ground",
+      "units": "degree_Celsius",
+      "status": "collector_configured_pending_first_success",
+      "grid_id": "GRID_NOAA_GFS_025_V1",
       "latest_snapshot": null
     },
     {
       "dataset_id": "ATMOSPHERE_07",
-      "name": "cloud_properties",
-      "status": "source_not_configured",
-      "grid_id": null,
+      "name": "precipitable_water",
+      "category": "moisture",
+      "source_variable": "PWAT",
+      "source_level": "entire atmosphere",
+      "units": "kilogram_per_square_metre",
+      "status": "collector_configured_pending_first_success",
+      "grid_id": "GRID_NOAA_GFS_025_V1",
       "latest_snapshot": null
     },
     {
       "dataset_id": "ATMOSPHERE_08",
-      "name": "co2_concentration",
-      "status": "source_not_configured",
-      "grid_id": null,
-      "latest_snapshot": null
-    },
-    {
-      "dataset_id": "ATMOSPHERE_09",
-      "name": "methane",
-      "status": "source_not_configured",
-      "grid_id": null,
-      "latest_snapshot": null
-    },
-    {
-      "dataset_id": "ATMOSPHERE_10",
-      "name": "ozone",
-      "status": "source_not_configured",
-      "grid_id": null,
-      "latest_snapshot": null
-    },
-    {
-      "dataset_id": "ATMOSPHERE_11",
-      "name": "carbon_monoxide",
-      "status": "source_not_configured",
-      "grid_id": null,
-      "latest_snapshot": null
-    },
-    {
-      "dataset_id": "ATMOSPHERE_12",
-      "name": "aerosols_dust",
-      "status": "source_not_configured",
-      "grid_id": null,
+      "name": "total_cloud_cover",
+      "category": "moisture",
+      "source_variable": "TCDC",
+      "source_level": "entire atmosphere",
+      "units": "percent",
+      "status": "collector_configured_pending_first_success",
+      "grid_id": "GRID_NOAA_GFS_025_V1",
       "latest_snapshot": null
     }
+  ],
+  "notes": [
+    "Wind speed and direction are derived from the stored U and V components; they are not duplicate source fields.",
+    "Atmospheric composition datasets are maintained by the separate Atmospheric Composition world.",
+    "All fields must share one NOAA GFS analysis cycle and the same native 1440x721 0.25-degree grid."
   ]
 }
