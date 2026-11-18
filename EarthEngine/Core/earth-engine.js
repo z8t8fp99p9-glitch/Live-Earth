@@ -5,7 +5,6 @@
  * view-owned; the Engine supplies lights when a view has not supplied its own.
  */
 import { createEarthGraphics } from "../Graphics/earth-engine-3d-graphics-engine.js";
-import { createCountryBordersSkin } from "../Graphics/country-borders-skin.js";
 
 const VIEWPOINT_STATE_KEY = "__liveEarthGlobalViewpointV1";
 const VIEWPOINT_STORAGE_KEY = "liveEarthGlobalViewpointV1";
@@ -487,21 +486,6 @@ export async function createEarthGlobe(options = {}) {
   installLifecycle();
   const ownerAtRequest = getCurrentOwner();
   const globe = await createEarthGraphics(options);
-  // Shared geographic skin: every view created by the Earth Engine receives
-  // the same country borders, independent of its numerical data layer.
-  let countryBorders = null;
-  try {
-    countryBorders = await createCountryBordersSkin({
-      THREE: options.THREE,
-      earthGroup: globe.group,
-      radius: options.countryBorders?.radius ?? 1.004,
-      color: options.countryBorders?.color ?? 0xa8d8e8,
-      opacity: options.countryBorders?.opacity ?? 0.62,
-      enabled: options.countryBorders?.enabled !== false
-    });
-  } catch (error) {
-    console.warn("[LIVE // EARTH] Country borders could not be loaded; continuing without the overlay.", error);
-  }
   const unregister = registerEarthGroup(globe, ownerAtRequest);
   const interactionControllers = new Set();
   const runtimeUnregisters = new Set();
@@ -542,7 +526,6 @@ export async function createEarthGlobe(options = {}) {
       for (const unregisterRuntime of runtimeUnregisters) unregisterRuntime();
       runtimeUnregisters.clear();
       unregister();
-      countryBorders?.dispose?.();
       globe.dispose();
     }
   });

@@ -2,7 +2,7 @@
  * Geographic overlay only: independent of numerical grids and their palettes.
  * Natural Earth 1:50m Admin 0 land-boundary lines; public-domain source data.
  */
-const DATA_URL = "./EarthEngine/Assets/country-boundaries-50m.json";
+const DATA_URL = "./Atmosphere/Assets/country-boundaries-50m.json";
 let boundaryDataPromise = null;
 
 async function loadBoundaryData() {
@@ -30,11 +30,12 @@ function toVector(THREE, lon, lat, radius) {
   const phi = THREE.MathUtils.degToRad(lat);
   const lambda = THREE.MathUtils.degToRad(lon);
   const cosPhi = Math.cos(phi);
+  // Match the existing Earth numerical grid skin: lon=0 faces +Z.
   return [-radius * cosPhi * Math.sin(lambda), radius * Math.sin(phi), radius * cosPhi * Math.cos(lambda)];
 }
 
 export async function createCountryBordersSkin({ THREE, earthGroup, radius = 1.004,
-  color = 0xa8d8e8, opacity = 0.62, linewidth = 1, enabled = true } = {}) {
+  color = 0xa8d8e8, opacity = 0.62, linewidth = 1, renderOrder = 10, enabled = true } = {}) {
   if (!THREE || !earthGroup?.add) throw new TypeError("Three.js and an Earth group are required.");
   if (!enabled) return Object.freeze({ visible: false, dispose() {} });
 
@@ -56,7 +57,7 @@ export async function createCountryBordersSkin({ THREE, earthGroup, radius = 1.0
   });
   const lines = new THREE.LineSegments(geometry, material);
   lines.name = "LIVE_EARTH_COUNTRY_BORDERS_50M";
-  lines.renderOrder = 4;
+  lines.renderOrder = Number.isFinite(renderOrder) ? renderOrder : 10;
   earthGroup.add(lines);
 
   let disposed = false;
