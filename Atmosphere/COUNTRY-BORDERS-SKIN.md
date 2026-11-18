@@ -1,15 +1,24 @@
 # Atmosphere Country Borders Skin
 
-This is intentionally owned by the Atmosphere View Controller only. It is not
-registered in, imported by, or created from the central Earth Engine. Other
-views may select a different country-boundary skin later.
+- Scope: Atmosphere View only. This skin is not imported by Earth Engine.
+- Data: Natural Earth 1:50m Admin 0 land boundary lines (public domain).
+- Data asset: `Atmosphere/Assets/country-boundaries-50m.json`.
+- Renderer: `Atmosphere/country-borders-skin.js`.
+- Owner: `Atmosphere/atmosphere-view-controller.js`.
 
-- Source: Natural Earth 1:50m Admin 0 land boundary lines (public domain).
-- Runtime: `Atmosphere/country-borders-skin.js`
-- Dataset: `Atmosphere/Assets/country-boundaries-50m.json`
-- Owner: `Atmosphere/atmosphere-view-controller.js`
+## Alignment contract
 
-The view attaches the lines to the Earth surface so the overlay inherits the
-surface's geographic alignment and rotation. It renders above the temperature
-layer and is disposed with the Atmosphere globe. Styling is isolated from the
-shared numerical grid renderer and central Earth Engine.
+The skin uses the exact geographic frame from
+`EarthEngine/Graphics/earth-grid-rendering-skin.js`:
+- longitude 0° faces +Z;
+- positive latitude points +Y;
+- longitude is normalized to -180°..+180°;
+- positions are expressed in the Earth surface's local coordinate frame.
+
+The overlay is attached to the Atmosphere globe's existing Earth surface, so it inherits the same globe rotation. It is offset to radius 1.012, just above the numerical grid layer at radius 1.009. Antimeridian-crossing segments are not bridged.
+
+The line object disables raycasting so recursive gesture picking continues to hit the actual Earth surface rather than decorative border lines. The Atmosphere controller owns creation and disposal.
+
+## Styling
+
+Default boundary colour: `#a8d8e8`; opacity: `0.52`. Temperature grid opacity remains `0.75`.

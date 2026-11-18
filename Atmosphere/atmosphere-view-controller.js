@@ -255,9 +255,11 @@ async function initializeEngineView(view, viewId) {
       countryBorders = await createCountryBordersSkin({
         THREE: T,
         earthGroup: earthGlobe.surface,
-        radius: 1.004,
+        // Sit just above the numerical grid skin (radius 1.009) while
+        // sharing the exact Earth-surface coordinate frame.
+        radius: 1.012,
         color: 0xa8d8e8,
-        opacity: 0.62,
+        opacity: 0.52,
         renderOrder: 10
       });
       if (countryBorders) root.dataset.countryBorders = "natural-earth-50m";

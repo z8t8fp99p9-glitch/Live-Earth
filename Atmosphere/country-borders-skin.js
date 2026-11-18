@@ -1,9 +1,26 @@
-/* LIVE // EARTH — shared Natural Earth country-boundary skin.
- * Geographic overlay only: independent of numerical grids and their palettes.
- * Natural Earth 1:50m Admin 0 land-boundary lines; public-domain source data.
+/* LIVE // EARTH — Atmosphere-only Natural Earth country-boundary skin.
+ * Coordinates deliberately mirror EarthEngine/Graphics/earth-grid-rendering-skin.js:
+ * lon=0 faces +Z; +latitude points +Y; longitude is normalized to -180..180.
+ * This layer is visual-only and never participates in globe raycasting.
  */
 const DATA_URL = "./Atmosphere/Assets/country-boundaries-50m.json";
 let boundaryDataPromise = null;
+
+function normalizeLongitude(lon) {
+  return ((lon + 180) % 360 + 360) % 360 - 180;
+}
+
+function positionOnEarth(THREE, latitude, longitude, radius) {
+  const lat = THREE.MathUtils.degToRad(latitude);
+  const lon = THREE.MathUtils.degToRad(normalizeLongitude(longitude));
+  const cosLat = Math.cos(lat);
+  // Exact coordinate convention from the existing numerical grid renderer.
+  return new THREE.Vector3(
+    -radius * cosLat * Math.sin(lon),
+     radius * Math.sin(lat),
+     radius * cosLat * Math.cos(lon)
+  );
+}
 
 async function loadBoundaryData() {
   if (!boundaryDataPromise) {
@@ -26,43 +43,60 @@ async function loadBoundaryData() {
   return boundaryDataPromise;
 }
 
-function toVector(THREE, lon, lat, radius) {
-  const phi = THREE.MathUtils.degToRad(lat);
-  const lambda = THREE.MathUtils.degToRad(lon);
-  const cosPhi = Math.cos(phi);
-  // Match the existing Earth numerical grid skin: lon=0 faces +Z.
-  return [-radius * cosPhi * Math.sin(lambda), radius * Math.sin(phi), radius * cosPhi * Math.cos(lambda)];
-}
-
-export async function createCountryBordersSkin({ THREE, earthGroup, radius = 1.004,
-  color = 0xa8d8e8, opacity = 0.62, linewidth = 1, renderOrder = 10, enabled = true } = {}) {
-  if (!THREE || !earthGroup?.add) throw new TypeError("Three.js and an Earth group are required.");
+export async function createCountryBordersSkin({
+  THREE, earthGroup, radius = 1.012, color = 0xa8d8e8,
+  opacity = 0.52, renderOrder = 10, enabled = true
+} = {}) {
+  if (!THREE || !earthGroup?.add) throw new TypeError("Three.js and the Earth surface are required.");
+  if (!Number.isFinite(radius) || radius <= 1.009) {
+    throw new RangeError("Country borders must sit above the numerical grid overlay.");
+  }
   if (!enabled) return Object.freeze({ visible: false, dispose() {} });
 
   const data = await loadBoundaryData();
   const positions = [];
+  let segmentCount = 0;
+
   for (const line of data.coordinates) {
     for (let i = 1; i < line.length; i++) {
-      const a = toVector(THREE, line[i - 1][0], line[i - 1][1], radius);
-      const b = toVector(THREE, line[i][0], line[i][1], radius);
-      positions.push(...a, ...b);
+      const [lonA, latA] = line[i - 1];
+      const [lonB, latB] = line[i];
+      if (![lonA, latA, lonB, latB].every(Number.isFinite)) continue;
+
+      // Never bridge the antimeridian: those are separate visible line pieces.
+      if (Math.abs(lonB - lonA) > 180) continue;
+
+      const a = positionOnEarth(THREE, latA, lonA, radius);
+      const b = positionOnEarth(THREE, latB, lonB, radius);
+      positions.push(a.x, a.y, a.z, b.x, b.y, b.z);
+      segmentCount++;
     }
   }
+  if (!segmentCount) throw new Error("Natural Earth boundary data produced no drawable segments.");
 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.computeBoundingSphere();
+
   const material = new THREE.LineBasicMaterial({
-    color, transparent: true, opacity, linewidth,
-    depthTest: true, depthWrite: false
+    color, transparent: true, opacity: Math.max(0, Math.min(1, opacity)),
+    depthTest: true, depthWrite: false, toneMapped: false
   });
   const lines = new THREE.LineSegments(geometry, material);
-  lines.name = "LIVE_EARTH_COUNTRY_BORDERS_50M";
-  lines.renderOrder = Number.isFinite(renderOrder) ? renderOrder : 10;
-  earthGroup.add(lines);
+  lines.name = "LIVE_EARTH_ATMOSPHERE_COUNTRY_BORDERS_50M";
+  lines.renderOrder = renderOrder;
+  lines.frustumCulled = true;
 
+  // Critical: recursive raycasting from the Atmosphere gesture controller must
+  // hit the Earth surface, never these decorative boundary segments.
+  lines.raycast = function ignoreCountryBorderPicking() {};
+
+  earthGroup.add(lines);
   let disposed = false;
+
   return Object.freeze({
     object: lines,
+    segmentCount,
     setVisible(value) { if (!disposed) lines.visible = !!value; },
     setStyle(style = {}) {
       if (disposed) return;
@@ -81,7 +115,8 @@ export async function createCountryBordersSkin({ THREE, earthGroup, radius = 1.0
 }
 
 export const CountryBordersSkin = Object.freeze({
-  version: "1.0.0",
+  version: "1.1.0",
   source: "Natural Earth 1:50m Admin 0 boundary lines land",
+  coordinateReference: "Earth Grid Rendering Skin geographic frame",
   create: createCountryBordersSkin
 });
