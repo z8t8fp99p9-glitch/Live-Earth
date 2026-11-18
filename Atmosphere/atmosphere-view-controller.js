@@ -12,9 +12,8 @@
     return;
   }
   const ATMOSPHERE_VIEW = { id: 'atmosphere', title: 'Atmosphere', symbol: '◉' };
-  const MANIFEST_URL = 'https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/atmosphere/manifest.json';
-  const DATASET_ID = 'ATMOSPHERE_01';
-  const SCRIPT_PATHS = ['./EarthEngine/Graphics/universal-grid-system.js','./EarthEngine/Graphics/earth-grid-gpu-skin.js'];
+  const MANIFEST_URL = 'https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/Data/Central-Database/published/atmosphere/manifest.json';
+  const SCRIPT_PATHS = ['./EarthEngine/Graphics/universal-grid-system.js','./EarthEngine/Graphics/earth-grid-gpu-skin.js','./Atmosphere/temperature-numeral-rays.js'];
 
   function installHudStyle() {
     if (document.getElementById('le-atmosphere-cinematic-hud')) return;
@@ -129,6 +128,7 @@
   async function loadSharedGridTools() {
     await loadScript(SCRIPT_PATHS[0], () => !!window.LiveEarthUniversalGridSystem?.loadSnapshot);
     await loadScript(SCRIPT_PATHS[1], () => !!window.LiveEarthGpuGridSkin?.create);
+    await loadScript(SCRIPT_PATHS[2], () => !!window.LiveEarthTemperatureNumeralRays?.create);
   }
   // Match Moon and Sun: display each absolute timestamp in the device's
   // local timezone. The source instant remains UTC and is never shifted.
@@ -564,26 +564,30 @@ function installStyles() {
     status.dataset.state = 'neutral';
     view.body.appendChild(status);
 
-    const selector = runtime.card('Atmosphere datasets', 'Choose a verified atmospheric field to render on the globe. The Earth remains available while datasets load.');
+    const selector = runtime.card('Atmosphere datasets', 'Choose a verified NOAA atmospheric field to render on the globe. Composition is available in its own World.');
     selector.classList.add('le-atmo-dataset-card');
     const datasetGrid = runtime.el('div', 'le-atmo-dataset-grid');
     const datasetOptions = [
-      { id: 'temperature', label: 'Temperature', detail: 'Global air temperature · NOAA GFS', available: true },
-      { id: 'pressure', label: 'Pressure', detail: 'Awaiting verified pressure adapter', available: false },
-      { id: 'wind', label: 'Wind', detail: 'Awaiting verified wind adapter', available: false },
-      { id: 'moisture', label: 'Moisture', detail: 'Awaiting verified moisture adapter', available: false },
-      { id: 'composition', label: 'Composition', detail: 'Awaiting verified composition adapter', available: false }
+      { id: 'temperature', label: 'Temperature', detail: '2 m air temperature · NOAA GFS' },
+      { id: 'pressure', label: 'Pressure', detail: 'Mean sea-level pressure · kPa' },
+      { id: 'wind', label: 'Wind', detail: '10 m wind speed + direction · U/V' },
+      { id: 'moisture', label: 'Moisture', detail: '2 m relative humidity · %' }
     ];
+    const FIELD_CONFIG = {
+      temperature: { ids: ['earth.atmosphere.air_temperature'], title: 'NOAA · 2 m air temperature', units: 'degree_Celsius', displayUnits: '°C', min: -80, max: 45, ticks: ['−80°','−40°','0°','20°','45°'], source: 'NOAA NCEP · GFS 0.25° analysis · 2 m air temperature' },
+      pressure: { ids: ['earth.atmosphere.atmospheric_pressure'], title: 'NOAA · Mean sea-level pressure', units: 'kilopascal', displayUnits: 'kPa', min: null, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · mean sea-level pressure' },
+      wind: { ids: ['earth.atmosphere.wind_speed','earth.atmosphere.wind_direction'], title: 'NOAA · 10 m wind', units: 'metre_per_second', displayUnits: 'm/s', min: 0, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · 10 m wind speed and direction derived from U/V components' },
+      moisture: { ids: ['earth.atmosphere.humidity'], title: 'NOAA · 2 m relative humidity', units: 'percent', displayUnits: '%', min: 0, max: 100, ticks: ['0%','25%','50%','75%','100%'], source: 'NOAA NCEP · GFS 0.25° analysis · 2 m relative humidity' }
+    };
     const datasetButtons = new Map();
     let selectedDataset = null;
     for (const item of datasetOptions) {
-      const button = runtime.el('button', `le-atmo-dataset-option${item.available ? '' : ' is-unavailable'}`);
+      const button = runtime.el('button', 'le-atmo-dataset-option');
       button.type = 'button';
-      button.disabled = !item.available;
       button.dataset.dataset = item.id;
       const name = runtime.el('strong', 'le-atmo-dataset-name', item.label);
       const description = runtime.el('span', 'le-atmo-dataset-detail', item.detail);
-      const state = runtime.el('span', 'le-atmo-dataset-state', item.available ? 'AVAILABLE' : 'COMING WHEN VERIFIED');
+      const state = runtime.el('span', 'le-atmo-dataset-state', 'LOAD VERIFIED FIELD');
       button.append(name, description, state);
       datasetGrid.appendChild(button);
       datasetButtons.set(item.id, button);
@@ -591,20 +595,21 @@ function installStyles() {
     selector.appendChild(datasetGrid);
     view.body.appendChild(selector);
 
-    const details = runtime.card('NOAA · Global air temperature', 'Select Temperature to load the verified GFS field.');
+    const details = runtime.card('NOAA · Atmospheric field', 'Select a dataset to load its latest verified GFS grid.');
     details.hidden = true;
     const range = runtime.el('div', 'le-atmo-range');
     const rangeValue = runtime.el('strong', '', '—');
     range.appendChild(rangeValue);
-    range.appendChild(runtime.el('span', '', 'Verified global range · °C'));
+    const rangeUnit = runtime.el('span', '', 'Verified global range');
+    range.appendChild(rangeUnit);
     details.appendChild(range);
     const legend = runtime.el('div', 'le-atmo-legend');
     legend.setAttribute('role', 'img');
-    legend.setAttribute('aria-label', 'Temperature colour scale in degrees Celsius, from minus 80 to plus 45');
-    legend.appendChild(runtime.el('span', 'le-atmo-legend-title', 'Temperature colour scale · °C'));
+    legend.setAttribute('aria-label', 'Selected atmospheric field colour scale');
+    const legendTitle = runtime.el('span', 'le-atmo-legend-title', 'Field scale');
+    legend.appendChild(legendTitle);
     legend.appendChild(runtime.el('div', 'le-atmo-legend-bar'));
     const legendTicks = runtime.el('div', 'le-atmo-legend-ticks');
-    for (const tick of ['−80°', '−40°', '0°', '20°', '45°']) legendTicks.appendChild(runtime.el('span', '', tick));
     legend.appendChild(legendTicks);
     details.appendChild(legend);
     const disclosure = runtime.el('details', 'le-atmo-details');
@@ -613,11 +618,11 @@ function installStyles() {
     disclosure.appendChild(metric);
     details.appendChild(disclosure);
     view.body.appendChild(details);
-    const source = runtime.el('p', 'le-sfv-attribution', 'NOAA NCEP · Global Forecast System · GFS 0.25° analysis · model analysis, not direct thermometer readings');
+    const source = runtime.el('p', 'le-sfv-attribution', 'NOAA NCEP · Global Forecast System · 0.25° analysis');
     source.hidden = true;
     view.body.appendChild(source);
 
-    let closed = false, layerDispose = null, gridHandle = null, gridRoot = null, worldGlobe = null;
+    let closed = false, layerDispose = null, gridHandle = null, thermalRaysHandle = null, windArrowsHandle = null, gridRoot = null, worldGlobe = null;
     let dataRequest = null;
     let contourFrame = 0;
     let contourStartedAt = 0;
@@ -628,15 +633,18 @@ function installStyles() {
     };
     const startContourAnimation = () => {
       stopContourAnimation();
-      if (!gridHandle?.mesh?.material?.uniforms?.uTime) return;
+      const hasContourClock = !!gridHandle?.mesh?.material?.uniforms?.uTime;
+      if (!hasContourClock && !thermalRaysHandle) return;
       contourStartedAt = performance.now();
       const animateContours = now => {
-        if (closed || document.hidden || !runtime.isActive(ATMOSPHERE_VIEW.id) ||
-            !gridHandle?.mesh?.material?.uniforms?.uTime) {
+        const contourClock = gridHandle?.mesh?.material?.uniforms?.uTime;
+        if (closed || document.hidden || !runtime.isActive(ATMOSPHERE_VIEW.id) || (!contourClock && !thermalRaysHandle)) {
           contourFrame = 0;
           return;
         }
-        gridHandle.mesh.material.uniforms.uTime.value = (now - contourStartedAt) / 1000;
+        const elapsedSeconds = (now - contourStartedAt) / 1000;
+        if (contourClock) contourClock.value = elapsedSeconds;
+        thermalRaysHandle?.update?.(elapsedSeconds);
         worldGlobe?.requestRender?.();
         contourFrame = requestAnimationFrame(animateContours);
       };
@@ -644,9 +652,28 @@ function installStyles() {
     };
     const onVisibilityChange = () => {
       if (document.hidden) stopContourAnimation();
-      else if (gridHandle) startContourAnimation();
+      else if (gridHandle || thermalRaysHandle) startContourAnimation();
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
+
+    function removeActiveLayer() {
+      stopContourAnimation();
+      if (typeof layerDispose === 'function') {
+        const dispose = layerDispose;
+        layerDispose = null;
+        dispose();
+      }
+      try { windArrowsHandle?.dispose?.(); } catch (_) {}
+      windArrowsHandle = null;
+      try { thermalRaysHandle?.dispose?.(); } catch (_) {}
+      thermalRaysHandle = null;
+      try { gridHandle?.dispose?.(); } catch (_) {}
+      gridHandle = null;
+      try { gridRoot?.removeFromParent?.(); } catch (_) {}
+      gridRoot = null;
+      delete view.root.dataset.gridData;
+    }
+
     const cleanup = () => {
       if (closed) return;
       closed = true;
@@ -655,12 +682,7 @@ function installStyles() {
       document.body.classList.remove('le-atmosphere-fullscreen-open');
       hudToggle.remove();
       dataRequest?.abort();
-      try { gridHandle?.dispose?.(); } catch (_) {}
-      gridHandle = null;
-      try { layerDispose?.(); } catch (error) { console.warn('[LIVE // EARTH] Atmosphere layer cleanup failed.', error); }
-      layerDispose = null;
-      try { gridRoot?.removeFromParent?.(); } catch (_) {}
-      gridRoot = null;
+      removeActiveLayer();
       try { worldGlobe?.dispose?.(); } catch (error) { console.warn('[LIVE // EARTH] Atmosphere Engine globe cleanup failed.', error); }
       worldGlobe = null;
     };
@@ -674,71 +696,113 @@ function installStyles() {
       }
     }
 
-    async function selectTemperature() {
+    function formatFieldValue(value) {
+      if (!Number.isFinite(value)) return '—';
+      return value.toFixed(1);
+    }
+
+    function updateLegend(grid, config) {
+      const min = config.min === null ? grid.min : config.min;
+      const max = config.max === null ? grid.max : config.max;
+      legendTitle.textContent = `${config.title.replace('NOAA · ','')} · ${config.displayUnits}`;
+      legendTicks.replaceChildren();
+      const ticks = config.ticks || Array.from({ length: 5 }, (_, index) => {
+        const value = min + (max - min) * index / 4;
+        return `${formatFieldValue(value)} ${config.displayUnits}`;
+      });
+      for (const tick of ticks) legendTicks.appendChild(runtime.el('span', '', tick));
+      return { min, max };
+    }
+
+    function makeWindArrows(THREE, earth, directionGrid) {
+      const def = directionGrid.definition;
+      const values = directionGrid.values;
+      const positions = [];
+      const rowStep = 36;
+      const colStep = 48;
+      const rad = Math.PI / 180;
+      for (let y = 18; y < def.height - 18; y += rowStep) {
+        const latitude = def.latStart + y * def.latStep;
+        const phi = latitude * rad;
+        for (let x = 24; x < def.width - 24; x += colStep) {
+          const index = y * def.width + x;
+          const direction = values[index];
+          if (!Number.isFinite(direction)) continue;
+          const longitude = def.lonStart + x * def.lonStep;
+          const lambda = longitude * rad;
+          const normal = new THREE.Vector3(Math.cos(phi) * Math.cos(lambda), Math.sin(phi), -Math.cos(phi) * Math.sin(lambda)).normalize();
+          const north = new THREE.Vector3(-Math.sin(phi) * Math.cos(lambda), Math.cos(phi), Math.sin(phi) * Math.sin(lambda)).normalize();
+          const east = new THREE.Vector3(-Math.sin(lambda), 0, -Math.cos(lambda)).normalize();
+          const bearingTo = ((direction + 180) % 360) * rad;
+          const tangent = north.multiplyScalar(Math.cos(bearingTo)).add(east.multiplyScalar(Math.sin(bearingTo))).normalize();
+          const side = new THREE.Vector3().crossVectors(normal, tangent).normalize();
+          const start = normal.clone().multiplyScalar(1.018);
+          const tip = normal.clone().add(tangent.clone().multiplyScalar(0.028)).normalize().multiplyScalar(1.018);
+          const headBase = tip.clone().add(tangent.clone().multiplyScalar(-0.009));
+          const headLeft = headBase.clone().add(side.clone().multiplyScalar(0.006));
+          const headRight = headBase.clone().add(side.clone().multiplyScalar(-0.006));
+          positions.push(start.x,start.y,start.z,tip.x,tip.y,tip.z,
+            tip.x,tip.y,tip.z,headLeft.x,headLeft.y,headLeft.z,
+            tip.x,tip.y,tip.z,headRight.x,headRight.y,headRight.z);
+        }
+      }
+      if (!positions.length) return null;
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      const material = new THREE.LineBasicMaterial({ color: 0xe5f8ff, transparent: true, opacity: 0.88, depthTest: true, depthWrite: false });
+      const lines = new THREE.LineSegments(geometry, material);
+      lines.name = 'liveEarthAtmosphereWindDirectionVectors';
+      lines.renderOrder = 9;
+      earth.add(lines);
+      return { dispose() { lines.removeFromParent(); geometry.dispose(); material.dispose(); } };
+    }
+
+    async function selectDataset(datasetKey) {
       if (closed || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
-
-      // The same dataset button is a true on/off switch. A second tap while
-      // loading cancels the request; a tap after loading removes only this layer.
-      if (dataRequest) {
-        dataRequest.abort();
-        dataRequest = null;
+      const config = FIELD_CONFIG[datasetKey];
+      if (!config) return;
+      if (selectedDataset === datasetKey && layerDispose) {
+        dataRequest?.abort(); dataRequest = null;
+        removeActiveLayer();
         setSelectedDataset(null);
-        details.hidden = true;
-        source.hidden = true;
-        runtime.setStatus(status, 'Temperature loading cancelled. The Earth remains active.', 'neutral');
+        details.hidden = true; source.hidden = true;
+        runtime.setStatus(status, `${datasetOptions.find(item => item.id === datasetKey).label} layer hidden. The Earth remains active.`, 'neutral');
         worldGlobe?.requestRender?.();
         return;
       }
-
-      if (selectedDataset === 'temperature' && layerDispose) {
-        stopContourAnimation();
-        const removeLayer = layerDispose;
-        layerDispose = null;
-        removeLayer();
-        gridHandle = null;
-        gridRoot = null;
-        setSelectedDataset(null);
-        details.hidden = true;
-        source.hidden = true;
-        delete view.root.dataset.gridRenderingSkin;
-        delete view.root.dataset.gridData;
-        runtime.setStatus(status, 'Temperature layer hidden. The Earth remains active.', 'neutral');
-        worldGlobe?.requestRender?.();
-        return;
-      }
-
-      setSelectedDataset('temperature');
-      details.hidden = false;
-      source.hidden = false;
+      dataRequest?.abort(); dataRequest = null;
+      removeActiveLayer();
+      setSelectedDataset(datasetKey);
+      details.hidden = false; source.hidden = false;
+      details.querySelector('h2').textContent = config.title;
+      details.querySelector('p').textContent = `Verified global ${config.displayUnits} field · NOAA GFS 0.25°`;
+      source.textContent = config.source + ' · model analysis, not direct instrument readings';
       const controller = new AbortController();
       dataRequest = controller;
-      runtime.setStatus(status, 'Loading and verifying NOAA temperature data…', 'neutral');
+      const button = datasetButtons.get(datasetKey);
+      button.disabled = true;
+      const label = datasetOptions.find(item => item.id === datasetKey).label;
+      runtime.setStatus(status, `Loading and verifying NOAA ${label.toLowerCase()} grids…`, 'neutral');
       try {
         await loadSharedGridTools();
         if (closed || controller.signal.aborted || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
-        const grid = await window.LiveEarthUniversalGridSystem.loadSnapshot({
-          manifestUrl: MANIFEST_URL, datasetId: DATASET_ID, signal: controller.signal
-        });
+        const grids = await Promise.all(config.ids.map(datasetId => window.LiveEarthUniversalGridSystem.loadSnapshot({
+          manifestUrl: MANIFEST_URL, datasetId, signal: controller.signal
+        })));
         if (closed || controller.signal.aborted || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
-        if (grid.definition.width !== 1440 || grid.definition.height !== 721 || grid.units !== 'degree_Celsius') {
-          throw new Error('The NOAA grid dimensions or units differ from the approved dataset contract.');
+        const grid = grids[0];
+        for (const item of grids) {
+          if (item.definition.width !== 1440 || item.definition.height !== 721) throw new Error('A selected NOAA field does not match the approved 1440 × 721 grid.');
         }
-
-        // Replace only the active dataset skin; never recreate the Engine globe.
-        stopContourAnimation();
-        if (typeof layerDispose === 'function') {
-          layerDispose(); layerDispose = null;
-        }
-        try { gridHandle?.dispose?.(); } catch (_) {}
-        gridHandle = null;
-        try { gridRoot?.removeFromParent?.(); } catch (_) {}
-        gridRoot = null;
-
-        rangeValue.textContent = `${grid.min.toFixed(1)}° — ${grid.max.toFixed(1)}°`;
+        if (grid.units !== config.units) throw new Error(`Expected ${config.units}, received ${grid.units}.`);
+        if (datasetKey === 'wind' && grids[1].units !== 'degree') throw new Error(`Expected wind direction in degrees, received ${grids[1].units}.`);
+        const bounds = updateLegend(grid, config);
+        rangeValue.textContent = `${formatFieldValue(grid.min)} — ${formatFieldValue(grid.max)}`;
+        rangeUnit.textContent = `Verified global range · ${config.displayUnits}`;
         metric.replaceChildren();
-        const makeMetric = (label, value, unit = '') => {
+        const makeMetric = (labelText, value, unit = '') => {
           const item = runtime.el('div', 'le-sfv-metric');
-          item.appendChild(runtime.el('span', 'le-sfv-metric-label', label));
+          item.appendChild(runtime.el('span', 'le-sfv-metric-label', labelText));
           const v = runtime.el('strong', 'le-sfv-metric-value', value);
           if (unit) v.appendChild(runtime.el('span', 'le-sfv-metric-unit', ` ${unit}`));
           item.appendChild(v); metric.appendChild(item);
@@ -747,27 +811,39 @@ function installStyles() {
         makeMetric('Valid cells', grid.validCount.toLocaleString(), 'of ' + (grid.definition.width * grid.definition.height).toLocaleString());
         makeMetric('Observed / valid time', formatTime(grid.observedAt));
         makeMetric('Snapshot published', formatTime(grid.retrievedAt));
-        makeMetric('Verified range', `${grid.min.toFixed(1)} to ${grid.max.toFixed(1)}`, '°C');
-
+        makeMetric('Verified range', `${formatFieldValue(grid.min)} to ${formatFieldValue(grid.max)}`, config.displayUnits);
+        if (datasetKey === 'wind') {
+          makeMetric('Wind direction range', `${formatFieldValue(grids[1].min)} to ${formatFieldValue(grids[1].max)}`, 'degrees FROM north');
+          makeMetric('Wind vectors', '10 m', 'U/V components');
+        }
         if (closed || controller.signal.aborted || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
         if (!worldGlobe || typeof worldGlobe.attachLayer !== 'function') throw new Error('The Earth Engine globe is not ready.');
-        layerDispose = worldGlobe.attachLayer('atmosphere-temperature', ({ THREE, earth }) => {
+        layerDispose = worldGlobe.attachLayer(`atmosphere-${datasetKey}`, ({ THREE, earth }) => {
           if (!THREE || !earth?.add) throw new Error('The Earth Engine did not provide its Three.js surface.');
           gridRoot = new THREE.Group();
-          gridRoot.name = 'liveEarth-atmosphere-temperature-layer';
+          gridRoot.name = `liveEarth-atmosphere-${datasetKey}-layer`;
+          const colorMin = datasetKey === 'temperature' ? -80 : (datasetKey === 'moisture' ? 0 : bounds.min);
+          const colorMax = datasetKey === 'temperature' ? 45 : (datasetKey === 'moisture' ? 100 : bounds.max);
           gridHandle = window.LiveEarthGpuGridSkin.create({
-            THREE, grid, radius: 1.009, opacity: 0.86, min: -80, max: 45,
-            contours: true, contourStrength: 0.24,
-            name: 'NOAA-GFS-2m-air-temperature'
+            THREE, grid, radius: 1.009, opacity: 0.80,
+            min: colorMin, max: colorMax,
+            contours: true, contourStrength: datasetKey === 'temperature' ? 0.28 : 0.16,
+            name: `NOAA-GFS-${datasetKey}`
           });
-          // Atmosphere-only visual tuning: reveal more of the Earth Engine's
-          // geographic texture while keeping the 5 °C measured isolines legible.
-          const temperatureUniforms = gridHandle.mesh?.material?.uniforms;
-          if (temperatureUniforms?.uOpacity) temperatureUniforms.uOpacity.value = 0.70;
-          if (temperatureUniforms?.uContourStrength) temperatureUniforms.uContourStrength.value = 0.30;
+          const uniforms = gridHandle.mesh?.material?.uniforms;
+          if (uniforms?.uOpacity) uniforms.uOpacity.value = datasetKey === 'temperature' ? 0.70 : 0.78;
+          if (uniforms?.uContourStrength && datasetKey === 'temperature') uniforms.uContourStrength.value = 0.30;
+          if (datasetKey === 'temperature' && window.LiveEarthTemperatureNumeralRays?.create) {
+            thermalRaysHandle = window.LiveEarthTemperatureNumeralRays.create({ THREE, earth, grid, maximumLabels: 16 });
+          }
+          if (datasetKey === 'wind') windArrowsHandle = makeWindArrows(THREE, earth, grids[1]);
           gridRoot.add(gridHandle.mesh);
           earth.add(gridRoot);
           return () => {
+            try { windArrowsHandle?.dispose?.(); } catch (_) {}
+            windArrowsHandle = null;
+            try { thermalRaysHandle?.dispose?.(); } catch (_) {}
+            thermalRaysHandle = null;
             try { gridHandle?.dispose?.(); } catch (_) {}
             gridHandle = null;
             try { gridRoot?.removeFromParent?.(); } catch (_) {}
@@ -775,27 +851,29 @@ function installStyles() {
           };
         });
         if (closed || controller.signal.aborted) { layerDispose?.(); layerDispose = null; return; }
-        if (typeof layerDispose !== 'function') throw new Error('The verified NOAA temperature layer could not attach.');
+        if (typeof layerDispose !== 'function') throw new Error(`The verified NOAA ${label.toLowerCase()} layer could not attach.`);
         view.root.dataset.gridRenderingSkin = 'gpu-ready';
-        view.root.dataset.gridData = 'verified-noaa-gfs';
-        runtime.setStatus(status, 'Temperature · NOAA grid verified. Isotherm contours show the measured temperature pattern.', 'success');
+        view.root.dataset.gridData = `verified-noaa-gfs-${datasetKey}`;
+        const confirmation = datasetKey === 'wind'
+          ? 'Wind · colour shows speed; directional arrows show the 10 m wind direction.'
+          : `${label} · NOAA GFS global grid verified.`;
+        runtime.setStatus(status, confirmation, 'success');
         startContourAnimation();
         worldGlobe.requestRender?.();
       } catch (error) {
         if (!closed && !controller.signal.aborted && runtime.isActive(ATMOSPHERE_VIEW.id)) {
+          removeActiveLayer();
           setSelectedDataset(null);
-          details.hidden = true;
-          source.hidden = true;
-          runtime.setStatus(status, `Temperature data could not be displayed. The base globe remains active. ${error?.message || ''}`, 'error');
+          details.hidden = true; source.hidden = true;
+          runtime.setStatus(status, `${label} data could not be displayed. The base globe remains active. ${error?.message || ''}`, 'error');
         }
       } finally {
-        if (dataRequest === controller) {
-          dataRequest = null;
-        }
+        if (dataRequest === controller) dataRequest = null;
+        button.disabled = false;
       }
     }
 
-    datasetButtons.get('temperature').addEventListener('click', selectTemperature);
+    for (const [key, button] of datasetButtons) button.addEventListener('click', () => selectDataset(key));
 
     (async () => {
       try {

@@ -58,11 +58,12 @@
     const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
     return new Uint8Array(await new Response(stream).arrayBuffer());
   }
-  function decodeInt16Centidegrees(bytes, expectedCount) {
+  function decodeInt16Scaled(bytes, expectedCount, scaleFactor) {
     if (bytes.byteLength !== expectedCount * 2) throw new RangeError(`Decoded grid has ${bytes.byteLength} bytes; expected ${expectedCount * 2}.`);
+    if (!Number.isFinite(scaleFactor) || scaleFactor <= 0) throw new RangeError('Grid scale factor must be positive.');
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     const values = new Float32Array(expectedCount);
-    for (let i = 0; i < expectedCount; i++) values[i] = view.getInt16(i * 2, true) / 100;
+    for (let i = 0; i < expectedCount; i++) values[i] = view.getInt16(i * 2, true) / scaleFactor;
     return values;
   }
   async function loadSnapshot(options = {}) {
@@ -87,15 +88,16 @@
     try { rawMetadata = JSON.parse(new TextDecoder().decode(metadataBytes)); }
     catch (_) { throw new Error('The provider grid metadata is not valid JSON.'); }
     const definition = validateMetadata(rawMetadata);
-    if (String(rawMetadata.encoding || '').toLowerCase().includes('int16') && String(rawMetadata.encoding).toLowerCase().includes('little-endian') && /\/\s*100/.test(String(rawMetadata.encoding))) {
-      // This encoding is explicitly declared by the NOAA GFS collector.
-    } else {
+    const encoding = String(rawMetadata.encoding || '').toLowerCase();
+    const encodedScale = encoding.match(/\/\s*(\d+(?:\.\d+)?)/);
+    const scaleFactor = Number(rawMetadata.scale_factor ?? rawMetadata.scaleFactor ?? (encodedScale ? encodedScale[1] : NaN));
+    if (!(encoding.includes('int16') && encoding.includes('little-endian') && encodedScale && Number.isFinite(scaleFactor) && scaleFactor > 0 && Math.abs(Number(encodedScale[1]) - scaleFactor) < 1e-9)) {
       throw new Error(`No decoder is approved for the declared encoding: ${rawMetadata.encoding || 'missing'}.`);
     }
     const uncompressed = await gunzip(compressedBytes);
     const actualHash = await sha256Hex(uncompressed);
     if (actualHash.toLowerCase() !== snapshot.sha256_uncompressed_values.toLowerCase()) throw new Error('Scientific snapshot checksum mismatch. The data was not displayed.');
-    const values = decodeInt16Centidegrees(uncompressed, definition.width * definition.height);
+    const values = decodeInt16Scaled(uncompressed, definition.width * definition.height, scaleFactor);
     let min = Infinity, max = -Infinity, validCount = 0;
     for (let i = 0; i < values.length; i++) {
       const value = values[i];

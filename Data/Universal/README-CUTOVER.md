@@ -20,3 +20,9 @@ Raw source payloads and metadata are stored under `Data/Central-Database/raw`; n
 
 ## Cutover
 Replace the existing scheduled workflow with the YML supplied separately. The workflow commits only `Data/Universal` and `Data/Central-Database`; it does not publish or update the old six World snapshot folders. Do not delete old application data readers until they have been explicitly migrated to `world_data.py` and tested in the running app.
+
+
+## Atmosphere four-field connection
+The Universal Collector now configures five individual NOAA GFS datasets behind four Atmosphere controls: 2 m air temperature; mean sea-level pressure; 10 m wind speed; 10 m wind direction; and 2 m relative humidity. Wind speed/direction are derived from NOAA's native 10 m U/V components. All five use the same GFS 0.25-degree analysis cycle and 1440 x 721 grid.
+
+Successful Atmosphere grid retrievals are published through `Data/Central-Database/published/atmosphere/manifest.json`, which references the raw immutable retrieval payloads and metadata already stored in the Central Database. The Atmosphere controller reads that manifest through the Universal Grid System and replaces only the active GPU Grid Skin. The separate Atmospheric Composition World is not part of the Atmosphere selector.
