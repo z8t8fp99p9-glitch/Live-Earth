@@ -31,7 +31,10 @@ Default boundary colour: `#a8d8e8`; opacity: `0.62`; spherical ribbon width: `0.
 
 ## Adaptive border presentation
 
-- Satellite/base mode: `#3A5568` at 20% opacity, render order 10.
-- Temperature mode: `#263746` at 20% opacity, render order 3 (beneath the temperature GPU skin at render order 4).
+- Satellite/base mode: `#3A5568` at 32% opacity, render order 10.
+- Temperature mode: `#263746` at 32% opacity, render order 3 (beneath the temperature GPU skin at render order 4).
 - Both modes retain the same 0.0048 world-unit ribbon geometry and no glow.
 - `Atmosphere/atmosphere-view-controller.js` switches the style when the selected dataset changes.
+
+
+Visibility refinement: both adaptive border styles use 32% opacity so the geographic guides remain gently visible over satellite imagery and temperature fields.

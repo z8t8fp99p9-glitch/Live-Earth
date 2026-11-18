@@ -548,6 +548,10 @@ async function initializeEngineView(view, viewId) {
       earth: earthGlobe.surface,
       attachLayer,
       removeLayer,
+      setCountryBordersStyle(style) {
+        countryBorders?.setStyle?.(style);
+        requestRender();
+      },
       requestRender,
       dispose
     });
@@ -697,13 +701,13 @@ function installStyles() {
 
     function setSelectedDataset(id) {
       selectedDataset = id;
-      if (countryBorders) {
+      if (worldGlobe?.setCountryBordersStyle) {
         if (id === "temperature") {
           // Temperature overlay sits at renderOrder 4. Keep borders beneath it.
-          countryBorders.setStyle({ color: 0x263746, opacity: 0.20, renderOrder: 3 });
-        } else {
-          // Satellite/base view: subdued guides above the imagery, without glow.
-          countryBorders.setStyle({ color: 0x3a5568, opacity: 0.20, renderOrder: 10 });
+          worldGlobe.setCountryBordersStyle({ color: 0x263746, opacity: 0.32, renderOrder: 3 });
+        } else if (id) {
+          // Other atmospheric fields retain the subdued satellite guide style.
+          worldGlobe.setCountryBordersStyle({ color: 0x3a5568, opacity: 0.32, renderOrder: 10 });
         }
       }
       for (const [key, button] of datasetButtons) {
@@ -848,6 +852,12 @@ function installStyles() {
             opacity: datasetKey === 'temperature' ? 0.75 : 0.78,
             min: colorMin, max: colorMax,
             colorStops: datasetKey === 'temperature' ? TEMPERATURE_COLOR_STOPS : undefined,
+            thermalAura: datasetKey === 'temperature' ? {
+              enabled: true,
+              expansion: 0.0015,
+              intensity: 0.075,
+              diffusion: 0.012
+            } : undefined,
             contourInterval: datasetKey === 'temperature' ? 5 : 0,
             contourStrength: datasetKey === 'temperature' ? 0.085 : 0.16,
             contourColor: [0.13, 0.10, 0.09],
@@ -855,6 +865,7 @@ function installStyles() {
           });
           if (datasetKey === 'wind') windArrowsHandle = makeWindArrows(THREE, earth, grids[1]);
           gridRoot.add(gridHandle.mesh);
+          if (gridHandle.auraMesh) gridRoot.add(gridHandle.auraMesh);
           earth.add(gridRoot);
           return () => {
             try { windArrowsHandle?.dispose?.(); } catch (_) {}

@@ -79,6 +79,8 @@
     const material = new T.ShaderMaterial({
       uniforms: {
         uGrid: { value: texture }, uRamp: { value: rampTexture }, uOpacity: { value: opacity },
+        uThermalDiffusion: { value: options.thermalAura?.enabled ? 1 : 0 },
+        uDiffusionAmount: { value: Number.isFinite(options.thermalAura?.diffusion) ? options.thermalAura.diffusion : 0.012 },
         uContours: { value: contourInterval > 0 ? 1 : 0 }, uContourInterval: { value: contourInterval },
         uContourStrength: { value: contourStrength }, uContourColor: { value: new T.Vector3(...contourColor) },
         uMin: { value: min }, uMax: { value: max },
@@ -91,6 +93,7 @@
       vertexShader: `varying vec2 vUv; varying vec3 vNormalView; void main(){ vUv=uv; vNormalView=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
       fragmentShader: `
         uniform sampler2D uGrid; uniform sampler2D uRamp; uniform float uOpacity;
+        uniform float uThermalDiffusion; uniform float uDiffusionAmount;
         uniform float uContours; uniform float uContourInterval; uniform float uContourStrength;
         uniform vec3 uContourColor; uniform float uMin; uniform float uMax;
         uniform float uLongitudeOffset; uniform float uLongitudeScale;
@@ -101,6 +104,16 @@
           vec4 sampleValue=texture2D(uGrid,gridUv);
           if(sampleValue.a<0.5) discard;
           float t=sampleValue.r;
+          // Optional, tightly-local thermal diffusion. The five-tap average
+          // softens only the temperature field; default callers remain untouched.
+          if(uThermalDiffusion>0.5){
+            vec2 d=vec2(uDiffusionAmount, uDiffusionAmount);
+            float tL=texture2D(uGrid,vec2(fract(gridUv.x-d.x),gridUv.y)).r;
+            float tR=texture2D(uGrid,vec2(fract(gridUv.x+d.x),gridUv.y)).r;
+            float tD=texture2D(uGrid,vec2(gridUv.x,clamp(gridUv.y-d.y,0.0,1.0))).r;
+            float tU=texture2D(uGrid,vec2(gridUv.x,clamp(gridUv.y+d.y,0.0,1.0))).r;
+            t=mix(t,(t*2.0+tL+tR+tD+tU)/6.0,0.22);
+          }
           vec3 colour=texture2D(uRamp,vec2(t,0.5)).rgb;
           if(uContours>0.5 && uContourInterval>0.0){
             float scalar=mix(uMin,uMax,t);
@@ -124,15 +137,53 @@
       observedAt: grid.observedAt, retrievedAt: grid.retrievedAt,
       colourRange: Object.freeze({ min, max })
     });
+    let auraMesh = null, auraGeometry = null, auraMaterial = null;
+    if (options.thermalAura?.enabled) {
+      const expansion = Number.isFinite(options.thermalAura.expansion) ? Math.max(0.0005, Math.min(0.006, options.thermalAura.expansion)) : 0.0025;
+      auraGeometry = new T.SphereGeometry((Number(options.radius) || 1.008) + expansion, 192, 96);
+      auraMaterial = new T.ShaderMaterial({
+        uniforms: {
+          uGrid: { value: texture }, uRamp: { value: rampTexture },
+          uLongitudeOffset: material.uniforms.uLongitudeOffset,
+          uLongitudeScale: material.uniforms.uLongitudeScale,
+          uLatitudeOffset: material.uniforms.uLatitudeOffset,
+          uLatitudeScale: material.uniforms.uLatitudeScale,
+          uIntensity: { value: Number.isFinite(options.thermalAura.intensity) ? Math.max(0, Math.min(0.22, options.thermalAura.intensity)) : 0.075 }
+        },
+        vertexShader: `varying vec2 vUv; varying vec3 vNormalView; void main(){vUv=uv;vNormalView=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+        fragmentShader: `
+          uniform sampler2D uGrid; uniform sampler2D uRamp;
+          uniform float uLongitudeOffset; uniform float uLongitudeScale;
+          uniform float uLatitudeOffset; uniform float uLatitudeScale; uniform float uIntensity;
+          varying vec2 vUv; varying vec3 vNormalView;
+          void main(){
+            vec2 uv=vec2(fract(uLongitudeOffset+uLongitudeScale*vUv.x),clamp(uLatitudeOffset+uLatitudeScale*vUv.y,0.0,1.0));
+            vec4 field=texture2D(uGrid,uv); if(field.a<0.5) discard;
+            vec3 thermal=texture2D(uRamp,vec2(field.r,0.5)).rgb;
+            float rim=pow(1.0-abs(vNormalView.z),3.2);
+            float alpha= uIntensity * rim * 0.42;
+            gl_FragColor=vec4(thermal,alpha);
+          }
+        `,
+        transparent: true, depthWrite: false, depthTest: true,
+        side: T.FrontSide, blending: T.AdditiveBlending, toneMapped: false
+      });
+      auraMesh = new T.Mesh(auraGeometry, auraMaterial);
+      auraMesh.name = (options.name || 'liveEarth-grid') + '-thermal-aura';
+      auraMesh.renderOrder = 5;
+      auraMesh.raycast = function ignoreThermalAuraPicking() {};
+    }
     let disposed = false;
     return Object.freeze({
-      mesh,
+      mesh, auraMesh,
       stats: Object.freeze({ width: d.width, height: d.height, textureBytes: pixels.byteLength, validCells: grid.validCount, min, max }),
       dispose() {
         if (disposed) return;
         disposed = true;
-        mesh.removeFromParent?.();
-        geometry.dispose(); material.dispose(); texture.dispose(); rampTexture.dispose();
+        mesh.removeFromParent?.(); auraMesh?.removeFromParent?.();
+        geometry.dispose(); material.dispose();
+        auraGeometry?.dispose(); auraMaterial?.dispose();
+        texture.dispose(); rampTexture.dispose();
       }
     });
   }
