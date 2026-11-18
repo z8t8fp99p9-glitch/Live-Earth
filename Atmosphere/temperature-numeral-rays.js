@@ -1,96 +1,75 @@
-/* LIVE // EARTH — Atmosphere temperature numeral rays.
-   A lightweight, Atmosphere-owned overlay built only from the verified NOAA grid.
-   Geographic positions use the same convention as the Earth Engine location marker.
+/* LIVE // EARTH — Atmosphere temperature light rays.
+   Uses only verified NOAA grid samples. All geometry is attached to the
+   Earth surface using the Earth Engine's established geographic convention.
 */
 (() => {
   'use strict';
+  const API = 'LiveEarthTemperatureNumeralRays';
+  if (window[API]?.create) return;
 
-  const API_NAME = 'LiveEarthTemperatureNumeralRays';
-  if (window[API_NAME]?.create) return;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-
-  function temperatureColor(value) {
-    if (value <= -25) return 0x9cddff;
-    if (value <= -5) return 0x75cfff;
-    if (value < 10) return 0xb5e8ff;
-    if (value < 20) return 0xffdf8a;
-    if (value < 30) return 0xffa34d;
-    return 0xff5748;
+  function colorFor(temp) {
+    if (temp <= -25) return 0x91eaff;
+    if (temp <= -5) return 0x63cfff;
+    if (temp < 10) return 0xc5f4ff;
+    if (temp < 20) return 0xffdf83;
+    if (temp < 30) return 0xff9b43;
+    return 0xff493d;
   }
 
-  function readGridValue(grid, latitude, longitude) {
-    const d = grid?.definition;
-    const values = d?.values;
-    if (!d || !values || !d.width || !d.height) return null;
-
-    const colFloat = (longitude - d.lonStart) / d.lonStep;
-    const rowFloat = (latitude - d.latStart) / d.latStep;
-    const col = ((Math.round(colFloat) % d.width) + d.width) % d.width;
-    const row = Math.round(rowFloat);
+  function sampleAt(grid, lat, lon) {
+    const d = grid.definition;
+    const col = ((Math.round((lon - d.lonStart) / d.lonStep) % d.width) + d.width) % d.width;
+    const row = Math.round((lat - d.latStart) / d.latStep);
     if (row < 0 || row >= d.height) return null;
-
-    const value = values[row * d.width + col];
-    if (!Number.isFinite(value) || value === d.noDataValue) return null;
-    return value;
+    const value = d.values[row * d.width + col];
+    return Number.isFinite(value) && value !== d.noDataValue ? value : null;
   }
 
-  function chooseSamples(grid, maximum) {
-    const candidates = [];
-    // A deliberately sparse geographic lattice; the values always come from
-    // the verified grid, never from generated or interpolated weather.
-    for (let latitude = -70; latitude <= 70; latitude += 20) {
-      for (let longitude = -180; longitude < 180; longitude += 30) {
-        const value = readGridValue(grid, latitude, longitude);
-        if (value == null) continue;
-        candidates.push({ latitude, longitude, value });
+  function selectLocations(grid, limit) {
+    const points = [];
+    // Sparse global sampling. Each displayed number is derived from a real
+    // nearest NOAA cell and rounded only to the requested 5-degree display step.
+    for (let lat = -65; lat <= 65; lat += 15) {
+      for (let lon = -180; lon < 180; lon += 24) {
+        const temp = sampleAt(grid, lat, lon);
+        if (temp !== null) points.push({ lat, lon, temp });
       }
     }
-
-    // Greedy geographic spacing keeps the numerals legible on a phone.
-    const chosen = [];
-    const minSeparation = 25;
-    while (candidates.length && chosen.length < maximum) {
-      let bestIndex = -1;
-      let bestScore = -Infinity;
-      for (let i = 0; i < candidates.length; i++) {
-        const candidate = candidates[i];
+    const selected = [];
+    while (points.length && selected.length < limit) {
+      let best = 0, bestDistance = -1;
+      for (let i = 0; i < points.length; i++) {
         let nearest = 180;
-        for (const existing of chosen) {
-          const lat1 = candidate.latitude * Math.PI / 180;
-          const lat2 = existing.latitude * Math.PI / 180;
-          const dLat = lat2 - lat1;
-          let dLon = (existing.longitude - candidate.longitude) * Math.PI / 180;
-          while (dLon > Math.PI) dLon -= Math.PI * 2;
-          while (dLon < -Math.PI) dLon += Math.PI * 2;
-          const a = Math.sin(dLat / 2) ** 2 +
-            Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
-          nearest = Math.min(nearest, 2 * Math.asin(Math.sqrt(clamp(a, 0, 1))) * 180 / Math.PI);
+        for (const p of selected) {
+          const a = points[i].lat * Math.PI / 180;
+          const b = p.lat * Math.PI / 180;
+          const dl = (p.lon - points[i].lon) * Math.PI / 180;
+          const dp = b - a;
+          const h = Math.sin(dp / 2) ** 2 + Math.cos(a) * Math.cos(b) * Math.sin(dl / 2) ** 2;
+          nearest = Math.min(nearest, 2 * Math.asin(Math.sqrt(clamp(h, 0, 1))) * 180 / Math.PI);
         }
-        const score = chosen.length ? nearest : 180 - Math.abs(candidate.latitude);
-        if (score > bestScore) { bestScore = score; bestIndex = i; }
+        const score = selected.length ? nearest : 180 - Math.abs(points[i].lat);
+        if (score > bestDistance) { bestDistance = score; best = i; }
       }
-      if (bestIndex < 0 || (chosen.length && bestScore < minSeparation)) break;
-      chosen.push(candidates.splice(bestIndex, 1)[0]);
+      if (selected.length && bestDistance < 20) break;
+      selected.push(points.splice(best, 1)[0]);
     }
-    return chosen;
+    return selected;
   }
 
-  function makeLabelTexture(THREE, text, color) {
+  function makeNumberTexture(THREE, label, color) {
     const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 128;
-    const context = canvas.getContext('2d');
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    context.font = '700 62px system-ui, -apple-system, sans-serif';
-    context.shadowColor = `#${color.toString(16).padStart(6, '0')}`;
-    context.shadowBlur = 24;
-    context.fillStyle = '#ffffff';
-    context.fillText(text, 128, 64);
-    context.shadowBlur = 8;
-    context.fillText(text, 128, 64);
+    canvas.width = 512; canvas.height = 256;
+    const c = canvas.getContext('2d');
+    c.clearRect(0, 0, 512, 256);
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.font = '800 116px system-ui, -apple-system, sans-serif';
+    c.shadowColor = `#${color.toString(16).padStart(6, '0')}`;
+    c.shadowBlur = 42; c.fillStyle = '#fff';
+    c.fillText(label, 256, 128);
+    c.shadowBlur = 18; c.fillText(label, 256, 128);
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.minFilter = THREE.LinearFilter;
@@ -99,84 +78,117 @@
     return texture;
   }
 
-  function create({ THREE, earth, grid, maximumLabels = 18 } = {}) {
-    if (!THREE || !earth?.add || !grid?.definition) {
-      throw new TypeError('Three.js, the Earth surface and a verified NOAA grid are required.');
+  function create({ THREE, earth, grid, maximumLabels = 16 } = {}) {
+    if (!THREE || !earth?.add || !grid?.definition?.values) {
+      throw new TypeError('A Three.js Earth surface and verified NOAA grid are required.');
     }
-
     const root = new THREE.Group();
-    root.name = 'liveEarth-atmosphere-temperature-numeral-rays';
-    const items = [];
-    const samples = chooseSamples(grid, clamp(maximumLabels, 8, 18));
+    root.name = 'liveEarth-atmosphere-temperature-light-rays';
+    const up = new THREE.Vector3(0, 1, 0);
+    const records = [];
 
-    for (const sample of samples) {
-      const rounded = Math.round(sample.value / 5) * 5;
+    for (const point of selectLocations(grid, clamp(maximumLabels, 8, 16))) {
+      const rounded = Math.round(point.temp / 5) * 5;
       const label = `${rounded < 0 ? '−' : ''}${Math.abs(rounded)}°`;
-      const color = temperatureColor(sample.value);
-
-      const phi = sample.latitude * Math.PI / 180;
-      const lambda = sample.longitude * Math.PI / 180;
-      // Same geographic convention as the trusted Earth Engine marker.
+      const color = colorFor(point.temp);
+      const phi = point.lat * Math.PI / 180;
+      const lambda = point.lon * Math.PI / 180;
       const normal = new THREE.Vector3(
         Math.cos(phi) * Math.cos(lambda),
         Math.sin(phi),
         -Math.cos(phi) * Math.sin(lambda)
       ).normalize();
 
-      const beamLength = 0.075 + Math.min(0.045, Math.abs(sample.value) / 900);
-      const beam = new THREE.Mesh(
-        new THREE.ConeGeometry(0.009, beamLength, 5, 1, true),
+      // Long central shaft plus two fine companion streaks. These extend
+      // conspicuously beyond the limb rather than sitting as tiny surface spikes.
+      const height = 0.34 + Math.min(0.22, Math.abs(point.temp) / 180);
+      const beamGroup = new THREE.Group();
+      beamGroup.position.copy(normal).multiplyScalar(1.012);
+      beamGroup.quaternion.setFromUnitVectors(up, normal);
+      beamGroup.renderOrder = 8;
+
+      const core = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.0025, 0.012, height, 7, 1, true),
         new THREE.MeshBasicMaterial({
-          color, transparent: true, opacity: 0.48,
-          blending: THREE.AdditiveBlending, depthWrite: false
+          color, transparent: true, opacity: 0.88,
+          blending: THREE.AdditiveBlending, depthWrite: false,
+          side: THREE.DoubleSide
         })
       );
-      beam.position.copy(normal).multiplyScalar(1.018 + beamLength * 0.5);
-      beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
-      beam.renderOrder = 6;
-      root.add(beam);
+      core.position.y = height * 0.5;
+      core.renderOrder = 8;
+      beamGroup.add(core);
 
-      const texture = makeLabelTexture(THREE, label, color);
+      const halo = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.012, 0.045, height * 0.92, 8, 1, true),
+        new THREE.MeshBasicMaterial({
+          color, transparent: true, opacity: 0.20,
+          blending: THREE.AdditiveBlending, depthWrite: false,
+          side: THREE.DoubleSide
+        })
+      );
+      halo.position.y = height * 0.48;
+      halo.renderOrder = 8;
+      beamGroup.add(halo);
+
+      for (const offset of [-0.035, 0.035]) {
+        const streak = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.001, 0.0035, height * 0.78, 4, 1, true),
+          new THREE.MeshBasicMaterial({
+            color: 0xffffff, transparent: true, opacity: 0.62,
+            blending: THREE.AdditiveBlending, depthWrite: false
+          })
+        );
+        streak.position.set(offset, height * 0.45, 0);
+        streak.renderOrder = 8;
+        beamGroup.add(streak);
+      }
+      root.add(beamGroup);
+
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: texture, color: 0xffffff, transparent: true,
-        opacity: 0.92, depthWrite: false, depthTest: true,
+        map: makeNumberTexture(THREE, label, color),
+        color: 0xffffff, transparent: true, opacity: 1,
+        depthWrite: false, depthTest: true,
         blending: THREE.AdditiveBlending
       }));
-      sprite.position.copy(normal).multiplyScalar(1.115 + beamLength);
-      sprite.scale.set(0.19, 0.095, 1);
-      sprite.renderOrder = 7;
+      sprite.position.copy(normal).multiplyScalar(1.035 + height);
+      sprite.scale.set(0.34, 0.17, 1);
+      sprite.renderOrder = 10;
       root.add(sprite);
-
-      items.push({ beam, sprite, baseOpacity: 0.48 + Math.min(0.18, Math.abs(sample.value) / 500) });
+      records.push({ beamGroup, sprite, core, halo, height });
     }
 
     earth.add(root);
     let disposed = false;
-
     return {
-      count: items.length,
+      count: records.length,
       update(seconds) {
         if (disposed) return;
-        const pulse = 0.5 + 0.5 * Math.sin(seconds * 1.35);
-        for (const item of items) {
-          item.beam.material.opacity = item.baseOpacity * (0.82 + pulse * 0.18);
-          item.sprite.material.opacity = 0.82 + pulse * 0.12;
+        const pulse = 0.5 + 0.5 * Math.sin(seconds * 1.7);
+        for (const r of records) {
+          r.halo.material.opacity = 0.15 + pulse * 0.12;
+          r.core.material.opacity = 0.76 + pulse * 0.18;
+          r.sprite.material.opacity = 0.88 + pulse * 0.12;
         }
       },
       dispose() {
         if (disposed) return;
         disposed = true;
         root.removeFromParent();
-        for (const item of items) {
-          item.beam.geometry.dispose();
-          item.beam.material.dispose();
-          item.sprite.material.map?.dispose();
-          item.sprite.material.dispose();
-        }
+        root.traverse(object => {
+          if (object.geometry) object.geometry.dispose();
+          if (object.material) {
+            const materials = Array.isArray(object.material) ? object.material : [object.material];
+            for (const material of materials) {
+              material.map?.dispose?.();
+              material.dispose?.();
+            }
+          }
+        });
         root.clear();
       }
     };
   }
 
-  window[API_NAME] = Object.freeze({ create });
+  window[API] = Object.freeze({ create });
 })();
