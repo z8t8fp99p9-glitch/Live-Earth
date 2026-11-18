@@ -1,6 +1,7 @@
 /* LIVE // EARTH — Atmosphere-only Natural Earth country-boundary skin.
- * Coordinates deliberately mirror EarthEngine/Graphics/earth-grid-rendering-skin.js:
- * lon=0 faces +Z; +latitude points +Y; longitude is normalized to -180..180.
+ * Coordinates deliberately mirror the Earth Graphics Engine's texture frame:
+ * lon=0 faces +X; east-positive longitude moves toward -Z; +latitude points +Y.
+ * Longitude is normalized to -180..180.
  * This layer is visual-only and never participates in globe raycasting.
  */
 const DATA_URL = "./Atmosphere/Assets/country-boundaries-50m.json";
@@ -14,11 +15,12 @@ function positionOnEarth(THREE, latitude, longitude, radius) {
   const lat = THREE.MathUtils.degToRad(latitude);
   const lon = THREE.MathUtils.degToRad(normalizeLongitude(longitude));
   const cosLat = Math.cos(lat);
-  // Exact coordinate convention from the existing numerical grid renderer.
+  // Exact coordinate convention documented by Earth Graphics Engine's
+  // subsolar-point calculation and used by its equirectangular texture.
   return new THREE.Vector3(
-    -radius * cosLat * Math.sin(lon),
+     radius * cosLat * Math.cos(lon),
      radius * Math.sin(lat),
-     radius * cosLat * Math.cos(lon)
+    -radius * cosLat * Math.sin(lon)
   );
 }
 
@@ -117,6 +119,6 @@ export async function createCountryBordersSkin({
 export const CountryBordersSkin = Object.freeze({
   version: "1.1.0",
   source: "Natural Earth 1:50m Admin 0 boundary lines land",
-  coordinateReference: "Earth Grid Rendering Skin geographic frame",
+  coordinateReference: "Earth Graphics Engine texture geographic frame",
   create: createCountryBordersSkin
 });

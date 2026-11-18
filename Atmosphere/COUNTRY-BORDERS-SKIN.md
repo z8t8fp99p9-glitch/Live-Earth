@@ -8,12 +8,17 @@
 
 ## Alignment contract
 
-The skin uses the exact geographic frame from
-`EarthEngine/Graphics/earth-grid-rendering-skin.js`:
-- longitude 0° faces +Z;
+The skin uses the geographic frame explicitly documented by
+`EarthEngine/Graphics/earth-engine-3d-graphics-engine.js`:
+- longitude 0° faces local +X;
+- east-positive longitude moves toward local -Z;
 - positive latitude points +Y;
 - longitude is normalized to -180°..+180°;
 - positions are expressed in the Earth surface's local coordinate frame.
+
+This is intentionally different from the numerical Grid Rendering Skin's
+local +Z central meridian. The satellite texture and its Earth Engine mapping
+are the alignment reference for this Atmosphere overlay.
 
 The overlay is attached to the Atmosphere globe's existing Earth surface, so it inherits the same globe rotation. It is offset to radius 1.012, just above the numerical grid layer at radius 1.009. Antimeridian-crossing segments are not bridged.
 
