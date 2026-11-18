@@ -110,7 +110,7 @@
       const core = new THREE.Mesh(
         new THREE.CylinderGeometry(0.0025, 0.012, height, 7, 1, true),
         new THREE.MeshBasicMaterial({
-          color, transparent: true, opacity: 0.88,
+          color, transparent: true, opacity: 0.86,
           blending: THREE.AdditiveBlending, depthWrite: false,
           side: THREE.DoubleSide
         })
@@ -122,7 +122,7 @@
       const halo = new THREE.Mesh(
         new THREE.CylinderGeometry(0.012, 0.045, height * 0.92, 8, 1, true),
         new THREE.MeshBasicMaterial({
-          color, transparent: true, opacity: 0.20,
+          color, transparent: true, opacity: 0.18,
           blending: THREE.AdditiveBlending, depthWrite: false,
           side: THREE.DoubleSide
         })
@@ -147,7 +147,7 @@
 
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
         map: makeNumberTexture(THREE, label, color),
-        color: 0xffffff, transparent: true, opacity: 1,
+        color: 0xffffff, transparent: true, opacity: 0.96,
         depthWrite: false, depthTest: true,
         blending: THREE.AdditiveBlending
       }));
@@ -162,15 +162,7 @@
     let disposed = false;
     return {
       count: records.length,
-      // Static light treatment: no pulsing, breathing, or beacon animation.
-      update() {
-        if (disposed) return;
-        for (const r of records) {
-          r.halo.material.opacity = 0.18;
-          r.core.material.opacity = 0.86;
-          r.sprite.material.opacity = 0.96;
-        }
-      },
+      // Static light treatment: no pulse function and no per-frame update hook.
       dispose() {
         if (disposed) return;
         disposed = true;

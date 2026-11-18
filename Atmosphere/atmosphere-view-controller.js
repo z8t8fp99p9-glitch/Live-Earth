@@ -13,17 +13,22 @@
   }
   const ATMOSPHERE_VIEW = { id: 'atmosphere', title: 'Atmosphere', symbol: '◉' };
   const MANIFEST_URL = 'https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/Data/Central-Database/published/atmosphere/manifest.json';
-  // Temperature's visual identity follows the earlier numerical rendering skin:
-  // deep blue -> ocean cyan -> living green -> warm gold -> ember red.
+  // Temperature keeps the classic LIVE // EARTH thermal identity, but the
+  // stops are anchored to meaningful Celsius thresholds across the full view
+  // range. This preserves cold/warm contrast without clipping values at 60 C.
   // The universal GPU renderer remains dataset-agnostic.
   const TEMPERATURE_COLOR_STOPS = [
-    [0.00, 0.125, 0.231, 0.541],
-    [0.25, 0.086, 0.537, 0.722],
-    [0.50, 0.271, 0.725, 0.471],
-    [0.75, 0.941, 0.776, 0.294],
-    [1.00, 0.784, 0.247, 0.212]
+    [0.000000, 0.1255, 0.2314, 0.5412], // -80 C · deep cobalt
+    [0.178571, 0.0863, 0.5373, 0.7216], // -55 C · ocean blue
+    [0.357143, 0.1098, 0.7725, 0.8196], // -30 C · electric cyan
+    [0.500000, 0.2706, 0.7255, 0.4706], // -10 C · living green
+    [0.642857, 0.6078, 0.7804, 0.3569], // +10 C · lime
+    [0.750000, 0.9412, 0.7765, 0.2941], // +25 C · warm gold
+    [0.821429, 0.9412, 0.3922, 0.1608], // +35 C · ember orange
+    [0.892857, 0.7843, 0.2471, 0.2118], // +45 C · crimson
+    [1.000000, 0.4784, 0.0745, 0.3412]  // +60 C · hot magenta
   ];
-  const TEMPERATURE_LEGEND = 'linear-gradient(90deg,#203b8a 0%,#1689b8 25%,#45b978 50%,#f0c64b 75%,#c83f36 100%)';
+  const TEMPERATURE_LEGEND = 'linear-gradient(90deg,#203b8a 0%,#1689b8 17.8571%,#1cc5d1 35.7143%,#45b978 50%,#9bc75b 64.2857%,#f0c64b 75%,#f06429 82.1429%,#c83f36 89.2857%,#7a1357 100%)';
   const SCRIPT_PATHS = ['./EarthEngine/Graphics/universal-grid-system.js','./EarthEngine/Graphics/earth-grid-gpu-skin.js','./Atmosphere/temperature-numeral-rays.js'];
 
   function installHudStyle() {
@@ -644,18 +649,18 @@ function installStyles() {
     };
     const startContourAnimation = () => {
       stopContourAnimation();
+      // The current GPU grid shader and Temperature rays are static. Only run
+      // a frame loop if a future renderer explicitly exposes an animated uTime.
       const hasContourClock = !!gridHandle?.mesh?.material?.uniforms?.uTime;
-      if (!hasContourClock && !thermalRaysHandle) return;
+      if (!hasContourClock) return;
       contourStartedAt = performance.now();
       const animateContours = now => {
         const contourClock = gridHandle?.mesh?.material?.uniforms?.uTime;
-        if (closed || document.hidden || !runtime.isActive(ATMOSPHERE_VIEW.id) || (!contourClock && !thermalRaysHandle)) {
+        if (closed || document.hidden || !runtime.isActive(ATMOSPHERE_VIEW.id) || !contourClock) {
           contourFrame = 0;
           return;
         }
-        const elapsedSeconds = (now - contourStartedAt) / 1000;
-        if (contourClock) contourClock.value = elapsedSeconds;
-        thermalRaysHandle?.update?.(elapsedSeconds);
+        contourClock.value = (now - contourStartedAt) / 1000;
         worldGlobe?.requestRender?.();
         contourFrame = requestAnimationFrame(animateContours);
       };
@@ -839,12 +844,12 @@ function installStyles() {
           const colorMax = datasetKey === 'temperature' ? 60 : (datasetKey === 'moisture' ? 100 : bounds.max);
           gridHandle = window.LiveEarthGpuGridSkin.create({
             THREE, grid, radius: 1.009,
-            opacity: datasetKey === 'temperature' ? 0.76 : 0.78,
+            opacity: datasetKey === 'temperature' ? 0.86 : 0.78,
             min: colorMin, max: colorMax,
             colorStops: datasetKey === 'temperature' ? TEMPERATURE_COLOR_STOPS : undefined,
             contourInterval: datasetKey === 'temperature' ? 5 : 0,
-            contourStrength: datasetKey === 'temperature' ? 0.13 : 0.16,
-            contourColor: [0.055, 0.105, 0.16],
+            contourStrength: datasetKey === 'temperature' ? 0.085 : 0.16,
+            contourColor: [0.13, 0.10, 0.09],
             name: `NOAA-GFS-${datasetKey}`
           });
           if (datasetKey === 'temperature' && window.LiveEarthTemperatureNumeralRays?.create) {
