@@ -585,7 +585,7 @@ function installStyles() {
       { id: 'moisture', label: 'Moisture', detail: '2 m relative humidity · %' }
     ];
     const FIELD_CONFIG = {
-      temperature: { ids: ['earth.atmosphere.air_temperature'], title: 'NOAA · 2 m air temperature', units: 'degree_Celsius', displayUnits: '°C', min: -80, max: 45, ticks: ['−80°','−40°','0°','20°','45°'], source: 'NOAA NCEP · GFS 0.25° analysis · 2 m air temperature' },
+      temperature: { ids: ['earth.atmosphere.air_temperature'], title: 'NOAA · 2 m air temperature', units: 'degree_Celsius', displayUnits: '°C', min: -80, max: 60, ticks: ['−80°','−45°','−10°','25°','60°'], source: 'NOAA NCEP · GFS 0.25° analysis · 2 m air temperature' },
       pressure: { ids: ['earth.atmosphere.atmospheric_pressure'], title: 'NOAA · Mean sea-level pressure', units: 'kilopascal', displayUnits: 'kPa', min: null, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · mean sea-level pressure' },
       wind: { ids: ['earth.atmosphere.wind_speed','earth.atmosphere.wind_direction'], title: 'NOAA · 10 m wind', units: 'metre_per_second', displayUnits: 'm/s', min: 0, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · 10 m wind speed and direction derived from U/V components' },
       moisture: { ids: ['earth.atmosphere.humidity'], title: 'NOAA · 2 m relative humidity', units: 'percent', displayUnits: '%', min: 0, max: 100, ticks: ['0%','25%','50%','75%','100%'], source: 'NOAA NCEP · GFS 0.25° analysis · 2 m relative humidity' }
@@ -836,7 +836,7 @@ function installStyles() {
           gridRoot = new THREE.Group();
           gridRoot.name = `liveEarth-atmosphere-${datasetKey}-layer`;
           const colorMin = datasetKey === 'temperature' ? -80 : (datasetKey === 'moisture' ? 0 : bounds.min);
-          const colorMax = datasetKey === 'temperature' ? 45 : (datasetKey === 'moisture' ? 100 : bounds.max);
+          const colorMax = datasetKey === 'temperature' ? 60 : (datasetKey === 'moisture' ? 100 : bounds.max);
           gridHandle = window.LiveEarthGpuGridSkin.create({
             THREE, grid, radius: 1.009,
             opacity: datasetKey === 'temperature' ? 0.76 : 0.78,
