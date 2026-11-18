@@ -807,7 +807,7 @@ function installStyles() {
           const colorMax = datasetKey === 'temperature' ? 60 : (datasetKey === 'moisture' ? 100 : bounds.max);
           gridHandle = window.LiveEarthGpuGridSkin.create({
             THREE, grid, radius: 1.009,
-            opacity: datasetKey === 'temperature' ? 0.86 : 0.78,
+            opacity: datasetKey === 'temperature' ? 0.75 : 0.78,
             min: colorMin, max: colorMax,
             colorStops: datasetKey === 'temperature' ? TEMPERATURE_COLOR_STOPS : undefined,
             contourInterval: datasetKey === 'temperature' ? 5 : 0,
