@@ -675,15 +675,44 @@ function installStyles() {
     }
 
     async function selectTemperature() {
-      if (closed || !runtime.isActive(ATMOSPHERE_VIEW.id) || selectedDataset === 'temperature' && layerDispose) return;
+      if (closed || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
+
+      // The same dataset button is a true on/off switch. A second tap while
+      // loading cancels the request; a tap after loading removes only this layer.
+      if (dataRequest) {
+        dataRequest.abort();
+        dataRequest = null;
+        setSelectedDataset(null);
+        details.hidden = true;
+        source.hidden = true;
+        runtime.setStatus(status, 'Temperature loading cancelled. The Earth remains active.', 'neutral');
+        worldGlobe?.requestRender?.();
+        return;
+      }
+
+      if (selectedDataset === 'temperature' && layerDispose) {
+        stopContourAnimation();
+        const removeLayer = layerDispose;
+        layerDispose = null;
+        removeLayer();
+        gridHandle = null;
+        gridRoot = null;
+        setSelectedDataset(null);
+        details.hidden = true;
+        source.hidden = true;
+        delete view.root.dataset.gridRenderingSkin;
+        delete view.root.dataset.gridData;
+        runtime.setStatus(status, 'Temperature layer hidden. The Earth remains active.', 'neutral');
+        worldGlobe?.requestRender?.();
+        return;
+      }
+
       setSelectedDataset('temperature');
       details.hidden = false;
       source.hidden = false;
-      dataRequest?.abort();
       const controller = new AbortController();
       dataRequest = controller;
       runtime.setStatus(status, 'Loading and verifying NOAA temperature data…', 'neutral');
-      datasetButtons.get('temperature').disabled = true;
       try {
         await loadSharedGridTools();
         if (closed || controller.signal.aborted || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
@@ -754,12 +783,14 @@ function installStyles() {
         worldGlobe.requestRender?.();
       } catch (error) {
         if (!closed && !controller.signal.aborted && runtime.isActive(ATMOSPHERE_VIEW.id)) {
+          setSelectedDataset(null);
+          details.hidden = true;
+          source.hidden = true;
           runtime.setStatus(status, `Temperature data could not be displayed. The base globe remains active. ${error?.message || ''}`, 'error');
         }
       } finally {
         if (dataRequest === controller) {
           dataRequest = null;
-          datasetButtons.get('temperature').disabled = false;
         }
       }
     }
