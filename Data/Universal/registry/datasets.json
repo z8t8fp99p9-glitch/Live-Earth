@@ -9,18 +9,18 @@
       "legacy_ids": [
         "ATMOSPHERE_01"
       ],
-      "status": "collector_configured_pending_first_success",
+      "status": "collector_configured_success",
       "collection": {
         "enabled": true,
-        "adapter_id": "native_sources",
-        "source_id": "noaa_ncep_gfs",
-        "cadence": "hourly"
+        "adapter_id": "atmosphere_gfs",
+        "source_id": "noaa_ncep_gfs_025",
+        "cadence": "6-hourly"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
         "units": "degree_Celsius",
         "spatial_coverage": "global_native_0.25_degree_grid",
-        "temporal_resolution": "source_native"
+        "temporal_resolution": "six_hourly_gfs_analysis_cycle"
       },
       "provenance_required": true
     },
@@ -30,18 +30,18 @@
       "legacy_ids": [
         "ATMOSPHERE_02"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "atmosphere_gfs",
+        "source_id": "noaa_ncep_gfs_025",
+        "cadence": "6-hourly"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "kilopascal",
+        "spatial_coverage": "global_native_0.25_degree_grid_mean_sea_level",
+        "temporal_resolution": "six_hourly_gfs_analysis_cycle"
       },
       "provenance_required": true
     },
@@ -51,18 +51,18 @@
       "legacy_ids": [
         "ATMOSPHERE_03"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "atmosphere_gfs",
+        "source_id": "noaa_ncep_gfs_025",
+        "cadence": "6-hourly"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "metre_per_second",
+        "spatial_coverage": "global_native_0.25_degree_grid_10m_derived_from_UGRD_VGRD",
+        "temporal_resolution": "six_hourly_gfs_analysis_cycle"
       },
       "provenance_required": true
     },
@@ -72,18 +72,18 @@
       "legacy_ids": [
         "ATMOSPHERE_04"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "atmosphere_gfs",
+        "source_id": "noaa_ncep_gfs_025",
+        "cadence": "6-hourly"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "degree",
+        "spatial_coverage": "global_native_0.25_degree_grid_10m_meteorological_from_direction",
+        "temporal_resolution": "six_hourly_gfs_analysis_cycle"
       },
       "provenance_required": true
     },
@@ -93,18 +93,18 @@
       "legacy_ids": [
         "ATMOSPHERE_05"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "atmosphere_gfs",
+        "source_id": "noaa_ncep_gfs_025",
+        "cadence": "6-hourly"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "percent",
+        "spatial_coverage": "global_native_0.25_degree_grid_2m_relative_humidity",
+        "temporal_resolution": "six_hourly_gfs_analysis_cycle"
       },
       "provenance_required": true
     },
@@ -261,7 +261,7 @@
       "legacy_ids": [
         "OCEANS_01"
       ],
-      "status": "collector_configured_pending_first_success",
+      "status": "collector_configured_success",
       "collection": {
         "enabled": true,
         "adapter_id": "native_sources",
@@ -272,7 +272,7 @@
         "measurement_type": "field_or_indicator",
         "units": "degree_C",
         "spatial_coverage": "global_native_0.25_degree_grid",
-        "temporal_resolution": "source_native"
+        "temporal_resolution": "daily_source_observation"
       },
       "provenance_required": true
     },
@@ -471,7 +471,7 @@
       "legacy_ids": [
         "LAND_01"
       ],
-      "status": "collector_configured_pending_first_success",
+      "status": "collector_configured_success",
       "collection": {
         "enabled": true,
         "adapter_id": "native_sources",
@@ -482,7 +482,7 @@
         "measurement_type": "field_or_indicator",
         "units": "degree_C",
         "spatial_coverage": "six_sparse_regional_point_samples",
-        "temporal_resolution": "source_native"
+        "temporal_resolution": "daily_source_observation"
       },
       "provenance_required": true
     },
@@ -681,7 +681,7 @@
       "legacy_ids": [
         "WATER_ICE_01"
       ],
-      "status": "collector_configured_pending_first_success",
+      "status": "collector_configured_success",
       "collection": {
         "enabled": true,
         "adapter_id": "native_sources",
@@ -692,7 +692,7 @@
         "measurement_type": "field_or_indicator",
         "units": "mm/day",
         "spatial_coverage": "six_sparse_regional_point_samples",
-        "temporal_resolution": "source_native"
+        "temporal_resolution": "daily_source_observation"
       },
       "provenance_required": true
     },
@@ -891,7 +891,7 @@
       "legacy_ids": [
         "EARTH_ACTIVITY_02"
       ],
-      "status": "collector_configured_pending_first_success",
+      "status": "collector_configured_success",
       "collection": {
         "enabled": true,
         "adapter_id": "native_sources",
@@ -902,7 +902,7 @@
         "measurement_type": "event",
         "units": "magnitude",
         "spatial_coverage": "USGS_all_day_event_feed",
-        "temporal_resolution": "source_native"
+        "temporal_resolution": "hourly_event_feed"
       },
       "provenance_required": true
     },
@@ -1038,7 +1038,7 @@
       "legacy_ids": [
         "ENERGY_HUMANITY_01"
       ],
-      "status": "collector_configured_pending_first_success",
+      "status": "collector_configured_success",
       "collection": {
         "enabled": true,
         "adapter_id": "native_sources",
@@ -1049,7 +1049,7 @@
         "measurement_type": "field_or_indicator",
         "units": "kWh/m^2/day",
         "spatial_coverage": "six_sparse_regional_point_samples",
-        "temporal_resolution": "source_native"
+        "temporal_resolution": "daily_source_observation"
       },
       "provenance_required": true
     },

@@ -1,0 +1,13 @@
+{
+  "dataset_id": "earth.atmosphere.atmospheric_pressure",
+  "status": "success",
+  "normalized_paths": [
+    "normalized/earth.atmosphere.atmospheric_pressure/2026-11-18/20261118T044930-741f03ac.jsonl"
+  ],
+  "record_count": 1,
+  "raw_sha256": "3c024306fc29c46155c6f67b2175360b3906d37df3c3ad087de42bae68fe133a",
+  "data_kind": null,
+  "published_path": "published/atmosphere/manifest.json",
+  "retrieval_id": "20261118T044930-741f03ac",
+  "recorded_at": "2026-11-18T04:49:31.251172+00:00"
+}

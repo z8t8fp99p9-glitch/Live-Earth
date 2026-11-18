@@ -1,0 +1,13 @@
+{
+  "dataset_id": "earth.atmosphere.wind_direction",
+  "status": "success",
+  "normalized_paths": [
+    "normalized/earth.atmosphere.wind_direction/2026-11-18/20261118T044931-be9eda9d.jsonl"
+  ],
+  "record_count": 1,
+  "raw_sha256": "1d6653f155c0c0df544e2fd45ae487b27cf8ccf844c39ce656c11a7aff878eaf",
+  "data_kind": null,
+  "published_path": "published/atmosphere/manifest.json",
+  "retrieval_id": "20261118T044931-be9eda9d",
+  "recorded_at": "2026-11-18T04:49:31.851946+00:00"
+}
