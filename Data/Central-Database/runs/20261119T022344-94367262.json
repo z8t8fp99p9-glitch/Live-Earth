@@ -1,0 +1,13 @@
+{
+  "dataset_id": "earth.water_ice.rainfall",
+  "status": "success",
+  "normalized_paths": [
+    "normalized/earth.water_ice.rainfall/2026-11-15/20261119T022344-94367262.jsonl"
+  ],
+  "record_count": 6,
+  "raw_sha256": "41237bac0da1e9327bf88968919f5a507a0ee18bbb212444b12c42de07f7d83c",
+  "data_kind": "point_samples",
+  "published_path": null,
+  "retrieval_id": "20261119T022344-94367262",
+  "recorded_at": "2026-11-19T02:23:47.298097+00:00"
+}

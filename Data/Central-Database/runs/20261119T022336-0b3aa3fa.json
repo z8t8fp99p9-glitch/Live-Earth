@@ -1,0 +1,13 @@
+{
+  "dataset_id": "earth.atmosphere.humidity",
+  "status": "success",
+  "normalized_paths": [
+    "normalized/earth.atmosphere.humidity/2026-11-18/20261119T022336-0b3aa3fa.jsonl"
+  ],
+  "record_count": 1,
+  "raw_sha256": "8f81066981842efee4a71edf03859d085a7a42c99ca7ba26ff1cff09951a2402",
+  "data_kind": null,
+  "published_path": "published/atmosphere/manifest.json",
+  "retrieval_id": "20261119T022336-0b3aa3fa",
+  "recorded_at": "2026-11-19T02:23:36.862685+00:00"
+}

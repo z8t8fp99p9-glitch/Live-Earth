@@ -1,0 +1,13 @@
+{
+  "dataset_id": "earth.energy_humanity.solar_radiation",
+  "status": "success",
+  "normalized_paths": [
+    "normalized/earth.energy_humanity.solar_radiation/2026-11-14/20261119T022347-5292633e.jsonl"
+  ],
+  "record_count": 6,
+  "raw_sha256": "07f1141825ec990d0c04c7ffb7b81bc820b521705c5b8c8e1226187286613261",
+  "data_kind": "point_samples",
+  "published_path": null,
+  "retrieval_id": "20261119T022347-5292633e",
+  "recorded_at": "2026-11-19T02:23:50.713032+00:00"
+}
