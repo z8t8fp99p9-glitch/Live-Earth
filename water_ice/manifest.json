@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "world": "water_ice",
-  "updated_at_utc": "2026-11-18T01:40:33.200914Z",
+  "storage_model": "central_current_values",
   "snapshots": [
     {
       "dataset": "corrected_precipitation",
-      "data": "latest/corrected_precipitation.source.csv.gz",
-      "metadata": "latest/corrected_precipitation.metadata.json",
-      "sha256_source_payload": "ef2794e4f4e9ac34f8a6d3c3dd0157d5ebaefc2ca52683e54bbf562e5797d6f6",
-      "valid_time_utc": "2026-11-16T00:00:00Z"
+      "data": "../Data/Central-Database/values/earth.water_ice.rainfall/records.jsonl",
+      "metadata": "../Data/Central-Database/values/earth.water_ice.rainfall/metadata.json",
+      "valid_time_utc": "2026-11-16T00:00:00Z",
+      "dataset_id": "earth.water_ice.rainfall"
     }
   ]
 }

@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "world": "energy_humanity",
-  "updated_at_utc": "2026-11-18T01:40:37.800206Z",
+  "storage_model": "central_current_values",
   "snapshots": [
     {
       "dataset": "surface_solar_radiation",
-      "data": "latest/surface_solar_radiation.source.csv.gz",
-      "metadata": "latest/surface_solar_radiation.metadata.json",
-      "sha256_source_payload": "82514b75c67eeb61869904ff63788aab19f2eac1175c2767be9eb5a73e17bd2b",
-      "valid_time_utc": "2026-08-31T00:00:00Z"
+      "data": "../Data/Central-Database/values/earth.energy_humanity.solar_radiation/records.jsonl",
+      "metadata": "../Data/Central-Database/values/earth.energy_humanity.solar_radiation/metadata.json",
+      "valid_time_utc": "2026-08-31T00:00:00Z",
+      "dataset_id": "earth.energy_humanity.solar_radiation"
     }
   ]
 }

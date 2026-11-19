@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "world": "earth_activity",
-  "updated_at_utc": "2026-11-18T01:40:33.427761Z",
+  "storage_model": "central_current_values",
   "snapshots": [
     {
       "dataset": "earthquakes",
-      "data": "latest/earthquakes.source.jsonl.gz",
-      "metadata": "latest/earthquakes.metadata.json",
-      "sha256_source_payload": "94608ed32b3404f117fc09a86a2fe918282a7ba3bc676f2e8af90a5eebd9bc20",
-      "valid_time_utc": "2026-11-18T01:39:54Z"
+      "data": "../Data/Central-Database/values/earth.earth_activity.earthquakes/records.jsonl",
+      "metadata": "../Data/Central-Database/values/earth.earth_activity.earthquakes/metadata.json",
+      "valid_time_utc": "2026-11-18T01:39:54Z",
+      "dataset_id": "earth.earth_activity.earthquakes"
     }
   ]
 }

@@ -1,15 +1,14 @@
 {
   "schema_version": 1,
   "world": "atmosphere",
-  "updated_at_utc": "2026-11-18T01:40:23.574088Z",
+  "storage_model": "central_current_values",
   "snapshots": [
     {
-      "dataset_id": "ATMOSPHERE_01",
+      "dataset_id": "earth.atmosphere.air_temperature",
       "dataset": "air_temperature",
       "grid_id": "GRID_NOAA_GFS_025_V1",
-      "data": "latest/air_temperature.bin.gz",
-      "metadata": "latest/air_temperature.metadata.json",
-      "sha256_uncompressed_values": "e90585f5c114e789e5f15e86ec3aae6e0fbc92976eb8bcc8a3509ac532eac6ee",
+      "data": "../Data/Central-Database/values/earth.atmosphere.air_temperature/values.bin",
+      "metadata": "../Data/Central-Database/values/earth.atmosphere.air_temperature/metadata.json",
       "valid_time_utc": "2026-11-17T18:00:00Z"
     }
   ]
