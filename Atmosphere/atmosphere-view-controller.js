@@ -108,16 +108,67 @@
       .le-sfv--atmosphere .le-sfv-metric-value { font-size:clamp(13px,3.5vw,17px); }
       .le-sfv--atmosphere .le-sfv-attribution { margin:7px 2px 0; font-size:8px; color:#8da9bc; }
       .le-sfv--atmosphere .le-atmo-dataset-card { margin-bottom:9px; }
-      .le-atmo-dataset-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
-      .le-atmo-dataset-option { appearance:none; display:flex; flex-direction:column; align-items:flex-start; gap:4px; min-width:0; min-height:66px; padding:10px 11px; border:1px solid rgba(130,197,230,.22); border-radius:13px; color:#eaf7ff; text-align:left; background:linear-gradient(145deg,rgba(16,43,65,.82),rgba(4,13,25,.82)); cursor:pointer; font:inherit; transition:border-color .18s ease,background .18s ease,transform .18s ease; }
-      .le-atmo-dataset-option:active:not(:disabled) { transform:scale(.985); }
-      .le-atmo-dataset-option.is-selected { border-color:rgba(91,222,190,.8); background:linear-gradient(145deg,rgba(15,76,75,.78),rgba(4,24,35,.92)); box-shadow:inset 0 0 0 1px rgba(91,222,190,.14),0 0 18px rgba(62,218,181,.12); }
-      .le-atmo-dataset-option:disabled { opacity:.48; cursor:not-allowed; }
-      .le-atmo-dataset-name { font-size:12px; letter-spacing:.02em; }
-      .le-atmo-dataset-detail { color:#a9c6d8; font-size:9px; line-height:1.35; }
-      .le-atmo-dataset-state { margin-top:auto; color:#80d9c1; font-size:7px; font-weight:800; letter-spacing:.1em; }
+      /* Four atmospheric fields: luminous glass tiles with restrained orbital
+         emblems. The decoration is CSS-only; dataset controls and data flow stay intact. */
+      .le-atmo-dataset-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:clamp(7px,1.8vw,11px); }
+      .le-atmo-dataset-option {
+        appearance:none; position:relative; isolation:isolate; overflow:hidden;
+        display:flex; flex-direction:column; align-items:flex-start; gap:5px;
+        min-width:0; min-height:clamp(78px,10dvh,94px);
+        padding:12px 13px; border:1px solid rgba(151,207,239,.25);
+        border-radius:19px; color:#effaff; text-align:left;
+        background:linear-gradient(145deg,rgba(22,52,76,.78),rgba(5,15,29,.84) 68%),
+          radial-gradient(circle at 100% 0%,rgba(100,190,230,.14),transparent 58%);
+        box-shadow:inset 1px 1px 0 rgba(255,255,255,.13),
+          inset -1px -1px 0 rgba(0,0,0,.24),0 9px 24px rgba(0,0,0,.20);
+        backdrop-filter:blur(18px) saturate(135%); -webkit-backdrop-filter:blur(18px) saturate(135%);
+        cursor:pointer; font:inherit; text-align:left;
+        transition:border-color .22s ease,background .22s ease,box-shadow .22s ease,transform .22s ease;
+      }
+      .le-atmo-dataset-option::before {
+        content:""; position:absolute; z-index:-1; width:clamp(36px,8vw,46px);
+        aspect-ratio:1; right:12px; top:10px; border-radius:50%;
+        border:1px solid rgba(255,255,255,.32);
+        background:radial-gradient(circle at 32% 25%,rgba(255,255,255,.92),rgba(255,255,255,.20) 13%,transparent 30%),
+          radial-gradient(circle at 38% 34%,var(--atmo-orb-core),var(--atmo-orb-mid) 48%,var(--atmo-orb-edge) 78%,rgba(4,13,26,.2));
+        box-shadow:inset -5px -7px 12px rgba(0,0,0,.28),inset 2px 2px 7px rgba(255,255,255,.26),
+          0 0 19px var(--atmo-orb-glow),0 0 34px color-mix(in srgb,var(--atmo-orb-glow) 45%,transparent);
+        opacity:.92; pointer-events:none;
+      }
+      .le-atmo-dataset-option::after {
+        content:attr(data-orb-symbol); position:absolute; right:12px; top:10px;
+        width:clamp(36px,8vw,46px); aspect-ratio:1; display:grid; place-items:center;
+        color:rgba(255,255,255,.94); font-size:clamp(17px,4vw,22px); font-weight:500;
+        text-shadow:0 1px 8px rgba(0,0,0,.55); pointer-events:none;
+      }
+      .le-atmo-dataset-option[data-dataset="temperature"] { --atmo-orb-core:#fff1a5; --atmo-orb-mid:#f09b48; --atmo-orb-edge:#a83d35; --atmo-orb-glow:rgba(255,151,75,.44); }
+      .le-atmo-dataset-option[data-dataset="pressure"] { --atmo-orb-core:#d8f5ff; --atmo-orb-mid:#62b9df; --atmo-orb-edge:#315b9a; --atmo-orb-glow:rgba(91,184,231,.42); }
+      .le-atmo-dataset-option[data-dataset="wind"] { --atmo-orb-core:#d8fff0; --atmo-orb-mid:#54d5b4; --atmo-orb-edge:#187c80; --atmo-orb-glow:rgba(65,224,183,.40); }
+      .le-atmo-dataset-option[data-dataset="moisture"] { --atmo-orb-core:#e3e8ff; --atmo-orb-mid:#899bf0; --atmo-orb-edge:#4852a6; --atmo-orb-glow:rgba(133,147,255,.42); }
+      .le-atmo-dataset-option[data-orb-symbol=""]::after { content:""; }
+      .le-atmo-dataset-option:active:not(:disabled) { transform:scale(.975); }
+      .le-atmo-dataset-option:hover:not(:disabled) { border-color:rgba(190,232,255,.58); box-shadow:inset 1px 1px 0 rgba(255,255,255,.18),0 12px 30px rgba(0,0,0,.25),0 0 22px var(--atmo-orb-glow); }
+      .le-atmo-dataset-option.is-selected {
+        border-color:rgba(132,255,224,.88);
+        background:linear-gradient(145deg,rgba(14,75,75,.78),rgba(4,22,34,.94) 72%);
+        box-shadow:inset 0 0 0 1px rgba(130,255,224,.20),inset 1px 1px 0 rgba(255,255,255,.18),
+          0 0 0 1px rgba(91,222,190,.12),0 0 24px rgba(62,218,181,.19);
+      }
+      .le-atmo-dataset-option.is-selected::before { opacity:1; transform:scale(1.06); }
+      .le-atmo-dataset-option:focus-visible { outline:2px solid #9be8ff; outline-offset:3px; }
+      .le-atmo-dataset-option:disabled { opacity:.48; cursor:not-allowed; filter:saturate(.55); }
+      .le-atmo-dataset-name { position:relative; z-index:1; max-width:calc(100% - 48px); font-size:12px; letter-spacing:.02em; font-weight:750; }
+      .le-atmo-dataset-detail { position:relative; z-index:1; max-width:calc(100% - 2px); color:#b5d0df; font-size:9px; line-height:1.35; }
+      .le-atmo-dataset-state { position:relative; z-index:1; margin-top:auto; color:#8be7d0; font-size:7px; font-weight:800; letter-spacing:.1em; }
       .le-atmo-dataset-option.is-unavailable .le-atmo-dataset-state { color:#91a4b4; }
-      @media (max-width:360px) { .le-atmo-dataset-grid { grid-template-columns:1fr; } }
+      @media (max-width:360px) {
+        .le-atmo-dataset-grid { grid-template-columns:1fr; }
+        .le-atmo-dataset-option { min-height:76px; }
+      }
+      @media (prefers-reduced-motion:reduce) {
+        .le-atmo-dataset-option { transition:none; }
+        .le-atmo-dataset-option:active:not(:disabled) { transform:none; }
+      }
       @media (max-height:700px) {
         .le-sfv--atmosphere.le-world-engine-host .le-sfv-body { margin-top:clamp(145px,28vh,230px); }
         .le-sfv--atmosphere .le-sfv-panel { padding-bottom:calc(env(safe-area-inset-bottom) + 112px); }
@@ -634,6 +685,8 @@ function installStyles() {
       const button = runtime.el('button', 'le-atmo-dataset-option');
       button.type = 'button';
       button.dataset.dataset = item.id;
+      button.dataset.orbSymbol = ({ temperature: '°', pressure: '◉', wind: '↗', moisture: '≈' })[item.id] || '';
+      button.setAttribute('aria-label', `${item.label}. ${item.detail}. Load verified NOAA field.`);
       const name = runtime.el('strong', 'le-atmo-dataset-name', item.label);
       const description = runtime.el('span', 'le-atmo-dataset-detail', item.detail);
       const state = runtime.el('span', 'le-atmo-dataset-state', 'LOAD VERIFIED FIELD');
