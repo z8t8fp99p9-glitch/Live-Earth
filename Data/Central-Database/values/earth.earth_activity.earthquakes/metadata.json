@@ -5,13 +5,13 @@
   "dataset_id": "earth.earth_activity.earthquakes",
   "feed_window": "past_24_hours",
   "format": "records",
-  "observed_at_utc": "2026-11-19T10:27:39.563000Z",
-  "record_count": 172,
+  "observed_at_utc": "2026-11-19T13:09:41.190000Z",
+  "record_count": 177,
   "source_id": "usgs_comcat",
   "source_name": "USGS all-day earthquake GeoJSON event feed",
   "source_url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson",
-  "updated_at_utc": "2026-11-19T10:48:45.952436Z",
-  "value_bytes": 109754,
+  "updated_at_utc": "2026-11-19T13:13:27.385845Z",
+  "value_bytes": 113217,
   "value_file": "records.jsonl",
-  "value_sha256": "d04ec5ee9a009ed0c58d1392a10df3653f74d5013de125ddde12f6d7cd46c4fc"
+  "value_sha256": "472b47105d02df3bb59e03190d8c200e99b9e0f5202a0834a445d7cc8f684087"
 }
