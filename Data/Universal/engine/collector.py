@@ -8,7 +8,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .registry import load_registry, enabled_jobs
-from .storage import write_run, store_raw, store_normalized, cleanup_dataset_storage
+from .storage import (
+    write_run,
+    store_raw,
+    store_normalized,
+    compact_legacy_database,
+    remove_legacy_dataset_files,
+)
 from .publisher import publish_grid_snapshot
 
 ADAPTER_PACKAGE = "Data.Universal.engine.adapters"
@@ -54,6 +60,9 @@ def _save_registry_status(registry, statuses):
 
 def run_all():
     registry = load_registry()
+    compacted = compact_legacy_database()
+    if compacted:
+        print("UNIVERSAL_DATABASE_COMPACTED datasets=" + ",".join(sorted(compacted)))
     jobs = enabled_jobs(registry)
     print(
         f"UNIVERSAL_COLLECTOR registered={len(registry['datasets'])} "
@@ -112,10 +121,6 @@ def run_all():
                 dataset_id, retrieval_id, result["raw_payload"], raw_metadata
             )
 
-            # New retrieval is fully stored and published. Only now remove
-            # previous raw/normalized snapshots for this same dataset.
-            cleanup_dataset_storage(dataset_id, retrieval_id)
-
             write_run(retrieval_id, {
                 "dataset_id": dataset_id,
                 "status": "success",
@@ -125,6 +130,7 @@ def run_all():
                 "data_kind": raw_metadata.get("data_kind"),
                 "published_path": published_path,
             })
+            remove_legacy_dataset_files(dataset_id)
 
             successes.append(dataset_id)
             statuses[dataset_id] = "collector_configured_success"

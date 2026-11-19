@@ -15,15 +15,15 @@ Collect by **dataset identity**, store centrally, and assign datasets to Worlds 
 This is the **architecture foundation**, not a claim that all 56 sources are connected. Only six datasets currently have collector code in the existing project, and those sources still need to be adapted and verified against the new adapter contract. The other 50 remain `source_not_configured`. No source is enabled by this package. Existing live collectors, workflows, World controllers and visual files are intentionally untouched in this phase.
 
 ## Database boundary
-The logical central database contract is defined here independently of its physical backend. This package supplies a repository-backed development store with separate immutable raw payloads, normalized records, metadata and run logs. It is not a hosted database service and does not replace the existing private archive arrangement. Before production data volume is moved, select and configure the production backend and retention policy. Do not store secrets in this repository.
+The logical central database contract is defined here independently of its physical backend. This package supplies a repository-backed latest-value store with one current raw payload, metadata file and normalized record file per dataset, plus small collection run logs. New data replaces the current dataset files; timestamped historical payload snapshots are not retained. It is not a hosted database service. Do not store secrets in this repository.
 
 ## Storage layout
-`Data/Central-Database/raw/<dataset_id>/<retrieval_id>/source.bin`
-`Data/Central-Database/normalized/<dataset_id>/<date>/<retrieval_id>.jsonl`
-`Data/Central-Database/metadata/<dataset_id>.json`
+`Data/Central-Database/raw/<dataset_id>/source.bin`
+`Data/Central-Database/raw/<dataset_id>/metadata.json`
+`Data/Central-Database/normalized/<dataset_id>/latest.jsonl`
 `Data/Central-Database/runs/<retrieval_id>.json`
 
-Raw payloads are write-once by retrieval ID. Normalized observations preserve both provider observation time and our retrieval time. Failed jobs do not overwrite previous successful records.
+Each dataset has one current raw payload and one current normalized record file. Grid datasets retain their compact binary grid payload and full grid metadata; sparse samples and event feeds retain their native observation rows. Files are replaced atomically. The existing run records preserve lightweight collection diagnostics, not historical dataset snapshots. On collector startup, verified legacy snapshots are promoted to the latest-value layout and old copies are removed; unverified data is left untouched.
 
 ## Migration sequence
 1. Review this registry and mapping.

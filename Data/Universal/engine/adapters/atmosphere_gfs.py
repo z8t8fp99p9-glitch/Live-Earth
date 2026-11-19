@@ -55,16 +55,15 @@ def is_due(dataset):
  cycle=latest_cycle()
  if cycle is None: return True
  dataset_id=dataset["dataset_id"]
- folder=DB_ROOT/"normalized"/dataset_id/cycle.strftime("%Y-%m-%d")
- if not folder.exists(): return True
+ latest=DB_ROOT/"normalized"/dataset_id/"latest.jsonl"
+ if not latest.is_file(): return True
  target=_iso(cycle)
- for file in folder.glob("*.jsonl"):
-  try:
-   for line in file.read_text(encoding="utf-8").splitlines():
-    if line.strip() and json.loads(line).get("observed_at")==target:
-     return False
-  except (OSError,ValueError,json.JSONDecodeError):
-   continue
+ try:
+  for line in latest.read_text(encoding="utf-8").splitlines():
+   if line.strip() and json.loads(line).get("observed_at")==target:
+    return False
+ except (OSError,ValueError,json.JSONDecodeError):
+  return True
  return True
 
 def _request(variable,level,cycle):

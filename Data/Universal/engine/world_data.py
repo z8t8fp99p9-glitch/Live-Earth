@@ -17,15 +17,22 @@ def datasets_for_world(world_id,include_uncollected=False):
             out.append({**d,"assignment":a})
     return out
 def latest_dataset_records(dataset_id,limit=1000):
-    """Read normalized records from newest date partitions, newest retrieval first."""
-    root=ROOT/"normalized"/dataset_id
-    if not root.exists():return []
-    files=sorted(root.glob("*/*.jsonl"),reverse=True); rows=[]
-    for file in files:
-        for line in file.read_text(encoding="utf-8").splitlines():
-            if line.strip():rows.append(json.loads(line))
-            if len(rows)>=limit:return rows
+    """Read the one current normalized file for a dataset."""
+    dataset_id = str(dataset_id)
+    if not dataset_id or any(part in (".", "..") for part in dataset_id.split("/")) or "\\" in dataset_id:
+        raise ValueError(f"Unsafe dataset_id: {dataset_id!r}")
+    latest = ROOT / "normalized" / dataset_id / "latest.jsonl"
+    if not latest.is_file():
+        return []
+    rows=[]
+    for line in latest.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            rows.append(json.loads(line))
+            if len(rows)>=limit:
+                break
     return rows
+
+
 def world_snapshot(world_id,limit_per_dataset=1000):
     """World Controller data contract: assigned datasets plus their central records."""
     result=[]

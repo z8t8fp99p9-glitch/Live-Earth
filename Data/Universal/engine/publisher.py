@@ -19,8 +19,8 @@ def publish_grid_snapshot(dataset_id,retrieval_id,payload,metadata):
  if metadata["coordinate_order"]!="latitude-longitude" or metadata["row_order"] not in ("north-to-south","south-to-north") or metadata["longitude_convention"]!="0..360":
   raise ValueError("Atmosphere grid coordinate convention is unsupported")
  folder=ROOT/"published"/"atmosphere"; folder.mkdir(parents=True,exist_ok=True)
- path_data=f"../../raw/{dataset_id}/{retrieval_id}/source.bin"
- path_meta=f"../../raw/{dataset_id}/{retrieval_id}/metadata.json"
+ path_data=f"../../raw/{dataset_id}/source.bin"
+ path_meta=f"../../raw/{dataset_id}/metadata.json"
  manifest_path=folder/"manifest.json"
  if manifest_path.exists():
   manifest=json.loads(manifest_path.read_text(encoding="utf-8"))
