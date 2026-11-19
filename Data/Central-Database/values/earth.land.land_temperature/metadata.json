@@ -1,11 +1,12 @@
 {
+  "cell_count": null,
   "community": "AG",
   "coverage_mode": "six_sparse_regional_point_samples",
   "data_kind": "point_samples",
   "database_schema_version": 1,
   "dataset_id": "earth.land.land_temperature",
-  "format": "jsonl",
-  "latest_observed_at_utc": "2026-11-15T00:00:00Z",
+  "format": "records",
+  "observed_at_utc": "2026-11-16T00:00:00Z",
   "parameter": "T2M",
   "record_count": 6,
   "request_urls": {
@@ -51,8 +52,8 @@
   "source_id": "nasa_power_daily",
   "source_name": "NASA POWER daily 2m air temperature at six regional sample points",
   "units": "degree_C",
-  "updated_at_utc": "2026-11-19T06:38:58.317362Z",
-  "value_bytes": 3208,
+  "updated_at_utc": "2026-11-19T06:55:08.780632Z",
+  "value_bytes": 3207,
   "value_file": "records.jsonl",
-  "value_sha256": "a29ac014123d3f85ccab99531d35beae89338be5d611104462d1e150b8ec9a29"
+  "value_sha256": "bb5fe09435474ce311972bbe7eb6ffc11e64d0b83f0555939ec6f0ab39ea37e1"
 }

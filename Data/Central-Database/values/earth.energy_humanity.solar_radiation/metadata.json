@@ -1,11 +1,12 @@
 {
+  "cell_count": null,
   "community": "RE",
   "coverage_mode": "six_sparse_regional_point_samples",
   "data_kind": "point_samples",
   "database_schema_version": 1,
   "dataset_id": "earth.energy_humanity.solar_radiation",
-  "format": "jsonl",
-  "latest_observed_at_utc": "2026-11-14T00:00:00Z",
+  "format": "records",
+  "observed_at_utc": "2026-11-14T00:00:00Z",
   "parameter": "ALLSKY_SFC_SW_DWN",
   "record_count": 6,
   "request_urls": {
@@ -51,8 +52,8 @@
   "source_id": "nasa_power_daily",
   "source_name": "NASA POWER daily all-sky surface shortwave radiation at six regional sample points",
   "units": "kWh/m^2/day",
-  "updated_at_utc": "2026-11-19T06:38:58.314942Z",
+  "updated_at_utc": "2026-11-19T06:55:14.205959Z",
   "value_bytes": 3375,
   "value_file": "records.jsonl",
-  "value_sha256": "954bf6aa72d86bbdf5a8fb8ea5d8f7b926b80181b7713f7088837ac3f104350d"
+  "value_sha256": "f0b43dc4c169becf81e11cc1c17c4b27b855867561cc01af7760958c61c6e22f"
 }

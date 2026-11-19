@@ -1,16 +1,17 @@
 {
+  "cell_count": null,
   "data_kind": "events",
   "database_schema_version": 1,
   "dataset_id": "earth.earth_activity.earthquakes",
   "feed_window": "past_24_hours",
-  "format": "jsonl",
-  "latest_observed_at_utc": "2026-11-19T02:49:21.230000Z",
-  "record_count": 175,
+  "format": "records",
+  "observed_at_utc": "2026-11-19T06:51:22.910000Z",
+  "record_count": 161,
   "source_id": "usgs_comcat",
   "source_name": "USGS all-day earthquake GeoJSON event feed",
   "source_url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson",
-  "updated_at_utc": "2026-11-19T06:38:58.310950Z",
-  "value_bytes": 111474,
+  "updated_at_utc": "2026-11-19T06:55:11.321455Z",
+  "value_bytes": 102634,
   "value_file": "records.jsonl",
-  "value_sha256": "bf4178d0b836753dc2915e101217467e2bccc3328e6cbc8a11ab86d35d67bd47"
+  "value_sha256": "ecdbbfe5076471c3b1c42cb34bd534cb88b37a4df3bcdda40a80582f7239f67a"
 }
