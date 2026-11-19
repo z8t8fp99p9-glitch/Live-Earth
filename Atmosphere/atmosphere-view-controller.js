@@ -1,6 +1,6 @@
 /* LIVE // EARTH — Atmosphere View Controller.
    First real consumer of the shared Universal Grid System and GPU grid skin.
-   Reads only the verified NOAA GFS snapshot; owns its layer only while open.
+   Reads the current NOAA GFS values; owns its layer only while open.
 */
 (() => {
   'use strict';
@@ -12,7 +12,7 @@
     return;
   }
   const ATMOSPHERE_VIEW = { id: 'atmosphere', title: 'Atmosphere', symbol: '◉' };
-  const MANIFEST_URL = 'https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/Data/Central-Database/published/atmosphere/manifest.json';
+  const VALUES_BASE_URL = 'https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/Data/Central-Database/values/';
   // Temperature uses an expanded cold-to-hot scale. The original deep blue
   // remains anchored at -60 C; values below it progress into midnight blues.
   // The original green and gold identity is retained; values above 45 C deepen
@@ -143,7 +143,7 @@
     return window[key];
   }
   async function loadSharedGridTools() {
-    await loadScript(SCRIPT_PATHS[0], () => !!window.LiveEarthUniversalGridSystem?.loadSnapshot);
+    await loadScript(SCRIPT_PATHS[0], () => !!window.LiveEarthUniversalGridSystem?.loadCurrentGrid);
     await loadScript(SCRIPT_PATHS[1], () => !!window.LiveEarthGpuGridSkin?.create);
   }
   // Match Moon and Sun: display each absolute timestamp in the device's
@@ -644,12 +644,12 @@ function installStyles() {
     selector.appendChild(datasetGrid);
     view.body.appendChild(selector);
 
-    const details = runtime.card('NOAA · Atmospheric field', 'Select a dataset to load its latest verified GFS grid.');
+    const details = runtime.card('NOAA · Atmospheric field', 'Select a dataset to load its current verified GFS grid values.');
     details.hidden = true;
     const range = runtime.el('div', 'le-atmo-range');
     const rangeValue = runtime.el('strong', '', '—');
     range.appendChild(rangeValue);
-    const rangeUnit = runtime.el('span', '', 'Verified global range');
+    const rangeUnit = runtime.el('span', '', 'Current global range');
     range.appendChild(rangeUnit);
     details.appendChild(range);
     const legend = runtime.el('div', 'le-atmo-legend');
@@ -798,19 +798,19 @@ function installStyles() {
       setSelectedDataset(datasetKey);
       details.hidden = false; source.hidden = false;
       details.querySelector('h2').textContent = config.title;
-      details.querySelector('p').textContent = `Verified global ${config.displayUnits} field · NOAA GFS 0.25°`;
+      details.querySelector('p').textContent = `Current global ${config.displayUnits} field · NOAA GFS 0.25°`;
       source.textContent = config.source + ' · model analysis, not direct instrument readings';
       const controller = new AbortController();
       dataRequest = controller;
       const button = datasetButtons.get(datasetKey);
       button.disabled = true;
       const label = datasetOptions.find(item => item.id === datasetKey).label;
-      runtime.setStatus(status, `Loading and verifying NOAA ${label.toLowerCase()} grids…`, 'neutral');
+      runtime.setStatus(status, `Loading and verifying current NOAA ${label.toLowerCase()} grids…`, 'neutral');
       try {
         await loadSharedGridTools();
         if (closed || controller.signal.aborted || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
-        const grids = await Promise.all(config.ids.map(datasetId => window.LiveEarthUniversalGridSystem.loadSnapshot({
-          manifestUrl: MANIFEST_URL, datasetId, signal: controller.signal
+        const grids = await Promise.all(config.ids.map(datasetId => window.LiveEarthUniversalGridSystem.loadCurrentGrid({
+          baseUrl: VALUES_BASE_URL, datasetId, signal: controller.signal
         })));
         if (closed || controller.signal.aborted || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
         const grid = grids[0];
@@ -821,7 +821,7 @@ function installStyles() {
         if (datasetKey === 'wind' && grids[1].units !== 'degree') throw new Error(`Expected wind direction in degrees, received ${grids[1].units}.`);
         const bounds = updateLegend(grid, config);
         rangeValue.textContent = `${formatFieldValue(grid.min)} — ${formatFieldValue(grid.max)}`;
-        rangeUnit.textContent = `Verified global range · ${config.displayUnits}`;
+        rangeUnit.textContent = `Current global range · ${config.displayUnits}`;
         metric.replaceChildren();
         const makeMetric = (labelText, value, unit = '') => {
           const item = runtime.el('div', 'le-sfv-metric');

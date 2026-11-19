@@ -3,19 +3,10 @@ from __future__ import annotations
 import importlib
 import json
 import os
-import uuid
-from datetime import datetime, timezone
 from pathlib import Path
 
 from .registry import load_registry, enabled_jobs
-from .storage import (
-    write_run,
-    store_raw,
-    store_normalized,
-    compact_legacy_database,
-    remove_legacy_dataset_files,
-)
-from .publisher import publish_grid_snapshot
+from .storage import store_current_values
 
 ADAPTER_PACKAGE = "Data.Universal.engine.adapters"
 REGISTRY_PATH = Path(__file__).resolve().parents[1] / "registry" / "datasets.json"
@@ -34,10 +25,10 @@ def _write_step_summary(successes, skipped, failures):
 
     content = (
         "# LIVE // EARTH — Universal collection report\n\n"
-        f"- Successful: **{len(successes)}**\n"
+        f"- Updated: **{len(successes)}**\n"
         f"- Skipped (already current): **{len(skipped)}**\n"
         f"- Failed: **{len(failures)}**\n\n"
-        + section("Successful datasets", successes) + "\n"
+        + section("Updated datasets", successes) + "\n"
         + section("Skipped datasets", skipped) + "\n"
         + section("Failed datasets", failures)
     )
@@ -46,7 +37,7 @@ def _write_step_summary(successes, skipped, failures):
 
 
 def _save_registry_status(registry, statuses):
-    """Persist per-dataset health after all independent jobs have been attempted."""
+    """Persist per-dataset health without creating a history of collection runs."""
     by_id = {item["dataset_id"]: item for item in registry["datasets"]}
     for dataset_id, status in statuses.items():
         item = by_id.get(dataset_id)
@@ -60,9 +51,6 @@ def _save_registry_status(registry, statuses):
 
 def run_all():
     registry = load_registry()
-    compacted = compact_legacy_database()
-    if compacted:
-        print("UNIVERSAL_DATABASE_COMPACTED datasets=" + ",".join(sorted(compacted)))
     jobs = enabled_jobs(registry)
     print(
         f"UNIVERSAL_COLLECTOR registered={len(registry['datasets'])} "
@@ -74,11 +62,6 @@ def run_all():
 
     for dataset in jobs:
         dataset_id = dataset["dataset_id"]
-        retrieval_id = (
-            datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
-            + "-" + uuid.uuid4().hex[:8]
-        )
-
         try:
             adapter_id = dataset["collection"]["adapter_id"]
             module = importlib.import_module(f"{ADAPTER_PACKAGE}.{adapter_id}")
@@ -88,69 +71,53 @@ def run_all():
                 skipped.append(dataset_id)
                 print(
                     f"DATASET_RESULT {dataset_id}=SKIPPED "
-                    "reason=latest_successful_snapshot_already_current"
+                    "reason=current_values_already_match_source_cycle"
                 )
                 continue
 
             result = module.collect(dataset)
-            if (
-                not isinstance(result, dict)
-                or not isinstance(result.get("raw_payload"), bytes)
-                or not result["raw_payload"]
-            ):
-                raise ValueError("Adapter must return non-empty raw_payload bytes")
-
+            if not isinstance(result, dict):
+                raise ValueError("Adapter must return a result object")
+            value_payload = result.get("value_payload")
+            metadata = result.get("metadata", {})
             rows = result.get("observations")
+            if not isinstance(metadata, dict):
+                raise ValueError("Adapter metadata must be an object")
+            data_kind = metadata.get("data_kind")
+            if not data_kind and metadata.get("world") == "atmosphere":
+                data_kind = "grid"
+            if not data_kind and str(metadata.get("format", "")).lower() == "netcdf":
+                data_kind = "grid"
+            if data_kind == "grid" and (not isinstance(value_payload, bytes) or not value_payload):
+                raise ValueError("Grid adapter must return its current encoded value field")
             if not isinstance(rows, list) or not rows:
                 raise ValueError("Adapter must return non-empty typed observations")
-            raw_metadata = result.get("raw_metadata", {})
 
-            digest = store_raw(
-                dataset_id, retrieval_id, result["raw_payload"], raw_metadata
-            )
-
+            # Validate provenance and stable dataset identity before one atomic value write.
             for row in rows:
+                if not isinstance(row, dict) or row.get("dataset_id") != dataset_id:
+                    raise ValueError("Adapter returned an observation for the wrong dataset")
                 provenance = row.setdefault("provenance", {})
-                provenance["raw_sha256"] = digest
-                provenance["retrieval_id"] = retrieval_id
                 if not provenance.get("source_url"):
-                    raise ValueError("Observation provenance.source_url is required")
+                    source_url = metadata.get("source_url")
+                    if not source_url:
+                        raise ValueError("Observation provenance.source_url is required")
+                    provenance["source_url"] = source_url
 
-            locations = store_normalized(dataset_id, retrieval_id, rows)
-            published_path = publish_grid_snapshot(
-                dataset_id, retrieval_id, result["raw_payload"], raw_metadata
-            )
-
-            write_run(retrieval_id, {
-                "dataset_id": dataset_id,
-                "status": "success",
-                "normalized_paths": locations,
-                "record_count": len(rows),
-                "raw_sha256": digest,
-                "data_kind": raw_metadata.get("data_kind"),
-                "published_path": published_path,
-            })
-            remove_legacy_dataset_files(dataset_id)
-
+            stored = store_current_values(dataset_id, value_payload, metadata, rows)
             successes.append(dataset_id)
             statuses[dataset_id] = "collector_configured_success"
+            quantity = (
+                f"cells={stored['cell_count']}" if stored.get("cell_count") is not None
+                else f"records={stored['record_count']}"
+            )
             print(
-                f"DATASET_RESULT {dataset_id}=SUCCESS records={len(rows)}"
-                + (f" published={published_path}" if published_path else "")
+                f"DATASET_RESULT {dataset_id}=SUCCESS "
+                f"kind={stored['data_kind']} {quantity} "
+                f"file={stored['value_file']}"
             )
 
         except Exception as exc:
-            try:
-                write_run(retrieval_id, {
-                    "dataset_id": dataset_id,
-                    "status": "failed",
-                    "error": str(exc),
-                })
-            except Exception as run_error:
-                print(
-                    f"DATASET_RUN_RECORD_ERROR {dataset_id}: {run_error}"
-                )
-
             failures.append(dataset_id)
             statuses[dataset_id] = "collector_configured_failed"
             print(f"DATASET_RESULT {dataset_id}=FAILED: {exc}")
@@ -159,11 +126,11 @@ def run_all():
     _write_step_summary(successes, skipped, failures)
 
     print(
-        f"COLLECTION_SUMMARY success={len(successes)} "
+        f"COLLECTION_SUMMARY updated={len(successes)} "
         f"skipped={len(skipped)} failed={len(failures)}"
     )
 
-    # Deliberately fail only after every enabled dataset has been attempted.
+    # Every enabled dataset is attempted before the workflow reports failure.
     if failures:
         raise SystemExit(
             "Independent dataset jobs failed: " + ", ".join(failures)

@@ -4,8 +4,8 @@
 
 The numerical-data path is split into reusable stages:
 
-1. Provider snapshot manifest and metadata identify the dataset, grid geometry, units, valid time and checksum.
-2. `EarthEngine/Graphics/universal-grid-system.js` fetches the snapshot, validates its metadata, decompresses the payload, verifies SHA-256 and normalizes the values into a flat typed array plus a common geographic grid definition.
+1. The current dataset metadata identifies the grid geometry, units, valid time and checksums.
+2. `EarthEngine/Graphics/universal-grid-system.js` fetches the current value field, validates its metadata, decompresses the payload, verifies SHA-256 and normalizes the values into a flat typed array plus a common geographic grid definition.
 3. A reusable visual skin consumes that normalized grid. `earth-grid-gpu-skin.js` uploads it as one compact RGBA texture and shades one sphere mesh. It does not create one JavaScript mesh per cell.
 4. The world controller owns only its registered layer and view-scoped cleanup. The existing shared Earth and Stacks layer lifecycle remain in control.
 
@@ -21,9 +21,9 @@ The Universal Grid System is data-format infrastructure, not a per-dataset rende
 - Units: degrees Celsius
 - Grid: 1440 × 721, latitude/longitude, south-to-north rows, 0.25° spacing, 0..360° longitude
 - Encoding: little-endian signed int16; stored integer divided by 100
-- Integrity: SHA-256 of the uncompressed value bytes must match the manifest before any values are displayed
+- Integrity: SHA-256 of the uncompressed value bytes must match the current-value metadata before any values are displayed
 
-This is a GFS model-analysis field, not direct thermometer observations. The interface displays the product's valid time separately from the manifest publication time.
+This is a GFS model-analysis field, not direct thermometer observations. The interface displays the product's valid time separately from the database value-update time.
 
 ## Rendering
 
@@ -32,7 +32,7 @@ The GPU skin maps normalized values to a texture and samples it on a UV sphere p
 ## Safety and limitations
 
 - A failed request, unsupported encoding, invalid grid, missing Web Crypto/gzip support or checksum mismatch prevents display; no synthetic values are substituted.
-- The browser fetches the published repository snapshot over HTTPS. Raw GitHub CORS, service-worker caching and iOS memory/performance still require validation on the deployed app.
+- The browser fetches the current dataset values from the repository over HTTPS. Raw GitHub CORS, service-worker caching and iOS memory/performance still require validation on the deployed app.
 - This phase connects only the Atmosphere temperature dataset. It does not claim that all 56 catalog signals or all six worlds are connected.
 - The existing cell-by-cell grid skin remains available for small grids, but must not be used for this full-resolution NOAA grid.
 - Home, Earth Engine, Moon, Sun, Location, existing Weather/Clouds/Elevation/Traffic/Earthquakes and other numerical-world controllers are not intentionally modified by this patch.

@@ -21,7 +21,7 @@
 
   function loadSharedGridTools() {
     const scripts = [
-      ['./EarthEngine/Graphics/universal-grid-system.js', () => !!window.LiveEarthUniversalGridSystem?.loadSnapshot],
+      ['./EarthEngine/Graphics/universal-grid-system.js', () => !!window.LiveEarthUniversalGridSystem?.loadCurrentGrid],
       ['./EarthEngine/Graphics/earth-grid-gpu-skin.js', () => !!window.LiveEarthGpuGridSkin?.create]
     ];
     return scripts.reduce((chain, [path, ready]) => chain.then(() => {

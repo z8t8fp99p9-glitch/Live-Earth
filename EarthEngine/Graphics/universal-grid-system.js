@@ -49,7 +49,7 @@
     return new Uint8Array(await response.arrayBuffer());
   }
   async function sha256Hex(bytes) {
-    if (!globalThis.crypto?.subtle) throw new Error('This browser cannot verify the scientific snapshot checksum.');
+    if (!globalThis.crypto?.subtle) throw new Error('This browser cannot verify the current grid value checksum.');
     const digest = await crypto.subtle.digest('SHA-256', bytes);
     return [...new Uint8Array(digest)].map(v => v.toString(16).padStart(2, '0')).join('');
   }
@@ -66,37 +66,44 @@
     for (let i = 0; i < expectedCount; i++) values[i] = view.getInt16(i * 2, true) / scaleFactor;
     return values;
   }
-  async function loadSnapshot(options = {}) {
-    const manifestUrl = String(options.manifestUrl || '');
-    const snapshotId = String(options.datasetId || '');
-    if (!/^https:\/\//i.test(manifestUrl) || !snapshotId) throw new TypeError('A secure manifest URL and dataset id are required.');
+  async function loadCurrentGrid(options = {}) {
+    const baseUrl = String(options.baseUrl || '');
+    const datasetId = String(options.datasetId || '');
+    if (!/^https:\/\//i.test(baseUrl) || !datasetId || /[\/\\]/.test(datasetId) || datasetId.split('.').some(part => part === '.' || part === '..')) {
+      throw new TypeError('A secure current-values base URL and dataset id are required.');
+    }
     const controller = options.signal ? null : new AbortController();
     const signal = options.signal || controller.signal;
-    const manifestBytes = await fetchBytes(manifestUrl, signal);
-    let manifest;
-    try { manifest = JSON.parse(new TextDecoder().decode(manifestBytes)); }
-    catch (_) { throw new Error('The scientific manifest is not valid JSON.'); }
-    if (!Array.isArray(manifest.snapshots)) throw new TypeError('The scientific manifest has no snapshots array.');
-    const snapshot = manifest.snapshots.find(item => String(item.dataset_id) === snapshotId);
-    if (!snapshot) throw new Error(`Dataset ${snapshotId} is not listed in the current manifest.`);
-    if (typeof snapshot.data !== 'string' || typeof snapshot.metadata !== 'string' || !/^[a-f0-9]{64}$/i.test(snapshot.sha256_uncompressed_values || '')) throw new TypeError('The snapshot is missing its data path, metadata path or SHA-256 checksum.');
-    const base = new URL('.', manifestUrl);
-    const dataUrl = new URL(snapshot.data, base).href;
-    const metadataUrl = new URL(snapshot.metadata, base).href;
-    const [metadataBytes, compressedBytes] = await Promise.all([fetchBytes(metadataUrl, signal), fetchBytes(dataUrl, signal)]);
-    let rawMetadata;
-    try { rawMetadata = JSON.parse(new TextDecoder().decode(metadataBytes)); }
-    catch (_) { throw new Error('The provider grid metadata is not valid JSON.'); }
-    const definition = validateMetadata(rawMetadata);
-    const encoding = String(rawMetadata.encoding || '').toLowerCase();
+    const folderUrl = new URL(`${encodeURIComponent(datasetId)}/`, baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`);
+    const metadataUrl = new URL('metadata.json', folderUrl).href;
+    const metadataBytes = await fetchBytes(metadataUrl, signal);
+    let metadata;
+    try { metadata = JSON.parse(new TextDecoder().decode(metadataBytes)); }
+    catch (_) { throw new Error('The current dataset metadata is not valid JSON.'); }
+    if (metadata.dataset_id !== datasetId || metadata.data_kind !== 'grid' || metadata.value_file !== 'values.bin') {
+      throw new TypeError('The current dataset entry is not a supported stored grid.');
+    }
+    if (!/^[a-f0-9]{64}$/i.test(metadata.value_sha256 || '') || !/^[a-f0-9]{64}$/i.test(metadata.sha256_uncompressed_values || '')) {
+      throw new TypeError('Current grid metadata is missing its value checksums.');
+    }
+    const definition = validateMetadata(metadata);
+    const encoding = String(metadata.encoding || '').toLowerCase();
     const encodedScale = encoding.match(/\/\s*(\d+(?:\.\d+)?)/);
-    const scaleFactor = Number(rawMetadata.scale_factor ?? rawMetadata.scaleFactor ?? (encodedScale ? encodedScale[1] : NaN));
+    const scaleFactor = Number(metadata.scale_factor ?? metadata.scaleFactor ?? (encodedScale ? encodedScale[1] : NaN));
     if (!(encoding.includes('int16') && encoding.includes('little-endian') && encodedScale && Number.isFinite(scaleFactor) && scaleFactor > 0 && Math.abs(Number(encodedScale[1]) - scaleFactor) < 1e-9)) {
-      throw new Error(`No decoder is approved for the declared encoding: ${rawMetadata.encoding || 'missing'}.`);
+      throw new Error(`No decoder is approved for the declared grid encoding: ${metadata.encoding || 'missing'}.`);
+    }
+    const valuesUrl = new URL('values.bin', folderUrl).href;
+    const compressedBytes = await fetchBytes(valuesUrl, signal);
+    const storedHash = await sha256Hex(compressedBytes);
+    if (storedHash.toLowerCase() !== metadata.value_sha256.toLowerCase()) {
+      throw new Error('Current grid values failed their stored-file checksum.');
     }
     const uncompressed = await gunzip(compressedBytes);
     const actualHash = await sha256Hex(uncompressed);
-    if (actualHash.toLowerCase() !== snapshot.sha256_uncompressed_values.toLowerCase()) throw new Error('Scientific snapshot checksum mismatch. The data was not displayed.');
+    if (actualHash.toLowerCase() !== metadata.sha256_uncompressed_values.toLowerCase()) {
+      throw new Error('Current grid values failed their decoded-value checksum. The data was not displayed.');
+    }
     const values = decodeInt16Scaled(uncompressed, definition.width * definition.height, scaleFactor);
     let min = Infinity, max = -Infinity, validCount = 0;
     for (let i = 0; i < values.length; i++) {
@@ -106,20 +113,20 @@
       if (value > max) max = value;
       validCount++;
     }
-    if (!validCount) throw new Error('The verified grid contains no valid numeric cells.');
+    if (!validCount) throw new Error('The verified current grid contains no valid numeric cells.');
     return Object.freeze({
-      datasetId: snapshotId, dataset: snapshot.dataset || snapshotId,
-      gridId: snapshot.grid_id || null, definition, values,
+      datasetId, dataset: metadata.dataset || datasetId,
+      gridId: metadata.grid_id || null, definition, values,
       min, max, validCount,
       units: definition.units || 'unknown',
-      observedAt: snapshot.valid_time_utc || null,
-      retrievedAt: manifest.updated_at_utc || null,
+      observedAt: metadata.valid_time_utc || metadata.source_cycle_utc || null,
+      retrievedAt: metadata.updated_at_utc || metadata.retrieved_at_utc || null,
       provider: definition.provider, product: definition.product,
       qualityStatus: definition.qualityStatus,
-      checksum: actualHash, sourceUrl: metadataUrl
+      checksum: actualHash, sourceUrl: metadata.source_url || metadata.source_urls?.[0] || metadataUrl
     });
   }
 
-  window.LiveEarthUniversalGridSystem = Object.freeze({ version: VERSION, validateMetadata, loadSnapshot });
+  window.LiveEarthUniversalGridSystem = Object.freeze({ version: VERSION, validateMetadata, loadCurrentGrid });
   window.dispatchEvent?.(new CustomEvent('live-earth-universal-grid-system-ready', { detail: { version: VERSION } }));
 })();

@@ -1,28 +1,21 @@
-# Dataset-first migration plan
+# Dataset-first current-value migration
 
-## Current state verified from repository files
-- Six numerical-world registries contain 56 catalog entries.
-- The application also has a separate Atmospheric Composition World. It is included in the World registry but has no numerical dataset assignments yet.
-- Existing collector scripts are organized around the six numerical Worlds and write world-specific outputs.
-- Existing collectors and workflows are preserved by this package.
+## Model
+- Dataset identity is globally stable and independent of World assignment.
+- World membership is represented by the many-to-many assignment registry.
+- Each enabled adapter returns current values for one dataset.
+- The collector validates a result and upserts it into the fixed dataset value store.
+- Current values replace prior values at the same stable location/key. No per-retrieval collection is retained.
 
-## New state
-- Global dataset IDs do not encode a World assignment.
-- Legacy IDs are retained on every migrated dataset entry.
-- World membership is represented only in `world-dataset-assignments.json`.
-- Collector jobs are discovered from `collection.enabled` and `adapter_id`, not a hardcoded World list.
-- Every dataset job succeeds or fails independently; one failure does not erase another dataset's successful output.
+## Value identities
+- Global grids: dataset ID plus the fixed grid coordinate/cell layout; the current encoded value matrix is replaced when its valid time advances.
+- Sparse samples: stable sample tile or coordinate key.
+- Events: source event ID; the current feed replaces the active event set.
 
 ## Rollout guardrails
-1. Do not switch the current scheduled workflow to this runner yet.
-2. Implement an adapter for one dataset at a time, starting with the six existing collector-backed datasets.
-3. Compare raw payload hashes, timestamps, units, record counts and coverage metadata against the existing collectors.
-4. Enable a dataset only after its adapter passes source validation and its storage path is verified.
-5. Migrate app readers to the central database contract before retiring old world folders.
-6. Preserve rollback until the new path has completed successful scheduled runs.
-
-## Not included
-- No credentials, private-repository token, hosted database provisioning or workflow secret changes.
-- No edits to `.github/workflows`.
-- No deletion or relocation of existing world snapshots or collector files.
-- No claim that 56 datasets are currently live. Fifty remain unconfigured in the current catalog; the six configured entries are pending first successful publication in their existing system.
+1. Do not enable an unconfigured source.
+2. Validate dimensions, coordinate conventions, units, value encoding and checksums before writing a grid.
+3. Validate stable record keys and provenance before updating point/event values.
+4. Write new values atomically; a failed collection must not damage the previous committed value set.
+5. Keep application readers aligned to the same stable value contract.
+6. Do not reintroduce retrieval directories, raw payload archives, dated normalized files, run histories or cleanup passes.

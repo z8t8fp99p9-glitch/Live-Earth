@@ -51,20 +51,18 @@ def _cycle():
  return _ACTIVE_CYCLE
 
 def is_due(dataset):
- """Avoid re-collecting the same six-hourly analysis on hourly workflow checks."""
+ """Avoid re-collecting the same six-hourly analysis when current values match."""
  cycle=latest_cycle()
  if cycle is None: return True
  dataset_id=dataset["dataset_id"]
- latest=DB_ROOT/"normalized"/dataset_id/"latest.jsonl"
- if not latest.is_file(): return True
+ metadata_path=DB_ROOT/"values"/dataset_id/"metadata.json"
+ if not metadata_path.is_file(): return True
  target=_iso(cycle)
  try:
-  for line in latest.read_text(encoding="utf-8").splitlines():
-   if line.strip() and json.loads(line).get("observed_at")==target:
-    return False
+  metadata=json.loads(metadata_path.read_text(encoding="utf-8"))
+  return metadata.get("valid_time_utc") != target
  except (OSError,ValueError,json.JSONDecodeError):
   return True
- return True
 
 def _request(variable,level,cycle):
  ymd,hh=cycle.strftime("%Y%m%d"),cycle.strftime("%H")
@@ -185,4 +183,4 @@ def collect(dataset):
   "geometry":{"type":"global_regular_grid","metadata":metadata},
   "quality":{"status":"downloaded_and_grid_validated","grid_id":"GRID_NOAA_GFS_025_V1"},
   "provenance":{"source_url":urls[0],"source_urls":urls,"source_variables":decoded_names}}
- return {"raw_payload":compressed,"raw_metadata":metadata,"observations":[row]}
+ return {"value_payload":compressed,"metadata":metadata,"observations":[row]}

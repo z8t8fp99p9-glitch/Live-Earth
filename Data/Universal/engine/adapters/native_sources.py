@@ -72,12 +72,17 @@ def _gfs(dataset,retrieved):
                     if vals.ndim!=2 or vals.shape!=(lat.size,lon.size) or not np.isfinite(vals).all(): raise RuntimeError("Invalid GFS grid")
                     packed=np.rint((vals-273.15)*100).astype("<i2")
                     raw=gzip.compress(packed.tobytes(order="C"),compresslevel=9,mtime=0)
+                    uncompressed=packed.tobytes(order="C")
                     meta={"data_kind":"grid","format":"gzip+int16-le-centi-celsius","width":int(lon.size),"height":int(lat.size),
+                          "coordinate_order":"latitude-longitude",
+                          "row_order":"north-to-south" if float(np.median(np.diff(lat)))<0 else "south-to-north",
                           "latitude_first":float(lat[0]),"latitude_step":float(np.median(np.diff(lat))),
                           "longitude_first":float(lon[0]),"longitude_step":float(np.median(np.diff(lon))),
                           "longitude_convention":"0..360","source_cycle_utc":_iso(cycle),"valid_time_utc":_iso(cycle),
                           "compressed_payload":True,"source_file":f"gfs.t{hh}z.pgrb2.0p25.f000","source_url":url,
-                          "units":"degree_Celsius","scale":0.01,"value_transform":"int16 / 100"}
+                          "units":"degree_Celsius","scale_factor":100,
+                          "encoding":"little-endian signed int16; value = stored_integer / 100",
+                          "sha256_uncompressed_values":hashlib.sha256(uncompressed).hexdigest()}
                 finally: ds.close()
             finally:
                 try:os.unlink(name)
@@ -132,11 +137,10 @@ def _power(dataset,retrieved,parameter,community,unit,source_name):
         rows.append(_record(dataset,"nasa_power_daily",_iso(observed),retrieved,value,unit,response.url,
                             latitude=tile["lat"],longitude=tile["lon"],
                             quality={"sample_tile_id":tile["id"],"sample_mode":"regional_point","community":community}))
-    payload=("".join(json.dumps(r,separators=(",",":"))+"\n" for r in rows)).encode()
-    meta={"data_kind":"point_samples","format":"jsonl","coverage_mode":"six_sparse_regional_point_samples",
+    meta={"data_kind":"point_samples","format":"records","coverage_mode":"six_sparse_regional_point_samples",
           "source_name":source_name,"parameter":parameter,"community":community,"sample_tiles":POWER_TILES,
           "request_urls":urls,"units":unit}
-    return payload,meta,rows
+    return None,meta,rows
 def _usgs(dataset,retrieved):
     url="https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson"
     obj=_get(url).json()
@@ -153,8 +157,7 @@ def _usgs(dataset,retrieved):
              latitude=lat,longitude=lon,geometry={"type":"Point","coordinates":[lon,lat,depth]},
              event_id=feature.get("id"),event_type="earthquake",depth_km=depth,place=p.get("place"),event_url=p.get("url")))
     if not rows:raise RuntimeError("USGS feed contained no valid events")
-    payload=("".join(json.dumps(r,separators=(",",":"))+"\n" for r in rows)).encode()
-    return payload,{"data_kind":"events","format":"jsonl","feed_window":"past_24_hours","source_url":url},rows
+    return None,{"data_kind":"events","format":"records","feed_window":"past_24_hours","source_url":url},rows
 def collect(dataset):
     dataset_id=dataset["dataset_id"]; spec=DATASETS.get(dataset_id)
     if not spec:raise ValueError(f"No native adapter configured for {dataset_id}")
@@ -166,5 +169,6 @@ def collect(dataset):
     elif dataset_id=="earth.energy_humanity.solar_radiation":raw,meta,rows=_power(dataset_id,retrieved,"ALLSKY_SFC_SW_DWN","RE","kWh/m^2/day",source_name)
     elif kind=="usgs_events":raw,meta,rows=_usgs(dataset_id,retrieved)
     else:raise ValueError(f"Unsupported native source kind: {kind}")
-    return {"raw_payload":raw,"raw_metadata":dict(meta,source_name=source_name,source_id=dataset["collection"]["source_id"]),
+    value_payload = raw if kind in ("gfs_grid", "oisst_grid") else None
+    return {"value_payload":value_payload,"metadata":dict(meta,source_name=source_name,source_id=dataset["collection"]["source_id"]),
             "observations":rows}

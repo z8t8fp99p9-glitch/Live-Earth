@@ -90,10 +90,25 @@
     "provenance": {
       "type": "object",
       "required": [
-        "source_url",
-        "retrieval_id",
-        "raw_sha256"
-      ]
+        "source_url"
+      ],
+      "properties": {
+        "source_url": {
+          "type": "string"
+        },
+        "source_urls": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "source_variables": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
     }
   },
   "additionalProperties": true
