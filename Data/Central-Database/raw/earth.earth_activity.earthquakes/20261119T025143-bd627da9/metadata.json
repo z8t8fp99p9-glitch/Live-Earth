@@ -1,0 +1,11 @@
+{
+  "data_kind": "events",
+  "format": "jsonl",
+  "feed_window": "past_24_hours",
+  "source_url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson",
+  "source_name": "USGS all-day earthquake GeoJSON event feed",
+  "source_id": "usgs_comcat",
+  "raw_sha256": "0c83ba178228548ac2c74a1a6f2752dff4d1af01f5eb8c7c96af6cb496b35748",
+  "raw_bytes": 105739,
+  "retrieval_id": "20261119T025143-bd627da9"
+}
