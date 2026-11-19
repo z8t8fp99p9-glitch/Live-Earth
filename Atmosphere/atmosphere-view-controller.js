@@ -47,17 +47,37 @@
           clamp(15px,4vw,32px) 0;
       }
       .le-sfv--atmosphere .le-sfv-head { margin-bottom: 9px; }
+      /* A compact Atmosphere-only floating control. It stays in the top safe
+         area so it never competes with the protected Global Orb dock below. */
       .le-atmo-hud-toggle {
-        position:absolute; z-index:5; top:calc(env(safe-area-inset-top) + 14px);
-        right:max(14px,env(safe-area-inset-right)); min-height:40px;
-        padding:9px 13px; border:1px solid rgba(151,210,238,.34);
-        border-radius:999px; color:#eaf7ff; background:rgba(4,16,29,.86);
-        box-shadow:0 6px 22px rgba(0,0,0,.28); backdrop-filter:blur(12px);
-        -webkit-backdrop-filter:blur(12px); font-family:inherit;
-        font-size:11px; font-weight:650; line-height:1.1;
+        position:absolute; z-index:5; isolation:isolate; overflow:hidden;
+        top:calc(env(safe-area-inset-top) + 14px);
+        right:max(14px,env(safe-area-inset-right));
+        display:grid; place-items:center;
+        width:clamp(54px,6.5vw,62px); height:clamp(54px,6.5vw,62px);
+        min-height:54px; padding:0;
+        border:1px solid rgba(211,235,255,.72); border-radius:50%;
+        color:#f5fbff; font-family:inherit; font-size:24px; font-weight:500; line-height:1;
+        background:
+          radial-gradient(ellipse at 28% 17%,rgba(255,255,255,.94) 0%,rgba(255,255,255,.34) 9%,transparent 32%),
+          radial-gradient(circle at 35% 30%,rgba(143,198,255,.98),rgba(91,117,245,.88) 43%,rgba(61,68,165,.94) 72%,rgba(25,35,79,.98) 100%);
+        box-shadow:inset 2px 2px 5px rgba(255,255,255,.72),inset -5px -7px 13px rgba(12,24,75,.52),
+          0 7px 18px rgba(0,0,0,.34),0 0 25px rgba(111,157,255,.42),0 0 48px rgba(104,132,255,.19);
+        backdrop-filter:blur(22px) saturate(175%); -webkit-backdrop-filter:blur(22px) saturate(175%);
         cursor:pointer; touch-action:manipulation; pointer-events:auto;
+        -webkit-tap-highlight-color:transparent;
+        transition:transform .24s cubic-bezier(.2,.8,.2,1),box-shadow .24s ease,filter .24s ease;
       }
-      .le-atmo-hud-toggle:focus-visible { outline:2px solid #80d9f5; outline-offset:3px; }
+      .le-atmo-hud-toggle::before {
+        content:""; position:absolute; z-index:-1; inset:4px; border-radius:inherit; pointer-events:none;
+        border:1px solid rgba(255,255,255,.32);
+        background:linear-gradient(145deg,rgba(255,255,255,.25),transparent 42%,rgba(13,25,83,.18));
+        box-shadow:inset 0 1px 2px rgba(255,255,255,.35);
+      }
+      .le-atmo-hud-toggle:hover { transform:translateY(-2px); filter:brightness(1.08); }
+      .le-atmo-hud-toggle:active { transform:scale(.94); }
+      .le-atmo-hud-toggle:focus-visible { outline:2px solid #a8e5ff; outline-offset:4px; }
+      @media (prefers-reduced-motion:reduce) { .le-atmo-hud-toggle { transition:none; } }
       .le-sfv--atmosphere .le-sfv-panel.le-atmo-hud-hidden {
         opacity:0; visibility:hidden; pointer-events:none; transition:opacity .2s ease,visibility .2s ease;
       }
@@ -156,14 +176,90 @@
       }
       .le-atmo-dataset-option.is-selected::before { opacity:1; transform:scale(1.06); }
       .le-atmo-dataset-option:focus-visible { outline:2px solid #9be8ff; outline-offset:3px; }
+
+      /* Liquid Clay Glass flower menu: four atmospheric fields orbit a soft
+         central glass hub. All visuals are Atmosphere-only; the Global Orb dock
+         and its layout are deliberately not selected or restyled here. */
+      .le-sfv--atmosphere .le-atmo-dataset-card {
+        position:relative; isolation:isolate; overflow:hidden;
+        width:min(100%,344px); box-sizing:border-box; margin:0 auto 12px;
+        padding:17px 14px; border:1px solid rgba(204,231,255,.48);
+        border-radius:42px 50px 42px 50px;
+        background:
+          radial-gradient(ellipse at 24% 8%,rgba(255,255,255,.28),transparent 43%),
+          linear-gradient(145deg,rgba(155,190,237,.22),rgba(54,82,145,.34) 52%,rgba(15,25,65,.58));
+        box-shadow:inset 2px 2px 6px rgba(255,255,255,.28),inset -6px -8px 18px rgba(4,12,39,.38),
+          0 17px 38px rgba(0,0,0,.30),0 0 34px rgba(107,163,255,.18);
+        backdrop-filter:blur(28px) saturate(170%); -webkit-backdrop-filter:blur(28px) saturate(170%);
+      }
+      .le-sfv--atmosphere .le-atmo-dataset-card::before {
+        content:""; position:absolute; z-index:-1; inset:1px; border-radius:inherit; pointer-events:none;
+        background:linear-gradient(130deg,rgba(255,255,255,.16),transparent 34%,rgba(104,147,255,.09) 70%,rgba(255,255,255,.08));
+      }
+      .le-sfv--atmosphere .le-atmo-dataset-card h2,
+      .le-sfv--atmosphere .le-atmo-dataset-card > p { display:none; }
+      .le-atmo-dataset-grid {
+        position:relative; display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+        grid-template-rows:repeat(3,clamp(72px,19vw,94px));
+        justify-items:center; align-items:center; gap:clamp(3px,1.3vw,8px);
+      }
+      .le-atmo-dataset-grid::before {
+        content:"≋"; position:absolute; z-index:0; left:50%; top:50%;
+        width:clamp(58px,15vw,72px); aspect-ratio:1; transform:translate(-50%,-50%);
+        display:grid; place-items:center; border:1px solid rgba(231,244,255,.66); border-radius:50%;
+        color:rgba(238,249,255,.96); font-size:clamp(25px,6vw,31px); font-weight:400;
+        background:radial-gradient(ellipse at 27% 18%,rgba(255,255,255,.86),rgba(255,255,255,.16) 13%,transparent 36%),
+          radial-gradient(circle at 36% 30%,rgba(135,193,255,.96),rgba(94,116,239,.82) 50%,rgba(45,55,137,.96) 100%);
+        box-shadow:inset 2px 2px 5px rgba(255,255,255,.72),inset -5px -7px 12px rgba(10,22,73,.48),
+          0 0 22px rgba(117,159,255,.48),0 8px 18px rgba(0,0,0,.28);
+        pointer-events:none;
+      }
+      .le-atmo-dataset-option {
+        position:relative; z-index:1; width:clamp(72px,19vw,94px); min-height:0; aspect-ratio:1;
+        box-sizing:border-box; align-items:center; justify-content:center; gap:3px; padding:8px 5px;
+        border:1px solid rgba(226,242,255,.70); border-radius:50%; color:#f7fbff; text-align:center;
+        background:
+          radial-gradient(ellipse at 29% 17%,rgba(255,255,255,.88),rgba(255,255,255,.18) 11%,transparent 35%),
+          radial-gradient(circle at 35% 30%,var(--atmo-orb-core),var(--atmo-orb-mid) 46%,var(--atmo-orb-edge) 82%,rgba(9,18,47,.96));
+        box-shadow:inset 2px 2px 6px rgba(255,255,255,.68),inset -6px -8px 14px rgba(3,12,35,.46),
+          0 8px 18px rgba(0,0,0,.30),0 0 19px var(--atmo-orb-glow);
+        backdrop-filter:blur(20px) saturate(175%); -webkit-backdrop-filter:blur(20px) saturate(175%);
+        transition:transform .22s ease,box-shadow .22s ease,filter .22s ease;
+      }
+      .le-atmo-dataset-option:nth-child(1) { grid-column:2; grid-row:1; }
+      .le-atmo-dataset-option:nth-child(2) { grid-column:2; grid-row:3; }
+      .le-atmo-dataset-option:nth-child(3) { grid-column:1; grid-row:2; }
+      .le-atmo-dataset-option:nth-child(4) { grid-column:3; grid-row:2; }
+      .le-atmo-dataset-option::before {
+        content:""; position:absolute; inset:4px; width:auto; aspect-ratio:auto; right:4px; top:4px;
+        border:1px solid rgba(255,255,255,.30); border-radius:50%; opacity:.9;
+        background:linear-gradient(145deg,rgba(255,255,255,.17),transparent 45%,rgba(0,0,0,.11));
+        box-shadow:inset 0 1px 3px rgba(255,255,255,.36); pointer-events:none;
+      }
+      .le-atmo-dataset-option::after {
+        position:relative; inset:auto; order:0; width:100%; height:auto; aspect-ratio:auto;
+        display:block; color:rgba(255,255,255,.99); font-size:clamp(19px,5vw,25px);
+        line-height:1.05; text-shadow:0 2px 9px rgba(0,0,0,.40);
+      }
+      .le-atmo-dataset-name { order:1; max-width:100%; margin-top:2px; font-size:clamp(9px,2.5vw,11px);
+        line-height:1.15; letter-spacing:.01em; text-shadow:0 1px 7px rgba(0,0,0,.42); }
+      .le-atmo-dataset-detail,.le-atmo-dataset-state { display:none; }
+      .le-atmo-dataset-option:hover:not(:disabled) { transform:translateY(-2px) scale(1.035); filter:brightness(1.10);
+        box-shadow:inset 2px 2px 6px rgba(255,255,255,.76),inset -6px -8px 14px rgba(3,12,35,.40),
+          0 11px 23px rgba(0,0,0,.34),0 0 27px var(--atmo-orb-glow); }
+      .le-atmo-dataset-option.is-selected { border-color:rgba(255,255,255,.98);
+        box-shadow:inset 2px 2px 7px rgba(255,255,255,.82),inset -6px -8px 14px rgba(3,12,35,.38),
+          0 0 0 3px rgba(211,239,255,.24),0 0 32px var(--atmo-orb-glow); }
+      .le-atmo-dataset-option.is-selected::before { transform:scale(.92); opacity:1; }
       .le-atmo-dataset-option:disabled { opacity:.48; cursor:not-allowed; filter:saturate(.55); }
       .le-atmo-dataset-name { position:relative; z-index:1; max-width:calc(100% - 48px); font-size:12px; letter-spacing:.02em; font-weight:750; }
       .le-atmo-dataset-detail { position:relative; z-index:1; max-width:calc(100% - 2px); color:#b5d0df; font-size:9px; line-height:1.35; }
       .le-atmo-dataset-state { position:relative; z-index:1; margin-top:auto; color:#8be7d0; font-size:7px; font-weight:800; letter-spacing:.1em; }
       .le-atmo-dataset-option.is-unavailable .le-atmo-dataset-state { color:#91a4b4; }
       @media (max-width:360px) {
-        .le-atmo-dataset-grid { grid-template-columns:1fr; }
-        .le-atmo-dataset-option { min-height:76px; }
+        .le-sfv--atmosphere .le-atmo-dataset-card { padding:12px 8px; }
+        .le-atmo-dataset-grid { grid-template-rows:repeat(3,72px); gap:2px; }
+        .le-atmo-dataset-option { width:68px; }
       }
       @media (prefers-reduced-motion:reduce) {
         .le-atmo-dataset-option { transition:none; }
@@ -648,18 +744,26 @@ function installStyles() {
 
     // The globe is the view's immediate baseline. Scientific tools and data
     // are deliberately not requested until the user chooses a dataset.
-    const hudToggle = runtime.el('button', 'le-atmo-hud-toggle', 'Hide controls');
+    // Start with the globe unobstructed. The Atmosphere-only round button
+    // reveals the existing datasets, colour scale and provenance on demand.
+    // Global Orbs and their shared dock remain owned by the existing runtime.
+    view.panel.id = 'le-atmo-hud-panel';
+    view.panel.classList.add('le-atmo-hud-hidden');
+    const hudToggle = runtime.el('button', 'le-atmo-hud-toggle', '☰');
     hudToggle.type = 'button';
     hudToggle.setAttribute('aria-controls', 'le-atmo-hud-panel');
-    hudToggle.setAttribute('aria-expanded', 'true');
+    hudToggle.setAttribute('aria-expanded', 'false');
+    hudToggle.setAttribute('aria-label', 'Open Atmosphere controls');
+    hudToggle.title = 'Open Atmosphere controls';
     hudToggle.addEventListener('click', () => {
       const hidden = view.panel.classList.toggle('le-atmo-hud-hidden');
-      hudToggle.textContent = hidden ? 'Show controls' : 'Hide controls';
+      const label = hidden ? 'Open Atmosphere controls' : 'Close Atmosphere controls';
+      hudToggle.textContent = hidden ? '☰' : '×';
       hudToggle.setAttribute('aria-expanded', String(!hidden));
-      hudToggle.setAttribute('aria-label', hidden ? 'Show Atmosphere controls' : 'Hide Atmosphere controls');
+      hudToggle.setAttribute('aria-label', label);
+      hudToggle.title = label;
     });
     view.root.appendChild(hudToggle);
-    view.panel.id = 'le-atmo-hud-panel';
     const status = runtime.el('p', 'le-sfv-status', 'Opening the Earth Engine globe…');
     status.dataset.state = 'neutral';
     view.body.appendChild(status);
