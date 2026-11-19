@@ -32,6 +32,64 @@ def store_normalized(dataset_id,retrieval_id,observations):
         if target.exists() and target.read_text(encoding="utf-8")!=payload:raise FileExistsError("Normalized retrieval collision")
         target.write_text(payload,encoding="utf-8"); written.append(str(target.relative_to(ROOT)))
     return written
+def cleanup_dataset_storage(dataset_id, keep_retrieval_id):
+    """Keep only the successfully stored retrieval for one Universal dataset.
+
+    The caller must invoke this only after raw storage, normalized storage,
+    and any applicable publication step have completed successfully.
+    """
+    dataset_id = _safe(dataset_id)
+    keep_retrieval_id = _safe(keep_retrieval_id)
+
+    raw_dataset = ROOT / "raw" / dataset_id
+    normalized_dataset = ROOT / "normalized" / dataset_id
+    current_raw = raw_dataset / keep_retrieval_id
+
+    # Preflight the replacement before deleting anything. A partial or
+    # incomplete new retrieval must never cause the previous snapshot to go.
+    if not (current_raw / "source.bin").is_file():
+        raise FileNotFoundError(
+            f"Latest raw payload is missing for {dataset_id}/{keep_retrieval_id}"
+        )
+    if not (current_raw / "metadata.json").is_file():
+        raise FileNotFoundError(
+            f"Latest raw metadata is missing for {dataset_id}/{keep_retrieval_id}"
+        )
+
+    current_normalized = (
+        list(normalized_dataset.glob(f"*/{keep_retrieval_id}.jsonl"))
+        if normalized_dataset.exists()
+        else []
+    )
+    if not current_normalized:
+        raise FileNotFoundError(
+            f"Latest normalized payload is missing for {dataset_id}/{keep_retrieval_id}"
+        )
+
+    # Replacement is complete. Remove only older snapshots belonging to this
+    # dataset; other dataset IDs and all collection configuration stay intact.
+    import shutil
+
+    if raw_dataset.exists():
+        for retrieval_folder in raw_dataset.iterdir():
+            if retrieval_folder.is_dir() and retrieval_folder.name != keep_retrieval_id:
+                shutil.rmtree(retrieval_folder)
+
+    if normalized_dataset.exists():
+        for normalized_file in normalized_dataset.rglob("*.jsonl"):
+            if normalized_file.stem != keep_retrieval_id:
+                normalized_file.unlink()
+
+        # Remove empty date partitions left behind by deleted snapshots.
+        for directory in sorted(
+            (path for path in normalized_dataset.rglob("*") if path.is_dir()),
+            key=lambda path: len(path.parts),
+            reverse=True,
+        ):
+            if not any(directory.iterdir()):
+                directory.rmdir()
+
+
 def write_run(retrieval_id,result):
     retrieval_id=_safe(retrieval_id); folder=ROOT/"runs"; folder.mkdir(parents=True,exist_ok=True)
     result=dict(result,retrieval_id=retrieval_id,recorded_at=datetime.now(timezone.utc).isoformat())

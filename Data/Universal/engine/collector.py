@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .registry import load_registry, enabled_jobs
-from .storage import write_run, store_raw, store_normalized
+from .storage import write_run, store_raw, store_normalized, cleanup_dataset_storage
 from .publisher import publish_grid_snapshot
 
 ADAPTER_PACKAGE = "Data.Universal.engine.adapters"
@@ -111,6 +111,10 @@ def run_all():
             published_path = publish_grid_snapshot(
                 dataset_id, retrieval_id, result["raw_payload"], raw_metadata
             )
+
+            # New retrieval is fully stored and published. Only now remove
+            # previous raw/normalized snapshots for this same dataset.
+            cleanup_dataset_storage(dataset_id, retrieval_id)
 
             write_run(retrieval_id, {
                 "dataset_id": dataset_id,
