@@ -1,14 +1,14 @@
 # Weather Art Archive
 
-This folder retains artwork catalogues, painting data, style references and production studies from the superseded Weather Live Art experiments.
+The original artwork catalogues, drawing data, production plans and JSON scene records are retained as historical design records.
 
-They are archival material, not dependencies of the current Weather view.
+The six binary reference, proof, atlas and preview images formerly stored in `References/` have been removed. Source inspection of the current Weather renderer (`weather-view.js`) found no references to those images or to the retired `Weather/Art` renderer.
 
 ## Current runtime
 
-- `../weather-view.js` owns the full-screen Canvas 2D atmosphere and all current Weather presentation.
-- `live-art-online.js` is now an inert compatibility stub. It no longer observes Home, fetches artwork, paints a canvas or modifies the Weather screen.
-- `service-worker-extension.js` keeps that stub in the essential app shell only so older cached Home HTML containing a historical script reference can resolve it offline. It does not inject the old renderer into new Home responses.
-- The disconnected `Weather/LivingTopography/` prototype and its obsolete tests have been retired after checking that the active app does not reference them.
+- `../weather-view.js` owns the current Weather presentation and builds its scene procedurally.
+- `live-art-online.js` is an inert compatibility stub retained for older cached Home documents.
+- `service-worker-extension.js` retains that stub in the essential app shell for compatibility; it does not activate the retired artwork renderer.
+- The archived JSON catalogues and plans are not runtime dependencies. Their historical image-path fields are retained as provenance and may refer to files intentionally removed from this archive.
 
-The original artwork JSON and reference images remain preserved here. They should not be mistaken for the active Weather design or reconnected without a new, explicit product decision.
+Do not reconnect the archived artwork system without a new, explicit product decision.
