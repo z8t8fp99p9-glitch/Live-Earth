@@ -426,63 +426,69 @@
     return true;
   }
 
-  const externalModules = new Map([
-    ['clouds', './Clouds/clouds-view.js'],
-    ['weather', './Weather/weather-view.js'],
-    ['earthquakes', './Earthquakes/earthquakes-view.js'],
-    ['traffic', './Traffic/traffic-view.js'],
-    ['atmosphere', './Atmosphere/atmosphere-view-controller.js'],
-    ['atmospheric-composition', './Atmospheric-Composition/atmospheric-composition-view-controller.js'],
-    ['oceans', './Oceans/oceans-view-controller.js'],
-    ['land', './Land/land-view-controller.js'],
-    ['water-ice', './Water-Ice/water-ice-view-controller.js'],
-    ['earth-activity', './Earth-Activity/earth-activity-view-controller.js'],
-    ['energy-humanity', './Energy-Humanity/energy-humanity-view-controller.js']
-  ]);
-  const modulePromises = new Map();
-
-  function loadFeatureModule(path) {
-    return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = new URL(path, document.baseURI).href;
-      script.async = true;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error(`Feature module failed to load: ${path}`));
-      (document.head || document.documentElement).appendChild(script);
-    });
-  }
-
-  function loadFeature(id) {
-    if (id === 'elevation') return Promise.resolve(registered.has(id));
-    if (!externalModules.has(id)) return Promise.reject(new Error(`Unknown Stacks feature: ${id}`));
-    if (registered.has(id)) return Promise.resolve(true);
-    if (modulePromises.has(id)) return modulePromises.get(id);
-
-    const pending = loadFeatureModule(externalModules.get(id)).then(() => {
-      if (!registered.has(id)) throw new Error(`The module loaded but did not register ${id}.`);
-      return true;
-    }).catch(error => {
-      console.error('[LIVE // EARTH] Feature module could not be loaded.', error);
-      modulePromises.delete(id);
-      throw error;
-    });
-    modulePromises.set(id, pending);
-    return pending;
-  }
-
-  // Elevation's implementation lives in this shared runtime. Register it now,
-  // but do not download any other feature controller until its Orb is selected.
-  registerFeature('elevation', activateElevation);
-
   window.LiveEarthStacksFeatureRuntime = Object.freeze({
     registerFeature,
-    loadFeature,
     mount, el, setStatus, button, card, attribution,
     attachLayer, isActive, globe,
     fetchImageBlob, textureFromBlob, getEarthRaster, timeLabel
   });
 
-  window.__liveEarthStacksFeatureViewsInstalled = true;
-  window.__liveEarthStacksFeatureViewsLoading = false;
-  window.dispatchEvent(new Event('live-earth-stacks-feature-views-ready'));
+  // Elevation remains in the shared Stacks feature module. Registration order
+  // below deliberately matches the original catalog to preserve Orb scatter order.
+
+  const externalModules = [
+    { id: 'clouds', path: './Clouds/clouds-view.js' },
+    { id: 'weather', path: './Weather/weather-view.js' },
+    { id: 'earthquakes', path: './Earthquakes/earthquakes-view.js' },
+    { id: 'traffic', path: './Traffic/traffic-view.js' },
+    // Numerical-world controllers use this same Stacks loader and registry.
+    { id: 'atmosphere', path: './Atmosphere/atmosphere-view-controller.js' },
+    { id: 'atmospheric-composition', path: './Atmospheric-Composition/atmospheric-composition-view-controller.js' },
+    { id: 'oceans', path: './Oceans/oceans-view-controller.js' },
+    { id: 'land', path: './Land/land-view-controller.js' },
+    { id: 'water-ice', path: './Water-Ice/water-ice-view-controller.js' },
+    { id: 'earth-activity', path: './Earth-Activity/earth-activity-view-controller.js' },
+    { id: 'energy-humanity', path: './Energy-Humanity/energy-humanity-view-controller.js' }
+  ];
+  function loadFeatureModule(path) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = new URL(path, document.baseURI).href;
+      script.async = false;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error(`Feature module failed to load: ${path}`));
+      (document.head || document.documentElement).appendChild(script);
+    });
+  }
+  function registerUnavailableFeature(id, reason) {
+    registerFeature(id, () => {
+      const view = mount(id);
+      if (view) {
+        const status = el('p', 'le-sfv-status', `${VIEW_META[id].title} view module is unavailable. Prime Earth and Global Orb controls remain untouched. ${reason || ''}`);
+        status.dataset.state = 'error';
+        view.body.appendChild(status);
+      }
+      return () => {};
+    }, false);
+  }
+  (async () => {
+    for (let index = 0; index < externalModules.length; index++) {
+      // Preserve the original catalog order: Clouds, Weather, Elevation,
+      // Earthquakes and Traffic. The numerical worlds follow those five entries.
+      if (index === 2) registerFeature('elevation', activateElevation);
+      const item = externalModules[index];
+      try {
+        await loadFeatureModule(item.path);
+        if (!registered.has(item.id)) registerUnavailableFeature(item.id, 'The module did not register its view.');
+      } catch (error) {
+        console.error('[LIVE // EARTH] Feature module could not be loaded.', error);
+        registerUnavailableFeature(item.id, error?.message || '');
+      }
+    }
+    // Startup readiness is set only after every feature is registered (or receives
+    // a safe unavailable-state view), including the six numerical-world controllers.
+    window.__liveEarthStacksFeatureViewsInstalled = true;
+    window.__liveEarthStacksFeatureViewsLoading = false;
+    window.dispatchEvent(new Event('live-earth-stacks-feature-views-ready'));
+  })();
 })();

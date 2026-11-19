@@ -42,28 +42,6 @@
     }
   }
 
-  let sunRendererLoadPromise = null;
-  function ensureSunController() {
-    if (window.LiveEarthViewModules?.has("sun-procedural-renderer")) return Promise.resolve(true);
-    if (sunRendererLoadPromise) return sunRendererLoadPromise;
-    sunRendererLoadPromise = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = new URL("./Sun/sun-view-controller.js", document.baseURI).href;
-      script.async = true;
-      script.onload = () => window.LiveEarthViewModules?.has("sun-procedural-renderer")
-        ? resolve(true)
-        : reject(new Error("The Sun controller loaded but did not register its view."));
-      script.onerror = () => reject(new Error("The Sun controller could not be downloaded."));
-      (document.head || document.documentElement).appendChild(script);
-    }).catch(error => {
-      sunRendererLoadPromise = null;
-      console.warn("[LIVE // EARTH] Sun view could not be loaded on demand.", error?.message || error);
-      throw error;
-    });
-    window.__liveEarthSunRendererLoadPromise = sunRendererLoadPromise;
-    return sunRendererLoadPromise;
-  }
-
   function onPrimaryViewChange(event) {
     const next = event.detail?.view || "home";
     const previous = event.detail?.previous || activeView;
@@ -94,9 +72,6 @@
     }
 
     activeView = next;
-    if (next === "sun" && !window.LiveEarthViewModules?.has("sun-procedural-renderer")) {
-      ensureSunController().catch(() => {});
-    }
 
     for (const entry of modules.values()) {
       const shouldBeActive = matches(entry, next);
@@ -708,138 +683,15 @@
       }));
     }
 
-    const featureLoadPromises = new Map();
-    let stacksRuntimeLoadPromise = null;
-    let offlineBlockedFeature = null;
-    const offlineFeatureMessage = "Oops, you poor human! 🥺😂 Please get back Online first, then try me again. It's not alien technology 👽🚀 — I just need the internet! 🌐😜";
-
-    function showOfflineFeatureMessage(id) {
-      offlineBlockedFeature = id;
-      if (activeFeature !== id) return;
-      stageDescription.textContent = offlineFeatureMessage;
-      stageStatus.textContent = "🌐 Waiting for an internet connection";
-      stage.hidden = false;
-    }
-    const featureModulePaths = Object.freeze({
-      clouds: "./Clouds/clouds-view.js",
-      weather: "./Weather/weather-view.js",
-      elevation: null,
-      earthquakes: "./Earthquakes/earthquakes-view.js",
-      traffic: "./Traffic/traffic-view.js",
-      atmosphere: "./Atmosphere/atmosphere-view-controller.js",
-      "atmospheric-composition": "./Atmospheric-Composition/atmospheric-composition-view-controller.js",
-      oceans: "./Oceans/oceans-view-controller.js",
-      land: "./Land/land-view-controller.js",
-      "water-ice": "./Water-Ice/water-ice-view-controller.js",
-      "earth-activity": "./Earth-Activity/earth-activity-view-controller.js",
-      "energy-humanity": "./Energy-Humanity/energy-humanity-view-controller.js"
-    });
-
-    function appendFeatureScript(path, installed) {
-      return new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = new URL(path, document.baseURI).href;
-        script.async = true;
-        script.onload = () => installed() ? resolve(true) : reject(new Error(`Feature script loaded without registering: ${path}`));
-        script.onerror = () => reject(new Error(`Feature script could not be downloaded: ${path}`));
-        (document.head || document.documentElement).appendChild(script);
-      });
-    }
-
-    function ensureStacksRuntime() {
-      if (window.__liveEarthStacksFeatureViewsInstalled && window.LiveEarthStacksFeatureRuntime) return Promise.resolve(true);
-      if (stacksRuntimeLoadPromise) return stacksRuntimeLoadPromise;
-      stacksRuntimeLoadPromise = appendFeatureScript(
-        "./Stacks/stacks-feature-views.js",
-        () => window.__liveEarthStacksFeatureViewsInstalled === true && !!window.LiveEarthStacksFeatureRuntime
-      ).catch(error => {
-        stacksRuntimeLoadPromise = null;
-        throw error;
-      });
-      return stacksRuntimeLoadPromise;
-    }
-
-    function loadFeatureController(id) {
-      if (id === "editorial-engine") {
-        if (window.__liveEarthEngineFeatureViewsInstalled) return Promise.resolve(true);
-        if (featureLoadPromises.has(id)) return featureLoadPromises.get(id);
-        const pending = appendFeatureScript(
-          "./Editorial-Engine/engine-feature-views.js",
-          () => window.__liveEarthEngineFeatureViewsInstalled === true
-        ).catch(error => {
-          featureLoadPromises.delete(id);
-          throw error;
-        });
-        featureLoadPromises.set(id, pending);
-        return pending;
-      }
-
-      if (!Object.prototype.hasOwnProperty.call(featureModulePaths, id)) {
-        return Promise.reject(new Error(`No on-demand loader is defined for ${id}.`));
-      }
-      if (featureLoadPromises.has(id)) return featureLoadPromises.get(id);
-      const pending = ensureStacksRuntime().then(() => {
-        const runtime = window.LiveEarthStacksFeatureRuntime;
-        if (!runtime || typeof runtime.loadFeature !== "function") throw new Error("The Stacks feature runtime did not expose its on-demand loader.");
-        return runtime.loadFeature(id);
-      }).catch(error => {
-        featureLoadPromises.delete(id);
-        throw error;
-      });
-      featureLoadPromises.set(id, pending);
-      return pending;
-    }
-
-    function makeLazyFeatureActivate(id) {
-      const lazyActivate = (previous, source) => {
-        if (navigator.onLine === false) {
-          showOfflineFeatureMessage(id);
-          return;
-        }
-        loadFeatureController(id).then(() => {
-          if (offlineBlockedFeature === id) offlineBlockedFeature = null;
-          if (activeFeature !== id) return;
-          const loaded = catalog.get(id);
-          if (loaded && loaded.activate !== lazyActivate) safeHook(loaded.activate, previous, source);
-        }).catch(error => {
-          console.warn(`[LIVE // EARTH] ${id} view will remain in its preview shell.`, error?.message || error);
-          if (navigator.onLine === false) {
-            showOfflineFeatureMessage(id);
-            featureLoadPromises.delete(id);
-            return;
-          }
-          const existing = catalog.get(id);
-          if (existing) {
-            catalog.set(id, {
-              ...existing,
-              connected: false,
-              description: `${existing.description.split(" The view module could not be loaded")[0]} The view module could not be loaded; try again when online.`
-            });
-            if (activeFeature === id) updateStage();
-            if (libraryOpen) renderLibrary();
-          }
-          featureLoadPromises.delete(id);
-        });
-      };
-      return lazyActivate;
-    }
-
     function activateFeature(id, source = "stacks") {
       const nextFeature = catalog.get(id);
       if (!nextFeature) return false;
       if (activeFeature === id) {
-        if (offlineBlockedFeature === id) {
-          if (navigator.onLine === false) return true;
-          offlineBlockedFeature = null;
-          safeHook(nextFeature.activate, null, "offline-retry");
-          return true;
-        }
         closeActiveFeature("same-feature-selected");
         return true;
       }
       const previous = activeFeature;
       const previousFeature = previous ? catalog.get(previous) : null;
-      if (offlineBlockedFeature === previous) offlineBlockedFeature = null;
       const primaryManager = window.LiveEarthViewManager;
       const primaryView = primaryManager?.getCanonicalActiveView?.()
         || (primaryManager?.getActiveView?.() === "explorer" ? "earth" : primaryManager?.getActiveView?.())
@@ -893,7 +745,6 @@
       }
       const previous = activeFeature;
       const previousFeature = catalog.get(previous);
-      if (offlineBlockedFeature === previous) offlineBlockedFeature = null;
       const primaryManager = window.LiveEarthViewManager;
       const primaryView = primaryManager?.getCanonicalActiveView?.()
         || (primaryManager?.getActiveView?.() === "explorer" ? "earth" : primaryManager?.getActiveView?.())
@@ -1101,25 +952,12 @@
 
     // Default Orb identities are deliberate temporary looks; custom art comes later.
     [
-      { id: "clouds", title: "Clouds", shortLabel: "Clouds", symbol: "☁", description: "Online NASA cloud-fraction imagery over the existing Earth globe; the product is daily, not minute-by-minute." },
-      { id: "weather", title: "Weather", shortLabel: "Weather", symbol: "🌦", description: "Online current-model weather for the existing enabled location; Location must be ON." },
-      { id: "elevation", title: "Elevation", shortLabel: "Elevation", symbol: "⛰", description: "Online global relief imagery and a coordinate-based elevation lookup." },
-      { id: "earthquakes", title: "Earthquakes", shortLabel: "Quakes", symbol: "〰", description: "Recent USGS earthquake events on the same Earth globe; refreshes while open." },
-      { id: "traffic", title: "Traffic", shortLabel: "Traffic", symbol: "↗", description: "Independent traffic workspace; verified live traffic data is not connected yet." },
-      { id: "atmosphere", title: "Atmosphere", shortLabel: "Atmosphere", symbol: "◉", description: "A numerical view of atmospheric conditions: temperature, pressure, wind and moisture." },
-      { id: "atmospheric-composition", title: "Atmospheric Composition", shortLabel: "Composition", symbol: "◌", description: "A dedicated world for verified atmospheric constituents and chemistry, including greenhouse gases, ozone, aerosols and particulates." },
-      { id: "oceans", title: "Oceans", shortLabel: "Oceans", symbol: "≈", description: "A visual preview of numerical ocean systems: currents, heat, salinity, sea level and marine productivity." },
-      { id: "land", title: "Land", shortLabel: "Land", symbol: "⌁", description: "A visual preview of numerical land systems: terrain, soils, vegetation and land-cover change." },
-      { id: "water-ice", title: "Water & Ice", shortLabel: "Water & Ice", symbol: "❄", description: "A visual preview of freshwater and cryosphere systems: rainfall, snow, glaciers, ice and water storage." },
-      { id: "earth-activity", title: "Earth Activity", shortLabel: "Earth Activity", symbol: "✧", description: "A visual preview of measured geophysical and environmental activity, including earthquakes, volcanoes and fires." },
-      { id: "energy-humanity", title: "Energy & Humanity", shortLabel: "Energy", symbol: "✺", description: "A visual preview of planetary energy and human activity indicators, including radiation, night lights and land use." },
-      { id: "editorial-engine", title: "Editorial Engine", shortLabel: "Editorial", symbol: "✍️", description: "A full-screen workspace for the Universal Editorial Engine." }
-    ].forEach(item => api.register(item.id, {
-      ...item,
-      connected: item.id !== "traffic",
-      activate: makeLazyFeatureActivate(item.id),
-      deactivate: () => {}
-    }));
+      { id: "clouds", title: "Clouds", shortLabel: "Clouds", symbol: "☁", description: "Cloud-view shell. The cloud data layer is not connected yet." },
+      { id: "weather", title: "Weather", shortLabel: "Weather", symbol: "🌦", description: "Weather-view shell. Forecast and live weather data are not connected yet." },
+      { id: "elevation", title: "Elevation", shortLabel: "Elevation", symbol: "⛰", description: "Elevation-view shell. The terrain data layer is not connected yet." },
+      { id: "earthquakes", title: "Earthquakes", shortLabel: "Quakes", symbol: "〰", description: "Earthquake-view shell. Live earthquake data is not connected yet." },
+      { id: "traffic", title: "Traffic", shortLabel: "Traffic", symbol: "↗", description: "Traffic-view shell. The traffic data layer is not connected yet." }
+    ].forEach(item => api.register(item.id, item));
 
     window.LiveEarthOrbSystem = Object.freeze({
       version: "1.0.0",

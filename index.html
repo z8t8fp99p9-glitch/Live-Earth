@@ -1,13 +1,4 @@
 <!doctype html>
-<!--
-  STARTUP ESSENTIALS — EXPLICIT-APPROVAL POLICY (PROTECTED)
-  DO NOT add, remove, or change any startup script, APP_SHELL asset, or runtime dependency
-  without the user's explicit approval. New Feature Views, optional controllers, media,
-  datasets, editorial modules, and other feature-only resources MUST NOT be added to
-  startup Essentials. Keep the catalogue/Orb shell lightweight; load a feature's
-  implementation only after the user opens that feature. If a genuine core dependency
-  is proposed, explain why and obtain approval before changing index.html or sw.js.
--->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -705,6 +696,7 @@ if (window.__leBootControlledAtStart === true && 'serviceWorker' in navigator &&
     './Location/location.js',
     './Global/view-manager.js',
     './Global/view-module-registry.js',
+    './Stacks/stacks-feature-views.js',
     './Global/sky-view-controller.js',
     './Moon/moon-view-controller.js',
     './Moon/moon-lunar-interface.js',

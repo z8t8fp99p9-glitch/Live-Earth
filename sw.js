@@ -1,24 +1,17 @@
-/* LIVE // EARTH V151 — on-demand Feature Views + friendly offline message. */
-/*
- * STARTUP ESSENTIALS — EXPLICIT-APPROVAL POLICY (PROTECTED)
- * DO NOT add, remove, or change any APP_SHELL path, runtime dependency, or startup
- * controller without the user's explicit approval. Feature-only controllers, media,
- * datasets and optional modules are NOT Essentials. Keep feature catalogues lightweight
- * and load implementations only after the user opens the feature. Propose genuine core
- * dependencies separately with a clear reason; never silently expand startup downloads.
- */
+/* LIVE // EARTH V128 — Atmospheric Composition world registration. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v151-friendly-offline-feature-message";
-const CACHE_NAME = "live-earth-shell-v151-friendly-offline-feature-message";
+const BUILD_ID = "v149-atmospheric-composition-world";
+const CACHE_NAME = "live-earth-shell-v149-atmospheric-composition-world";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
- "./","./index.html","./ios-standalone-root-flow.js","./Global/orb-controls-v4.js","./EarthEngine/Core/earth-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-core.js","./EarthEngine/Graphics/universal-grid-system.js","./EarthEngine/Graphics/earth-grid-gpu-skin.js","./EarthEngine/Assets/README.md","./Earth/earth-view-controller.js","./Global/view-manager.js","./Global/view-module-registry.js","./Global/sky-view-controller.js","./Moon/moon-view-controller.js","./Moon/moon-lunar-interface.js",
+ "./","./index.html","./ios-standalone-root-flow.js","./Global/orb-controls-v4.js","./EarthEngine/Core/earth-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-core.js","./EarthEngine/Graphics/universal-grid-system.js","./EarthEngine/Graphics/earth-grid-gpu-skin.js","./EarthEngine/Assets/README.md","./Earth/earth-view-controller.js","./Global/view-manager.js","./Global/view-module-registry.js","./Stacks/stacks-feature-views.js","./Atmosphere/atmosphere-view-controller.js","./Atmospheric-Composition/atmospheric-composition-view-controller.js","./Oceans/oceans-view-controller.js","./Land/land-view-controller.js","./Water-Ice/water-ice-view-controller.js","./Earth-Activity/earth-activity-view-controller.js","./Energy-Humanity/energy-humanity-view-controller.js","./Clouds/clouds-view.js","./Weather/weather-view.js","./Traffic/traffic-view.js","./Earthquakes/earthquakes-view.js","./Global/sky-view-controller.js","./Moon/moon-view-controller.js","./Moon/moon-lunar-interface.js","./Sun/sun-view-controller.js","./Sun/sun-surface-shared.webp",
  "./Earth/location.html","./Earth/earth-orb-globe.js","./manifest.json","./Global/icon.svg","./Data/data-store.js","./Location/location.js",
  "./Global/astronomy.js","./Home/moon-orbit.js","./Data/dataset-manifest.json",
  "./Home/moon-surface-lroc-1536.jpg",
  "./Moon/moon-sky-background-responsive.svg",
  "./Moon/moon-sky-background-portrait.webp","./Moon/moon-sky-background-landscape.webp",
+ "./Sun/sun-sky-background-portrait.webp","./Sun/sun-sky-background-landscape.webp",
  "./Global/update-manager.js","./Data/data-recovery.js",
  "./Earth/earth.webp","./Moon/moon.webp","./Sun/sun.webp","./Location/location.webp","./Stacks/stacks.webp"
 ];
@@ -724,6 +717,7 @@ function injectStartupGate(html) {
       if (!window.LiveEarthOrbSystem) paths.push('./Global/view-module-registry.js');
       if (!window.LiveEarthSkyViews) paths.push('./Global/sky-view-controller.js');
       if (!window.__liveEarthMoonRendererInstalled) paths.push('./Moon/moon-view-controller.js');
+      if (!window.__liveEarthStacksFeatureViewsInstalled) paths.push('./Stacks/stacks-feature-views.js');
       if (!window.__liveEarthControlsInstalled || typeof window.liveEarthLocationAllowed !== 'function') paths.push('./Global/orb-controls-v4.js');
       if (!window.__liveEarthLocationScannerInstalled) paths.push('./Location/location.js');
       const brokenImages = [...document.querySelectorAll('#navButtons .orbImage')].filter(img => img.complete && img.naturalWidth === 0);
@@ -775,7 +769,7 @@ function injectStartupGate(html) {
         !!window.LiveEarthPrimeScene && !!window.LiveEarthScene && !!window.LiveEarthEngine && !!window.LiveEarthGlobalViewpoint && !!window.LiveEarthOrbSystem && window.__liveEarthEarthRendererInstalled === true &&
         !!window.LiveEarthViewManager && !!modules && modules.has('earth-independent-renderer') &&
         modules.has('sky-container') && modules.has('moon-lunar-interface') &&
-        window.__liveEarthMoonRendererInstalled === true && !!window.LiveEarthSkyViews &&
+        window.__liveEarthMoonRendererInstalled === true && window.__liveEarthStacksFeatureViewsInstalled === true && !!window.LiveEarthSkyViews &&
         window.__liveEarthControlsInstalled === true && window.__liveEarthLocationScannerInstalled === true &&
         typeof window.liveEarthLocationAllowed === 'function' && window.liveEarthLocationAllowed() === false && imagesReady;
     }
@@ -962,18 +956,15 @@ function injectStartupGate(html) {
     window.addEventListener('error', event => {
       if (event.target && event.target.tagName === 'SCRIPT') {
         const src = event.target.src || '';
-        const scriptPaths = ['./Global/orb-controls-v4.js','./EarthEngine/Core/earth-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-core.js','./Earth/earth-view-controller.js','./Global/view-manager.js','./Global/view-module-registry.js','./Global/sky-view-controller.js','./Moon/moon-view-controller.js','./Moon/moon-lunar-interface.js','./Global/update-manager.js','./Data/data-recovery.js','./Location/location.js','./Home/moon-orbit.js','./Data/data-store.js'];
-        const essentialPath = scriptPaths.find(path => src.endsWith(path.slice(1)));
-        if (essentialPath) {
-          knownBadPaths.push(essentialPath);
-          sceneFailure = 'A required startup script failed to load.';
-        }
-      } else if (event.error && !ready) {
+        const scriptPaths = ['./Global/orb-controls-v4.js','./EarthEngine/Core/earth-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-core.js','./Earth/earth-view-controller.js','./Global/view-manager.js','./Global/view-module-registry.js','./Stacks/stacks-feature-views.js','./Atmosphere/atmosphere-view-controller.js','./Oceans/oceans-view-controller.js','./Land/land-view-controller.js','./Water-Ice/water-ice-view-controller.js','./Earth-Activity/earth-activity-view-controller.js','./Energy-Humanity/energy-humanity-view-controller.js','./Clouds/clouds-view.js','./Weather/weather-view.js','./Traffic/traffic-view.js','./Earthquakes/earthquakes-view.js','./Global/sky-view-controller.js','./Moon/moon-view-controller.js','./Sun/sun-view-controller.js','./Global/update-manager.js','./Data/data-recovery.js','./Location/location.js','./Home/moon-orbit.js','./Data/data-store.js'];
+        for (const path of scriptPaths) if (src.endsWith(path.slice(1))) knownBadPaths.push(path);
+        sceneFailure = 'A required startup script failed to load.';
+      } else if (event.error) {
         sceneFailure = 'A startup script or the Earth renderer encountered an error.';
       }
     }, true);
     window.addEventListener('unhandledrejection', event => {
-      if (!ready && event.reason) sceneFailure = 'A startup task failed: ' + String(event.reason.message || event.reason).slice(0,120);
+      if (event.reason) sceneFailure = 'A startup task failed: ' + String(event.reason.message || event.reason).slice(0,120);
     });
     const statusNode = document.getElementById('status');
     if (statusNode && window.MutationObserver) {
@@ -1053,7 +1044,14 @@ async function transformHomeHTML(request, response, forceHome = false) {
       html = html.replace(/<\/body\s*>/i, '<script src="./Global/view-module-registry.js" defer></script>\n</body>');
     }
   }
-  // Stacks feature runtime is loaded only when a feature Orb is selected.
+  if (!html.includes("stacks-feature-views.js")) {
+    const registryAnchor = "'./Global/view-module-registry.js',";
+    if (html.includes(registryAnchor)) {
+      html = html.replace(registryAnchor, registryAnchor + "\n    './Stacks/stacks-feature-views.js',");
+    } else {
+      html = html.replace(/<\/body\s*>/i, '<script src="./Stacks/stacks-feature-views.js" defer></script>\n</body>');
+    }
+  }
   if (!html.includes("update-manager.js")) {
     html = html.replace(/<\/body\s*>/i, '<script src="./Global/update-manager.js" defer></script>\n</body>');
   }
