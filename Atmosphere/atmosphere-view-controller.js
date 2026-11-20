@@ -166,9 +166,23 @@
       .le-atmo-scale-more:active { transform:scale(.94); }
       .le-atmo-scale-more:focus-visible { outline:2px solid #80d9f5; outline-offset:3px; }
       .le-atmo-legend-bar {
+        position:relative; isolation:isolate; overflow:visible;
         width:100%; height:6px; border-radius:999px;
         background:linear-gradient(90deg,#080d2c 0%,#101c50 7.1429%,#203b8a 14.2857%,#1689b8 32.1429%,#45b978 50%,#f0c64b 67.8571%,#f06429 82.1429%,#c83f36 89.2857%,#8b152a 94.6429%,#450417 100%);
         box-shadow:0 0 5px rgba(77,157,255,.25),inset 0 0 0 1px rgba(255,255,255,.30);
+      }
+      .le-atmo-range-marker {
+        position:absolute; z-index:2; top:-4px;
+        width:1px; height:14px; transform:translateX(-50%);
+        background:rgba(239,250,255,.96);
+        box-shadow:0 0 3px rgba(110,225,255,.95),0 0 7px rgba(73,171,255,.72);
+        pointer-events:none;
+      }
+      .le-atmo-range-marker::after {
+        content:""; position:absolute; left:50%; top:-2px;
+        width:4px; height:4px; border-radius:50%;
+        transform:translateX(-50%);
+        background:#f4fdff; box-shadow:0 0 4px rgba(110,225,255,.95);
       }
       .le-atmo-legend-ticks {
         position:relative; width:var(--atmo-content-width);
@@ -868,6 +882,22 @@ function installStyles() {
       legendBar.style.background = config === FIELD_CONFIG.temperature
         ? TEMPERATURE_LEGEND
         : 'linear-gradient(90deg,#0e297a 0%,#05a8e0 25%,#2edca8 50%,#ffca47 75%,#e8402b 100%)';
+
+      // Keep the colour ramp's calibrated domain intact. Overlay live observed
+      // minimum/maximum markers so the verified data range is visible without
+      // rescaling or recolouring the gradient.
+      legendBar.querySelectorAll('.le-atmo-range-marker').forEach(node => node.remove());
+      const markerPosition = value => max > min
+        ? Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100))
+        : 0;
+      for (const [kind, value] of [['min', grid.min], ['max', grid.max]]) {
+        if (!Number.isFinite(value)) continue;
+        const marker = runtime.el('span', `le-atmo-range-marker le-atmo-range-marker--${kind}`);
+        marker.style.left = `${markerPosition(value)}%`;
+        marker.title = `${kind === 'min' ? 'Minimum' : 'Maximum'} verified value: ${formatFieldValue(value)} ${config.displayUnits}`;
+        marker.setAttribute('aria-hidden', 'true');
+        legendBar.appendChild(marker);
+      }
       legendTicks.replaceChildren();
       const tickValues = config.ticks
         ? config.ticks.map(label => {
