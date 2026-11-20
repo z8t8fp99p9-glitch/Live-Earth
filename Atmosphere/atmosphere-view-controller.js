@@ -507,15 +507,17 @@ async function initializeEngineView(view, viewId) {
       textureUrl: "./EarthEngine/Assets/earth-land-ocean-ice-2048.png",
       geometryDetail: "standard",
       maxAnisotropy: renderer.capabilities.getMaxAnisotropy(),
-      atmosphere: true
+      atmosphere: false
     });
     if (disposed) { earthGlobe.dispose(); throw new Error("The world view closed while its Engine globe was loading."); }
     scene.add(earthGlobe.group);
-    // Render the base Earth immediately; country boundaries are a separate,
-    // non-blocking Atmosphere overlay and must not delay engine readiness.
+    // Render the base Earth immediately; country boundaries are a separate
+    // overlay and must not delay the first visible globe frame.
     requestRender();
 
-    // Country boundaries attach when ready, without holding up the globe.
+    // Country boundaries are an Atmosphere-only overlay. Attach them to the
+    // surface asynchronously so they inherit its texture alignment and rotation
+    // without blocking the base globe from appearing.
     createCountryBordersSkin({
       THREE: T,
       earthGroup: earthGlobe.surface,
@@ -531,7 +533,7 @@ async function initializeEngineView(view, viewId) {
         result?.dispose?.();
         return;
       }
-      countryBorders = result;
+      countryBorders = result || null;
       if (countryBorders) root.dataset.countryBorders = "natural-earth-50m";
       requestRender();
     }).catch(error => {
