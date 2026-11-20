@@ -93,15 +93,16 @@
       .le-atmo-range { display:flex; align-items:baseline; flex-wrap:wrap; gap:5px 10px; }
       .le-atmo-range strong { color:#f2fbff; font-size:clamp(23px,6vw,31px); letter-spacing:-.035em; font-weight:760; }
       .le-atmo-range span { color:#a9c6d8; font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
-      /* Slim, single-line instrument. Keep the three header fields on one baseline. */
+      /* Proportional instrument: header and gradient share one column; action sits beside the bar. */
       .le-atmo-scale-dock {
         container-type:inline-size;
+        --atmo-action-space:clamp(28px,6cqi,40px);
         position:absolute; z-index:4;
         left:clamp(12px,3.6vw,28px); right:clamp(12px,3.6vw,28px);
         bottom:calc(env(safe-area-inset-bottom) + clamp(82px,12svh,112px));
         box-sizing:border-box; width:min(calc(100% - 24px),680px);
         margin:0 auto;
-        padding:4px clamp(10px,2.2cqi,16px) 3px;
+        padding:clamp(5px,1.15cqi,8px) clamp(12px,2.2cqi,17px) clamp(5px,1.05cqi,7px);
         border:1px solid rgba(119,203,255,.45); border-radius:999px;
         color:#eaf7ff;
         background:linear-gradient(180deg,rgba(4,15,31,.94),rgba(2,8,19,.96));
@@ -111,77 +112,79 @@
       }
       .le-atmo-scale-dock[hidden] { display:none!important; }
       .le-atmo-scale-heading {
-        display:flex; flex-wrap:nowrap; align-items:center; justify-content:space-between;
-        gap:0; min-width:0; margin:0 0 3px; white-space:nowrap;
-        line-height:1;
+        display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr) minmax(0,.8fr);
+        align-items:center; width:calc(100% - var(--atmo-action-space) - clamp(8px,1.8cqi,14px));
+        min-width:0; margin:0 0 clamp(5px,.9cqi,7px);
+        white-space:nowrap; line-height:1;
       }
       .le-atmo-legend-title {
-        display:block; flex:1 1 0; min-width:0; max-width:39%; overflow:hidden;
-        padding-right:clamp(6px,1.5cqi,11px);
+        display:block; min-width:0; overflow:hidden; padding-right:clamp(6px,1.2cqi,10px);
         color:#e5edf8; font-family:Georgia,serif;
-        font-size:clamp(7px,2vw,9.5px); font-size:clamp(7px,2cqi,9.5px);
-        font-weight:500; letter-spacing:.065em; text-overflow:ellipsis;
-        text-transform:uppercase; white-space:nowrap;
+        font-size:clamp(8px,1.65cqi,11px); font-weight:500;
+        letter-spacing:.09em; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap;
       }
       .le-atmo-scale-range-group { display:contents; }
       .le-atmo-scale-range {
-        flex:0 0 auto; padding:0 clamp(6px,1.45cqi,11px);
+        min-width:0; padding:0 clamp(6px,1.25cqi,11px);
         border-left:1px solid rgba(213,235,255,.56);
         color:#f5f8ff; font-family:Georgia,serif;
-        font-size:clamp(12px,3.2vw,16px); font-size:clamp(12px,3.2cqi,16px);
-        font-weight:500; letter-spacing:0; font-variant-numeric:tabular-nums;
-        white-space:nowrap;
+        font-size:clamp(12px,2.8cqi,19px); font-weight:500;
+        letter-spacing:0; font-variant-numeric:tabular-nums; white-space:nowrap; text-align:center;
       }
       .le-atmo-scale-caption {
-        flex:0 1 auto; min-width:0; padding-left:clamp(6px,1.35cqi,10px);
+        min-width:0; overflow:hidden; padding-left:clamp(6px,1.25cqi,11px);
         border-left:1px solid rgba(213,235,255,.48);
-        color:#c0d4e8; font-size:clamp(5px,1.45vw,7px); font-size:clamp(5px,1.45cqi,7px);
+        color:#c0d4e8; font-size:clamp(5px,1.15cqi,8px);
         font-weight:650; letter-spacing:.075em; line-height:1;
-        text-transform:uppercase; white-space:nowrap; opacity:.94;
+        text-transform:uppercase; white-space:nowrap; opacity:.94; text-align:center;
       }
-      .le-atmo-scale-track-row { display:flex; align-items:center; gap:clamp(8px,2cqi,14px); min-width:0; }
-      .le-atmo-scale-track { flex:1 1 auto; min-width:0; }
+      .le-atmo-scale-track-row {
+        display:grid; grid-template-columns:minmax(0,1fr) var(--atmo-action-space);
+        align-items:center; column-gap:clamp(8px,1.8cqi,14px); min-width:0;
+      }
+      .le-atmo-scale-track { min-width:0; width:100%; }
       .le-atmo-scale-more {
         flex:none; display:grid; place-items:center;
-        width:clamp(26px,7cqi,32px); height:clamp(26px,7cqi,32px);
-        margin:0; padding:0; border:1px solid rgba(113,224,255,.92); border-radius:50%;
+        width:var(--atmo-action-space); height:var(--atmo-action-space);
+        margin:0; padding:0; justify-self:end; align-self:center;
+        border:1px solid rgba(113,224,255,.92); border-radius:50%;
         color:#e5faff;
         background:radial-gradient(circle at 36% 28%,rgba(112,229,255,.34),rgba(4,19,34,.97) 72%);
         box-shadow:0 0 6px rgba(57,207,255,.58),0 0 13px rgba(38,145,255,.27),inset 0 0 5px rgba(255,255,255,.15);
-        font:300 20px/1 system-ui,sans-serif;
+        font:300 clamp(19px,3.1cqi,25px)/1 system-ui,sans-serif;
         cursor:pointer; pointer-events:auto; touch-action:manipulation;
       }
       .le-atmo-scale-more:active { transform:scale(.94); }
       .le-atmo-scale-more:focus-visible { outline:2px solid #80d9f5; outline-offset:3px; }
       .le-atmo-legend-bar {
-        height:5.5px; border-radius:999px;
+        width:100%; height:clamp(7px,1.25cqi,10px); border-radius:999px;
         background:linear-gradient(90deg,#080d2c 0%,#101c50 7.1429%,#203b8a 14.2857%,#1689b8 32.1429%,#45b978 50%,#f0c64b 67.8571%,#f06429 82.1429%,#c83f36 89.2857%,#8b152a 94.6429%,#450417 100%);
         box-shadow:0 0 6px rgba(77,157,255,.28),inset 0 0 0 1px rgba(255,255,255,.28);
       }
       .le-atmo-legend-ticks {
-        position:relative; height:9px; margin-top:2px; color:#d5e1ed;
-        font-family:Georgia,serif; font-size:7.5px; line-height:1;
-        font-variant-numeric:tabular-nums;
+        position:relative; width:calc(100% - var(--atmo-action-space) - clamp(8px,1.8cqi,14px));
+        height:clamp(11px,1.9cqi,15px); margin-top:clamp(2px,.45cqi,4px);
+        color:#d5e1ed; font-family:Georgia,serif;
+        font-size:clamp(8px,1.55cqi,11px); line-height:1; font-variant-numeric:tabular-nums;
       }
       .le-atmo-legend-ticks span { position:absolute; top:0; transform:translateX(-50%); white-space:nowrap; }
       .le-atmo-legend-ticks span:first-child { transform:none; }
       .le-atmo-legend-ticks span:last-child { transform:translateX(-100%); }
-      @container (max-width:420px) {
-        .le-atmo-legend-title { max-width:37%; letter-spacing:.045em; padding-right:6px; }
-        .le-atmo-scale-range { padding-left:6px; padding-right:6px; font-size:12px; }
-        .le-atmo-scale-caption { padding-left:6px; font-size:5.2px; letter-spacing:.035em; }
-        .le-atmo-scale-track-row { gap:8px; }
+      @container (max-width:430px) {
+        .le-atmo-scale-heading { grid-template-columns:minmax(0,1.05fr) minmax(0,1fr) minmax(0,.75fr); }
+        .le-atmo-legend-title { letter-spacing:.045em; padding-right:5px; font-size:8px; }
+        .le-atmo-scale-range { padding-left:5px; padding-right:5px; font-size:clamp(11px,2.8cqi,14px); }
+        .le-atmo-scale-caption { padding-left:5px; font-size:5px; letter-spacing:.025em; }
       }
-      @container (max-width:330px) {
-        .le-atmo-scale-caption { display:none; }
-        .le-atmo-legend-title { max-width:42%; }
-        .le-atmo-scale-range { border-left:1px solid rgba(213,235,255,.55); }
+      @container (max-width:350px) {
+        .le-atmo-scale-heading { grid-template-columns:minmax(0,1fr) auto; row-gap:3px; }
+        .le-atmo-legend-title { max-width:none; }
+        .le-atmo-scale-range { border-left:1px solid rgba(213,235,255,.56); }
+        .le-atmo-scale-caption { grid-column:1 / -1; border:0; padding:0; text-align:right; font-size:5px; }
+        .le-atmo-legend-ticks { font-size:8px; }
       }
       @media (orientation:landscape) {
-        .le-atmo-scale-dock {
-          bottom:calc(env(safe-area-inset-bottom) + clamp(48px,10svh,70px));
-          left:auto; right:clamp(12px,2vw,20px); width:min(58vw,620px);
-        }
+        .le-atmo-scale-dock { bottom:calc(env(safe-area-inset-bottom) + clamp(48px,10svh,70px)); left:auto; right:clamp(12px,2vw,20px); width:min(58vw,620px); }
       }
       .le-atmo-details { margin-top:10px; border-top:1px solid rgba(165,208,235,.14); padding-top:8px; }
       .le-atmo-details summary { list-style:none; cursor:pointer; color:#b7d8e9; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; display:flex; justify-content:space-between; align-items:center; min-height:26px; }
@@ -757,14 +760,13 @@ function installStyles() {
     legendBar.setAttribute('aria-label', 'Atmospheric field colour gradient');
     scaleTrack.appendChild(legendBar);
     const legendTicks = runtime.el('div', 'le-atmo-legend-ticks');
-    scaleTrack.appendChild(legendTicks);
     scaleMore = runtime.el('button', 'le-atmo-scale-more', '+');
     scaleMore.type = 'button';
     scaleMore.setAttribute('aria-label', 'Show atmospheric data details and provenance');
     scaleMore.setAttribute('aria-controls', 'le-atmosphere-data-details');
     scaleMore.setAttribute('aria-expanded', 'false');
     scaleTrackRow.append(scaleTrack, scaleMore);
-    scaleDock.appendChild(scaleTrackRow);
+    scaleDock.append(scaleTrackRow, legendTicks);
     view.root.appendChild(scaleDock);
     const disclosure = runtime.el('details', 'le-atmo-details');
     disclosure.id = 'le-atmosphere-data-details';
