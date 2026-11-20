@@ -922,7 +922,7 @@ function installStyles() {
     const FIELD_CONFIG = {
       temperature: { ids: ['earth.atmosphere.air_temperature'], title: 'NOAA · 2 m air temperature', units: 'degree_Celsius', displayUnits: '°C', min: null, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · 2 m air temperature' },
       pressure: { ids: ['earth.atmosphere.atmospheric_pressure'], title: 'NOAA · Mean sea-level pressure', units: 'kilopascal', displayUnits: 'kPa', min: null, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · mean sea-level pressure' },
-      wind: { ids: ['earth.atmosphere.wind_speed','earth.atmosphere.wind_direction'], title: 'NOAA · 10 m wind', units: 'metre_per_second', displayUnits: 'm/s', min: 0, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · 10 m wind speed and direction derived from U/V components' },
+      wind: { ids: ['earth.atmosphere.wind_speed'], title: 'NOAA · 10 m wind speed', units: 'metre_per_second', displayUnits: 'm/s', min: 0, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · 10 m wind speed' },
       moisture: { ids: ['earth.atmosphere.humidity'], title: 'NOAA · 2 m relative humidity', units: 'percent', displayUnits: '%', min: 0, max: 100, ticks: ['0%','25%','50%','75%','100%'], source: 'NOAA NCEP · GFS 0.25° analysis · 2 m relative humidity' }
     };
     const datasetButtons = new Map();
@@ -1051,7 +1051,7 @@ function installStyles() {
     source.hidden = true;
     details.appendChild(source);
 
-    let closed = false, layerDispose = null, gridHandle = null, windFlowHandle = null, gridRoot = null, worldGlobe = null;
+    let closed = false, layerDispose = null, gridHandle = null, gridRoot = null, worldGlobe = null;
     let dataRequest = null;
     function removeActiveLayer() {
       if (typeof layerDispose === 'function') {
@@ -1059,8 +1059,6 @@ function installStyles() {
         layerDispose = null;
         dispose();
       }
-      try { windFlowHandle?.dispose?.(); } catch (_) {}
-      windFlowHandle = null;
       try { gridHandle?.dispose?.(); } catch (_) {}
       gridHandle = null;
       try { gridRoot?.removeFromParent?.(); } catch (_) {}
@@ -1144,190 +1142,6 @@ function installStyles() {
       return { min, max };
     }
 
-    function makeWindFlow(THREE, earth, speedGrid, directionGrid, speedMin, speedMax, requestRender) {
-      // Restrained surface flow overlay. The verified speed skin remains the
-      // primary field; trails use normal alpha blending (never additive) so
-      // particle accumulation cannot wash the globe to white.
-      const speedDef = speedGrid.definition;
-      const directionDef = directionGrid.definition;
-      const speedValues = speedGrid.values;
-      const directionValues = directionGrid.values;
-      const particleCount = Math.min(360, Math.max(220, Math.round((window.innerWidth || 420) * 0.62)));
-      const trailLength = 7;
-      const segmentCount = trailLength - 1;
-      const vertexCount = particleCount * segmentCount * 2;
-      const positions = new Float32Array(vertexCount * 3);
-      const colors = new Float32Array(vertexCount * 3);
-      const fades = new Float32Array(vertexCount);
-      const headPositions = new Float32Array(particleCount * 3);
-      const headColors = new Float32Array(particleCount * 3);
-      const particles = [];
-      const rad = Math.PI / 180;
-      const radius = 1.0125;
-      const speedRange = Math.max(0.001, speedMax - speedMin);
-      let seed = 0x51f15e;
-      const random = () => {
-        seed = (seed * 1664525 + 1013904223) >>> 0;
-        return seed / 4294967296;
-      };
-      const palette = WIND_COLOR_STOPS.map(stop => ({
-        at: stop[0], color: new THREE.Color(stop[1], stop[2], stop[3])
-      }));
-      function colourAt(t) {
-        const value = Math.max(0, Math.min(1, t));
-        let right = palette.findIndex(stop => stop.at >= value);
-        if (right < 0) right = palette.length - 1;
-        const a = palette[Math.max(0, right - 1)], b = palette[right];
-        const f = b.at > a.at ? (value - a.at) / (b.at - a.at) : 0;
-        return a.color.clone().lerp(b.color, f);
-      }
-      function gridSample(def, values, latitude, longitude, circular) {
-        const gx = (longitude - def.lonStart) / def.lonStep;
-        const gy = (latitude - def.latStart) / def.latStep;
-        if (!Number.isFinite(gx) || !Number.isFinite(gy)) return null;
-        const xRaw = Math.floor(gx), yRaw = Math.floor(gy);
-        const fx = gx - xRaw, fy = gy - yRaw;
-        const wrap = value => ((value % def.width) + def.width) % def.width;
-        const x0 = wrap(xRaw), x1 = wrap(xRaw + 1);
-        const y0 = Math.max(0, Math.min(def.height - 1, yRaw));
-        const y1 = Math.max(0, Math.min(def.height - 1, yRaw + 1));
-        const samples = [
-          [values[y0 * def.width + x0], (1 - fx) * (1 - fy)],
-          [values[y0 * def.width + x1], fx * (1 - fy)],
-          [values[y1 * def.width + x0], (1 - fx) * fy],
-          [values[y1 * def.width + x1], fx * fy]
-        ];
-        let total = 0, weight = 0, sx = 0, sy = 0;
-        for (const [value, w] of samples) {
-          if (!Number.isFinite(value) || w <= 0) continue;
-          if (circular) {
-            sx += Math.cos(value * rad) * w;
-            sy += Math.sin(value * rad) * w;
-          } else total += value * w;
-          weight += w;
-        }
-        if (weight < 0.25) return null;
-        return circular ? ((Math.atan2(sy, sx) / rad) + 360) % 360 : total / weight;
-      }
-      function surfacePoint(latitude, longitude, target) {
-        const phi = latitude * rad, lambda = longitude * rad;
-        const cp = Math.cos(phi);
-        target[0] = cp * Math.cos(lambda) * radius;
-        target[1] = Math.sin(phi) * radius;
-        target[2] = -cp * Math.sin(lambda) * radius;
-      }
-      function resetParticle(particle) {
-        particle.lat = -76 + random() * 152;
-        particle.lon = -180 + random() * 360;
-        particle.speed = speedMin;
-        particle.history = Array.from({ length: trailLength }, () => [0, 0, 0]);
-        surfacePoint(particle.lat, particle.lon, particle.history[0]);
-        for (let i = 1; i < trailLength; i++) particle.history[i] = particle.history[0].slice();
-      }
-      for (let i = 0; i < particleCount; i++) {
-        const particle = { lat: 0, lon: 0, history: [], speed: speedMin };
-        resetParticle(particle);
-        particles.push(particle);
-      }
-
-      const lineGeometry = new THREE.BufferGeometry();
-      lineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
-      lineGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3).setUsage(THREE.DynamicDrawUsage));
-      lineGeometry.setAttribute('fade', new THREE.BufferAttribute(fades, 1).setUsage(THREE.DynamicDrawUsage));
-      const lineMaterial = new THREE.ShaderMaterial({
-        transparent: true, depthTest: true, depthWrite: false,
-        blending: THREE.NormalBlending, toneMapped: false,
-        vertexShader: `attribute vec3 color; attribute float fade; varying vec3 vColor; varying float vFade; void main(){vColor=color;vFade=fade;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
-        fragmentShader: `varying vec3 vColor; varying float vFade; void main(){gl_FragColor=vec4(vColor,clamp(vFade,0.0,0.34));}`
-      });
-      const trails = new THREE.LineSegments(lineGeometry, lineMaterial);
-      trails.name = 'liveEarthAtmosphereWindFlowTrails';
-      trails.renderOrder = 8;
-
-      const headGeometry = new THREE.BufferGeometry();
-      headGeometry.setAttribute('position', new THREE.BufferAttribute(headPositions, 3).setUsage(THREE.DynamicDrawUsage));
-      headGeometry.setAttribute('color', new THREE.BufferAttribute(headColors, 3).setUsage(THREE.DynamicDrawUsage));
-      const headMaterial = new THREE.PointsMaterial({
-        size: 1.35, sizeAttenuation: true, vertexColors: true, transparent: true,
-        opacity: 0.56, depthTest: true, depthWrite: false,
-        blending: THREE.NormalBlending, toneMapped: false
-      });
-      const heads = new THREE.Points(headGeometry, headMaterial);
-      heads.name = 'liveEarthAtmosphereWindFlowParticles';
-      heads.renderOrder = 9;
-      earth.add(trails, heads);
-
-      let disposed = false;
-      let frame = 0;
-      let lastFrameTime = 0;
-      function animate(time) {
-        if (disposed) return;
-        frame = requestAnimationFrame(animate);
-        if (document.hidden || time - lastFrameTime < 48) return;
-        lastFrameTime = time;
-        let vertex = 0;
-        for (let i = 0; i < particles.length; i++) {
-          const particle = particles[i];
-          const speed = gridSample(speedDef, speedValues, particle.lat, particle.lon, false);
-          const direction = gridSample(directionDef, directionValues, particle.lat, particle.lon, true);
-          if (speed === null || direction === null || speed < 0) {
-            resetParticle(particle);
-          } else {
-            particle.speed = speed;
-            // NOAA direction is meteorological FROM; reverse it for travel.
-            const bearing = (direction + 180) * rad;
-            const normalizedSpeed = Math.max(0, Math.min(1, (speed - speedMin) / speedRange));
-            const stepDegrees = 0.003 + normalizedSpeed * 0.038;
-            const oldLat = particle.lat * rad;
-            particle.lat = Math.max(-82, Math.min(82, particle.lat + Math.cos(bearing) * stepDegrees));
-            particle.lon += (Math.sin(bearing) * stepDegrees) / Math.max(0.16, Math.cos(oldLat));
-            if (particle.lon > 180) particle.lon -= 360;
-            if (particle.lon < -180) particle.lon += 360;
-            const head = [0, 0, 0];
-            surfacePoint(particle.lat, particle.lon, head);
-            particle.history.shift();
-            particle.history.push(head);
-          }
-          const normalized = Math.max(0, Math.min(1, (particle.speed - speedMin) / speedRange));
-          const tint = colourAt(normalized);
-          for (let j = 0; j < segmentCount; j++) {
-            const a = particle.history[j], b = particle.history[j + 1];
-            positions.set(a, vertex * 3);
-            colors.set([tint.r, tint.g, tint.b], vertex * 3);
-            fades[vertex++] = 0.025 + (j / segmentCount) * 0.22;
-            positions.set(b, vertex * 3);
-            colors.set([tint.r, tint.g, tint.b], vertex * 3);
-            fades[vertex++] = 0.025 + ((j + 1) / segmentCount) * 0.22;
-          }
-          const head = particle.history[trailLength - 1];
-          headPositions.set(head, i * 3);
-          headColors[i * 3] = tint.r;
-          headColors[i * 3 + 1] = tint.g;
-          headColors[i * 3 + 2] = tint.b;
-        }
-        lineGeometry.attributes.position.needsUpdate = true;
-        lineGeometry.attributes.color.needsUpdate = true;
-        lineGeometry.attributes.fade.needsUpdate = true;
-        headGeometry.attributes.position.needsUpdate = true;
-        headGeometry.attributes.color.needsUpdate = true;
-        requestRender?.();
-      }
-      frame = requestAnimationFrame(animate);
-      return {
-        dispose() {
-          if (disposed) return;
-          disposed = true;
-          cancelAnimationFrame(frame);
-          trails.removeFromParent();
-          heads.removeFromParent();
-          lineGeometry.dispose();
-          lineMaterial.dispose();
-          headGeometry.dispose();
-          headMaterial.dispose();
-        }
-      };
-    }
-
     async function selectDataset(datasetKey) {
       if (closed || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
       const config = FIELD_CONFIG[datasetKey];
@@ -1367,7 +1181,6 @@ function installStyles() {
           if (item.definition.width !== 1440 || item.definition.height !== 721) throw new Error('A selected NOAA field does not match the approved 1440 × 721 grid.');
         }
         if (grid.units !== config.units) throw new Error(`Expected ${config.units}, received ${grid.units}.`);
-        if (datasetKey === 'wind' && grids[1].units !== 'degree') throw new Error(`Expected wind direction in degrees, received ${grids[1].units}.`);
         const bounds = updateLegend(grid, config);
         rangeValue.textContent = `${formatFieldValue(grid.min)} — ${formatFieldValue(grid.max)}`;
         rangeUnit.textContent = `Current global range · ${config.displayUnits}`;
@@ -1384,10 +1197,6 @@ function installStyles() {
         makeMetric('Observed / valid time', formatTime(grid.observedAt));
         makeMetric('Snapshot published', formatTime(grid.retrievedAt));
         makeMetric('Verified range', `${formatFieldValue(grid.min)} to ${formatFieldValue(grid.max)}`, config.displayUnits);
-        if (datasetKey === 'wind') {
-          makeMetric('Wind direction range', `${formatFieldValue(grids[1].min)} to ${formatFieldValue(grids[1].max)}`, 'degrees FROM north');
-          makeMetric('Wind vectors', '10 m', 'U/V components');
-        }
         if (closed || controller.signal.aborted || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
         if (!worldGlobe || typeof worldGlobe.attachLayer !== 'function') throw new Error('The Earth Engine globe is not ready.');
         layerDispose = worldGlobe.attachLayer(`atmosphere-${datasetKey}`, ({ THREE, earth }) => {
@@ -1412,20 +1221,10 @@ function installStyles() {
             contourColor: [0.13, 0.10, 0.09],
             name: `NOAA-GFS-${datasetKey}`
           });
-          if (datasetKey === 'wind') {
-            try {
-              windFlowHandle = makeWindFlow(THREE, earth, grid, grids[1], bounds.min, bounds.max, () => worldGlobe?.requestRender?.());
-            } catch (error) {
-              console.warn('[LIVE // EARTH] Wind flow overlay could not be created; the verified wind-speed field remains visible.', error);
-              windFlowHandle = null;
-            }
-          }
           gridRoot.add(gridHandle.mesh);
           if (gridHandle.auraMesh) gridRoot.add(gridHandle.auraMesh);
           earth.add(gridRoot);
           return () => {
-            try { windFlowHandle?.dispose?.(); } catch (_) {}
-            windFlowHandle = null;
             try { gridHandle?.dispose?.(); } catch (_) {}
             gridHandle = null;
             try { gridRoot?.removeFromParent?.(); } catch (_) {}
