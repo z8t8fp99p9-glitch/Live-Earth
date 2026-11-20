@@ -93,7 +93,7 @@
       .le-atmo-range { display:flex; align-items:baseline; flex-wrap:wrap; gap:5px 10px; }
       .le-atmo-range strong { color:#f2fbff; font-size:clamp(23px,6vw,31px); letter-spacing:-.035em; font-weight:760; }
       .le-atmo-range span { color:#a9c6d8; font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
-      /* Header is centred on the gradient track itself; the action button is outside that shared width. */
+      /* Header group is centred on the gradient track; temperature label receives the only size emphasis. */
       .le-atmo-scale-dock {
         container-type:inline-size;
         --atmo-action-space:clamp(28px,5.2cqi,34px);
@@ -115,30 +115,29 @@
       }
       .le-atmo-scale-dock[hidden] { display:none!important; }
       .le-atmo-scale-heading {
-        display:grid; grid-template-columns:34% 38% 28%;
-        align-items:center; width:var(--atmo-content-width);
+        display:flex; justify-content:center; align-items:center;
+        gap:0; width:var(--atmo-content-width);
         min-width:0; margin:0 0 2px;
         white-space:nowrap; line-height:1;
       }
       .le-atmo-legend-title {
-        display:block; min-width:0; overflow:hidden;
-        padding:0 3px; color:#e5edf8; font-family:Georgia,serif;
-        font-size:var(--atmo-header-font); font-weight:500;
+        display:block; flex:0 1 auto; min-width:0; overflow:hidden;
+        margin:0; padding:0; color:#e5edf8; font-family:Georgia,serif;
+        font-size:clamp(9px,1.65cqi,11px); font-weight:500;
         letter-spacing:0; text-align:center;
         text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap;
       }
       .le-atmo-scale-range-group { display:contents; }
       .le-atmo-scale-range {
-        min-width:0; padding:0 4px;
-        border-left:1px solid rgba(213,235,255,.56);
-        color:#f5f8ff; font-family:Georgia,serif;
+        flex:0 0 auto; min-width:0; margin:0; padding:0;
+        border:0; color:#f5f8ff; font-family:Georgia,serif;
         font-size:var(--atmo-header-font); font-weight:500;
         letter-spacing:0; font-variant-numeric:tabular-nums;
         white-space:nowrap; text-align:center;
       }
       .le-atmo-scale-caption {
-        display:block; min-width:0; overflow:hidden; padding:0 3px;
-        border-left:1px solid rgba(213,235,255,.48);
+        display:block; flex:0 1 auto; min-width:0; overflow:hidden;
+        margin:0; padding:0; border:0;
         color:#c0d4e8; font-family:Georgia,serif;
         font-size:var(--atmo-header-font); font-weight:500;
         letter-spacing:0; line-height:1;
@@ -177,16 +176,12 @@
       .le-atmo-legend-ticks span:first-child { transform:none; }
       .le-atmo-legend-ticks span:last-child { transform:translateX(-100%); }
       @container (max-width:430px) {
-        .le-atmo-scale-heading { grid-template-columns:34% 38% 28%; }
-        .le-atmo-legend-title, .le-atmo-scale-range, .le-atmo-scale-caption {
-          font-size:var(--atmo-header-font); letter-spacing:0;
-        }
-        .le-atmo-legend-title, .le-atmo-scale-range, .le-atmo-scale-caption { padding-left:2px; padding-right:2px; }
+        .le-atmo-legend-title { font-size:clamp(9px,1.65cqi,10px); }
+        .le-atmo-scale-range, .le-atmo-scale-caption { font-size:var(--atmo-header-font); }
       }
       @container (max-width:350px) {
-        .le-atmo-scale-heading { grid-template-columns:34% 38% 28%; }
-        .le-atmo-legend-title, .le-atmo-scale-range, .le-atmo-scale-caption { font-size:8px; }
-        .le-atmo-legend-ticks { font-size:8px; }
+        .le-atmo-legend-title { font-size:9px; }
+        .le-atmo-scale-range, .le-atmo-scale-caption, .le-atmo-legend-ticks { font-size:8px; }
       }
       @media (orientation:landscape) {
         .le-atmo-scale-dock { bottom:calc(env(safe-area-inset-bottom) + clamp(48px,10svh,70px)); left:auto; right:clamp(12px,2vw,20px); width:min(58vw,620px); }
