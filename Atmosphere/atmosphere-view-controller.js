@@ -68,6 +68,47 @@
       .le-atmo-hud-toggle:active { transform:scale(.94); }
       .le-atmo-hud-toggle:focus-visible { outline:2px solid #80d9f5; outline-offset:3px; }
       .le-atmo-hud-toggle-icon { width:19px; height:19px; flex:none; color:#a6e5ff; }
+      .le-atmo-hud-toggle[aria-expanded="true"] {
+        border-color:rgba(111,218,255,.78);
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 0 22px rgba(55,190,245,.25),0 5px 18px rgba(0,0,0,.28);
+      }
+      .le-atmo-dataset-orb-menu {
+        position:absolute; z-index:6;
+        top:calc(env(safe-area-inset-top) + 72px);
+        right:max(14px,env(safe-area-inset-right));
+        display:flex; flex-direction:column; align-items:center; gap:9px;
+        opacity:0; visibility:hidden; pointer-events:none;
+        transform:translateY(-7px) scale(.96);
+        transform-origin:top center;
+        transition:opacity .2s ease,transform .2s ease,visibility .2s ease;
+      }
+      .le-atmo-dataset-orb-menu.is-open {
+        opacity:1; visibility:visible; pointer-events:auto;
+        transform:translateY(0) scale(1);
+      }
+      .le-atmo-dataset-orb {
+        appearance:none; display:grid; place-items:center;
+        width:clamp(42px,5.8vmin,48px); height:clamp(42px,5.8vmin,48px);
+        min-width:42px; min-height:42px; padding:0; border-radius:50%;
+        border:1px solid rgba(122,205,240,.42);
+        color:#eaf7ff;
+        background:
+          radial-gradient(circle at 34% 24%,rgba(111,204,245,.2),transparent 52%),
+          linear-gradient(155deg,rgba(12,37,58,.96),rgba(3,12,24,.97));
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 0 15px rgba(54,174,231,.13),0 4px 13px rgba(0,0,0,.28);
+        backdrop-filter:blur(13px); -webkit-backdrop-filter:blur(13px);
+        cursor:pointer; touch-action:manipulation;
+        transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease;
+      }
+      .le-atmo-dataset-orb:active { transform:scale(.92); }
+      .le-atmo-dataset-orb:focus-visible { outline:2px solid #80d9f5; outline-offset:3px; }
+      .le-atmo-dataset-orb.is-selected {
+        border-color:rgba(112,225,210,.9);
+        box-shadow:inset 0 0 0 1px rgba(112,225,210,.22),0 0 19px rgba(72,220,196,.28),0 4px 13px rgba(0,0,0,.28);
+        background:linear-gradient(155deg,rgba(15,65,72,.96),rgba(3,18,31,.98));
+      }
+      .le-atmo-dataset-orb:disabled { opacity:.48; cursor:progress; }
+      .le-atmo-dataset-orb-icon { width:21px; height:21px; display:block; }
       .le-sfv--atmosphere .le-sfv-panel.le-atmo-hud-hidden {
         opacity:0; visibility:hidden; pointer-events:none;
         transition:opacity .2s ease,visibility .2s ease;
@@ -789,13 +830,16 @@ function installStyles() {
     hudIcon.innerHTML = '<path d="M4 7h7m4 0h5M4 17h3m4 0h9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="13" cy="7" r="2" fill="#061525" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="17" r="2" fill="#061525" stroke="currentColor" stroke-width="1.6"/>';
     // Compact round orb: keep the action discoverable through its accessible label.
     hudToggle.append(hudIcon);
-    hudToggle.setAttribute('aria-controls', 'le-atmo-hud-panel');
-    hudToggle.setAttribute('aria-expanded', 'true');
-    hudToggle.setAttribute('aria-label', 'Hide Atmosphere controls');
+    let datasetOrbMenu = null;
+    let datasetOrbButtons = new Map();
+    hudToggle.setAttribute('aria-controls', 'le-atmo-dataset-orb-menu');
+    hudToggle.setAttribute('aria-expanded', 'false');
+    hudToggle.setAttribute('aria-haspopup', 'true');
+    hudToggle.setAttribute('aria-label', 'Open atmospheric datasets');
     hudToggle.addEventListener('click', () => {
-      const hidden = view.panel.classList.toggle('le-atmo-hud-hidden');
-      hudToggle.setAttribute('aria-expanded', String(!hidden));
-      hudToggle.setAttribute('aria-label', hidden ? 'Show Atmosphere controls' : 'Hide Atmosphere controls');
+      const open = datasetOrbMenu?.classList.toggle('is-open') || false;
+      hudToggle.setAttribute('aria-expanded', String(open));
+      hudToggle.setAttribute('aria-label', open ? 'Close atmospheric datasets' : 'Open atmospheric datasets');
     });
     view.root.appendChild(hudToggle);
     view.panel.id = 'le-atmo-hud-panel';
@@ -832,7 +876,51 @@ function installStyles() {
       datasetButtons.set(item.id, button);
     }
     selector.appendChild(datasetGrid);
-    view.body.appendChild(selector);
+    // Dataset selection is presented by the floating four-orb menu, not duplicate cards.
+    // Keep the original dataset buttons detached as the accessible action bridge to the
+    // established selection/loading pipeline below.
+
+    datasetOrbMenu = runtime.el('div', 'le-atmo-dataset-orb-menu');
+    datasetOrbMenu.id = 'le-atmo-dataset-orb-menu';
+    datasetOrbMenu.setAttribute('role', 'group');
+    datasetOrbMenu.setAttribute('aria-label', 'Atmospheric datasets');
+
+    const datasetOrbIcons = {
+      temperature: '<path d="M10 14.5V5a2 2 0 1 1 4 0v9.5a4 4 0 1 1-4 0Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 10v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+      pressure: '<path d="M4.5 17a8 8 0 1 1 15 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="m12 13 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="13" r="1.5" fill="currentColor"/>',
+      wind: '<path d="M3 9h11a2.5 2.5 0 1 0-2.4-3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M3 13h15a2 2 0 1 1-1.9 2.6M3 17h7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+      moisture: '<path d="M12 3.5s-6 6.4-6 10.5a6 6 0 0 0 12 0c0-4.1-6-10.5-6-10.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 15.2a3.2 3.2 0 0 0 3.2 3.1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'
+    };
+    const datasetOrbColors = {
+      temperature: '#ff9185',
+      pressure: '#7be6c8',
+      wind: '#82dcf8',
+      moisture: '#c1a0ff'
+    };
+    for (const item of datasetOptions) {
+      const orb = runtime.el('button', 'le-atmo-dataset-orb');
+      orb.type = 'button';
+      orb.dataset.dataset = item.id;
+      orb.setAttribute('aria-label', item.label);
+      orb.setAttribute('aria-pressed', 'false');
+      orb.title = item.label;
+      const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      icon.setAttribute('viewBox', '0 0 24 24');
+      icon.setAttribute('aria-hidden', 'true');
+      icon.classList.add('le-atmo-dataset-orb-icon');
+      icon.style.color = datasetOrbColors[item.id];
+      icon.innerHTML = datasetOrbIcons[item.id];
+      orb.appendChild(icon);
+      orb.addEventListener('click', () => {
+        datasetButtons.get(item.id)?.click();
+        datasetOrbMenu.classList.remove('is-open');
+        hudToggle.setAttribute('aria-expanded', 'false');
+        hudToggle.setAttribute('aria-label', 'Open atmospheric datasets');
+      });
+      datasetOrbMenu.appendChild(orb);
+      datasetOrbButtons.set(item.id, orb);
+    }
+    view.root.appendChild(datasetOrbMenu);
 
     const details = runtime.card('NOAA · Atmospheric field', 'Select a dataset to load its current verified GFS grid values.');
     details.classList.add('le-atmo-data-card');
@@ -944,6 +1032,11 @@ function installStyles() {
         const active = key === id;
         button.classList.toggle('is-selected', active);
         button.setAttribute('aria-pressed', String(active));
+      }
+      for (const [key, orb] of datasetOrbButtons) {
+        const active = key === id;
+        orb.classList.toggle('is-selected', active);
+        orb.setAttribute('aria-pressed', String(active));
       }
     }
 
