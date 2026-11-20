@@ -121,8 +121,8 @@
       }
       .le-atmo-scale-dock[hidden] { display:none!important; }
       .le-atmo-instrument-label {
-        display:flex; align-items:center; justify-content:center; gap:10px;
-        width:100%; margin:0 0 10px;
+        display:flex; align-items:center; justify-content:center; gap:7px;
+        width:100%; margin:0 0 6px;
         color:#b7dff4; font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;
         font-size:10px; font-weight:650; letter-spacing:.28em;
         line-height:1; text-align:center; text-transform:uppercase;
@@ -130,7 +130,7 @@
       }
       .le-atmo-instrument-label::before,
       .le-atmo-instrument-label::after {
-        content:""; display:block; flex:1 1 0; max-width:112px; height:1px;
+        content:""; display:block; flex:1 1 0; max-width:88px; height:1px;
         background:linear-gradient(90deg,transparent,rgba(104,190,231,.46));
       }
       .le-atmo-instrument-label::after {
@@ -143,9 +143,9 @@
       }
       .le-atmo-scale-heading {
         display:flex; flex-flow:row nowrap; justify-content:flex-start;
-        align-items:center; gap:10px;
+        align-items:center; gap:8px;
         width:var(--atmo-content-width); min-width:0;
-        margin:0 0 8px; white-space:nowrap; line-height:1;
+        margin:0 0 5px; white-space:nowrap; line-height:1;
         text-align:left;
       }
       .le-atmo-legend-title {
@@ -158,7 +158,7 @@
       }
       .le-atmo-scale-range {
         display:block; flex:0 0 auto; min-width:0; margin:0;
-        padding:0 0 0 10px; border-left:1px solid rgba(137,200,228,.56);
+        padding:0 0 0 8px; border-left:1px solid rgba(137,200,228,.56);
         color:#f7fbff;
         font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;
         font-size:clamp(16px,4.1cqi,22px); font-weight:560;
@@ -197,7 +197,7 @@
       }
       .le-atmo-legend-ticks {
         position:relative; width:var(--atmo-content-width);
-        height:14px; margin-top:7px;
+        height:14px; margin-top:4px;
         color:#b9cddd; font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;
         font-size:clamp(9px,1.8cqi,11px); font-weight:500;
         line-height:1; font-variant-numeric:tabular-nums;
@@ -216,17 +216,17 @@
       .le-atmo-legend-ticks span:last-child { transform:translateX(-100%); text-align:right; }
       .le-atmo-legend-ticks span:last-child::before { left:100%; }
       @container (max-width:430px) {
-        .le-atmo-scale-heading { gap:8px; }
+        .le-atmo-scale-heading { gap:7px; }
         .le-atmo-legend-title { font-size:clamp(8.5px,2.2cqi,10px); letter-spacing:.025em; }
         .le-atmo-scale-range { padding-left:8px; font-size:clamp(15px,4cqi,19px); }
-        .le-atmo-instrument-label { margin-bottom:8px; }
+        .le-atmo-instrument-label { margin-bottom:6px; }
       }
       @container (max-width:350px) {
         .le-atmo-scale-dock { --atmo-action-space:40px; --atmo-track-gap:9px; }
-        .le-atmo-scale-heading { gap:6px; margin-bottom:7px; }
+        .le-atmo-scale-heading { gap:5px; margin-bottom:5px; }
         .le-atmo-legend-title { font-size:8px; }
         .le-atmo-scale-range { padding-left:6px; font-size:15px; }
-        .le-atmo-instrument-label { font-size:9px; letter-spacing:.22em; }
+        .le-atmo-instrument-label { font-size:9px; letter-spacing:.22em; margin-bottom:5px; }
         .le-atmo-legend-ticks { font-size:8px; }
       }
       @media (orientation:landscape) {
@@ -235,8 +235,8 @@
           width:min(62vw,700px);
           bottom:calc(env(safe-area-inset-bottom) + clamp(48px,10svh,70px));
         }
-        .le-atmo-instrument-label { margin-bottom:6px; }
-        .le-atmo-scale-heading { margin-bottom:6px; }
+        .le-atmo-instrument-label { margin-bottom:4px; }
+        .le-atmo-scale-heading { margin-bottom:4px; }
       }
 
       .le-atmo-details { margin-top:10px; border-top:1px solid rgba(165,208,235,.14); padding-top:8px; }
