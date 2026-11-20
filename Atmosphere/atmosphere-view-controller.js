@@ -48,21 +48,26 @@
       .le-atmo-hud-toggle {
         position:absolute; z-index:5; top:calc(env(safe-area-inset-top) + 14px);
         right:max(14px,env(safe-area-inset-right));
-        display:inline-flex; align-items:center; justify-content:center; gap:9px;
-        min-height:44px; padding:9px 15px;
-        border:1px solid rgba(135,205,239,.34); border-radius:999px;
+        display:grid; place-items:center;
+        width:clamp(46px,6vmin,52px); height:clamp(46px,6vmin,52px);
+        min-width:44px; min-height:44px; padding:0; aspect-ratio:1;
+        border:1px solid rgba(135,205,239,.48); border-radius:50%;
         color:#eaf7ff;
-        background:linear-gradient(180deg,rgba(8,25,43,.86),rgba(3,12,23,.82));
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 5px 18px rgba(0,0,0,.22);
+        background:
+          radial-gradient(circle at 34% 25%,rgba(112,207,245,.18),transparent 48%),
+          linear-gradient(155deg,rgba(13,39,61,.94),rgba(3,12,24,.96));
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,.16),
+          inset 0 0 0 3px rgba(122,205,240,.035),
+          0 0 18px rgba(54,174,231,.14),
+          0 5px 18px rgba(0,0,0,.28);
         backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-        font-family:inherit; font-size:11px; font-weight:620; line-height:1.1;
         cursor:pointer; touch-action:manipulation; pointer-events:auto;
-        transition:background .18s ease,border-color .18s ease,transform .18s ease;
+        transition:background .2s ease,border-color .2s ease,box-shadow .2s ease,transform .2s ease;
       }
-      .le-atmo-hud-toggle:active { transform:scale(.98); }
+      .le-atmo-hud-toggle:active { transform:scale(.94); }
       .le-atmo-hud-toggle:focus-visible { outline:2px solid #80d9f5; outline-offset:3px; }
-      .le-atmo-hud-toggle-icon { width:17px; height:17px; flex:none; color:#91d9f8; }
-      .le-atmo-hud-toggle-label { white-space:nowrap; }
+      .le-atmo-hud-toggle-icon { width:19px; height:19px; flex:none; color:#a6e5ff; }
       .le-sfv--atmosphere .le-sfv-panel.le-atmo-hud-hidden {
         opacity:0; visibility:hidden; pointer-events:none;
         transition:opacity .2s ease,visibility .2s ease;
@@ -782,14 +787,13 @@ function installStyles() {
     hudIcon.setAttribute('aria-hidden', 'true');
     hudIcon.classList.add('le-atmo-hud-toggle-icon');
     hudIcon.innerHTML = '<path d="M4 7h7m4 0h5M4 17h3m4 0h9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="13" cy="7" r="2" fill="#061525" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="17" r="2" fill="#061525" stroke="currentColor" stroke-width="1.6"/>';
-    const hudLabel = runtime.el('span', 'le-atmo-hud-toggle-label', 'Hide controls');
-    hudToggle.append(hudIcon, hudLabel);
+    // Compact round orb: keep the action discoverable through its accessible label.
+    hudToggle.append(hudIcon);
     hudToggle.setAttribute('aria-controls', 'le-atmo-hud-panel');
     hudToggle.setAttribute('aria-expanded', 'true');
     hudToggle.setAttribute('aria-label', 'Hide Atmosphere controls');
     hudToggle.addEventListener('click', () => {
       const hidden = view.panel.classList.toggle('le-atmo-hud-hidden');
-      hudLabel.textContent = hidden ? 'Show controls' : 'Hide controls';
       hudToggle.setAttribute('aria-expanded', String(!hidden));
       hudToggle.setAttribute('aria-label', hidden ? 'Show Atmosphere controls' : 'Hide Atmosphere controls');
     });
