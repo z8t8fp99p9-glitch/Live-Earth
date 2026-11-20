@@ -1252,8 +1252,8 @@ function installStyles() {
             colorStops: datasetKey === 'temperature' ? TEMPERATURE_COLOR_STOPS : undefined,
             thermalAura: datasetKey === 'temperature' ? {
               enabled: true,
-              expansion: 0.0015,
-              intensity: 0.075,
+              expansion: 0.0020,
+              intensity: 0.10,
               diffusion: 0.012
             } : undefined,
             contourInterval: datasetKey === 'temperature' ? 5 : 0,
