@@ -45,6 +45,32 @@
           clamp(15px,4vw,32px) 0;
       }
       .le-sfv--atmosphere .le-sfv-head { margin-bottom:9px; }
+      /* The title is a permanent scene layer: the WebGL globe renders above it. */
+      .le-atmo-scene-title {
+        position:absolute; z-index:1; top:calc(env(safe-area-inset-top) + clamp(86px,11vh,118px));
+        left:clamp(22px,8vw,72px); right:clamp(76px,15vw,112px);
+        display:flex; align-items:center; gap:clamp(12px,3vw,24px);
+        color:rgba(226,241,250,.88); pointer-events:none; user-select:none;
+      }
+      .le-atmo-scene-title::before,.le-atmo-scene-title::after {
+        content:""; height:1px; flex:1 1 0; min-width:12px;
+        background:linear-gradient(90deg,transparent,rgba(148,190,215,.46));
+      }
+      .le-atmo-scene-title::after { background:linear-gradient(90deg,rgba(148,190,215,.46),transparent); }
+      .le-atmo-scene-title span {
+        font:500 clamp(12px,3.25vw,17px)/1.2 system-ui,-apple-system,sans-serif;
+        letter-spacing:clamp(.24em,1.15vw,.38em); white-space:nowrap;
+        text-shadow:0 0 14px rgba(122,190,226,.20);
+      }
+      .le-atmo-scene-title i {
+        position:absolute; left:16%; right:16%; top:calc(100% + 13px); height:1px;
+        background:linear-gradient(90deg,transparent,rgba(50,155,232,.30) 28%,rgba(69,190,255,.9) 50%,rgba(50,155,232,.30) 72%,transparent);
+        box-shadow:0 0 8px rgba(30,151,255,.45); font-style:normal;
+      }
+      .le-atmo-scene-title i::after {
+        content:""; position:absolute; left:50%; top:50%; width:5px; height:5px; border-radius:50%;
+        transform:translate(-50%,-50%); background:#a8eaff; box-shadow:0 0 6px 2px #168fff,0 0 15px 5px rgba(20,133,255,.55);
+      }
       .le-atmo-hud-toggle {
         position:absolute; z-index:5; top:calc(env(safe-area-inset-top) + 14px);
         right:max(14px,env(safe-area-inset-right));
@@ -114,6 +140,8 @@
         transition:opacity .2s ease,visibility .2s ease;
       }
       .le-sfv--atmosphere .le-sfv-panel { transition:opacity .2s ease,visibility .2s ease; }
+      .le-sfv--atmosphere.le-world-engine-host .le-world-engine-canvas { z-index:2; }
+      .le-sfv--atmosphere.le-world-engine-host .le-sfv-panel { z-index:3; }
       .le-sfv--atmosphere .le-sfv-pill { margin-bottom:10px; }
 
       .le-sfv--atmosphere.le-world-engine-host .le-sfv-body {
@@ -397,6 +425,11 @@ async function initializeEngineView(view, viewId) {
   canvas.setAttribute("role", "img");
   root.insertBefore(canvas, root.firstChild);
   installStyles();
+  const sceneTitle = document.createElement("div");
+  sceneTitle.className = "le-atmo-scene-title";
+  sceneTitle.setAttribute("aria-label", "Atmosphere");
+  sceneTitle.innerHTML = "<span>ATMOSPHERE</span><i aria-hidden=\"true\"></i>";
+  root.appendChild(sceneTitle);
 
   let renderer = null;
   let scene = null;
