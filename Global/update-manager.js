@@ -3,7 +3,7 @@
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v153-on-demand-feature-views";
+  const BUILD_ID = "v154-feature-controller-recovery";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
@@ -57,6 +57,11 @@
     window.__liveEarthSunRendererReady = false;
     console.warn("[LIVE // EARTH] Procedural Sun is not available yet; Home and Moon remain available.", error?.message || error);
   });
+
+  loadEngineFeatureViews().catch(error => console.warn(
+    "[LIVE // EARTH] Editorial Engine view is not available yet; Home, Moon and other Stacks views remain available.",
+    error?.message || error
+  ));
 
   window.addEventListener("live-earth-scene-ready", signalVerifiedStartup);
   window.addEventListener("live-earth-earth-engine-ready", signalVerifiedStartup);
