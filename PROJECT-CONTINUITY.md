@@ -3,7 +3,7 @@
 **Project:** LIVE // EARTH  
 **Repository:** `z8t8fp99p9-glitch/Live-Earth`  
 **Branch:** `main`  
-**Documentation baseline:** 15 November 2026
+**Documentation baseline:** 20 November 2026
 
 This document contains the safeguards that apply to every task. Current code is authoritative for exact implementation details.
 
@@ -45,10 +45,23 @@ Keep current guidance short and canonical. Put only durable decisions in `Docume
 ## 18 November 2026 — Atmospheric Composition world separation
 
 - Added `Atmospheric-Composition/atmospheric-composition-view-controller.js` as a separate Stacks world with ID `atmospheric-composition`, title **Atmospheric Composition**, and Orb symbol `◌`.
-- Registered the world in `Stacks/stacks-feature-views.js` catalogue and sequential module loader, immediately after Atmosphere.
-- Added the controller to `sw.js` app-shell cache so the module is available for offline startup.
+- At the 18 November checkpoint, registered the world in `Stacks/stacks-feature-views.js` catalogue and sequential module loader, immediately after Atmosphere. The 20 November v155 candidate supersedes that loading method with Orb-selected loading.
+- At that checkpoint, added the controller to `sw.js` app-shell cache so the module was available for offline startup. The v155 candidate moves it to the bounded optional cache; first-use offline access requires a previously cached copy.
 - Kept Atmosphere distinct and narrowed its catalogue description to temperature, pressure, wind and moisture. Composition is no longer listed as an Atmosphere topic.
 - The new controller follows the established numerical-world lifecycle: its own Engine-created globe/view renderer and cleanup, while reusing the shared Earth Engine, Universal Grid System and GPU Grid Skin. It does not create another globe framework or navigation dock.
 - No composition data adapter or measurements are connected in this separation phase. The view must remain honest and show readiness only until approved, verified datasets are connected.
 - Updated architecture, Stacks feature and numerical-world lifecycle documentation.
 - Package is prepared for the user's ZIP upload workflow; no direct GitHub changes were made.
+
+
+## 20 November 2026 — v155 on-demand feature-view separation candidate
+
+- **Verified source baseline:** uploaded `Live-Earth-main 16.zip` matches the inspected current GitHub `main` blobs for `sw.js`, `Global/update-manager.js`, `Stacks/stacks-feature-views.js`, `Global/view-module-registry.js`, `index.html` and `STARTUP-ESSENTIALS-POLICY.md`. The latest inspected commit is `af75d0ce789c88044adf9c0652f83e247a2f9f00` (v154, `Restore Stacks Feature Controllers and Service Worker Shell`).
+- **Reason for the change:** the earlier v153 attempt registered no-op catalogue entries but had no working click-to-load path in the shared feature registry. v154 restored controllers to startup. Do not revert to v153; v155 adds a real selection-driven loader inside the Stacks shared runtime.
+- **Candidate design:** register all catalogue metadata immediately; load one controller after its Orb is selected; allow the controller to self-register; activate only if that same Orb is still selected. A delayed response after close/switch is ignored. Failures are displayed within the feature and do not fail Home startup.
+- **Essential resources:** v154 has 51 app-shell paths + 3 runtime dependencies = 54 staged resources. v155 candidate has 37 app-shell paths + 3 runtime dependencies = 40. Eleven already-separate Stacks controller files leave the app shell, and Elevation's previously inline controller is extracted into its own on-demand file. All 12 Stacks feature controllers are now optional. Editorial Engine's browser workspace is also moved from eager startup to Orb-selected loading, though it was not in the app-shell list.
+- **Preserved:** Elevation's visual/data behaviour and its shared Prime Earth layer contract remain intact, but its controller is now optional; the shared Stacks catalogue/lifecycle stays essential. Home/Prime Earth, five Home Orbs, three-Orb dock, primary Earth, Moon, Sun, Location OFF privacy, core Earth Engine, data/recovery, iOS and service-worker safeguards remain core. The retained Editorial Engine utility and retired-publishing boundary are unchanged.
+- **Optional caching:** existing bounded optional cache remains the fetch path; no optional cache or IndexedDB clearing is introduced. First-time offline access to a never-cached feature may fail locally while Home remains available.
+- **Validation:** `node --check` passed for the three core startup/loader files and all 13 optional controllers. The expanded mock loader test passed for all 13 catalogue modules, zero startup optional fetches, one-on-selection loading, in-flight request sharing, switch-away/switch-back race handling, stale response suppression, failure/retry and loaded-module reuse. The separate Elevation smoke test passed registration, shared-layer attachment, offline no-fetch behaviour, listener cleanup and layer disposal. App-shell audit confirms 37 paths + 3 runtime dependencies = 40, all shell paths exist, none of the 13 optional modules or 2 grid helpers are in the shell, and worker/update-manager build IDs match.
+- **Package:** `LIVE-EARTH-v155-On-Demand-Feature-Views.zip`; manifest commit title: `Move Feature Views Out of Startup Essentials`.
+- **Status:** locally prepared and validated only. No GitHub writes were made. User upload/extraction, Actions/Pages and installed-iPhone verification remain pending. This entry supersedes the 18 November note that Atmospheric Composition's controller was in the app shell; its controller is now an optional on-demand view in the v155 candidate.

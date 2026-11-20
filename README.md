@@ -1,3 +1,7 @@
+> **Historical package note — not the current project specification.** This README describes an earlier Universal Collector Fix Package v4 and its old payload. For current project instructions, read `README-FIRST.txt`, `PROJECT-CONTINUITY.md`, `Documentation/INDEX.md` and `STARTUP-ESSENTIALS-POLICY.md`. Current inspected application baseline is v154; the v155 on-demand feature-view package is a locally prepared candidate only until the user uploads and verifies it.
+
+---
+
 # LIVE // EARTH — Universal Collector Fix Package v4
 
 This archive is formatted for the repository's manifest-validated ZIP extractor.

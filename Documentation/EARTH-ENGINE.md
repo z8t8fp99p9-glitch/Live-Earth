@@ -46,7 +46,7 @@ Test Prime Earth startup and locked framing; independent Earth View construction
 
 Each numerical-world view controller imports `EarthEngine/Core/earth-engine.js` directly and calls its existing `createEarthGlobe()` / `createGlobe()` factory. The controller owns its own canvas, Three.js scene, camera, renderer, interactions and cleanup. No additional globe-runtime helper module is used.
 
-The shared numerical pipeline has three reusable systems:
+The shared numerical pipeline has three reusable systems. Only the Earth Engine factory/graphics core and shared Three.js dependencies are essential for primary Earth operation; numerical controllers and grid-only helpers load on demand.
 
 1. `EarthEngine/Core/earth-engine.js` — creates the globe instance.
 2. `EarthEngine/Graphics/universal-grid-system.js` — loads, validates, decodes and normalizes approved numerical grid snapshots. Persistent storage remains in the scientific databases.

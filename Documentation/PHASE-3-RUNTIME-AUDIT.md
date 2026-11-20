@@ -90,3 +90,40 @@ After extraction there will be no checked-in automated regression tests. Do not 
 ## Evidence boundary
 
 This checkpoint records remote source inspection and Git tree asset identity analysis. It does not claim that a full repository test suite was executed locally, that GitHub Actions run repository tests, or that the app has passed iPhone acceptance testing.
+
+
+---
+
+## 20 November 2026 — v154 source audit and v155 feature-view separation candidate
+
+**Current inspected baseline:** `af75d0ce789c88044adf9c0652f83e247a2f9f00` (`Restore Stacks Feature Controllers and Service Worker Shell`). The uploaded `Live-Earth-main 16.zip` matches the inspected GitHub `main` blob identities for `sw.js`, `Global/update-manager.js`, `Stacks/stacks-feature-views.js`, `Global/view-module-registry.js`, `index.html` and `STARTUP-ESSENTIALS-POLICY.md`.
+
+The 15 November runtime graph above is historical and is superseded for feature loading by this supplement. v154 has 51 `APP_SHELL` paths plus 3 separately staged runtime dependencies. Its `Stacks/stacks-feature-views.js` appends 11 feature controllers serially during startup and sets its installed/readiness flag only after all 11 load. `Global/update-manager.js` also loads the Editorial Engine workspace at startup. This means the feature catalogue's readiness is coupled to remote view-controller downloads, even though Home, primary Earth, Moon and Sun do not need those controllers to start.
+
+The earlier v153 policy is not a safe rollback target: its catalogue entries used no-op activation callbacks and the shared `Global/view-module-registry.js` did not contain a working feature-script lazy loader. The v154 recovery commit restored the feature scripts to startup after that nonfunctional attempt. v155 instead places a real per-feature loader in the shared Stacks runtime.
+
+### Current v155 resource classification
+
+- Keep 37 `APP_SHELL` entries plus 3 runtime dependencies (40 install-time resources): Home/Prime Earth, primary Earth, Moon/Sun, shared registries, Stacks shared catalogue/lifecycle runtime, core Earth Engine and graphics, vendor/runtime texture, Location, core Data/recovery, service-worker/update manager, iOS support and primary-view assets.
+- Move all 12 Stacks feature-view implementations out of startup. Eleven standalone controller scripts leave `APP_SHELL`: Clouds, Weather, Earthquakes, Traffic, Atmosphere, Atmospheric Composition, Oceans, Land, Water & Ice, Earth Activity and Energy & Humanity. The Elevation view implementation is extracted from `Stacks/stacks-feature-views.js` into `Elevation/elevation-view.js` and is also loaded only on Orb selection.
+- Move the two feature-only numerical helpers out of `APP_SHELL`: `universal-grid-system.js` and `earth-grid-gpu-skin.js`. They load only when a selected numerical view requests a grid dataset.
+- Remove the documentation-only `EarthEngine/Assets/README.md` from `APP_SHELL`; keep the file in the repository.
+- Move `Editorial-Engine/engine-feature-views.js` from eager Update Manager loading to the same Stacks Orb-selected path. It was not an `APP_SHELL` entry in v154.
+- Keep the Elevation feature and its shared Prime Earth layer contract intact, but move its controller code to `Elevation/elevation-view.js` so it is not bundled into the essential shared Stacks runtime.
+
+### Runtime contract change
+
+The Stacks runtime registers all catalogue placeholders synchronously in the original order, including Elevation and Editorial Engine. All 12 Stacks controllers plus the Editorial Engine workspace (13 optional modules total) register their implementations only after the matching Orb is selected. `__liveEarthStacksFeatureViewsInstalled` now means the shared runtime/catalogue is ready. Selecting an Orb starts one script request; the controller self-registers; the runtime opens it only if the Orb is still active. A late response after close or view-switch is ignored. A failed optional module is reported in that feature only. The Service Worker startup diagnostics no longer classify optional controller/helper errors as required Home-startup failures.
+
+### Cache and offline boundary
+
+The existing `live-earth-optional-v1` cache is retained and used for all non-shell same-origin GET requests. Online feature selection refreshes from the network and saves a verified successful response; later offline selection can use a previously saved copy. First-use offline access to a never-cached feature may be unavailable, but this does not block Home or primary-view startup. Do not clear the optional cache, versioned app-shell recovery data or IndexedDB.
+
+### Local verification and release status
+
+- `node --check` passed for all 16 involved runtime JavaScript files: `sw.js`, `Global/update-manager.js`, `Stacks/stacks-feature-views.js` and all 13 optional feature controllers.
+- The expanded mock-runtime smoke check passed for the 13-entry catalogue, zero optional script requests at startup, all 13 optional module paths loading only on selection, single-flight request reuse, switch-away/switch-back token safety, late-response suppression after close, failure/retry and loaded-controller reuse.
+- A separate Elevation lifecycle smoke check passed: feature self-registration, connected state, shared Earth-layer attachment, offline open without a network request, listener cleanup and layer disposal.
+- The candidate matching build identity is `v155-on-demand-feature-views` in both `sw.js` and `Global/update-manager.js`.
+- No browser/WebGL render or installed-iPhone test was performed. The package has not been uploaded or deployed. The repository's checked-in `Tests/` directory was previously retired; no automated suite claim is made.
+- Next verification after user upload: extractor commit and exact file scope; v155 identities on `main`; Actions and Pages; Home/offline startup; complete Stacks order; each controller on first online selection and after cached offline reuse; close/switch while loading; retry after failed load; primary-view, Location and orientation protections.

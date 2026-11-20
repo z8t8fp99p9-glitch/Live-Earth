@@ -1,7 +1,7 @@
 # Universal Globe Grid-Rendering Skin — Phase 1
 
 ## Purpose
-One reusable renderer converts validated regular latitude/longitude numerical grids into a coloured Three.js overlay on the existing Earth surface. All six numerical worlds can use the same rendering implementation while keeping their controllers separate.
+One reusable renderer converts validated regular latitude/longitude numerical grids into a coloured Three.js overlay on the existing Earth surface. The six original numerical database worlds can use the same rendering implementation while keeping their controllers separate. The separate Atmospheric Composition Stacks view can reuse this pipeline once its data adapter is approved and connected.
 
 ## Input contract
 `runtime.createGridRenderingSkin({ THREE, definition, values, gridId, signalId, observedAt, unit, radius, min, max, opacity, palette, name })`

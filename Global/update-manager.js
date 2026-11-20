@@ -1,9 +1,9 @@
-/* LIVE // EARTH V138 update manager — Global Orb and view lifecycle. */
+/* LIVE // EARTH V155 update manager — core startup readiness and staged updates. */
 (() => {
   "use strict";
   if (window.__liveEarthSunUpdateManagerInstalled) return;
   window.__liveEarthSunUpdateManagerInstalled = true;
-  const BUILD_ID = "v154-feature-controller-recovery";
+  const BUILD_ID = "v155-on-demand-feature-views";
   if (!("serviceWorker" in navigator) || !/^https?:$/.test(location.protocol)) return;
 
   function readyControllersPresent() {
@@ -38,30 +38,13 @@
     });
     window.__liveEarthSunRendererLoadPromise = loading; return loading;
   }
-  async function loadEngineFeatureViews() {
-    if (window.__liveEarthEngineFeatureViewsInstalled) return true;
-    if (!window.LiveEarthFeatureViews?.register) throw new Error("The Stacks feature registry is not ready yet.");
-    if (window.__liveEarthEngineFeatureViewsLoadPromise) return window.__liveEarthEngineFeatureViewsLoadPromise;
-    const loading = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = new URL("./Editorial-Engine/engine-feature-views.js", document.baseURI).href; script.async = true;
-      script.onload = () => window.__liveEarthEngineFeatureViewsInstalled ? resolve(true) : reject(new Error("The Editorial Engine workspace loaded but did not register its view."));
-      script.onerror = () => reject(new Error("The Editorial Engine workspace controller could not be loaded."));
-      document.head.appendChild(script);
-    });
-    window.__liveEarthEngineFeatureViewsLoadPromise = loading;
-    return loading.catch(error => { window.__liveEarthEngineFeatureViewsLoadPromise = null; throw error; });
-  }
+
 
   loadProceduralSun().then(() => { window.__liveEarthSunRendererReady = true; signalVerifiedStartup(); }).catch(error => {
     window.__liveEarthSunRendererReady = false;
     console.warn("[LIVE // EARTH] Procedural Sun is not available yet; Home and Moon remain available.", error?.message || error);
   });
 
-  loadEngineFeatureViews().catch(error => console.warn(
-    "[LIVE // EARTH] Editorial Engine view is not available yet; Home, Moon and other Stacks views remain available.",
-    error?.message || error
-  ));
 
   window.addEventListener("live-earth-scene-ready", signalVerifiedStartup);
   window.addEventListener("live-earth-earth-engine-ready", signalVerifiedStartup);

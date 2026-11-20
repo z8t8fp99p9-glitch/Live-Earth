@@ -11,6 +11,8 @@ The numerical-data path is split into reusable stages:
 
 The Universal Grid System is data-format infrastructure, not a per-dataset renderer. Future grid datasets should add or reuse a decoder in the shared system and select a reusable visual skin. Point-event datasets such as USGS earthquakes require a point-data path rather than being coerced into a continuous grid.
 
+The Universal Grid System and GPU Grid Skin are feature-only numerical helpers, not Home/primary-view startup dependencies. Numerical-world controllers are loaded after their Stacks Orb is selected; these two helpers are fetched only when a selected view requests a grid dataset. Their same-origin requests use the bounded optional cache, preserving cached offline reuse without inflating the install-time app shell.
+
 ## Phase 1 connected dataset
 
 - World: Atmosphere
@@ -33,6 +35,6 @@ The GPU skin maps normalized values to a texture and samples it on a UV sphere p
 
 - A failed request, unsupported encoding, invalid grid, missing Web Crypto/gzip support or checksum mismatch prevents display; no synthetic values are substituted.
 - The browser fetches the current dataset values from the repository over HTTPS. Raw GitHub CORS, service-worker caching and iOS memory/performance still require validation on the deployed app.
-- This phase connects only the Atmosphere temperature dataset. It does not claim that all 56 catalog signals or all six worlds are connected.
+- This phase connects only the Atmosphere temperature dataset. It does not claim that all 56 catalog signals or all six original numerical database worlds are connected.
 - The existing cell-by-cell grid skin remains available for small grids, but must not be used for this full-resolution NOAA grid.
 - Home, Earth Engine, Moon, Sun, Location, existing Weather/Clouds/Elevation/Traffic/Earthquakes and other numerical-world controllers are not intentionally modified by this patch.

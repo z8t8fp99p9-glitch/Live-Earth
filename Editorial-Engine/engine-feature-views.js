@@ -37,10 +37,6 @@
     .le-engine-title span{display:block;margin-top:.08em;font-weight:420;letter-spacing:-.045em}
     .le-engine-mark{width:min(120px,28vw);height:1px;margin:28px auto 22px;opacity:.9}
     .le-engine-subtitle{max-width:460px;margin:0 auto;color:#e5ebefc9;font-size:clamp(12px,3.2vw,14px);line-height:1.8;letter-spacing:.015em;text-wrap:balance}
-    .le-feature-library-item .le-feature-symbol{font-size:clamp(30px,8vmin,42px);filter:drop-shadow(0 2px 5px rgba(0,0,0,.72))}
-    #le-feature-dock .le-feature-orb .le-feature-symbol{font-size:clamp(30px,8vmin,42px)}
-    #le-feature-library .le-feature-library-item[data-feature="editorial-engine"] .orbShell,#le-feature-dock .le-feature-orb[data-feature="editorial-engine"] .orbShell{background:radial-gradient(circle at 30% 22%,#ffe0a8 0,#b7793d 24%,#4b281b 67%,#160e0b 100%);border-color:#f4d09a;box-shadow:inset 2px 2px 7px #fff9,inset -5px -7px 12px #160a0acc,0 0 22px #d69c5577,0 5px 12px #000b}
-    #le-feature-library .le-feature-library-item .orbShell:before{background:radial-gradient(ellipse at 28% 16%,rgba(255,255,255,.58),transparent 30%),linear-gradient(138deg,rgba(255,255,255,.25),rgba(255,255,255,.035) 27%,transparent 47%,rgba(255,255,255,.09) 76%,rgba(255,255,255,.22))}
     @media(min-width:700px){.le-engine-header{left:38px;right:38px}.le-engine-content{margin-top:-3vh}}
     @media(orientation:landscape) and (max-height:520px){.le-engine-view{padding-top:70px;padding-bottom:100px}.le-engine-content{margin-top:0}.le-engine-eyebrow{margin-bottom:10px}.le-engine-title{font-size:clamp(36px,9vh,58px)}.le-engine-mark{margin:16px auto 12px}.le-engine-subtitle{font-size:11px;max-width:540px}}
     @media(prefers-reduced-motion:reduce){.le-engine-view *{animation:none!important;transition:none!important}}
@@ -120,17 +116,15 @@
   }
 
   function install() {
+    const runtime = window.LiveEarthStacksFeatureRuntime;
     const api = window.LiveEarthFeatureViews;
-    if (!api || typeof api.register !== 'function') return false;
-    api.register(view.id, {
-      title: view.title,
-      shortLabel: view.shortLabel,
-      symbol: view.symbol,
-      description: view.description,
-      connected: true,
-      activate,
-      deactivate
-    });
+    if (!runtime || typeof runtime.registerFeature !== 'function' || !api) return false;
+    // The shared runtime owns the catalogue entry and calls this workspace only
+    // after the Editorial Engine Orb has been explicitly selected.
+    runtime.registerFeature(view.id, () => {
+      activate();
+      return () => deactivate();
+    }, true);
     const open = () => api.open(view.id, 'api');
     window.__liveEarthEngineFeatureViewsInstalled = true;
     window.LiveEarthEngineViews = Object.freeze({
@@ -143,5 +137,5 @@
     return true;
   }
 
-  if (!install()) window.addEventListener('live-earth-feature-views-ready', install, { once: true });
+  if (!install()) window.addEventListener('live-earth-stacks-feature-views-ready', install, { once: true });
 })();

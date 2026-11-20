@@ -8,7 +8,9 @@ The numerical worlds use the same three reusable systems:
 2. `EarthEngine/Graphics/universal-grid-system.js` loads, validates, decodes and normalizes numerical grid data. Persistent data storage remains in the scientific databases.
 3. `EarthEngine/Graphics/earth-grid-gpu-skin.js` converts a prepared regular grid into a GPU texture skin on the globe.
 
-Each world controller owns its view canvas, Three.js scene, camera, renderer, interactions, data selection, colours, legends and lifecycle cleanup. The six controllers call the Earth Engine directly; there is no extra `independent-world-globe.js` runtime/helper layer.
+Each world controller owns its view canvas, Three.js scene, camera, renderer, interactions, data selection, colours, legends and lifecycle cleanup. All seven numerical-style Stacks controllers call the Earth Engine directly; there is no extra `independent-world-globe.js` runtime/helper layer. The Atmospheric Composition adapter remains disconnected, but its controller shares the same rendering foundation.
+
+The seven numerical-world controllers themselves are optional Stacks modules and load only when their Orb is selected. The Universal Grid System and GPU Grid Skin are also optional: the controller fetches them only when a selected dataset requires the grid pipeline. The core Earth Engine factory and required Three.js dependencies remain in the essential shell. These optional same-origin resources use the existing bounded optional cache, so first-use offline access is available only when the needed module has previously been cached.
 
 ## View lifecycle
 

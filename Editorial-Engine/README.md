@@ -11,7 +11,7 @@
 - `Tests/test_editorial_text_intelligence.py` — text-intelligence tests.
 - `requirements.txt` — dependencies for the retained Python core.
 
-The Python core and browser helper are retained unchanged by the Newsroom removal. The Editorial Engine Feature Orb remains available in the app. Its workspace does not register or load any collection, policy-checking, image-processing, database-writing, source-discovery or Publisher views.
+The Python core and browser helper are retained unchanged by the Newsroom removal. The Editorial Engine Feature Orb remains in the Stacks catalogue. Its browser workspace controller (`engine-feature-views.js`) is loaded only when that Orb is selected; it is not an install-time essential. The workspace does not register or load any collection, policy-checking, image-processing, database-writing, source-discovery or Publisher views.
 
 ## Current boundary
 
@@ -22,6 +22,10 @@ The preserved Python core still contains its existing read-only approved-record 
 ## Editorial integrity
 
 The text-intelligence utilities use source-grounded, extractive selection and structure. They are designed to preserve source order and protect figures, quotations, negation and uncertainty. They do not invent reporting or claim independent fact verification.
+
+## App loading boundary
+
+The shared Stacks runtime owns the Orb metadata, loader and cleanup contract. The workspace controller self-registers through `LiveEarthStacksFeatureRuntime` after selection. The retained Python core, browser helper and text-intelligence utilities are unchanged and are not fetched as Home startup dependencies.
 
 ## Dependencies
 

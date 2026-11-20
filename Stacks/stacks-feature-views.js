@@ -1,4 +1,4 @@
-/* LIVE // EARTH V118 — modular full-screen Stacks feature views over the existing shared Earth.
+/* LIVE // EARTH V155 — shared Stacks runtime with on-demand feature controllers.
    Uses the existing LiveEarthFeatureViews contract and Prime Earth scene.
    No second Earth is created. Location-based weather uses only an already-enabled fix.
    Live-data views do not display old cached data as current while offline. */
@@ -45,12 +45,21 @@
     land: { title: 'Land', symbol: '⌁', description: 'A visual preview of numerical land systems: terrain, soils, vegetation and land-cover change.' },
     'water-ice': { title: 'Water & Ice', symbol: '❄', description: 'A visual preview of freshwater and cryosphere systems: rainfall, snow, glaciers, ice and water storage.' },
     'earth-activity': { title: 'Earth Activity', symbol: '✧', description: 'A visual preview of measured geophysical and environmental activity, including earthquakes, volcanoes and fires.' },
-    'energy-humanity': { title: 'Energy & Humanity', symbol: '✺', description: 'A visual preview of planetary energy and human activity indicators, including radiation, night lights and land use.' }
+    'energy-humanity': { title: 'Energy & Humanity', symbol: '✺', description: 'A visual preview of planetary energy and human activity indicators, including radiation, night lights and land use.' },
+    'editorial-engine': { title: 'Editorial Engine', symbol: '✍️', description: 'A full-screen workspace for the retained Universal Editorial Engine utilities.' }
   };
 
   const style = document.createElement('style');
-  style.id = 'le-stacks-feature-views-v118-style';
+  style.id = 'le-stacks-feature-views-v155-style';
   style.textContent = `
+    /* Preserve the shared feature-Orb symbol scale/highlight without loading the Editorial workspace. */
+    .le-feature-library-item .le-feature-symbol{font-size:clamp(30px,8vmin,42px);filter:drop-shadow(0 2px 5px rgba(0,0,0,.72))}
+    #le-feature-dock .le-feature-orb .le-feature-symbol{font-size:clamp(30px,8vmin,42px)}
+    #le-feature-library .le-feature-library-item .orbShell:before{background:radial-gradient(ellipse at 28% 16%,rgba(255,255,255,.58),transparent 30%),linear-gradient(138deg,rgba(255,255,255,.25),rgba(255,255,255,.035) 27%,transparent 47%,rgba(255,255,255,.09) 76%,rgba(255,255,255,.22))}
+    /* The Editorial Orb keeps its identity in the shared catalogue; its workspace stays on-demand. */
+    #le-feature-library .le-feature-library-item[data-feature="editorial-engine"] .orbShell,#le-feature-dock .le-feature-orb[data-feature="editorial-engine"] .orbShell{background:radial-gradient(circle at 30% 22%,#ffe0a8 0,#b7793d 24%,#4b281b 67%,#160e0b 100%);border-color:#f4d09a;box-shadow:inset 2px 2px 7px #fff9,inset -5px -7px 12px #160a0acc,0 0 22px #d69c5577,0 5px 12px #000b}
+    #le-feature-library .le-feature-library-item[data-feature="editorial-engine"] .orbShell:before{background:radial-gradient(ellipse at 28% 16%,rgba(255,255,255,.58),transparent 30%),linear-gradient(138deg,rgba(255,255,255,.25),rgba(255,255,255,.035) 27%,transparent 47%,rgba(255,255,255,.09) 76%,rgba(255,255,255,.22))}
+    #le-feature-library .le-feature-library-item[data-feature="editorial-engine"] .le-feature-symbol,#le-feature-dock .le-feature-orb[data-feature="editorial-engine"] .le-feature-symbol{font-size:clamp(30px,8vmin,42px)}
     /* Feature views occupy the complete stage. The protected Global three-Orb dock stays above them. */
     #le-feature-stage.le-sfv-open{display:block!important;padding:0!important;overflow:hidden!important;background:transparent!important}
     #le-feature-stage .le-feature-stage-card[hidden]{display:none!important}
@@ -203,6 +212,7 @@
   }
   function isActive(id) { return currentFeature === id; }
 
+
   // Live-data raster requests are network-only. The app shell may be cached,
   // but these views never paint a saved image and label it as current data.
   async function fetchImageBlob(url, timeoutMs = 18000, parentSignal = null) {
@@ -260,169 +270,148 @@
     catch (_) { return new Date(timestamp).toISOString(); }
   }
 
-  // ELEVATION — the globe layer is NASA's global shaded-relief/bathymetry raster.
-  // Numerical point elevations are queried on demand; no device location is requested.
-  function activateElevation() {
-    const view = mount('elevation'); if (!view) return;
-    const { body } = view;
-    let reliefRequestController = null, elevationLookupController = null;
-    const status = el('p', 'le-sfv-status', 'Preparing global shaded relief and bathymetry…'); body.appendChild(status);
-    const controls = card('Relief layer', 'A global shaded-relief and bathymetry image over the same Earth sphere. This first layer changes the surface visualization; it does not physically displace the globe mesh.');
-    const rangeLabel = el('label', 'le-sfv-range-label');
-    const left = el('span', '', 'Overlay opacity'); const right = el('strong', '', '88%'); rangeLabel.append(left, right);
-    const range = el('input', 'le-sfv-range'); range.type = 'range'; range.min = '25'; range.max = '100'; range.step = '5'; range.value = '88'; range.setAttribute('aria-label', 'Elevation layer opacity');
-    const actions = el('div', 'le-sfv-controls');
-    const refresh = button('Refresh relief layer', () => loadRelief());
-    const toggle = button('Hide relief layer', () => {
-      reliefVisible = !reliefVisible;
-      if (reliefMesh) reliefMesh.visible = reliefVisible && !!reliefMaterial?.map;
-      toggle.textContent = reliefVisible ? 'Hide relief layer' : 'Show relief layer';
-      globe()?.requestRender?.();
-    });
-    actions.append(refresh, toggle); controls.append(rangeLabel, range, actions); body.appendChild(controls);
-
-    const lookup = card('Point elevation lookup', 'Enter coordinates to ask Open-Meteo for a modelled surface elevation. Device location is never requested here. This image is a global relief/bathymetry baseline, not a time-varying live terrain scan; the coordinate lookup requires an internet connection. The numeric result is not a seafloor-depth measurement.');
-    const inputRow = el('div', 'le-sfv-input-row');
-    const latWrap = el('label', 'le-sfv-input-wrap', 'LATITUDE'); const latInput = el('input', 'le-sfv-input'); latInput.type = 'number'; latInput.min = '-90'; latInput.max = '90'; latInput.step = 'any'; latInput.placeholder = 'e.g. 27.0'; latInput.value = '0'; latWrap.appendChild(latInput);
-    const lonWrap = el('label', 'le-sfv-input-wrap', 'LONGITUDE'); const lonInput = el('input', 'le-sfv-input'); lonInput.type = 'number'; lonInput.min = '-180'; lonInput.max = '180'; lonInput.step = 'any'; lonInput.placeholder = 'e.g. 78.0'; lonInput.value = '0'; lonWrap.appendChild(lonInput);
-    inputRow.append(latWrap, lonWrap); lookup.appendChild(inputRow);
-    const lookupStatus = el('p', 'le-sfv-status', 'No coordinate lookup requested.'); lookupStatus.style.marginTop = '10px'; lookup.appendChild(lookupStatus);
-    const lookupActions = el('div', 'le-sfv-controls');
-    const locate = button('Use enabled Location', () => {
-      if (window.liveEarthLocationAllowed?.() !== true) { setStatus(lookupStatus, 'Location is OFF. Turn it ON first, or enter coordinates manually.', 'error'); return; }
-      const point = globe()?.getLocation?.();
-      if (!point) { setStatus(lookupStatus, 'Waiting for a fresh fix from the existing Location scanner.', 'error'); return; }
-      latInput.value = point.latitude.toFixed(4); lonInput.value = point.longitude.toFixed(4);
-      setStatus(lookupStatus, 'Copied the current enabled position into the fields. No new location request was made.');
-    });
-    const look = button('Look up elevation', async () => {
-      const lat = Number(latInput.value), lon = Number(lonInput.value);
-      if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lon) || lon < -180 || lon > 180) { setStatus(lookupStatus, 'Enter a valid latitude (−90 to 90) and longitude (−180 to 180).', 'error'); return; }
-      if (navigator.onLine === false) { setStatus(lookupStatus, 'Offline · internet is required for a point elevation lookup. No saved result is shown.', 'error'); return; }
-      elevationLookupController?.abort();
-      const controller = new AbortController(); elevationLookupController = controller;
-      look.disabled = true; setStatus(lookupStatus, 'Querying the public elevation model online…');
-      try {
-        const q = new URLSearchParams({ latitude: String(lat), longitude: String(lon) });
-        const response = await fetch(`https://api.open-meteo.com/v1/elevation?${q.toString()}`, { mode: 'cors', credentials: 'omit', cache: 'no-store', signal: controller.signal });
-        if (!response.ok) throw new Error(`Elevation source returned ${response.status}.`);
-        const data = await response.json();
-        const elevation = Array.isArray(data?.elevation) ? Number(data.elevation[0]) : NaN;
-        if (!Number.isFinite(elevation)) throw new Error('No elevation value was returned.');
-        if (!isActive('elevation') || elevationLookupController !== controller) return;
-        setStatus(lookupStatus, `Modelled surface elevation: ${Math.round(elevation).toLocaleString()} m at ${lat.toFixed(3)}°, ${lon.toFixed(3)}°.`, 'success');
-      } catch (error) {
-        if (error?.name !== 'AbortError' && isActive('elevation') && elevationLookupController === controller) {
-          const offline = navigator.onLine === false ? ' Internet connection required; no saved result is used.' : '';
-          setStatus(lookupStatus, `Elevation lookup unavailable: ${error?.message || 'connection failed'}.${offline}`, 'error');
-        }
-      } finally { if (elevationLookupController === controller) { elevationLookupController = null; look.disabled = false; } }
-    });
-    lookupActions.append(locate, look); lookup.appendChild(lookupActions); body.appendChild(lookup);
-    attribution(body, [{ text: 'Global relief: ' }, { label: 'NASA GIBS', href: 'https://nasa-gibs.github.io/gibs-api-docs/' }, { text: ' · Point elevation: ' }, { label: 'Open-Meteo Elevation API', href: 'https://open-meteo.com/en/docs/elevation-api' }, { text: ' (90 m Copernicus DEM GLO-90 model estimate; Copernicus Programme attribution).' }]);
-
-    let reliefMesh = null, reliefMaterial = null, reliefVisible = true, layerDispose = null, loading = false;
-    layerDispose = attachLayer('elevation', ({ THREE, earth, redraw }) => {
-      const material = new THREE.MeshBasicMaterial({ transparent: true, opacity: Number(range.value) / 100, depthWrite: false, depthTest: true, side: THREE.FrontSide });
-      const mesh = new THREE.Mesh(new THREE.SphereGeometry(1.006, 96, 64), material);
-      mesh.renderOrder = 2; mesh.visible = false; earth.add(mesh); reliefMesh = mesh; reliefMaterial = material;
-      return () => {
-        earth.remove(mesh); mesh.geometry.dispose(); material.map?.dispose(); material.dispose();
-        if (reliefMesh === mesh) { reliefMesh = null; reliefMaterial = null; }
-      };
-    });
-    range.addEventListener('input', () => { right.textContent = `${range.value}%`; if (reliefMaterial) { reliefMaterial.opacity = Number(range.value) / 100; reliefMaterial.needsUpdate = true; } globe()?.requestRender?.(); });
-    async function loadRelief() {
-      if (!isActive('elevation') || !reliefMaterial) return;
-      if (navigator.onLine === false) {
-        if (reliefMesh) reliefMesh.visible = false;
-        setStatus(status, 'Offline · internet is required for the relief imagery. The base Earth remains unchanged.', 'error');
-        globe()?.requestRender?.();
-        return;
-      }
-      if (loading) return;
-      loading = true; refresh.disabled = true;
-      if (reliefMesh) reliefMesh.visible = false;
-      globe()?.requestRender?.();
-      setStatus(status, 'Loading NASA global shaded-relief and bathymetry imagery…');
-      reliefRequestController?.abort();
-      const controller = new AbortController(); reliefRequestController = controller;
-      try {
-        const url = await getEarthRaster('BlueMarble_ShadedRelief_Bathymetry');
-        const result = await fetchImageBlob(url, 18000, controller.signal);
-        const texture = await textureFromBlob(globe()?.getTHREE?.(), result.blob);
-        if (!isActive('elevation') || !reliefMaterial || controller.signal.aborted) { texture.dispose(); return; }
-        const old = reliefMaterial.map; reliefMaterial.map = texture; reliefMaterial.needsUpdate = true;
-        if (reliefMesh) reliefMesh.visible = reliefVisible && !!reliefMaterial?.map;
-        if (old && old !== texture) old.dispose();
-        setStatus(status, `Global relief layer loaded from NASA · checked ${timeLabel(result.checkedAt)}.`, 'success');
-        globe()?.requestRender?.();
-      } catch (error) {
-        if (error?.name !== 'AbortError' && isActive('elevation')) {
-          const offline = navigator.onLine === false ? ' Internet connection required; no saved relief image is shown offline.' : '';
-          setStatus(status, `Global relief imagery unavailable. The base Earth remains unchanged.${offline} ${error?.message || ''}`, 'error');
-        }
-      } finally {
-        if (reliefRequestController === controller) { reliefRequestController = null; loading = false; refresh.disabled = false; }
-      }
-    }
-    const networkOfflineHandler = () => {
-      if (!isActive('elevation')) return;
-      reliefRequestController?.abort();
-      elevationLookupController?.abort();
-      if (reliefMesh) reliefMesh.visible = false;
-      const staleTexture = reliefMaterial?.map;
-      if (reliefMaterial) { reliefMaterial.map = null; reliefMaterial.needsUpdate = true; }
-      staleTexture?.dispose?.();
-      setStatus(status, 'Offline · relief imagery is hidden until a fresh online request can be made. The base Earth remains unchanged.', 'error');
-      setStatus(lookupStatus, 'Offline · internet is required for point elevation lookups. No saved result is shown.', 'error');
-      refresh.disabled = false; look.disabled = false;
-      globe()?.requestRender?.();
-    };
-    const networkOnlineHandler = () => {
-      if (!isActive('elevation')) return;
-      setStatus(status, 'Connection restored · requesting fresh relief imagery…');
-      window.setTimeout(() => { if (isActive('elevation')) loadRelief(); }, 350);
-      setStatus(lookupStatus, 'Online again · enter coordinates and request a fresh elevation result when needed.');
-    };
-    window.addEventListener('offline', networkOfflineHandler);
-    window.addEventListener('online', networkOnlineHandler);
-    if (reliefMaterial && globe()?.getTHREE) loadRelief();
-    else setStatus(status, 'The shared Earth layer interface is unavailable. The original Earth stays intact.', 'error');
-    currentCleanup = () => {
-      reliefRequestController?.abort(); reliefRequestController = null;
-      elevationLookupController?.abort(); elevationLookupController = null;
-      window.removeEventListener('offline', networkOfflineHandler);
-      window.removeEventListener('online', networkOnlineHandler);
-      if (layerDispose) layerDispose(); layerDispose = null; reliefMesh = null; reliefMaterial = null;
-    };
-  }
 
   const registered = new Set();
-  function registerFeature(id, activate, connectedOverride = null) {
+  const featureActivators = new Map();
+  const externalModules = [
+    { id: 'clouds', path: './Clouds/clouds-view.js', connected: true },
+    { id: 'elevation', path: './Elevation/elevation-view.js', connected: true },
+    { id: 'weather', path: './Weather/weather-view.js', connected: true },
+    { id: 'earthquakes', path: './Earthquakes/earthquakes-view.js', connected: true },
+    { id: 'traffic', path: './Traffic/traffic-view.js', connected: false },
+    { id: 'atmosphere', path: './Atmosphere/atmosphere-view-controller.js', connected: false },
+    { id: 'atmospheric-composition', path: './Atmospheric-Composition/atmospheric-composition-view-controller.js', connected: false },
+    { id: 'oceans', path: './Oceans/oceans-view-controller.js', connected: false },
+    { id: 'land', path: './Land/land-view-controller.js', connected: false },
+    { id: 'water-ice', path: './Water-Ice/water-ice-view-controller.js', connected: false },
+    { id: 'earth-activity', path: './Earth-Activity/earth-activity-view-controller.js', connected: false },
+    { id: 'energy-humanity', path: './Energy-Humanity/energy-humanity-view-controller.js', connected: false },
+    { id: 'editorial-engine', path: './Editorial-Engine/engine-feature-views.js', connected: true }
+  ];
+  const externalModulesById = new Map(externalModules.map(item => [item.id, item]));
+  const moduleStates = new Map(externalModules.map(item => [item.id, { status: 'idle', promise: null, activationToken: 0 }]));
+
+  function runFeatureActivation(id) {
+    if (!api.isActive(id)) return;
+    const activate = featureActivators.get(id);
+    if (typeof activate !== 'function') {
+      showFeatureLoadStatus(id, 'This feature controller has not registered its view yet. Close and reopen the feature to retry.', 'error');
+      return;
+    }
+    // Remove the temporary loading surface before the feature creates its own view.
+    cleanupCurrent();
+    try {
+      const cleanup = activate();
+      currentCleanup = typeof cleanup === 'function' ? cleanup : () => {};
+    } catch (error) {
+      console.error(`[LIVE // EARTH] ${id} view failed to open.`, error);
+      showFeatureLoadStatus(id, `This view could not initialize. Prime Earth and the Global Orb dock remain intact. ${error?.message || ''}`, 'error');
+    }
+  }
+
+  function showFeatureLoadStatus(id, message, state = '') {
+    if (!api.isActive(id)) return;
+    let body = null;
+    if (currentFeature === id && currentRoot?.isConnected) {
+      body = currentRoot.querySelector('.le-sfv-body');
+    } else {
+      const view = mount(id);
+      body = view?.body || null;
+    }
+    if (!body) return;
+    const status = el('p', 'le-sfv-status', message);
+    if (state) status.dataset.state = state;
+    body.replaceChildren(status);
+    currentCleanup = () => {};
+  }
+
+  function ensureFeatureModule(id) {
+    const item = externalModulesById.get(id);
+    const state = moduleStates.get(id);
+    if (!item || !state) return Promise.reject(new Error(`Unknown optional feature module: ${id}`));
+    if (featureActivators.has(id)) {
+      state.status = 'loaded';
+      return Promise.resolve(true);
+    }
+    if (state.promise) return state.promise;
+
+    state.status = 'loading';
+    const request = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = new URL(item.path, document.baseURI).href;
+      script.async = true;
+      script.dataset.liveEarthOptionalFeature = id;
+      script.onload = () => {
+        if (typeof featureActivators.get(id) === 'function') {
+          state.status = 'loaded';
+          resolve(true);
+        } else {
+          script.remove();
+          reject(new Error(`${VIEW_META[id].title} loaded but did not register its Stacks view.`));
+        }
+      };
+      script.onerror = () => {
+        script.remove();
+        reject(new Error(`${VIEW_META[id].title} could not be downloaded. Connect to the internet or reopen it after it has been cached.`));
+      };
+      (document.head || document.documentElement).appendChild(script);
+    });
+
+    state.promise = request.catch(error => {
+      state.status = 'idle';
+      state.promise = null;
+      throw error;
+    });
+    return state.promise;
+  }
+
+  function activateRegisteredFeature(id) {
+    if (!externalModulesById.has(id) || featureActivators.has(id)) {
+      runFeatureActivation(id);
+      return;
+    }
+    const state = moduleStates.get(id);
+    if (!state) return;
+    const activationToken = ++state.activationToken;
+    showFeatureLoadStatus(id, `Loading ${VIEW_META[id].title}…`);
+    ensureFeatureModule(id).then(() => {
+      // A user may switch away and back while one script request is in flight.
+      // Only the newest selection token may activate when that shared request resolves.
+      if (state.activationToken === activationToken && api.isActive(id)) runFeatureActivation(id);
+    }).catch(error => {
+      if (state.activationToken === activationToken && api.isActive(id)) {
+        showFeatureLoadStatus(id, error?.message || 'This feature is unavailable right now.', 'error');
+      }
+      console.warn(`[LIVE // EARTH] ${id} feature module is unavailable.`, error);
+    });
+  }
+
+  function registerCatalogEntry(id, connected) {
     const meta = VIEW_META[id];
-    if (!meta || typeof activate !== 'function' || registered.has(id)) return false;
+    if (!meta) return false;
     api.register(id, {
       title: meta.title,
       shortLabel: id === 'earthquakes' ? 'Quakes' : meta.title,
       symbol: meta.symbol,
       description: meta.description,
-      connected: connectedOverride === null ? id !== 'traffic' : connectedOverride,
-      activate: () => {
-        try {
-          const cleanup = activate();
-          if (typeof cleanup === 'function') currentCleanup = cleanup;
-          else if (typeof currentCleanup !== 'function') currentCleanup = () => {};
-        } catch (error) {
-          console.error(`[LIVE // EARTH] ${id} view failed to open.`, error);
-          const view = mount(id);
-          if (view) view.body.appendChild(el('p', 'le-sfv-status', `This view could not initialize. Prime Earth is preserved. ${error?.message || ''}`));
-          currentCleanup = () => {};
-        }
-      },
+      connected: typeof connected === 'boolean' ? connected : id !== 'traffic',
+      activate: () => activateRegisteredFeature(id),
       deactivate: () => cleanupCurrent()
     });
     registered.add(id);
+    return true;
+  }
+
+  function registerFeature(id, activate, connectedOverride = null) {
+    const meta = VIEW_META[id];
+    if (!meta || typeof activate !== 'function') return false;
+    // External controllers register here after their script is fetched. Updating the
+    // activation map is intentional: the catalogue placeholder already exists.
+    featureActivators.set(id, activate);
+    if (!registered.has(id)) registerCatalogEntry(id, connectedOverride);
+    else if (typeof connectedOverride === 'boolean') api.register(id, { connected: connectedOverride });
+    const state = moduleStates.get(id);
+    if (state) state.status = 'loaded';
     return true;
   }
 
@@ -433,62 +422,21 @@
     fetchImageBlob, textureFromBlob, getEarthRaster, timeLabel
   });
 
-  // Elevation remains in the shared Stacks feature module. Registration order
-  // below deliberately matches the original catalog to preserve Orb scatter order.
-
-  const externalModules = [
-    { id: 'clouds', path: './Clouds/clouds-view.js' },
-    { id: 'weather', path: './Weather/weather-view.js' },
-    { id: 'earthquakes', path: './Earthquakes/earthquakes-view.js' },
-    { id: 'traffic', path: './Traffic/traffic-view.js' },
-    // Numerical-world controllers use this same Stacks loader and registry.
-    { id: 'atmosphere', path: './Atmosphere/atmosphere-view-controller.js' },
-    { id: 'atmospheric-composition', path: './Atmospheric-Composition/atmospheric-composition-view-controller.js' },
-    { id: 'oceans', path: './Oceans/oceans-view-controller.js' },
-    { id: 'land', path: './Land/land-view-controller.js' },
-    { id: 'water-ice', path: './Water-Ice/water-ice-view-controller.js' },
-    { id: 'earth-activity', path: './Earth-Activity/earth-activity-view-controller.js' },
-    { id: 'energy-humanity', path: './Energy-Humanity/energy-humanity-view-controller.js' }
+  // Register lightweight catalogue metadata immediately, in its original order.
+  // All feature-view implementations, including Elevation, load only on Orb selection.
+  const catalogueOrder = [
+    'clouds', 'weather', 'elevation', 'earthquakes', 'traffic',
+    'atmosphere', 'atmospheric-composition', 'oceans', 'land', 'water-ice',
+    'earth-activity', 'energy-humanity', 'editorial-engine'
   ];
-  function loadFeatureModule(path) {
-    return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = new URL(path, document.baseURI).href;
-      script.async = false;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error(`Feature module failed to load: ${path}`));
-      (document.head || document.documentElement).appendChild(script);
-    });
+  for (const id of catalogueOrder) {
+    const item = externalModulesById.get(id);
+    registerCatalogEntry(id, item?.connected);
   }
-  function registerUnavailableFeature(id, reason) {
-    registerFeature(id, () => {
-      const view = mount(id);
-      if (view) {
-        const status = el('p', 'le-sfv-status', `${VIEW_META[id].title} view module is unavailable. Prime Earth and Global Orb controls remain untouched. ${reason || ''}`);
-        status.dataset.state = 'error';
-        view.body.appendChild(status);
-      }
-      return () => {};
-    }, false);
-  }
-  (async () => {
-    for (let index = 0; index < externalModules.length; index++) {
-      // Preserve the original catalog order: Clouds, Weather, Elevation,
-      // Earthquakes and Traffic. The numerical worlds follow those five entries.
-      if (index === 2) registerFeature('elevation', activateElevation);
-      const item = externalModules[index];
-      try {
-        await loadFeatureModule(item.path);
-        if (!registered.has(item.id)) registerUnavailableFeature(item.id, 'The module did not register its view.');
-      } catch (error) {
-        console.error('[LIVE // EARTH] Feature module could not be loaded.', error);
-        registerUnavailableFeature(item.id, error?.message || '');
-      }
-    }
-    // Startup readiness is set only after every feature is registered (or receives
-    // a safe unavailable-state view), including the six numerical-world controllers.
-    window.__liveEarthStacksFeatureViewsInstalled = true;
-    window.__liveEarthStacksFeatureViewsLoading = false;
-    window.dispatchEvent(new Event('live-earth-stacks-feature-views-ready'));
-  })();
+
+  // Stacks readiness now means the shared runtime and complete Orb catalogue are ready;
+  // optional feature controllers are deliberately fetched only after their Orb is selected.
+  window.__liveEarthStacksFeatureViewsInstalled = true;
+  window.__liveEarthStacksFeatureViewsLoading = false;
+  window.dispatchEvent(new Event('live-earth-stacks-feature-views-ready'));
 })();

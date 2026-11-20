@@ -1,11 +1,11 @@
-/* LIVE // EARTH V128 — Atmospheric Composition world registration. */
+/* LIVE // EARTH V155 — minimal essential shell with on-demand Stacks feature modules. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v154-feature-controller-recovery";
-const CACHE_NAME = "live-earth-shell-v154-feature-controller-recovery";
+const BUILD_ID = "v155-on-demand-feature-views";
+const CACHE_NAME = "live-earth-shell-v155-on-demand-feature-views";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
- "./","./index.html","./ios-standalone-root-flow.js","./Global/orb-controls-v4.js","./EarthEngine/Core/earth-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-core.js","./EarthEngine/Graphics/universal-grid-system.js","./EarthEngine/Graphics/earth-grid-gpu-skin.js","./EarthEngine/Assets/README.md","./Earth/earth-view-controller.js","./Global/view-manager.js","./Global/view-module-registry.js","./Stacks/stacks-feature-views.js","./Atmosphere/atmosphere-view-controller.js","./Atmospheric-Composition/atmospheric-composition-view-controller.js","./Oceans/oceans-view-controller.js","./Land/land-view-controller.js","./Water-Ice/water-ice-view-controller.js","./Earth-Activity/earth-activity-view-controller.js","./Energy-Humanity/energy-humanity-view-controller.js","./Clouds/clouds-view.js","./Weather/weather-view.js","./Traffic/traffic-view.js","./Earthquakes/earthquakes-view.js","./Global/sky-view-controller.js","./Moon/moon-view-controller.js","./Moon/moon-lunar-interface.js","./Sun/sun-view-controller.js","./Sun/sun-surface-shared.webp",
+ "./","./index.html","./ios-standalone-root-flow.js","./Global/orb-controls-v4.js","./EarthEngine/Core/earth-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-core.js","./Earth/earth-view-controller.js","./Global/view-manager.js","./Global/view-module-registry.js","./Stacks/stacks-feature-views.js","./Global/sky-view-controller.js","./Moon/moon-view-controller.js","./Moon/moon-lunar-interface.js","./Sun/sun-view-controller.js","./Sun/sun-surface-shared.webp",
  "./Earth/location.html","./Earth/earth-orb-globe.js","./manifest.json","./Global/icon.svg","./Data/data-store.js","./Location/location.js",
  "./Global/astronomy.js","./Home/moon-orbit.js","./Data/dataset-manifest.json",
  "./Home/moon-surface-lroc-1536.jpg",
@@ -956,14 +956,27 @@ function injectStartupGate(html) {
     window.addEventListener('error', event => {
       if (event.target && event.target.tagName === 'SCRIPT') {
         const src = event.target.src || '';
-        const scriptPaths = ['./Global/orb-controls-v4.js','./EarthEngine/Core/earth-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-core.js','./Earth/earth-view-controller.js','./Global/view-manager.js','./Global/view-module-registry.js','./Stacks/stacks-feature-views.js','./Atmosphere/atmosphere-view-controller.js','./Oceans/oceans-view-controller.js','./Land/land-view-controller.js','./Water-Ice/water-ice-view-controller.js','./Earth-Activity/earth-activity-view-controller.js','./Energy-Humanity/energy-humanity-view-controller.js','./Clouds/clouds-view.js','./Weather/weather-view.js','./Traffic/traffic-view.js','./Earthquakes/earthquakes-view.js','./Global/sky-view-controller.js','./Moon/moon-view-controller.js','./Sun/sun-view-controller.js','./Global/update-manager.js','./Data/data-recovery.js','./Location/location.js','./Home/moon-orbit.js','./Data/data-store.js'];
-        for (const path of scriptPaths) if (src.endsWith(path.slice(1))) knownBadPaths.push(path);
-        sceneFailure = 'A required startup script failed to load.';
+        const scriptPaths = ['./Global/orb-controls-v4.js','./EarthEngine/Core/earth-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js','./EarthEngine/Graphics/earth-engine-3d-graphics-core.js','./Earth/earth-view-controller.js','./Global/view-manager.js','./Global/view-module-registry.js','./Stacks/stacks-feature-views.js','./Global/sky-view-controller.js','./Moon/moon-view-controller.js','./Moon/moon-lunar-interface.js','./Sun/sun-view-controller.js','./Global/update-manager.js','./Data/data-recovery.js','./Location/location.js','./Home/moon-orbit.js','./Data/data-store.js'];
+        const optionalFeaturePaths = ['./Clouds/clouds-view.js','./Elevation/elevation-view.js','./Weather/weather-view.js','./Earthquakes/earthquakes-view.js','./Traffic/traffic-view.js','./Atmosphere/atmosphere-view-controller.js','./Atmospheric-Composition/atmospheric-composition-view-controller.js','./Oceans/oceans-view-controller.js','./Land/land-view-controller.js','./Water-Ice/water-ice-view-controller.js','./Earth-Activity/earth-activity-view-controller.js','./Energy-Humanity/energy-humanity-view-controller.js','./Editorial-Engine/engine-feature-views.js','./EarthEngine/Graphics/universal-grid-system.js','./EarthEngine/Graphics/earth-grid-gpu-skin.js'];
+        if (optionalFeaturePaths.some(path => src.endsWith(path.slice(1)))) return;
+        const requiredPath = scriptPaths.find(path => src.endsWith(path.slice(1)));
+        if (requiredPath) {
+          knownBadPaths.push(requiredPath);
+          sceneFailure = 'A required startup script failed to load.';
+        } else {
+          sceneFailure = 'An unclassified script failed during startup.';
+        }
+        return;
       } else if (event.error) {
+        const filename = event.filename || '';
+        const optionalFeaturePaths = ['./Clouds/clouds-view.js','./Elevation/elevation-view.js','./Weather/weather-view.js','./Earthquakes/earthquakes-view.js','./Traffic/traffic-view.js','./Atmosphere/atmosphere-view-controller.js','./Atmospheric-Composition/atmospheric-composition-view-controller.js','./Oceans/oceans-view-controller.js','./Land/land-view-controller.js','./Water-Ice/water-ice-view-controller.js','./Earth-Activity/earth-activity-view-controller.js','./Energy-Humanity/energy-humanity-view-controller.js','./Editorial-Engine/engine-feature-views.js','./EarthEngine/Graphics/universal-grid-system.js','./EarthEngine/Graphics/earth-grid-gpu-skin.js'];
+        if (window.__liveEarthStartupReady === true || optionalFeaturePaths.some(path => filename.endsWith(path.slice(1)))) return;
         sceneFailure = 'A startup script or the Earth renderer encountered an error.';
       }
     }, true);
     window.addEventListener('unhandledrejection', event => {
+      // After the essential startup gate passes, optional feature failures must remain local.
+      if (window.__liveEarthStartupReady === true) return;
       if (event.reason) sceneFailure = 'A startup task failed: ' + String(event.reason.message || event.reason).slice(0,120);
     });
     const statusNode = document.getElementById('status');

@@ -1,6 +1,6 @@
 # Documentation Index
 
-**Reviewed:** 15 November 2026
+**Reviewed:** 20 November 2026
 
 This is the single documentation front door. Read the root safeguards first, then use the short current references below.
 
@@ -10,6 +10,7 @@ This is the single documentation front door. Read the root safeguards first, the
 - [`../GLOBAL-STANDARDS.md`](../GLOBAL-STANDARDS.md) — shared application standards.
 - [`../PROTECTED-DECISIONS.md`](../PROTECTED-DECISIONS.md) — areas needing owner approval.
 - [`CURRENT-STATUS.md`](CURRENT-STATUS.md) — latest source, deployment and open verification.
+- [`../STARTUP-ESSENTIALS-POLICY.md`](../STARTUP-ESSENTIALS-POLICY.md) — authoritative core-shell and on-demand feature loading boundary.
 
 ## Current architecture and working rules
 

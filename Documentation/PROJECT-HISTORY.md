@@ -82,3 +82,13 @@ User selected a GitHub Pages-only architecture. Added direct public-source adapt
 - All active Live Cams view, WHEP player, public camera adapter and six discovery assets were removed. The Stacks registration, bootstrap load, service-worker shell entries and startup repair references were removed with them.
 - Traffic remains independent and unchanged in its feature registration and navigation. Historical Live Cams notes remain in the repository as an archive; they do not describe active app code.
 - Future Live Cams work starts as a new design, not as a continuation of the retired implementation.
+
+
+## 20 November — Startup essentials and on-demand Stacks feature views
+
+- Audited the v154 repository source against current GitHub `main` and found 11 feature controllers in the install-time app shell, two feature-only numerical grid helpers there as well, and an Editorial Engine workspace fetched during startup.
+- Identified why v153 was not a safe rollback: it registered no-op feature callbacks but did not provide a functioning lazy script-loader in the shared feature registry. v154 restored controllers to startup.
+- Prepared a v155 design with synchronous catalogue registration and a real Stacks selection-driven loader. A selected feature downloads its controller, waits for self-registration and opens only if still selected; late responses after close/switch are ignored. Load failures remain local to the feature.
+- Keep the shared Stacks catalogue/lifecycle runtime essential, but extract the Elevation view implementation into `Elevation/elevation-view.js`. All 12 Stacks feature-view controllers (including Elevation) load only after their Orb is selected. Move the two numerical-only grid helpers to optional caching; move the Editorial Engine browser workspace from eager Update Manager startup to Orb-selected loading. The retained Editorial Engine utility and retired publishing boundary remain unchanged.
+- Candidate install-time resources decrease from 51 app-shell paths + 3 runtime dependencies (54) to 37 + 3 (40). Package: `LIVE-EARTH-v155-On-Demand-Feature-Views.zip`; manifest commit title: `Move Feature Views Out of Startup Essentials`. No Home, primary Earth, Moon/Sun, dock, Location privacy, core Earth Engine, user data or recovery behavior is intentionally redesigned.
+- Candidate passed syntax checks for all modified JavaScript, an expanded mock-runtime test for all 13 optional modules and loader races/retry, and a dedicated Elevation lifecycle/offline-cleanup smoke test. User upload/extraction, Actions/Pages and iPhone acceptance remain pending.

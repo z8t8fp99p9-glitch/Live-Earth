@@ -1,11 +1,40 @@
 # Current Status
 
-**Reviewed:** 15 November 2026  
+**Reviewed:** 20 November 2026  
 **Repository:** `z8t8fp99p9-glitch/Live-Earth` · `main`  
-**Inspected source baseline:** `de3b4f18048bc0802489dcee7209a81c11d1e603`  
-**Baseline commit:** `Retire Live Cams and reduce startup essentials`
+**Current inspected baseline:** `af75d0ce789c88044adf9c0652f83e247a2f9f00` (v154)  
+**Baseline commit:** `Restore Stacks Feature Controllers and Service Worker Shell`
 
-## Current decision — Live Cams retired for a clean rebuild
+## Current candidate — v155 on-demand Stacks feature views
+
+- **Candidate package:** `LIVE-EARTH-v155-On-Demand-Feature-Views.zip`  
+  **Manifest commit title:** `Move Feature Views Out of Startup Essentials`
+
+- The uploaded `Live-Earth-main 16.zip` was checked against the current GitHub `main` source. Six high-impact application files matched their Git blob identities exactly.
+- v154 currently stages 51 `APP_SHELL` paths plus 3 runtime dependencies: 54 install-time essential resources. Their `APP_SHELL` payload totals 4,581,676 bytes.
+- The v155 candidate moves all 12 Stacks feature-view implementations out of startup: 11 standalone controllers leave `APP_SHELL`, and Elevation is extracted from the shared Stacks source into its own optional controller. It also moves 2 feature-only numerical grid helpers and the documentation-only `EarthEngine/Assets/README.md` out of the shell. The candidate stages 37 `APP_SHELL` paths plus 3 runtime dependencies: 40 essential resources (14 fewer staged entries, a 25.9% reduction). The `APP_SHELL` payload totals 4,253,633 bytes, 328,043 bytes (about 320.4 KiB) less by static file-size accounting; no launch-speed claim is made.
+- The Editorial Engine browser workspace was already outside the app shell but v154 loaded it during startup; the candidate moves it to the same Orb-selected on-demand loader.
+- The shared Stacks runtime registers all 13 catalogue entries synchronously, preserving the order. The 12 Stacks feature controllers and the Editorial Engine workspace are separate optional modules fetched on Orb selection; Elevation is no longer bundled in the shared runtime.
+- The optional module loader fetches the controller when selected, waits for its self-registration, checks the Orb is still active before opening it, and surfaces download errors within that feature. A delayed script response cannot reopen a view after the user closes or switches away.
+- The optional cache remains separate and is not cleared. A feature first opened online can be reused offline after its controller/resources are cached; a never-cached feature first opened offline may report unavailable without affecting Home.
+- Matching candidate build ID: `v155-on-demand-feature-views` in both `sw.js` and `Global/update-manager.js`.
+- **Status:** locally prepared candidate only. It has not been uploaded, extracted, committed, deployed or tested on the installed iPhone.
+
+## Verification recorded for the candidate
+
+- `node --check` passed for all 16 involved runtime JavaScript files: the three core startup/loader files plus all 13 optional feature controllers.
+- The expanded mock-runtime loader check passed for the exact 13-entry catalogue, zero optional script requests at startup, each of the 13 optional modules loading only on selection, shared in-flight request handling, switch-away/switch-back token safety, late-response suppression after close, error/retry, and loaded-module reuse.
+- A separate Elevation controller lifecycle check passed: it registers as a connected feature, mounts against the shared Prime Earth layer interface, performs no network request when offline, removes online/offline listeners on close, and disposes the attached layer.
+- The repository's checked-in automated `Tests/` directory was retired earlier by explicit owner direction. No claim of full regression-suite coverage is made.
+- Remaining gates are ZIP manifest/integrity validation, user extractor upload, resulting `main` identity, Actions/Pages and installed-iPhone online/offline acceptance.
+
+## Protected areas retained
+
+Home/Prime Earth composition and the five Home Orbs; primary Earth; Moon and Sun; Earth Engine core/graphics runtime and core texture/vendor dependencies; `Global/view-manager.js`; `Global/view-module-registry.js`; the shared Stacks runtime and Elevation's preserved feature contract; the three-Orb feature dock; Location OFF privacy; core data/recovery; iOS root-flow and orientation recovery; service-worker readiness/update coordination; local data and IndexedDB; the retained Editorial Engine utilities; and all unrelated views.
+
+## Historical checkpoint — 15 November 2026 (superseded by the 20 November startup split below)
+
+## Previous decision — Live Cams retired for a clean rebuild
 
 - By owner direction, the Live Cams implementation has been removed completely from the active app. The camera-directory view, WHEP player, public-source adapters and six discovery images are deleted.
 - Live Cams is unregistered from the shared Stacks loader and removed from the startup controller bootstrap, service-worker app shell and startup repair list.

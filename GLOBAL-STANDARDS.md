@@ -25,6 +25,7 @@ These standards apply throughout LIVE // EARTH.
 ## Offline, updates and recovery
 
 - Preserve the service-worker shell, optional-resource cache, readiness checks and staged update flow.
+- Keep the app shell focused on Home/primary views, shared registries/runtime, core data/recovery and required offline dependencies. Stacks feature controllers and feature-only helpers load on explicit Orb selection through the bounded optional cache; Stacks readiness means the catalogue is ready, not that every feature controller is downloaded.
 - `sw.js` and `Global/update-manager.js` must use matching build identities.
 - Do not clear Cache Storage, localStorage, sessionStorage, IndexedDB or user data as a generic fix.
 - Trace runtime dependencies before removing or moving files.
