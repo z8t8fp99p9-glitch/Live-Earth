@@ -175,18 +175,25 @@
     root.dataset.feature = id;
     root.setAttribute('role', 'region');
     root.setAttribute('aria-label', `${meta.title} view`);
-    root.innerHTML = `<div class="le-sfv-panel"><header class="le-sfv-head"><span class="le-sfv-symbol" aria-hidden="true"></span><div><h1 class="le-sfv-title"></h1><p class="le-sfv-subtitle"></p></div></header><div class="le-sfv-pill"><span class="le-sfv-dot" aria-hidden="true"></span><span class="le-sfv-pill-text"></span></div><div class="le-sfv-body"></div></div>`;
-    root.querySelector('.le-sfv-symbol').textContent = meta.symbol;
-    root.querySelector('.le-sfv-title').textContent = meta.title;
-    root.querySelector('.le-sfv-subtitle').textContent = meta.description;
-    const pillLabels = {
-      clouds: 'ONLINE · NASA CLOUD PRODUCT',
-      weather: 'ONLINE · LOCATION REQUIRED',
-      elevation: 'ONLINE · GLOBAL RELIEF',
-      earthquakes: 'ONLINE · USGS FEED',
-      traffic: 'DATA SOURCE NOT CONNECTED'
-    };
-    root.querySelector('.le-sfv-pill-text').textContent = pillLabels[id] || 'FEATURE VIEW';
+    // Atmosphere is intentionally a globe-first instrument. Do not create the
+    // generic feature intro (title, description, symbol or FEATURE VIEW pill)
+    // for this view. Other feature views retain the shared intro unchanged.
+    if (id === 'atmosphere') {
+      root.innerHTML = `<div class="le-sfv-panel"><div class="le-sfv-body"></div></div>`;
+    } else {
+      root.innerHTML = `<div class="le-sfv-panel"><header class="le-sfv-head"><span class="le-sfv-symbol" aria-hidden="true"></span><div><h1 class="le-sfv-title"></h1><p class="le-sfv-subtitle"></p></div></header><div class="le-sfv-pill"><span class="le-sfv-dot" aria-hidden="true"></span><span class="le-sfv-pill-text"></span></div><div class="le-sfv-body"></div></div>`;
+      root.querySelector('.le-sfv-symbol').textContent = meta.symbol;
+      root.querySelector('.le-sfv-title').textContent = meta.title;
+      root.querySelector('.le-sfv-subtitle').textContent = meta.description;
+      const pillLabels = {
+        clouds: 'ONLINE · NASA CLOUD PRODUCT',
+        weather: 'ONLINE · LOCATION REQUIRED',
+        elevation: 'ONLINE · GLOBAL RELIEF',
+        earthquakes: 'ONLINE · USGS FEED',
+        traffic: 'DATA SOURCE NOT CONNECTED'
+      };
+      root.querySelector('.le-sfv-pill-text').textContent = pillLabels[id] || 'FEATURE VIEW';
+    }
     host.appendChild(root);
     currentRoot = root;
     return { root, panel: root.querySelector('.le-sfv-panel'), body: root.querySelector('.le-sfv-body') };
@@ -352,7 +359,7 @@
       };
       script.onerror = () => {
         script.remove();
-        reject(new Error(`${VIEW_META[id].title} could not be downloaded. Connect to the internet or reopen it after it has been cached.`));
+        reject(new Error(`You poor human! It's not alien technology. Connect to the Internet to access this, please. 👽🌐😂`));
       };
       (document.head || document.documentElement).appendChild(script);
     });

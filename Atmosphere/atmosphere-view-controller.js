@@ -807,7 +807,7 @@ function installStyles() {
     .le-world-engine-host .le-sfv-head,.le-world-engine-host .le-sfv-body{pointer-events:auto}
     .le-world-engine-host .le-sfv-body{max-height:calc(100% - 150px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
     .le-world-engine-host .le-sfv-head{ text-shadow:0 2px 18px rgba(0,0,0,.85) }
-    .le-atmosphere-no-intro .le-sfv-head{display:none!important}
+    
     .le-world-engine-host .le-sfv-card{background:rgba(4,13,24,.58);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
   `;
   document.head.appendChild(style);
@@ -818,10 +818,6 @@ function installStyles() {
     installHudStyle();
     const view = runtime.mount(ATMOSPHERE_VIEW.id);
     if (!view) return () => {};
-    // This feature uses the shared Stacks shell. Remove its generic intro
-    // header from the mounted view; Atmosphere is intentionally globe-first.
-    view.root.querySelectorAll('.le-sfv-head').forEach(node => node.remove());
-    view.root.classList.add('le-atmosphere-no-intro');
     document.body.classList.add('le-atmosphere-fullscreen-open');
 
     // The globe is the view's immediate baseline. Scientific tools and data
@@ -851,6 +847,15 @@ function installStyles() {
     const status = runtime.el('p', 'le-sfv-status', '');
     status.dataset.state = 'neutral';
     status.hidden = true;
+    const showStatus = (message, state) => {
+      status.hidden = false;
+      if (!status.isConnected) view.body.appendChild(status);
+      runtime.setStatus(status, message, state);
+    };
+    const clearStatus = () => {
+      status.remove();
+      status.hidden = true;
+    };
 
     const selector = runtime.card('Atmosphere datasets', 'Choose a verified NOAA atmospheric field to render on the globe. Composition is available in its own World.');
     selector.classList.add('le-atmo-dataset-card');
@@ -1137,7 +1142,7 @@ function installStyles() {
         removeActiveLayer();
         setSelectedDataset(null);
         details.hidden = true; source.hidden = true; scaleDock.hidden = true;
-        runtime.setStatus(status, `${datasetOptions.find(item => item.id === datasetKey).label} layer hidden. The Earth remains active.`, 'neutral');
+        clearStatus();
         worldGlobe?.requestRender?.();
         return;
       }
@@ -1154,7 +1159,7 @@ function installStyles() {
       const button = datasetButtons.get(datasetKey);
       button.disabled = true;
       const label = datasetOptions.find(item => item.id === datasetKey).label;
-      runtime.setStatus(status, `Loading and verifying current NOAA ${label.toLowerCase()} grids…`, 'neutral');
+      showStatus(`Loading and verifying current NOAA ${label.toLowerCase()} grids…`, 'neutral');
       try {
         await loadSharedGridTools();
         if (closed || controller.signal.aborted || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
@@ -1229,17 +1234,16 @@ function installStyles() {
         if (typeof layerDispose !== 'function') throw new Error(`The verified NOAA ${label.toLowerCase()} layer could not attach.`);
         view.root.dataset.gridRenderingSkin = 'gpu-ready';
         view.root.dataset.gridData = `verified-noaa-gfs-${datasetKey}`;
-        const confirmation = datasetKey === 'wind'
-          ? 'Wind · colour shows speed; directional arrows show the 10 m wind direction.'
-          : `${label} · NOAA GFS global grid verified.`;
-        runtime.setStatus(status, confirmation, 'success');
+        // No persistent success banner: the selected layer and live scale
+        // provide the confirmation visually. Keep the interface uncluttered.
+        clearStatus();
         worldGlobe.requestRender?.();
       } catch (error) {
         if (!closed && !controller.signal.aborted && runtime.isActive(ATMOSPHERE_VIEW.id)) {
           removeActiveLayer();
           setSelectedDataset(null);
           details.hidden = true; source.hidden = true; scaleDock.hidden = true;
-          runtime.setStatus(status, `${label} data could not be displayed. The base globe remains active. ${error?.message || ''}`, 'error');
+          showStatus(`${label} data could not be displayed. The base globe remains active. ${error?.message || ''}`, 'error');
         }
       } finally {
         if (dataRequest === controller) dataRequest = null;
@@ -1255,14 +1259,12 @@ function installStyles() {
         if (closed || !runtime.isActive(ATMOSPHERE_VIEW.id)) { worldGlobe?.dispose?.(); worldGlobe = null; return; }
         if (!worldGlobe || typeof worldGlobe.attachLayer !== 'function') throw new Error('The Earth Engine globe could not be created.');
         view.root.dataset.globeEngine = 'ready';
-        // Successful initialization needs no persistent status banner.
-        status.remove();
+        // A ready banner is intentionally not created or displayed.
+        clearStatus();
         worldGlobe.requestRender?.();
       } catch (error) {
         if (!closed && runtime.isActive(ATMOSPHERE_VIEW.id)) {
-          status.hidden = false;
-          view.body.appendChild(status);
-          runtime.setStatus(status, `The Earth Engine globe could not open. ${error?.message || ''}`, 'error');
+          showStatus(`The Earth Engine globe could not open. ${error?.message || ''}`, 'error');
         }
       }
     })();
