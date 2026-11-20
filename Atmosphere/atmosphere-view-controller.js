@@ -47,9 +47,15 @@
       .le-sfv--atmosphere .le-sfv-head { margin-bottom:9px; }
       /* The title is a permanent scene layer: the WebGL globe renders above it. */
       .le-atmo-scene-title {
-        position:absolute; z-index:1; top:calc(env(safe-area-inset-top) + clamp(86px,11vh,118px));
-        left:clamp(22px,8vw,72px); right:clamp(76px,15vw,112px);
-        display:flex; align-items:center; gap:clamp(12px,3vw,24px);
+        /* Responsive scene anchor: 12% of the small viewport below the safe area,
+           centered on the true screen midpoint rather than offset around the HUD. */
+        position:absolute; z-index:1;
+        top:calc(env(safe-area-inset-top) + 12vh);
+        top:calc(env(safe-area-inset-top) + 12svh);
+        left:50%; right:auto; width:min(84vw,620px);
+        box-sizing:border-box; transform:translateX(-50%);
+        display:flex; align-items:center; justify-content:center;
+        gap:clamp(12px,3vw,24px);
         color:rgba(226,241,250,.88); pointer-events:none; user-select:none;
       }
       .le-atmo-scene-title::before,.le-atmo-scene-title::after {
