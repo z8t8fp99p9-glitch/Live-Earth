@@ -115,34 +115,27 @@
       }
       .le-atmo-scale-dock[hidden] { display:none!important; }
       .le-atmo-scale-heading {
-        display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
-        align-items:center; width:var(--atmo-content-width); min-width:0;
+        display:flex; flex-flow:row nowrap; justify-content:flex-start;
+        align-items:center; gap:clamp(6px,1.2cqi,9px);
+        width:var(--atmo-content-width); min-width:0;
         margin:0 0 3px; white-space:nowrap; line-height:1;
+        text-align:left;
       }
       .le-atmo-legend-title {
-        display:block; min-width:0; overflow:hidden; margin:0;
-        padding:0 4px 0 0; color:#dceaf6; font-family:Georgia,serif;
+        display:block; flex:0 1 auto; min-width:0; overflow:hidden; margin:0;
+        padding:0; color:#dceaf6; font-family:Georgia,serif;
         font-size:var(--atmo-header-small); font-weight:500;
-        letter-spacing:0; text-align:center;
+        letter-spacing:0; text-align:left;
         text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap;
       }
       .le-atmo-scale-range {
-        display:block; min-width:0; margin:0; padding:0 6px;
+        display:block; flex:0 0 auto; min-width:0; margin:0;
+        padding:0 0 0 clamp(6px,1.2cqi,9px);
         border-left:1px solid rgba(213,235,255,.48);
-        border-right:1px solid rgba(213,235,255,.48);
         color:#f5f8ff; font-family:Georgia,serif;
         font-size:var(--atmo-header-value); font-weight:500;
         letter-spacing:0; font-variant-numeric:tabular-nums;
-        white-space:nowrap; text-align:center;
-      }
-      .le-atmo-scale-caption {
-        display:block; min-width:0; overflow:hidden; margin:0;
-        padding:0 0 0 4px; border:0;
-        color:#c0d4e8; font-family:Georgia,serif;
-        font-size:var(--atmo-header-small); font-weight:500;
-        letter-spacing:0; line-height:1;
-        text-transform:uppercase; white-space:nowrap; opacity:.94; text-align:center;
-        text-overflow:ellipsis;
+        white-space:nowrap; text-align:left;
       }
       .le-atmo-scale-track-row {
         display:grid; grid-template-columns:minmax(0,1fr) var(--atmo-action-space);
@@ -188,12 +181,11 @@
       .le-atmo-legend-ticks span:last-child { transform:translateX(-100%); text-align:right; }
       .le-atmo-legend-ticks span:last-child::before { left:100%; }
       @container (max-width:430px) {
-        .le-atmo-scale-heading { grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); }
-        .le-atmo-legend-title, .le-atmo-scale-caption { font-size:var(--atmo-header-small); }
+        .le-atmo-legend-title { font-size:var(--atmo-header-small); }
         .le-atmo-scale-range { font-size:var(--atmo-header-value); padding-left:5px; padding-right:5px; }
       }
       @container (max-width:350px) {
-        .le-atmo-legend-title, .le-atmo-scale-caption { font-size:7px; }
+        .le-atmo-legend-title { font-size:7px; }
         .le-atmo-scale-range { font-size:9px; padding-left:4px; padding-right:4px; }
         .le-atmo-legend-ticks { font-size:8px; }
       }
@@ -761,8 +753,7 @@ function installStyles() {
     const scaleHeading = runtime.el('div', 'le-atmo-scale-heading');
     const legendTitle = runtime.el('span', 'le-atmo-legend-title', 'Field scale');
     const scaleRange = runtime.el('span', 'le-atmo-scale-range', '—');
-    const scaleCaption = runtime.el('span', 'le-atmo-scale-caption', 'Verified global range');
-    scaleHeading.append(legendTitle, scaleRange, scaleCaption);
+    scaleHeading.append(legendTitle, scaleRange);
     scaleDock.appendChild(scaleHeading);
     let scaleMore;
     const scaleTrackRow = runtime.el('div', 'le-atmo-scale-track-row');
@@ -864,9 +855,6 @@ function installStyles() {
       legendTitle.textContent = config === FIELD_CONFIG.temperature
         ? '2 m air temp · °C'
         : `${config.title.replace('NOAA · ','')} · ${config.displayUnits}`;
-      scaleCaption.textContent = config === FIELD_CONFIG.temperature
-        ? 'Verified global range'
-        : 'Verified range';
       legendBar.style.background = config === FIELD_CONFIG.temperature
         ? TEMPERATURE_LEGEND
         : 'linear-gradient(90deg,#0e297a 0%,#05a8e0 25%,#2edca8 50%,#ffca47 75%,#e8402b 100%)';
