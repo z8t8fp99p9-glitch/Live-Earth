@@ -120,6 +120,31 @@
         pointer-events:none;
       }
       .le-atmo-scale-dock[hidden] { display:none!important; }
+
+      /* The Plus control expands/collapses the complete Atmosphere data deck.
+         The data card grows upward; the scale instrument rises as one unit. */
+      .le-sfv--atmosphere .le-atmo-scale-dock {
+        transition:bottom .38s cubic-bezier(.2,.72,.22,1);
+      }
+      .le-sfv--atmosphere.le-atmo-details-expanded .le-atmo-scale-dock {
+        bottom:calc(env(safe-area-inset-bottom) + clamp(230px,32svh,340px));
+      }
+      .le-sfv--atmosphere.le-world-engine-host .le-sfv-body {
+        transition:max-height .38s cubic-bezier(.2,.72,.22,1),padding-bottom .38s ease;
+      }
+      .le-sfv--atmosphere.le-world-engine-host.le-atmo-details-expanded .le-sfv-body {
+        max-height:min(66dvh,680px);
+        padding-bottom:calc(env(safe-area-inset-bottom) + clamp(190px,27svh,270px));
+      }
+      @media (orientation:landscape) {
+        .le-sfv--atmosphere.le-atmo-details-expanded .le-atmo-scale-dock {
+          bottom:calc(env(safe-area-inset-bottom) + clamp(120px,25svh,210px));
+        }
+        .le-sfv--atmosphere.le-world-engine-host.le-atmo-details-expanded .le-sfv-body {
+          max-height:min(66dvh,440px);
+          padding-bottom:calc(env(safe-area-inset-bottom) + clamp(120px,23svh,190px));
+        }
+      }
       .le-atmo-instrument-label {
         display:flex; align-items:center; justify-content:center; gap:7px;
         width:100%; margin:0 0 6px;
@@ -853,19 +878,15 @@ function installStyles() {
     disclosure.id = 'le-atmosphere-data-details';
     disclosure.appendChild(runtime.el('summary', '', 'Data details & provenance'));
     const syncScaleMore = () => {
-      scaleMore.textContent = disclosure.open ? '−' : '+';
-      scaleMore.setAttribute('aria-expanded', String(disclosure.open));
-      scaleMore.setAttribute('aria-label', disclosure.open
-        ? 'Hide atmospheric data details and provenance'
-        : 'Show atmospheric data details and provenance');
+      const expanded = disclosure.open;
+      scaleMore.textContent = expanded ? '−' : '+';
+      scaleMore.setAttribute('aria-expanded', String(expanded));
+      scaleMore.setAttribute('aria-label', expanded
+        ? 'Collapse atmospheric data details'
+        : 'Expand atmospheric data details');
+      view.root.classList.toggle('le-atmo-details-expanded', expanded);
     };
     scaleMore.addEventListener('click', () => {
-      if (!disclosure.open && view.panel.classList.contains('le-atmo-hud-hidden')) {
-        view.panel.classList.remove('le-atmo-hud-hidden');
-        hudLabel.textContent = 'Hide controls';
-        hudToggle.setAttribute('aria-expanded', 'true');
-        hudToggle.setAttribute('aria-label', 'Hide Atmosphere controls');
-      }
       disclosure.open = !disclosure.open;
       syncScaleMore();
     });
