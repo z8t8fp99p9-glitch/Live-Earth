@@ -96,12 +96,14 @@
       /* The active field scale is a fixed instrument, independent of the scrollable HUD. */
       .le-atmo-scale-dock { position:absolute; z-index:4; left:clamp(14px,4vw,28px); right:clamp(14px,4vw,28px); bottom:calc(env(safe-area-inset-bottom) + 104px); box-sizing:border-box; width:min(calc(100% - 28px),680px); margin:0 auto; padding:9px 15px 8px; border:1px solid rgba(119,203,255,.42); border-radius:999px; color:#eaf7ff; background:linear-gradient(180deg,rgba(5,19,35,.88),rgba(2,9,20,.92)); box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -1px 0 rgba(63,172,255,.13),0 0 9px rgba(40,167,255,.30),0 0 22px rgba(103,75,255,.16),0 8px 26px rgba(0,0,0,.38); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); pointer-events:none; }
       .le-atmo-scale-dock[hidden] { display:none!important; }
-      .le-atmo-scale-heading { display:flex; align-items:center; gap:clamp(7px,1.8vw,16px); min-width:0; margin-bottom:6px; }
+      .le-atmo-scale-heading { display:flex; align-items:baseline; justify-content:space-between; gap:clamp(7px,1.8vw,16px); min-width:0; margin-bottom:7px; }
       .le-atmo-legend-title { display:block; flex:0 1 auto; min-width:0; max-width:42%; overflow:hidden; color:#e5edf8; font-family:Georgia,serif; font-size:clamp(7px,1.45vw,10px); font-weight:500; letter-spacing:.13em; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
       .le-atmo-scale-range-group { display:flex; flex:1 1 auto; min-width:0; align-items:baseline; justify-content:flex-end; gap:clamp(5px,1.4vw,14px); }
       .le-atmo-scale-range { flex:none; color:#f5f8ff; font-family:Georgia,serif; font-size:clamp(12px,2.5vw,19px); font-weight:500; letter-spacing:.015em; font-variant-numeric:tabular-nums; white-space:nowrap; }
       .le-atmo-scale-caption { color:#c0d4e8; font-size:clamp(6px,1.15vw,8px); font-weight:600; letter-spacing:.13em; text-transform:uppercase; white-space:nowrap; opacity:.9; }
-      .le-atmo-scale-more { flex:none; display:grid; place-items:center; width:clamp(28px,4.8vw,36px); height:clamp(28px,4.8vw,36px); margin:-2px -3px -2px 2px; padding:0; border:1px solid rgba(113,224,255,.85); border-radius:50%; color:#e5faff; background:radial-gradient(circle at 36% 28%,rgba(112,229,255,.35),rgba(4,19,34,.96) 72%); box-shadow:0 0 8px rgba(57,207,255,.62),0 0 18px rgba(38,145,255,.30),inset 0 0 7px rgba(255,255,255,.16); font:300 22px/1 system-ui,sans-serif; cursor:pointer; pointer-events:auto; touch-action:manipulation; }
+      .le-atmo-scale-track-row { display:flex; align-items:center; gap:clamp(9px,2vw,17px); min-width:0; }
+      .le-atmo-scale-track { flex:1 1 auto; min-width:0; }
+      .le-atmo-scale-more { flex:none; display:grid; place-items:center; width:clamp(32px,5.2vw,40px); height:clamp(32px,5.2vw,40px); margin:0; padding:0; border:1px solid rgba(113,224,255,.9); border-radius:50%; color:#e5faff; background:radial-gradient(circle at 36% 28%,rgba(112,229,255,.35),rgba(4,19,34,.96) 72%); box-shadow:0 0 8px rgba(57,207,255,.62),0 0 18px rgba(38,145,255,.30),inset 0 0 7px rgba(255,255,255,.16); font:300 24px/1 system-ui,sans-serif; cursor:pointer; pointer-events:auto; touch-action:manipulation; }
       .le-atmo-scale-more:active { transform:scale(.94); }
       .le-atmo-scale-more:focus-visible { outline:2px solid #80d9f5; outline-offset:3px; }
       .le-atmo-legend-bar { height:7px; border-radius:999px; background:linear-gradient(90deg,#080d2c 0%,#101c50 7.1429%,#203b8a 14.2857%,#1689b8 32.1429%,#45b978 50%,#f0c64b 67.8571%,#f06429 82.1429%,#c83f36 89.2857%,#8b152a 94.6429%,#450417 100%); box-shadow:0 0 8px rgba(77,157,255,.24),inset 0 0 0 1px rgba(255,255,255,.26); }
@@ -111,9 +113,11 @@
       .le-atmo-legend-ticks span:last-child { transform:translateX(-100%); }
       @media (max-width:390px) {
         .le-atmo-scale-dock { padding:8px 11px 7px; }
-        .le-atmo-legend-title { max-width:34%; letter-spacing:.09em; }
-        .le-atmo-scale-caption { letter-spacing:.07em; }
+        .le-atmo-legend-title { max-width:38%; letter-spacing:.07em; }
+        .le-atmo-scale-caption { letter-spacing:.055em; font-size:6px; }
         .le-atmo-scale-heading { gap:6px; }
+        .le-atmo-scale-range { font-size:clamp(11px,2.7vw,14px); }
+        .le-atmo-scale-track-row { gap:9px; }
       }
       @media (orientation:landscape) { .le-atmo-scale-dock { bottom:calc(env(safe-area-inset-bottom) + 58px); left:auto; right:14px; width:min(58vw,620px); } }
       .le-atmo-details { margin-top:10px; border-top:1px solid rgba(165,208,235,.14); padding-top:8px; }
@@ -680,19 +684,24 @@ function installStyles() {
     const scaleRange = runtime.el('span', 'le-atmo-scale-range', '—');
     const scaleCaption = runtime.el('span', 'le-atmo-scale-caption', 'Verified global range');
     scaleRangeGroup.append(scaleRange, scaleCaption);
-    const scaleMore = runtime.el('button', 'le-atmo-scale-more', '+');
+    scaleHeading.append(legendTitle, scaleRangeGroup);
+    scaleDock.appendChild(scaleHeading);
+    let scaleMore;
+    const scaleTrackRow = runtime.el('div', 'le-atmo-scale-track-row');
+    const scaleTrack = runtime.el('div', 'le-atmo-scale-track');
+    const legendBar = runtime.el('div', 'le-atmo-legend-bar');
+    legendBar.setAttribute('role', 'img');
+    legendBar.setAttribute('aria-label', 'Atmospheric field colour gradient');
+    scaleTrack.appendChild(legendBar);
+    const legendTicks = runtime.el('div', 'le-atmo-legend-ticks');
+    scaleTrack.appendChild(legendTicks);
+    scaleMore = runtime.el('button', 'le-atmo-scale-more', '+');
     scaleMore.type = 'button';
     scaleMore.setAttribute('aria-label', 'Show atmospheric data details and provenance');
     scaleMore.setAttribute('aria-controls', 'le-atmosphere-data-details');
     scaleMore.setAttribute('aria-expanded', 'false');
-    scaleHeading.append(legendTitle, scaleRangeGroup, scaleMore);
-    scaleDock.appendChild(scaleHeading);
-    const legendBar = runtime.el('div', 'le-atmo-legend-bar');
-    legendBar.setAttribute('role', 'img');
-    legendBar.setAttribute('aria-label', 'Atmospheric field colour gradient');
-    scaleDock.appendChild(legendBar);
-    const legendTicks = runtime.el('div', 'le-atmo-legend-ticks');
-    scaleDock.appendChild(legendTicks);
+    scaleTrackRow.append(scaleTrack, scaleMore);
+    scaleDock.appendChild(scaleTrackRow);
     view.root.appendChild(scaleDock);
     const disclosure = runtime.el('details', 'le-atmo-details');
     disclosure.id = 'le-atmosphere-data-details';
