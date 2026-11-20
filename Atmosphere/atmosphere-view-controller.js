@@ -119,7 +119,18 @@
         backdrop-filter:none; -webkit-backdrop-filter:none;
         pointer-events:none;
       }
+      .le-atmo-scale-dock > .le-atmo-data-card { pointer-events:auto; }
       .le-atmo-scale-dock[hidden] { display:none!important; }
+      .le-atmo-scale-dock .le-atmo-data-card {
+        display:none!important;
+        width:100%; box-sizing:border-box; margin:0 0 12px;
+        pointer-events:auto;
+      }
+      .le-sfv--atmosphere.le-atmo-details-expanded .le-atmo-scale-dock .le-atmo-data-card {
+        display:block!important;
+      }
+      .le-atmo-scale-dock .le-sfv-attribution { margin:8px 2px 0; }
+      .le-atmo-scale-dock .le-atmo-details { pointer-events:auto; }
 
       /* The Plus control expands/collapses the complete Atmosphere data deck.
          The data card grows upward; the scale instrument rises as one unit. */
@@ -837,6 +848,7 @@ function installStyles() {
     view.body.appendChild(selector);
 
     const details = runtime.card('NOAA · Atmospheric field', 'Select a dataset to load its current verified GFS grid values.');
+    details.classList.add('le-atmo-data-card');
     details.hidden = true;
     const range = runtime.el('div', 'le-atmo-range');
     const rangeValue = runtime.el('strong', '', '—');
@@ -852,6 +864,9 @@ function installStyles() {
       runtime.el('span', 'le-atmo-instrument-symbol', '≋'),
       runtime.el('span', 'le-atmo-instrument-name', 'Atmosphere')
     );
+    // The verified data/provenance card is part of this instrument deck,
+    // not part of the independently hideable feature-controls panel.
+    scaleDock.appendChild(details);
     scaleDock.appendChild(instrumentLabel);
     const scaleHeading = runtime.el('div', 'le-atmo-scale-heading');
     const legendTitle = runtime.el('span', 'le-atmo-legend-title', '2 m air temp · °C');
@@ -894,10 +909,9 @@ function installStyles() {
     const metric = runtime.el('div', 'le-sfv-metric-grid');
     disclosure.appendChild(metric);
     details.appendChild(disclosure);
-    view.body.appendChild(details);
     const source = runtime.el('p', 'le-sfv-attribution', 'NOAA NCEP · Global Forecast System · 0.25° analysis');
     source.hidden = true;
-    view.body.appendChild(source);
+    details.appendChild(source);
 
     let closed = false, layerDispose = null, gridHandle = null, windArrowsHandle = null, gridRoot = null, worldGlobe = null;
     let dataRequest = null;
