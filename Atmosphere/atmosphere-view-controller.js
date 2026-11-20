@@ -93,10 +93,18 @@
       .le-atmo-range { display:flex; align-items:baseline; flex-wrap:wrap; gap:5px 10px; }
       .le-atmo-range strong { color:#f2fbff; font-size:clamp(23px,6vw,31px); letter-spacing:-.035em; font-weight:760; }
       .le-atmo-range span { color:#a9c6d8; font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
-      .le-atmo-legend { margin:10px 0 2px; padding:9px 10px; border:1px solid rgba(159,211,249,.13); border-radius:12px; background:rgba(1,8,17,.34); }
-      .le-atmo-legend-title { display:block; margin-bottom:7px; color:#a9c6d8; font-size:8px; font-weight:750; letter-spacing:.12em; text-transform:uppercase; }
-      .le-atmo-legend-bar { height:9px; border-radius:999px; background:linear-gradient(90deg,#203b8a,#1689b8,#45b978,#f0c64b,#c83f36); box-shadow:inset 0 0 0 1px rgba(255,255,255,.12); }
-      .le-atmo-legend-ticks { display:flex; justify-content:space-between; gap:5px; margin-top:5px; color:#b8cbd8; font-size:8px; font-variant-numeric:tabular-nums; }
+      /* The active field scale is a fixed instrument, independent of the scrollable HUD. */
+      .le-atmo-scale-dock { position:absolute; z-index:4; left:clamp(14px,4vw,28px); right:clamp(14px,4vw,28px); bottom:calc(env(safe-area-inset-bottom) + 104px); box-sizing:border-box; width:min(calc(100% - 28px),640px); margin:0 auto; padding:10px 13px 11px; border:1px solid rgba(159,211,249,.24); border-radius:15px; color:#eaf7ff; background:linear-gradient(135deg,rgba(5,18,32,.91),rgba(3,9,19,.88)); box-shadow:inset 1px 1px 1px rgba(255,255,255,.09),0 9px 28px rgba(0,0,0,.36),0 0 24px rgba(69,169,226,.09); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); pointer-events:none; }
+      .le-atmo-scale-dock[hidden] { display:none!important; }
+      .le-atmo-scale-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+      .le-atmo-legend-title { display:block; min-width:0; overflow:hidden; color:#b8d5e7; font-size:9px; font-weight:800; letter-spacing:.12em; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
+      .le-atmo-scale-range { flex:none; color:#f2fbff; font-size:10px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+      .le-atmo-legend-bar { height:10px; border-radius:999px; background:linear-gradient(90deg,#203b8a,#1689b8,#45b978,#f0c64b,#c83f36); box-shadow:inset 0 0 0 1px rgba(255,255,255,.16); }
+      .le-atmo-legend-ticks { position:relative; height:14px; margin-top:6px; color:#c0d2df; font-size:8px; font-variant-numeric:tabular-nums; }
+      .le-atmo-legend-ticks span { position:absolute; top:0; transform:translateX(-50%); white-space:nowrap; }
+      .le-atmo-legend-ticks span:first-child { transform:none; }
+      .le-atmo-legend-ticks span:last-child { transform:translateX(-100%); }
+      @media (orientation:landscape) { .le-atmo-scale-dock { bottom:calc(env(safe-area-inset-bottom) + 58px); left:auto; right:14px; width:min(48vw,480px); } }
       .le-atmo-details { margin-top:10px; border-top:1px solid rgba(165,208,235,.14); padding-top:8px; }
       .le-atmo-details summary { list-style:none; cursor:pointer; color:#b7d8e9; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; display:flex; justify-content:space-between; align-items:center; min-height:26px; }
       .le-atmo-details summary::-webkit-details-marker { display:none; }
@@ -652,15 +660,21 @@ function installStyles() {
     const rangeUnit = runtime.el('span', '', 'Current global range');
     range.appendChild(rangeUnit);
     details.appendChild(range);
-    const legend = runtime.el('div', 'le-atmo-legend');
-    legend.setAttribute('role', 'img');
-    legend.setAttribute('aria-label', 'Selected atmospheric field colour scale');
+    const scaleDock = runtime.el('section', 'le-atmo-scale-dock');
+    scaleDock.setAttribute('aria-label', 'Active atmospheric field colour scale');
+    scaleDock.hidden = true;
+    const scaleHeading = runtime.el('div', 'le-atmo-scale-heading');
     const legendTitle = runtime.el('span', 'le-atmo-legend-title', 'Field scale');
-    legend.appendChild(legendTitle);
-    legend.appendChild(runtime.el('div', 'le-atmo-legend-bar'));
+    const scaleRange = runtime.el('span', 'le-atmo-scale-range', '—');
+    scaleHeading.append(legendTitle, scaleRange);
+    scaleDock.appendChild(scaleHeading);
+    const legendBar = runtime.el('div', 'le-atmo-legend-bar');
+    legendBar.setAttribute('role', 'img');
+    legendBar.setAttribute('aria-label', 'Atmospheric field colour gradient');
+    scaleDock.appendChild(legendBar);
     const legendTicks = runtime.el('div', 'le-atmo-legend-ticks');
-    legend.appendChild(legendTicks);
-    details.appendChild(legend);
+    scaleDock.appendChild(legendTicks);
+    view.root.appendChild(scaleDock);
     const disclosure = runtime.el('details', 'le-atmo-details');
     disclosure.appendChild(runtime.el('summary', '', 'Data details & provenance'));
     const metric = runtime.el('div', 'le-sfv-metric-grid');
@@ -693,6 +707,7 @@ function installStyles() {
       closed = true;
       document.body.classList.remove('le-atmosphere-fullscreen-open');
       hudToggle.remove();
+      scaleDock.remove();
       dataRequest?.abort();
       removeActiveLayer();
       try { worldGlobe?.dispose?.(); } catch (error) { console.warn('[LIVE // EARTH] Atmosphere Engine globe cleanup failed.', error); }
@@ -726,14 +741,27 @@ function installStyles() {
       const min = config.min === null ? grid.min : config.min;
       const max = config.max === null ? grid.max : config.max;
       legendTitle.textContent = `${config.title.replace('NOAA · ','')} · ${config.displayUnits}`;
-      const legendBar = legend.querySelector('.le-atmo-legend-bar');
-      if (legendBar) legendBar.style.background = config === FIELD_CONFIG.temperature ? TEMPERATURE_LEGEND : '';
+      legendBar.style.background = config === FIELD_CONFIG.temperature
+        ? TEMPERATURE_LEGEND
+        : 'linear-gradient(90deg,#0e297a 0%,#05a8e0 25%,#2edca8 50%,#ffca47 75%,#e8402b 100%)';
       legendTicks.replaceChildren();
-      const ticks = config.ticks || Array.from({ length: 5 }, (_, index) => {
-        const value = min + (max - min) * index / 4;
-        return `${formatFieldValue(value)} ${config.displayUnits}`;
-      });
-      for (const tick of ticks) legendTicks.appendChild(runtime.el('span', '', tick));
+      const tickValues = config.ticks
+        ? config.ticks.map(label => {
+            const match = String(label).match(/[−-]?\d+(?:\.\d+)?/);
+            return { label, value: match ? Number(match[0].replace('−','-')) : min };
+          })
+        : Array.from({ length: 5 }, (_, index) => {
+            const value = min + (max - min) * index / 4;
+            return { label: `${formatFieldValue(value)} ${config.displayUnits}`, value };
+          });
+      for (const tick of tickValues) {
+        const position = max > min ? Math.max(0, Math.min(100, ((tick.value - min) / (max - min)) * 100)) : 0;
+        const node = runtime.el('span', '', tick.label);
+        node.style.left = `${position}%`;
+        legendTicks.appendChild(node);
+      }
+      scaleRange.textContent = `${formatFieldValue(grid.min)} — ${formatFieldValue(grid.max)} ${config.displayUnits}`;
+      scaleDock.hidden = false;
       return { min, max };
     }
 
@@ -788,13 +816,14 @@ function installStyles() {
         dataRequest?.abort(); dataRequest = null;
         removeActiveLayer();
         setSelectedDataset(null);
-        details.hidden = true; source.hidden = true;
+        details.hidden = true; source.hidden = true; scaleDock.hidden = true;
         runtime.setStatus(status, `${datasetOptions.find(item => item.id === datasetKey).label} layer hidden. The Earth remains active.`, 'neutral');
         worldGlobe?.requestRender?.();
         return;
       }
       dataRequest?.abort(); dataRequest = null;
       removeActiveLayer();
+      scaleDock.hidden = true;
       setSelectedDataset(datasetKey);
       details.hidden = false; source.hidden = false;
       details.querySelector('h2').textContent = config.title;
@@ -889,7 +918,7 @@ function installStyles() {
         if (!closed && !controller.signal.aborted && runtime.isActive(ATMOSPHERE_VIEW.id)) {
           removeActiveLayer();
           setSelectedDataset(null);
-          details.hidden = true; source.hidden = true;
+          details.hidden = true; source.hidden = true; scaleDock.hidden = true;
           runtime.setStatus(status, `${label} data could not be displayed. The base globe remains active. ${error?.message || ''}`, 'error');
         }
       } finally {
