@@ -29,6 +29,15 @@
     [1.000000, 0.2706, 0.0157, 0.0902]  // 100% · dark burgundy
   ];
   const TEMPERATURE_LEGEND = 'linear-gradient(90deg,#080d2c 0%,#101c50 7.1429%,#203b8a 14.2857%,#1689b8 32.1429%,#45b978 50%,#f0c64b 67.8571%,#f06429 82.1429%,#c83f36 89.2857%,#8b152a 94.6429%,#450417 100%)';
+  // Cool, perceptually ordered wind palette: calm blue through luminous cyan to warm high-wind accents.
+  const WIND_COLOR_STOPS = [
+    [0.00, 0.035, 0.090, 0.310],
+    [0.34, 0.020, 0.390, 0.690],
+    [0.68, 0.075, 0.760, 0.850],
+    [0.88, 0.690, 0.900, 0.920],
+    [1.00, 0.980, 0.790, 0.470]
+  ];
+  const WIND_LEGEND = 'linear-gradient(90deg,#09174f 0%,#0563b0 34%,#13c2d9 68%,#b0e6eb 88%,#fad478 100%)';
   const SCRIPT_PATHS = ['./EarthEngine/Graphics/universal-grid-system.js','./EarthEngine/Graphics/earth-grid-gpu-skin.js'];
 
   function installHudStyle() {
@@ -1042,7 +1051,7 @@ function installStyles() {
     source.hidden = true;
     details.appendChild(source);
 
-    let closed = false, layerDispose = null, gridHandle = null, windArrowsHandle = null, gridRoot = null, worldGlobe = null;
+    let closed = false, layerDispose = null, gridHandle = null, windFlowHandle = null, gridRoot = null, worldGlobe = null;
     let dataRequest = null;
     function removeActiveLayer() {
       if (typeof layerDispose === 'function') {
@@ -1050,8 +1059,8 @@ function installStyles() {
         layerDispose = null;
         dispose();
       }
-      try { windArrowsHandle?.dispose?.(); } catch (_) {}
-      windArrowsHandle = null;
+      try { windFlowHandle?.dispose?.(); } catch (_) {}
+      windFlowHandle = null;
       try { gridHandle?.dispose?.(); } catch (_) {}
       gridHandle = null;
       try { gridRoot?.removeFromParent?.(); } catch (_) {}
@@ -1110,6 +1119,7 @@ function installStyles() {
         : `${config.title.replace('NOAA · ','')} · ${config.displayUnits}`;
       legendBar.style.background = config === FIELD_CONFIG.temperature
         ? TEMPERATURE_LEGEND
+        : config === FIELD_CONFIG.wind ? WIND_LEGEND
         : 'linear-gradient(90deg,#0e297a 0%,#05a8e0 25%,#2edca8 50%,#ffca47 75%,#e8402b 100%)';
 
       legendTicks.replaceChildren();
@@ -1134,47 +1144,179 @@ function installStyles() {
       return { min, max };
     }
 
-    function makeWindArrows(THREE, earth, directionGrid) {
-      const def = directionGrid.definition;
-      const values = directionGrid.values;
-      const positions = [];
-      const rowStep = 36;
-      const colStep = 48;
+    function makeWindFlow(THREE, earth, speedGrid, directionGrid, speedMin, speedMax, requestRender) {
+      // A single GPU-friendly line/point layer. Particle motion is driven by
+      // the verified 10 m speed + direction grids; no decorative paths are added.
+      const speedDef = speedGrid.definition;
+      const directionDef = directionGrid.definition;
+      const speedValues = speedGrid.values;
+      const directionValues = directionGrid.values;
+      const particleCount = Math.min(760, Math.max(420, Math.round((window.innerWidth || 420) * 1.25)));
+      const trailLength = 9;
+      const segmentCount = trailLength - 1;
+      const positions = new Float32Array(particleCount * segmentCount * 2 * 3);
+      const colors = new Float32Array(positions.length);
+      const fades = new Float32Array(particleCount * segmentCount * 2);
+      const headPositions = new Float32Array(particleCount * 3);
+      const headColors = new Float32Array(particleCount * 3);
+      const particles = [];
       const rad = Math.PI / 180;
-      for (let y = 18; y < def.height - 18; y += rowStep) {
-        const latitude = def.latStart + y * def.latStep;
-        const phi = latitude * rad;
-        for (let x = 24; x < def.width - 24; x += colStep) {
-          const index = y * def.width + x;
-          const direction = values[index];
-          if (!Number.isFinite(direction)) continue;
-          const longitude = def.lonStart + x * def.lonStep;
-          const lambda = longitude * rad;
-          const normal = new THREE.Vector3(Math.cos(phi) * Math.cos(lambda), Math.sin(phi), -Math.cos(phi) * Math.sin(lambda)).normalize();
-          const north = new THREE.Vector3(-Math.sin(phi) * Math.cos(lambda), Math.cos(phi), Math.sin(phi) * Math.sin(lambda)).normalize();
-          const east = new THREE.Vector3(-Math.sin(lambda), 0, -Math.cos(lambda)).normalize();
-          const bearingTo = ((direction + 180) % 360) * rad;
-          const tangent = north.multiplyScalar(Math.cos(bearingTo)).add(east.multiplyScalar(Math.sin(bearingTo))).normalize();
-          const side = new THREE.Vector3().crossVectors(normal, tangent).normalize();
-          const start = normal.clone().multiplyScalar(1.018);
-          const tip = normal.clone().add(tangent.clone().multiplyScalar(0.028)).normalize().multiplyScalar(1.018);
-          const headBase = tip.clone().add(tangent.clone().multiplyScalar(-0.009));
-          const headLeft = headBase.clone().add(side.clone().multiplyScalar(0.006));
-          const headRight = headBase.clone().add(side.clone().multiplyScalar(-0.006));
-          positions.push(start.x,start.y,start.z,tip.x,tip.y,tip.z,
-            tip.x,tip.y,tip.z,headLeft.x,headLeft.y,headLeft.z,
-            tip.x,tip.y,tip.z,headRight.x,headRight.y,headRight.z);
-        }
+      const radius = 1.018;
+      const speedRange = Math.max(0.001, speedMax - speedMin);
+      let seed = 0x51f15e;
+      const random = () => {
+        seed = (seed * 1664525 + 1013904223) >>> 0;
+        return seed / 4294967296;
+      };
+      const palette = WIND_COLOR_STOPS.map(stop => ({ at: stop[0], color: new THREE.Color(stop[1], stop[2], stop[3]) }));
+      function colourAt(t) {
+        const value = Math.max(0, Math.min(1, t));
+        let right = palette.findIndex(stop => stop.at >= value);
+        if (right < 0) right = palette.length - 1;
+        const a = palette[Math.max(0, right - 1)], b = palette[right];
+        const f = b.at > a.at ? (value - a.at) / (b.at - a.at) : 0;
+        return a.color.clone().lerp(b.color, f);
       }
-      if (!positions.length) return null;
-      const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-      const material = new THREE.LineBasicMaterial({ color: 0xe5f8ff, transparent: true, opacity: 0.88, depthTest: true, depthWrite: false });
-      const lines = new THREE.LineSegments(geometry, material);
-      lines.name = 'liveEarthAtmosphereWindDirectionVectors';
-      lines.renderOrder = 9;
-      earth.add(lines);
-      return { dispose() { lines.removeFromParent(); geometry.dispose(); material.dispose(); } };
+      function gridSample(def, values, latitude, longitude, circular) {
+        const gx = (longitude - def.lonStart) / def.lonStep;
+        const gy = (latitude - def.latStart) / def.latStep;
+        if (!Number.isFinite(gx) || !Number.isFinite(gy)) return null;
+        const x0raw = Math.floor(gx), y0raw = Math.floor(gy);
+        const fx = gx - x0raw, fy = gy - y0raw;
+        const wrap = value => ((value % def.width) + def.width) % def.width;
+        const x0 = wrap(x0raw), x1 = wrap(x0raw + 1);
+        const y0 = Math.max(0, Math.min(def.height - 1, y0raw));
+        const y1 = Math.max(0, Math.min(def.height - 1, y0raw + 1));
+        const samples = [
+          [values[y0 * def.width + x0], (1 - fx) * (1 - fy)],
+          [values[y0 * def.width + x1], fx * (1 - fy)],
+          [values[y1 * def.width + x0], (1 - fx) * fy],
+          [values[y1 * def.width + x1], fx * fy]
+        ];
+        let total = 0, weight = 0, sx = 0, sy = 0;
+        for (const [value, w] of samples) {
+          if (!Number.isFinite(value) || w <= 0) continue;
+          if (circular) { sx += Math.cos(value * rad) * w; sy += Math.sin(value * rad) * w; }
+          else total += value * w;
+          weight += w;
+        }
+        if (weight < 0.25) return null;
+        return circular ? ((Math.atan2(sy, sx) / rad) + 360) % 360 : total / weight;
+      }
+      function surfacePoint(latitude, longitude, target) {
+        const phi = latitude * rad, lambda = longitude * rad;
+        const cp = Math.cos(phi);
+        target[0] = cp * Math.cos(lambda) * radius;
+        target[1] = Math.sin(phi) * radius;
+        target[2] = -cp * Math.sin(lambda) * radius;
+      }
+      function resetParticle(particle) {
+        particle.lat = -78 + random() * 156;
+        particle.lon = -180 + random() * 360;
+        particle.history = Array.from({ length: trailLength }, () => [0, 0, 0]);
+        surfacePoint(particle.lat, particle.lon, particle.history[0]);
+        for (let i = 1; i < trailLength; i++) particle.history[i] = particle.history[0].slice();
+      }
+      for (let i = 0; i < particleCount; i++) {
+        const particle = { lat: 0, lon: 0, history: [], speed: 0 };
+        resetParticle(particle);
+        particles.push(particle);
+      }
+
+      const lineGeometry = new THREE.BufferGeometry();
+      lineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
+      lineGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3).setUsage(THREE.DynamicDrawUsage));
+      lineGeometry.setAttribute('fade', new THREE.BufferAttribute(fades, 1).setUsage(THREE.DynamicDrawUsage));
+      const lineMaterial = new THREE.ShaderMaterial({
+        transparent: true, depthTest: true, depthWrite: false,
+        blending: THREE.AdditiveBlending, toneMapped: false,
+        vertexShader: `attribute vec3 color; attribute float fade; varying vec3 vColor; varying float vFade; void main(){vColor=color;vFade=fade;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+        fragmentShader: `varying vec3 vColor; varying float vFade; void main(){gl_FragColor=vec4(vColor,vFade);}`
+      });
+      const trails = new THREE.LineSegments(lineGeometry, lineMaterial);
+      trails.name = 'liveEarthAtmosphereWindFlowTrails';
+      trails.renderOrder = 8;
+
+      const headGeometry = new THREE.BufferGeometry();
+      headGeometry.setAttribute('position', new THREE.BufferAttribute(headPositions, 3).setUsage(THREE.DynamicDrawUsage));
+      headGeometry.setAttribute('color', new THREE.BufferAttribute(headColors, 3).setUsage(THREE.DynamicDrawUsage));
+      const heads = new THREE.Points(headGeometry, new THREE.PointsMaterial({
+        size: 2.1, sizeAttenuation: true, vertexColors: true, transparent: true,
+        opacity: 0.82, depthTest: true, depthWrite: false,
+        blending: THREE.AdditiveBlending, toneMapped: false
+      }));
+      heads.name = 'liveEarthAtmosphereWindFlowParticles';
+      heads.renderOrder = 9;
+      earth.add(trails, heads);
+
+      let disposed = false;
+      let frame = 0;
+      let lastFrameTime = 0;
+      function animate(time) {
+        if (disposed) return;
+        frame = requestAnimationFrame(animate);
+        if (time - lastFrameTime < 38) return;
+        lastFrameTime = time;
+        let lineVertex = 0;
+        let fadeIndex = 0;
+        for (let i = 0; i < particles.length; i++) {
+          const particle = particles[i];
+          const speed = gridSample(speedDef, speedValues, particle.lat, particle.lon, false);
+          const direction = gridSample(directionDef, directionValues, particle.lat, particle.lon, true);
+          if (speed === null || direction === null || speed < 0) {
+            resetParticle(particle);
+          } else {
+            particle.speed = speed;
+            // NOAA direction is meteorological FROM; add 180° to move particles
+            // in the actual direction of travel, matching the old arrow convention.
+            const bearing = (direction + 180) * rad;
+            const normalizedSpeed = Math.max(0, Math.min(1, (speed - speedMin) / speedRange));
+            const stepDegrees = 0.006 + normalizedSpeed * 0.070;
+            const oldLat = particle.lat * rad;
+            const nextLat = Math.max(-84, Math.min(84, particle.lat + Math.cos(bearing) * stepDegrees));
+            const cosLat = Math.max(0.12, Math.cos(oldLat));
+            particle.lon += (Math.sin(bearing) * stepDegrees) / cosLat;
+            if (particle.lon > 180) particle.lon -= 360;
+            if (particle.lon < -180) particle.lon += 360;
+            particle.lat = nextLat;
+            const head = [0, 0, 0];
+            surfacePoint(particle.lat, particle.lon, head);
+            particle.history.shift();
+            particle.history.push(head);
+          }
+          const normalized = Math.max(0, Math.min(1, (particle.speed - speedMin) / speedRange));
+          const tint = colourAt(normalized);
+          for (let j = 0; j < segmentCount; j++) {
+            const a = particle.history[j], b = particle.history[j + 1];
+            positions.set(a, lineVertex * 3); colors.set([tint.r, tint.g, tint.b], lineVertex * 3);
+            fades[lineVertex] = 0.035 + (j / segmentCount) * 0.34; lineVertex++;
+            positions.set(b, lineVertex * 3); colors.set([tint.r, tint.g, tint.b], lineVertex * 3);
+            fades[lineVertex] = 0.035 + ((j + 1) / segmentCount) * 0.34; lineVertex++;
+          }
+          const head = particle.history[trailLength - 1];
+          headPositions.set(head, i * 3);
+          headColors[i * 3] = Math.min(1, tint.r * 1.22 + 0.08);
+          headColors[i * 3 + 1] = Math.min(1, tint.g * 1.22 + 0.08);
+          headColors[i * 3 + 2] = Math.min(1, tint.b * 1.22 + 0.08);
+        }
+        lineGeometry.attributes.position.needsUpdate = true;
+        lineGeometry.attributes.color.needsUpdate = true;
+        lineGeometry.attributes.fade.needsUpdate = true;
+        headGeometry.attributes.position.needsUpdate = true;
+        headGeometry.attributes.color.needsUpdate = true;
+        requestRender?.();
+      }
+      frame = requestAnimationFrame(animate);
+      return {
+        dispose() {
+          if (disposed) return;
+          disposed = true;
+          cancelAnimationFrame(frame);
+          trails.removeFromParent(); heads.removeFromParent();
+          lineGeometry.dispose(); lineMaterial.dispose();
+          headGeometry.dispose(); heads.material.dispose();
+        }
+      };
     }
 
     async function selectDataset(datasetKey) {
@@ -1249,7 +1391,7 @@ function installStyles() {
             THREE, grid, radius: 1.009,
             opacity: datasetKey === 'temperature' ? 0.75 : 0.78,
             min: colorMin, max: colorMax,
-            colorStops: datasetKey === 'temperature' ? TEMPERATURE_COLOR_STOPS : undefined,
+            colorStops: datasetKey === 'temperature' ? TEMPERATURE_COLOR_STOPS : datasetKey === 'wind' ? WIND_COLOR_STOPS : undefined,
             thermalAura: datasetKey === 'temperature' ? {
               enabled: true,
               expansion: 0.0020,
@@ -1261,13 +1403,13 @@ function installStyles() {
             contourColor: [0.13, 0.10, 0.09],
             name: `NOAA-GFS-${datasetKey}`
           });
-          if (datasetKey === 'wind') windArrowsHandle = makeWindArrows(THREE, earth, grids[1]);
+          if (datasetKey === 'wind') windFlowHandle = makeWindFlow(THREE, earth, grid, grids[1], bounds.min, bounds.max, () => worldGlobe?.requestRender?.());
           gridRoot.add(gridHandle.mesh);
           if (gridHandle.auraMesh) gridRoot.add(gridHandle.auraMesh);
           earth.add(gridRoot);
           return () => {
-            try { windArrowsHandle?.dispose?.(); } catch (_) {}
-            windArrowsHandle = null;
+            try { windFlowHandle?.dispose?.(); } catch (_) {}
+            windFlowHandle = null;
             try { gridHandle?.dispose?.(); } catch (_) {}
             gridHandle = null;
             try { gridRoot?.removeFromParent?.(); } catch (_) {}
