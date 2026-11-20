@@ -93,14 +93,14 @@
       .le-atmo-range { display:flex; align-items:baseline; flex-wrap:wrap; gap:5px 10px; }
       .le-atmo-range strong { color:#f2fbff; font-size:clamp(23px,6vw,31px); letter-spacing:-.035em; font-weight:760; }
       .le-atmo-range span { color:#a9c6d8; font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
-      /* Balanced instrument typography: three compact header cells centred over the colour track. */
+      /* Atmosphere scale: the three header cells share the gradient track's exact width. */
       .le-atmo-scale-dock {
         container-type:inline-size;
         --atmo-action-space:clamp(28px,5.2cqi,34px);
         --atmo-track-gap:clamp(12px,1.9cqi,14px);
         --atmo-content-width:calc(100% - var(--atmo-action-space) - var(--atmo-track-gap));
-        --atmo-header-small:clamp(8px,1.35cqi,9px);
-        --atmo-header-value:clamp(10px,1.75cqi,12px);
+        --atmo-header-small:clamp(7px,1.25cqi,8.5px);
+        --atmo-header-value:clamp(10px,1.7cqi,12px);
         position:absolute; z-index:4;
         left:clamp(12px,3.6vw,28px); right:clamp(12px,3.6vw,28px);
         bottom:calc(env(safe-area-inset-bottom) + clamp(82px,12svh,112px));
@@ -121,31 +121,28 @@
       }
       .le-atmo-legend-title {
         display:block; min-width:0; overflow:hidden; margin:0;
-        padding:0 5px 0 0; color:#dceaf6; font-family:Georgia,serif;
+        padding:0 4px 0 0; color:#dceaf6; font-family:Georgia,serif;
         font-size:var(--atmo-header-small); font-weight:500;
-        letter-spacing:.015em; text-align:center;
+        letter-spacing:0; text-align:center;
         text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap;
       }
-      .le-atmo-scale-range-group {
-        display:flex; align-items:center; justify-content:center;
-        min-width:0; padding:0 clamp(5px,1cqi,8px);
+      .le-atmo-scale-range {
+        display:block; min-width:0; margin:0; padding:0 6px;
         border-left:1px solid rgba(213,235,255,.48);
         border-right:1px solid rgba(213,235,255,.48);
-      }
-      .le-atmo-scale-range {
-        display:block; min-width:0; margin:0; padding:0;
-        border:0; color:#f5f8ff; font-family:Georgia,serif;
+        color:#f5f8ff; font-family:Georgia,serif;
         font-size:var(--atmo-header-value); font-weight:500;
         letter-spacing:0; font-variant-numeric:tabular-nums;
         white-space:nowrap; text-align:center;
       }
       .le-atmo-scale-caption {
         display:block; min-width:0; overflow:hidden; margin:0;
-        padding:0 0 0 5px; border:0;
+        padding:0 0 0 4px; border:0;
         color:#c0d4e8; font-family:Georgia,serif;
         font-size:var(--atmo-header-small); font-weight:500;
-        letter-spacing:.015em; line-height:1;
+        letter-spacing:0; line-height:1;
         text-transform:uppercase; white-space:nowrap; opacity:.94; text-align:center;
+        text-overflow:ellipsis;
       }
       .le-atmo-scale-track-row {
         display:grid; grid-template-columns:minmax(0,1fr) var(--atmo-action-space);
@@ -166,23 +163,9 @@
       .le-atmo-scale-more:active { transform:scale(.94); }
       .le-atmo-scale-more:focus-visible { outline:2px solid #80d9f5; outline-offset:3px; }
       .le-atmo-legend-bar {
-        position:relative; isolation:isolate; overflow:visible;
         width:100%; height:6px; border-radius:999px;
         background:linear-gradient(90deg,#080d2c 0%,#101c50 7.1429%,#203b8a 14.2857%,#1689b8 32.1429%,#45b978 50%,#f0c64b 67.8571%,#f06429 82.1429%,#c83f36 89.2857%,#8b152a 94.6429%,#450417 100%);
         box-shadow:0 0 5px rgba(77,157,255,.25),inset 0 0 0 1px rgba(255,255,255,.30);
-      }
-      .le-atmo-range-marker {
-        position:absolute; z-index:2; top:-4px;
-        width:1px; height:14px; transform:translateX(-50%);
-        background:rgba(239,250,255,.96);
-        box-shadow:0 0 3px rgba(110,225,255,.95),0 0 7px rgba(73,171,255,.72);
-        pointer-events:none;
-      }
-      .le-atmo-range-marker::after {
-        content:""; position:absolute; left:50%; top:-2px;
-        width:4px; height:4px; border-radius:50%;
-        transform:translateX(-50%);
-        background:#f4fdff; box-shadow:0 0 4px rgba(110,225,255,.95);
       }
       .le-atmo-legend-ticks {
         position:relative; width:var(--atmo-content-width);
@@ -207,12 +190,11 @@
       @container (max-width:430px) {
         .le-atmo-scale-heading { grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); }
         .le-atmo-legend-title, .le-atmo-scale-caption { font-size:var(--atmo-header-small); }
-        .le-atmo-scale-range { font-size:var(--atmo-header-value); }
-        .le-atmo-scale-range-group { padding-left:5px; padding-right:5px; }
+        .le-atmo-scale-range { font-size:var(--atmo-header-value); padding-left:5px; padding-right:5px; }
       }
       @container (max-width:350px) {
-        .le-atmo-legend-title, .le-atmo-scale-caption { font-size:8px; }
-        .le-atmo-scale-range { font-size:10px; }
+        .le-atmo-legend-title, .le-atmo-scale-caption { font-size:7px; }
+        .le-atmo-scale-range { font-size:9px; padding-left:4px; padding-right:4px; }
         .le-atmo-legend-ticks { font-size:8px; }
       }
       @media (orientation:landscape) {
@@ -778,11 +760,9 @@ function installStyles() {
     scaleDock.hidden = true;
     const scaleHeading = runtime.el('div', 'le-atmo-scale-heading');
     const legendTitle = runtime.el('span', 'le-atmo-legend-title', 'Field scale');
-    const scaleRangeGroup = runtime.el('div', 'le-atmo-scale-range-group');
     const scaleRange = runtime.el('span', 'le-atmo-scale-range', '—');
     const scaleCaption = runtime.el('span', 'le-atmo-scale-caption', 'Verified global range');
-    scaleRangeGroup.append(scaleRange, scaleCaption);
-    scaleHeading.append(legendTitle, scaleRangeGroup);
+    scaleHeading.append(legendTitle, scaleRange, scaleCaption);
     scaleDock.appendChild(scaleHeading);
     let scaleMore;
     const scaleTrackRow = runtime.el('div', 'le-atmo-scale-track-row');
@@ -876,38 +856,37 @@ function installStyles() {
     }
 
     function updateLegend(grid, config) {
-      const min = config.min === null ? grid.min : config.min;
-      const max = config.max === null ? grid.max : config.max;
-      legendTitle.textContent = `${config.title.replace('NOAA · ','')} · ${config.displayUnits}`;
+      // Every field's visible scale follows the verified values in the loaded
+      // grid. For temperature this makes the gradient endpoints the actual
+      // observed minimum and maximum, never a hard-coded climatological range.
+      const min = grid.min;
+      const max = grid.max;
+      legendTitle.textContent = config === FIELD_CONFIG.temperature
+        ? '2 m air temp · °C'
+        : `${config.title.replace('NOAA · ','')} · ${config.displayUnits}`;
+      scaleCaption.textContent = config === FIELD_CONFIG.temperature
+        ? 'Verified global range'
+        : 'Verified range';
       legendBar.style.background = config === FIELD_CONFIG.temperature
         ? TEMPERATURE_LEGEND
         : 'linear-gradient(90deg,#0e297a 0%,#05a8e0 25%,#2edca8 50%,#ffca47 75%,#e8402b 100%)';
 
-      // Keep the colour ramp's calibrated domain intact. Overlay live observed
-      // minimum/maximum markers so the verified data range is visible without
-      // rescaling or recolouring the gradient.
-      legendBar.querySelectorAll('.le-atmo-range-marker').forEach(node => node.remove());
-      const markerPosition = value => max > min
-        ? Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100))
-        : 0;
-      for (const [kind, value] of [['min', grid.min], ['max', grid.max]]) {
-        if (!Number.isFinite(value)) continue;
-        const marker = runtime.el('span', `le-atmo-range-marker le-atmo-range-marker--${kind}`);
-        marker.style.left = `${markerPosition(value)}%`;
-        marker.title = `${kind === 'min' ? 'Minimum' : 'Maximum'} verified value: ${formatFieldValue(value)} ${config.displayUnits}`;
-        marker.setAttribute('aria-hidden', 'true');
-        legendBar.appendChild(marker);
-      }
       legendTicks.replaceChildren();
-      const tickValues = config.ticks
-        ? config.ticks.map(label => {
-            const match = String(label).match(/[−-]?\d+(?:\.\d+)?/);
-            return { label, value: match ? Number(match[0].replace('−','-')) : min };
-          })
-        : Array.from({ length: 5 }, (_, index) => {
+      const useLiveTemperatureRange = config === FIELD_CONFIG.temperature;
+      const tickValues = useLiveTemperatureRange
+        ? Array.from({ length: 5 }, (_, index) => {
             const value = min + (max - min) * index / 4;
-            return { label: `${formatFieldValue(value)} ${config.displayUnits}`, value };
-          });
+            return { label: `${formatFieldValue(value)}°`, value };
+          })
+        : config.ticks
+          ? config.ticks.map(label => {
+              const match = String(label).match(/[−-]?\d+(?:\.\d+)?/);
+              return { label, value: match ? Number(match[0].replace('−','-')) : min };
+            })
+          : Array.from({ length: 5 }, (_, index) => {
+              const value = min + (max - min) * index / 4;
+              return { label: `${formatFieldValue(value)} ${config.displayUnits}`, value };
+            });
       for (const tick of tickValues) {
         const position = max > min ? Math.max(0, Math.min(100, ((tick.value - min) / (max - min)) * 100)) : 0;
         const node = runtime.el('span', '', tick.label);
@@ -1028,8 +1007,8 @@ function installStyles() {
           if (!THREE || !earth?.add) throw new Error('The Earth Engine did not provide its Three.js surface.');
           gridRoot = new THREE.Group();
           gridRoot.name = `liveEarth-atmosphere-${datasetKey}-layer`;
-          const colorMin = datasetKey === 'temperature' ? -80 : (datasetKey === 'moisture' ? 0 : bounds.min);
-          const colorMax = datasetKey === 'temperature' ? 60 : (datasetKey === 'moisture' ? 100 : bounds.max);
+          const colorMin = datasetKey === 'moisture' ? 0 : bounds.min;
+          const colorMax = datasetKey === 'moisture' ? 100 : bounds.max;
           gridHandle = window.LiveEarthGpuGridSkin.create({
             THREE, grid, radius: 1.009,
             opacity: datasetKey === 'temperature' ? 0.75 : 0.78,
