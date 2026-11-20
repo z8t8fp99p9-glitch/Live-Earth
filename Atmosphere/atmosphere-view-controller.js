@@ -13,21 +13,20 @@
   }
   const ATMOSPHERE_VIEW = { id: 'atmosphere', title: 'Atmosphere', symbol: '◉' };
   const VALUES_BASE_URL = 'https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/Data/Central-Database/values/';
-  // Temperature uses an expanded cold-to-hot scale. The original deep blue
-  // remains anchored at -60 C; values below it progress into midnight blues.
-  // The original green and gold identity is retained; values above 45 C deepen
-  // through crimson to burgundy at +60 C. GPU renderer remains unchanged.
+  // Temperature palette stops are normalized from 0 to 1. The verified
+  // dataset minimum and maximum define the live colour domain; this palette
+  // stretches across that range without fixed absolute temperature endpoints.
   const TEMPERATURE_COLOR_STOPS = [
-    [0.000000, 0.0314, 0.0510, 0.1725], // -80 C · midnight navy
-    [0.071429, 0.0627, 0.1098, 0.3137], // -70 C · polar indigo
-    [0.142857, 0.1255, 0.2314, 0.5412], // -60 C · original deep blue
-    [0.321429, 0.0863, 0.5373, 0.7216], // -35 C · original blue-cyan
-    [0.500000, 0.2706, 0.7255, 0.4706], // -10 C · original green
-    [0.678571, 0.9412, 0.7765, 0.2941], // +15 C · original gold
-    [0.821429, 0.9412, 0.3922, 0.1608], // +35 C · orange
-    [0.892857, 0.7843, 0.2471, 0.2118], // +45 C · original red
-    [0.946429, 0.5451, 0.0824, 0.1647], // +52.5 C · deep crimson
-    [1.000000, 0.2706, 0.0157, 0.0902]  // +60 C · dark burgundy
+    [0.000000, 0.0314, 0.0510, 0.1725], // 0% · midnight navy
+    [0.071429, 0.0627, 0.1098, 0.3137], // 7.1% · polar indigo
+    [0.142857, 0.1255, 0.2314, 0.5412], // 14.3% · deep blue
+    [0.321429, 0.0863, 0.5373, 0.7216], // 32.1% · blue-cyan
+    [0.500000, 0.2706, 0.7255, 0.4706], // 50% · green
+    [0.678571, 0.9412, 0.7765, 0.2941], // 67.9% · gold
+    [0.821429, 0.9412, 0.3922, 0.1608], // 82.1% · orange
+    [0.892857, 0.7843, 0.2471, 0.2118], // 89.3% · red
+    [0.946429, 0.5451, 0.0824, 0.1647], // 94.6% · deep crimson
+    [1.000000, 0.2706, 0.0157, 0.0902]  // 100% · dark burgundy
   ];
   const TEMPERATURE_LEGEND = 'linear-gradient(90deg,#080d2c 0%,#101c50 7.1429%,#203b8a 14.2857%,#1689b8 32.1429%,#45b978 50%,#f0c64b 67.8571%,#f06429 82.1429%,#c83f36 89.2857%,#8b152a 94.6429%,#450417 100%)';
   const SCRIPT_PATHS = ['./EarthEngine/Graphics/universal-grid-system.js','./EarthEngine/Graphics/earth-grid-gpu-skin.js'];
@@ -37,38 +36,45 @@
     const style = document.createElement('style');
     style.id = 'le-atmosphere-cinematic-hud';
     style.textContent = `
-      /* Atmosphere: keep the centre of the shared globe visually clear. */
+      /* Atmosphere observatory: cinematic globe, quiet controls, precise data instrument. */
       .le-sfv--atmosphere .le-sfv-panel {
         display:flex; flex-direction:column; align-items:stretch;
-        overflow:hidden;
-        background:transparent;
-        backdrop-filter:none; -webkit-backdrop-filter:none;
+        overflow:hidden; background:transparent!important;
+        backdrop-filter:none!important; -webkit-backdrop-filter:none!important;
         padding:calc(env(safe-area-inset-top) + clamp(66px,9vmin,82px))
           clamp(15px,4vw,32px) 0;
       }
-      .le-sfv--atmosphere .le-sfv-head { margin-bottom: 9px; }
+      .le-sfv--atmosphere .le-sfv-head { margin-bottom:9px; }
       .le-atmo-hud-toggle {
         position:absolute; z-index:5; top:calc(env(safe-area-inset-top) + 14px);
-        right:max(14px,env(safe-area-inset-right)); min-height:40px;
-        padding:9px 13px; border:1px solid rgba(151,210,238,.34);
-        border-radius:999px; color:#eaf7ff; background:rgba(4,16,29,.86);
-        box-shadow:0 6px 22px rgba(0,0,0,.28); backdrop-filter:blur(12px);
-        -webkit-backdrop-filter:blur(12px); font-family:inherit;
-        font-size:11px; font-weight:650; line-height:1.1;
+        right:max(14px,env(safe-area-inset-right));
+        display:inline-flex; align-items:center; justify-content:center; gap:9px;
+        min-height:44px; padding:9px 15px;
+        border:1px solid rgba(135,205,239,.34); border-radius:999px;
+        color:#eaf7ff;
+        background:linear-gradient(180deg,rgba(8,25,43,.86),rgba(3,12,23,.82));
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 5px 18px rgba(0,0,0,.22);
+        backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+        font-family:inherit; font-size:11px; font-weight:620; line-height:1.1;
         cursor:pointer; touch-action:manipulation; pointer-events:auto;
+        transition:background .18s ease,border-color .18s ease,transform .18s ease;
       }
+      .le-atmo-hud-toggle:active { transform:scale(.98); }
       .le-atmo-hud-toggle:focus-visible { outline:2px solid #80d9f5; outline-offset:3px; }
+      .le-atmo-hud-toggle-icon { width:17px; height:17px; flex:none; color:#91d9f8; }
+      .le-atmo-hud-toggle-label { white-space:nowrap; }
       .le-sfv--atmosphere .le-sfv-panel.le-atmo-hud-hidden {
-        opacity:0; visibility:hidden; pointer-events:none; transition:opacity .2s ease,visibility .2s ease;
+        opacity:0; visibility:hidden; pointer-events:none;
+        transition:opacity .2s ease,visibility .2s ease;
       }
       .le-sfv--atmosphere .le-sfv-panel { transition:opacity .2s ease,visibility .2s ease; }
+      .le-sfv--atmosphere .le-sfv-pill { margin-bottom:10px; }
 
-      .le-sfv--atmosphere .le-sfv-pill { margin-bottom: 10px; }
       .le-sfv--atmosphere.le-world-engine-host .le-sfv-body {
         display:block; box-sizing:border-box; width:min(100%,680px);
-        margin:auto auto 0; min-height:0;
-        max-height:min(48dvh,540px); overflow-y:auto; overflow-x:hidden;
-        overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+        margin:auto auto 0; min-height:0; max-height:min(48dvh,540px);
+        overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain;
+        -webkit-overflow-scrolling:touch;
         padding-bottom:calc(env(safe-area-inset-bottom) + 144px);
         scrollbar-width:none;
       }
@@ -83,58 +89,80 @@
         backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
       }
       .le-sfv--atmosphere .le-sfv-card {
-        padding:13px 15px; border-radius:19px;
-        border-color:rgba(159,211,249,.22);
-        background:linear-gradient(135deg,rgba(8,22,38,.78),rgba(4,10,20,.72));
-        box-shadow:inset 1px 1px 1px rgba(255,255,255,.10),0 12px 34px rgba(0,0,0,.25),0 0 28px rgba(69,169,226,.08);
+        padding:13px 15px; border-radius:17px;
+        border-color:rgba(159,211,249,.19);
+        background:linear-gradient(145deg,rgba(8,23,40,.80),rgba(3,10,20,.78));
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 28px rgba(0,0,0,.22);
         backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
       }
-      .le-sfv--atmosphere .le-sfv-card h2 { margin:0 0 4px; font-size:10px; letter-spacing:.13em; color:#9fc5dc; text-transform:uppercase; }
+      .le-sfv--atmosphere .le-sfv-card h2 {
+        margin:0 0 4px; font-size:10px; letter-spacing:.12em;
+        color:#a9c9de; text-transform:uppercase;
+      }
       .le-atmo-range { display:flex; align-items:baseline; flex-wrap:wrap; gap:5px 10px; }
       .le-atmo-range strong { color:#f2fbff; font-size:clamp(23px,6vw,31px); letter-spacing:-.035em; font-weight:760; }
       .le-atmo-range span { color:#a9c6d8; font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
-      /* Atmosphere scale: the three header cells share the gradient track's exact width. */
+
+      /* The scale is a floating instrument, not a card. Its text and spectrum share one track. */
       .le-atmo-scale-dock {
         container-type:inline-size;
-        --atmo-action-space:clamp(28px,5.2cqi,34px);
-        --atmo-track-gap:clamp(12px,1.9cqi,14px);
+        --atmo-action-space:42px;
+        --atmo-track-gap:12px;
         --atmo-content-width:calc(100% - var(--atmo-action-space) - var(--atmo-track-gap));
-        --atmo-header-small:clamp(7px,1.25cqi,8.5px);
-        --atmo-header-value:clamp(10px,1.7cqi,12px);
         position:absolute; z-index:4;
-        left:clamp(12px,3.6vw,28px); right:clamp(12px,3.6vw,28px);
+        left:clamp(20px,4.5vw,48px); right:clamp(20px,4.5vw,48px);
         bottom:calc(env(safe-area-inset-bottom) + clamp(82px,12svh,112px));
-        box-sizing:border-box; width:min(calc(100% - 24px),680px);
-        margin:0 auto; padding:3px clamp(10px,1.8cqi,14px) 3px;
-        border:1px solid rgba(119,203,255,.43); border-radius:999px;
-        color:#eaf7ff;
-        background:linear-gradient(180deg,rgba(4,15,31,.94),rgba(2,8,19,.96));
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.12),inset 0 -1px 0 rgba(63,172,255,.12),
-          0 0 6px rgba(40,167,255,.30),0 0 14px rgba(103,75,255,.16),0 5px 16px rgba(0,0,0,.36);
-        backdrop-filter:blur(15px); -webkit-backdrop-filter:blur(15px); pointer-events:none;
+        box-sizing:border-box; width:min(calc(100% - 40px),760px);
+        margin:0 auto; padding:0;
+        border:0; border-radius:0; color:#eff8ff;
+        background:transparent; box-shadow:none;
+        backdrop-filter:none; -webkit-backdrop-filter:none;
+        pointer-events:none;
       }
       .le-atmo-scale-dock[hidden] { display:none!important; }
+      .le-atmo-instrument-label {
+        display:flex; align-items:center; justify-content:center; gap:10px;
+        width:100%; margin:0 0 10px;
+        color:#b7dff4; font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;
+        font-size:10px; font-weight:650; letter-spacing:.28em;
+        line-height:1; text-align:center; text-transform:uppercase;
+        text-shadow:0 0 16px rgba(65,176,235,.20);
+      }
+      .le-atmo-instrument-label::before,
+      .le-atmo-instrument-label::after {
+        content:""; display:block; flex:1 1 0; max-width:112px; height:1px;
+        background:linear-gradient(90deg,transparent,rgba(104,190,231,.46));
+      }
+      .le-atmo-instrument-label::after {
+        background:linear-gradient(90deg,rgba(104,190,231,.46),transparent);
+      }
+      .le-atmo-instrument-symbol {
+        color:#71cbed; font-family:Georgia,serif;
+        font-size:21px; font-weight:400; letter-spacing:0; line-height:.7;
+        text-shadow:0 0 12px rgba(63,194,246,.55);
+      }
       .le-atmo-scale-heading {
         display:flex; flex-flow:row nowrap; justify-content:flex-start;
-        align-items:center; gap:clamp(6px,1.2cqi,9px);
+        align-items:center; gap:10px;
         width:var(--atmo-content-width); min-width:0;
-        margin:0 0 3px; white-space:nowrap; line-height:1;
+        margin:0 0 8px; white-space:nowrap; line-height:1;
         text-align:left;
       }
       .le-atmo-legend-title {
         display:block; flex:0 1 auto; min-width:0; overflow:hidden; margin:0;
-        padding:0; color:#dceaf6; font-family:Georgia,serif;
-        font-size:var(--atmo-header-small); font-weight:500;
-        letter-spacing:0; text-align:left;
+        padding:0; color:#c6ddeb;
+        font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;
+        font-size:clamp(9px,2.25cqi,11px); font-weight:620;
+        letter-spacing:.055em; text-align:left;
         text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap;
       }
       .le-atmo-scale-range {
         display:block; flex:0 0 auto; min-width:0; margin:0;
-        padding:0 0 0 clamp(6px,1.2cqi,9px);
-        border-left:1px solid rgba(213,235,255,.48);
-        color:#f5f8ff; font-family:Georgia,serif;
-        font-size:var(--atmo-header-value); font-weight:500;
-        letter-spacing:0; font-variant-numeric:tabular-nums;
+        padding:0 0 0 10px; border-left:1px solid rgba(137,200,228,.56);
+        color:#f7fbff;
+        font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;
+        font-size:clamp(16px,4.1cqi,22px); font-weight:560;
+        letter-spacing:-.025em; font-variant-numeric:tabular-nums;
         white-space:nowrap; text-align:left;
       }
       .le-atmo-scale-track-row {
@@ -143,37 +171,44 @@
       }
       .le-atmo-scale-track { min-width:0; width:100%; }
       .le-atmo-scale-more {
-        flex:none; display:grid; place-items:center;
+        position:relative; flex:none; display:grid; place-items:center;
         width:var(--atmo-action-space); height:var(--atmo-action-space);
         margin:0; padding:0; justify-self:end; align-self:center;
-        border:1px solid rgba(113,224,255,.9); border-radius:50%;
-        color:#e5faff;
-        background:radial-gradient(circle at 36% 28%,rgba(112,229,255,.32),rgba(4,19,34,.97) 72%);
-        box-shadow:0 0 5px rgba(57,207,255,.52),0 0 11px rgba(38,145,255,.23),inset 0 0 4px rgba(255,255,255,.14);
-        font:300 clamp(16px,2.8cqi,20px)/1 system-ui,sans-serif;
+        border:1px solid rgba(116,218,250,.78); border-radius:50%;
+        color:#d9f7ff;
+        background:radial-gradient(circle at 35% 27%,rgba(78,190,229,.18),rgba(3,19,32,.72) 72%);
+        box-shadow:0 0 0 1px rgba(82,186,228,.07),0 0 13px rgba(49,177,228,.20),
+          inset 0 1px 4px rgba(255,255,255,.10);
+        font:300 22px/1 ui-sans-serif,system-ui,sans-serif;
         cursor:pointer; pointer-events:auto; touch-action:manipulation;
+        transition:background .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease;
+      }
+      .le-atmo-scale-more:hover {
+        border-color:rgba(150,232,255,.95);
+        background:radial-gradient(circle at 35% 27%,rgba(78,190,229,.30),rgba(3,19,32,.82) 72%);
+        box-shadow:0 0 16px rgba(49,177,228,.30);
       }
       .le-atmo-scale-more:active { transform:scale(.94); }
       .le-atmo-scale-more:focus-visible { outline:2px solid #80d9f5; outline-offset:3px; }
       .le-atmo-legend-bar {
-        width:100%; height:6px; border-radius:999px;
+        width:100%; height:8px; border-radius:999px;
         background:linear-gradient(90deg,#080d2c 0%,#101c50 7.1429%,#203b8a 14.2857%,#1689b8 32.1429%,#45b978 50%,#f0c64b 67.8571%,#f06429 82.1429%,#c83f36 89.2857%,#8b152a 94.6429%,#450417 100%);
-        box-shadow:0 0 5px rgba(77,157,255,.25),inset 0 0 0 1px rgba(255,255,255,.30);
+        box-shadow:inset 0 0 0 1px rgba(255,255,255,.30),0 0 9px rgba(68,159,222,.24);
       }
       .le-atmo-legend-ticks {
         position:relative; width:var(--atmo-content-width);
-        height:11px; margin-top:3px;
-        color:#d5e1ed; font-family:Georgia,serif;
-        font-size:clamp(8px,1.4cqi,9px); line-height:1;
-        font-variant-numeric:tabular-nums;
+        height:14px; margin-top:7px;
+        color:#b9cddd; font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;
+        font-size:clamp(9px,1.8cqi,11px); font-weight:500;
+        line-height:1; font-variant-numeric:tabular-nums;
       }
       .le-atmo-legend-ticks span {
         position:absolute; top:0; transform:translateX(-50%);
         white-space:nowrap; text-align:center;
       }
       .le-atmo-legend-ticks span::before {
-        content:""; position:absolute; left:50%; top:-4px;
-        width:1px; height:2px; background:rgba(190,221,245,.62);
+        content:""; position:absolute; left:50%; top:-6px;
+        width:1px; height:3px; background:rgba(171,211,233,.58);
         transform:translateX(-50%);
       }
       .le-atmo-legend-ticks span:first-child { transform:none; text-align:left; }
@@ -181,19 +216,35 @@
       .le-atmo-legend-ticks span:last-child { transform:translateX(-100%); text-align:right; }
       .le-atmo-legend-ticks span:last-child::before { left:100%; }
       @container (max-width:430px) {
-        .le-atmo-legend-title { font-size:var(--atmo-header-small); }
-        .le-atmo-scale-range { font-size:var(--atmo-header-value); padding-left:5px; padding-right:5px; }
+        .le-atmo-scale-heading { gap:8px; }
+        .le-atmo-legend-title { font-size:clamp(8.5px,2.2cqi,10px); letter-spacing:.025em; }
+        .le-atmo-scale-range { padding-left:8px; font-size:clamp(15px,4cqi,19px); }
+        .le-atmo-instrument-label { margin-bottom:8px; }
       }
       @container (max-width:350px) {
-        .le-atmo-legend-title { font-size:7px; }
-        .le-atmo-scale-range { font-size:9px; padding-left:4px; padding-right:4px; }
+        .le-atmo-scale-dock { --atmo-action-space:40px; --atmo-track-gap:9px; }
+        .le-atmo-scale-heading { gap:6px; margin-bottom:7px; }
+        .le-atmo-legend-title { font-size:8px; }
+        .le-atmo-scale-range { padding-left:6px; font-size:15px; }
+        .le-atmo-instrument-label { font-size:9px; letter-spacing:.22em; }
         .le-atmo-legend-ticks { font-size:8px; }
       }
       @media (orientation:landscape) {
-        .le-atmo-scale-dock { bottom:calc(env(safe-area-inset-bottom) + clamp(48px,10svh,70px)); left:auto; right:clamp(12px,2vw,20px); width:min(58vw,620px); }
+        .le-atmo-scale-dock {
+          left:auto; right:clamp(20px,3vw,36px);
+          width:min(62vw,700px);
+          bottom:calc(env(safe-area-inset-bottom) + clamp(48px,10svh,70px));
+        }
+        .le-atmo-instrument-label { margin-bottom:6px; }
+        .le-atmo-scale-heading { margin-bottom:6px; }
       }
+
       .le-atmo-details { margin-top:10px; border-top:1px solid rgba(165,208,235,.14); padding-top:8px; }
-      .le-atmo-details summary { list-style:none; cursor:pointer; color:#b7d8e9; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; display:flex; justify-content:space-between; align-items:center; min-height:26px; }
+      .le-atmo-details summary {
+        list-style:none; cursor:pointer; color:#b7d8e9; font-size:10px;
+        font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+        display:flex; justify-content:space-between; align-items:center; min-height:26px;
+      }
       .le-atmo-details summary::-webkit-details-marker { display:none; }
       .le-atmo-details summary::after { content:'＋'; color:#82d9f5; font-size:15px; }
       .le-atmo-details[open] summary::after { content:'−'; }
@@ -204,9 +255,21 @@
       .le-sfv--atmosphere .le-sfv-attribution { margin:7px 2px 0; font-size:8px; color:#8da9bc; }
       .le-sfv--atmosphere .le-atmo-dataset-card { margin-bottom:9px; }
       .le-atmo-dataset-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
-      .le-atmo-dataset-option { appearance:none; display:flex; flex-direction:column; align-items:flex-start; gap:4px; min-width:0; min-height:66px; padding:10px 11px; border:1px solid rgba(130,197,230,.22); border-radius:13px; color:#eaf7ff; text-align:left; background:linear-gradient(145deg,rgba(16,43,65,.82),rgba(4,13,25,.82)); cursor:pointer; font:inherit; transition:border-color .18s ease,background .18s ease,transform .18s ease; }
+      .le-atmo-dataset-option {
+        appearance:none; display:flex; flex-direction:column; align-items:flex-start;
+        gap:4px; min-width:0; min-height:66px; padding:10px 11px;
+        border:1px solid rgba(130,197,230,.22); border-radius:13px;
+        color:#eaf7ff; text-align:left;
+        background:linear-gradient(145deg,rgba(16,43,65,.82),rgba(4,13,25,.82));
+        cursor:pointer; font:inherit;
+        transition:border-color .18s ease,background .18s ease,transform .18s ease;
+      }
       .le-atmo-dataset-option:active:not(:disabled) { transform:scale(.985); }
-      .le-atmo-dataset-option.is-selected { border-color:rgba(91,222,190,.8); background:linear-gradient(145deg,rgba(15,76,75,.78),rgba(4,24,35,.92)); box-shadow:inset 0 0 0 1px rgba(91,222,190,.14),0 0 18px rgba(62,218,181,.12); }
+      .le-atmo-dataset-option.is-selected {
+        border-color:rgba(91,222,190,.8);
+        background:linear-gradient(145deg,rgba(15,76,75,.78),rgba(4,24,35,.92));
+        box-shadow:inset 0 0 0 1px rgba(91,222,190,.14),0 0 18px rgba(62,218,181,.12);
+      }
       .le-atmo-dataset-option:disabled { opacity:.48; cursor:not-allowed; }
       .le-atmo-dataset-name { font-size:12px; letter-spacing:.02em; }
       .le-atmo-dataset-detail { color:#a9c6d8; font-size:9px; line-height:1.35; }
@@ -307,7 +370,7 @@ async function initializeEngineView(view, viewId) {
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
-    defaultCameraDistance = getDefaultCameraDistance({ width, height, radius: 1, fieldOfView: 38, diameterFraction: 0.75 });
+    defaultCameraDistance = getDefaultCameraDistance({ width, height, radius: 1, fieldOfView: 38, diameterFraction: 0.71 });
     camera.position.z = defaultCameraDistance / zoomFactor;
     requestRender();
   }
@@ -322,7 +385,7 @@ async function initializeEngineView(view, viewId) {
     const width = Math.max(1, rect.width || window.innerWidth || 1);
     const height = Math.max(1, rect.height || window.innerHeight || 1);
     camera = new T.PerspectiveCamera(38, width / height, 0.1, 100);
-    defaultCameraDistance = getDefaultCameraDistance({ width, height, radius: 1, fieldOfView: 38, diameterFraction: 0.75 });
+    defaultCameraDistance = getDefaultCameraDistance({ width, height, radius: 1, fieldOfView: 38, diameterFraction: 0.71 });
     camera.position.set(0, 0, defaultCameraDistance);
     camera.lookAt(0, 0, 0);
     scene.add(new T.AmbientLight(0x8aa7c8, 0.28));
@@ -674,7 +737,8 @@ function installStyles() {
     .le-sfv--atmosphere.le-world-engine-host{position:absolute;inset:0;isolation:isolate;background:radial-gradient(ellipse at 50% 43%,#0a1b2b 0%,#030914 58%,#010308 100%);pointer-events:none}
     .le-world-engine-host{isolation:isolate;background:radial-gradient(ellipse at 50% 42%,rgba(15,47,75,.22),rgba(2,6,13,.88) 76%)}
     .le-world-engine-canvas{position:absolute;inset:0;z-index:0;width:100%;height:100%;display:block;pointer-events:auto;touch-action:none;outline:none;-webkit-tap-highlight-color:transparent}
-    .le-world-engine-host .le-sfv-panel{z-index:1;pointer-events:none;overflow:hidden;background:linear-gradient(180deg,rgba(3,12,23,.48),rgba(3,9,18,.16) 48%,rgba(2,7,14,.62));backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+    .le-world-engine-host .le-sfv-panel{z-index:1;pointer-events:none;overflow:hidden;background:linear-gradient(180deg,rgba(3,12,23,.34),rgba(3,9,18,.04) 46%,rgba(2,7,14,.28));backdrop-filter:none;-webkit-backdrop-filter:none}
+    .le-sfv--atmosphere.le-world-engine-host .le-sfv-panel{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none}
     .le-world-engine-host .le-sfv-head,.le-world-engine-host .le-sfv-body{pointer-events:auto}
     .le-world-engine-host .le-sfv-body{max-height:calc(100% - 150px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
     .le-world-engine-host .le-sfv-head{ text-shadow:0 2px 18px rgba(0,0,0,.85) }
@@ -692,13 +756,21 @@ function installStyles() {
 
     // The globe is the view's immediate baseline. Scientific tools and data
     // are deliberately not requested until the user chooses a dataset.
-    const hudToggle = runtime.el('button', 'le-atmo-hud-toggle', 'Hide controls');
+    const hudToggle = runtime.el('button', 'le-atmo-hud-toggle');
     hudToggle.type = 'button';
+    const hudIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    hudIcon.setAttribute('viewBox', '0 0 24 24');
+    hudIcon.setAttribute('aria-hidden', 'true');
+    hudIcon.classList.add('le-atmo-hud-toggle-icon');
+    hudIcon.innerHTML = '<path d="M4 7h7m4 0h5M4 17h3m4 0h9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="13" cy="7" r="2" fill="#061525" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="17" r="2" fill="#061525" stroke="currentColor" stroke-width="1.6"/>';
+    const hudLabel = runtime.el('span', 'le-atmo-hud-toggle-label', 'Hide controls');
+    hudToggle.append(hudIcon, hudLabel);
     hudToggle.setAttribute('aria-controls', 'le-atmo-hud-panel');
     hudToggle.setAttribute('aria-expanded', 'true');
+    hudToggle.setAttribute('aria-label', 'Hide Atmosphere controls');
     hudToggle.addEventListener('click', () => {
       const hidden = view.panel.classList.toggle('le-atmo-hud-hidden');
-      hudToggle.textContent = hidden ? 'Show controls' : 'Hide controls';
+      hudLabel.textContent = hidden ? 'Show controls' : 'Hide controls';
       hudToggle.setAttribute('aria-expanded', String(!hidden));
       hudToggle.setAttribute('aria-label', hidden ? 'Show Atmosphere controls' : 'Hide Atmosphere controls');
     });
@@ -718,7 +790,7 @@ function installStyles() {
       { id: 'moisture', label: 'Moisture', detail: '2 m relative humidity · %' }
     ];
     const FIELD_CONFIG = {
-      temperature: { ids: ['earth.atmosphere.air_temperature'], title: 'NOAA · 2 m air temperature', units: 'degree_Celsius', displayUnits: '°C', min: -80, max: 60, ticks: ['−80°','−60°','−10°','45°','60°'], source: 'NOAA NCEP · GFS 0.25° analysis · 2 m air temperature' },
+      temperature: { ids: ['earth.atmosphere.air_temperature'], title: 'NOAA · 2 m air temperature', units: 'degree_Celsius', displayUnits: '°C', min: null, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · 2 m air temperature' },
       pressure: { ids: ['earth.atmosphere.atmospheric_pressure'], title: 'NOAA · Mean sea-level pressure', units: 'kilopascal', displayUnits: 'kPa', min: null, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · mean sea-level pressure' },
       wind: { ids: ['earth.atmosphere.wind_speed','earth.atmosphere.wind_direction'], title: 'NOAA · 10 m wind', units: 'metre_per_second', displayUnits: 'm/s', min: 0, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · 10 m wind speed and direction derived from U/V components' },
       moisture: { ids: ['earth.atmosphere.humidity'], title: 'NOAA · 2 m relative humidity', units: 'percent', displayUnits: '%', min: 0, max: 100, ticks: ['0%','25%','50%','75%','100%'], source: 'NOAA NCEP · GFS 0.25° analysis · 2 m relative humidity' }
@@ -750,8 +822,14 @@ function installStyles() {
     const scaleDock = runtime.el('section', 'le-atmo-scale-dock');
     scaleDock.setAttribute('aria-label', 'Active atmospheric field colour scale');
     scaleDock.hidden = true;
+    const instrumentLabel = runtime.el('div', 'le-atmo-instrument-label');
+    instrumentLabel.append(
+      runtime.el('span', 'le-atmo-instrument-symbol', '≋'),
+      runtime.el('span', 'le-atmo-instrument-name', 'Atmosphere')
+    );
+    scaleDock.appendChild(instrumentLabel);
     const scaleHeading = runtime.el('div', 'le-atmo-scale-heading');
-    const legendTitle = runtime.el('span', 'le-atmo-legend-title', 'Field scale');
+    const legendTitle = runtime.el('span', 'le-atmo-legend-title', '2 m air temp · °C');
     const scaleRange = runtime.el('span', 'le-atmo-scale-range', '—');
     scaleHeading.append(legendTitle, scaleRange);
     scaleDock.appendChild(scaleHeading);
@@ -782,6 +860,12 @@ function installStyles() {
         : 'Show atmospheric data details and provenance');
     };
     scaleMore.addEventListener('click', () => {
+      if (!disclosure.open && view.panel.classList.contains('le-atmo-hud-hidden')) {
+        view.panel.classList.remove('le-atmo-hud-hidden');
+        hudLabel.textContent = 'Hide controls';
+        hudToggle.setAttribute('aria-expanded', 'true');
+        hudToggle.setAttribute('aria-label', 'Hide Atmosphere controls');
+      }
       disclosure.open = !disclosure.open;
       syncScaleMore();
     });
@@ -850,8 +934,8 @@ function installStyles() {
       // Every field's visible scale follows the verified values in the loaded
       // grid. For temperature this makes the gradient endpoints the actual
       // observed minimum and maximum, never a hard-coded climatological range.
-      const min = grid.min;
-      const max = grid.max;
+      const min = config.min === null ? grid.min : config.min;
+      const max = config.max === null ? grid.max : config.max;
       legendTitle.textContent = config === FIELD_CONFIG.temperature
         ? '2 m air temp · °C'
         : `${config.title.replace('NOAA · ','')} · ${config.displayUnits}`;
@@ -860,21 +944,16 @@ function installStyles() {
         : 'linear-gradient(90deg,#0e297a 0%,#05a8e0 25%,#2edca8 50%,#ffca47 75%,#e8402b 100%)';
 
       legendTicks.replaceChildren();
-      const useLiveTemperatureRange = config === FIELD_CONFIG.temperature;
-      const tickValues = useLiveTemperatureRange
-        ? Array.from({ length: 5 }, (_, index) => {
-            const value = min + (max - min) * index / 4;
-            return { label: `${formatFieldValue(value)}°`, value };
+      const tickValues = config.ticks
+        ? config.ticks.map(label => {
+            const match = String(label).match(/[−-]?\d+(?:\.\d+)?/);
+            return { label, value: match ? Number(match[0].replace('−','-')) : min };
           })
-        : config.ticks
-          ? config.ticks.map(label => {
-              const match = String(label).match(/[−-]?\d+(?:\.\d+)?/);
-              return { label, value: match ? Number(match[0].replace('−','-')) : min };
-            })
-          : Array.from({ length: 5 }, (_, index) => {
-              const value = min + (max - min) * index / 4;
-              return { label: `${formatFieldValue(value)} ${config.displayUnits}`, value };
-            });
+        : Array.from({ length: 5 }, (_, index) => {
+            const value = min + (max - min) * index / 4;
+            const suffix = config === FIELD_CONFIG.temperature ? '°' : ` ${config.displayUnits}`;
+            return { label: `${formatFieldValue(value)}${suffix}`, value };
+          });
       for (const tick of tickValues) {
         const position = max > min ? Math.max(0, Math.min(100, ((tick.value - min) / (max - min)) * 100)) : 0;
         const node = runtime.el('span', '', tick.label);
