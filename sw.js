@@ -1,11 +1,11 @@
 /* LIVE // EARTH V128 — Atmospheric Composition world registration. */
 const CACHE_PREFIX = "live-earth-shell-";
-const BUILD_ID = "v149-atmospheric-composition-world";
-const CACHE_NAME = "live-earth-shell-v149-atmospheric-composition-world";
+const BUILD_ID = "v153-on-demand-feature-views";
+const CACHE_NAME = "live-earth-shell-v153-on-demand-feature-views";
 const OPTIONAL_CACHE = "live-earth-optional-v1";
 const OPTIONAL_LIMIT = 48;
 const APP_SHELL = [
- "./","./index.html","./ios-standalone-root-flow.js","./Global/orb-controls-v4.js","./EarthEngine/Core/earth-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-core.js","./EarthEngine/Graphics/universal-grid-system.js","./EarthEngine/Graphics/earth-grid-gpu-skin.js","./EarthEngine/Assets/README.md","./Earth/earth-view-controller.js","./Global/view-manager.js","./Global/view-module-registry.js","./Stacks/stacks-feature-views.js","./Atmosphere/atmosphere-view-controller.js","./Atmospheric-Composition/atmospheric-composition-view-controller.js","./Oceans/oceans-view-controller.js","./Land/land-view-controller.js","./Water-Ice/water-ice-view-controller.js","./Earth-Activity/earth-activity-view-controller.js","./Energy-Humanity/energy-humanity-view-controller.js","./Clouds/clouds-view.js","./Weather/weather-view.js","./Traffic/traffic-view.js","./Earthquakes/earthquakes-view.js","./Global/sky-view-controller.js","./Moon/moon-view-controller.js","./Moon/moon-lunar-interface.js","./Sun/sun-view-controller.js","./Sun/sun-surface-shared.webp",
+ "./","./index.html","./ios-standalone-root-flow.js","./Global/orb-controls-v4.js","./EarthEngine/Core/earth-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-engine.js","./EarthEngine/Graphics/earth-engine-3d-graphics-core.js","./EarthEngine/Graphics/universal-grid-system.js","./EarthEngine/Graphics/earth-grid-gpu-skin.js","./EarthEngine/Assets/README.md","./Earth/earth-view-controller.js","./Global/view-manager.js","./Global/view-module-registry.js","./Stacks/stacks-feature-views.js","./Global/sky-view-controller.js","./Moon/moon-view-controller.js","./Moon/moon-lunar-interface.js","./Sun/sun-view-controller.js","./Sun/sun-surface-shared.webp",
  "./Earth/location.html","./Earth/earth-orb-globe.js","./manifest.json","./Global/icon.svg","./Data/data-store.js","./Location/location.js",
  "./Global/astronomy.js","./Home/moon-orbit.js","./Data/dataset-manifest.json",
  "./Home/moon-surface-lroc-1536.jpg",

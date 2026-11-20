@@ -437,58 +437,30 @@
   // below deliberately matches the original catalog to preserve Orb scatter order.
 
   const externalModules = [
-    { id: 'clouds', path: './Clouds/clouds-view.js' },
-    { id: 'weather', path: './Weather/weather-view.js' },
-    { id: 'earthquakes', path: './Earthquakes/earthquakes-view.js' },
-    { id: 'traffic', path: './Traffic/traffic-view.js' },
-    // Numerical-world controllers use this same Stacks loader and registry.
-    { id: 'atmosphere', path: './Atmosphere/atmosphere-view-controller.js' },
-    { id: 'atmospheric-composition', path: './Atmospheric-Composition/atmospheric-composition-view-controller.js' },
-    { id: 'oceans', path: './Oceans/oceans-view-controller.js' },
-    { id: 'land', path: './Land/land-view-controller.js' },
-    { id: 'water-ice', path: './Water-Ice/water-ice-view-controller.js' },
-    { id: 'earth-activity', path: './Earth-Activity/earth-activity-view-controller.js' },
-    { id: 'energy-humanity', path: './Energy-Humanity/energy-humanity-view-controller.js' }
+    { id: 'clouds' }, { id: 'weather' }, { id: 'earthquakes' }, { id: 'traffic' },
+    { id: 'atmosphere' }, { id: 'atmospheric-composition' }, { id: 'oceans' },
+    { id: 'land' }, { id: 'water-ice' }, { id: 'earth-activity' }, { id: 'energy-humanity' }
   ];
-  function loadFeatureModule(path) {
-    return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = new URL(path, document.baseURI).href;
-      script.async = false;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error(`Feature module failed to load: ${path}`));
-      (document.head || document.documentElement).appendChild(script);
+
+  // Lightweight catalogue entries only. The Orb registry's lazyFeatureModules
+  // map fetches each external controller after its Orb is explicitly selected.
+  // Register Elevation between Weather and Earthquakes to preserve Orb order.
+  for (let index = 0; index < externalModules.length; index++) {
+    if (index === 2) registerFeature('elevation', activateElevation);
+    const item = externalModules[index];
+    const meta = VIEW_META[item.id];
+    api.register(item.id, {
+      title: meta.title,
+      shortLabel: item.id === 'earthquakes' ? 'Quakes' : meta.title,
+      symbol: meta.symbol,
+      description: meta.description,
+      connected: item.id !== 'traffic',
+      activate: () => {},
+      deactivate: () => cleanupCurrent()
     });
   }
-  function registerUnavailableFeature(id, reason) {
-    registerFeature(id, () => {
-      const view = mount(id);
-      if (view) {
-        const status = el('p', 'le-sfv-status', `${VIEW_META[id].title} view module is unavailable. Prime Earth and Global Orb controls remain untouched. ${reason || ''}`);
-        status.dataset.state = 'error';
-        view.body.appendChild(status);
-      }
-      return () => {};
-    }, false);
-  }
-  (async () => {
-    for (let index = 0; index < externalModules.length; index++) {
-      // Preserve the original catalog order: Clouds, Weather, Elevation,
-      // Earthquakes and Traffic. The numerical worlds follow those five entries.
-      if (index === 2) registerFeature('elevation', activateElevation);
-      const item = externalModules[index];
-      try {
-        await loadFeatureModule(item.path);
-        if (!registered.has(item.id)) registerUnavailableFeature(item.id, 'The module did not register its view.');
-      } catch (error) {
-        console.error('[LIVE // EARTH] Feature module could not be loaded.', error);
-        registerUnavailableFeature(item.id, error?.message || '');
-      }
-    }
-    // Startup readiness is set only after every feature is registered (or receives
-    // a safe unavailable-state view), including the six numerical-world controllers.
-    window.__liveEarthStacksFeatureViewsInstalled = true;
-    window.__liveEarthStacksFeatureViewsLoading = false;
-    window.dispatchEvent(new Event('live-earth-stacks-feature-views-ready'));
-  })();
+
+  window.__liveEarthStacksFeatureViewsInstalled = true;
+  window.__liveEarthStacksFeatureViewsLoading = false;
+  window.dispatchEvent(new Event('live-earth-stacks-feature-views-ready'));
 })();

@@ -1,46 +1,16 @@
-# LIVE // EARTH — Startup Essentials Protection
+# LIVE // EARTH — v153 startup and optional-view policy
 
-**Status:** Protected architecture rule  
-**Approval:** The user's explicit approval is required before any change to startup Essentials.
+## Essential startup
+The install-time app shell retains the Home/Earth renderer, shared view and Orb registries, Stacks feature catalogue/runtime, Sun primary-view controller, Moon/sky controllers, core data/location services, update manager, and startup dependencies.
 
-## Non-negotiable rule
+## On-demand feature controllers
+Clouds, Weather, Earthquakes, Traffic, Atmosphere, Atmospheric Composition, Oceans, Land, Water & Ice, Earth Activity, Energy & Humanity, and Editorial Engine controllers are optional resources. Their catalogue entries are registered without downloading their controller scripts. The existing Orb registry loads each controller only after the corresponding feature is explicitly selected.
 
-Do not add, remove, or modify a file in the startup Essentials inventory, startup controller sequence, Service Worker `APP_SHELL`, or `RUNTIME_DEPENDENCIES` unless the user explicitly asks for that change.
+## Caching and offline behavior
+Optional same-origin scripts are handled by the Service Worker's bounded optional cache. Online requests prefer fresh network content and refresh the optional cache; offline requests can use a saved optional copy. The bounded cache remains separate from the versioned app-shell cache and user IndexedDB.
 
-A proposed addition must first be explained with its exact dependency reason and receive approval. Do not silently expand launch-time downloads.
+## Update coordination
+`sw.js` and `Global/update-manager.js` share the exact build identifier `v153-on-demand-feature-views`. The Service Worker removes retired app-shell caches only after the page reports verified startup with that matching identifier. The optional cache and user IndexedDB are not deleted by that cleanup.
 
-## What is not an Essential
-
-Feature-only controllers, optional renderers, editorial workspaces, feature textures/backgrounds, datasets, media, and any module used only after a user opens a view are not startup Essentials.
-
-They must be fetched only after the user selects the relevant view. Once fetched, they may use the bounded optional cache; this does not make them startup Essentials.
-
-## Core launch contract
-
-The core app may load only the files required to:
-- render and operate the Home / Earth scene;
-- provide the existing Global Orb navigation and view registry;
-- provide shared Earth Engine and graphics foundations;
-- provide the existing Moon and sky-stage core;
-- initialize Location-OFF privacy and data-store/recovery foundations;
-- verify and recover the actual core startup.
-
-The catalogue may register lightweight feature names, symbols, labels, and descriptions so the Stacks library can display its Orbs. A catalogue entry is not permission to download its implementation.
-
-## On-demand contract
-
-- Selecting a Stacks Feature Orb loads the shared Stacks feature runtime and only that selected feature controller.
-- Selecting Editorial Engine loads its workspace controller only then.
-- Selecting Sun loads the Sun renderer and its view-only textures/backgrounds only then.
-- Feature download failures must not mark Home/core startup as failed. They must leave the core scene and Global Orb controls intact and allow a later retry.
-
-## Change discipline
-
-Before any future Essentials change:
-1. Identify the exact file and its actual startup dependency.
-2. Explain why it cannot be loaded on demand.
-3. Show the proposed inventory change.
-4. Obtain the user's explicit approval.
-5. Keep `index.html`, `sw.js`, startup recovery checks, and this policy document consistent.
-
-**Never treat convenience, preloading, or a new feature registration as authorization to add a launch-time download.**
+## Preserved behavior
+The feature Orb catalogue order is preserved, with Elevation remaining locally implemented in the shared Stacks feature runtime. Existing primary views and shared scene/view lifecycle code are not rewritten.
