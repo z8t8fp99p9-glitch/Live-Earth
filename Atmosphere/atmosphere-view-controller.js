@@ -47,11 +47,12 @@
       .le-sfv--atmosphere .le-sfv-head { margin-bottom:9px; }
       /* The title is a permanent scene layer: the WebGL globe renders above it. */
       .le-atmo-scene-title {
-        /* Responsive scene anchor: 12% of the small viewport below the safe area,
-           centered on the true screen midpoint rather than offset around the HUD. */
+        /* True viewport anchor: exactly 12% down from the screen top.
+           Do not add the safe-area inset: it is already part of the viewport.
+           svh keeps the anchor stable as mobile browser chrome expands/collapses. */
         position:absolute; z-index:1;
-        top:calc(env(safe-area-inset-top) + 12vh);
-        top:calc(env(safe-area-inset-top) + 12svh);
+        top:12vh;
+        top:12svh;
         left:50%; right:auto; width:min(84vw,620px);
         box-sizing:border-box; transform:translateX(-50%);
         display:flex; align-items:center; justify-content:center;
