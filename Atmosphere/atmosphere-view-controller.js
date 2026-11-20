@@ -121,10 +121,17 @@
       }
       .le-atmo-scale-dock > .le-atmo-data-card { pointer-events:auto; }
       .le-atmo-scale-dock[hidden] { display:none!important; }
+      /* Provenance opens as a separate panel anchored above the scale.
+         It is removed from layout flow, so the scale deck never moves,
+         grows, or changes its position when the panel is opened. */
       .le-atmo-scale-dock .le-atmo-data-card {
         display:none!important;
-        width:100%; box-sizing:border-box; margin:0 0 12px;
-        pointer-events:auto;
+        position:absolute; left:0; right:0;
+        bottom:calc(100% + clamp(10px,1.6svh,18px));
+        width:100%; max-height:min(52svh,560px);
+        box-sizing:border-box; margin:0;
+        overflow:auto; overscroll-behavior:contain;
+        pointer-events:auto; z-index:6;
       }
       .le-sfv--atmosphere.le-atmo-details-expanded .le-atmo-scale-dock .le-atmo-data-card {
         display:block!important;
@@ -132,30 +139,6 @@
       .le-atmo-scale-dock .le-sfv-attribution { margin:8px 2px 0; }
       .le-atmo-scale-dock .le-atmo-details { pointer-events:auto; }
 
-      /* The Plus control expands/collapses the complete Atmosphere data deck.
-         The data card grows upward; the scale instrument rises as one unit. */
-      .le-sfv--atmosphere .le-atmo-scale-dock {
-        transition:bottom .38s cubic-bezier(.2,.72,.22,1);
-      }
-      .le-sfv--atmosphere.le-atmo-details-expanded .le-atmo-scale-dock {
-        bottom:calc(env(safe-area-inset-bottom) + clamp(230px,32svh,340px));
-      }
-      .le-sfv--atmosphere.le-world-engine-host .le-sfv-body {
-        transition:max-height .38s cubic-bezier(.2,.72,.22,1),padding-bottom .38s ease;
-      }
-      .le-sfv--atmosphere.le-world-engine-host.le-atmo-details-expanded .le-sfv-body {
-        max-height:min(66dvh,680px);
-        padding-bottom:calc(env(safe-area-inset-bottom) + clamp(190px,27svh,270px));
-      }
-      @media (orientation:landscape) {
-        .le-sfv--atmosphere.le-atmo-details-expanded .le-atmo-scale-dock {
-          bottom:calc(env(safe-area-inset-bottom) + clamp(120px,25svh,210px));
-        }
-        .le-sfv--atmosphere.le-world-engine-host.le-atmo-details-expanded .le-sfv-body {
-          max-height:min(66dvh,440px);
-          padding-bottom:calc(env(safe-area-inset-bottom) + clamp(120px,23svh,190px));
-        }
-      }
       .le-atmo-instrument-label {
         display:flex; align-items:center; justify-content:center; gap:7px;
         width:100%; margin:0 0 6px;
