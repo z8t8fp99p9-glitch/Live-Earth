@@ -807,6 +807,7 @@ function installStyles() {
     .le-world-engine-host .le-sfv-head,.le-world-engine-host .le-sfv-body{pointer-events:auto}
     .le-world-engine-host .le-sfv-body{max-height:calc(100% - 150px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
     .le-world-engine-host .le-sfv-head{ text-shadow:0 2px 18px rgba(0,0,0,.85) }
+    .le-atmosphere-no-intro .le-sfv-head{display:none!important}
     .le-world-engine-host .le-sfv-card{background:rgba(4,13,24,.58);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
   `;
   document.head.appendChild(style);
@@ -817,6 +818,10 @@ function installStyles() {
     installHudStyle();
     const view = runtime.mount(ATMOSPHERE_VIEW.id);
     if (!view) return () => {};
+    // This feature uses the shared Stacks shell. Remove its generic intro
+    // header from the mounted view; Atmosphere is intentionally globe-first.
+    view.root.querySelectorAll('.le-sfv-head').forEach(node => node.remove());
+    view.root.classList.add('le-atmosphere-no-intro');
     document.body.classList.add('le-atmosphere-fullscreen-open');
 
     // The globe is the view's immediate baseline. Scientific tools and data
@@ -843,9 +848,9 @@ function installStyles() {
     });
     view.root.appendChild(hudToggle);
     view.panel.id = 'le-atmo-hud-panel';
-    const status = runtime.el('p', 'le-sfv-status', 'Opening the Earth Engine globe…');
+    const status = runtime.el('p', 'le-sfv-status', '');
     status.dataset.state = 'neutral';
-    view.body.appendChild(status);
+    status.hidden = true;
 
     const selector = runtime.card('Atmosphere datasets', 'Choose a verified NOAA atmospheric field to render on the globe. Composition is available in its own World.');
     selector.classList.add('le-atmo-dataset-card');
@@ -1250,10 +1255,13 @@ function installStyles() {
         if (closed || !runtime.isActive(ATMOSPHERE_VIEW.id)) { worldGlobe?.dispose?.(); worldGlobe = null; return; }
         if (!worldGlobe || typeof worldGlobe.attachLayer !== 'function') throw new Error('The Earth Engine globe could not be created.');
         view.root.dataset.globeEngine = 'ready';
-        runtime.setStatus(status, 'Earth Engine globe ready · choose an atmospheric dataset to add its live layer.', 'success');
+        // Successful initialization needs no persistent status banner.
+        status.remove();
         worldGlobe.requestRender?.();
       } catch (error) {
         if (!closed && runtime.isActive(ATMOSPHERE_VIEW.id)) {
+          status.hidden = false;
+          view.body.appendChild(status);
           runtime.setStatus(status, `The Earth Engine globe could not open. ${error?.message || ''}`, 'error');
         }
       }
