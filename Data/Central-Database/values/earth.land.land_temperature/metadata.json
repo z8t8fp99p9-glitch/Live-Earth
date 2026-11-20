@@ -10,12 +10,12 @@
   "parameter": "T2M",
   "record_count": 6,
   "request_urls": {
-    "east_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M&community=AG&longitude=35.0&latitude=0.0&start=19810101&end=20261119&format=JSON",
-    "east_asia_pacific": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M&community=AG&longitude=125.0&latitude=25.0&start=19810101&end=20261119&format=JSON",
-    "europe_north_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M&community=AG&longitude=15.0&latitude=35.0&start=19810101&end=20261119&format=JSON",
-    "north_america": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M&community=AG&longitude=-100.0&latitude=40.0&start=19810101&end=20261119&format=JSON",
-    "south_america": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M&community=AG&longitude=-60.0&latitude=-15.0&start=19810101&end=20261119&format=JSON",
-    "south_asia": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M&community=AG&longitude=80.0&latitude=20.0&start=19810101&end=20261119&format=JSON"
+    "east_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M&community=AG&longitude=35.0&latitude=0.0&start=19810101&end=20261120&format=JSON",
+    "east_asia_pacific": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M&community=AG&longitude=125.0&latitude=25.0&start=19810101&end=20261120&format=JSON",
+    "europe_north_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M&community=AG&longitude=15.0&latitude=35.0&start=19810101&end=20261120&format=JSON",
+    "north_america": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M&community=AG&longitude=-100.0&latitude=40.0&start=19810101&end=20261120&format=JSON",
+    "south_america": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M&community=AG&longitude=-60.0&latitude=-15.0&start=19810101&end=20261120&format=JSON",
+    "south_asia": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M&community=AG&longitude=80.0&latitude=20.0&start=19810101&end=20261120&format=JSON"
   },
   "sample_tiles": [
     {
@@ -52,8 +52,8 @@
   "source_id": "nasa_power_daily",
   "source_name": "NASA POWER daily 2m air temperature at six regional sample points",
   "units": "degree_C",
-  "updated_at_utc": "2026-11-19T19:12:57.808634Z",
+  "updated_at_utc": "2026-11-20T01:28:02.421862Z",
   "value_bytes": 3207,
   "value_file": "records.jsonl",
-  "value_sha256": "3835ff43e9550be7510485ba398303ae80887733b14e692bea5ca5555f102dee"
+  "value_sha256": "f9d8586b7f2b8c0a6f82f61cde60440833689086155cc93a2c19ccfd19caf18a"
 }
