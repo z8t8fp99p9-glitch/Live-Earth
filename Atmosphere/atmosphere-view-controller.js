@@ -511,30 +511,32 @@ async function initializeEngineView(view, viewId) {
     });
     if (disposed) { earthGlobe.dispose(); throw new Error("The world view closed while its Engine globe was loading."); }
     scene.add(earthGlobe.group);
+    // Render the base Earth immediately; country boundaries are a separate,
+    // non-blocking Atmosphere overlay and must not delay engine readiness.
+    requestRender();
 
-    // Country boundaries are an Atmosphere-only overlay. Attach them to the
-    // surface so they inherit its base texture alignment and globe rotation.
-    try {
-      countryBorders = await createCountryBordersSkin({
-        THREE: T,
-        earthGroup: earthGlobe.surface,
-        // Hug the satellite surface (radius 1.000) with only 0.0015 clearance.
-        // This prevents the country overlay from protruding beyond the globe limb.
-        radius: 1.0015,
-        color: 0x3a5568,
-        opacity: 0.20,
-        lineWidth: 0.0048,
-        renderOrder: 10
-      });
+    // Country boundaries attach when ready, without holding up the globe.
+    createCountryBordersSkin({
+      THREE: T,
+      earthGroup: earthGlobe.surface,
+      // Hug the satellite surface (radius 1.000) with only 0.0015 clearance.
+      // This prevents the country overlay from protruding beyond the globe limb.
+      radius: 1.0015,
+      color: 0x3a5568,
+      opacity: 0.20,
+      lineWidth: 0.0048,
+      renderOrder: 10
+    }).then(result => {
+      if (disposed) {
+        result?.dispose?.();
+        return;
+      }
+      countryBorders = result;
       if (countryBorders) root.dataset.countryBorders = "natural-earth-50m";
-    } catch (error) {
+      requestRender();
+    }).catch(error => {
       console.warn("[LIVE // EARTH] Atmosphere country borders could not be loaded; the base globe will remain available.", error);
-    }
-    if (disposed) {
-      countryBorders?.dispose?.(); countryBorders = null;
-      earthGlobe.dispose();
-      throw new Error("The Atmosphere view closed while its globe was loading.");
-    }
+    });
 
     // Match the Home Earth location marker: a small red halo and dot attached
     // directly to this view's Earth surface, so it follows every globe rotation.
