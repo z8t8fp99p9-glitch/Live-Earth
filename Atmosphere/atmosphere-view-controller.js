@@ -38,6 +38,14 @@
     [1.00, 0.980, 0.790, 0.470]
   ];
   const WIND_LEGEND = 'linear-gradient(90deg,#09174f 0%,#0563b0 34%,#13c2d9 68%,#b0e6eb 88%,#fad478 100%)';
+  const WIND_DIRECTION_COLOR_STOPS = [
+    [0.00, 0.08, 0.78, 0.96],
+    [0.25, 0.12, 0.36, 0.96],
+    [0.50, 0.66, 0.25, 0.94],
+    [0.75, 0.98, 0.34, 0.58],
+    [1.00, 0.08, 0.78, 0.96]
+  ];
+  const WIND_DIRECTION_LEGEND = 'linear-gradient(90deg,#14c7f5 0%,#1f5cf5 25%,#a840f0 50%,#fa5794 75%,#14c7f5 100%)';
   const SCRIPT_PATHS = ['./EarthEngine/Graphics/universal-grid-system.js','./EarthEngine/Graphics/earth-grid-gpu-skin.js'];
 
   function installHudStyle() {
@@ -922,7 +930,7 @@ function installStyles() {
     const FIELD_CONFIG = {
       temperature: { ids: ['earth.atmosphere.air_temperature'], title: 'NOAA · 2 m air temperature', units: 'degree_Celsius', displayUnits: '°C', min: null, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · 2 m air temperature' },
       pressure: { ids: ['earth.atmosphere.atmospheric_pressure'], title: 'NOAA · Mean sea-level pressure', units: 'kilopascal', displayUnits: 'kPa', min: null, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · mean sea-level pressure' },
-      wind: { ids: ['earth.atmosphere.wind_speed'], title: 'NOAA · 10 m wind speed', units: 'metre_per_second', displayUnits: 'm/s', min: 0, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · 10 m wind speed' },
+      wind: { ids: ['earth.atmosphere.wind_direction'], title: 'NOAA · 10 m wind direction', units: 'degree', displayUnits: '°', min: 0, max: 360, ticks: ['N · 0°','E · 90°','S · 180°','W · 270°','N · 360°'], source: 'NOAA NCEP · GFS 0.25° analysis · 10 m wind direction · degrees FROM north' },
       moisture: { ids: ['earth.atmosphere.humidity'], title: 'NOAA · 2 m relative humidity', units: 'percent', displayUnits: '%', min: 0, max: 100, ticks: ['0%','25%','50%','75%','100%'], source: 'NOAA NCEP · GFS 0.25° analysis · 2 m relative humidity' }
     };
     const datasetButtons = new Map();
@@ -1117,7 +1125,7 @@ function installStyles() {
         : `${config.title.replace('NOAA · ','')} · ${config.displayUnits}`;
       legendBar.style.background = config === FIELD_CONFIG.temperature
         ? TEMPERATURE_LEGEND
-        : config === FIELD_CONFIG.wind ? WIND_LEGEND
+        : config === FIELD_CONFIG.wind ? WIND_DIRECTION_LEGEND
         : 'linear-gradient(90deg,#0e297a 0%,#05a8e0 25%,#2edca8 50%,#ffca47 75%,#e8402b 100%)';
 
       legendTicks.replaceChildren();
@@ -1209,7 +1217,7 @@ function installStyles() {
             THREE, grid, radius: 1.009,
             opacity: datasetKey === 'temperature' ? 0.75 : 0.78,
             min: colorMin, max: colorMax,
-            colorStops: datasetKey === 'temperature' ? TEMPERATURE_COLOR_STOPS : datasetKey === 'wind' ? WIND_COLOR_STOPS : undefined,
+            colorStops: datasetKey === 'temperature' ? TEMPERATURE_COLOR_STOPS : datasetKey === 'wind' ? WIND_DIRECTION_COLOR_STOPS : undefined,
             thermalAura: datasetKey === 'temperature' ? {
               enabled: true,
               expansion: 0.0020,
