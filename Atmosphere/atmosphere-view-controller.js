@@ -1145,30 +1145,34 @@ function installStyles() {
     }
 
     function makeWindFlow(THREE, earth, speedGrid, directionGrid, speedMin, speedMax, requestRender) {
-      // A single GPU-friendly line/point layer. Particle motion is driven by
-      // the verified 10 m speed + direction grids; no decorative paths are added.
+      // Restrained surface flow overlay. The verified speed skin remains the
+      // primary field; trails use normal alpha blending (never additive) so
+      // particle accumulation cannot wash the globe to white.
       const speedDef = speedGrid.definition;
       const directionDef = directionGrid.definition;
       const speedValues = speedGrid.values;
       const directionValues = directionGrid.values;
-      const particleCount = Math.min(760, Math.max(420, Math.round((window.innerWidth || 420) * 1.25)));
-      const trailLength = 9;
+      const particleCount = Math.min(360, Math.max(220, Math.round((window.innerWidth || 420) * 0.62)));
+      const trailLength = 7;
       const segmentCount = trailLength - 1;
-      const positions = new Float32Array(particleCount * segmentCount * 2 * 3);
-      const colors = new Float32Array(positions.length);
-      const fades = new Float32Array(particleCount * segmentCount * 2);
+      const vertexCount = particleCount * segmentCount * 2;
+      const positions = new Float32Array(vertexCount * 3);
+      const colors = new Float32Array(vertexCount * 3);
+      const fades = new Float32Array(vertexCount);
       const headPositions = new Float32Array(particleCount * 3);
       const headColors = new Float32Array(particleCount * 3);
       const particles = [];
       const rad = Math.PI / 180;
-      const radius = 1.018;
+      const radius = 1.0125;
       const speedRange = Math.max(0.001, speedMax - speedMin);
       let seed = 0x51f15e;
       const random = () => {
         seed = (seed * 1664525 + 1013904223) >>> 0;
         return seed / 4294967296;
       };
-      const palette = WIND_COLOR_STOPS.map(stop => ({ at: stop[0], color: new THREE.Color(stop[1], stop[2], stop[3]) }));
+      const palette = WIND_COLOR_STOPS.map(stop => ({
+        at: stop[0], color: new THREE.Color(stop[1], stop[2], stop[3])
+      }));
       function colourAt(t) {
         const value = Math.max(0, Math.min(1, t));
         let right = palette.findIndex(stop => stop.at >= value);
@@ -1181,12 +1185,12 @@ function installStyles() {
         const gx = (longitude - def.lonStart) / def.lonStep;
         const gy = (latitude - def.latStart) / def.latStep;
         if (!Number.isFinite(gx) || !Number.isFinite(gy)) return null;
-        const x0raw = Math.floor(gx), y0raw = Math.floor(gy);
-        const fx = gx - x0raw, fy = gy - y0raw;
+        const xRaw = Math.floor(gx), yRaw = Math.floor(gy);
+        const fx = gx - xRaw, fy = gy - yRaw;
         const wrap = value => ((value % def.width) + def.width) % def.width;
-        const x0 = wrap(x0raw), x1 = wrap(x0raw + 1);
-        const y0 = Math.max(0, Math.min(def.height - 1, y0raw));
-        const y1 = Math.max(0, Math.min(def.height - 1, y0raw + 1));
+        const x0 = wrap(xRaw), x1 = wrap(xRaw + 1);
+        const y0 = Math.max(0, Math.min(def.height - 1, yRaw));
+        const y1 = Math.max(0, Math.min(def.height - 1, yRaw + 1));
         const samples = [
           [values[y0 * def.width + x0], (1 - fx) * (1 - fy)],
           [values[y0 * def.width + x1], fx * (1 - fy)],
@@ -1196,8 +1200,10 @@ function installStyles() {
         let total = 0, weight = 0, sx = 0, sy = 0;
         for (const [value, w] of samples) {
           if (!Number.isFinite(value) || w <= 0) continue;
-          if (circular) { sx += Math.cos(value * rad) * w; sy += Math.sin(value * rad) * w; }
-          else total += value * w;
+          if (circular) {
+            sx += Math.cos(value * rad) * w;
+            sy += Math.sin(value * rad) * w;
+          } else total += value * w;
           weight += w;
         }
         if (weight < 0.25) return null;
@@ -1211,14 +1217,15 @@ function installStyles() {
         target[2] = -cp * Math.sin(lambda) * radius;
       }
       function resetParticle(particle) {
-        particle.lat = -78 + random() * 156;
+        particle.lat = -76 + random() * 152;
         particle.lon = -180 + random() * 360;
+        particle.speed = speedMin;
         particle.history = Array.from({ length: trailLength }, () => [0, 0, 0]);
         surfacePoint(particle.lat, particle.lon, particle.history[0]);
         for (let i = 1; i < trailLength; i++) particle.history[i] = particle.history[0].slice();
       }
       for (let i = 0; i < particleCount; i++) {
-        const particle = { lat: 0, lon: 0, history: [], speed: 0 };
+        const particle = { lat: 0, lon: 0, history: [], speed: speedMin };
         resetParticle(particle);
         particles.push(particle);
       }
@@ -1229,9 +1236,9 @@ function installStyles() {
       lineGeometry.setAttribute('fade', new THREE.BufferAttribute(fades, 1).setUsage(THREE.DynamicDrawUsage));
       const lineMaterial = new THREE.ShaderMaterial({
         transparent: true, depthTest: true, depthWrite: false,
-        blending: THREE.AdditiveBlending, toneMapped: false,
+        blending: THREE.NormalBlending, toneMapped: false,
         vertexShader: `attribute vec3 color; attribute float fade; varying vec3 vColor; varying float vFade; void main(){vColor=color;vFade=fade;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
-        fragmentShader: `varying vec3 vColor; varying float vFade; void main(){gl_FragColor=vec4(vColor,vFade);}`
+        fragmentShader: `varying vec3 vColor; varying float vFade; void main(){gl_FragColor=vec4(vColor,clamp(vFade,0.0,0.34));}`
       });
       const trails = new THREE.LineSegments(lineGeometry, lineMaterial);
       trails.name = 'liveEarthAtmosphereWindFlowTrails';
@@ -1240,11 +1247,12 @@ function installStyles() {
       const headGeometry = new THREE.BufferGeometry();
       headGeometry.setAttribute('position', new THREE.BufferAttribute(headPositions, 3).setUsage(THREE.DynamicDrawUsage));
       headGeometry.setAttribute('color', new THREE.BufferAttribute(headColors, 3).setUsage(THREE.DynamicDrawUsage));
-      const heads = new THREE.Points(headGeometry, new THREE.PointsMaterial({
-        size: 2.1, sizeAttenuation: true, vertexColors: true, transparent: true,
-        opacity: 0.82, depthTest: true, depthWrite: false,
-        blending: THREE.AdditiveBlending, toneMapped: false
-      }));
+      const headMaterial = new THREE.PointsMaterial({
+        size: 1.35, sizeAttenuation: true, vertexColors: true, transparent: true,
+        opacity: 0.56, depthTest: true, depthWrite: false,
+        blending: THREE.NormalBlending, toneMapped: false
+      });
+      const heads = new THREE.Points(headGeometry, headMaterial);
       heads.name = 'liveEarthAtmosphereWindFlowParticles';
       heads.renderOrder = 9;
       earth.add(trails, heads);
@@ -1255,10 +1263,9 @@ function installStyles() {
       function animate(time) {
         if (disposed) return;
         frame = requestAnimationFrame(animate);
-        if (time - lastFrameTime < 38) return;
+        if (document.hidden || time - lastFrameTime < 48) return;
         lastFrameTime = time;
-        let lineVertex = 0;
-        let fadeIndex = 0;
+        let vertex = 0;
         for (let i = 0; i < particles.length; i++) {
           const particle = particles[i];
           const speed = gridSample(speedDef, speedValues, particle.lat, particle.lon, false);
@@ -1267,18 +1274,15 @@ function installStyles() {
             resetParticle(particle);
           } else {
             particle.speed = speed;
-            // NOAA direction is meteorological FROM; add 180° to move particles
-            // in the actual direction of travel, matching the old arrow convention.
+            // NOAA direction is meteorological FROM; reverse it for travel.
             const bearing = (direction + 180) * rad;
             const normalizedSpeed = Math.max(0, Math.min(1, (speed - speedMin) / speedRange));
-            const stepDegrees = 0.006 + normalizedSpeed * 0.070;
+            const stepDegrees = 0.003 + normalizedSpeed * 0.038;
             const oldLat = particle.lat * rad;
-            const nextLat = Math.max(-84, Math.min(84, particle.lat + Math.cos(bearing) * stepDegrees));
-            const cosLat = Math.max(0.12, Math.cos(oldLat));
-            particle.lon += (Math.sin(bearing) * stepDegrees) / cosLat;
+            particle.lat = Math.max(-82, Math.min(82, particle.lat + Math.cos(bearing) * stepDegrees));
+            particle.lon += (Math.sin(bearing) * stepDegrees) / Math.max(0.16, Math.cos(oldLat));
             if (particle.lon > 180) particle.lon -= 360;
             if (particle.lon < -180) particle.lon += 360;
-            particle.lat = nextLat;
             const head = [0, 0, 0];
             surfacePoint(particle.lat, particle.lon, head);
             particle.history.shift();
@@ -1288,16 +1292,18 @@ function installStyles() {
           const tint = colourAt(normalized);
           for (let j = 0; j < segmentCount; j++) {
             const a = particle.history[j], b = particle.history[j + 1];
-            positions.set(a, lineVertex * 3); colors.set([tint.r, tint.g, tint.b], lineVertex * 3);
-            fades[lineVertex] = 0.035 + (j / segmentCount) * 0.34; lineVertex++;
-            positions.set(b, lineVertex * 3); colors.set([tint.r, tint.g, tint.b], lineVertex * 3);
-            fades[lineVertex] = 0.035 + ((j + 1) / segmentCount) * 0.34; lineVertex++;
+            positions.set(a, vertex * 3);
+            colors.set([tint.r, tint.g, tint.b], vertex * 3);
+            fades[vertex++] = 0.025 + (j / segmentCount) * 0.22;
+            positions.set(b, vertex * 3);
+            colors.set([tint.r, tint.g, tint.b], vertex * 3);
+            fades[vertex++] = 0.025 + ((j + 1) / segmentCount) * 0.22;
           }
           const head = particle.history[trailLength - 1];
           headPositions.set(head, i * 3);
-          headColors[i * 3] = Math.min(1, tint.r * 1.22 + 0.08);
-          headColors[i * 3 + 1] = Math.min(1, tint.g * 1.22 + 0.08);
-          headColors[i * 3 + 2] = Math.min(1, tint.b * 1.22 + 0.08);
+          headColors[i * 3] = tint.r;
+          headColors[i * 3 + 1] = tint.g;
+          headColors[i * 3 + 2] = tint.b;
         }
         lineGeometry.attributes.position.needsUpdate = true;
         lineGeometry.attributes.color.needsUpdate = true;
@@ -1312,9 +1318,12 @@ function installStyles() {
           if (disposed) return;
           disposed = true;
           cancelAnimationFrame(frame);
-          trails.removeFromParent(); heads.removeFromParent();
-          lineGeometry.dispose(); lineMaterial.dispose();
-          headGeometry.dispose(); heads.material.dispose();
+          trails.removeFromParent();
+          heads.removeFromParent();
+          lineGeometry.dispose();
+          lineMaterial.dispose();
+          headGeometry.dispose();
+          headMaterial.dispose();
         }
       };
     }
@@ -1403,7 +1412,14 @@ function installStyles() {
             contourColor: [0.13, 0.10, 0.09],
             name: `NOAA-GFS-${datasetKey}`
           });
-          if (datasetKey === 'wind') windFlowHandle = makeWindFlow(THREE, earth, grid, grids[1], bounds.min, bounds.max, () => worldGlobe?.requestRender?.());
+          if (datasetKey === 'wind') {
+            try {
+              windFlowHandle = makeWindFlow(THREE, earth, grid, grids[1], bounds.min, bounds.max, () => worldGlobe?.requestRender?.());
+            } catch (error) {
+              console.warn('[LIVE // EARTH] Wind flow overlay could not be created; the verified wind-speed field remains visible.', error);
+              windFlowHandle = null;
+            }
+          }
           gridRoot.add(gridHandle.mesh);
           if (gridHandle.auraMesh) gridRoot.add(gridHandle.auraMesh);
           earth.add(gridRoot);
