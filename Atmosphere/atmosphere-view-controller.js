@@ -927,6 +927,35 @@ function installStyles() {
       { id: 'wind', label: 'Wind', detail: '10 m wind speed + direction · U/V' },
       { id: 'moisture', label: 'Moisture', detail: '2 m relative humidity · %' }
     ];
+    // WIND VECTOR ARCHITECTURE — durable implementation note (planning only).
+    // Current behaviour remains the verified single-field selector below; this note
+    // does not create, fetch, or render a combined dataset.
+    //
+    // Approved direction for the next Wind iteration:
+    // - Preserve the existing Central Database speed and direction products unchanged.
+    // - Add a separate derived dataset, `earth.atmosphere.wind_vector`, generated from
+    //   time/grid-aligned NOAA 10 m UGRD (eastward) and VGRD (northward) components.
+    // - Keep one shared grid definition, valid time, forecast reference, validity mask,
+    //   and integrity metadata for every cell. Reject mismatched source cycles/grids.
+    // - Carry speed plus U and V components (not a scalar-interpolated angle). Derive
+    //   speed = hypot(U, V); derive meteorological direction FROM north as
+    //   (atan2(-U, -V) * 180 / PI + 360) % 360 when a compass angle is needed.
+    // - Interpolate U/V components, then reconstruct direction. Animate particles
+    //   toward the vector (U,V); meteorological FROM direction must not be used as
+    //   the particle travel bearing without reversing it.
+    // - Feed the combined product to one Wind GPU grid surface. Speed mode colours
+    //   by speed; direction mode uses circular/vector-correct reconstruction; flow
+    //   mode advects particles using U/V. Do not stack coplanar speed/direction skins.
+    // - Implement any multi-channel GPU support additively and backward-compatibly.
+    //   Temperature, pressure, moisture, other views, Earth Engine, and the existing
+    //   Universal Grid System scalar contract remain unchanged unless separately
+    //   reviewed and explicitly approved.
+    // - Keep the combined dataset derived and independently verifiable. Do not
+    //   overwrite/delete the existing speed/direction products or change database
+    //   schema/collector/publisher until source alignment, metadata, checksums,
+    //   fallback behaviour, and acceptance tests are designed and verified.
+    //
+    // See Documentation/WIND-VECTOR-DATA-ARCHITECTURE.md for the canonical plan.
     const FIELD_CONFIG = {
       temperature: { ids: ['earth.atmosphere.air_temperature'], title: 'NOAA · 2 m air temperature', units: 'degree_Celsius', displayUnits: '°C', min: null, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · 2 m air temperature' },
       pressure: { ids: ['earth.atmosphere.atmospheric_pressure'], title: 'NOAA · Mean sea-level pressure', units: 'kilopascal', displayUnits: 'kPa', min: null, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · mean sea-level pressure' },

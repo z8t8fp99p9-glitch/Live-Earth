@@ -92,3 +92,14 @@ User selected a GitHub Pages-only architecture. Added direct public-source adapt
 - Keep the shared Stacks catalogue/lifecycle runtime essential, but extract the Elevation view implementation into `Elevation/elevation-view.js`. All 12 Stacks feature-view controllers (including Elevation) load only after their Orb is selected. Move the two numerical-only grid helpers to optional caching; move the Editorial Engine browser workspace from eager Update Manager startup to Orb-selected loading. The retained Editorial Engine utility and retired publishing boundary remain unchanged.
 - Candidate install-time resources decrease from 51 app-shell paths + 3 runtime dependencies (54) to 37 + 3 (40). Package: `LIVE-EARTH-v155-On-Demand-Feature-Views.zip`; manifest commit title: `Move Feature Views Out of Startup Essentials`. No Home, primary Earth, Moon/Sun, dock, Location privacy, core Earth Engine, user data or recovery behavior is intentionally redesigned.
 - Candidate passed syntax checks for all modified JavaScript, an expanded mock-runtime test for all 13 optional modules and loader races/retry, and a dedicated Elevation lifecycle/offline-cleanup smoke test. User upload/extraction, Actions/Pages and iPhone acceptance remain pending.
+
+
+## 21 November 2026 — Atmosphere Wind vector architecture decision
+
+- Approved an additive derived dataset, `earth.atmosphere.wind_vector`, built from time/grid-aligned NOAA 10 m UGRD and VGRD components.
+- Preserve existing wind-speed and wind-direction datasets unchanged as independent verification and fallback products. Do not migrate or replace the Central Database schema in the design phase.
+- The combined product is planned to carry U, V and derived speed on one shared grid/time definition. Reconstruct meteorological direction FROM north only after vector-component interpolation; animate movement toward `(U,V)`.
+- The intended Wind view uses one combined input and one coordinated GPU surface with selectable speed, direction and future vector-flow modes. Do not stack coplanar speed/direction globe skins.
+- Any multi-channel support in the Universal Grid System/GPU skin must be optional and backward-compatible; scalar datasets and all non-Wind views remain protected.
+- This entry records a design decision, not implementation. Collector, publisher, database, renderer and controller behaviour remain unchanged until separately inspected, implemented and validated.
+- Canonical details: `Documentation/WIND-VECTOR-DATA-ARCHITECTURE.md`. The Atmosphere controller contains a matching implementation note beside its dataset configuration.

@@ -31,3 +31,12 @@ When the view closes, its controller aborts pending requests, disposes the GPU s
 ## Atmospheric Composition separation
 
 `Atmospheric-Composition/atmospheric-composition-view-controller.js` is a distinct Stacks world from `Atmosphere/atmosphere-view-controller.js`. It has its own controller, world ID, Orb registration and view lifecycle, while reusing the same Earth Engine, Universal Grid System and GPU Grid Skin. Its data adapter is intentionally pending; until verified composition datasets are connected, the view displays readiness/status information only and no fabricated measurements.
+
+
+## Planned multi-channel Wind dataset (not implemented)
+
+The Atmosphere Wind design calls for a separate derived `earth.atmosphere.wind_vector` product containing aligned U, V and speed channels. This must not silently change the existing scalar-grid contract used by Temperature, Pressure, Moisture or other numerical worlds.
+
+If the combined product requires multi-channel support, introduce it as an optional, backward-compatible capability. Existing scalar `loadCurrentGrid()` and `LiveEarthGpuGridSkin.create()` consumers must retain their present behaviour. Wind direction must be reconstructed after interpolating U/V components; raw direction angles must not be linearly interpolated across the 0°/360° boundary. See `WIND-VECTOR-DATA-ARCHITECTURE.md`.
+
+This is a planning note only: no shared grid helper or GPU skin implementation is changed by the current package.

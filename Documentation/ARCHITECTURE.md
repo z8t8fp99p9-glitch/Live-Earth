@@ -33,6 +33,17 @@
 
 `Stacks/stacks-feature-views.js` provides the essential shared feature catalogue/runtime, common lifecycle and reusable network/image utilities. All 12 Stacks feature implementations—including Elevation—are separate optional controllers. Clouds, Weather, Elevation, Earthquakes, Traffic and the seven numerical-style views register through the shared runtime; their catalogue metadata is registered synchronously, while each controller is downloaded only after its feature Orb is selected. Controllers mount into the existing full-screen stage or their documented workspace below the shared three-Orb dock. The active feature Orb closes the view. Features must not create a parallel dock, close button or primary-view manager.
 
+
+
+### Atmosphere Wind vector data — approved design direction
+
+- The current Atmosphere controller and scalar Universal Grid System remain in place. The current Wind selection is a single-field path; no combined vector dataset is implemented by this note.
+- The planned additive product is `earth.atmosphere.wind_vector`, derived from time/grid-aligned NOAA 10 m UGRD and VGRD components. Existing speed and direction datasets remain unchanged as independent verification/fallback products.
+- The derived product will carry U, V and speed on one shared grid/time definition. Direction is reconstructed from interpolated components using the meteorological FROM-north convention; particle movement follows the toward-vector `(U,V)`.
+- One combined dataset will feed one coordinated Wind GPU grid surface with speed-colour, direction-colour and vector-flow modes. Do not stack separate coplanar speed and direction skins.
+- Any multi-channel grid/GPU support must be optional and backward-compatible. Scalar consumers and all non-Wind views retain their current contracts.
+- This is a design decision only. Collector, publisher, database, Universal Grid System and GPU renderer changes require separate source inspection, validation and an implementation package. See `WIND-VECTOR-DATA-ARCHITECTURE.md`.
+
 ### Atmospheric Composition world separation
 
 - **Atmosphere** (`Atmosphere/atmosphere-view-controller.js`) remains the world for atmospheric conditions such as temperature, pressure, wind and moisture.
