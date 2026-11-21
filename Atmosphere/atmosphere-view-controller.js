@@ -1314,8 +1314,14 @@ function installStyles() {
             vec2 metric = vec2(wind.x / c, wind.y);
             float magnitude = max(length(metric), 0.0001);
             vec2 bearing = metric / magnitude;
-            vec2 alongWindUv = vec2(bearing.x / c, bearing.y) * (phase * 0.0045);
-            return texture2D(uNoise, uv * vec2(20.0, 10.0) + alongWindUv * vec2(20.0, 10.0)).r;
+            float speed01 = clamp(length(wind) / uSpeedCeiling, 0.0, 1.0);
+            // Displace the noise carrier by a visible, speed-scaled distance
+            // along the local wind bearing. This is the temporal advection
+            // term; the earlier 0.0045 multiplier was too small to see.
+            float travelDegrees = phase * (0.12 + speed01 * 0.42);
+            vec2 travelLL = vec2(bearing.x / c, bearing.y) * travelDegrees;
+            vec2 advectedUv = uv + vec2(travelLL.x / 360.0, travelLL.y / 180.0);
+            return texture2D(uNoise, advectedUv * vec2(20.0, 10.0)).r;
           }
 
           vec3 speedColor(float t) {
@@ -1338,7 +1344,9 @@ function installStyles() {
             if (here.a < 0.05) discard;
 
             vec2 ll = vec2(lon, lat);
-            float phase = fract(uTime * 0.035);
+            // Continuous time phase (not wrapped): the carrier is advected
+            // steadily along the vector field instead of barely oscillating.
+            float phase = uTime * 0.45;
             float total = carrier(ll, phase) * 1.25;
             float weight = 1.25;
             vec2 fwd = ll, back = ll;
