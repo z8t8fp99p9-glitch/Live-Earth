@@ -1238,7 +1238,7 @@ function installStyles() {
       noiseTexture.generateMipmaps = false;
       noiseTexture.needsUpdate = true;
 
-      const geometry = new THREE.SphereGeometry(1.014, 192, 128);
+      const geometry = new THREE.SphereGeometry(1.014, 128, 96);
       const material = new THREE.ShaderMaterial({
         transparent: true,
         depthTest: true,
@@ -1276,52 +1276,16 @@ function installStyles() {
           const float PI = 3.141592653589793;
 
           vec4 fieldAt(float lonDeg, float latDeg) {
-            float lon = uLon360 > 0.5 ? mod(lonDeg + 360.0, 360.0) : mod(lonDeg + 180.0, 360.0) - 180.0;
+            float lon = uLon360 > 0.5
+              ? mod(lonDeg + 360.0, 360.0)
+              : mod(lonDeg + 180.0, 360.0) - 180.0;
             float gx = mod((lon - uLonStart) / uLonStep, uGrid.x);
             float gy = clamp((latDeg - uLatStart) / uLatStep, 0.0, uGrid.y - 1.0);
-            vec2 uv = (vec2(gx, gy) + 0.5) / uGrid;
-            return texture2D(uWind, uv);
+            return texture2D(uWind, (vec2(gx, gy) + 0.5) / uGrid);
           }
 
           vec2 physicalWind(vec4 f) {
             return (f.rg * 2.0 - 1.0) * uSpeedCeiling;
-          }
-
-          vec2 traceStep(vec2 ll, float signDir, float stepDeg) {
-            vec4 f1 = fieldAt(ll.x, ll.y);
-            vec2 w1 = physicalWind(f1);
-            float c1 = max(0.12, cos(radians(clamp(ll.y, -88.0, 88.0))));
-            vec2 metric1 = vec2(w1.x / c1, w1.y);
-            float m1 = max(length(metric1), 0.0001);
-            vec2 d1 = metric1 / m1;
-            vec2 mid = ll + vec2(d1.x / c1, d1.y) * (signDir * stepDeg * 0.5);
-            vec4 f2 = fieldAt(mid.x, mid.y);
-            vec2 w2 = physicalWind(f2);
-            float c2 = max(0.12, cos(radians(clamp(mid.y, -88.0, 88.0))));
-            vec2 metric2 = vec2(w2.x / c2, w2.y);
-            float m2 = max(length(metric2), 0.0001);
-            vec2 d2 = metric2 / m2;
-            return ll + vec2(d2.x / c2, d2.y) * (signDir * stepDeg);
-          }
-
-          float carrier(vec2 ll, float phase) {
-            // Move the carrier along the local physical wind bearing. The
-            // streamline integration below also follows the full varying field.
-            vec2 uv = vec2(ll.x / 360.0, (ll.y + 90.0) / 180.0);
-            vec4 local = fieldAt(ll.x, ll.y);
-            vec2 wind = physicalWind(local);
-            float c = max(0.12, cos(radians(clamp(ll.y, -88.0, 88.0))));
-            vec2 metric = vec2(wind.x / c, wind.y);
-            float magnitude = max(length(metric), 0.0001);
-            vec2 bearing = metric / magnitude;
-            float speed01 = clamp(length(wind) / uSpeedCeiling, 0.0, 1.0);
-            // Displace the noise carrier by a visible, speed-scaled distance
-            // along the local wind bearing. This is the temporal advection
-            // term; the earlier 0.0045 multiplier was too small to see.
-            float travelDegrees = phase * (0.12 + speed01 * 0.42);
-            vec2 travelLL = vec2(bearing.x / c, bearing.y) * travelDegrees;
-            vec2 advectedUv = uv + vec2(travelLL.x / 360.0, travelLL.y / 180.0);
-            return texture2D(uNoise, advectedUv * vec2(20.0, 10.0)).r;
           }
 
           vec3 speedColor(float t) {
@@ -1340,29 +1304,39 @@ function installStyles() {
             float lat = degrees(asin(clamp(p.y, -1.0, 1.0)));
             float lon = degrees(atan(-p.z, p.x));
             if (lon < 0.0) lon += 360.0;
-            vec4 here = fieldAt(lon, lat);
-            if (here.a < 0.05) discard;
 
-            vec2 ll = vec2(lon, lat);
-            // Continuous time phase (not wrapped): the carrier is advected
-            // steadily along the vector field instead of barely oscillating.
-            float phase = uTime * 0.45;
-            float total = carrier(ll, phase) * 1.25;
-            float weight = 1.25;
-            vec2 fwd = ll, back = ll;
-            for (int i=1; i<=16; i++) {
-              float taper = 1.0 - float(i) / 17.0;
-              fwd = traceStep(fwd, 1.0, 0.16);
-              back = traceStep(back, -1.0, 0.16);
-              total += (carrier(fwd, phase + float(i)*0.006) +
-                        carrier(back, phase - float(i)*0.006)) * taper;
-              weight += 2.0 * taper;
-            }
-            float lic = total / weight;
-            float filament = smoothstep(0.46, 0.59, lic) * (1.0 - smoothstep(0.70, 0.82, lic));
-            float speed = here.b;
-            float speedPresence = smoothstep(0.015, 0.18, speed);
-            float alpha = filament * (0.16 + 0.48 * speedPresence);
+            // One wind-field lookup per fragment: the NOAA direction and
+            // speed define both the streak orientation and its advection.
+            vec4 field = fieldAt(lon, lat);
+            if (field.a < 0.05) discard;
+            vec2 wind = physicalWind(field);
+            float speed = field.b;
+            float latitudeCos = max(0.16, cos(radians(clamp(lat,-82.0,82.0))));
+
+            // Convert east/north wind into a unit tangent in geographic space.
+            vec2 metricWind = vec2(wind.x / latitudeCos, wind.y);
+            float magnitude = length(metricWind);
+            if (magnitude < 0.025) discard;
+            vec2 tangent = metricWind / magnitude;
+            vec2 normal = vec2(-tangent.y, tangent.x);
+
+            // Locally oriented anisotropic noise: long narrow filaments run
+            // parallel to the actual wind vector, not arbitrary FBM contours.
+            vec2 geographic = vec2(lon, lat);
+            vec2 alongAcross = vec2(dot(geographic, tangent), dot(geographic, normal));
+            float speed01 = clamp(length(wind) / uSpeedCeiling, 0.0, 1.0);
+            float drift = uTime * (0.045 + speed01 * 0.19);
+            vec2 noiseUv = vec2(
+              alongAcross.x * 0.030 - drift,
+              alongAcross.y * 0.24
+            );
+            float n = texture2D(uNoise, noiseUv).r;
+
+            // Fine, wispy streaks; their long axis is the wind bearing.
+            float filament = smoothstep(0.43,0.56,n) *
+                             (1.0 - smoothstep(0.69,0.81,n));
+            float softness = smoothstep(0.01,0.22,speed01);
+            float alpha = filament * (0.12 + softness * 0.48);
             gl_FragColor = vec4(speedColor(speed), alpha);
           }
         `
@@ -1378,7 +1352,7 @@ function installStyles() {
       const animate = time => {
         if (disposed) return;
         frame = requestAnimationFrame(animate);
-        if (document.hidden || time - last < 33) return;
+        if (document.hidden || time - last < 42) return;
         last = time;
         material.uniforms.uTime.value = time * 0.001;
         requestRender?.();
