@@ -29,23 +29,6 @@
     [1.000000, 0.2706, 0.0157, 0.0902]  // 100% · dark burgundy
   ];
   const TEMPERATURE_LEGEND = 'linear-gradient(90deg,#080d2c 0%,#101c50 7.1429%,#203b8a 14.2857%,#1689b8 32.1429%,#45b978 50%,#f0c64b 67.8571%,#f06429 82.1429%,#c83f36 89.2857%,#8b152a 94.6429%,#450417 100%)';
-  // Cool, perceptually ordered wind palette: calm blue through luminous cyan to warm high-wind accents.
-  const WIND_COLOR_STOPS = [
-    [0.00, 0.035, 0.090, 0.310],
-    [0.34, 0.020, 0.390, 0.690],
-    [0.68, 0.075, 0.760, 0.850],
-    [0.88, 0.690, 0.900, 0.920],
-    [1.00, 0.980, 0.790, 0.470]
-  ];
-  const WIND_LEGEND = 'linear-gradient(90deg,#09174f 0%,#0563b0 34%,#13c2d9 68%,#b0e6eb 88%,#fad478 100%)';
-  const WIND_DIRECTION_COLOR_STOPS = [
-    [0.00, 0.08, 0.78, 0.96],
-    [0.25, 0.12, 0.36, 0.96],
-    [0.50, 0.66, 0.25, 0.94],
-    [0.75, 0.98, 0.34, 0.58],
-    [1.00, 0.08, 0.78, 0.96]
-  ];
-  const WIND_DIRECTION_LEGEND = 'linear-gradient(90deg,#14c7f5 0%,#1f5cf5 25%,#a840f0 50%,#fa5794 75%,#14c7f5 100%)';
   const SCRIPT_PATHS = ['./EarthEngine/Graphics/universal-grid-system.js','./EarthEngine/Graphics/earth-grid-gpu-skin.js'];
 
   function installHudStyle() {
@@ -524,38 +507,34 @@ async function initializeEngineView(view, viewId) {
       textureUrl: "./EarthEngine/Assets/earth-land-ocean-ice-2048.png",
       geometryDetail: "standard",
       maxAnisotropy: renderer.capabilities.getMaxAnisotropy(),
-      atmosphere: false
+      atmosphere: true
     });
     if (disposed) { earthGlobe.dispose(); throw new Error("The world view closed while its Engine globe was loading."); }
     scene.add(earthGlobe.group);
-    // Render the base Earth immediately; country boundaries are a separate
-    // overlay and must not delay the first visible globe frame.
-    requestRender();
 
     // Country boundaries are an Atmosphere-only overlay. Attach them to the
-    // surface asynchronously so they inherit its texture alignment and rotation
-    // without blocking the base globe from appearing.
-    createCountryBordersSkin({
-      THREE: T,
-      earthGroup: earthGlobe.surface,
-      // Hug the satellite surface (radius 1.000) with only 0.0015 clearance.
-      // This prevents the country overlay from protruding beyond the globe limb.
-      radius: 1.0015,
-      color: 0x3a5568,
-      opacity: 0.20,
-      lineWidth: 0.0048,
-      renderOrder: 10
-    }).then(result => {
-      if (disposed) {
-        result?.dispose?.();
-        return;
-      }
-      countryBorders = result || null;
+    // surface so they inherit its base texture alignment and globe rotation.
+    try {
+      countryBorders = await createCountryBordersSkin({
+        THREE: T,
+        earthGroup: earthGlobe.surface,
+        // Hug the satellite surface (radius 1.000) with only 0.0015 clearance.
+        // This prevents the country overlay from protruding beyond the globe limb.
+        radius: 1.0015,
+        color: 0x3a5568,
+        opacity: 0.20,
+        lineWidth: 0.0048,
+        renderOrder: 10
+      });
       if (countryBorders) root.dataset.countryBorders = "natural-earth-50m";
-      requestRender();
-    }).catch(error => {
+    } catch (error) {
       console.warn("[LIVE // EARTH] Atmosphere country borders could not be loaded; the base globe will remain available.", error);
-    });
+    }
+    if (disposed) {
+      countryBorders?.dispose?.(); countryBorders = null;
+      earthGlobe.dispose();
+      throw new Error("The Atmosphere view closed while its globe was loading.");
+    }
 
     // Match the Home Earth location marker: a small red halo and dot attached
     // directly to this view's Earth surface, so it follows every globe rotation.
@@ -930,7 +909,7 @@ function installStyles() {
     const FIELD_CONFIG = {
       temperature: { ids: ['earth.atmosphere.air_temperature'], title: 'NOAA · 2 m air temperature', units: 'degree_Celsius', displayUnits: '°C', min: null, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · 2 m air temperature' },
       pressure: { ids: ['earth.atmosphere.atmospheric_pressure'], title: 'NOAA · Mean sea-level pressure', units: 'kilopascal', displayUnits: 'kPa', min: null, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · mean sea-level pressure' },
-      wind: { ids: ['earth.atmosphere.wind_direction'], title: 'NOAA · 10 m atmospheric wind flow', units: 'degree', displayUnits: '°', min: 0, max: 360, ticks: ['N · 0°','E · 90°','S · 180°','W · 270°','N · 360°'], source: 'NOAA NCEP · GFS 0.25° analysis · direction drives travel; separate speed field colours and sizes particles' },
+      wind: { ids: ['earth.atmosphere.wind_speed','earth.atmosphere.wind_direction'], title: 'NOAA · 10 m wind', units: 'metre_per_second', displayUnits: 'm/s', min: 0, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · 10 m wind speed and direction derived from U/V components' },
       moisture: { ids: ['earth.atmosphere.humidity'], title: 'NOAA · 2 m relative humidity', units: 'percent', displayUnits: '%', min: 0, max: 100, ticks: ['0%','25%','50%','75%','100%'], source: 'NOAA NCEP · GFS 0.25° analysis · 2 m relative humidity' }
     };
     const datasetButtons = new Map();
@@ -1059,7 +1038,7 @@ function installStyles() {
     source.hidden = true;
     details.appendChild(source);
 
-    let closed = false, layerDispose = null, gridHandle = null, windFlowHandle = null, gridRoot = null, worldGlobe = null;
+    let closed = false, layerDispose = null, gridHandle = null, windArrowsHandle = null, windFlowHandle = null, gridRoot = null, worldGlobe = null;
     let dataRequest = null;
     function removeActiveLayer() {
       if (typeof layerDispose === 'function') {
@@ -1067,6 +1046,8 @@ function installStyles() {
         layerDispose = null;
         dispose();
       }
+      try { windArrowsHandle?.dispose?.(); } catch (_) {}
+      windArrowsHandle = null;
       try { windFlowHandle?.dispose?.(); } catch (_) {}
       windFlowHandle = null;
       try { gridHandle?.dispose?.(); } catch (_) {}
@@ -1127,7 +1108,6 @@ function installStyles() {
         : `${config.title.replace('NOAA · ','')} · ${config.displayUnits}`;
       legendBar.style.background = config === FIELD_CONFIG.temperature
         ? TEMPERATURE_LEGEND
-        : config === FIELD_CONFIG.wind ? WIND_DIRECTION_LEGEND
         : 'linear-gradient(90deg,#0e297a 0%,#05a8e0 25%,#2edca8 50%,#ffca47 75%,#e8402b 100%)';
 
       legendTicks.replaceChildren();
@@ -1152,79 +1132,113 @@ function installStyles() {
       return { min, max };
     }
 
-    function makeWindFlow(THREE, earth, directionGrid, speedGrid, requestRender) {
-      // GPU-shaded atmospheric flow. Direction and speed are packed into one
-      // compact texture; the fragment shader back-advects procedural wisps
-      // through the spherical vector field to create continuous moving air.
-      const dirDef = directionGrid.definition;
-      const dirValues = directionGrid.values;
-      const spdValues = speedGrid.values;
-      const width = dirDef.width;
-      const height = dirDef.height;
-      const speedCeiling = Math.max(1, Number(speedGrid.max) || 25);
-      const fieldBytes = new Uint8Array(width * height * 4);
-      const toByte = value => Math.max(0, Math.min(255, Math.round(value * 255)));
+    function makeWindArrows(THREE, earth, directionGrid) {
+      const def = directionGrid.definition;
+      const values = directionGrid.values;
+      const positions = [];
+      const rowStep = 36;
+      const colStep = 48;
+      const rad = Math.PI / 180;
+      for (let y = 18; y < def.height - 18; y += rowStep) {
+        const latitude = def.latStart + y * def.latStep;
+        const phi = latitude * rad;
+        for (let x = 24; x < def.width - 24; x += colStep) {
+          const index = y * def.width + x;
+          const direction = values[index];
+          if (!Number.isFinite(direction)) continue;
+          const longitude = def.lonStart + x * def.lonStep;
+          const lambda = longitude * rad;
+          const normal = new THREE.Vector3(Math.cos(phi) * Math.cos(lambda), Math.sin(phi), -Math.cos(phi) * Math.sin(lambda)).normalize();
+          const north = new THREE.Vector3(-Math.sin(phi) * Math.cos(lambda), Math.cos(phi), Math.sin(phi) * Math.sin(lambda)).normalize();
+          const east = new THREE.Vector3(-Math.sin(lambda), 0, -Math.cos(lambda)).normalize();
+          const bearingTo = ((direction + 180) % 360) * rad;
+          const tangent = north.multiplyScalar(Math.cos(bearingTo)).add(east.multiplyScalar(Math.sin(bearingTo))).normalize();
+          const side = new THREE.Vector3().crossVectors(normal, tangent).normalize();
+          const start = normal.clone().multiplyScalar(1.018);
+          const tip = normal.clone().add(tangent.clone().multiplyScalar(0.028)).normalize().multiplyScalar(1.018);
+          const headBase = tip.clone().add(tangent.clone().multiplyScalar(-0.009));
+          const headLeft = headBase.clone().add(side.clone().multiplyScalar(0.006));
+          const headRight = headBase.clone().add(side.clone().multiplyScalar(-0.006));
+          positions.push(start.x,start.y,start.z,tip.x,tip.y,tip.z,
+            tip.x,tip.y,tip.z,headLeft.x,headLeft.y,headLeft.z,
+            tip.x,tip.y,tip.z,headRight.x,headRight.y,headRight.z);
+        }
+      }
+      if (!positions.length) return null;
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      const material = new THREE.LineBasicMaterial({ color: 0xe5f8ff, transparent: true, opacity: 0.88, depthTest: true, depthWrite: false });
+      const lines = new THREE.LineSegments(geometry, material);
+      lines.name = 'liveEarthAtmosphereWindDirectionVectors';
+      lines.renderOrder = 9;
+      earth.add(lines);
+      return { dispose() { lines.removeFromParent(); geometry.dispose(); material.dispose(); } };
+    }
 
+
+    function makeWindFlow(THREE, earth, speedGrid, directionGrid, requestRender) {
+      const def = speedGrid.definition;
+      const dirDef = directionGrid.definition;
+      if (def.width !== dirDef.width || def.height !== dirDef.height ||
+          def.lonStart !== dirDef.lonStart || def.lonStep !== dirDef.lonStep ||
+          def.latStart !== dirDef.latStart || def.latStep !== dirDef.latStep ||
+          def.rowOrder !== dirDef.rowOrder) {
+        throw new Error('Wind speed and direction grids do not share identical coordinates.');
+      }
+
+      const width = def.width, height = def.height;
+      const speedValues = speedGrid.values, directionValues = directionGrid.values;
+      const ceiling = Math.max(1, Number(speedGrid.max) || 30);
+      const bytes = new Uint8Array(width * height * 4);
+      const byte = v => Math.max(0, Math.min(255, Math.round(v * 255)));
+
+      // Convert meteorological direction (FROM north, clockwise) to physical
+      // eastward/northward components. Components are interpolated, never angles.
       for (let i = 0; i < width * height; i++) {
-        const direction = dirValues[i];
-        const speed = spdValues[i];
-        const offset = i * 4;
-        if (!Number.isFinite(direction) || !Number.isFinite(speed) || speed < 0) {
-          fieldBytes[offset] = 128;
-          fieldBytes[offset + 1] = 128;
-          fieldBytes[offset + 2] = 0;
-          fieldBytes[offset + 3] = 0;
+        const speed = speedValues[i], from = directionValues[i];
+        const k = i * 4;
+        if (!Number.isFinite(speed) || !Number.isFinite(from) || speed < 0) {
+          bytes[k] = 128; bytes[k + 1] = 128; bytes[k + 2] = 0; bytes[k + 3] = 0;
           continue;
         }
-        const angle = direction * Math.PI / 180;
-        // NOAA meteorological direction is FROM; vector components point TO.
+        const angle = from * Math.PI / 180;
         const east = -Math.sin(angle) * speed;
         const north = -Math.cos(angle) * speed;
-        fieldBytes[offset] = toByte(east / speedCeiling * 0.5 + 0.5);
-        fieldBytes[offset + 1] = toByte(north / speedCeiling * 0.5 + 0.5);
-        fieldBytes[offset + 2] = toByte(speed / speedCeiling);
-        fieldBytes[offset + 3] = 255;
+        bytes[k] = byte(0.5 + east / (2 * ceiling));
+        bytes[k + 1] = byte(0.5 + north / (2 * ceiling));
+        bytes[k + 2] = byte(speed / ceiling);
+        bytes[k + 3] = 255;
       }
 
-      const windTexture = new THREE.DataTexture(
-        fieldBytes, width, height, THREE.RGBAFormat, THREE.UnsignedByteType
-      );
-      windTexture.name = 'liveEarthAtmosphereWindVectorField';
-      windTexture.magFilter = THREE.NearestFilter;
-      windTexture.minFilter = THREE.NearestFilter;
-      windTexture.wrapS = THREE.RepeatWrapping;
-      windTexture.wrapT = THREE.ClampToEdgeWrapping;
-      windTexture.generateMipmaps = false;
-      windTexture.flipY = false;
-      windTexture.unpackAlignment = 1;
-      windTexture.needsUpdate = true;
+      const fieldTexture = new THREE.DataTexture(bytes, width, height, THREE.RGBAFormat, THREE.UnsignedByteType);
+      fieldTexture.name = 'liveEarthWindEastNorthSpeed';
+      fieldTexture.magFilter = THREE.LinearFilter;
+      fieldTexture.minFilter = THREE.LinearFilter;
+      fieldTexture.wrapS = THREE.RepeatWrapping;
+      fieldTexture.wrapT = THREE.ClampToEdgeWrapping;
+      fieldTexture.generateMipmaps = false;
+      fieldTexture.flipY = false;
+      fieldTexture.unpackAlignment = 1;
+      fieldTexture.needsUpdate = true;
 
-      // LIC input texture: a repeatable fine-grain noise field. The shader
-      // convolves this noise along the NOAA wind vectors at every globe pixel.
       const noiseSize = 256;
       const noiseBytes = new Uint8Array(noiseSize * noiseSize * 4);
-      let noiseSeed = 0x51f15e5d;
+      let seed = 0x6d2b79f5;
       for (let i = 0; i < noiseSize * noiseSize; i++) {
-        noiseSeed = (noiseSeed * 1664525 + 1013904223) >>> 0;
-        const n = noiseSeed >>> 24;
-        const k = i * 4;
-        noiseBytes[k] = n;
-        noiseBytes[k + 1] = n;
-        noiseBytes[k + 2] = n;
-        noiseBytes[k + 3] = 255;
+        seed = (seed * 1664525 + 1013904223) >>> 0;
+        const n = seed >>> 24, k = i * 4;
+        noiseBytes[k] = n; noiseBytes[k + 1] = n; noiseBytes[k + 2] = n; noiseBytes[k + 3] = 255;
       }
-      const licNoise = new THREE.DataTexture(
-        noiseBytes, noiseSize, noiseSize, THREE.RGBAFormat, THREE.UnsignedByteType
-      );
-      licNoise.name = 'liveEarthAtmosphereLICNoise';
-      licNoise.wrapS = THREE.RepeatWrapping;
-      licNoise.wrapT = THREE.RepeatWrapping;
-      licNoise.magFilter = THREE.LinearFilter;
-      licNoise.minFilter = THREE.LinearFilter;
-      licNoise.generateMipmaps = false;
-      licNoise.needsUpdate = true;
+      const noiseTexture = new THREE.DataTexture(noiseBytes, noiseSize, noiseSize, THREE.RGBAFormat, THREE.UnsignedByteType);
+      noiseTexture.name = 'liveEarthWindLICNoise';
+      noiseTexture.wrapS = THREE.RepeatWrapping;
+      noiseTexture.wrapT = THREE.RepeatWrapping;
+      noiseTexture.magFilter = THREE.LinearFilter;
+      noiseTexture.minFilter = THREE.LinearFilter;
+      noiseTexture.generateMipmaps = false;
+      noiseTexture.needsUpdate = true;
 
-      const geometry = new THREE.SphereGeometry(1.014, 160, 112);
+      const geometry = new THREE.SphereGeometry(1.014, 192, 128);
       const material = new THREE.ShaderMaterial({
         transparent: true,
         depthTest: true,
@@ -1233,86 +1247,78 @@ function installStyles() {
         side: THREE.FrontSide,
         toneMapped: false,
         uniforms: {
-          uWindField: { value: windTexture },
-          uLicNoise: { value: licNoise },
-          uGridSize: { value: new THREE.Vector2(width, height) },
-          uLonStart: { value: dirDef.lonStart },
-          uLonStep: { value: dirDef.lonStep },
-          uLatStart: { value: dirDef.latStart },
-          uLatStep: { value: dirDef.latStep },
-          uLonZeroTo360: { value: dirDef.longitudeConvention === '0..360' ? 1 : 0 },
+          uWind: { value: fieldTexture },
+          uNoise: { value: noiseTexture },
+          uGrid: { value: new THREE.Vector2(width, height) },
+          uLonStart: { value: def.lonStart },
+          uLonStep: { value: def.lonStep },
+          uLatStart: { value: def.latStart },
+          uLatStep: { value: def.latStep },
+          uLon360: { value: def.longitudeConvention === '0..360' ? 1 : 0 },
           uTime: { value: 0 },
-          uSpeedCeiling: { value: speedCeiling },
-          uFlowRate: { value: 1.0 }
+          uSpeedCeiling: { value: ceiling }
         },
         vertexShader: `
-          varying vec2 vUv;
+          varying vec3 vLocalPosition;
           void main() {
-            vUv = uv;
+            vLocalPosition = normalize(position);
             gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
           }
         `,
         fragmentShader: `
           precision highp float;
-          uniform sampler2D uWindField;
-          uniform sampler2D uLicNoise;
-          uniform vec2 uGridSize;
-          uniform float uLonStart;
-          uniform float uLonStep;
-          uniform float uLatStart;
-          uniform float uLatStep;
-          uniform float uLonZeroTo360;
-          uniform float uTime;
-          uniform float uSpeedCeiling;
-          uniform float uFlowRate;
-          varying vec2 vUv;
+          uniform sampler2D uWind;
+          uniform sampler2D uNoise;
+          uniform vec2 uGrid;
+          uniform float uLonStart, uLonStep, uLatStart, uLatStep, uLon360;
+          uniform float uTime, uSpeedCeiling;
+          varying vec3 vLocalPosition;
+          const float PI = 3.141592653589793;
 
-          const float PI = 3.14159265359;
-
-          vec4 readFieldCell(float x, float y) {
-            return texture2D(uWindField, (vec2(x, y) + 0.5) / uGridSize);
+          vec4 fieldAt(float lonDeg, float latDeg) {
+            float lon = uLon360 > 0.5 ? mod(lonDeg + 360.0, 360.0) : mod(lonDeg + 180.0, 360.0) - 180.0;
+            float gx = mod((lon - uLonStart) / uLonStep, uGrid.x);
+            float gy = clamp((latDeg - uLatStart) / uLatStep, 0.0, uGrid.y - 1.0);
+            vec2 uv = (vec2(gx, gy) + 0.5) / uGrid;
+            return texture2D(uWind, uv);
           }
 
-          vec4 sampleField(vec2 sphereUv) {
-            float longitude = (0.5 - sphereUv.x) * 360.0;
-            float latitude = (sphereUv.y - 0.5) * 180.0;
-            longitude = uLonZeroTo360 > 0.5
-              ? mod(longitude + 360.0, 360.0)
-              : mod(longitude + 180.0, 360.0) - 180.0;
-            float gx = mod((longitude - uLonStart) / uLonStep, uGridSize.x);
-            float gy = clamp((latitude - uLatStart) / uLatStep, 0.0, uGridSize.y - 1.0);
-            float x0 = floor(gx), x1 = mod(x0 + 1.0, uGridSize.x);
-            float y0 = floor(gy), y1 = min(y0 + 1.0, uGridSize.y - 1.0);
-            float fx = fract(gx), fy = fract(gy);
-            vec4 a = readFieldCell(x0,y0), b = readFieldCell(x1,y0);
-            vec4 c = readFieldCell(x0,y1), d = readFieldCell(x1,y1);
-            float wa=(1.0-fx)*(1.0-fy)*a.a, wb=fx*(1.0-fy)*b.a;
-            float wc=(1.0-fx)*fy*c.a, wd=fx*fy*d.a;
-            float total=wa+wb+wc+wd;
-            if (total < 0.001) return vec4(0.5,0.5,0.0,0.0);
-            return vec4((a.rgb*wa+b.rgb*wb+c.rgb*wc+d.rgb*wd)/total,total);
+          vec2 physicalWind(vec4 f) {
+            return (f.rg * 2.0 - 1.0) * uSpeedCeiling;
           }
 
-          vec2 vectorAt(vec2 uv) {
-            vec4 f = sampleField(vec2(fract(uv.x), clamp(uv.y,0.002,0.998)));
-            vec2 v = f.rg * 2.0 - 1.0;
-            float lat = (uv.y - 0.5) * PI;
-            // Convert east/north components into equirectangular UV displacement.
-            return vec2(-v.x / max(0.18,cos(lat)), v.y * 2.0);
+          vec2 traceStep(vec2 ll, float signDir, float stepDeg) {
+            vec4 f1 = fieldAt(ll.x, ll.y);
+            vec2 w1 = physicalWind(f1);
+            float c1 = max(0.12, cos(radians(clamp(ll.y, -88.0, 88.0))));
+            vec2 metric1 = vec2(w1.x / c1, w1.y);
+            float m1 = max(length(metric1), 0.0001);
+            vec2 d1 = metric1 / m1;
+            vec2 mid = ll + vec2(d1.x / c1, d1.y) * (signDir * stepDeg * 0.5);
+            vec4 f2 = fieldAt(mid.x, mid.y);
+            vec2 w2 = physicalWind(f2);
+            float c2 = max(0.12, cos(radians(clamp(mid.y, -88.0, 88.0))));
+            vec2 metric2 = vec2(w2.x / c2, w2.y);
+            float m2 = max(length(metric2), 0.0001);
+            vec2 d2 = metric2 / m2;
+            return ll + vec2(d2.x / c2, d2.y) * (signDir * stepDeg);
           }
 
-          vec2 stepAlong(vec2 uv, float direction, float stepSize) {
-            vec2 v1 = vectorAt(uv);
-            float m1 = max(length(v1), 0.0001);
-            vec2 d1 = v1 / m1;
-            vec2 mid = uv + d1 * direction * stepSize * 0.5;
-            vec2 v2 = vectorAt(mid);
-            float m2 = max(length(v2), 0.0001);
-            return uv + (v2 / m2) * direction * stepSize;
+          float carrier(vec2 ll, float phase) {
+            // Move the carrier along the local physical wind bearing. The
+            // streamline integration below also follows the full varying field.
+            vec2 uv = vec2(ll.x / 360.0, (ll.y + 90.0) / 180.0);
+            vec4 local = fieldAt(ll.x, ll.y);
+            vec2 wind = physicalWind(local);
+            float c = max(0.12, cos(radians(clamp(ll.y, -88.0, 88.0))));
+            vec2 metric = vec2(wind.x / c, wind.y);
+            float magnitude = max(length(metric), 0.0001);
+            vec2 bearing = metric / magnitude;
+            vec2 alongWindUv = vec2(bearing.x / c, bearing.y) * (phase * 0.0045);
+            return texture2D(uNoise, uv * vec2(20.0, 10.0) + alongWindUv * vec2(20.0, 10.0)).r;
           }
 
-          vec3 speedColor(float speed) {
-            float t = clamp(speed,0.0,1.0);
+          vec3 speedColor(float t) {
             vec3 c0=vec3(0.10,0.62,0.86), c1=vec3(0.12,0.72,0.78);
             vec3 c2=vec3(0.28,0.78,0.40), c3=vec3(0.86,0.78,0.25);
             vec3 c4=vec3(0.96,0.48,0.22), c5=vec3(0.94,0.25,0.48);
@@ -1323,92 +1329,69 @@ function installStyles() {
             return mix(c4,c5,(t-0.80)/0.20);
           }
 
-          float noiseAt(vec2 uv, float phase) {
-            // Animate the noise signal along the local streamline, not across
-            // the globe in screen space. This is the temporal LIC carrier.
-            vec2 noiseUv = vec2(uv.x * 7.0, uv.y * 3.5);
-            return texture2D(uLicNoise, noiseUv + vec2(phase, phase * 0.17)).r;
-          }
-
           void main() {
-            vec2 uv = vec2(fract(vUv.x), clamp(vUv.y,0.002,0.998));
-            vec4 localField = sampleField(uv);
-            if (localField.a < 0.05) discard;
+            vec3 p = normalize(vLocalPosition);
+            float lat = degrees(asin(clamp(p.y, -1.0, 1.0)));
+            float lon = degrees(atan(-p.z, p.x));
+            if (lon < 0.0) lon += 360.0;
+            vec4 here = fieldAt(lon, lat);
+            if (here.a < 0.05) discard;
 
-            vec2 v = vectorAt(uv);
-            float magnitude = length(v);
-            if (magnitude < 0.00001) discard;
-            vec2 tangent = normalize(v);
-            float lat = (uv.y - 0.5) * PI;
-
-            // Animated line-integral convolution: integrate both directions
-            // along the actual wind vector and convolve fine noise along it.
-            float sum = noiseAt(uv, uTime * 0.018) * 1.35;
-            float weight = 1.35;
-            vec2 forwardUv = uv;
-            vec2 backwardUv = uv;
-            float stepSize = 0.00125;
-            float phase = mod(uTime * 0.085, 1.0);
-            for (int i=1; i<=12; i++) {
-              float taper = 1.0 - float(i) / 13.0;
-              forwardUv = stepAlong(forwardUv, 1.0, stepSize);
-              backwardUv = stepAlong(backwardUv, -1.0, stepSize);
-              float nf = noiseAt(forwardUv, phase + float(i)*0.013);
-              float nb = noiseAt(backwardUv, phase - float(i)*0.013);
-              sum += (nf + nb) * taper;
+            vec2 ll = vec2(lon, lat);
+            float phase = fract(uTime * 0.035);
+            float total = carrier(ll, phase) * 1.25;
+            float weight = 1.25;
+            vec2 fwd = ll, back = ll;
+            for (int i=1; i<=16; i++) {
+              float taper = 1.0 - float(i) / 17.0;
+              fwd = traceStep(fwd, 1.0, 0.16);
+              back = traceStep(back, -1.0, 0.16);
+              total += (carrier(fwd, phase + float(i)*0.006) +
+                        carrier(back, phase - float(i)*0.006)) * taper;
               weight += 2.0 * taper;
             }
-            float lic = sum / weight;
-
-            // Convert LIC into fine wind streaks: narrow bright filaments with
-            // softer low-frequency variation, never broad procedural vortices.
-            float streak = smoothstep(0.47,0.61,lic) * (1.0-smoothstep(0.72,0.84,lic));
-            float fineGrain = texture2D(uLicNoise, uv * vec2(95.0,48.0) + phase*0.07).r;
-            streak *= 0.78 + fineGrain * 0.32;
-
-            float speed = localField.b;
-            float speedFactor = smoothstep(0.0,0.65,speed);
-            float alpha = streak * (0.22 + speedFactor * 0.58);
-            vec3 color = speedColor(speed);
-            gl_FragColor = vec4(color, alpha);
+            float lic = total / weight;
+            float filament = smoothstep(0.46, 0.59, lic) * (1.0 - smoothstep(0.70, 0.82, lic));
+            float speed = here.b;
+            float speedPresence = smoothstep(0.015, 0.18, speed);
+            float alpha = filament * (0.16 + 0.48 * speedPresence);
+            gl_FragColor = vec4(speedColor(speed), alpha);
           }
         `
       });
 
-      const flowMesh = new THREE.Mesh(geometry, material);
-      flowMesh.name = 'liveEarthAtmosphereGpuAdvectedFlow';
-      flowMesh.renderOrder = 8;
-      flowMesh.raycast = () => {};
-      earth.add(flowMesh);
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.name = 'liveEarthAtmosphereVectorFieldLIC';
+      mesh.renderOrder = 9;
+      mesh.raycast = () => {};
+      earth.add(mesh);
 
-      let disposed = false;
-      let animationFrame = 0;
-      let lastRenderTime = 0;
+      let disposed = false, frame = 0, last = 0;
       const animate = time => {
         if (disposed) return;
-        animationFrame = requestAnimationFrame(animate);
-        if (document.hidden) return;
-        if (time - lastRenderTime < 33) return;
-        lastRenderTime = time;
+        frame = requestAnimationFrame(animate);
+        if (document.hidden || time - last < 33) return;
+        last = time;
         material.uniforms.uTime.value = time * 0.001;
         requestRender?.();
       };
-      animationFrame = requestAnimationFrame(animate);
+      frame = requestAnimationFrame(animate);
 
       return {
         dispose() {
           if (disposed) return;
           disposed = true;
-          cancelAnimationFrame(animationFrame);
-          flowMesh.removeFromParent();
+          cancelAnimationFrame(frame);
+          mesh.removeFromParent();
           geometry.dispose();
           material.dispose();
-          windTexture.dispose();
-          licNoise.dispose();
+          fieldTexture.dispose();
+          noiseTexture.dispose();
         },
-        stats: { renderer: 'animated-vector-field-lic', gridWidth: width, gridHeight: height }
+        stats: { renderer: 'vector-field-spherical-lic', width, height }
       };
     }
+
     async function selectDataset(datasetKey) {
       if (closed || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
       const config = FIELD_CONFIG[datasetKey];
@@ -1439,52 +1422,19 @@ function installStyles() {
       try {
         await loadSharedGridTools();
         if (closed || controller.signal.aborted || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
-        const gridLoads = config.ids.map(datasetId => window.LiveEarthUniversalGridSystem.loadCurrentGrid({
+        const grids = await Promise.all(config.ids.map(datasetId => window.LiveEarthUniversalGridSystem.loadCurrentGrid({
           baseUrl: VALUES_BASE_URL, datasetId, signal: controller.signal
-        }));
-        // Wind flow uses the independent speed product only as a visual attribute
-        // source; direction remains the sole source of particle travel bearings.
-        if (datasetKey === 'wind') {
-          gridLoads.push(window.LiveEarthUniversalGridSystem.loadCurrentGrid({
-            baseUrl: VALUES_BASE_URL, datasetId: 'earth.atmosphere.wind_speed', signal: controller.signal
-          }));
-        }
-        const grids = await Promise.all(gridLoads);
+        })));
         if (closed || controller.signal.aborted || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
         const grid = grids[0];
-        const speedGrid = datasetKey === 'wind' ? grids[1] : null;
         for (const item of grids) {
           if (item.definition.width !== 1440 || item.definition.height !== 721) throw new Error('A selected NOAA field does not match the approved 1440 × 721 grid.');
         }
         if (grid.units !== config.units) throw new Error(`Expected ${config.units}, received ${grid.units}.`);
-        if (datasetKey === 'wind') {
-          if (!speedGrid || speedGrid.units !== 'metre_per_second') throw new Error(`Expected metre_per_second wind speed, received ${speedGrid?.units || 'no speed field'}.`);
-          if (speedGrid.definition.width !== grid.definition.width || speedGrid.definition.height !== grid.definition.height) {
-            throw new Error('Wind direction and speed grids do not share the same approved dimensions.');
-          }
-        }
-        // Wind lines use direction for geometry and speed for their colour.
-        // Restore the legend as a speed-colour key; no speed raster is rendered.
-        const bounds = datasetKey === 'wind'
-          ? updateLegend(speedGrid, {
-              title: 'NOAA · 10 m wind speed',
-              displayUnits: 'm/s',
-              min: null,
-              max: null,
-              ticks: null
-            })
-          : updateLegend(grid, config);
-        if (datasetKey === 'wind') {
-          legendTitle.textContent = '10 m wind speed · m/s';
-          legendBar.style.background = 'linear-gradient(90deg,#199ed8 0%,#20c9c4 20%,#48c66b 40%,#e0d34c 60%,#f39a3d 80%,#ef4778 100%)';
-          rangeValue.textContent = `${formatFieldValue(speedGrid.min)} — ${formatFieldValue(speedGrid.max)}`;
-          rangeUnit.textContent = 'Current global range · m/s';
-          source.textContent = config.source + ' · line colour represents wind speed';
-        } else {
-          rangeValue.textContent = `${formatFieldValue(grid.min)} — ${formatFieldValue(grid.max)}`;
-          rangeUnit.textContent = `Current global range · ${config.displayUnits}`;
-        }
-        scaleDock.hidden = false;
+        if (datasetKey === 'wind' && grids[1].units !== 'degree') throw new Error(`Expected wind direction in degrees, received ${grids[1].units}.`);
+        const bounds = updateLegend(grid, config);
+        rangeValue.textContent = `${formatFieldValue(grid.min)} — ${formatFieldValue(grid.max)}`;
+        rangeUnit.textContent = `Current global range · ${config.displayUnits}`;
         metric.replaceChildren();
         const makeMetric = (labelText, value, unit = '') => {
           const item = runtime.el('div', 'le-sfv-metric');
@@ -1498,39 +1448,43 @@ function installStyles() {
         makeMetric('Observed / valid time', formatTime(grid.observedAt));
         makeMetric('Snapshot published', formatTime(grid.retrievedAt));
         makeMetric('Verified range', `${formatFieldValue(grid.min)} to ${formatFieldValue(grid.max)}`, config.displayUnits);
+        if (datasetKey === 'wind') {
+          makeMetric('Wind direction range', `${formatFieldValue(grids[1].min)} to ${formatFieldValue(grids[1].max)}`, 'degrees FROM north');
+          makeMetric('Wind vectors', '10 m', 'U/V components');
+        }
         if (closed || controller.signal.aborted || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
         if (!worldGlobe || typeof worldGlobe.attachLayer !== 'function') throw new Error('The Earth Engine globe is not ready.');
         layerDispose = worldGlobe.attachLayer(`atmosphere-${datasetKey}`, ({ THREE, earth }) => {
           if (!THREE || !earth?.add) throw new Error('The Earth Engine did not provide its Three.js surface.');
           gridRoot = new THREE.Group();
           gridRoot.name = `liveEarth-atmosphere-${datasetKey}-layer`;
+          const colorMin = datasetKey === 'moisture' ? 0 : bounds.min;
+          const colorMax = datasetKey === 'moisture' ? 100 : bounds.max;
+          gridHandle = window.LiveEarthGpuGridSkin.create({
+            THREE, grid, radius: 1.009,
+            opacity: datasetKey === 'temperature' ? 0.75 : 0.78,
+            min: colorMin, max: colorMax,
+            colorStops: datasetKey === 'temperature' ? TEMPERATURE_COLOR_STOPS : undefined,
+            thermalAura: datasetKey === 'temperature' ? {
+              enabled: true,
+              expansion: 0.0015,
+              intensity: 0.075,
+              diffusion: 0.012
+            } : undefined,
+            contourInterval: datasetKey === 'temperature' ? 5 : 0,
+            contourStrength: datasetKey === 'temperature' ? 0.085 : 0.16,
+            contourColor: [0.13, 0.10, 0.09],
+            name: `NOAA-GFS-${datasetKey}`
+          });
+          gridRoot.add(gridHandle.mesh);
+          if (gridHandle.auraMesh) gridRoot.add(gridHandle.auraMesh);
+          earth.add(gridRoot);
           if (datasetKey === 'wind') {
-            // Direction data drives the flow only; no static colour skin or raster is rendered.
-            windFlowHandle = makeWindFlow(THREE, earth, grid, speedGrid, () => worldGlobe?.requestRender?.());
-          } else {
-            const colorMin = datasetKey === 'moisture' ? 0 : bounds.min;
-            const colorMax = datasetKey === 'moisture' ? 100 : bounds.max;
-            gridHandle = window.LiveEarthGpuGridSkin.create({
-              THREE, grid, radius: 1.009,
-              opacity: datasetKey === 'temperature' ? 0.75 : 0.78,
-              min: colorMin, max: colorMax,
-              colorStops: datasetKey === 'temperature' ? TEMPERATURE_COLOR_STOPS : undefined,
-              thermalAura: datasetKey === 'temperature' ? {
-                enabled: true,
-                expansion: 0.0020,
-                intensity: 0.10,
-                diffusion: 0.012
-              } : undefined,
-              contourInterval: datasetKey === 'temperature' ? 5 : 0,
-              contourStrength: datasetKey === 'temperature' ? 0.085 : 0.16,
-              contourColor: [0.13, 0.10, 0.09],
-              name: `NOAA-GFS-${datasetKey}`
-            });
-            gridRoot.add(gridHandle.mesh);
-            if (gridHandle.auraMesh) gridRoot.add(gridHandle.auraMesh);
-            earth.add(gridRoot);
+            windFlowHandle = makeWindFlow(THREE, earth, grid, grids[1], () => worldGlobe?.requestRender?.());
           }
           return () => {
+            try { windArrowsHandle?.dispose?.(); } catch (_) {}
+            windArrowsHandle = null;
             try { windFlowHandle?.dispose?.(); } catch (_) {}
             windFlowHandle = null;
             try { gridHandle?.dispose?.(); } catch (_) {}
