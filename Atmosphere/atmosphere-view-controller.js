@@ -1166,7 +1166,7 @@ function installStyles() {
       const fades = new Float32Array(vertexCount);
       const particles = [];
       const rad = Math.PI / 180;
-      const radius = 1.014;
+      const radius = 1.016;
       let seed = 0x6d2b79f5;
       const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
 
@@ -1322,7 +1322,8 @@ function installStyles() {
           if (item.definition.width !== 1440 || item.definition.height !== 721) throw new Error('A selected NOAA field does not match the approved 1440 × 721 grid.');
         }
         if (grid.units !== config.units) throw new Error(`Expected ${config.units}, received ${grid.units}.`);
-        const bounds = updateLegend(grid, config);
+        const bounds = datasetKey === 'wind' ? null : updateLegend(grid, config);
+        if (datasetKey === 'wind') scaleDock.hidden = true;
         rangeValue.textContent = `${formatFieldValue(grid.min)} — ${formatFieldValue(grid.max)}`;
         rangeUnit.textContent = `Current global range · ${config.displayUnits}`;
         metric.replaceChildren();
@@ -1344,28 +1345,32 @@ function installStyles() {
           if (!THREE || !earth?.add) throw new Error('The Earth Engine did not provide its Three.js surface.');
           gridRoot = new THREE.Group();
           gridRoot.name = `liveEarth-atmosphere-${datasetKey}-layer`;
-          const colorMin = datasetKey === 'moisture' ? 0 : bounds.min;
-          const colorMax = datasetKey === 'moisture' ? 100 : bounds.max;
-          gridHandle = window.LiveEarthGpuGridSkin.create({
-            THREE, grid, radius: 1.009,
-            opacity: datasetKey === 'temperature' ? 0.75 : 0.78,
-            min: colorMin, max: colorMax,
-            colorStops: datasetKey === 'temperature' ? TEMPERATURE_COLOR_STOPS : datasetKey === 'wind' ? WIND_DIRECTION_COLOR_STOPS : undefined,
-            thermalAura: datasetKey === 'temperature' ? {
-              enabled: true,
-              expansion: 0.0020,
-              intensity: 0.10,
-              diffusion: 0.012
-            } : undefined,
-            contourInterval: datasetKey === 'temperature' ? 5 : 0,
-            contourStrength: datasetKey === 'temperature' ? 0.085 : 0.16,
-            contourColor: [0.13, 0.10, 0.09],
-            name: `NOAA-GFS-${datasetKey}`
-          });
-          if (datasetKey === 'wind') windFlowHandle = makeWindFlow(THREE, earth, grid, () => worldGlobe?.requestRender?.());
-          gridRoot.add(gridHandle.mesh);
-          if (gridHandle.auraMesh) gridRoot.add(gridHandle.auraMesh);
-          earth.add(gridRoot);
+          if (datasetKey === 'wind') {
+            // Direction field drives particles only; no coloured raster skin or legend.
+            windFlowHandle = makeWindFlow(THREE, earth, grid, () => worldGlobe?.requestRender?.());
+          } else {
+            const colorMin = datasetKey === 'moisture' ? 0 : bounds.min;
+            const colorMax = datasetKey === 'moisture' ? 100 : bounds.max;
+            gridHandle = window.LiveEarthGpuGridSkin.create({
+              THREE, grid, radius: 1.009,
+              opacity: datasetKey === 'temperature' ? 0.75 : 0.78,
+              min: colorMin, max: colorMax,
+              colorStops: datasetKey === 'temperature' ? TEMPERATURE_COLOR_STOPS : undefined,
+              thermalAura: datasetKey === 'temperature' ? {
+                enabled: true,
+                expansion: 0.0020,
+                intensity: 0.10,
+                diffusion: 0.012
+              } : undefined,
+              contourInterval: datasetKey === 'temperature' ? 5 : 0,
+              contourStrength: datasetKey === 'temperature' ? 0.085 : 0.16,
+              contourColor: [0.13, 0.10, 0.09],
+              name: `NOAA-GFS-${datasetKey}`
+            });
+            gridRoot.add(gridHandle.mesh);
+            if (gridHandle.auraMesh) gridRoot.add(gridHandle.auraMesh);
+            earth.add(gridRoot);
+          }
           return () => {
             try { windFlowHandle?.dispose?.(); } catch (_) {}
             windFlowHandle = null;
