@@ -909,7 +909,7 @@ function installStyles() {
     const FIELD_CONFIG = {
       temperature: { ids: ['earth.atmosphere.air_temperature'], title: 'NOAA · 2 m air temperature', units: 'degree_Celsius', displayUnits: '°C', min: null, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · 2 m air temperature' },
       pressure: { ids: ['earth.atmosphere.atmospheric_pressure'], title: 'NOAA · Mean sea-level pressure', units: 'kilopascal', displayUnits: 'kPa', min: null, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · mean sea-level pressure' },
-      wind: { ids: ['earth.atmosphere.wind_speed','earth.atmosphere.wind_direction'], title: 'NOAA · 10 m wind', units: 'metre_per_second', displayUnits: 'm/s', min: 0, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · 10 m wind speed colours with static direction trails and speed labels' },
+      wind: { ids: ['earth.atmosphere.wind_speed','earth.atmosphere.wind_direction'], title: 'NOAA · 10 m wind', units: 'metre_per_second', displayUnits: 'm/s', min: 0, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · 10 m wind speed and direction derived from U/V components' },
       moisture: { ids: ['earth.atmosphere.humidity'], title: 'NOAA · 2 m relative humidity', units: 'percent', displayUnits: '%', min: 0, max: 100, ticks: ['0%','25%','50%','75%','100%'], source: 'NOAA NCEP · GFS 0.25° analysis · 2 m relative humidity' }
     };
     const datasetButtons = new Map();
@@ -1128,195 +1128,6 @@ function installStyles() {
       return { min, max };
     }
 
-    function makeWindDirectionLayer(THREE, earth, speedGrid, directionGrid) {
-      const def = speedGrid.definition;
-      const dirDef = directionGrid.definition;
-      if (def.width !== dirDef.width || def.height !== dirDef.height ||
-          def.lonStart !== dirDef.lonStart || def.lonStep !== dirDef.lonStep ||
-          def.latStart !== dirDef.latStart || def.latStep !== dirDef.latStep ||
-          def.rowOrder !== dirDef.rowOrder) {
-        throw new Error('Wind speed and direction grids do not share identical coordinates.');
-      }
-
-      const width = def.width, height = def.height;
-      const speedValues = speedGrid.values, directionValues = directionGrid.values;
-      const rad = Math.PI / 180;
-      const wrap = (value, size) => ((value % size) + size) % size;
-
-      // Bilinear interpolation is performed on east/north vector components,
-      // not on circular direction angles (avoids the 359°/1° discontinuity).
-      function sampleWind(latitude, longitude) {
-        let lon = longitude;
-        if (def.longitudeConvention === '0..360') lon = wrap(lon, 360);
-        else lon = ((lon + 180) % 360 + 360) % 360 - 180;
-
-        const gx = wrap((lon - def.lonStart) / def.lonStep, width);
-        const gy = Math.max(0, Math.min(height - 1, (latitude - def.latStart) / def.latStep));
-        const x0 = Math.floor(gx), x1 = (x0 + 1) % width;
-        const y0 = Math.floor(gy), y1 = Math.min(height - 1, y0 + 1);
-        const fx = gx - x0, fy = gy - y0;
-        const cells = [
-          [y0 * width + x0, (1-fx)*(1-fy)],
-          [y0 * width + x1, fx*(1-fy)],
-          [y1 * width + x0, (1-fx)*fy],
-          [y1 * width + x1, fx*fy]
-        ];
-        let east=0, north=0, speed=0, total=0;
-        for (const [index, weight] of cells) {
-          const sp=speedValues[index], from=directionValues[index];
-          if (!Number.isFinite(sp) || !Number.isFinite(from) || sp < 0) continue;
-          const angle=from*rad;
-          east += -Math.sin(angle)*sp*weight;
-          north += -Math.cos(angle)*sp*weight;
-          speed += sp*weight;
-          total += weight;
-        }
-        if (total < 0.35) return null;
-        return { east:east/total, north:north/total, speed:speed/total };
-      }
-
-      const canvas=document.createElement('canvas');
-      canvas.width=1440; canvas.height=720;
-      const ctx=canvas.getContext('2d');
-      if (!ctx) throw new Error('Canvas 2D is unavailable for the static wind-direction layer.');
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-
-      const maxSpeed=Math.max(1,Number(speedGrid.max)||30);
-      const colorForSpeed=value => {
-        const stops=[
-          [0,[35,115,245]],[0.20,[0,205,230]],[0.40,[45,210,145]],
-          [0.60,[220,225,55]],[0.80,[255,145,35]],[1,[245,65,65]]
-        ];
-        const t=Math.max(0,Math.min(1,value/maxSpeed));
-        for(let i=1;i<stops.length;i++){
-          if(t<=stops[i][0]){
-            const [ta,ca]=stops[i-1], [tb,cb]=stops[i], f=(t-ta)/(tb-ta);
-            return `rgb(${ca.map((v,j)=>Math.round(v+(cb[j]-v)*f)).join(',')})`;
-          }
-        }
-        return 'rgb(245,65,65)';
-      };
-      const pointFor=(longitude,latitude)=>({
-        x:((longitude+180)/360)*canvas.width,
-        y:((90-latitude)/180)*canvas.height
-      });
-
-      // A restrained global sampling density keeps the layer readable on
-      // mobile while remaining independent of zoom and frame rate.
-      const rowStep=54, colStep=72;
-      for(let y=14;y<height-14;y+=rowStep){
-        const latitude=def.latStart+y*def.latStep;
-        if(latitude < -82 || latitude > 82) continue;
-        for(let x=24;x<width-24;x+=colStep){
-          const index=y*width+x;
-          const speed=speedValues[index], from=directionValues[index];
-          if(!Number.isFinite(speed)||!Number.isFinite(from)||speed<0.35) continue;
-
-          const longitude=def.lonStart+x*def.lonStep;
-          const start=pointFor(longitude,latitude);
-          const color=colorForSpeed(speed);
-          const angle=from*rad;
-          let lat=latitude, lon=longitude;
-          const path=[start];
-          const travelDegrees=2.4+Math.min(4.0,speed/maxSpeed*4.0);
-          const stepDegrees=0.55;
-          const steps=Math.max(5,Math.ceil(travelDegrees/stepDegrees));
-
-          for(let step=0;step<steps;step++){
-            const wind=sampleWind(lat,lon);
-            if(!wind) break;
-            const magnitude=Math.hypot(wind.east,wind.north);
-            if(magnitude<0.25) break;
-            const east=wind.east/magnitude, north=wind.north/magnitude;
-            const cosLat=Math.max(0.18,Math.cos(lat*rad));
-            lat += north*stepDegrees;
-            lon += east*stepDegrees/cosLat;
-            if(lat < -88 || lat > 88) break;
-            path.push(pointFor(lon,lat));
-          }
-          if(path.length<3) continue;
-
-          // Soft halo plus speed-coloured core creates a fine, static trail.
-          ctx.beginPath();
-          ctx.moveTo(path[0].x,path[0].y);
-          for(let i=1;i<path.length;i++) ctx.lineTo(path[i].x,path[i].y);
-          ctx.strokeStyle='rgba(5,20,45,0.58)';
-          ctx.lineWidth=4.4;
-          ctx.lineCap='round'; ctx.lineJoin='round'; ctx.stroke();
-          ctx.strokeStyle=color;
-          ctx.globalAlpha=0.92;
-          ctx.lineWidth=2.0;
-          ctx.stroke();
-          ctx.globalAlpha=1;
-
-          const tip=path[path.length-1], prev=path[path.length-2];
-          const dx=tip.x-prev.x, dy=tip.y-prev.y;
-          const length=Math.max(0.001,Math.hypot(dx,dy));
-          const ux=dx/length, uy=dy/length;
-          const headLength=5.2, headWidth=3.1;
-          ctx.beginPath();
-          ctx.moveTo(tip.x,tip.y);
-          ctx.lineTo(tip.x-ux*headLength-uy*headWidth,tip.y-uy*headLength+ux*headWidth);
-          ctx.lineTo(tip.x-ux*headLength+uy*headWidth,tip.y-uy*headLength-ux*headWidth);
-          ctx.closePath();
-          ctx.fillStyle=color; ctx.fill();
-
-          // Compact numeric speed badge at the trail origin.
-          const label=String(Math.round(speed));
-          ctx.font='600 17px -apple-system, BlinkMacSystemFont, sans-serif';
-          const textWidth=ctx.measureText(label).width;
-          const badgeWidth=textWidth+12, badgeHeight=21;
-          const bx=start.x-badgeWidth/2, by=start.y+5;
-          const radius=7;
-          ctx.beginPath();
-          ctx.moveTo(bx+radius,by); ctx.lineTo(bx+badgeWidth-radius,by);
-          ctx.quadraticCurveTo(bx+badgeWidth,by,bx+badgeWidth,by+radius);
-          ctx.lineTo(bx+badgeWidth,by+badgeHeight-radius);
-          ctx.quadraticCurveTo(bx+badgeWidth,by+badgeHeight,bx+badgeWidth-radius,by+badgeHeight);
-          ctx.lineTo(bx+radius,by+badgeHeight);
-          ctx.quadraticCurveTo(bx,by+badgeHeight,bx,by+badgeHeight-radius);
-          ctx.lineTo(bx,by+radius); ctx.quadraticCurveTo(bx,by,bx+radius,by);
-          ctx.closePath();
-          ctx.fillStyle='rgba(5,18,42,0.78)'; ctx.fill();
-          ctx.strokeStyle='rgba(220,245,255,0.62)'; ctx.lineWidth=1; ctx.stroke();
-          ctx.fillStyle='#f4fbff'; ctx.textAlign='center'; ctx.textBaseline='middle';
-          ctx.fillText(label,start.x,by+badgeHeight/2+0.5);
-        }
-      }
-
-      const texture=new THREE.CanvasTexture(canvas);
-      texture.name='liveEarthStaticWindTrailsAndSpeedLabels';
-      texture.wrapS=THREE.RepeatWrapping;
-      texture.wrapT=THREE.ClampToEdgeWrapping;
-      texture.magFilter=THREE.LinearFilter;
-      texture.minFilter=THREE.LinearFilter;
-      texture.generateMipmaps=false;
-      if ('colorSpace' in texture && THREE.SRGBColorSpace) texture.colorSpace=THREE.SRGBColorSpace;
-      texture.needsUpdate=true;
-
-      const geometry=new THREE.SphereGeometry(1.017,128,80);
-      const material=new THREE.MeshBasicMaterial({
-        map:texture, transparent:true, opacity:0.98,
-        depthTest:true, depthWrite:false, toneMapped:false
-      });
-      const mesh=new THREE.Mesh(geometry,material);
-      mesh.name='liveEarthAtmosphereStaticWindTrails';
-      mesh.renderOrder=11;
-      mesh.raycast=()=>{};
-      earth.add(mesh);
-
-      return {
-        dispose(){
-          mesh.removeFromParent();
-          geometry.dispose();
-          material.dispose();
-          texture.dispose();
-          canvas.width=canvas.height=1;
-        },
-        stats:{renderer:'static-canvas-wind-trails',samples:Math.ceil(height/rowStep)*Math.ceil(width/colStep)}
-      };
-    }
-
     async function selectDataset(datasetKey) {
       if (closed || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
       const config = FIELD_CONFIG[datasetKey];
@@ -1387,9 +1198,18 @@ function installStyles() {
           const colorMax = datasetKey === 'moisture' ? 100 : bounds.max;
           gridHandle = window.LiveEarthGpuGridSkin.create({
             THREE, grid, radius: 1.009,
-            opacity: datasetKey === 'temperature' ? 0.75 : 0.78,
+            opacity: datasetKey === 'temperature' ? 0.75 : (datasetKey === 'wind' ? 0.86 : 0.78),
             min: colorMin, max: colorMax,
-            colorStops: datasetKey === 'temperature' ? TEMPERATURE_COLOR_STOPS : undefined,
+            colorStops: datasetKey === 'temperature' ? TEMPERATURE_COLOR_STOPS : (datasetKey === 'wind' ? [
+              [0.00, 0.025, 0.055, 0.22],
+              [0.16, 0.055, 0.19, 0.48],
+              [0.32, 0.035, 0.43, 0.68],
+              [0.48, 0.035, 0.62, 0.52],
+              [0.64, 0.24, 0.72, 0.24],
+              [0.76, 0.88, 0.78, 0.16],
+              [0.88, 0.96, 0.43, 0.12],
+              [1.00, 0.78, 0.12, 0.22]
+            ] : undefined),
             thermalAura: datasetKey === 'temperature' ? {
               enabled: true,
               expansion: 0.0015,
@@ -1404,13 +1224,7 @@ function installStyles() {
           gridRoot.add(gridHandle.mesh);
           if (gridHandle.auraMesh) gridRoot.add(gridHandle.auraMesh);
           earth.add(gridRoot);
-          let windDirectionHandle = null;
-          if (datasetKey === 'wind') {
-            windDirectionHandle = makeWindDirectionLayer(THREE, earth, grid, grids[1]);
-          }
           return () => {
-            try { windDirectionHandle?.dispose?.(); } catch (_) {}
-            windDirectionHandle = null;
             try { gridHandle?.dispose?.(); } catch (_) {}
             gridHandle = null;
             try { gridRoot?.removeFromParent?.(); } catch (_) {}
