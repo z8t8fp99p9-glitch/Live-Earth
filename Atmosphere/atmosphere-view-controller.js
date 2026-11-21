@@ -1199,6 +1199,31 @@ function installStyles() {
       windTexture.unpackAlignment = 1;
       windTexture.needsUpdate = true;
 
+      // LIC input texture: a repeatable fine-grain noise field. The shader
+      // convolves this noise along the NOAA wind vectors at every globe pixel.
+      const noiseSize = 256;
+      const noiseBytes = new Uint8Array(noiseSize * noiseSize * 4);
+      let noiseSeed = 0x51f15e5d;
+      for (let i = 0; i < noiseSize * noiseSize; i++) {
+        noiseSeed = (noiseSeed * 1664525 + 1013904223) >>> 0;
+        const n = noiseSeed >>> 24;
+        const k = i * 4;
+        noiseBytes[k] = n;
+        noiseBytes[k + 1] = n;
+        noiseBytes[k + 2] = n;
+        noiseBytes[k + 3] = 255;
+      }
+      const licNoise = new THREE.DataTexture(
+        noiseBytes, noiseSize, noiseSize, THREE.RGBAFormat, THREE.UnsignedByteType
+      );
+      licNoise.name = 'liveEarthAtmosphereLICNoise';
+      licNoise.wrapS = THREE.RepeatWrapping;
+      licNoise.wrapT = THREE.RepeatWrapping;
+      licNoise.magFilter = THREE.LinearFilter;
+      licNoise.minFilter = THREE.LinearFilter;
+      licNoise.generateMipmaps = false;
+      licNoise.needsUpdate = true;
+
       const geometry = new THREE.SphereGeometry(1.014, 160, 112);
       const material = new THREE.ShaderMaterial({
         transparent: true,
@@ -1209,6 +1234,7 @@ function installStyles() {
         toneMapped: false,
         uniforms: {
           uWindField: { value: windTexture },
+          uLicNoise: { value: licNoise },
           uGridSize: { value: new THREE.Vector2(width, height) },
           uLonStart: { value: dirDef.lonStart },
           uLonStep: { value: dirDef.lonStep },
@@ -1217,7 +1243,7 @@ function installStyles() {
           uLonZeroTo360: { value: dirDef.longitudeConvention === '0..360' ? 1 : 0 },
           uTime: { value: 0 },
           uSpeedCeiling: { value: speedCeiling },
-          uFlowRate: { value: 0.0105 }
+          uFlowRate: { value: 1.0 }
         },
         vertexShader: `
           varying vec2 vUv;
@@ -1229,6 +1255,7 @@ function installStyles() {
         fragmentShader: `
           precision highp float;
           uniform sampler2D uWindField;
+          uniform sampler2D uLicNoise;
           uniform vec2 uGridSize;
           uniform float uLonStart;
           uniform float uLonStep;
@@ -1240,134 +1267,108 @@ function installStyles() {
           uniform float uFlowRate;
           varying vec2 vUv;
 
+          const float PI = 3.14159265359;
+
           vec4 readFieldCell(float x, float y) {
-            vec2 cellUv = (vec2(x, y) + 0.5) / uGridSize;
-            return texture2D(uWindField, cellUv);
+            return texture2D(uWindField, (vec2(x, y) + 0.5) / uGridSize);
           }
 
           vec4 sampleField(vec2 sphereUv) {
             float longitude = (0.5 - sphereUv.x) * 360.0;
             float latitude = (sphereUv.y - 0.5) * 180.0;
-            if (uLonZeroTo360 > 0.5) {
-              longitude = mod(longitude + 360.0, 360.0);
-            } else {
-              longitude = mod(longitude + 180.0, 360.0) - 180.0;
-            }
+            longitude = uLonZeroTo360 > 0.5
+              ? mod(longitude + 360.0, 360.0)
+              : mod(longitude + 180.0, 360.0) - 180.0;
             float gx = mod((longitude - uLonStart) / uLonStep, uGridSize.x);
             float gy = clamp((latitude - uLatStart) / uLatStep, 0.0, uGridSize.y - 1.0);
-            float x0 = floor(gx);
-            float x1 = mod(x0 + 1.0, uGridSize.x);
-            float y0 = floor(gy);
-            float y1 = min(y0 + 1.0, uGridSize.y - 1.0);
-            float fx = fract(gx);
-            float fy = fract(gy);
-            vec4 a = readFieldCell(x0, y0);
-            vec4 b = readFieldCell(x1, y0);
-            vec4 c = readFieldCell(x0, y1);
-            vec4 d = readFieldCell(x1, y1);
-            float wa = (1.0-fx)*(1.0-fy)*a.a;
-            float wb = fx*(1.0-fy)*b.a;
-            float wc = (1.0-fx)*fy*c.a;
-            float wd = fx*fy*d.a;
-            float total = wa + wb + wc + wd;
-            if (total < 0.001) return vec4(0.0, 0.0, 0.0, 0.0);
-            vec3 packed = (a.rgb*wa + b.rgb*wb + c.rgb*wc + d.rgb*wd) / total;
-            return vec4(packed, total);
+            float x0 = floor(gx), x1 = mod(x0 + 1.0, uGridSize.x);
+            float y0 = floor(gy), y1 = min(y0 + 1.0, uGridSize.y - 1.0);
+            float fx = fract(gx), fy = fract(gy);
+            vec4 a = readFieldCell(x0,y0), b = readFieldCell(x1,y0);
+            vec4 c = readFieldCell(x0,y1), d = readFieldCell(x1,y1);
+            float wa=(1.0-fx)*(1.0-fy)*a.a, wb=fx*(1.0-fy)*b.a;
+            float wc=(1.0-fx)*fy*c.a, wd=fx*fy*d.a;
+            float total=wa+wb+wc+wd;
+            if (total < 0.001) return vec4(0.5,0.5,0.0,0.0);
+            return vec4((a.rgb*wa+b.rgb*wb+c.rgb*wc+d.rgb*wd)/total,total);
           }
 
-          vec2 windVelocity(vec2 uv) {
-            vec4 field = sampleField(uv);
-            vec2 components = (field.rg * 2.0 - 1.0);
-            float latitude = (uv.y - 0.5) * 3.14159265359;
-            float eastScale = 1.0 / max(0.22, cos(latitude));
-            // UV-x runs opposite longitude; UV-y spans half as many degrees.
-            return vec2(-components.x * eastScale, components.y * 2.0) * uFlowRate;
+          vec2 vectorAt(vec2 uv) {
+            vec4 f = sampleField(vec2(fract(uv.x), clamp(uv.y,0.002,0.998)));
+            vec2 v = f.rg * 2.0 - 1.0;
+            float lat = (uv.y - 0.5) * PI;
+            // Convert east/north components into equirectangular UV displacement.
+            return vec2(-v.x / max(0.18,cos(lat)), v.y * 2.0);
           }
 
-          float hash21(vec2 p) {
-            p.x = mod(p.x, 256.0);
-            p.y = mod(p.y, 256.0);
-            vec3 p3 = fract(vec3(p.xyx) * 0.1031);
-            p3 += dot(p3, p3.yzx + 33.33);
-            return fract((p3.x + p3.y) * p3.z);
-          }
-
-          float noise2(vec2 p) {
-            vec2 i = floor(p);
-            vec2 f = fract(p);
-            f = f*f*(3.0-2.0*f);
-            float a = hash21(i);
-            float b = hash21(i+vec2(1.0,0.0));
-            float c = hash21(i+vec2(0.0,1.0));
-            float d = hash21(i+vec2(1.0,1.0));
-            return mix(mix(a,b,f.x), mix(c,d,f.x), f.y);
-          }
-
-          float fbm(vec2 p) {
-            float value = 0.0;
-            float amplitude = 0.5;
-            for (int i=0; i<4; i++) {
-              value += noise2(p) * amplitude;
-              p = p * 2.03 + vec2(17.17, 9.23);
-              amplitude *= 0.5;
-            }
-            return value;
+          vec2 stepAlong(vec2 uv, float direction, float stepSize) {
+            vec2 v1 = vectorAt(uv);
+            float m1 = max(length(v1), 0.0001);
+            vec2 d1 = v1 / m1;
+            vec2 mid = uv + d1 * direction * stepSize * 0.5;
+            vec2 v2 = vectorAt(mid);
+            float m2 = max(length(v2), 0.0001);
+            return uv + (v2 / m2) * direction * stepSize;
           }
 
           vec3 speedColor(float speed) {
-            float t = clamp(speed, 0.0, 1.0);
-            vec3 c0 = vec3(0.10,0.62,0.86);
-            vec3 c1 = vec3(0.12,0.72,0.78);
-            vec3 c2 = vec3(0.28,0.78,0.40);
-            vec3 c3 = vec3(0.86,0.78,0.25);
-            vec3 c4 = vec3(0.96,0.48,0.22);
-            vec3 c5 = vec3(0.94,0.25,0.48);
-            if (t < 0.20) return mix(c0,c1,t/0.20);
-            if (t < 0.40) return mix(c1,c2,(t-0.20)/0.20);
-            if (t < 0.60) return mix(c2,c3,(t-0.40)/0.20);
-            if (t < 0.80) return mix(c3,c4,(t-0.60)/0.20);
+            float t = clamp(speed,0.0,1.0);
+            vec3 c0=vec3(0.10,0.62,0.86), c1=vec3(0.12,0.72,0.78);
+            vec3 c2=vec3(0.28,0.78,0.40), c3=vec3(0.86,0.78,0.25);
+            vec3 c4=vec3(0.96,0.48,0.22), c5=vec3(0.94,0.25,0.48);
+            if(t<0.20)return mix(c0,c1,t/0.20);
+            if(t<0.40)return mix(c1,c2,(t-0.20)/0.20);
+            if(t<0.60)return mix(c2,c3,(t-0.40)/0.20);
+            if(t<0.80)return mix(c3,c4,(t-0.60)/0.20);
             return mix(c4,c5,(t-0.80)/0.20);
           }
 
+          float noiseAt(vec2 uv, float phase) {
+            // Animate the noise signal along the local streamline, not across
+            // the globe in screen space. This is the temporal LIC carrier.
+            vec2 noiseUv = vec2(uv.x * 7.0, uv.y * 3.5);
+            return texture2D(uLicNoise, noiseUv + vec2(phase, phase * 0.17)).r;
+          }
+
           void main() {
-            vec2 uv = vec2(fract(vUv.x), clamp(vUv.y, 0.002, 0.998));
+            vec2 uv = vec2(fract(vUv.x), clamp(vUv.y,0.002,0.998));
             vec4 localField = sampleField(uv);
             if (localField.a < 0.05) discard;
 
-            float latitude = (uv.y - 0.5) * 3.14159265359;
-            vec2 localVelocity = windVelocity(uv);
-            vec2 flowDirection = normalize(localVelocity + vec2(0.00001, 0.00001));
-            vec2 perpendicular = vec2(-flowDirection.y, flowDirection.x);
+            vec2 v = vectorAt(uv);
+            float magnitude = length(v);
+            if (magnitude < 0.00001) discard;
+            vec2 tangent = normalize(v);
+            float lat = (uv.y - 0.5) * PI;
 
-            // Backtrace the procedural atmospheric texture through the actual
-            // vector field. Four midpoint-like substeps keep curved flow coherent.
-            float phase = mod(uTime, 60.0);
-            vec2 traced = uv;
-            float dt = phase * 0.25;
-            for (int i=0; i<4; i++) {
-              vec2 v1 = windVelocity(traced);
-              vec2 midpoint = traced - v1 * (dt * 0.5);
-              vec2 v2 = windVelocity(midpoint);
-              traced -= v2 * dt;
-              traced.x = fract(traced.x);
-              traced.y = clamp(traced.y, 0.002, 0.998);
+            // Animated line-integral convolution: integrate both directions
+            // along the actual wind vector and convolve fine noise along it.
+            float sum = noiseAt(uv, uTime * 0.018) * 1.35;
+            float weight = 1.35;
+            vec2 forwardUv = uv;
+            vec2 backwardUv = uv;
+            float stepSize = 0.00125;
+            float phase = mod(uTime * 0.085, 1.0);
+            for (int i=1; i<=12; i++) {
+              float taper = 1.0 - float(i) / 13.0;
+              forwardUv = stepAlong(forwardUv, 1.0, stepSize);
+              backwardUv = stepAlong(backwardUv, -1.0, stepSize);
+              float nf = noiseAt(forwardUv, phase + float(i)*0.013);
+              float nb = noiseAt(backwardUv, phase - float(i)*0.013);
+              sum += (nf + nb) * taper;
+              weight += 2.0 * taper;
             }
+            float lic = sum / weight;
 
-            vec2 p = traced * vec2(230.0, 118.0);
-            float warp = fbm(p * 0.22 + vec2(uTime*0.075, -uTime*0.052));
-            vec2 oriented = vec2(
-              dot(p, flowDirection) * 0.20 + warp * 2.1,
-              dot(p, perpendicular) * 1.55
-            );
-            float wisps = fbm(oriented);
-            float fine = noise2(oriented * vec2(1.9, 1.45) + vec2(7.1, 3.7));
-            float filament = pow(max(0.0, 1.0 - abs(wisps - 0.50) * 2.0), 3.0);
-            filament *= smoothstep(0.30, 0.78, fine);
-            float diffuse = smoothstep(0.48, 0.76, fbm(oriented * 0.42 + 19.0));
+            // Convert LIC into fine wind streaks: narrow bright filaments with
+            // softer low-frequency variation, never broad procedural vortices.
+            float streak = smoothstep(0.47,0.61,lic) * (1.0-smoothstep(0.72,0.84,lic));
+            float fineGrain = texture2D(uLicNoise, uv * vec2(95.0,48.0) + phase*0.07).r;
+            streak *= 0.78 + fineGrain * 0.32;
+
             float speed = localField.b;
-            float speedPresence = smoothstep(0.025, 0.22, speed);
-            float density = clamp(filament * 0.82 + diffuse * 0.13, 0.0, 0.72);
-            float alpha = density * speedPresence * (0.28 + speed * 0.52);
+            float speedFactor = smoothstep(0.0,0.65,speed);
+            float alpha = streak * (0.22 + speedFactor * 0.58);
             vec3 color = speedColor(speed);
             gl_FragColor = vec4(color, alpha);
           }
@@ -1403,8 +1404,9 @@ function installStyles() {
           geometry.dispose();
           material.dispose();
           windTexture.dispose();
+          licNoise.dispose();
         },
-        stats: { renderer: 'gpu-advected-atmospheric-texture', gridWidth: width, gridHeight: height }
+        stats: { renderer: 'animated-vector-field-lic', gridWidth: width, gridHeight: height }
       };
     }
     async function selectDataset(datasetKey) {
