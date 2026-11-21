@@ -1161,7 +1161,7 @@ function installStyles() {
       const spdDef = speedGrid.definition;
       const spdValues = speedGrid.values;
       const particleCount = 2000;
-      const trailLength = 36;
+      const trailLength = 48;
       const segmentCount = trailLength - 1;
       const vertexCount = particleCount * segmentCount * 2;
       const positions = new Float32Array(vertexCount * 3);
@@ -1175,10 +1175,10 @@ function installStyles() {
       const radius = 1.014;
       const angularStep = 0.075; // direction controls travel; speed remains a visual attribute
       const speedCeiling = Math.max(12, Math.min(30, Number(speedGrid.max) || 25));
-      const minLifetime = 360; // animation updates, approximately 14 seconds at 25 fps
-      const maxLifetime = 660; // animation updates, approximately 26 seconds at 25 fps
-      const fadeDuration = 90; // fade the complete trail before respawn
-      const trailWarmup = 18; // gently reveal a newly spawned particle's trail
+      const minLifetime = 50; // 2 seconds at 25 animation updates per second
+      const maxLifetime = 75; // 3 seconds at 25 animation updates per second
+      const trailFadeDuration = trailLength; // trail remains after the head finishes travelling
+      const trailWarmup = 8; // gently reveal a newly launched particle's trail
       let seed = 0x6d2b79f5;
       const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
       const clamp01 = value => Math.max(0, Math.min(1, value));
@@ -1270,15 +1270,22 @@ function installStyles() {
         out[2] = -cp * Math.sin(lambda) * radius;
       }
 
-      function resetParticle(p, stagger = false) {
-        // Uniform-area spawn over the sphere, not uniform latitude.
-        p.lat = Math.asin(random() * 2 - 1) / rad;
-        p.lon = -180 + random() * 360;
+      function resetParticle(p, createEmitter = false) {
+        // Each particle owns one permanent emitter coordinate. Every new life
+        // launches from that same location instead of random-walking around Earth.
+        if (createEmitter || !Number.isFinite(p.spawnLat) || !Number.isFinite(p.spawnLon)) {
+          p.spawnLat = Math.asin(random() * 2 - 1) / rad;
+          p.spawnLon = -180 + random() * 360;
+        }
+        p.lat = p.spawnLat;
+        p.lon = p.spawnLon;
         p.head = 0;
-        p.age = stagger ? Math.floor(random() * (p.maxAge - fadeDuration - trailWarmup)) : 0;
+        p.age = 0;
+        p.retiring = false;
+        p.retireAge = 0;
         p.maxAge = minLifetime + Math.floor(random() * (maxLifetime - minLifetime + 1));
-        // Keep the initial trail collapsed at the new spawn point. This prevents
-        // a visible connector between the particle's previous life and new spawn.
+        // Collapse the new trail at its fixed emitter. This prevents a connector
+        // between the previous trail and the next launch.
         const point = [0,0,0];
         surfacePoint(p.lat, p.lon, point);
         const speed = sampleSpeed(p.lat, p.lon);
@@ -1311,7 +1318,8 @@ function installStyles() {
 
       for (let i=0;i<particleCount;i++) {
         const p = {
-          lat:0, lon:0, head:0, age:0,
+          lat:0, lon:0, spawnLat:NaN, spawnLon:NaN,
+          head:0, age:0, retiring:false, retireAge:0,
           maxAge:minLifetime + Math.floor(random() * (maxLifetime-minLifetime+1)),
           history:new Float32Array(trailLength * 4)
         };
@@ -1360,29 +1368,41 @@ function installStyles() {
         let vertex = 0;
         for (let i=0;i<particles.length;i++) {
           const p = particles[i];
-          const from = sampleDirection(p.lat,p.lon);
-          if (from === null || p.age >= p.maxAge) {
-            resetParticle(p);
+          if (p.retiring) {
+            // The moving head has finished its 2–3 second run. Keep its trail
+            // in place and fade it independently before relaunching at its emitter.
+            p.retireAge += elapsed;
+            if (p.retireAge >= trailFadeDuration) resetParticle(p);
+          } else if (p.age >= p.maxAge) {
+            p.retiring = true;
+            p.retireAge = 0;
           } else {
-            // Direction alone determines travel bearing. Speed only styles the flow.
-            const next = advanceOnSphere(p.lat, p.lon, (from + 180) % 360, angularStep * elapsed);
-            p.lat = next.lat;
-            p.lon = next.lon;
-            p.age += elapsed;
-            p.head = (p.head + 1) % trailLength;
-            const speed = sampleSpeed(p.lat,p.lon);
-            const k = p.head * 4;
-            const phi = p.lat * rad, lambda = p.lon * rad, cp = Math.cos(phi);
-            p.history[k] = cp * Math.cos(lambda) * radius;
-            p.history[k+1] = Math.sin(phi) * radius;
-            p.history[k+2] = -cp * Math.sin(lambda) * radius;
-            p.history[k+3] = speed;
+            const from = sampleDirection(p.lat,p.lon);
+            if (from === null) {
+              p.retiring = true;
+              p.retireAge = 0;
+            } else {
+              // Direction alone determines travel bearing. Speed only styles the flow.
+              const next = advanceOnSphere(p.lat, p.lon, (from + 180) % 360, angularStep * elapsed);
+              p.lat = next.lat;
+              p.lon = next.lon;
+              p.age += elapsed;
+              p.head = (p.head + 1) % trailLength;
+              const speed = sampleSpeed(p.lat,p.lon);
+              const k = p.head * 4;
+              const phi = p.lat * rad, lambda = p.lon * rad, cp = Math.cos(phi);
+              p.history[k] = cp * Math.cos(lambda) * radius;
+              p.history[k+1] = Math.sin(phi) * radius;
+              p.history[k+2] = -cp * Math.sin(lambda) * radius;
+              p.history[k+3] = speed;
+            }
           }
 
           const oldest = (p.head + 1) % trailLength;
-          const lifeFade = clamp01((p.maxAge - p.age) / fadeDuration);
           const warmFade = clamp01(p.age / trailWarmup);
-          const particleFade = lifeFade * warmFade;
+          const particleFade = p.retiring
+            ? clamp01(1 - p.retireAge / trailFadeDuration)
+            : warmFade;
           for (let j=0;j<segmentCount;j++) {
             const ia = ((oldest + j) % trailLength) * 4;
             const ib = ((oldest + j + 1) % trailLength) * 4;
