@@ -1153,20 +1153,22 @@ function installStyles() {
     }
 
     function makeWindFlow(THREE, earth, directionGrid, requestRender) {
-      // Direction-only animated overlay. The existing direction-coloured GPU
-      // skin remains unchanged; particles move opposite the meteorological
-      // FROM bearing, following the actual wind travel direction.
+      // Direction-only wind animation: no raster skin, arrows, or colour field.
+      // Particles are advected over the sphere and leave fine, fading trails.
       const def = directionGrid.definition;
       const values = directionGrid.values;
-      const particleCount = Math.min(300, Math.max(190, Math.round((window.innerWidth || 420) * 0.54)));
-      const trailLength = 8;
+      const particleCount = Math.min(280, Math.max(210, Math.round((window.innerWidth || 420) * 0.56)));
+      const trailLength = 34;
       const segmentCount = trailLength - 1;
       const vertexCount = particleCount * segmentCount * 2;
       const positions = new Float32Array(vertexCount * 3);
       const fades = new Float32Array(vertexCount);
+      const headPositions = new Float32Array(particleCount * 3);
       const particles = [];
       const rad = Math.PI / 180;
-      const radius = 1.016;
+      // Keep the flow just above the existing globe skin to avoid z-fighting.
+      const radius = 1.014;
+      const angularStep = 0.075;
       let seed = 0x6d2b79f5;
       const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
 
@@ -1196,6 +1198,7 @@ function installStyles() {
         if (weight < 0.25 || Math.hypot(sx, sy) < 1e-5) return null;
         return (Math.atan2(sx, sy) / rad + 360) % 360;
       }
+
       function surfacePoint(latitude, longitude, out) {
         const phi = latitude * rad, lambda = longitude * rad;
         const cp = Math.cos(phi);
@@ -1203,6 +1206,7 @@ function installStyles() {
         out[1] = Math.sin(phi) * radius;
         out[2] = -cp * Math.sin(lambda) * radius;
       }
+
       function resetParticle(p) {
         p.lat = -78 + random() * 156;
         p.lon = -180 + random() * 360;
@@ -1210,29 +1214,55 @@ function installStyles() {
         surfacePoint(p.lat, p.lon, p.history[0]);
         for (let j=1;j<trailLength;j++) p.history[j] = p.history[0].slice();
       }
+
+      // Great-circle destination: move in the local tangent direction without
+      // longitude distortion or pole singularities.
+      function advanceOnSphere(latitude, longitude, bearingDegrees, distanceDegrees) {
+        const lat1 = latitude * rad;
+        const lon1 = longitude * rad;
+        const bearing = bearingDegrees * rad;
+        const distance = distanceDegrees * rad;
+        const sinLat2 = Math.sin(lat1) * Math.cos(distance)
+          + Math.cos(lat1) * Math.sin(distance) * Math.cos(bearing);
+        const lat2 = Math.asin(Math.max(-1, Math.min(1, sinLat2)));
+        const lon2 = lon1 + Math.atan2(
+          Math.sin(bearing) * Math.sin(distance) * Math.cos(lat1),
+          Math.cos(distance) - Math.sin(lat1) * Math.sin(lat2)
+        );
+        return {
+          lat: Math.max(-85, Math.min(85, lat2 / rad)),
+          lon: ((lon2 / rad + 540) % 360) - 180
+        };
+      }
+
       for (let i=0;i<particleCount;i++) {
-        const p = {lat:0,lon:0,history:[]}; resetParticle(p); particles.push(p);
+        const p = {lat:0,lon:0,history:[]};
+        resetParticle(p);
+        particles.push(p);
       }
 
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.BufferAttribute(positions,3).setUsage(THREE.DynamicDrawUsage));
       geometry.setAttribute('fade', new THREE.BufferAttribute(fades,1).setUsage(THREE.DynamicDrawUsage));
-      const material = new THREE.ShaderMaterial({
+      const trailMaterial = new THREE.ShaderMaterial({
         transparent:true, depthTest:true, depthWrite:false,
         blending:THREE.NormalBlending, toneMapped:false,
         vertexShader:`attribute float fade; varying float vFade; void main(){vFade=fade;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
-        fragmentShader:`varying float vFade; void main(){gl_FragColor=vec4(0.56,0.86,1.0,clamp(vFade,0.0,0.24));}`
+        fragmentShader:`varying float vFade; void main(){gl_FragColor=vec4(0.56,0.86,1.0,clamp(vFade,0.0,0.22));}`
       });
-      const trails = new THREE.LineSegments(geometry, material);
+      const trails = new THREE.LineSegments(geometry, trailMaterial);
       trails.name = 'liveEarthAtmosphereWindDirectionFlow';
       trails.renderOrder = 8;
+
+      // Fixed screen-space point size plus a circular fragment mask prevents
+      // the square billboard artefact produced by the default PointsMaterial.
       const headGeometry = new THREE.BufferGeometry();
-      const headPositions = new Float32Array(particleCount * 3);
       headGeometry.setAttribute('position', new THREE.BufferAttribute(headPositions,3).setUsage(THREE.DynamicDrawUsage));
-      const headMaterial = new THREE.PointsMaterial({
-        color:0xc8f2ff, size:1.15, sizeAttenuation:true, transparent:true,
-        opacity:0.42, depthTest:true, depthWrite:false,
-        blending:THREE.NormalBlending, toneMapped:false
+      const headMaterial = new THREE.ShaderMaterial({
+        transparent:true, depthTest:true, depthWrite:false,
+        blending:THREE.NormalBlending, toneMapped:false,
+        vertexShader:`void main(){vec4 mvPosition=modelViewMatrix*vec4(position,1.0);gl_Position=projectionMatrix*mvPosition;gl_PointSize=2.0;}`,
+        fragmentShader:`void main(){vec2 p=gl_PointCoord-vec2(0.5);float d=length(p);float a=1.0-smoothstep(0.28,0.5,d);if(a<0.02)discard;gl_FragColor=vec4(0.72,0.91,1.0,a*0.48);}`
       });
       const heads = new THREE.Points(headGeometry, headMaterial);
       heads.name = 'liveEarthAtmosphereWindDirectionFlowHeads';
@@ -1243,7 +1273,8 @@ function installStyles() {
       function animate(time) {
         if (disposed) return;
         frame = requestAnimationFrame(animate);
-        if (document.hidden || time-lastFrameTime < 48) return;
+        if (document.hidden || time-lastFrameTime < 40) return;
+        const elapsed = lastFrameTime ? Math.min(2, (time-lastFrameTime)/48) : 1;
         lastFrameTime = time;
         let vertex = 0;
         for (let i=0;i<particles.length;i++) {
@@ -1253,20 +1284,19 @@ function installStyles() {
             resetParticle(p);
           } else {
             // Meteorological bearing is where wind comes FROM. Reverse it.
-            const bearing = (from + 180) * rad;
-            const step = 0.022;
-            const oldLat = p.lat * rad;
-            p.lat = Math.max(-82,Math.min(82,p.lat + Math.cos(bearing)*step));
-            p.lon += (Math.sin(bearing)*step)/Math.max(0.16,Math.cos(oldLat));
-            if (p.lon > 180) p.lon -= 360;
-            if (p.lon < -180) p.lon += 360;
-            const point = [0,0,0]; surfacePoint(p.lat,p.lon,point);
-            p.history.shift(); p.history.push(point);
+            const next = advanceOnSphere(p.lat, p.lon, (from + 180) % 360, angularStep * elapsed);
+            p.lat = next.lat;
+            p.lon = next.lon;
+            const point = [0,0,0];
+            surfacePoint(p.lat,p.lon,point);
+            p.history.shift();
+            p.history.push(point);
           }
           for (let j=0;j<segmentCount;j++) {
             const a=p.history[j], b=p.history[j+1];
-            positions.set(a,vertex*3); fades[vertex++] = 0.012 + (j/segmentCount)*0.17;
-            positions.set(b,vertex*3); fades[vertex++] = 0.012 + ((j+1)/segmentCount)*0.17;
+            const age = (j+1)/segmentCount;
+            positions.set(a,vertex*3); fades[vertex++] = 0.004 + age*0.105;
+            positions.set(b,vertex*3); fades[vertex++] = 0.004 + age*0.105;
           }
           headPositions.set(p.history[trailLength-1],i*3);
         }
@@ -1277,12 +1307,17 @@ function installStyles() {
       }
       frame = requestAnimationFrame(animate);
       return { dispose() {
-        if (disposed) return; disposed = true; cancelAnimationFrame(frame);
-        trails.removeFromParent(); heads.removeFromParent();
-        geometry.dispose(); material.dispose(); headGeometry.dispose(); headMaterial.dispose();
+        if (disposed) return;
+        disposed = true;
+        cancelAnimationFrame(frame);
+        trails.removeFromParent();
+        heads.removeFromParent();
+        geometry.dispose();
+        trailMaterial.dispose();
+        headGeometry.dispose();
+        headMaterial.dispose();
       }};
     }
-
     async function selectDataset(datasetKey) {
       if (closed || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
       const config = FIELD_CONFIG[datasetKey];
@@ -1322,8 +1357,9 @@ function installStyles() {
           if (item.definition.width !== 1440 || item.definition.height !== 721) throw new Error('A selected NOAA field does not match the approved 1440 × 721 grid.');
         }
         if (grid.units !== config.units) throw new Error(`Expected ${config.units}, received ${grid.units}.`);
+        // Wind is represented by animated particles only: no direction colour ramp.
         const bounds = datasetKey === 'wind' ? null : updateLegend(grid, config);
-        if (datasetKey === 'wind') scaleDock.hidden = true;
+        scaleDock.hidden = datasetKey === 'wind';
         rangeValue.textContent = `${formatFieldValue(grid.min)} — ${formatFieldValue(grid.max)}`;
         rangeUnit.textContent = `Current global range · ${config.displayUnits}`;
         metric.replaceChildren();
@@ -1346,7 +1382,7 @@ function installStyles() {
           gridRoot = new THREE.Group();
           gridRoot.name = `liveEarth-atmosphere-${datasetKey}-layer`;
           if (datasetKey === 'wind') {
-            // Direction field drives particles only; no coloured raster skin or legend.
+            // Direction data drives the flow only; no static colour skin or raster is rendered.
             windFlowHandle = makeWindFlow(THREE, earth, grid, () => worldGlobe?.requestRender?.());
           } else {
             const colorMin = datasetKey === 'moisture' ? 0 : bounds.min;
