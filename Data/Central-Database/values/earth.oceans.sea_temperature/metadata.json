@@ -6,16 +6,16 @@
   "dataset_id": "earth.oceans.sea_temperature",
   "format": "NetCDF",
   "native_grid_spacing_degrees": 0.25,
-  "observed_at_utc": "2026-11-05T12:00:00Z",
+  "observed_at_utc": "2026-11-06T12:00:00Z",
   "record_count": null,
   "source_dataset": "OISST v2.1 AVHRR",
   "source_id": "noaa_ncei_oisst",
   "source_name": "NOAA/NCEI OISST v2.1 daily global sea surface temperature",
-  "source_url": "https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/v2.1/access/avhrr/202611/oisst-avhrr-v02r01.20261105.nc",
+  "source_url": "https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/v2.1/access/avhrr/202611/oisst-avhrr-v02r01.20261106.nc",
   "units": "degree_C",
-  "updated_at_utc": "2026-11-21T15:40:55.703793Z",
-  "valid_time_utc": "2026-11-05T12:00:00Z",
-  "value_bytes": 1505435,
+  "updated_at_utc": "2026-11-21T21:14:37.448472Z",
+  "valid_time_utc": "2026-11-06T12:00:00Z",
+  "value_bytes": 1506651,
   "value_file": "values.bin",
-  "value_sha256": "807817f000e9dfe88021e5ab851dd99c73e971a4d8e762da5e03bc22cab91b94"
+  "value_sha256": "0ebd97214d5673783b77932c506f7248fd722e9340f41d8bea60a0aafe86b2cc"
 }
