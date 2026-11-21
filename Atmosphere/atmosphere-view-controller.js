@@ -1160,8 +1160,8 @@ function installStyles() {
       const dirValues = directionGrid.values;
       const spdDef = speedGrid.definition;
       const spdValues = speedGrid.values;
-      const streamlineCount = 680;
-      const stepsPerLine = 132;
+      const streamlineCount = 3000;
+      const stepsPerLine = 100;
       const angularStep = 0.19;
       const rad = Math.PI / 180;
       const radius = 1.014;
@@ -1272,9 +1272,13 @@ function installStyles() {
         };
       }
 
-      const positions = [];
-      const colors = [];
-      const alphas = [];
+      const maxSegments = streamlineCount * (stepsPerLine - 1);
+      const positions = new Float32Array(maxSegments * 6);
+      const colors = new Float32Array(maxSegments * 6);
+      const alphas = new Float32Array(maxSegments * 2);
+      let positionOffset = 0;
+      let colorOffset = 0;
+      let alphaOffset = 0;
       let acceptedLines = 0;
 
       for (let line = 0; line < streamlineCount; line++) {
@@ -1293,15 +1297,24 @@ function installStyles() {
           const color = speedColor(speed);
 
           if (previous) {
-            positions.push(previous[0], previous[1], previous[2], point[0], point[1], point[2]);
-            colors.push(
-              previous[3], previous[4], previous[5],
-              color[0], color[1], color[2]
-            );
+            positions[positionOffset++] = previous[0];
+            positions[positionOffset++] = previous[1];
+            positions[positionOffset++] = previous[2];
+            positions[positionOffset++] = point[0];
+            positions[positionOffset++] = point[1];
+            positions[positionOffset++] = point[2];
+            colors[colorOffset++] = previous[3];
+            colors[colorOffset++] = previous[4];
+            colors[colorOffset++] = previous[5];
+            colors[colorOffset++] = color[0];
+            colors[colorOffset++] = color[1];
+            colors[colorOffset++] = color[2];
             const along = step / stepsPerLine;
             const envelope = 0.42 + 0.48 * Math.sin(Math.PI * along);
             const speedAlpha = 0.48 + Math.min(1, speed / speedCeiling) * 0.25;
-            alphas.push(envelope * speedAlpha, envelope * speedAlpha);
+            const alpha = envelope * speedAlpha;
+            alphas[alphaOffset++] = alpha;
+            alphas[alphaOffset++] = alpha;
             lineSegments++;
           }
 
@@ -1315,9 +1328,9 @@ function installStyles() {
       }
 
       const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-      geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-      geometry.setAttribute('lineAlpha', new THREE.Float32BufferAttribute(alphas, 1));
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions.subarray(0, positionOffset), 3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors.subarray(0, colorOffset), 3));
+      geometry.setAttribute('lineAlpha', new THREE.BufferAttribute(alphas.subarray(0, alphaOffset), 1));
 
       const material = new THREE.ShaderMaterial({
         transparent: true,
@@ -1358,7 +1371,7 @@ function installStyles() {
           geometry.dispose();
           material.dispose();
         },
-        stats: { requestedLines: streamlineCount, acceptedLines, segments: positions.length / 6 }
+        stats: { requestedLines: streamlineCount, acceptedLines, segments: positionOffset / 6 }
       };
     }
     async function selectDataset(datasetKey) {
@@ -1415,11 +1428,28 @@ function installStyles() {
             throw new Error('Wind direction and speed grids do not share the same approved dimensions.');
           }
         }
-        // Wind is represented by animated particles only: no raster colour field.
-        const bounds = datasetKey === 'wind' ? null : updateLegend(grid, config);
-        scaleDock.hidden = datasetKey === 'wind';
-        rangeValue.textContent = `${formatFieldValue(grid.min)} — ${formatFieldValue(grid.max)}`;
-        rangeUnit.textContent = `Current global range · ${config.displayUnits}`;
+        // Wind lines use direction for geometry and speed for their colour.
+        // Restore the legend as a speed-colour key; no speed raster is rendered.
+        const bounds = datasetKey === 'wind'
+          ? updateLegend(speedGrid, {
+              title: 'NOAA · 10 m wind speed',
+              displayUnits: 'm/s',
+              min: null,
+              max: null,
+              ticks: null
+            })
+          : updateLegend(grid, config);
+        if (datasetKey === 'wind') {
+          legendTitle.textContent = '10 m wind speed · m/s';
+          legendBar.style.background = 'linear-gradient(90deg,#199ed8 0%,#20c9c4 20%,#48c66b 40%,#e0d34c 60%,#f39a3d 80%,#ef4778 100%)';
+          rangeValue.textContent = `${formatFieldValue(speedGrid.min)} — ${formatFieldValue(speedGrid.max)}`;
+          rangeUnit.textContent = 'Current global range · m/s';
+          source.textContent = config.source + ' · line colour represents wind speed';
+        } else {
+          rangeValue.textContent = `${formatFieldValue(grid.min)} — ${formatFieldValue(grid.max)}`;
+          rangeUnit.textContent = `Current global range · ${config.displayUnits}`;
+        }
+        scaleDock.hidden = false;
         metric.replaceChildren();
         const makeMetric = (labelText, value, unit = '') => {
           const item = runtime.el('div', 'le-sfv-metric');
