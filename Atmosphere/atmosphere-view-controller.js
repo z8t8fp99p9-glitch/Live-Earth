@@ -927,35 +927,6 @@ function installStyles() {
       { id: 'wind', label: 'Wind', detail: '10 m wind speed + direction · U/V' },
       { id: 'moisture', label: 'Moisture', detail: '2 m relative humidity · %' }
     ];
-    // WIND VECTOR ARCHITECTURE — durable implementation note (planning only).
-    // Current behaviour remains the verified single-field selector below; this note
-    // does not create, fetch, or render a combined dataset.
-    //
-    // Approved direction for the next Wind iteration:
-    // - Preserve the existing Central Database speed and direction products unchanged.
-    // - Add a separate derived dataset, `earth.atmosphere.wind_vector`, generated from
-    //   time/grid-aligned NOAA 10 m UGRD (eastward) and VGRD (northward) components.
-    // - Keep one shared grid definition, valid time, forecast reference, validity mask,
-    //   and integrity metadata for every cell. Reject mismatched source cycles/grids.
-    // - Carry speed plus U and V components (not a scalar-interpolated angle). Derive
-    //   speed = hypot(U, V); derive meteorological direction FROM north as
-    //   (atan2(-U, -V) * 180 / PI + 360) % 360 when a compass angle is needed.
-    // - Interpolate U/V components, then reconstruct direction. Animate particles
-    //   toward the vector (U,V); meteorological FROM direction must not be used as
-    //   the particle travel bearing without reversing it.
-    // - Feed the combined product to one Wind GPU grid surface. Speed mode colours
-    //   by speed; direction mode uses circular/vector-correct reconstruction; flow
-    //   mode advects particles using U/V. Do not stack coplanar speed/direction skins.
-    // - Implement any multi-channel GPU support additively and backward-compatibly.
-    //   Temperature, pressure, moisture, other views, Earth Engine, and the existing
-    //   Universal Grid System scalar contract remain unchanged unless separately
-    //   reviewed and explicitly approved.
-    // - Keep the combined dataset derived and independently verifiable. Do not
-    //   overwrite/delete the existing speed/direction products or change database
-    //   schema/collector/publisher until source alignment, metadata, checksums,
-    //   fallback behaviour, and acceptance tests are designed and verified.
-    //
-    // See Documentation/WIND-VECTOR-DATA-ARCHITECTURE.md for the canonical plan.
     const FIELD_CONFIG = {
       temperature: { ids: ['earth.atmosphere.air_temperature'], title: 'NOAA · 2 m air temperature', units: 'degree_Celsius', displayUnits: '°C', min: null, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · 2 m air temperature' },
       pressure: { ids: ['earth.atmosphere.atmospheric_pressure'], title: 'NOAA · Mean sea-level pressure', units: 'kilopascal', displayUnits: 'kPa', min: null, max: null, ticks: null, source: 'NOAA NCEP · GFS 0.25° analysis · mean sea-level pressure' },
@@ -1088,7 +1059,7 @@ function installStyles() {
     source.hidden = true;
     details.appendChild(source);
 
-    let closed = false, layerDispose = null, gridHandle = null, gridRoot = null, worldGlobe = null;
+    let closed = false, layerDispose = null, gridHandle = null, windFlowHandle = null, gridRoot = null, worldGlobe = null;
     let dataRequest = null;
     function removeActiveLayer() {
       if (typeof layerDispose === 'function') {
@@ -1096,6 +1067,8 @@ function installStyles() {
         layerDispose = null;
         dispose();
       }
+      try { windFlowHandle?.dispose?.(); } catch (_) {}
+      windFlowHandle = null;
       try { gridHandle?.dispose?.(); } catch (_) {}
       gridHandle = null;
       try { gridRoot?.removeFromParent?.(); } catch (_) {}
@@ -1179,6 +1152,137 @@ function installStyles() {
       return { min, max };
     }
 
+    function makeWindFlow(THREE, earth, directionGrid, requestRender) {
+      // Direction-only animated overlay. The existing direction-coloured GPU
+      // skin remains unchanged; particles move opposite the meteorological
+      // FROM bearing, following the actual wind travel direction.
+      const def = directionGrid.definition;
+      const values = directionGrid.values;
+      const particleCount = Math.min(300, Math.max(190, Math.round((window.innerWidth || 420) * 0.54)));
+      const trailLength = 8;
+      const segmentCount = trailLength - 1;
+      const vertexCount = particleCount * segmentCount * 2;
+      const positions = new Float32Array(vertexCount * 3);
+      const fades = new Float32Array(vertexCount);
+      const particles = [];
+      const rad = Math.PI / 180;
+      const radius = 1.014;
+      let seed = 0x6d2b79f5;
+      const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+
+      function sampleDirection(latitude, longitude) {
+        const gx = (longitude - def.lonStart) / def.lonStep;
+        const gy = (latitude - def.latStart) / def.latStep;
+        if (!Number.isFinite(gx) || !Number.isFinite(gy)) return null;
+        const x0raw = Math.floor(gx), y0raw = Math.floor(gy);
+        const fx = gx - x0raw, fy = gy - y0raw;
+        const wrap = x => ((x % def.width) + def.width) % def.width;
+        const x0 = wrap(x0raw), x1 = wrap(x0raw + 1);
+        const y0 = Math.max(0, Math.min(def.height - 1, y0raw));
+        const y1 = Math.max(0, Math.min(def.height - 1, y0raw + 1));
+        const samples = [
+          [values[y0 * def.width + x0], (1-fx)*(1-fy)],
+          [values[y0 * def.width + x1], fx*(1-fy)],
+          [values[y1 * def.width + x0], (1-fx)*fy],
+          [values[y1 * def.width + x1], fx*fy]
+        ];
+        let sx = 0, sy = 0, weight = 0;
+        for (const [angle, w] of samples) {
+          if (!Number.isFinite(angle) || w <= 0) continue;
+          sx += Math.sin(angle * rad) * w;
+          sy += Math.cos(angle * rad) * w;
+          weight += w;
+        }
+        if (weight < 0.25 || Math.hypot(sx, sy) < 1e-5) return null;
+        return (Math.atan2(sx, sy) / rad + 360) % 360;
+      }
+      function surfacePoint(latitude, longitude, out) {
+        const phi = latitude * rad, lambda = longitude * rad;
+        const cp = Math.cos(phi);
+        out[0] = cp * Math.cos(lambda) * radius;
+        out[1] = Math.sin(phi) * radius;
+        out[2] = -cp * Math.sin(lambda) * radius;
+      }
+      function resetParticle(p) {
+        p.lat = -78 + random() * 156;
+        p.lon = -180 + random() * 360;
+        p.history = Array.from({length: trailLength}, () => [0,0,0]);
+        surfacePoint(p.lat, p.lon, p.history[0]);
+        for (let j=1;j<trailLength;j++) p.history[j] = p.history[0].slice();
+      }
+      for (let i=0;i<particleCount;i++) {
+        const p = {lat:0,lon:0,history:[]}; resetParticle(p); particles.push(p);
+      }
+
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions,3).setUsage(THREE.DynamicDrawUsage));
+      geometry.setAttribute('fade', new THREE.BufferAttribute(fades,1).setUsage(THREE.DynamicDrawUsage));
+      const material = new THREE.ShaderMaterial({
+        transparent:true, depthTest:true, depthWrite:false,
+        blending:THREE.NormalBlending, toneMapped:false,
+        vertexShader:`attribute float fade; varying float vFade; void main(){vFade=fade;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+        fragmentShader:`varying float vFade; void main(){gl_FragColor=vec4(0.56,0.86,1.0,clamp(vFade,0.0,0.24));}`
+      });
+      const trails = new THREE.LineSegments(geometry, material);
+      trails.name = 'liveEarthAtmosphereWindDirectionFlow';
+      trails.renderOrder = 8;
+      const headGeometry = new THREE.BufferGeometry();
+      const headPositions = new Float32Array(particleCount * 3);
+      headGeometry.setAttribute('position', new THREE.BufferAttribute(headPositions,3).setUsage(THREE.DynamicDrawUsage));
+      const headMaterial = new THREE.PointsMaterial({
+        color:0xc8f2ff, size:1.15, sizeAttenuation:true, transparent:true,
+        opacity:0.42, depthTest:true, depthWrite:false,
+        blending:THREE.NormalBlending, toneMapped:false
+      });
+      const heads = new THREE.Points(headGeometry, headMaterial);
+      heads.name = 'liveEarthAtmosphereWindDirectionFlowHeads';
+      heads.renderOrder = 9;
+      earth.add(trails, heads);
+
+      let disposed = false, frame = 0, lastFrameTime = 0;
+      function animate(time) {
+        if (disposed) return;
+        frame = requestAnimationFrame(animate);
+        if (document.hidden || time-lastFrameTime < 48) return;
+        lastFrameTime = time;
+        let vertex = 0;
+        for (let i=0;i<particles.length;i++) {
+          const p = particles[i];
+          const from = sampleDirection(p.lat,p.lon);
+          if (from === null) {
+            resetParticle(p);
+          } else {
+            // Meteorological bearing is where wind comes FROM. Reverse it.
+            const bearing = (from + 180) * rad;
+            const step = 0.022;
+            const oldLat = p.lat * rad;
+            p.lat = Math.max(-82,Math.min(82,p.lat + Math.cos(bearing)*step));
+            p.lon += (Math.sin(bearing)*step)/Math.max(0.16,Math.cos(oldLat));
+            if (p.lon > 180) p.lon -= 360;
+            if (p.lon < -180) p.lon += 360;
+            const point = [0,0,0]; surfacePoint(p.lat,p.lon,point);
+            p.history.shift(); p.history.push(point);
+          }
+          for (let j=0;j<segmentCount;j++) {
+            const a=p.history[j], b=p.history[j+1];
+            positions.set(a,vertex*3); fades[vertex++] = 0.012 + (j/segmentCount)*0.17;
+            positions.set(b,vertex*3); fades[vertex++] = 0.012 + ((j+1)/segmentCount)*0.17;
+          }
+          headPositions.set(p.history[trailLength-1],i*3);
+        }
+        geometry.attributes.position.needsUpdate = true;
+        geometry.attributes.fade.needsUpdate = true;
+        headGeometry.attributes.position.needsUpdate = true;
+        requestRender?.();
+      }
+      frame = requestAnimationFrame(animate);
+      return { dispose() {
+        if (disposed) return; disposed = true; cancelAnimationFrame(frame);
+        trails.removeFromParent(); heads.removeFromParent();
+        geometry.dispose(); material.dispose(); headGeometry.dispose(); headMaterial.dispose();
+      }};
+    }
+
     async function selectDataset(datasetKey) {
       if (closed || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
       const config = FIELD_CONFIG[datasetKey];
@@ -1258,10 +1362,13 @@ function installStyles() {
             contourColor: [0.13, 0.10, 0.09],
             name: `NOAA-GFS-${datasetKey}`
           });
+          if (datasetKey === 'wind') windFlowHandle = makeWindFlow(THREE, earth, grid, () => worldGlobe?.requestRender?.());
           gridRoot.add(gridHandle.mesh);
           if (gridHandle.auraMesh) gridRoot.add(gridHandle.auraMesh);
           earth.add(gridRoot);
           return () => {
+            try { windFlowHandle?.dispose?.(); } catch (_) {}
+            windFlowHandle = null;
             try { gridHandle?.dispose?.(); } catch (_) {}
             gridHandle = null;
             try { gridRoot?.removeFromParent?.(); } catch (_) {}
