@@ -10,12 +10,12 @@
   "parameter": "PRECTOTCORR",
   "record_count": 6,
   "request_urls": {
-    "east_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=PRECTOTCORR&community=AG&longitude=35.0&latitude=0.0&start=19810101&end=20261120&format=JSON",
-    "east_asia_pacific": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=PRECTOTCORR&community=AG&longitude=125.0&latitude=25.0&start=19810101&end=20261120&format=JSON",
-    "europe_north_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=PRECTOTCORR&community=AG&longitude=15.0&latitude=35.0&start=19810101&end=20261120&format=JSON",
-    "north_america": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=PRECTOTCORR&community=AG&longitude=-100.0&latitude=40.0&start=19810101&end=20261120&format=JSON",
-    "south_america": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=PRECTOTCORR&community=AG&longitude=-60.0&latitude=-15.0&start=19810101&end=20261120&format=JSON",
-    "south_asia": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=PRECTOTCORR&community=AG&longitude=80.0&latitude=20.0&start=19810101&end=20261120&format=JSON"
+    "east_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=PRECTOTCORR&community=AG&longitude=35.0&latitude=0.0&start=19810101&end=20261121&format=JSON",
+    "east_asia_pacific": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=PRECTOTCORR&community=AG&longitude=125.0&latitude=25.0&start=19810101&end=20261121&format=JSON",
+    "europe_north_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=PRECTOTCORR&community=AG&longitude=15.0&latitude=35.0&start=19810101&end=20261121&format=JSON",
+    "north_america": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=PRECTOTCORR&community=AG&longitude=-100.0&latitude=40.0&start=19810101&end=20261121&format=JSON",
+    "south_america": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=PRECTOTCORR&community=AG&longitude=-60.0&latitude=-15.0&start=19810101&end=20261121&format=JSON",
+    "south_asia": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=PRECTOTCORR&community=AG&longitude=80.0&latitude=20.0&start=19810101&end=20261121&format=JSON"
   },
   "sample_tiles": [
     {
@@ -52,8 +52,8 @@
   "source_id": "nasa_power_daily",
   "source_name": "NASA POWER daily corrected precipitation at six regional sample points",
   "units": "mm/day",
-  "updated_at_utc": "2026-11-20T18:03:59.370958Z",
+  "updated_at_utc": "2026-11-21T00:22:24.636459Z",
   "value_bytes": 3219,
   "value_file": "records.jsonl",
-  "value_sha256": "ebb9f002f9cb5d0fb9862be875e615baf4d2e8936ff1c760650d83b239d4ad95"
+  "value_sha256": "f0cf9f08958c3b36bd588cb95d58ee245da2013e9881f617ce62b10cc1f154dc"
 }
