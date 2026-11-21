@@ -1253,6 +1253,10 @@ function installStyles() {
       const trails = new THREE.LineSegments(geometry, trailMaterial);
       trails.name = 'liveEarthAtmosphereWindDirectionFlow';
       trails.renderOrder = 8;
+      // The globe gesture picker raycasts recursively through surface children.
+      // Keep visual flow objects out of hit-testing so finger rotation always
+      // anchors to the real Earth surface.
+      trails.raycast = () => {};
 
       // Fixed screen-space point size plus a circular fragment mask prevents
       // the square billboard artefact produced by the default PointsMaterial.
@@ -1267,6 +1271,7 @@ function installStyles() {
       const heads = new THREE.Points(headGeometry, headMaterial);
       heads.name = 'liveEarthAtmosphereWindDirectionFlowHeads';
       heads.renderOrder = 9;
+      heads.raycast = () => {};
       earth.add(trails, heads);
 
       let disposed = false, frame = 0, lastFrameTime = 0;
