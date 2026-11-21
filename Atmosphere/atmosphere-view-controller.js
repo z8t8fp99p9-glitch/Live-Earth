@@ -1038,7 +1038,7 @@ function installStyles() {
     source.hidden = true;
     details.appendChild(source);
 
-    let closed = false, layerDispose = null, gridHandle = null, gridRoot = null, worldGlobe = null;
+    let closed = false, layerDispose = null, gridHandle = null, windTracerHandle = null, gridRoot = null, worldGlobe = null;
     let dataRequest = null;
     function removeActiveLayer() {
       if (typeof layerDispose === 'function') {
@@ -1046,6 +1046,8 @@ function installStyles() {
         layerDispose = null;
         dispose();
       }
+      try { windTracerHandle?.dispose?.(); } catch (_) {}
+      windTracerHandle = null;
       try { gridHandle?.dispose?.(); } catch (_) {}
       gridHandle = null;
       try { gridRoot?.removeFromParent?.(); } catch (_) {}
@@ -1126,6 +1128,222 @@ function installStyles() {
       scaleRange.textContent = `${formatFieldValue(grid.min)} — ${formatFieldValue(grid.max)} ${config.displayUnits}`;
       scaleDock.hidden = false;
       return { min, max };
+    }
+
+
+    function makeWindTracers(THREE, earth, camera, speedGrid, directionGrid, requestRender) {
+      const def=speedGrid.definition, dirDef=directionGrid.definition;
+      if(def.width!==dirDef.width || def.height!==dirDef.height ||
+         def.lonStart!==dirDef.lonStart || def.lonStep!==dirDef.lonStep ||
+         def.latStart!==dirDef.latStart || def.latStep!==dirDef.latStep ||
+         def.rowOrder!==dirDef.rowOrder) {
+        throw new Error('Wind tracer grids do not share identical coordinates.');
+      }
+
+      const COUNT=40, TRAIL_STEPS=3, RADIUS=1.014;
+      const DEG=Math.PI/180, RAD=180/Math.PI;
+      const speedValues=speedGrid.values, directionValues=directionGrid.values;
+      const width=def.width, height=def.height;
+      const wrap=(v,n)=>((v%n)+n)%n;
+
+      function sampleWind(lat,lon) {
+        let longitude=def.longitudeConvention==='0..360' ? wrap(lon,360) : wrap(lon+180,360)-180;
+        const gx=wrap((longitude-def.lonStart)/def.lonStep,width);
+        const gy=Math.max(0,Math.min(height-1,(lat-def.latStart)/def.latStep));
+        const x0=Math.floor(gx), x1=(x0+1)%width, y0=Math.floor(gy), y1=Math.min(height-1,y0+1);
+        const fx=gx-x0, fy=gy-y0;
+        const cells=[
+          [y0*width+x0,(1-fx)*(1-fy)],
+          [y0*width+x1,fx*(1-fy)],
+          [y1*width+x0,(1-fx)*fy],
+          [y1*width+x1,fx*fy]
+        ];
+        let east=0,north=0,speed=0,total=0;
+        for(const [index,w] of cells) {
+          const sp=Number(speedValues[index]), from=Number(directionValues[index]);
+          if(!Number.isFinite(sp)||!Number.isFinite(from)||sp<0) continue;
+          const a=from*DEG;
+          east+=-Math.sin(a)*sp*w;
+          north+=-Math.cos(a)*sp*w;
+          speed+=sp*w; total+=w;
+        }
+        if(total<0.5) return null;
+        return {east:east/total,north:north/total,speed:speed/total};
+      }
+
+      function toLatLon(p) {
+        const n=p.clone().normalize();
+        return {lat:Math.asin(THREE.MathUtils.clamp(n.y,-1,1))*RAD,
+                lon:Math.atan2(-n.z,n.x)*RAD};
+      }
+      function basis(lat,lon) {
+        const a=lat*DEG, b=lon*DEG, ca=Math.cos(a), sa=Math.sin(a), cb=Math.cos(b), sb=Math.sin(b);
+        return {
+          position:new THREE.Vector3(ca*cb,sa,-ca*sb),
+          east:new THREE.Vector3(-sb,0,-cb),
+          north:new THREE.Vector3(-sa*cb,ca,sa*sb)
+        };
+      }
+
+      const positions=new Float32Array(COUNT*3);
+      const trailPositions=new Float32Array(COUNT*TRAIL_STEPS*2*3);
+      const particles=[];
+      const pointGeometry=new THREE.BufferGeometry();
+      pointGeometry.setAttribute('position',new THREE.BufferAttribute(positions,3).setUsage(THREE.DynamicDrawUsage));
+      const pointMaterial=new THREE.PointsMaterial({
+        color:0xd9f7ff, size:0.008, sizeAttenuation:true,
+        transparent:true, opacity:0.82, depthTest:true, depthWrite:false,
+        blending:THREE.NormalBlending, toneMapped:false
+      });
+      const points=new THREE.Points(pointGeometry,pointMaterial);
+      points.name='liveEarthWind40AtmosphericTracers';
+      points.renderOrder=12;
+      points.frustumCulled=false;
+      points.raycast=()=>{};
+
+      const trailGeometry=new THREE.BufferGeometry();
+      trailGeometry.setAttribute('position',new THREE.BufferAttribute(trailPositions,3).setUsage(THREE.DynamicDrawUsage));
+      const trailMaterial=new THREE.LineBasicMaterial({
+        color:0xa9e9f5, transparent:true, opacity:0.20,
+        depthTest:true, depthWrite:false, blending:THREE.NormalBlending,
+        toneMapped:false
+      });
+      const trails=new THREE.LineSegments(trailGeometry,trailMaterial);
+      trails.name='liveEarthWindTracerShortTails';
+      trails.renderOrder=11;
+      trails.frustumCulled=false;
+      trails.raycast=()=>{};
+      earth.add(trails,points);
+
+      const cameraLocal=new THREE.Vector3();
+      const worldCamera=new THREE.Vector3();
+      function getViewDirection() {
+        camera.getWorldPosition(worldCamera);
+        earth.worldToLocal(cameraLocal.copy(worldCamera));
+        return cameraLocal.normalize();
+      }
+      function isVisible(p,viewDir) { return p.dot(viewDir)>0.10; }
+
+      function randomVisiblePosition(viewDir) {
+        // Uniformly distribute seeds over the visible hemisphere, avoiding
+        // the extreme limb where the surface becomes visually compressed.
+        for(let attempt=0;attempt<40;attempt++) {
+          const z=Math.random()*0.84+0.12;
+          const angle=Math.random()*Math.PI*2;
+          const radial=Math.sqrt(1-z*z);
+          const local=new THREE.Vector3(
+            viewDir.x*z + (Math.abs(viewDir.y)<0.9?new THREE.Vector3(0,1,0):new THREE.Vector3(1,0,0)).cross(viewDir).normalize().x*radial*Math.cos(angle),
+            viewDir.y*z + (Math.abs(viewDir.y)<0.9?new THREE.Vector3(0,1,0):new THREE.Vector3(1,0,0)).cross(viewDir).normalize().y*radial*Math.cos(angle),
+            viewDir.z*z + (Math.abs(viewDir.y)<0.9?new THREE.Vector3(0,1,0):new THREE.Vector3(1,0,0)).cross(viewDir).normalize().z*radial*Math.cos(angle)
+          );
+          const right=new THREE.Vector3().crossVectors(viewDir,Math.abs(viewDir.y)<0.9?new THREE.Vector3(0,1,0):new THREE.Vector3(1,0,0)).normalize();
+          local.addScaledVector(right,radial*Math.sin(angle)).normalize().multiplyScalar(RADIUS);
+          const ll=toLatLon(local), wind=sampleWind(ll.lat,ll.lon);
+          if(wind && wind.speed>=0.8) return local;
+        }
+        return null;
+      }
+
+      const initialView=getViewDirection();
+      function seedParticle(particle,viewDir) {
+        const seed=randomVisiblePosition(viewDir);
+        if(!seed) return false;
+        particle.position.copy(seed);
+        particle.history.length=0;
+        for(let i=0;i<TRAIL_STEPS+1;i++) particle.history.push(seed.clone());
+        particle.age=0;
+        return true;
+      }
+      for(let i=0;i<COUNT;i++) {
+        const particle={position:new THREE.Vector3(),history:[],age:0};
+        if(!seedParticle(particle,initialView)) {
+          particle.position.set(0,0,0);
+          particle.history=[particle.position.clone(),particle.position.clone(),particle.position.clone(),particle.position.clone()];
+        }
+        particles.push(particle);
+      }
+
+      function writeBuffers() {
+        for(let i=0;i<COUNT;i++) {
+          const p=particles[i];
+          const valid=p.position.lengthSq()>0.5;
+          const head=valid?p.position:new THREE.Vector3(0,0,0);
+          positions[i*3]=head.x; positions[i*3+1]=head.y; positions[i*3+2]=head.z;
+          for(let j=0;j<TRAIL_STEPS;j++) {
+            const a=p.history[j], b=p.history[j+1], k=(i*TRAIL_STEPS+j)*6;
+            trailPositions[k]=a.x; trailPositions[k+1]=a.y; trailPositions[k+2]=a.z;
+            trailPositions[k+3]=b.x; trailPositions[k+4]=b.y; trailPositions[k+5]=b.z;
+          }
+        }
+        pointGeometry.attributes.position.needsUpdate=true;
+        trailGeometry.attributes.position.needsUpdate=true;
+        pointGeometry.computeBoundingSphere();
+        trailGeometry.computeBoundingSphere();
+      }
+
+      let disposed=false, frame=0, last=0, accumulator=0;
+      const fixedStep=1/24;
+      const animate=time=>{
+        if(disposed) return;
+        frame=requestAnimationFrame(animate);
+        if(document.hidden) { last=time; return; }
+        if(!last) last=time;
+        const elapsed=Math.min(0.08,(time-last)/1000);
+        last=time; accumulator+=elapsed;
+        if(accumulator<fixedStep) return;
+        const dt=Math.min(0.05,accumulator);
+        accumulator=0;
+        const viewDir=getViewDirection();
+        let changed=false;
+
+        for(const particle of particles) {
+          if(particle.position.lengthSq()<0.5 || !isVisible(particle.position.clone().normalize(),viewDir)) {
+            seedParticle(particle,viewDir); changed=true;
+            continue;
+          }
+          const ll=toLatLon(particle.position);
+          const wind=sampleWind(ll.lat,ll.lon);
+          if(!wind || wind.speed<0.8) {
+            // Calm or missing cells do not create decorative motion.
+            seedParticle(particle,viewDir); changed=true;
+            continue;
+          }
+          const frameBasis=basis(ll.lat,ll.lon);
+          const tangent=new THREE.Vector3()
+            .addScaledVector(frameBasis.east,wind.east)
+            .addScaledVector(frameBasis.north,wind.north);
+          const magnitude=tangent.length();
+          if(magnitude<0.001) continue;
+          tangent.multiplyScalar(1/magnitude);
+
+          // Wind speed sets the travel rate. This is a visual-time scale,
+          // not a claim of real-time physical distance.
+          const angularStep=wind.speed*0.00021*dt;
+          particle.position.addScaledVector(tangent,angularStep*RADIUS).normalize().multiplyScalar(RADIUS);
+          particle.age+=dt;
+          particle.history.shift();
+          particle.history.push(particle.position.clone());
+          if(particle.age>18 || !isVisible(particle.position.clone().normalize(),viewDir)) {
+            seedParticle(particle,viewDir);
+          }
+          changed=true;
+        }
+        if(changed) { writeBuffers(); requestRender?.(); }
+      };
+      writeBuffers();
+      frame=requestAnimationFrame(animate);
+
+      return {
+        dispose() {
+          if(disposed) return;
+          disposed=true;
+          cancelAnimationFrame(frame);
+          points.removeFromParent(); trails.removeFromParent();
+          pointGeometry.dispose(); trailGeometry.dispose();
+          pointMaterial.dispose(); trailMaterial.dispose();
+        },
+        stats:{renderer:'40-visible-wind-tracers',count:COUNT,trailSegments:COUNT*TRAIL_STEPS}
+      };
     }
 
     async function selectDataset(datasetKey) {
@@ -1224,7 +1442,12 @@ function installStyles() {
           gridRoot.add(gridHandle.mesh);
           if (gridHandle.auraMesh) gridRoot.add(gridHandle.auraMesh);
           earth.add(gridRoot);
+          if (datasetKey === 'wind') {
+            windTracerHandle = makeWindTracers(THREE, earth, worldGlobe.camera, grid, grids[1], () => worldGlobe?.requestRender?.());
+          }
           return () => {
+            try { windTracerHandle?.dispose?.(); } catch (_) {}
+            windTracerHandle = null;
             try { gridHandle?.dispose?.(); } catch (_) {}
             gridHandle = null;
             try { gridRoot?.removeFromParent?.(); } catch (_) {}
