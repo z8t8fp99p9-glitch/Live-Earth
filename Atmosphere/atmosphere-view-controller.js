@@ -1153,15 +1153,15 @@ function installStyles() {
     }
 
     function makeWindFlow(THREE, earth, directionGrid, speedGrid, requestRender) {
-      // Two-field wind visualization:
-      // direction controls particle travel; speed controls trail colour and head size.
-      // No raster skin, arrows, or visible speed surface is created.
+      // Continuous two-field wind flow:
+      // direction controls travel; speed controls particle/trail appearance.
+      // Particles have staggered lifetimes, fade out, and respawn at fresh locations.
       const dirDef = directionGrid.definition;
       const dirValues = directionGrid.values;
       const spdDef = speedGrid.definition;
       const spdValues = speedGrid.values;
       const particleCount = 2000;
-      const trailLength = 24;
+      const trailLength = 36;
       const segmentCount = trailLength - 1;
       const vertexCount = particleCount * segmentCount * 2;
       const positions = new Float32Array(vertexCount * 3);
@@ -1173,10 +1173,15 @@ function installStyles() {
       const particles = [];
       const rad = Math.PI / 180;
       const radius = 1.014;
-      const angularStep = 0.075; // visual travel rate remains independent of speed for this stage
+      const angularStep = 0.075; // direction controls travel; speed remains a visual attribute
       const speedCeiling = Math.max(12, Math.min(30, Number(speedGrid.max) || 25));
+      const minLifetime = 360; // animation updates, approximately 14 seconds at 25 fps
+      const maxLifetime = 660; // animation updates, approximately 26 seconds at 25 fps
+      const fadeDuration = 90; // fade the complete trail before respawn
+      const trailWarmup = 18; // gently reveal a newly spawned particle's trail
       let seed = 0x6d2b79f5;
       const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+      const clamp01 = value => Math.max(0, Math.min(1, value));
 
       function gridCell(def, latitude, longitude) {
         const gx = (longitude - def.lonStart) / def.lonStep;
@@ -1231,7 +1236,6 @@ function installStyles() {
         return weight > 0.25 ? Math.max(0, total / weight) : 0;
       }
 
-      // Continuous calm-to-strong palette. These colours exist only on particles/trails.
       const speedStops = [
         [0.00, [0.18, 0.82, 0.91]],
         [0.22, [0.15, 0.52, 1.00]],
@@ -1241,7 +1245,7 @@ function installStyles() {
         [1.00, [1.00, 0.68, 0.30]]
       ];
       function speedStyle(speed) {
-        const t = Math.max(0, Math.min(1, speed / speedCeiling));
+        const t = clamp01(speed / speedCeiling);
         let a = speedStops[0], b = speedStops[speedStops.length - 1];
         for (let i=1;i<speedStops.length;i++) {
           if (t <= speedStops[i][0]) { a = speedStops[i-1]; b = speedStops[i]; break; }
@@ -1253,7 +1257,7 @@ function installStyles() {
             a[1][1] + (b[1][1]-a[1][1])*f,
             a[1][2] + (b[1][2]-a[1][2])*f
           ],
-          size: 1.65 + t * 2.25,
+          size: 3.2 + t * 2.4,
           strength: 0.045 + t * 0.12
         };
       }
@@ -1266,11 +1270,15 @@ function installStyles() {
         out[2] = -cp * Math.sin(lambda) * radius;
       }
 
-      function resetParticle(p) {
-        // Uniform area distribution on the sphere, avoiding polar clustering.
+      function resetParticle(p, stagger = false) {
+        // Uniform-area spawn over the sphere, not uniform latitude.
         p.lat = Math.asin(random() * 2 - 1) / rad;
         p.lon = -180 + random() * 360;
         p.head = 0;
+        p.age = stagger ? Math.floor(random() * (p.maxAge - fadeDuration - trailWarmup)) : 0;
+        p.maxAge = minLifetime + Math.floor(random() * (maxLifetime - minLifetime + 1));
+        // Keep the initial trail collapsed at the new spawn point. This prevents
+        // a visible connector between the particle's previous life and new spawn.
         const point = [0,0,0];
         surfacePoint(p.lat, p.lon, point);
         const speed = sampleSpeed(p.lat, p.lon);
@@ -1302,8 +1310,12 @@ function installStyles() {
       }
 
       for (let i=0;i<particleCount;i++) {
-        const p = {lat:0, lon:0, head:0, history:new Float32Array(trailLength * 4)};
-        resetParticle(p);
+        const p = {
+          lat:0, lon:0, head:0, age:0,
+          maxAge:minLifetime + Math.floor(random() * (maxLifetime-minLifetime+1)),
+          history:new Float32Array(trailLength * 4)
+        };
+        resetParticle(p, true);
         particles.push(p);
       }
 
@@ -1349,18 +1361,17 @@ function installStyles() {
         for (let i=0;i<particles.length;i++) {
           const p = particles[i];
           const from = sampleDirection(p.lat,p.lon);
-          if (from === null) {
+          if (from === null || p.age >= p.maxAge) {
             resetParticle(p);
           } else {
-            // Direction alone determines travel bearing. Speed affects appearance only.
+            // Direction alone determines travel bearing. Speed only styles the flow.
             const next = advanceOnSphere(p.lat, p.lon, (from + 180) % 360, angularStep * elapsed);
             p.lat = next.lat;
             p.lon = next.lon;
+            p.age += elapsed;
             p.head = (p.head + 1) % trailLength;
             const speed = sampleSpeed(p.lat,p.lon);
             const k = p.head * 4;
-            surfacePoint(p.lat,p.lon,[p.history[k],p.history[k+1],p.history[k+2]]);
-            // Write directly into the ring buffer without allocating per-frame vectors.
             const phi = p.lat * rad, lambda = p.lon * rad, cp = Math.cos(phi);
             p.history[k] = cp * Math.cos(lambda) * radius;
             p.history[k+1] = Math.sin(phi) * radius;
@@ -1369,6 +1380,9 @@ function installStyles() {
           }
 
           const oldest = (p.head + 1) % trailLength;
+          const lifeFade = clamp01((p.maxAge - p.age) / fadeDuration);
+          const warmFade = clamp01(p.age / trailWarmup);
+          const particleFade = lifeFade * warmFade;
           for (let j=0;j<segmentCount;j++) {
             const ia = ((oldest + j) % trailLength) * 4;
             const ib = ((oldest + j + 1) % trailLength) * 4;
@@ -1383,9 +1397,9 @@ function installStyles() {
             const styleB = speedStyle(p.history[ib+3]);
             trailColors.set(styleA.color, va);
             trailColors.set(styleB.color, va+3);
-            const age = (j+1)/segmentCount;
-            fades[vertex] = 0.008 + age * styleA.strength;
-            fades[vertex+1] = 0.008 + age * styleB.strength;
+            const ageFade = (j+1)/segmentCount;
+            fades[vertex] = particleFade * (0.008 + ageFade * styleA.strength);
+            fades[vertex+1] = particleFade * (0.008 + ageFade * styleB.strength);
             vertex += 2;
           }
           const latest = p.head * 4;
@@ -1395,7 +1409,7 @@ function installStyles() {
           headPositions[hi+2] = p.history[latest+2];
           const headStyle = speedStyle(p.history[latest+3]);
           headColors.set(headStyle.color, hi);
-          headSizes[i] = headStyle.size;
+          headSizes[i] = headStyle.size * particleFade;
         }
         geometry.attributes.position.needsUpdate = true;
         geometry.attributes.color.needsUpdate = true;
