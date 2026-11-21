@@ -1217,7 +1217,7 @@ function installStyles() {
           uLonZeroTo360: { value: dirDef.longitudeConvention === '0..360' ? 1 : 0 },
           uTime: { value: 0 },
           uSpeedCeiling: { value: speedCeiling },
-          uFlowRate: { value: 0.00165 }
+          uFlowRate: { value: 0.0105 }
         },
         vertexShader: `
           varying vec2 vUv;
@@ -1354,7 +1354,7 @@ function installStyles() {
             }
 
             vec2 p = traced * vec2(230.0, 118.0);
-            float warp = fbm(p * 0.22 + vec2(uTime*0.018, -uTime*0.012));
+            float warp = fbm(p * 0.22 + vec2(uTime*0.075, -uTime*0.052));
             vec2 oriented = vec2(
               dot(p, flowDirection) * 0.20 + warp * 2.1,
               dot(p, perpendicular) * 1.55
