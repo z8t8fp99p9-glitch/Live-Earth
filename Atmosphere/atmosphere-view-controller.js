@@ -1175,10 +1175,10 @@ function installStyles() {
       const radius = 1.014;
       const angularStep = 0.075; // direction controls travel; speed remains a visual attribute
       const speedCeiling = Math.max(12, Math.min(30, Number(speedGrid.max) || 25));
-      const minLifetime = 50; // 2 seconds at 25 animation updates per second
-      const maxLifetime = 75; // 3 seconds at 25 animation updates per second
-      const trailFadeDuration = trailLength; // trail remains after the head finishes travelling
-      const trailWarmup = 8; // gently reveal a newly launched particle's trail
+      const lifetime = 75; // 3 seconds at approximately 25 animation updates per second
+      const emissionInterval = 25; // launch a new cohort every 1 second
+      const fadeDuration = 18; // fade the particle and its trail over the final ~0.72 seconds
+      const trailWarmup = 5; // gently reveal each newly launched trail
       let seed = 0x6d2b79f5;
       const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
       const clamp01 = value => Math.max(0, Math.min(1, value));
@@ -1270,9 +1270,9 @@ function installStyles() {
         out[2] = -cp * Math.sin(lambda) * radius;
       }
 
-      function resetParticle(p, createEmitter = false) {
-        // Each particle owns one permanent emitter coordinate. Every new life
-        // launches from that same location instead of random-walking around Earth.
+      function resetParticle(p, createEmitter = false, initialAge = 0) {
+        // Each particle owns one invisible, permanent emitter coordinate.
+        // A new visible particle is launched from that same location every cycle.
         if (createEmitter || !Number.isFinite(p.spawnLat) || !Number.isFinite(p.spawnLon)) {
           p.spawnLat = Math.asin(random() * 2 - 1) / rad;
           p.spawnLon = -180 + random() * 360;
@@ -1280,12 +1280,11 @@ function installStyles() {
         p.lat = p.spawnLat;
         p.lon = p.spawnLon;
         p.head = 0;
-        p.age = 0;
-        p.retiring = false;
-        p.retireAge = 0;
-        p.maxAge = minLifetime + Math.floor(random() * (maxLifetime - minLifetime + 1));
-        // Collapse the new trail at its fixed emitter. This prevents a connector
-        // between the previous trail and the next launch.
+        p.age = initialAge;
+        p.maxAge = lifetime;
+        p.active = initialAge < lifetime;
+        // A fresh trail begins collapsed at its emitter. No marker is drawn
+        // at the emitter and no line can connect to a previous particle life.
         const point = [0,0,0];
         surfacePoint(p.lat, p.lon, point);
         const speed = sampleSpeed(p.lat, p.lon);
@@ -1319,11 +1318,13 @@ function installStyles() {
       for (let i=0;i<particleCount;i++) {
         const p = {
           lat:0, lon:0, spawnLat:NaN, spawnLon:NaN,
-          head:0, age:0, retiring:false, retireAge:0,
-          maxAge:minLifetime + Math.floor(random() * (maxLifetime-minLifetime+1)),
+          head:0, age:0, active:false,
           history:new Float32Array(trailLength * 4)
         };
-        resetParticle(p, true);
+        // Three evenly staggered cohorts: new particles launch every second,
+        // while each visible particle has a three-second lifetime.
+        const initialAge = (i % 3) * emissionInterval;
+        resetParticle(p, true, initialAge);
         particles.push(p);
       }
 
@@ -1368,19 +1369,14 @@ function installStyles() {
         let vertex = 0;
         for (let i=0;i<particles.length;i++) {
           const p = particles[i];
-          if (p.retiring) {
-            // The moving head has finished its 2–3 second run. Keep its trail
-            // in place and fade it independently before relaunching at its emitter.
-            p.retireAge += elapsed;
-            if (p.retireAge >= trailFadeDuration) resetParticle(p);
-          } else if (p.age >= p.maxAge) {
-            p.retiring = true;
-            p.retireAge = 0;
-          } else {
+          if (p.age >= lifetime) {
+            // Relaunch from the same invisible emitter after the 3-second life.
+            resetParticle(p);
+          }
+          if (p.active) {
             const from = sampleDirection(p.lat,p.lon);
             if (from === null) {
-              p.retiring = true;
-              p.retireAge = 0;
+              p.active = false;
             } else {
               // Direction alone determines travel bearing. Speed only styles the flow.
               const next = advanceOnSphere(p.lat, p.lon, (from + 180) % 360, angularStep * elapsed);
@@ -1400,9 +1396,8 @@ function installStyles() {
 
           const oldest = (p.head + 1) % trailLength;
           const warmFade = clamp01(p.age / trailWarmup);
-          const particleFade = p.retiring
-            ? clamp01(1 - p.retireAge / trailFadeDuration)
-            : warmFade;
+          const lifeFade = clamp01((lifetime - p.age) / fadeDuration);
+          const particleFade = p.active ? warmFade * lifeFade : 0;
           for (let j=0;j<segmentCount;j++) {
             const ia = ((oldest + j) % trailLength) * 4;
             const ib = ((oldest + j + 1) % trailLength) * 4;
