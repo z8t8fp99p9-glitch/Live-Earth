@@ -1153,35 +1153,21 @@ function installStyles() {
     }
 
     function makeWindFlow(THREE, earth, directionGrid, speedGrid, requestRender) {
-      // Continuous two-field wind flow:
-      // direction controls travel; speed controls particle/trail appearance.
-      // Particles have staggered lifetimes, fade out, and respawn at fresh locations.
+      // Static atmospheric streamlines.
+      // Direction determines each streamline's path; speed determines its colour.
+      // Geometry is generated once: no particles, animation loop, respawn, or timers.
       const dirDef = directionGrid.definition;
       const dirValues = directionGrid.values;
       const spdDef = speedGrid.definition;
       const spdValues = speedGrid.values;
-      const particleCount = 2000;
-      const trailLength = 48;
-      const segmentCount = trailLength - 1;
-      const vertexCount = particleCount * segmentCount * 2;
-      const positions = new Float32Array(vertexCount * 3);
-      const trailColors = new Float32Array(vertexCount * 3);
-      const fades = new Float32Array(vertexCount);
-      const headPositions = new Float32Array(particleCount * 3);
-      const headColors = new Float32Array(particleCount * 3);
-      const headSizes = new Float32Array(particleCount);
-      const particles = [];
+      const streamlineCount = 680;
+      const stepsPerLine = 132;
+      const angularStep = 0.19;
       const rad = Math.PI / 180;
       const radius = 1.014;
-      const angularStep = 0.075; // direction controls travel; speed remains a visual attribute
       const speedCeiling = Math.max(12, Math.min(30, Number(speedGrid.max) || 25));
-      const lifetime = 75; // 3 seconds at approximately 25 animation updates per second
-      const emissionInterval = 25; // launch a new cohort every 1 second
-      const fadeDuration = 18; // fade the particle and its trail over the final ~0.72 seconds
-      const trailWarmup = 5; // gently reveal each newly launched trail
-      let seed = 0x6d2b79f5;
+      let seed = 0x4f1bbcdc;
       const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-      const clamp01 = value => Math.max(0, Math.min(1, value));
 
       function gridCell(def, latitude, longitude) {
         const gx = (longitude - def.lonStart) / def.lonStep;
@@ -1237,71 +1223,42 @@ function installStyles() {
       }
 
       const speedStops = [
-        [0.00, [0.18, 0.82, 0.91]],
-        [0.22, [0.15, 0.52, 1.00]],
-        [0.42, [0.39, 0.34, 0.96]],
-        [0.62, [0.72, 0.27, 0.88]],
-        [0.82, [0.96, 0.31, 0.58]],
-        [1.00, [1.00, 0.68, 0.30]]
+        [0.00, [0.10, 0.62, 0.86]],
+        [0.20, [0.12, 0.72, 0.78]],
+        [0.40, [0.28, 0.78, 0.40]],
+        [0.60, [0.86, 0.78, 0.25]],
+        [0.80, [0.96, 0.48, 0.22]],
+        [1.00, [0.94, 0.25, 0.48]]
       ];
-      function speedStyle(speed) {
-        const t = clamp01(speed / speedCeiling);
+      function speedColor(speed) {
+        const t = Math.max(0, Math.min(1, speed / speedCeiling));
         let a = speedStops[0], b = speedStops[speedStops.length - 1];
         for (let i=1;i<speedStops.length;i++) {
           if (t <= speedStops[i][0]) { a = speedStops[i-1]; b = speedStops[i]; break; }
         }
         const f = b[0] === a[0] ? 0 : (t-a[0])/(b[0]-a[0]);
-        return {
-          color: [
-            a[1][0] + (b[1][0]-a[1][0])*f,
-            a[1][1] + (b[1][1]-a[1][1])*f,
-            a[1][2] + (b[1][2]-a[1][2])*f
-          ],
-          size: 3.2 + t * 2.4,
-          strength: 0.045 + t * 0.12
-        };
+        return [
+          a[1][0] + (b[1][0]-a[1][0])*f,
+          a[1][1] + (b[1][1]-a[1][1])*f,
+          a[1][2] + (b[1][2]-a[1][2])*f
+        ];
       }
 
-      function surfacePoint(latitude, longitude, out) {
+      function surfacePoint(latitude, longitude) {
         const phi = latitude * rad, lambda = longitude * rad;
         const cp = Math.cos(phi);
-        out[0] = cp * Math.cos(lambda) * radius;
-        out[1] = Math.sin(phi) * radius;
-        out[2] = -cp * Math.sin(lambda) * radius;
+        return [
+          cp * Math.cos(lambda) * radius,
+          Math.sin(phi) * radius,
+          -cp * Math.sin(lambda) * radius
+        ];
       }
 
-      function resetParticle(p, createEmitter = false, initialAge = 0) {
-        // Each particle owns one invisible, permanent emitter coordinate.
-        // A new visible particle is launched from that same location every cycle.
-        if (createEmitter || !Number.isFinite(p.spawnLat) || !Number.isFinite(p.spawnLon)) {
-          p.spawnLat = Math.asin(random() * 2 - 1) / rad;
-          p.spawnLon = -180 + random() * 360;
-        }
-        p.lat = p.spawnLat;
-        p.lon = p.spawnLon;
-        p.head = 0;
-        p.age = initialAge;
-        p.maxAge = lifetime;
-        p.active = initialAge < lifetime;
-        // A fresh trail begins collapsed at its emitter. No marker is drawn
-        // at the emitter and no line can connect to a previous particle life.
-        const point = [0,0,0];
-        surfacePoint(p.lat, p.lon, point);
-        const speed = sampleSpeed(p.lat, p.lon);
-        for (let j=0;j<trailLength;j++) {
-          const k = j * 4;
-          p.history[k] = point[0];
-          p.history[k+1] = point[1];
-          p.history[k+2] = point[2];
-          p.history[k+3] = speed;
-        }
-      }
-
-      function advanceOnSphere(latitude, longitude, bearingDegrees, distanceDegrees) {
+      function advanceOnSphere(latitude, longitude, bearingDegrees) {
         const lat1 = latitude * rad;
         const lon1 = longitude * rad;
         const bearing = bearingDegrees * rad;
-        const distance = distanceDegrees * rad;
+        const distance = angularStep * rad;
         const sinLat2 = Math.sin(lat1) * Math.cos(distance)
           + Math.cos(lat1) * Math.sin(distance) * Math.cos(bearing);
         const lat2 = Math.asin(Math.max(-1, Math.min(1, sinLat2)));
@@ -1315,137 +1272,94 @@ function installStyles() {
         };
       }
 
-      for (let i=0;i<particleCount;i++) {
-        const p = {
-          lat:0, lon:0, spawnLat:NaN, spawnLon:NaN,
-          head:0, age:0, active:false,
-          history:new Float32Array(trailLength * 4)
-        };
-        // Three evenly staggered cohorts: new particles launch every second,
-        // while each visible particle has a three-second lifetime.
-        const initialAge = (i % 3) * emissionInterval;
-        resetParticle(p, true, initialAge);
-        particles.push(p);
+      const positions = [];
+      const colors = [];
+      const alphas = [];
+      let acceptedLines = 0;
+
+      for (let line = 0; line < streamlineCount; line++) {
+        // Uniform-area seed distribution across the sphere.
+        let latitude = Math.asin(random() * 2 - 1) / rad;
+        let longitude = -180 + random() * 360;
+        let previous = null;
+        let lineSegments = 0;
+
+        for (let step = 0; step < stepsPerLine; step++) {
+          const from = sampleDirection(latitude, longitude);
+          if (from === null) break;
+
+          const point = surfacePoint(latitude, longitude);
+          const speed = sampleSpeed(latitude, longitude);
+          const color = speedColor(speed);
+
+          if (previous) {
+            positions.push(previous[0], previous[1], previous[2], point[0], point[1], point[2]);
+            colors.push(
+              previous[3], previous[4], previous[5],
+              color[0], color[1], color[2]
+            );
+            const along = step / stepsPerLine;
+            const envelope = 0.42 + 0.48 * Math.sin(Math.PI * along);
+            const speedAlpha = 0.48 + Math.min(1, speed / speedCeiling) * 0.25;
+            alphas.push(envelope * speedAlpha, envelope * speedAlpha);
+            lineSegments++;
+          }
+
+          previous = [point[0], point[1], point[2], color[0], color[1], color[2]];
+          // NOAA direction is FROM; particles/streamlines travel TO.
+          const next = advanceOnSphere(latitude, longitude, (from + 180) % 360);
+          latitude = next.lat;
+          longitude = next.lon;
+        }
+        if (lineSegments > 3) acceptedLines++;
       }
 
       const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions,3).setUsage(THREE.DynamicDrawUsage));
-      geometry.setAttribute('color', new THREE.BufferAttribute(trailColors,3).setUsage(THREE.DynamicDrawUsage));
-      geometry.setAttribute('fade', new THREE.BufferAttribute(fades,1).setUsage(THREE.DynamicDrawUsage));
-      const trailMaterial = new THREE.ShaderMaterial({
-        transparent:true, depthTest:true, depthWrite:false,
-        blending:THREE.AdditiveBlending, toneMapped:false,
-        vertexShader:`attribute vec3 color; attribute float fade; varying vec3 vColor; varying float vFade; void main(){vColor=color;vFade=fade;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
-        fragmentShader:`varying vec3 vColor; varying float vFade; void main(){gl_FragColor=vec4(vColor,clamp(vFade,0.0,0.24));}`
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      geometry.setAttribute('lineAlpha', new THREE.Float32BufferAttribute(alphas, 1));
+
+      const material = new THREE.ShaderMaterial({
+        transparent: true,
+        depthTest: true,
+        depthWrite: false,
+        blending: THREE.NormalBlending,
+        toneMapped: false,
+        vertexShader: `
+          attribute vec3 color;
+          attribute float lineAlpha;
+          varying vec3 vColor;
+          varying float vAlpha;
+          void main() {
+            vColor = color;
+            vAlpha = lineAlpha;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vColor;
+          varying float vAlpha;
+          void main() {
+            gl_FragColor = vec4(vColor, vAlpha);
+          }
+        `
       });
-      const trails = new THREE.LineSegments(geometry, trailMaterial);
-      trails.name = 'liveEarthAtmosphereWindSpeedColoredTrails';
-      trails.renderOrder = 8;
-      trails.raycast = () => {};
 
-      const headGeometry = new THREE.BufferGeometry();
-      headGeometry.setAttribute('position', new THREE.BufferAttribute(headPositions,3).setUsage(THREE.DynamicDrawUsage));
-      headGeometry.setAttribute('color', new THREE.BufferAttribute(headColors,3).setUsage(THREE.DynamicDrawUsage));
-      headGeometry.setAttribute('size', new THREE.BufferAttribute(headSizes,1).setUsage(THREE.DynamicDrawUsage));
-      const headMaterial = new THREE.ShaderMaterial({
-        transparent:true, depthTest:true, depthWrite:false,
-        blending:THREE.AdditiveBlending, toneMapped:false,
-        vertexShader:`attribute vec3 color; attribute float size; varying vec3 vColor; void main(){vColor=color;vec4 mvPosition=modelViewMatrix*vec4(position,1.0);gl_Position=projectionMatrix*mvPosition;gl_PointSize=size;}`,
-        fragmentShader:`varying vec3 vColor; void main(){vec2 p=gl_PointCoord-vec2(0.5);float d=length(p);float a=1.0-smoothstep(0.26,0.5,d);if(a<0.015)discard;gl_FragColor=vec4(vColor,a*0.78);}`
-      });
-      const heads = new THREE.Points(headGeometry, headMaterial);
-      heads.name = 'liveEarthAtmosphereWindSpeedSizedParticles';
-      heads.renderOrder = 9;
-      heads.raycast = () => {};
-      earth.add(trails, heads);
+      const streamlines = new THREE.LineSegments(geometry, material);
+      streamlines.name = 'liveEarthAtmosphereStaticWindStreamlines';
+      streamlines.renderOrder = 8;
+      // Decorative geometry must never enter the globe's recursive touch picking.
+      streamlines.raycast = () => {};
+      earth.add(streamlines);
 
-      let disposed = false, frame = 0, lastFrameTime = 0;
-      function animate(time) {
-        if (disposed) return;
-        frame = requestAnimationFrame(animate);
-        if (document.hidden || time-lastFrameTime < 40) return;
-        const elapsed = lastFrameTime ? Math.min(2, (time-lastFrameTime)/48) : 1;
-        lastFrameTime = time;
-        let vertex = 0;
-        for (let i=0;i<particles.length;i++) {
-          const p = particles[i];
-          if (p.age >= lifetime) {
-            // Relaunch from the same invisible emitter after the 3-second life.
-            resetParticle(p);
-          }
-          if (p.active) {
-            const from = sampleDirection(p.lat,p.lon);
-            if (from === null) {
-              p.active = false;
-            } else {
-              // Direction alone determines travel bearing. Speed only styles the flow.
-              const next = advanceOnSphere(p.lat, p.lon, (from + 180) % 360, angularStep * elapsed);
-              p.lat = next.lat;
-              p.lon = next.lon;
-              p.age += elapsed;
-              p.head = (p.head + 1) % trailLength;
-              const speed = sampleSpeed(p.lat,p.lon);
-              const k = p.head * 4;
-              const phi = p.lat * rad, lambda = p.lon * rad, cp = Math.cos(phi);
-              p.history[k] = cp * Math.cos(lambda) * radius;
-              p.history[k+1] = Math.sin(phi) * radius;
-              p.history[k+2] = -cp * Math.sin(lambda) * radius;
-              p.history[k+3] = speed;
-            }
-          }
-
-          const oldest = (p.head + 1) % trailLength;
-          const warmFade = clamp01(p.age / trailWarmup);
-          const lifeFade = clamp01((lifetime - p.age) / fadeDuration);
-          const particleFade = p.active ? warmFade * lifeFade : 0;
-          for (let j=0;j<segmentCount;j++) {
-            const ia = ((oldest + j) % trailLength) * 4;
-            const ib = ((oldest + j + 1) % trailLength) * 4;
-            const va = vertex * 3;
-            positions[va] = p.history[ia];
-            positions[va+1] = p.history[ia+1];
-            positions[va+2] = p.history[ia+2];
-            positions[va+3] = p.history[ib];
-            positions[va+4] = p.history[ib+1];
-            positions[va+5] = p.history[ib+2];
-            const styleA = speedStyle(p.history[ia+3]);
-            const styleB = speedStyle(p.history[ib+3]);
-            trailColors.set(styleA.color, va);
-            trailColors.set(styleB.color, va+3);
-            const ageFade = (j+1)/segmentCount;
-            fades[vertex] = particleFade * (0.008 + ageFade * styleA.strength);
-            fades[vertex+1] = particleFade * (0.008 + ageFade * styleB.strength);
-            vertex += 2;
-          }
-          const latest = p.head * 4;
-          const hi = i * 3;
-          headPositions[hi] = p.history[latest];
-          headPositions[hi+1] = p.history[latest+1];
-          headPositions[hi+2] = p.history[latest+2];
-          const headStyle = speedStyle(p.history[latest+3]);
-          headColors.set(headStyle.color, hi);
-          headSizes[i] = headStyle.size * particleFade;
-        }
-        geometry.attributes.position.needsUpdate = true;
-        geometry.attributes.color.needsUpdate = true;
-        geometry.attributes.fade.needsUpdate = true;
-        headGeometry.attributes.position.needsUpdate = true;
-        headGeometry.attributes.color.needsUpdate = true;
-        headGeometry.attributes.size.needsUpdate = true;
-        requestRender?.();
-      }
-      frame = requestAnimationFrame(animate);
-      return { dispose() {
-        if (disposed) return;
-        disposed = true;
-        cancelAnimationFrame(frame);
-        trails.removeFromParent();
-        heads.removeFromParent();
-        geometry.dispose();
-        trailMaterial.dispose();
-        headGeometry.dispose();
-        headMaterial.dispose();
-      }};
+      return {
+        dispose() {
+          streamlines.removeFromParent();
+          geometry.dispose();
+          material.dispose();
+        },
+        stats: { requestedLines: streamlineCount, acceptedLines, segments: positions.length / 6 }
+      };
     }
     async function selectDataset(datasetKey) {
       if (closed || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
