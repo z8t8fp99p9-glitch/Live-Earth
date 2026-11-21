@@ -1153,225 +1153,258 @@ function installStyles() {
     }
 
     function makeWindFlow(THREE, earth, directionGrid, speedGrid, requestRender) {
-      // Static atmospheric streamlines.
-      // Direction determines each streamline's path; speed determines its colour.
-      // Geometry is generated once: no particles, animation loop, respawn, or timers.
+      // GPU-shaded atmospheric flow. Direction and speed are packed into one
+      // compact texture; the fragment shader back-advects procedural wisps
+      // through the spherical vector field to create continuous moving air.
       const dirDef = directionGrid.definition;
       const dirValues = directionGrid.values;
-      const spdDef = speedGrid.definition;
       const spdValues = speedGrid.values;
-      const streamlineCount = 3000;
-      const stepsPerLine = 100;
-      const angularStep = 0.19;
-      const rad = Math.PI / 180;
-      const radius = 1.014;
-      const speedCeiling = Math.max(12, Math.min(30, Number(speedGrid.max) || 25));
-      let seed = 0x4f1bbcdc;
-      const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+      const width = dirDef.width;
+      const height = dirDef.height;
+      const speedCeiling = Math.max(1, Number(speedGrid.max) || 25);
+      const fieldBytes = new Uint8Array(width * height * 4);
+      const toByte = value => Math.max(0, Math.min(255, Math.round(value * 255)));
 
-      function gridCell(def, latitude, longitude) {
-        const gx = (longitude - def.lonStart) / def.lonStep;
-        const gy = (latitude - def.latStart) / def.latStep;
-        if (!Number.isFinite(gx) || !Number.isFinite(gy)) return null;
-        const x0raw = Math.floor(gx), y0raw = Math.floor(gy);
-        return {
-          x0: ((x0raw % def.width) + def.width) % def.width,
-          x1: (((x0raw + 1) % def.width) + def.width) % def.width,
-          y0: Math.max(0, Math.min(def.height - 1, y0raw)),
-          y1: Math.max(0, Math.min(def.height - 1, y0raw + 1)),
-          fx: gx - x0raw,
-          fy: gy - y0raw
-        };
-      }
-
-      function sampleDirection(latitude, longitude) {
-        const c = gridCell(dirDef, latitude, longitude);
-        if (!c) return null;
-        const samples = [
-          [dirValues[c.y0 * dirDef.width + c.x0], (1-c.fx)*(1-c.fy)],
-          [dirValues[c.y0 * dirDef.width + c.x1], c.fx*(1-c.fy)],
-          [dirValues[c.y1 * dirDef.width + c.x0], (1-c.fx)*c.fy],
-          [dirValues[c.y1 * dirDef.width + c.x1], c.fx*c.fy]
-        ];
-        let sx = 0, sy = 0, weight = 0;
-        for (const [angle, w] of samples) {
-          if (!Number.isFinite(angle) || w <= 0) continue;
-          sx += Math.sin(angle * rad) * w;
-          sy += Math.cos(angle * rad) * w;
-          weight += w;
+      for (let i = 0; i < width * height; i++) {
+        const direction = dirValues[i];
+        const speed = spdValues[i];
+        const offset = i * 4;
+        if (!Number.isFinite(direction) || !Number.isFinite(speed) || speed < 0) {
+          fieldBytes[offset] = 128;
+          fieldBytes[offset + 1] = 128;
+          fieldBytes[offset + 2] = 0;
+          fieldBytes[offset + 3] = 0;
+          continue;
         }
-        if (weight < 0.25 || Math.hypot(sx, sy) < 1e-5) return null;
-        return (Math.atan2(sx, sy) / rad + 360) % 360;
+        const angle = direction * Math.PI / 180;
+        // NOAA meteorological direction is FROM; vector components point TO.
+        const east = -Math.sin(angle) * speed;
+        const north = -Math.cos(angle) * speed;
+        fieldBytes[offset] = toByte(east / speedCeiling * 0.5 + 0.5);
+        fieldBytes[offset + 1] = toByte(north / speedCeiling * 0.5 + 0.5);
+        fieldBytes[offset + 2] = toByte(speed / speedCeiling);
+        fieldBytes[offset + 3] = 255;
       }
 
-      function sampleSpeed(latitude, longitude) {
-        const c = gridCell(spdDef, latitude, longitude);
-        if (!c) return 0;
-        const samples = [
-          [spdValues[c.y0 * spdDef.width + c.x0], (1-c.fx)*(1-c.fy)],
-          [spdValues[c.y0 * spdDef.width + c.x1], c.fx*(1-c.fy)],
-          [spdValues[c.y1 * spdDef.width + c.x0], (1-c.fx)*c.fy],
-          [spdValues[c.y1 * spdDef.width + c.x1], c.fx*c.fy]
-        ];
-        let total = 0, weight = 0;
-        for (const [value, w] of samples) {
-          if (!Number.isFinite(value) || w <= 0) continue;
-          total += value * w;
-          weight += w;
-        }
-        return weight > 0.25 ? Math.max(0, total / weight) : 0;
-      }
+      const windTexture = new THREE.DataTexture(
+        fieldBytes, width, height, THREE.RGBAFormat, THREE.UnsignedByteType
+      );
+      windTexture.name = 'liveEarthAtmosphereWindVectorField';
+      windTexture.magFilter = THREE.NearestFilter;
+      windTexture.minFilter = THREE.NearestFilter;
+      windTexture.wrapS = THREE.RepeatWrapping;
+      windTexture.wrapT = THREE.ClampToEdgeWrapping;
+      windTexture.generateMipmaps = false;
+      windTexture.flipY = false;
+      windTexture.unpackAlignment = 1;
+      windTexture.needsUpdate = true;
 
-      const speedStops = [
-        [0.00, [0.10, 0.62, 0.86]],
-        [0.20, [0.12, 0.72, 0.78]],
-        [0.40, [0.28, 0.78, 0.40]],
-        [0.60, [0.86, 0.78, 0.25]],
-        [0.80, [0.96, 0.48, 0.22]],
-        [1.00, [0.94, 0.25, 0.48]]
-      ];
-      function speedColor(speed) {
-        const t = Math.max(0, Math.min(1, speed / speedCeiling));
-        let a = speedStops[0], b = speedStops[speedStops.length - 1];
-        for (let i=1;i<speedStops.length;i++) {
-          if (t <= speedStops[i][0]) { a = speedStops[i-1]; b = speedStops[i]; break; }
-        }
-        const f = b[0] === a[0] ? 0 : (t-a[0])/(b[0]-a[0]);
-        return [
-          a[1][0] + (b[1][0]-a[1][0])*f,
-          a[1][1] + (b[1][1]-a[1][1])*f,
-          a[1][2] + (b[1][2]-a[1][2])*f
-        ];
-      }
-
-      function surfacePoint(latitude, longitude) {
-        const phi = latitude * rad, lambda = longitude * rad;
-        const cp = Math.cos(phi);
-        return [
-          cp * Math.cos(lambda) * radius,
-          Math.sin(phi) * radius,
-          -cp * Math.sin(lambda) * radius
-        ];
-      }
-
-      function advanceOnSphere(latitude, longitude, bearingDegrees) {
-        const lat1 = latitude * rad;
-        const lon1 = longitude * rad;
-        const bearing = bearingDegrees * rad;
-        const distance = angularStep * rad;
-        const sinLat2 = Math.sin(lat1) * Math.cos(distance)
-          + Math.cos(lat1) * Math.sin(distance) * Math.cos(bearing);
-        const lat2 = Math.asin(Math.max(-1, Math.min(1, sinLat2)));
-        const lon2 = lon1 + Math.atan2(
-          Math.sin(bearing) * Math.sin(distance) * Math.cos(lat1),
-          Math.cos(distance) - Math.sin(lat1) * Math.sin(lat2)
-        );
-        return {
-          lat: Math.max(-85, Math.min(85, lat2 / rad)),
-          lon: ((lon2 / rad + 540) % 360) - 180
-        };
-      }
-
-      const maxSegments = streamlineCount * (stepsPerLine - 1);
-      const positions = new Float32Array(maxSegments * 6);
-      const colors = new Float32Array(maxSegments * 6);
-      const alphas = new Float32Array(maxSegments * 2);
-      let positionOffset = 0;
-      let colorOffset = 0;
-      let alphaOffset = 0;
-      let acceptedLines = 0;
-
-      for (let line = 0; line < streamlineCount; line++) {
-        // Uniform-area seed distribution across the sphere.
-        let latitude = Math.asin(random() * 2 - 1) / rad;
-        let longitude = -180 + random() * 360;
-        let previous = null;
-        let lineSegments = 0;
-
-        for (let step = 0; step < stepsPerLine; step++) {
-          const from = sampleDirection(latitude, longitude);
-          if (from === null) break;
-
-          const point = surfacePoint(latitude, longitude);
-          const speed = sampleSpeed(latitude, longitude);
-          const color = speedColor(speed);
-
-          if (previous) {
-            positions[positionOffset++] = previous[0];
-            positions[positionOffset++] = previous[1];
-            positions[positionOffset++] = previous[2];
-            positions[positionOffset++] = point[0];
-            positions[positionOffset++] = point[1];
-            positions[positionOffset++] = point[2];
-            colors[colorOffset++] = previous[3];
-            colors[colorOffset++] = previous[4];
-            colors[colorOffset++] = previous[5];
-            colors[colorOffset++] = color[0];
-            colors[colorOffset++] = color[1];
-            colors[colorOffset++] = color[2];
-            const along = step / stepsPerLine;
-            const envelope = 0.42 + 0.48 * Math.sin(Math.PI * along);
-            const speedAlpha = 0.48 + Math.min(1, speed / speedCeiling) * 0.25;
-            const alpha = envelope * speedAlpha;
-            alphas[alphaOffset++] = alpha;
-            alphas[alphaOffset++] = alpha;
-            lineSegments++;
-          }
-
-          previous = [point[0], point[1], point[2], color[0], color[1], color[2]];
-          // NOAA direction is FROM; particles/streamlines travel TO.
-          const next = advanceOnSphere(latitude, longitude, (from + 180) % 360);
-          latitude = next.lat;
-          longitude = next.lon;
-        }
-        if (lineSegments > 3) acceptedLines++;
-      }
-
-      const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions.subarray(0, positionOffset), 3));
-      geometry.setAttribute('color', new THREE.BufferAttribute(colors.subarray(0, colorOffset), 3));
-      geometry.setAttribute('lineAlpha', new THREE.BufferAttribute(alphas.subarray(0, alphaOffset), 1));
-
+      const geometry = new THREE.SphereGeometry(1.014, 160, 112);
       const material = new THREE.ShaderMaterial({
         transparent: true,
         depthTest: true,
         depthWrite: false,
         blending: THREE.NormalBlending,
+        side: THREE.FrontSide,
         toneMapped: false,
+        uniforms: {
+          uWindField: { value: windTexture },
+          uGridSize: { value: new THREE.Vector2(width, height) },
+          uLonStart: { value: dirDef.lonStart },
+          uLonStep: { value: dirDef.lonStep },
+          uLatStart: { value: dirDef.latStart },
+          uLatStep: { value: dirDef.latStep },
+          uLonZeroTo360: { value: dirDef.longitudeConvention === '0..360' ? 1 : 0 },
+          uTime: { value: 0 },
+          uSpeedCeiling: { value: speedCeiling },
+          uFlowRate: { value: 0.00165 }
+        },
         vertexShader: `
-          attribute vec3 color;
-          attribute float lineAlpha;
-          varying vec3 vColor;
-          varying float vAlpha;
+          varying vec2 vUv;
           void main() {
-            vColor = color;
-            vAlpha = lineAlpha;
+            vUv = uv;
             gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
           }
         `,
         fragmentShader: `
-          varying vec3 vColor;
-          varying float vAlpha;
+          precision highp float;
+          uniform sampler2D uWindField;
+          uniform vec2 uGridSize;
+          uniform float uLonStart;
+          uniform float uLonStep;
+          uniform float uLatStart;
+          uniform float uLatStep;
+          uniform float uLonZeroTo360;
+          uniform float uTime;
+          uniform float uSpeedCeiling;
+          uniform float uFlowRate;
+          varying vec2 vUv;
+
+          vec4 readFieldCell(float x, float y) {
+            vec2 cellUv = (vec2(x, y) + 0.5) / uGridSize;
+            return texture2D(uWindField, cellUv);
+          }
+
+          vec4 sampleField(vec2 sphereUv) {
+            float longitude = (0.5 - sphereUv.x) * 360.0;
+            float latitude = (sphereUv.y - 0.5) * 180.0;
+            if (uLonZeroTo360 > 0.5) {
+              longitude = mod(longitude + 360.0, 360.0);
+            } else {
+              longitude = mod(longitude + 180.0, 360.0) - 180.0;
+            }
+            float gx = mod((longitude - uLonStart) / uLonStep, uGridSize.x);
+            float gy = clamp((latitude - uLatStart) / uLatStep, 0.0, uGridSize.y - 1.0);
+            float x0 = floor(gx);
+            float x1 = mod(x0 + 1.0, uGridSize.x);
+            float y0 = floor(gy);
+            float y1 = min(y0 + 1.0, uGridSize.y - 1.0);
+            float fx = fract(gx);
+            float fy = fract(gy);
+            vec4 a = readFieldCell(x0, y0);
+            vec4 b = readFieldCell(x1, y0);
+            vec4 c = readFieldCell(x0, y1);
+            vec4 d = readFieldCell(x1, y1);
+            float wa = (1.0-fx)*(1.0-fy)*a.a;
+            float wb = fx*(1.0-fy)*b.a;
+            float wc = (1.0-fx)*fy*c.a;
+            float wd = fx*fy*d.a;
+            float total = wa + wb + wc + wd;
+            if (total < 0.001) return vec4(0.0, 0.0, 0.0, 0.0);
+            vec3 packed = (a.rgb*wa + b.rgb*wb + c.rgb*wc + d.rgb*wd) / total;
+            return vec4(packed, total);
+          }
+
+          vec2 windVelocity(vec2 uv) {
+            vec4 field = sampleField(uv);
+            vec2 components = (field.rg * 2.0 - 1.0);
+            float latitude = (uv.y - 0.5) * 3.14159265359;
+            float eastScale = 1.0 / max(0.22, cos(latitude));
+            // UV-x runs opposite longitude; UV-y spans half as many degrees.
+            return vec2(-components.x * eastScale, components.y * 2.0) * uFlowRate;
+          }
+
+          float hash21(vec2 p) {
+            p.x = mod(p.x, 256.0);
+            p.y = mod(p.y, 256.0);
+            vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+            p3 += dot(p3, p3.yzx + 33.33);
+            return fract((p3.x + p3.y) * p3.z);
+          }
+
+          float noise2(vec2 p) {
+            vec2 i = floor(p);
+            vec2 f = fract(p);
+            f = f*f*(3.0-2.0*f);
+            float a = hash21(i);
+            float b = hash21(i+vec2(1.0,0.0));
+            float c = hash21(i+vec2(0.0,1.0));
+            float d = hash21(i+vec2(1.0,1.0));
+            return mix(mix(a,b,f.x), mix(c,d,f.x), f.y);
+          }
+
+          float fbm(vec2 p) {
+            float value = 0.0;
+            float amplitude = 0.5;
+            for (int i=0; i<4; i++) {
+              value += noise2(p) * amplitude;
+              p = p * 2.03 + vec2(17.17, 9.23);
+              amplitude *= 0.5;
+            }
+            return value;
+          }
+
+          vec3 speedColor(float speed) {
+            float t = clamp(speed, 0.0, 1.0);
+            vec3 c0 = vec3(0.10,0.62,0.86);
+            vec3 c1 = vec3(0.12,0.72,0.78);
+            vec3 c2 = vec3(0.28,0.78,0.40);
+            vec3 c3 = vec3(0.86,0.78,0.25);
+            vec3 c4 = vec3(0.96,0.48,0.22);
+            vec3 c5 = vec3(0.94,0.25,0.48);
+            if (t < 0.20) return mix(c0,c1,t/0.20);
+            if (t < 0.40) return mix(c1,c2,(t-0.20)/0.20);
+            if (t < 0.60) return mix(c2,c3,(t-0.40)/0.20);
+            if (t < 0.80) return mix(c3,c4,(t-0.60)/0.20);
+            return mix(c4,c5,(t-0.80)/0.20);
+          }
+
           void main() {
-            gl_FragColor = vec4(vColor, vAlpha);
+            vec2 uv = vec2(fract(vUv.x), clamp(vUv.y, 0.002, 0.998));
+            vec4 localField = sampleField(uv);
+            if (localField.a < 0.05) discard;
+
+            float latitude = (uv.y - 0.5) * 3.14159265359;
+            vec2 localVelocity = windVelocity(uv);
+            vec2 flowDirection = normalize(localVelocity + vec2(0.00001, 0.00001));
+            vec2 perpendicular = vec2(-flowDirection.y, flowDirection.x);
+
+            // Backtrace the procedural atmospheric texture through the actual
+            // vector field. Four midpoint-like substeps keep curved flow coherent.
+            float phase = mod(uTime, 60.0);
+            vec2 traced = uv;
+            float dt = phase * 0.25;
+            for (int i=0; i<4; i++) {
+              vec2 v1 = windVelocity(traced);
+              vec2 midpoint = traced - v1 * (dt * 0.5);
+              vec2 v2 = windVelocity(midpoint);
+              traced -= v2 * dt;
+              traced.x = fract(traced.x);
+              traced.y = clamp(traced.y, 0.002, 0.998);
+            }
+
+            vec2 p = traced * vec2(230.0, 118.0);
+            float warp = fbm(p * 0.22 + vec2(uTime*0.018, -uTime*0.012));
+            vec2 oriented = vec2(
+              dot(p, flowDirection) * 0.20 + warp * 2.1,
+              dot(p, perpendicular) * 1.55
+            );
+            float wisps = fbm(oriented);
+            float fine = noise2(oriented * vec2(1.9, 1.45) + vec2(7.1, 3.7));
+            float filament = pow(max(0.0, 1.0 - abs(wisps - 0.50) * 2.0), 3.0);
+            filament *= smoothstep(0.30, 0.78, fine);
+            float diffuse = smoothstep(0.48, 0.76, fbm(oriented * 0.42 + 19.0));
+            float speed = localField.b;
+            float speedPresence = smoothstep(0.025, 0.22, speed);
+            float density = clamp(filament * 0.82 + diffuse * 0.13, 0.0, 0.72);
+            float alpha = density * speedPresence * (0.28 + speed * 0.52);
+            vec3 color = speedColor(speed);
+            gl_FragColor = vec4(color, alpha);
           }
         `
       });
 
-      const streamlines = new THREE.LineSegments(geometry, material);
-      streamlines.name = 'liveEarthAtmosphereStaticWindStreamlines';
-      streamlines.renderOrder = 8;
-      // Decorative geometry must never enter the globe's recursive touch picking.
-      streamlines.raycast = () => {};
-      earth.add(streamlines);
+      const flowMesh = new THREE.Mesh(geometry, material);
+      flowMesh.name = 'liveEarthAtmosphereGpuAdvectedFlow';
+      flowMesh.renderOrder = 8;
+      flowMesh.raycast = () => {};
+      earth.add(flowMesh);
+
+      let disposed = false;
+      let animationFrame = 0;
+      let lastRenderTime = 0;
+      const animate = time => {
+        if (disposed) return;
+        animationFrame = requestAnimationFrame(animate);
+        if (document.hidden) return;
+        if (time - lastRenderTime < 33) return;
+        lastRenderTime = time;
+        material.uniforms.uTime.value = time * 0.001;
+        requestRender?.();
+      };
+      animationFrame = requestAnimationFrame(animate);
 
       return {
         dispose() {
-          streamlines.removeFromParent();
+          if (disposed) return;
+          disposed = true;
+          cancelAnimationFrame(animationFrame);
+          flowMesh.removeFromParent();
           geometry.dispose();
           material.dispose();
+          windTexture.dispose();
         },
-        stats: { requestedLines: streamlineCount, acceptedLines, segments: positionOffset / 6 }
+        stats: { renderer: 'gpu-advected-atmospheric-texture', gridWidth: width, gridHeight: height }
       };
     }
     async function selectDataset(datasetKey) {
