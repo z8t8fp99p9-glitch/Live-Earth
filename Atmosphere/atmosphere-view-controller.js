@@ -48,8 +48,8 @@
       .le-sfv--atmosphere .le-sfv-head { margin-bottom:9px; }
       /* The title is a permanent scene layer: the WebGL globe renders above it. */
       .le-atmo-scene-title {
-        /* Portrait header anchor: 10% from the top of the viewport.
-           The Landscape override below places it at 3%. */
+        /* Adaptive viewport anchor: 10% down from the screen top in Portrait.
+           Keep the position proportional across screen sizes. */
         position:absolute; z-index:1;
         top:10vh;
         top:10svh;
@@ -65,8 +65,6 @@
       }
       .le-atmo-scene-title::after { background:linear-gradient(90deg,rgba(148,190,215,.46),transparent); }
       .le-atmo-scene-title span {
-        /* Shared responsive typography: use the shorter viewport dimension
-           so Portrait and Landscape render the same header size. */
         font:500 clamp(12px,3.25vmin,17px)/1.2 system-ui,-apple-system,sans-serif;
         letter-spacing:clamp(.24em,1.15vmin,.38em); white-space:nowrap;
         text-shadow:0 0 14px rgba(122,190,226,.20);
@@ -1481,9 +1479,7 @@ function installStyles() {
       /* Landscape presentation — scale only. Globe, header, orbs and shared
          feature controls retain their existing presentation and behavior. */
       @media (orientation:landscape) {
-        /* Landscape header: 3% from the top; keep its centered alignment. */
         .le-atmo-scene-title { top:3vh; top:3svh; }
-
         .le-atmo-scale-dock {
           left:6%; right:auto;
           top:50%; bottom:auto; transform:translateY(-50%);
