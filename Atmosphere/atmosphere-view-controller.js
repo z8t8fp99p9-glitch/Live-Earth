@@ -31,6 +31,7 @@
   const TEMPERATURE_LEGEND = 'linear-gradient(90deg,#080d2c 0%,#101c50 7.1429%,#203b8a 14.2857%,#1689b8 32.1429%,#45b978 50%,#f0c64b 67.8571%,#f06429 82.1429%,#c83f36 89.2857%,#8b152a 94.6429%,#450417 100%)';
   const SCRIPT_PATHS = ['./EarthEngine/Graphics/universal-grid-system.js','./EarthEngine/Graphics/earth-grid-gpu-skin.js'];
 
+  // 01 — Shared visual foundation: all controls use one common design system.
   function installHudStyle() {
     if (document.getElementById('le-atmosphere-cinematic-hud')) return;
     const style = document.createElement('style');
@@ -160,9 +161,6 @@
         scrollbar-width:none;
       }
       .le-sfv--atmosphere.le-world-engine-host .le-sfv-body::-webkit-scrollbar { display:none; }
-      @media (orientation:landscape) {
-        .le-sfv--atmosphere.le-world-engine-host .le-sfv-body { max-height:min(48dvh,350px); }
-      }
       .le-sfv--atmosphere .le-sfv-status {
         display:inline-block; width:auto; max-width:100%; margin:0 0 9px;
         padding:7px 11px; border-radius:999px; font-size:9px; line-height:1.35;
@@ -315,29 +313,6 @@
       .le-atmo-legend-ticks span:first-child::before { left:0; }
       .le-atmo-legend-ticks span:last-child { transform:translateX(-100%); text-align:right; }
       .le-atmo-legend-ticks span:last-child::before { left:100%; }
-      @container (max-width:430px) {
-        .le-atmo-scale-heading { gap:7px; }
-        .le-atmo-legend-title { font-size:clamp(8.5px,2.2cqi,10px); letter-spacing:.025em; }
-        .le-atmo-scale-range { padding-left:8px; font-size:clamp(15px,4cqi,19px); }
-        .le-atmo-instrument-label { margin-bottom:6px; }
-      }
-      @container (max-width:350px) {
-        .le-atmo-scale-dock { --atmo-action-space:40px; --atmo-track-gap:9px; }
-        .le-atmo-scale-heading { gap:5px; margin-bottom:5px; }
-        .le-atmo-legend-title { font-size:8px; }
-        .le-atmo-scale-range { padding-left:6px; font-size:15px; }
-        .le-atmo-instrument-label { font-size:9px; letter-spacing:.22em; margin-bottom:5px; }
-        .le-atmo-legend-ticks { font-size:8px; }
-      }
-      @media (orientation:landscape) {
-        .le-atmo-scale-dock {
-          left:auto; right:clamp(20px,3vw,36px);
-          width:min(62vw,700px);
-          bottom:calc(env(safe-area-inset-bottom) + clamp(48px,10svh,70px));
-        }
-        .le-atmo-instrument-label { margin-bottom:4px; }
-        .le-atmo-scale-heading { margin-bottom:4px; }
-      }
 
       .le-atmo-details { margin-top:10px; border-top:1px solid rgba(165,208,235,.14); padding-top:8px; }
       .le-atmo-details summary {
@@ -375,17 +350,10 @@
       .le-atmo-dataset-detail { color:#a9c6d8; font-size:9px; line-height:1.35; }
       .le-atmo-dataset-state { margin-top:auto; color:#80d9c1; font-size:7px; font-weight:800; letter-spacing:.1em; }
       .le-atmo-dataset-option.is-unavailable .le-atmo-dataset-state { color:#91a4b4; }
-      @media (max-width:360px) { .le-atmo-dataset-grid { grid-template-columns:1fr; } }
-      @media (max-height:700px) {
-        .le-sfv--atmosphere.le-world-engine-host .le-sfv-body { margin-top:clamp(145px,28vh,230px); }
-        .le-sfv--atmosphere .le-sfv-panel { padding-bottom:calc(env(safe-area-inset-bottom) + 112px); }
-      }
-      @media (orientation:landscape) {
-        .le-sfv--atmosphere.le-world-engine-host .le-sfv-body { width:min(70vw,620px); margin-top:clamp(105px,22vh,190px); }
-      }
     `;
     document.head.appendChild(style);
   }
+  // 02 — Shared resource loading and time formatting.
   function loadScript(path, ready) {
     if (ready()) return Promise.resolve();
     const key = `__leScriptPromise:${path}`;
@@ -413,6 +381,7 @@
       ? 'Time unavailable'
       : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
   }
+  // 03 — Earth renderer, location marker and globe lifecycle.
   // This controller calls the shared Earth Engine directly and owns its view renderer.
 async function initializeEngineView(view, viewId) {
   if (!view?.root || !view?.panel || !viewId) throw new TypeError("A mounted world view and stable world id are required.");
@@ -587,6 +556,7 @@ async function initializeEngineView(view, viewId) {
     window.addEventListener("live-earth-location-state", syncAtmosphereLocation);
     syncAtmosphereLocation();
 
+    // 04 — Shared globe interaction: surface-anchored drag and pinch zoom.
     // Atmosphere owns its gestures. A geographic surface point is picked once
     // on pointer-down; every drag move rotates the globe until that same local
     // point intersects the camera ray beneath the finger.
@@ -832,6 +802,7 @@ async function initializeEngineView(view, viewId) {
 }
 
 
+// 05 — Shared full-screen canvas and input-layer foundation.
 function installStyles() {
   if (document.getElementById("le-world-engine-canvas-style")) return;
   const style = document.createElement("style");
@@ -854,8 +825,10 @@ function installStyles() {
 }
 
 
+  // 06 — Feature composition: controls, datasets, instruments and lifecycle.
   function activateView() {
     installHudStyle();
+    installResponsivePresentationStyles();
     const view = runtime.mount(ATMOSPHERE_VIEW.id);
     if (!view) return () => {};
     document.body.classList.add('le-atmosphere-fullscreen-open');
@@ -1131,6 +1104,7 @@ function installStyles() {
     }
 
 
+    // 07 — Wind visualisation layer.
     function makeWindTracers(THREE, earth, camera, speedGrid, directionGrid, requestRender) {
       const def=speedGrid.definition, dirDef=directionGrid.definition;
       if(def.width!==dirDef.width || def.height!==dirDef.height ||
@@ -1346,6 +1320,7 @@ function installStyles() {
       };
     }
 
+    // 08 — Dataset loading and verified grid attachment.
     async function selectDataset(datasetKey) {
       if (closed || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
       const config = FIELD_CONFIG[datasetKey];
@@ -1495,6 +1470,58 @@ function installStyles() {
 
     return cleanup;
   }
+
+  // ---------------------------------------------------------------------------
+  // FINAL PRESENTATION LAYER
+  // Shared controls, data and interactions are created above without orientation
+  // branches. This final layer changes presentation only. Portrait declarations
+  // remain the original baseline; Landscape is intentionally unchanged for now.
+  // ---------------------------------------------------------------------------
+  function installResponsivePresentationStyles() {
+    if (document.getElementById('le-atmo-responsive-presentation-style')) return;
+    const style = document.createElement('style');
+    style.id = 'le-atmo-responsive-presentation-style';
+    style.textContent = `
+      /* Compact-width presentation */
+      @container (max-width:430px) {
+        .le-atmo-scale-heading { gap:7px; }
+        .le-atmo-legend-title { font-size:clamp(8.5px,2.2cqi,10px); letter-spacing:.025em; }
+        .le-atmo-scale-range { padding-left:8px; font-size:clamp(15px,4cqi,19px); }
+        .le-atmo-instrument-label { margin-bottom:6px; }
+      }
+      @container (max-width:350px) {
+        .le-atmo-scale-dock { --atmo-action-space:40px; --atmo-track-gap:9px; }
+        .le-atmo-scale-heading { gap:5px; margin-bottom:5px; }
+        .le-atmo-legend-title { font-size:8px; }
+        .le-atmo-scale-range { padding-left:6px; font-size:15px; }
+        .le-atmo-instrument-label { font-size:9px; letter-spacing:.22em; margin-bottom:5px; }
+        .le-atmo-legend-ticks { font-size:8px; }
+      }
+      @media (max-width:360px) {
+        .le-atmo-dataset-grid { grid-template-columns:1fr; }
+      }
+      @media (max-height:700px) {
+        .le-sfv--atmosphere.le-world-engine-host .le-sfv-body { margin-top:clamp(145px,28vh,230px); }
+        .le-sfv--atmosphere .le-sfv-panel { padding-bottom:calc(env(safe-area-inset-bottom) + 112px); }
+      }
+
+      /* Landscape presentation — retained as-is for the next testing pass */
+      @media (orientation:landscape) {
+        .le-sfv--atmosphere.le-world-engine-host .le-sfv-body { max-height:min(48dvh,350px); }
+        .le-atmo-scale-dock {
+          left:auto; right:clamp(20px,3vw,36px);
+          width:min(62vw,700px);
+          bottom:calc(env(safe-area-inset-bottom) + clamp(48px,10svh,70px));
+        }
+        .le-atmo-instrument-label { margin-bottom:4px; }
+        .le-atmo-scale-heading { margin-bottom:4px; }
+        .le-sfv--atmosphere.le-world-engine-host .le-sfv-body { width:min(70vw,620px); margin-top:clamp(105px,22vh,190px); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // 09 — Final presentation rules are installed after shared view composition.
   if (runtime.registerFeature(ATMOSPHERE_VIEW.id, activateView, false)) {
     window[flag] = true;
     window.dispatchEvent(new CustomEvent('live-earth-atmosphere-view-controller-ready', { detail: { id: ATMOSPHERE_VIEW.id } }));
