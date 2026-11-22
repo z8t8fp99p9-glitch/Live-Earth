@@ -267,6 +267,7 @@
         display:grid; grid-template-columns:minmax(0,1fr) var(--atmo-action-space);
         align-items:center; column-gap:var(--atmo-track-gap); min-width:0;
       }
+      .le-atmo-scale-visual { min-width:0; width:100%; }
       .le-atmo-scale-track { min-width:0; width:100%; }
       .le-atmo-scale-more {
         position:relative; flex:none; display:grid; place-items:center;
@@ -945,19 +946,21 @@ function installStyles() {
     scaleDock.appendChild(scaleHeading);
     let scaleMore;
     const scaleTrackRow = runtime.el('div', 'le-atmo-scale-track-row');
+    const scaleVisual = runtime.el('div', 'le-atmo-scale-visual');
     const scaleTrack = runtime.el('div', 'le-atmo-scale-track');
     const legendBar = runtime.el('div', 'le-atmo-legend-bar');
     legendBar.setAttribute('role', 'img');
     legendBar.setAttribute('aria-label', 'Atmospheric field colour gradient');
     scaleTrack.appendChild(legendBar);
     const legendTicks = runtime.el('div', 'le-atmo-legend-ticks');
+    scaleVisual.append(scaleTrack, legendTicks);
     scaleMore = runtime.el('button', 'le-atmo-scale-more', '+');
     scaleMore.type = 'button';
     scaleMore.setAttribute('aria-label', 'Show atmospheric data details and provenance');
     scaleMore.setAttribute('aria-controls', 'le-atmosphere-data-details');
     scaleMore.setAttribute('aria-expanded', 'false');
-    scaleTrackRow.append(scaleTrack, scaleMore);
-    scaleDock.append(scaleTrackRow, legendTicks);
+    scaleTrackRow.append(scaleVisual, scaleMore);
+    scaleDock.appendChild(scaleTrackRow);
     view.root.appendChild(scaleDock);
     const disclosure = runtime.el('details', 'le-atmo-details');
     disclosure.id = 'le-atmosphere-data-details';
@@ -1040,9 +1043,14 @@ function installStyles() {
       legendTitle.textContent = config === FIELD_CONFIG.temperature
         ? '2 m air temp · °C'
         : `${config.title.replace('NOAA · ','')} · ${config.displayUnits}`;
-      legendBar.style.background = config === FIELD_CONFIG.temperature
+      const horizontalGradient = config === FIELD_CONFIG.temperature
         ? TEMPERATURE_LEGEND
         : 'linear-gradient(90deg,#0e297a 0%,#05a8e0 25%,#2edca8 50%,#ffca47 75%,#e8402b 100%)';
+      const verticalGradient = config === FIELD_CONFIG.temperature
+        ? 'linear-gradient(0deg,#080d2c 0%,#101c50 7.1429%,#203b8a 14.2857%,#1689b8 32.1429%,#45b978 50%,#f0c64b 67.8571%,#f06429 82.1429%,#c83f36 89.2857%,#8b152a 94.6429%,#450417 100%)'
+        : 'linear-gradient(0deg,#0e297a 0%,#05a8e0 25%,#2edca8 50%,#ffca47 75%,#e8402b 100%)';
+      legendBar.style.background = horizontalGradient;
+      legendBar.style.setProperty('--atmo-gradient-vertical', verticalGradient);
 
       legendTicks.replaceChildren();
       const tickValues = config.ticks
@@ -1059,6 +1067,7 @@ function installStyles() {
         const position = max > min ? Math.max(0, Math.min(100, ((tick.value - min) / (max - min)) * 100)) : 0;
         const node = runtime.el('span', '', tick.label);
         node.style.left = `${position}%`;
+        node.style.setProperty('--atmo-tick-position', `${100 - position}%`);
         legendTicks.appendChild(node);
       }
       scaleRange.textContent = `${formatFieldValue(grid.min)} — ${formatFieldValue(grid.max)} ${config.displayUnits}`;
@@ -1468,17 +1477,60 @@ function installStyles() {
         .le-sfv--atmosphere .le-sfv-panel { padding-bottom:calc(env(safe-area-inset-bottom) + 112px); }
       }
 
-      /* Landscape presentation — retained as-is for the next testing pass */
+      /* Landscape presentation — scale only. Globe, header, orbs and shared
+         feature controls retain their existing presentation and behavior. */
       @media (orientation:landscape) {
-        .le-sfv--atmosphere.le-world-engine-host .le-sfv-body { max-height:min(48dvh,350px); }
         .le-atmo-scale-dock {
-          left:auto; right:clamp(20px,3vw,36px);
-          width:min(62vw,700px);
-          bottom:calc(env(safe-area-inset-bottom) + clamp(48px,10svh,70px));
+          left:clamp(14px,2.8vw,34px); right:auto;
+          top:50%; bottom:auto; transform:translateY(-50%);
+          width:clamp(174px,21vw,238px); max-width:26vw;
+          padding:12px 12px 10px; border:1px solid rgba(112,190,226,.22);
+          border-radius:16px; background:linear-gradient(150deg,rgba(8,25,42,.78),rgba(3,11,22,.68));
+          box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 8px 28px rgba(0,0,0,.16);
+          backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+          pointer-events:auto;
         }
-        .le-atmo-instrument-label { margin-bottom:4px; }
-        .le-atmo-scale-heading { margin-bottom:4px; }
-        .le-sfv--atmosphere.le-world-engine-host .le-sfv-body { width:min(70vw,620px); margin-top:clamp(105px,22vh,190px); }
+        .le-atmo-instrument-label { margin-bottom:9px; font-size:9px; letter-spacing:.22em; }
+        .le-atmo-instrument-label::before,.le-atmo-instrument-label::after { max-width:34px; }
+        .le-atmo-scale-heading {
+          width:100%; flex-direction:column; align-items:flex-start; gap:5px;
+          margin:0 0 10px; white-space:normal;
+        }
+        .le-atmo-legend-title { max-width:100%; font-size:clamp(9px,1.15vw,11px); }
+        .le-atmo-scale-range {
+          padding:0; border:0; font-size:clamp(15px,1.8vw,20px);
+          white-space:normal; line-height:1.15;
+        }
+        .le-atmo-scale-track-row {
+          display:flex; flex-direction:column; align-items:stretch; gap:10px;
+        }
+        .le-atmo-scale-visual {
+          display:grid; grid-template-columns:12px minmax(0,1fr);
+          align-items:stretch; column-gap:13px; min-height:0;
+        }
+        .le-atmo-scale-track { width:12px; height:clamp(142px,35vh,230px); }
+        .le-atmo-legend-bar {
+          width:100%; height:100%; min-height:100%;
+          background:var(--atmo-gradient-vertical)!important;
+          border-radius:999px;
+        }
+        .le-atmo-legend-ticks {
+          position:relative; width:100%; height:auto; min-height:clamp(142px,35vh,230px);
+          margin:0; font-size:clamp(9px,1.05vw,11px);
+        }
+        .le-atmo-legend-ticks span {
+          top:var(--atmo-tick-position); left:0!important;
+          transform:translateY(-50%); text-align:left;
+        }
+        .le-atmo-legend-ticks span::before {
+          left:-8px; top:50%; width:4px; height:1px;
+          transform:translateY(-50%);
+        }
+        .le-atmo-legend-ticks span:first-child { transform:translateY(-100%); }
+        .le-atmo-legend-ticks span:first-child::before { left:-8px; }
+        .le-atmo-legend-ticks span:last-child { transform:none; text-align:left; }
+        .le-atmo-legend-ticks span:last-child::before { left:-8px; }
+        .le-atmo-scale-more { width:38px; height:38px; align-self:flex-end; }
       }
     `;
     document.head.appendChild(style);
