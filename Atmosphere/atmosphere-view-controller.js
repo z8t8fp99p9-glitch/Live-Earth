@@ -48,12 +48,11 @@
       .le-sfv--atmosphere .le-sfv-head { margin-bottom:9px; }
       /* The title is a permanent scene layer: the WebGL globe renders above it. */
       .le-atmo-scene-title {
-        /* True viewport anchor: exactly 12% down from the screen top.
-           Do not add the safe-area inset: it is already part of the viewport.
-           svh keeps the anchor stable as mobile browser chrome expands/collapses. */
+        /* Portrait header anchor: 10% from the top of the viewport.
+           The Landscape override below places it at 3%. */
         position:absolute; z-index:1;
-        top:12vh;
-        top:12svh;
+        top:10vh;
+        top:10svh;
         left:50%; right:auto; width:min(84vw,620px);
         box-sizing:border-box; transform:translateX(-50%);
         display:flex; align-items:center; justify-content:center;
@@ -1480,8 +1479,11 @@ function installStyles() {
       /* Landscape presentation — scale only. Globe, header, orbs and shared
          feature controls retain their existing presentation and behavior. */
       @media (orientation:landscape) {
+        /* Landscape header: 3% from the top; keep its centered alignment. */
+        .le-atmo-scene-title { top:3vh; top:3svh; }
+
         .le-atmo-scale-dock {
-          left:10%; right:auto;
+          left:6%; right:auto;
           top:50%; bottom:auto; transform:translateY(-50%);
           width:clamp(174px,17vw,210px); max-width:22vw;
           display:grid; grid-template-columns:22px minmax(0,1fr);
