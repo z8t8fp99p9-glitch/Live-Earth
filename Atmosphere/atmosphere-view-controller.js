@@ -260,6 +260,7 @@
       .le-atmo-scale-track-row {
         display:grid; grid-template-columns:minmax(0,1fr) var(--atmo-action-space);
         align-items:center; column-gap:var(--atmo-track-gap); min-width:0;
+        --atmo-gradient-height:8px;
       }
       .le-atmo-scale-visual { min-width:0; width:100%; }
       .le-atmo-scale-track { min-width:0; width:100%; }
@@ -275,6 +276,16 @@
         font:300 22px/1 ui-sans-serif,system-ui,sans-serif;
         cursor:pointer; pointer-events:auto; touch-action:manipulation;
         transition:background .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease;
+      }
+      /* Portrait: centre the + control on the colour gradient itself,
+         not on the combined gradient-and-tick-label block. The offset is
+         derived from the live control size and gradient thickness. */
+      @media (orientation:portrait) {
+        .le-atmo-scale-track-row { align-items:start; }
+        .le-atmo-scale-more {
+          align-self:start; justify-self:center;
+          margin-top:calc((var(--atmo-gradient-height) - var(--atmo-action-space)) / 2);
+        }
       }
       .le-atmo-scale-more:hover {
         border-color:rgba(150,232,255,.95);
