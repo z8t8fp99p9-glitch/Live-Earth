@@ -65,8 +65,10 @@
       }
       .le-atmo-scene-title::after { background:linear-gradient(90deg,rgba(148,190,215,.46),transparent); }
       .le-atmo-scene-title span {
-        font:500 clamp(12px,3.25vw,17px)/1.2 system-ui,-apple-system,sans-serif;
-        letter-spacing:clamp(.24em,1.15vw,.38em); white-space:nowrap;
+        /* Shared responsive typography: use the shorter viewport dimension
+           so Portrait and Landscape render the same header size. */
+        font:500 clamp(12px,3.25vmin,17px)/1.2 system-ui,-apple-system,sans-serif;
+        letter-spacing:clamp(.24em,1.15vmin,.38em); white-space:nowrap;
         text-shadow:0 0 14px rgba(122,190,226,.20);
       }
       .le-atmo-scene-title i {
