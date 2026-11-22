@@ -1505,8 +1505,8 @@ function installStyles() {
           left:6%; right:auto;
           top:50%; bottom:auto; transform:translateY(-50%);
           width:clamp(140px,13.6vw,168px); max-width:18vw;
-          display:grid; grid-template-columns:18px minmax(0,1fr) 36px;
-          grid-template-rows:auto auto auto auto; column-gap:7px; row-gap:7px;
+          display:grid; grid-template-columns:minmax(0,1fr);
+          grid-template-rows:auto auto auto auto; column-gap:0; row-gap:8px;
           padding:8px 8px 8px; border:1px solid rgba(112,190,226,.22);
           border-radius:16px; background:linear-gradient(150deg,rgba(8,25,42,.78),rgba(3,11,22,.68));
           box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 8px 28px rgba(0,0,0,.16);
@@ -1522,39 +1522,39 @@ function installStyles() {
         /* Dataset label is vertical; the live numeric range stays horizontal. */
         .le-atmo-scale-heading { display:contents; }
         .le-atmo-legend-title {
-          grid-column:1; grid-row:2 / span 2;
-          align-self:stretch; justify-self:center;
+          position:absolute; z-index:1;
+          left:7px; top:53%;
+          grid-column:auto; grid-row:auto;
+          align-self:auto; justify-self:auto;
           display:flex; align-items:center; justify-content:center;
           width:18px; max-width:none; overflow:visible;
-          writing-mode:vertical-rl; transform:rotate(180deg);
+          writing-mode:vertical-rl; transform:translateY(-50%) rotate(180deg);
           font-size:9px; letter-spacing:.08em; text-align:center;
           text-overflow:clip; white-space:nowrap;
         }
         .le-atmo-scale-range {
-          grid-column:2 / 4; grid-row:2;
+          grid-column:1; grid-row:2;
           display:block; width:100%; min-width:0;
           padding:0; border:0; font-size:clamp(13px,1.45vw,16px);
           line-height:1.1; letter-spacing:-.035em;
-          white-space:nowrap; text-align:left;
+          white-space:nowrap; text-align:center;
         }
         .le-atmo-scale-track-row { display:contents; }
         .le-atmo-scale-visual {
-          /* Centre the gradient + tick labels as one group on the card axis.
-             The vertical dataset title remains in its original left column. */
-          grid-column:1 / -1; grid-row:3;
+          grid-column:1; grid-row:3;
           display:grid; grid-template-columns:8px max-content;
-          justify-self:center; align-self:stretch;
-          width:max-content; max-width:100%;
-          align-items:stretch; column-gap:7px; min-width:0;
+          align-items:stretch; column-gap:7px;
+          width:max-content; max-width:100%; min-width:0;
+          justify-self:center;
         }
-        .le-atmo-scale-track { width:8px; height:clamp(148px,33vh,212px); }
+        .le-atmo-scale-track { width:8px; height:clamp(210px,48vh,300px); }
         .le-atmo-legend-bar {
           width:100%; height:100%; min-height:100%;
           background:var(--atmo-gradient-vertical)!important;
           border-radius:999px;
         }
         .le-atmo-legend-ticks {
-          position:relative; width:max-content; min-width:52px; height:auto; min-height:clamp(148px,33vh,212px);
+          position:relative; width:max-content; height:auto; min-height:clamp(210px,48vh,300px);
           margin:0; font-size:clamp(8px,.85vw,10px); line-height:1;
         }
         .le-atmo-legend-ticks span {
@@ -1568,10 +1568,9 @@ function installStyles() {
         .le-atmo-legend-ticks span:first-child { transform:translateY(-50%); }
         .le-atmo-legend-ticks span:last-child { transform:translateY(-50%); text-align:left; }
         .le-atmo-scale-more {
-          /* Place the action below the scale and share its card-centre axis. */
-          grid-column:1 / -1; grid-row:4;
+          grid-column:1; grid-row:4;
           width:34px; height:34px; justify-self:center; align-self:center;
-          margin:0;
+          margin:1px 0 0;
         }
 
         /* The + control opens provenance in a right-side drawer, not above
