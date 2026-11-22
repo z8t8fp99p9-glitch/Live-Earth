@@ -119,6 +119,14 @@
         opacity:1; visibility:visible; pointer-events:auto;
         transform:translateY(0) scale(1);
       }
+      /* Portrait: place the floating dataset control below the centered header.
+         The menu follows the button so it opens directly beneath it on every screen size. */
+      @media (orientation:portrait) {
+        .le-atmo-hud-toggle { top:15svh; }
+        .le-atmo-dataset-orb-menu {
+          top:calc(15svh + clamp(46px,6vmin,52px) + 10px);
+        }
+      }
       .le-atmo-dataset-orb {
         appearance:none; display:grid; place-items:center;
         width:clamp(42px,5.8vmin,48px); height:clamp(42px,5.8vmin,48px);
