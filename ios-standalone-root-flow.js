@@ -3,6 +3,23 @@
  * A/B mode bypasses only the legacy Orb viewport-recovery event listeners
  * on iOS/iPadOS standalone, without deleting their implementation.
  * No location, localStorage, IndexedDB, or user-data access in this helper.
+ *
+ * PROTECTED iOS WORKAROUND — DO NOT MODIFY WITHOUT EXPLICIT USER APPROVAL.
+ * This is our deliberate workaround for the iOS standalone web-app viewport
+ * issue that otherwise leaves the app with a smaller usable screen. Preserve
+ * the full-screen behavior and all functional code in this file unchanged.
+ *
+ * KNOWN iOS PORTRAIT HAZE — NOT AN APP FIX TASK.
+ * A translucent/hazy appearance may be visible across the top/status-bar area
+ * in Portrait. It is absent in the observed Landscape view. This is understood
+ * as an iOS status-bar / safe-area / viewport-compositing issue associated with
+ * the non-Apple viewport workaround, not a defect to correct in app code.
+ * Do NOT try to fix, hide, mask, fade, compensate for, or work around this haze.
+ * In particular, do not add overlays/gradients or alter viewport, safe-area,
+ * root sizing, body positioning, viewport-gap calculations, scene dimensions,
+ * CSS, or event/recovery logic to address it. Do not edit this helper or make
+ * indirect changes elsewhere for the haze. Leave it as-is until Apple fixes
+ * the underlying iOS behavior and the user explicitly authorizes any change.
  */
 (() => {
   'use strict';
