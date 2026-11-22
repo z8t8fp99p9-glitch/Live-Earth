@@ -6,7 +6,7 @@
   "database_schema_version": 1,
   "dataset_id": "earth.land.land_temperature",
   "format": "records",
-  "observed_at_utc": "2026-11-18T00:00:00Z",
+  "observed_at_utc": "2026-11-19T00:00:00Z",
   "parameter": "T2M",
   "record_count": 6,
   "request_urls": {
@@ -52,8 +52,8 @@
   "source_id": "nasa_power_daily",
   "source_name": "NASA POWER daily 2m air temperature at six regional sample points",
   "units": "degree_C",
-  "updated_at_utc": "2026-11-22T01:42:50.845438Z",
-  "value_bytes": 3209,
+  "updated_at_utc": "2026-11-22T08:54:57.130850Z",
+  "value_bytes": 3210,
   "value_file": "records.jsonl",
-  "value_sha256": "56825bfd3012b8058ead40a2bf83ecb4b596e1bfca83f81e6557ad3352e7096f"
+  "value_sha256": "ad9488bb2496a19d1447bb733877ecdbddb22c7f6c50f3a25de223dd3293bb16"
 }

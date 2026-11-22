@@ -6,7 +6,7 @@
   "database_schema_version": 1,
   "dataset_id": "earth.water_ice.rainfall",
   "format": "records",
-  "observed_at_utc": "2026-11-18T00:00:00Z",
+  "observed_at_utc": "2026-11-19T00:00:00Z",
   "parameter": "PRECTOTCORR",
   "record_count": 6,
   "request_urls": {
@@ -52,8 +52,8 @@
   "source_id": "nasa_power_daily",
   "source_name": "NASA POWER daily corrected precipitation at six regional sample points",
   "units": "mm/day",
-  "updated_at_utc": "2026-11-22T01:42:53.708839Z",
-  "value_bytes": 3219,
+  "updated_at_utc": "2026-11-22T08:54:58.733456Z",
+  "value_bytes": 3220,
   "value_file": "records.jsonl",
-  "value_sha256": "4bca90b1db0b541305501ce57f032751be5534b19828a62e21fda44c8761b9f0"
+  "value_sha256": "39f9dd7acf6fd789b7854bf8d16080a23f2bffc23e248a3db29b7eff5948b997"
 }
