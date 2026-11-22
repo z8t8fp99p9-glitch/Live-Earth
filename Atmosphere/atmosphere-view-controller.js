@@ -1535,13 +1535,15 @@ function installStyles() {
           display:block; width:100%; min-width:0;
           padding:0; border:0; font-size:clamp(13px,1.45vw,16px);
           line-height:1.1; letter-spacing:-.035em;
-          white-space:nowrap; text-align:left;
+          white-space:nowrap; text-align:center;
         }
         .le-atmo-scale-track-row { display:contents; }
         .le-atmo-scale-visual {
           grid-column:2; grid-row:3;
-          display:grid; grid-template-columns:8px minmax(0,1fr);
-          align-items:stretch; column-gap:7px; min-width:0;
+          display:grid; grid-template-columns:8px max-content;
+          align-items:stretch; column-gap:7px;
+          width:max-content; max-width:100%; min-width:0;
+          justify-self:center;
         }
         .le-atmo-scale-track { width:8px; height:clamp(168px,39vh,250px); }
         .le-atmo-legend-bar {
@@ -1550,7 +1552,7 @@ function installStyles() {
           border-radius:999px;
         }
         .le-atmo-legend-ticks {
-          position:relative; width:100%; height:auto; min-height:clamp(168px,39vh,250px);
+          position:relative; width:max-content; height:auto; min-height:clamp(168px,39vh,250px);
           margin:0; font-size:clamp(8px,.85vw,10px); line-height:1;
         }
         .le-atmo-legend-ticks span {
