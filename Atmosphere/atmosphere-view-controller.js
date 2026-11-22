@@ -1505,8 +1505,8 @@ function installStyles() {
           left:6%; right:auto;
           top:50%; bottom:auto; transform:translateY(-50%);
           width:clamp(140px,13.6vw,168px); max-width:18vw;
-          display:grid; grid-template-columns:18px minmax(0,1fr) 36px;
-          grid-template-rows:auto auto auto; column-gap:7px; row-gap:7px;
+          display:grid; grid-template-columns:18px minmax(0,1fr);
+          grid-template-rows:auto auto auto auto; column-gap:7px; row-gap:7px;
           padding:8px 8px 8px; border:1px solid rgba(112,190,226,.22);
           border-radius:16px; background:linear-gradient(150deg,rgba(8,25,42,.78),rgba(3,11,22,.68));
           box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 8px 28px rgba(0,0,0,.16);
@@ -1531,7 +1531,7 @@ function installStyles() {
           text-overflow:clip; white-space:nowrap;
         }
         .le-atmo-scale-range {
-          grid-column:2 / 4; grid-row:2;
+          grid-column:2; grid-row:2;
           display:block; width:100%; min-width:0;
           padding:0; border:0; font-size:clamp(13px,1.45vw,16px);
           line-height:1.1; letter-spacing:-.035em;
@@ -1543,14 +1543,14 @@ function installStyles() {
           display:grid; grid-template-columns:8px minmax(0,1fr);
           align-items:stretch; column-gap:7px; min-width:0;
         }
-        .le-atmo-scale-track { width:8px; height:clamp(148px,33vh,212px); }
+        .le-atmo-scale-track { width:8px; height:clamp(168px,39vh,250px); }
         .le-atmo-legend-bar {
           width:100%; height:100%; min-height:100%;
           background:var(--atmo-gradient-vertical)!important;
           border-radius:999px;
         }
         .le-atmo-legend-ticks {
-          position:relative; width:100%; height:auto; min-height:clamp(148px,33vh,212px);
+          position:relative; width:100%; height:auto; min-height:clamp(168px,39vh,250px);
           margin:0; font-size:clamp(8px,.85vw,10px); line-height:1;
         }
         .le-atmo-legend-ticks span {
@@ -1564,9 +1564,9 @@ function installStyles() {
         .le-atmo-legend-ticks span:first-child { transform:translateY(-50%); }
         .le-atmo-legend-ticks span:last-child { transform:translateY(-50%); text-align:left; }
         .le-atmo-scale-more {
-          grid-column:3; grid-row:3;
+          grid-column:2; grid-row:4;
           width:34px; height:34px; justify-self:center; align-self:center;
-          margin:0;
+          margin:1px 0 0;
         }
 
         /* The + control opens provenance in a right-side drawer, not above
