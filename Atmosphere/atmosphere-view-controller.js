@@ -176,6 +176,18 @@
         scrollbar-width:none;
       }
       .le-sfv--atmosphere.le-world-engine-host .le-sfv-body::-webkit-scrollbar { display:none; }
+      /* Empty feature-body space must pass gestures through to the globe.
+         Restore pointer handling only on actual content and controls. */
+      .le-sfv--atmosphere.le-world-engine-host .le-sfv-body {
+        pointer-events:none;
+      }
+      .le-sfv--atmosphere.le-world-engine-host .le-sfv-body > *,
+      .le-sfv--atmosphere.le-world-engine-host .le-sfv-body :is(
+        button, a, input, select, textarea, summary, [role="button"],
+        .le-atmo-details, .le-atmo-scale-dock, .le-atmo-data-card
+      ) {
+        pointer-events:auto;
+      }
       .le-sfv--atmosphere .le-sfv-status {
         display:inline-block; width:auto; max-width:100%; margin:0 0 9px;
         padding:7px 11px; border-radius:999px; font-size:9px; line-height:1.35;
@@ -641,15 +653,25 @@ async function initializeEngineView(view, viewId) {
       const beginAnchor = pointer => {
         hasAnchor = pickSurfacePoint(pointer.x, pointer.y, anchorLocal);
         activePointerId = hasAnchor ? pointer.id : null;
+        return hasAnchor;
       };
       const onPointerDown = event => {
         if (!isEnabled()) return;
         if (event.pointerType === "mouse" && event.button !== 0) return;
-        pointers.set(event.pointerId, { id: event.pointerId, x: event.clientX, y: event.clientY });
+
+        const pointer = { id: event.pointerId, x: event.clientX, y: event.clientY };
+        const startedOnGlobe = pickSurfacePoint(pointer.x, pointer.y, anchorLocal);
+        // Ignore touches that begin outside the visible globe. They must not
+        // become a drag or a pinch participant, even if they later move over it.
+        if (!startedOnGlobe) return;
+
+        pointers.set(event.pointerId, pointer);
         try { canvas.setPointerCapture(event.pointerId); } catch (_) {}
         if (pointers.size === 1) {
-          beginAnchor(pointers.get(event.pointerId));
+          beginAnchor(pointer);
         } else if (pointers.size === 2) {
+          // Both pointers are admitted only after independently hitting the
+          // globe surface, so pinch zoom cannot start from the surrounding UI.
           hasAnchor = false;
           activePointerId = null;
           pinchStartDistance = Math.max(1, pointerDistance());
@@ -1504,7 +1526,7 @@ function installStyles() {
         .le-atmo-scale-dock {
           left:6%; right:auto;
           top:50%; bottom:auto; transform:translateY(-50%);
-          width:clamp(140px,13.6vw,168px); max-width:18vw;
+          width:clamp(126px,12.24vw,151px); max-width:16.2vw;
           display:grid; grid-template-columns:minmax(0,1fr);
           grid-template-rows:auto auto auto auto; column-gap:0; row-gap:8px;
           padding:8px 8px 8px; border:1px solid rgba(112,190,226,.22);
