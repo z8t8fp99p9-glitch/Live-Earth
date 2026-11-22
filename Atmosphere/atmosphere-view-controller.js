@@ -1505,7 +1505,7 @@ function installStyles() {
           left:6%; right:auto;
           top:50%; bottom:auto; transform:translateY(-50%);
           width:clamp(140px,13.6vw,168px); max-width:18vw;
-          display:grid; grid-template-columns:18px minmax(0,1fr);
+          display:grid; grid-template-columns:18px minmax(0,1fr) 36px;
           grid-template-rows:auto auto auto auto; column-gap:7px; row-gap:7px;
           padding:8px 8px 8px; border:1px solid rgba(112,190,226,.22);
           border-radius:16px; background:linear-gradient(150deg,rgba(8,25,42,.78),rgba(3,11,22,.68));
@@ -1531,28 +1531,30 @@ function installStyles() {
           text-overflow:clip; white-space:nowrap;
         }
         .le-atmo-scale-range {
-          grid-column:2; grid-row:2;
+          grid-column:2 / 4; grid-row:2;
           display:block; width:100%; min-width:0;
           padding:0; border:0; font-size:clamp(13px,1.45vw,16px);
           line-height:1.1; letter-spacing:-.035em;
-          white-space:nowrap; text-align:center;
+          white-space:nowrap; text-align:left;
         }
         .le-atmo-scale-track-row { display:contents; }
         .le-atmo-scale-visual {
-          grid-column:2; grid-row:3;
+          /* Centre the gradient + tick labels as one group on the card axis.
+             The vertical dataset title remains in its original left column. */
+          grid-column:1 / -1; grid-row:3;
           display:grid; grid-template-columns:8px max-content;
-          align-items:stretch; column-gap:7px;
-          width:max-content; max-width:100%; min-width:0;
-          justify-self:center;
+          justify-self:center; align-self:stretch;
+          width:max-content; max-width:100%;
+          align-items:stretch; column-gap:7px; min-width:0;
         }
-        .le-atmo-scale-track { width:8px; height:clamp(168px,39vh,250px); }
+        .le-atmo-scale-track { width:8px; height:clamp(148px,33vh,212px); }
         .le-atmo-legend-bar {
           width:100%; height:100%; min-height:100%;
           background:var(--atmo-gradient-vertical)!important;
           border-radius:999px;
         }
         .le-atmo-legend-ticks {
-          position:relative; width:max-content; height:auto; min-height:clamp(168px,39vh,250px);
+          position:relative; width:max-content; min-width:52px; height:auto; min-height:clamp(148px,33vh,212px);
           margin:0; font-size:clamp(8px,.85vw,10px); line-height:1;
         }
         .le-atmo-legend-ticks span {
@@ -1566,9 +1568,10 @@ function installStyles() {
         .le-atmo-legend-ticks span:first-child { transform:translateY(-50%); }
         .le-atmo-legend-ticks span:last-child { transform:translateY(-50%); text-align:left; }
         .le-atmo-scale-more {
-          grid-column:2; grid-row:4;
+          /* Place the action below the scale and share its card-centre axis. */
+          grid-column:1 / -1; grid-row:4;
           width:34px; height:34px; justify-self:center; align-self:center;
-          margin:1px 0 0;
+          margin:0;
         }
 
         /* The + control opens provenance in a right-side drawer, not above
