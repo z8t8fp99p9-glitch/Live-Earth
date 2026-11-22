@@ -1131,9 +1131,9 @@ function installStyles() {
         throw new Error('Wind tracer grids do not share identical coordinates.');
       }
 
-      // A denser field and longer history make the wind direction legible
-      // without covering the underlying scientific colour layer.
-      const COUNT=76, TRAIL_STEPS=12, RADIUS=1.014;
+      // A denser field, longer history and faster visual advection make the
+      // flow legible on a phone while keeping the scientific colour layer clear.
+      const COUNT=88, TRAIL_STEPS=20, RADIUS=1.014;
       const DEG=Math.PI/180, RAD=180/Math.PI;
       const speedValues=speedGrid.values, directionValues=directionGrid.values;
       const width=def.width, height=def.height;
@@ -1181,23 +1181,23 @@ function installStyles() {
       const pointGeometry=new THREE.BufferGeometry();
       pointGeometry.setAttribute('position',new THREE.BufferAttribute(positions,3).setUsage(THREE.DynamicDrawUsage));
       const pointMaterial=new THREE.PointsMaterial({
-        color:0xe4faff, size:0.009, sizeAttenuation:true,
-        transparent:true, opacity:0.88, depthTest:true, depthWrite:false,
+        color:0xeafaff, size:0.012, sizeAttenuation:true,
+        transparent:true, opacity:0.98, depthTest:true, depthWrite:false,
         blending:THREE.AdditiveBlending, toneMapped:false
       });
       const points=new THREE.Points(pointGeometry,pointMaterial);
-      points.name='liveEarthWind76FlowHeads';
+      points.name='liveEarthWind88FlowHeads';
       points.renderOrder=12; points.frustumCulled=false; points.raycast=()=>{};
 
       const trailGeometry=new THREE.BufferGeometry();
       trailGeometry.setAttribute('position',new THREE.BufferAttribute(trailPositions,3).setUsage(THREE.DynamicDrawUsage));
       const trailMaterial=new THREE.LineBasicMaterial({
-        color:0x9feaff, transparent:true, opacity:0.27,
+        color:0xb5efff, transparent:true, opacity:0.50,
         depthTest:true, depthWrite:false, blending:THREE.AdditiveBlending,
         toneMapped:false
       });
       const trails=new THREE.LineSegments(trailGeometry,trailMaterial);
-      trails.name='liveEarthWind12StepFlowTrails';
+      trails.name='liveEarthWind20StepFlowTrails';
       trails.renderOrder=11; trails.frustumCulled=false; trails.raycast=()=>{};
       earth.add(trails,points);
 
@@ -1303,10 +1303,10 @@ function installStyles() {
           if(magnitude<0.001) continue;
           tangent.multiplyScalar(1/magnitude);
 
-          // A restrained visual-time multiplier preserves relative speed:
-          // stronger verified winds travel faster, without implying physical
-          // distance or elapsed real-world forecast time.
-          const angularStep=Math.min(0.0018,wind.speed*0.00075)*dt;
+          // Visual advection is deliberately amplified so motion remains apparent
+          // on a small, high-density phone display. Relative local wind speed
+          // is preserved; this is not a physical distance/time simulation.
+          const angularStep=Math.min(0.030,wind.speed*0.0125)*dt;
           particle.position.addScaledVector(tangent,angularStep*RADIUS).normalize().multiplyScalar(RADIUS);
           particle.age+=dt;
           particle.history.shift();
@@ -1327,7 +1327,7 @@ function installStyles() {
           pointGeometry.dispose(); trailGeometry.dispose();
           pointMaterial.dispose(); trailMaterial.dispose();
         },
-        stats:{renderer:'76-visible-wind-flow-tracers',count:COUNT,trailSegments:COUNT*TRAIL_STEPS}
+        stats:{renderer:'88-visible-wind-flow-tracers',count:COUNT,trailSegments:COUNT*TRAIL_STEPS}
       };
     }
 
