@@ -1,8 +1,8 @@
 # Atmosphere Wind Vector Data Architecture
 
-**Status:** Approved design direction; implementation not started.
+**Status:** Approved target architecture; interim verified-grid flow rendering is implemented in the Atmosphere controller.
 **Scope:** Atmosphere Wind only.
-**Current baseline:** The Atmosphere controller currently selects the existing wind-direction product as a single scalar grid. The existing speed-only and direction-only products remain independent and must be preserved.
+**Current baseline:** The current controller loads the verified speed and direction grids together for flow rendering. The speed grid remains the scalar GPU colour surface; the paired direction grid drives particle motion. The existing speed-only and direction-only products remain independent and must be preserved.
 
 ## Decision
 
@@ -86,4 +86,6 @@ Do not render speed and direction as two independent coplanar transparent globe 
 
 ## Current implementation status
 
-**Not implemented.** This package records the design only. It does not create the dataset, modify the collector/publisher, change the database, extend the GPU renderer, or alter current Wind behaviour.
+**Interim flow rendering implemented; combined vector dataset remains future work.** The Atmosphere Wind selection loads both verified NOAA 10 m speed and direction grids, checks that their geometry aligns, renders the speed field on the existing GPU skin, and advects visible-hemisphere particles using bilinearly sampled vector components. Meteorological FROM bearings are reversed to obtain the direction particles travel. The current visual layer uses 76 tracers with 12 trail segments each; stronger verified winds move tracers faster. Calm and missing cells do not generate invented flow. Animation pauses while the document is hidden and is disposed with the Wind layer.
+
+This interim implementation does **not** create `earth.atmosphere.wind_vector`, change the collector/publisher, alter the database schema, or add a multi-channel GPU texture. The scalar speed surface and paired direction grid remain separate verified products. The combined vector architecture above remains the intended future design.
