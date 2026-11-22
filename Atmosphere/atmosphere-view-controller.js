@@ -387,7 +387,6 @@ async function initializeEngineView(view, viewId) {
   if (!view?.root || !view?.panel || !viewId) throw new TypeError("A mounted world view and stable world id are required.");
   const T = await import("../vendor/three.module.js");
   const engine = await import("../EarthEngine/Core/earth-engine.js");
-  const { createCountryBordersSkin } = await import("./country-borders-skin.js");
   const createEarthGlobe = engine.createEarthGlobe || engine.createGlobe;
   const getDefaultCameraDistance = engine.getDefaultCameraDistance;
   if (typeof getDefaultCameraDistance !== "function") throw new Error("Earth Engine default framing API is unavailable.");
@@ -411,7 +410,6 @@ async function initializeEngineView(view, viewId) {
   let scene = null;
   let camera = null;
   let earthGlobe = null;
-  let countryBorders = null;
   let gestureController = null;
   let locationMarker = null;
   let locationHalo = null;
@@ -481,26 +479,7 @@ async function initializeEngineView(view, viewId) {
     if (disposed) { earthGlobe.dispose(); throw new Error("The world view closed while its Engine globe was loading."); }
     scene.add(earthGlobe.group);
 
-    // Country boundaries are an Atmosphere-only overlay. Attach them to the
-    // surface so they inherit its base texture alignment and globe rotation.
-    try {
-      countryBorders = await createCountryBordersSkin({
-        THREE: T,
-        earthGroup: earthGlobe.surface,
-        // Hug the satellite surface (radius 1.000) with only 0.0015 clearance.
-        // This prevents the country overlay from protruding beyond the globe limb.
-        radius: 1.0015,
-        color: 0x3a5568,
-        opacity: 0.20,
-        lineWidth: 0.0048,
-        renderOrder: 10
-      });
-      if (countryBorders) root.dataset.countryBorders = "natural-earth-50m";
-    } catch (error) {
-      console.warn("[LIVE // EARTH] Atmosphere country borders could not be loaded; the base globe will remain available.", error);
-    }
     if (disposed) {
-      countryBorders?.dispose?.(); countryBorders = null;
       earthGlobe.dispose();
       throw new Error("The Atmosphere view closed while its globe was loading.");
     }
@@ -761,8 +740,6 @@ async function initializeEngineView(view, viewId) {
       locationHalo?.geometry?.dispose?.(); locationHalo?.material?.dispose?.();
       locationDot?.geometry?.dispose?.(); locationDot?.material?.dispose?.();
       locationMarker = null; locationHalo = null; locationDot = null; locationVector = null;
-      countryBorders?.dispose?.(); countryBorders = null;
-      delete root.dataset.countryBorders;
       earthGlobe?.dispose?.(); earthGlobe = null;
       renderer?.dispose?.(); renderer?.forceContextLoss?.(); renderer = null;
       canvas.remove();
@@ -781,10 +758,6 @@ async function initializeEngineView(view, viewId) {
       earth: earthGlobe.surface,
       attachLayer,
       removeLayer,
-      setCountryBordersStyle(style) {
-        countryBorders?.setStyle?.(style);
-        requestRender();
-      },
       requestRender,
       dispose
     });
@@ -792,7 +765,6 @@ async function initializeEngineView(view, viewId) {
     disposed = true;
     resizeObserver?.disconnect();
     gestureController?.dispose?.();
-    countryBorders?.dispose?.(); countryBorders = null;
     earthGlobe?.dispose?.();
     renderer?.dispose?.();
     canvas.remove();
@@ -1042,15 +1014,6 @@ function installStyles() {
 
     function setSelectedDataset(id) {
       selectedDataset = id;
-      if (worldGlobe?.setCountryBordersStyle) {
-        if (id === "temperature") {
-          // Temperature overlay sits at renderOrder 4. Keep borders beneath it.
-          worldGlobe.setCountryBordersStyle({ color: 0x263746, opacity: 0.32, renderOrder: 3 });
-        } else if (id) {
-          // Other atmospheric fields retain the subdued satellite guide style.
-          worldGlobe.setCountryBordersStyle({ color: 0x3a5568, opacity: 0.32, renderOrder: 10 });
-        }
-      }
       for (const [key, button] of datasetButtons) {
         const active = key === id;
         button.classList.toggle('is-selected', active);
