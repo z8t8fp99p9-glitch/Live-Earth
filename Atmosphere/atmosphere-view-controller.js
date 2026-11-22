@@ -1481,57 +1481,85 @@ function installStyles() {
          feature controls retain their existing presentation and behavior. */
       @media (orientation:landscape) {
         .le-atmo-scale-dock {
-          left:clamp(14px,2.8vw,34px); right:auto;
+          left:10%; right:auto;
           top:50%; bottom:auto; transform:translateY(-50%);
-          width:clamp(174px,21vw,238px); max-width:26vw;
-          padding:12px 12px 10px; border:1px solid rgba(112,190,226,.22);
+          width:clamp(174px,17vw,210px); max-width:22vw;
+          display:grid; grid-template-columns:22px minmax(0,1fr);
+          grid-template-rows:auto auto auto auto; column-gap:9px; row-gap:8px;
+          padding:10px 10px 9px; border:1px solid rgba(112,190,226,.22);
           border-radius:16px; background:linear-gradient(150deg,rgba(8,25,42,.78),rgba(3,11,22,.68));
           box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 8px 28px rgba(0,0,0,.16);
           backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
           pointer-events:auto;
         }
-        .le-atmo-instrument-label { margin-bottom:9px; font-size:9px; letter-spacing:.22em; }
-        .le-atmo-instrument-label::before,.le-atmo-instrument-label::after { max-width:34px; }
-        .le-atmo-scale-heading {
-          width:100%; flex-direction:column; align-items:flex-start; gap:5px;
-          margin:0 0 10px; white-space:normal;
+        .le-atmo-instrument-label {
+          grid-column:1 / -1; grid-row:1;
+          width:100%; margin:0 0 1px; font-size:9px; letter-spacing:.18em;
         }
-        .le-atmo-legend-title { max-width:100%; font-size:clamp(9px,1.15vw,11px); }
+        .le-atmo-instrument-label::before,.le-atmo-instrument-label::after { max-width:24px; }
+
+        /* Dataset label is vertical; the live numeric range stays horizontal. */
+        .le-atmo-scale-heading { display:contents; }
+        .le-atmo-legend-title {
+          grid-column:1; grid-row:2 / span 2;
+          align-self:stretch; justify-self:center;
+          display:flex; align-items:center; justify-content:center;
+          width:18px; max-width:none; overflow:visible;
+          writing-mode:vertical-rl; transform:rotate(180deg);
+          font-size:9px; letter-spacing:.08em; text-align:center;
+          text-overflow:clip; white-space:nowrap;
+        }
         .le-atmo-scale-range {
-          padding:0; border:0; font-size:clamp(15px,1.8vw,20px);
-          white-space:normal; line-height:1.15;
+          grid-column:2; grid-row:2;
+          display:block; width:100%; min-width:0;
+          padding:0; border:0; font-size:clamp(13px,1.45vw,16px);
+          line-height:1.1; letter-spacing:-.035em;
+          white-space:nowrap; text-align:left;
         }
-        .le-atmo-scale-track-row {
-          display:flex; flex-direction:column; align-items:stretch; gap:10px;
-        }
+        .le-atmo-scale-track-row { display:contents; }
         .le-atmo-scale-visual {
-          display:grid; grid-template-columns:12px minmax(0,1fr);
-          align-items:stretch; column-gap:13px; min-height:0;
+          grid-column:2; grid-row:3;
+          display:grid; grid-template-columns:10px minmax(0,1fr);
+          align-items:stretch; column-gap:10px; min-width:0;
         }
-        .le-atmo-scale-track { width:12px; height:clamp(142px,35vh,230px); }
+        .le-atmo-scale-track { width:10px; height:clamp(132px,29vh,190px); }
         .le-atmo-legend-bar {
           width:100%; height:100%; min-height:100%;
           background:var(--atmo-gradient-vertical)!important;
           border-radius:999px;
         }
         .le-atmo-legend-ticks {
-          position:relative; width:100%; height:auto; min-height:clamp(142px,35vh,230px);
-          margin:0; font-size:clamp(9px,1.05vw,11px);
+          position:relative; width:100%; height:auto; min-height:clamp(132px,29vh,190px);
+          margin:0; font-size:clamp(8px,.85vw,10px); line-height:1;
         }
         .le-atmo-legend-ticks span {
           top:var(--atmo-tick-position); left:0!important;
-          transform:translateY(-50%); text-align:left;
+          transform:translateY(-50%); text-align:left; white-space:nowrap;
         }
         .le-atmo-legend-ticks span::before {
-          left:-8px; top:50%; width:4px; height:1px;
+          left:-7px; top:50%; width:4px; height:1px;
           transform:translateY(-50%);
         }
-        .le-atmo-legend-ticks span:first-child { transform:translateY(-100%); }
-        .le-atmo-legend-ticks span:first-child::before { left:-8px; }
-        .le-atmo-legend-ticks span:last-child { transform:none; text-align:left; }
-        .le-atmo-legend-ticks span:last-child::before { left:-8px; }
-        .le-atmo-scale-more { width:38px; height:38px; align-self:flex-end; }
+        .le-atmo-legend-ticks span:first-child { transform:translateY(-50%); }
+        .le-atmo-legend-ticks span:last-child { transform:translateY(-50%); text-align:left; }
+        .le-atmo-scale-more {
+          grid-column:2; grid-row:4;
+          width:36px; height:36px; justify-self:end; align-self:end;
+          margin-top:1px;
+        }
+
+        /* The + control opens provenance in a right-side drawer, not above
+           the scale, so the drawer stays inside the Landscape viewport. */
+        .le-atmo-scale-dock .le-atmo-data-card {
+          left:calc(100% + 14px); right:auto;
+          top:50%; bottom:auto; transform:translateY(-50%);
+          width:min(42vw,620px);
+          max-width:calc(80vw - 200px);
+          max-height:85svh; overflow:auto;
+          border-radius:16px;
+        }
       }
+    
     `;
     document.head.appendChild(style);
   }
