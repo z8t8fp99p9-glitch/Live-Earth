@@ -2,71 +2,43 @@
 
 **Project:** LIVE // EARTH  
 **Repository:** `z8t8fp99p9-glitch/Live-Earth`  
-**Branch:** `main`  
-**Documentation baseline:** 20 November 2026
+**Branch:** `main`
 
-This document contains the safeguards that apply to every task. Current code is authoritative for exact implementation details.
+This document is the governing work-safety and source-of-truth contract. It is not a second architecture guide or a chronological project log. Exact implementation belongs to current source; durable milestone decisions belong in [`Documentation/PROJECT-HISTORY.md`](Documentation/PROJECT-HISTORY.md).
 
-## Non-negotiable rules
+## Source of truth
 
-1. Inspect current `main`, callers, runtime dependencies and relevant tests before changing code.
-2. Keep each change narrow, reversible and limited to the requested scope.
-3. Preserve Home composition, five Home Orbs, the feature dock and their interaction contracts.
-4. Keep Moon and Sun as separate views. Do not create a competing primary-view manager.
-5. Location is OFF until the user explicitly enables it. Feature views may consume an approved fresh fix; they must not request GPS themselves.
-6. Preserve Stacks registration, close lifecycle, hitbox alignment and animation cleanup.
-7. Preserve offline startup, service-worker shell, update manager, local data and recovery. Never clear or migrate user data as generic troubleshooting.
-8. Retain the Universal Editorial Engine. Do not restore the removed Collector, Checker, source discovery, newsroom database, Publisher, feed or Magazine systems.
-9. Report source checks, local tests, ZIP validation, Actions, Pages deployment and device acceptance as separate evidence.
-10. The user uploads and commits manually. Do not write directly to GitHub.
+1. For every substantive code or asset task, inspect the latest `main` before editing. Use `z8t8fp99p9-glitch/Live-Earth` on `main` as the sole source for repository code, assets, configuration and repository documentation.
+2. Re-fetch the current branch state before each new task; do not treat an earlier checkout, user ZIP, local archive, Library copy or historical note as a replacement for current `main`.
+3. If GitHub source access fails, report the exact repository, path/ref and error, then pause source-dependent work. Do not silently fall back to an older copy.
+4. Project continuity and handoff documents outside the repository are instructions/history only; they are not implementation source.
 
-## Protected Home and iOS behaviour
+## Non-negotiable working rules
 
-Prime Earth framing, size, texture, baseline geometry, Moon orbit, star field and five-Orb layout are protected. `ios-standalone-root-flow.js` and orientation recovery in `Global/orb-controls-v4.js` are deliberate safeguards. A historically identified hidden Home visual has not been conclusively mapped; do not remove it or related assets without tracing and installed-iPhone testing.
+- Inspect callers, runtime references, resource classification and relevant component notes before changing code. Keep each change narrow, reversible and within the requested scope.
+- Do not refactor unrelated views or shared infrastructure. Preserve all protected decisions in [`PROTECTED-DECISIONS.md`](PROTECTED-DECISIONS.md) and the application-wide rules in [`GLOBAL-STANDARDS.md`](GLOBAL-STANDARDS.md).
+- Never remove a runtime file, asset, recovery item or data path because it appears old or unused. Trace static imports, dynamic loads, service-worker routes, standalone entry points and compatibility paths first.
+- Never reset or broadly clear Cache Storage, localStorage, sessionStorage, IndexedDB or user data as generic troubleshooting.
+- Keep the Universal Editorial Engine utility. Do not restore the retired Collector, Checker, source-discovery, rights-processing, newsroom database, Publisher, feed or Magazine systems.
+- The checked-in `Tests/` directory was retired by explicit owner direction. Do not restore it or claim that it provides regression coverage. Report only checks actually performed.
 
-## Shared architecture boundaries
+## Protected interaction and runtime boundaries
 
-- `Global/view-manager.js` owns primary-view transitions.
-- `Global/view-module-registry.js` owns shared feature registration, Stacks lifecycle and the three-Orb feature dock.
-- `Stacks/stacks-feature-views.js` provides the shared feature runtime.
-- `EarthEngine/Core/earth-engine.js` is the shared Earth globe factory and owns quaternion-only viewpoint continuity.
-- `Location/location.js` owns explicit permission and GPS watch lifecycle.
-- `sw.js` and `Global/update-manager.js` must keep build identity and update contracts synchronized.
+- Home/Prime Earth composition, framing, baseline geometry, Moon orbit, star field and five Home Orbs remain protected. A historically identified hidden Home visual has not been conclusively mapped; do not remove it or related assets without tracing and installed-iPhone testing.
+- `Global/view-manager.js` remains the sole primary-view transition authority. Moon and Sun remain separate views.
+- Location remains OFF by default and requires explicit user action. Other views consume approved fresh location state; they do not request GPS permission themselves.
+- Stacks keeps its shared feature registry, stage, three-Orb dock, hitbox alignment and cleanup guards. Feature-specific close changes must stay inside the Stacks lifecycle; do not alter global browser timers.
+- Preserve service-worker readiness, app-shell/offline startup, update coordination, local data and recovery. The separate startup/optional resource boundary is defined only in [`STARTUP-ESSENTIALS-POLICY.md`](STARTUP-ESSENTIALS-POLICY.md).
 
-## Working sequence
+## Change, verification and release sequence
 
-Read this file, `GLOBAL-STANDARDS.md`, `PROTECTED-DECISIONS.md` and the ZIP standard. Then read `Documentation/CURRENT-STATUS.md`, `Documentation/ARCHITECTURE.md` and the relevant component note. Inspect source and callers, make the smallest safe change, test it, review the exact file scope and update only the affected documentation.
+1. Confirm current `main`, identify the exact affected files and read the governing/component documentation.
+2. State the protected boundaries and regression risks before editing.
+3. Make the smallest change and run syntax/targeted checks. Review the complete diff and exact file list.
+4. Build and validate one manifest-based ZIP. Do not modify `.github/` through the ZIP extractor.
+5. The user uploads and commits the ZIP. Do not write directly to GitHub, create branches, commit, push, merge, rerun workflows or deploy.
+6. Report source identity, ZIP validation, extractor result, Actions, Pages deployment and installed-device acceptance as separate gates. A green Pages run is not proof of iPhone acceptance.
 
-## Documentation policy
+## Documentation ownership
 
-Keep current guidance short and canonical. Put only durable decisions in `Documentation/PROJECT-HISTORY.md`. Old experiments and one-off patch notes are not current specifications; Git history retains deleted documentation. Never delete runtime source, assets, tests or recovery data as part of documentation cleanup.
-
-
-## 18 November 2026 — Atmospheric Composition world separation
-
-- Added `Atmospheric-Composition/atmospheric-composition-view-controller.js` as a separate Stacks world with ID `atmospheric-composition`, title **Atmospheric Composition**, and Orb symbol `◌`.
-- At the 18 November checkpoint, registered the world in `Stacks/stacks-feature-views.js` catalogue and sequential module loader, immediately after Atmosphere. The 20 November v155 candidate supersedes that loading method with Orb-selected loading.
-- At that checkpoint, added the controller to `sw.js` app-shell cache so the module was available for offline startup. The v155 candidate moves it to the bounded optional cache; first-use offline access requires a previously cached copy.
-- Kept Atmosphere distinct and narrowed its catalogue description to temperature, pressure, wind and moisture. Composition is no longer listed as an Atmosphere topic.
-- The new controller follows the established numerical-world lifecycle: its own Engine-created globe/view renderer and cleanup, while reusing the shared Earth Engine, Universal Grid System and GPU Grid Skin. It does not create another globe framework or navigation dock.
-- No composition data adapter or measurements are connected in this separation phase. The view must remain honest and show readiness only until approved, verified datasets are connected.
-- Updated architecture, Stacks feature and numerical-world lifecycle documentation.
-- Package is prepared for the user's ZIP upload workflow; no direct GitHub changes were made.
-
-
-## 20 November 2026 — v155 on-demand feature-view separation candidate
-
-- **Verified source baseline:** uploaded `Live-Earth-main 16.zip` matches the inspected current GitHub `main` blobs for `sw.js`, `Global/update-manager.js`, `Stacks/stacks-feature-views.js`, `Global/view-module-registry.js`, `index.html` and `STARTUP-ESSENTIALS-POLICY.md`. The latest inspected commit is `af75d0ce789c88044adf9c0652f83e247a2f9f00` (v154, `Restore Stacks Feature Controllers and Service Worker Shell`).
-- **Reason for the change:** the earlier v153 attempt registered no-op catalogue entries but had no working click-to-load path in the shared feature registry. v154 restored controllers to startup. Do not revert to v153; v155 adds a real selection-driven loader inside the Stacks shared runtime.
-- **Candidate design:** register all catalogue metadata immediately; load one controller after its Orb is selected; allow the controller to self-register; activate only if that same Orb is still selected. A delayed response after close/switch is ignored. Failures are displayed within the feature and do not fail Home startup.
-- **Essential resources:** v154 has 51 app-shell paths + 3 runtime dependencies = 54 staged resources. v155 candidate has 37 app-shell paths + 3 runtime dependencies = 40. Eleven already-separate Stacks controller files leave the app shell, and Elevation's previously inline controller is extracted into its own on-demand file. All 12 Stacks feature controllers are now optional. Editorial Engine's browser workspace is also moved from eager startup to Orb-selected loading, though it was not in the app-shell list.
-- **Preserved:** Elevation's visual/data behaviour and its shared Prime Earth layer contract remain intact, but its controller is now optional; the shared Stacks catalogue/lifecycle stays essential. Home/Prime Earth, five Home Orbs, three-Orb dock, primary Earth, Moon, Sun, Location OFF privacy, core Earth Engine, data/recovery, iOS and service-worker safeguards remain core. The retained Editorial Engine utility and retired-publishing boundary are unchanged.
-- **Optional caching:** existing bounded optional cache remains the fetch path; no optional cache or IndexedDB clearing is introduced. First-time offline access to a never-cached feature may fail locally while Home remains available.
-- **Validation:** `node --check` passed for the three core startup/loader files and all 13 optional controllers. The expanded mock loader test passed for all 13 catalogue modules, zero startup optional fetches, one-on-selection loading, in-flight request sharing, switch-away/switch-back race handling, stale response suppression, failure/retry and loaded-module reuse. The separate Elevation smoke test passed registration, shared-layer attachment, offline no-fetch behaviour, listener cleanup and layer disposal. App-shell audit confirms 37 paths + 3 runtime dependencies = 40, all shell paths exist, none of the 13 optional modules or 2 grid helpers are in the shell, and worker/update-manager build IDs match.
-- **Package:** `LIVE-EARTH-v155-On-Demand-Feature-Views.zip`; manifest commit title: `Move Feature Views Out of Startup Essentials`.
-- **Status:** locally prepared and validated only. No GitHub writes were made. User upload/extraction, Actions/Pages and installed-iPhone verification remain pending. This entry supersedes the 18 November note that Atmospheric Composition's controller was in the app shell; its controller is now an optional on-demand view in the v155 candidate.
-
-
-## 21 November 2026 — Atmosphere Wind vector plan
-
-The approved next Wind architecture is an additive derived Central Database product, `earth.atmosphere.wind_vector`, sourced from aligned NOAA 10 m UGRD/VGRD components. Preserve current speed and direction products. The combined grid carries U, V and speed; interpolate components before reconstructing meteorological direction FROM north; animate particles toward `(U,V)`. Use one coordinated Wind GPU surface with speed, direction and vector-flow modes. Any multi-channel grid/GPU support must be optional and backward-compatible. No collector, publisher, database, shared-grid or renderer change is authorised by this documentation-only checkpoint. See `Documentation/WIND-VECTOR-DATA-ARCHITECTURE.md`.
+Use [`Documentation/INDEX.md`](Documentation/INDEX.md) as the only catalogue. `README-FIRST.txt` is the entry point; this file owns work/source safeguards; `GLOBAL-STANDARDS.md` owns app-wide behaviour; `PROTECTED-DECISIONS.md` owns approval boundaries; `STARTUP-ESSENTIALS-POLICY.md` owns the essential/optional resource boundary; `Documentation/CURRENT-STATUS.md` owns the current snapshot; `Documentation/ARCHITECTURE.md` owns the high-level architecture; component notes stay beside their components; and `Documentation/PROJECT-HISTORY.md` owns dated milestones. Do not duplicate a component contract in the root guidance files.

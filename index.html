@@ -157,8 +157,6 @@ body{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset
 @media(prefers-reduced-motion:reduce){
   #le-feature-library .le-stack-butterfly{animation:none!important;will-change:auto!important}
 }
-/* Closing Stacks is immediate; selecting a feature Orb keeps its existing collection motion. */
-#le-feature-library .le-feature-library-item.le-orb-collecting{transition:none!important;animation:none!important}
 </style>
 <!-- V75 EARLY BOOT CURTAIN: self-contained and available before the service worker controls this page. -->
 <style id="le-early-boot-style">
@@ -332,26 +330,6 @@ html.le-boot-pending body > :not(#le-boot-overlay):not(#le-startup-gate){visibil
   <button class="orbButton" data-view="location" aria-label="Location" aria-pressed="false"><span class="orbShell"><img class="orbImage" src="./Location/location.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Location</span></button>
   <button class="orbButton" data-view="stacks" aria-label="Stacks" aria-pressed="false"><span class="orbShell"><img class="orbImage" src="./Stacks/stacks.webp" alt="" draggable="false"><span class="orbShine"></span></span><span class="orbLabel">Stacks</span></button>
 </nav>
-<script id="le-stacks-close-motion-fix">
-(() => {
-  'use strict';
-  const nativeSetTimeout = window.setTimeout.bind(window);
-  let closeStacksNow = false;
-  document.addEventListener('click', event => {
-    const target = event.target instanceof Element ? event.target : null;
-    const button = target?.closest('#navButtons .orbButton[data-view="stacks"], #le-feature-dock .orbButton[data-view="stacks"]');
-    const library = document.getElementById('le-feature-library');
-    closeStacksNow = !!button && !!library && !library.hidden;
-  }, true);
-  window.setTimeout = function(callback, delay, ...args) {
-    if (closeStacksNow && Number(delay) === 760) {
-      closeStacksNow = false;
-      return nativeSetTimeout(callback, 0, ...args);
-    }
-    return nativeSetTimeout(callback, delay, ...args);
-  };
-})();
-</script>
 <script id="le-stacks-heading-butterflies">
 (() => {
   'use strict';

@@ -486,30 +486,33 @@
       }));
     }
 
-    function collectLooseOrbs(done) {
+    function collectLooseOrbs(done, { immediate = false } = {}) {
       if (collectingOrbs) return false;
       collectingOrbs = true;
       const anchor = getVisibleStacksAnchor();
       const layerRect = getLibraryRect();
       const items = [...(libraryGrid?.children || [])];
       const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
+      const skipMotion = immediate || reducedMotion || !items.length;
       for (const [index, item] of items.entries()) {
         item.classList.remove('le-orb-deployed');
         item.classList.add('le-orb-collecting');
         item.style.animation = 'none';
         item.style.pointerEvents = 'none';
-        item.style.transition = reducedMotion
+        item.style.transition = skipMotion
           ? 'none'
           : 'transform 620ms cubic-bezier(0.22,0.76,0.22,1), opacity 440ms ease, filter 440ms ease';
-        item.style.transitionDelay = reducedMotion ? '0ms' : `${Math.min(index * 16, 80)}ms`;
+        item.style.transitionDelay = skipMotion ? '0ms' : `${Math.min(index * 16, 80)}ms`;
         setOrbCenter(item, anchor.x, anchor.y - getOrbCenterOffsetY(item), layerRect);
       }
       const finish = () => {
+        if (collectingTimer) clearTimeout(collectingTimer);
         collectingTimer = null;
         done?.();
       };
-      // Six lightweight transform transitions only; no JS animation loop or per-frame layout work.
-      if (reducedMotion || !items.length) finish();
+      // Feature selection retains the short Orb collection. Closing the library
+      // opts into an immediate Stacks-local close without changing global timers.
+      if (skipMotion) finish();
       else collectingTimer = setTimeout(finish, 760);
       return true;
     }
@@ -666,7 +669,7 @@
     function toggleLibrary() {
       if (collectingOrbs) return;
       if (libraryOpen) {
-        collectLooseOrbs(() => finishLibraryClose("toggle"));
+        collectLooseOrbs(() => finishLibraryClose("toggle"), { immediate: true });
         return;
       }
       // Refresh the three-Orb dock before measuring it as a possible anchor.

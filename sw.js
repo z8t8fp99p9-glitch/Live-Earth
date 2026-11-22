@@ -1115,13 +1115,118 @@ async function networkFirst(request) {
     return offlineFallback(error);
   }
 }
+function optionalResourceKind(request, pathname) {
+  const destination = request.destination || "";
+  const path = pathname.toLowerCase();
+  if (destination === "script" || /\.(?:js|mjs)$/.test(path)) return "script";
+  if (destination === "style" || /\.css$/.test(path)) return "style";
+  if (destination === "image" || /\.(?:avif|gif|jpe?g|png|svg|webp)$/.test(path)) return "image";
+  if (destination === "font" || /\.(?:eot|otf|ttf|woff2?)$/.test(path)) return "font";
+  if (/\.jsonl?$/.test(path)) return "json";
+  if (/\.wasm$/.test(path)) return "wasm";
+  if (/\.(?:bin|dat)$/.test(path)) return "binary";
+  if (/\.(?:csv|txt)$/.test(path)) return "text";
+  return "other";
+}
+
+function optionalMimeIsValid(kind, mime, pathname) {
+  const jsTypes = new Set([
+    "application/ecmascript", "application/javascript", "application/x-javascript",
+    "text/ecmascript", "text/javascript"
+  ]);
+  if (kind === "script") return jsTypes.has(mime);
+  if (kind === "style") return mime === "text/css";
+  if (kind === "image") return mime.startsWith("image/");
+  if (kind === "font") return mime.startsWith("font/") || [
+    "application/font-woff", "application/octet-stream", "application/vnd.ms-fontobject",
+    "application/x-font-ttf", "application/x-font-woff"
+  ].includes(mime);
+  if (kind === "json") {
+    if (mime === "application/json" || mime === "application/geo+json" ||
+        mime === "application/ld+json" || mime === "application/x-ndjson" || mime.endsWith("+json")) return true;
+    return pathname.toLowerCase().endsWith(".jsonl") && mime === "text/plain";
+  }
+  if (kind === "wasm") return mime === "application/wasm" || mime === "application/octet-stream";
+  if (kind === "binary") return mime === "application/octet-stream" || mime === "application/x-binary";
+  if (kind === "text") return mime === "text/plain" || mime === "text/csv" || mime === "application/csv";
+  return !!mime && mime !== "text/html" && mime !== "application/xhtml+xml";
+}
+
+async function optionalBodyProbeIsValid(response, minimumBytes) {
+  // Read only a small prefix from a clone. This catches empty/truncated bodies
+  // and HTML fallbacks without buffering large optional images or data files.
+  const probe = response.clone();
+  if (!probe.body || typeof probe.body.getReader !== "function") {
+    const contentLength = Number(probe.headers.get("content-length"));
+    return Number.isFinite(contentLength) && contentLength >= minimumBytes;
+  }
+
+  const reader = probe.body.getReader();
+  const sample = [];
+  let total = 0;
+  let probeTimer = null;
+  let probeValid = false;
+  try {
+    const readPrefix = (async () => {
+      while (total < Math.max(minimumBytes, 96)) {
+        const part = await reader.read();
+        if (part.done) break;
+        const value = part.value || new Uint8Array();
+        total += value.byteLength;
+        for (let index = 0; index < value.length && sample.length < 128; index++) sample.push(value[index]);
+      }
+      return total >= minimumBytes;
+    })();
+    const probeDeadline = new Promise(resolve => {
+      probeTimer = setTimeout(() => resolve(false), 5000);
+    });
+    probeValid = await Promise.race([readPrefix, probeDeadline]);
+  } finally {
+    if (probeTimer !== null) clearTimeout(probeTimer);
+    try { void reader.cancel().catch(() => {}); } catch (_) { /* The cloned probe is disposable. */ }
+  }
+
+  if (!probeValid) return false;
+  const prefix = new TextDecoder().decode(new Uint8Array(sample)).trimStart().toLowerCase();
+  if (/^(?:<!doctype\s+html|<html(?:[\s>])|<head(?:[\s>])|<body(?:[\s>]))/.test(prefix)) return false;
+  return true;
+}
+
+async function optionalResponseIsValid(request, response) {
+  if (!response || response.status !== 200 || response.type === "opaque") {
+    return { valid: false, reason: "unexpected HTTP status or opaque response" };
+  }
+  const url = new URL(request.url);
+  const kind = optionalResourceKind(request, url.pathname);
+  const mime = (response.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
+  if (!optionalMimeIsValid(kind, mime, url.pathname)) {
+    return { valid: false, reason: `unexpected content type (${mime || "missing"}) for ${kind}` };
+  }
+  const minimumBytes = ({ script: 100, style: 8, image: 32, font: 64, json: 2, wasm: 8, binary: 1, text: 1, other: 1 })[kind];
+  if (!(await optionalBodyProbeIsValid(response, minimumBytes))) {
+    return { valid: false, reason: "body was empty, truncated or an HTML fallback" };
+  }
+  return { valid: true, reason: "validated" };
+}
+
+async function matchValidatedOptional(cache, request) {
+  const hit = await cache.match(request);
+  if (!hit) return null;
+  const validation = await optionalResponseIsValid(request, hit);
+  if (validation.valid) return hit;
+  await cache.delete(request);
+  console.warn(`[LIVE // EARTH] Removed an invalid saved optional resource: ${new URL(request.url).pathname} (${validation.reason}).`);
+  return null;
+}
+
 async function boundedOptionalCache(request) {
   const cache = await caches.open(OPTIONAL_CACHE);
 
-  // Optional online resources are refreshed from the network first. When the
-  // device is offline, use the bounded saved copy immediately when available.
+  // This function is reached only after the versioned app-shell, essential
+  // runtime dependencies and navigation routes have been handled separately.
+  // Optional online resources remain network-first; offline uses a validated saved copy.
   if (self.navigator && self.navigator.onLine === false) {
-    const hit = await cache.match(request);
+    const hit = await matchValidatedOptional(cache, request);
     if (hit) return hit;
     return fetch(request);
   }
@@ -1130,18 +1235,26 @@ async function boundedOptionalCache(request) {
   try {
     response = await fetch(request, { cache: "no-store" });
   } catch (error) {
-    const hit = await cache.match(request);
+    const hit = await matchValidatedOptional(cache, request);
     if (hit) return hit;
     throw error;
   }
 
-  if (response?.ok && response.type !== "opaque") {
-    await cache.put(request, response.clone());
-    const keys = await cache.keys();
-    while (keys.length > OPTIONAL_LIMIT) await cache.delete(keys.shift());
+  const validation = await optionalResponseIsValid(request, response);
+  if (!validation.valid) {
+    // Treat an invalid 200 (for example, an HTML fallback for a JS request) as
+    // an unusable network result. Prefer only a previously validated saved copy.
+    const hit = await matchValidatedOptional(cache, request);
+    if (hit) return hit;
+    throw new Error(`Optional resource failed validation: ${new URL(request.url).pathname} (${validation.reason}).`);
   }
+
+  await cache.put(request, response.clone());
+  const keys = await cache.keys();
+  while (keys.length > OPTIONAL_LIMIT) await cache.delete(keys.shift());
   return response;
 }
+
 async function forceFreshEssential(request) {
   const url = new URL(request.url);
   const dependency = RUNTIME_DEPENDENCIES.find(item => runtimePath(item.path) === url.pathname);

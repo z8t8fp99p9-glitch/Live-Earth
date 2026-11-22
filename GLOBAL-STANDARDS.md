@@ -1,6 +1,6 @@
 # Global Standards
 
-These standards apply throughout LIVE // EARTH.
+These standards define application-wide behaviour. Task workflow and GitHub source rules live in [`PROJECT-CONTINUITY.md`](PROJECT-CONTINUITY.md); owner-approval boundaries live in [`PROTECTED-DECISIONS.md`](PROTECTED-DECISIONS.md).
 
 ## Navigation and Orbs
 
@@ -14,6 +14,7 @@ These standards apply throughout LIVE // EARTH.
 - Moon and Sun share a sky host but retain separate controllers, renderers, calculations and UI.
 - `EarthEngine/Core/earth-engine.js` is the shared Earth globe factory. Each view owns its scene, camera and renderer. Only the user-controlled parent-group quaternion is handed between Engine-owned Earth views.
 - Stacks features register through `Stacks/stacks-feature-views.js`; a feature must not create another navigation system or dock.
+- Detailed feature ownership and dependencies are indexed in [`Documentation/ARCHITECTURE.md`](Documentation/ARCHITECTURE.md) and its component references.
 
 ## Location and privacy
 
@@ -24,11 +25,11 @@ These standards apply throughout LIVE // EARTH.
 
 ## Offline, updates and recovery
 
-- Preserve the service-worker shell, optional-resource cache, readiness checks and staged update flow.
-- Keep the app shell focused on Home/primary views, shared registries/runtime, core data/recovery and required offline dependencies. Stacks feature controllers and feature-only helpers load on explicit Orb selection through the bounded optional cache; Stacks readiness means the catalogue is ready, not that every feature controller is downloaded.
+- Preserve service-worker shell readiness, update coordination, optional-resource caching and local recovery.
+- The app shell contains the launch-critical resources; feature controllers and feature-only helpers load on explicit selection through the bounded optional cache. Stacks readiness means the catalogue is ready, not that every feature controller has downloaded.
+- Startup Essentials and optional resources are separate policies. Their exact route and cache boundaries are specified in [`STARTUP-ESSENTIALS-POLICY.md`](STARTUP-ESSENTIALS-POLICY.md).
 - `sw.js` and `Global/update-manager.js` must use matching build identities.
-- Do not clear Cache Storage, localStorage, sessionStorage, IndexedDB or user data as a generic fix.
-- Trace runtime dependencies before removing or moving files.
+- Do not clear Cache Storage, localStorage, sessionStorage, IndexedDB or user data as a generic fix. Trace runtime dependencies before moving or removing files.
 
 ## Editorial Engine boundary
 
@@ -36,4 +37,4 @@ The retained Universal Editorial Engine provides source-grounded extractive text
 
 ## Release discipline
 
-The user uploads and commits through the root manifest-validated ZIP workflow. Do not edit `.github/` through that ZIP or write directly to GitHub. Verify ZIP extraction, resulting commit, Pages deployment and installed-device behaviour separately.
+The user uploads and commits through the root manifest-validated ZIP workflow. Do not edit `.github/` through that ZIP or write directly to GitHub. See the unchanged root ZIP standard. Verify ZIP extraction, resulting commit, Pages deployment and installed-device behaviour separately.

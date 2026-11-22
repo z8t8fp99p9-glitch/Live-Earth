@@ -36,6 +36,13 @@ All 12 Stacks feature-view implementations are separate optional controllers, in
 
 Optional feature scripts use the Service Worker's bounded same-origin optional cache. Online selection prefers fresh network content and refreshes the optional cache; later offline selection may use the saved copy. First-ever access to a feature while offline is not guaranteed until that feature has been cached. Such a failure must remain local to the selected feature and must not fail Home startup.
 
+### Optional-loader reliability and close behaviour
+
+- Each optional controller request has one shared in-flight promise. A request is bounded by a 25-second deadline; timeout and download failure return the controller state to `idle`, so selecting the Orb again can retry. The loader suppresses late `load`/`error` callbacks and retains the existing activation-token check, so an old selection cannot reopen a view after close or switch.
+- Removing a timed-out script element does not guarantee that the browser cancels an already-started network transfer. Late registration therefore must not bypass the current active-feature/token checks.
+- Closing the Stacks library is an immediate Stacks-local operation. Selecting a feature keeps the existing short Orb-collection transition before activation. Neither action may override or rewrite `window.setTimeout` or change timers belonging to other views.
+- These rules apply only to optional Stacks modules and the Stacks library. They do not change Startup Essentials, primary-view readiness, app-shell caching or Weather rendering.
+
 ## Stacks features
 
 | Feature | Controller | Data and behaviour |

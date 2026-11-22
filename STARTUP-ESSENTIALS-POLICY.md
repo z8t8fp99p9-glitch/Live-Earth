@@ -1,15 +1,15 @@
 # LIVE // EARTH — v155 Startup Essentials and On-Demand Feature Policy
 
-**Policy checkpoint:** 20 November 2026  
-**Baseline:** v154 `af75d0ce789c88044adf9c0652f83e247a2f9f00`  
-**Candidate identity:** `v155-on-demand-feature-views`  
-**Status:** Candidate prepared locally; user upload, extraction, CI, Pages and iPhone verification are pending.
+**Policy checkpoint:** 23 November 2026  
+**Current source:** `d1aa269836069554cb27888f6b611e446407478c` on `main`  
+**Build identity:** `v155-on-demand-feature-views`  
+**Deployment evidence:** GitHub Pages workflow run `45076364772` succeeded for that exact source commit on 22 November 2026. Installed-iPhone activation and acceptance remain a separate, unverified gate.
 
 ## 1. Essential startup
 
 The versioned install-time app shell contains the resources needed to open and recover the core application: Home/Prime Earth, primary Earth, Moon and Sun, the shared Earth Engine and graphics runtime, the primary-view and feature registries, the shared Stacks catalogue/lifecycle runtime, Location and data/recovery services, the service worker/update manager, iOS startup support, app identity assets and primary-view textures.
 
-The candidate has **37 `APP_SHELL` paths plus 3 separately staged runtime dependencies = 40 install-time essential resources**. The v154 baseline had 51 `APP_SHELL` paths plus the same 3 runtime dependencies = 54. This is 14 fewer staged resources (25.9%). Static `APP_SHELL` file-size accounting is 4,253,633 bytes for the candidate versus 4,581,676 bytes for v154, a reduction of 328,043 bytes (about 320.4 KiB); this is not a measured launch-time benchmark.
+The current v155 source has **37 distinct `APP_SHELL` files represented by 38 routing entries** (the `./` and `./index.html` entries resolve to the same file), plus 3 separately staged runtime dependencies: 40 distinct install-time resources. The v154 historical baseline had 51 `APP_SHELL` resources plus the same 3 runtime dependencies: 54. This is 14 fewer distinct staged resources (25.9%). Static `APP_SHELL` file-size accounting is 4,253,633 bytes for the candidate versus 4,581,676 bytes for v154, a reduction of 328,043 bytes (about 320.4 KiB); this is not a measured launch-time benchmark.
 
 ## 2. Feature controllers loaded on selection
 
@@ -49,7 +49,9 @@ Elevation's catalogue metadata remains in the shared Stacks runtime, but its com
 
 ## 5. Optional cache and offline behaviour
 
-`sw.js` handles same-origin non-shell GET requests through the bounded `live-earth-optional-v1` cache (limit: 48 entries). Online requests prefer fresh network content and refresh the optional cache; offline requests use a saved optional copy when present.
+`sw.js` handles same-origin non-shell GET requests through the bounded `live-earth-optional-v1` cache (limit: 48 entries). The request router handles force-fresh Essentials, the app shell, staged runtime dependencies and navigation before it reaches `boundedOptionalCache()`. Optional-response validation belongs only inside that final optional-resource path. It must not alter Startup Essentials, readiness, recovery, the versioned shell cache or update activation.
+
+Before an optional response is stored or reused, the service worker requires HTTP 200, a non-opaque response, and a MIME type compatible with the request destination/path. It probes only a small body prefix (with a five-second read bound) to reject empty/tiny resources and obvious HTML fallback documents without buffering large images or datasets. Existing saved optional entries are validated before use and removed if invalid. An invalid online response is treated as an unusable network result: a previously validated saved copy may be used; otherwise the feature request fails locally instead of caching or serving the invalid response. Online optional requests remain network-first; offline uses a validated saved optional copy when present.
 
 A feature first opened online can therefore be available on later offline sessions after its script and required resources have been cached. A feature never downloaded before, and opened for the first time while offline, may report that it is unavailable. This limitation must remain local to that feature; Home and the primary views must continue working.
 
@@ -65,7 +67,7 @@ The corresponding shell cache is:
 
 `live-earth-shell-v155-on-demand-feature-views`
 
-The service worker may retire previous versioned app-shell caches only after the new app reports verified startup with this matching build identity. The bounded optional cache and IndexedDB remain untouched.
+The service worker retires previous versioned app-shell caches only after the new app reports verified startup with this matching build identity. The bounded optional cache and IndexedDB remain untouched.
 
 ## 7. Protected resources and behaviour
 
@@ -75,13 +77,13 @@ Keep the original Stacks order: Clouds, Weather, Elevation, Earthquakes, Traffic
 
 ## 8. Release and acceptance gates
 
-The candidate is not considered deployed when its ZIP is prepared. The user uploads one root-level manifest-validated ZIP. Then verify, separately:
+A source package is not considered deployed when its ZIP is prepared. The user uploads one root-level manifest-validated ZIP. Then verify, separately:
 
 1. Extractor commit and changed-file membership.
 2. Exact `main` file identities and matching v155 build IDs.
-3. GitHub Actions and Pages deployment.
-4. iPhone Home startup and offline launch.
+3. GitHub Actions and Pages deployment for the resulting commit.
+4. Installed-iPhone activation, Home startup and offline launch.
 5. Stacks catalogue order; one-at-a-time feature loading; first-use-online and cached-offline behaviour.
-6. Repeated open/close, rapid switching while a module is loading, load failure/retry, dock/Orb hitboxes, portrait/landscape, Location ON/OFF, and return to the protected primary views.
+6. Repeated open/close, bounded loader timeout and retry, rapid switching while a module is loading, dock/Orb hitboxes, portrait/landscape, Location ON/OFF, and return to the protected primary views.
 
 The repository's checked-in `Tests/` suite was retired by explicit owner direction. Do not claim that it exists or that automated regression coverage passed. Report syntax checks, custom smoke checks, ZIP validation, CI, Pages and device acceptance as separate evidence.

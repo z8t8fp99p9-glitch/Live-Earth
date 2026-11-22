@@ -1,7 +1,5 @@
-# History Index
+# History Index — Compatibility Pointer
 
-- **Current instructions:** root `PROJECT-CONTINUITY.md`, `GLOBAL-STANDARDS.md`, `PROTECTED-DECISIONS.md` and `Documentation/CURRENT-STATUS.md`.
-- **Current architecture:** `Documentation/ARCHITECTURE.md`, `EARTH-ENGINE.md` and `STACKS-FEATURE-VIEWS.md`.
-- **Durable milestones:** `Documentation/PROJECT-HISTORY.md`.
-- **Old prototypes and one-off patches:** not current instructions. Their source history remains in Git commits; do not restore them unless the owner explicitly requests recovery.
-- **Retired publishing systems:** removed at the owner's direction. The retained Editorial Engine is a standalone utility, not an active collection or publishing pipeline.
+The project keeps one canonical documentation catalogue. Use [`INDEX.md#history-and-archives`](INDEX.md#history-and-archives) to find milestone history, dated status snapshots and retired-system records.
+
+The canonical dated timeline is [`PROJECT-HISTORY.md`](PROJECT-HISTORY.md). Historical snapshots and technical audits are evidence from their stated dates, not current runtime instructions.

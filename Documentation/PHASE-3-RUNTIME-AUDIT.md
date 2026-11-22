@@ -1,3 +1,5 @@
+> **Historical runtime and asset audit — 15 November 2026, with a v155 candidate section dated 20 November 2026.** The v154/v155 statements below describe those dated checkpoints. They are not current source or deployment status. See [`CURRENT-STATUS.md`](CURRENT-STATUS.md) and [`PROJECT-HISTORY.md`](PROJECT-HISTORY.md).
+
 # Phase 3 — Runtime and Asset Dependency Audit
 
 **Audit checkpoint:** 15 November 2026  
@@ -104,7 +106,7 @@ The earlier v153 policy is not a safe rollback target: its catalogue entries use
 
 ### Current v155 resource classification
 
-- Keep 37 `APP_SHELL` entries plus 3 runtime dependencies (40 install-time resources): Home/Prime Earth, primary Earth, Moon/Sun, shared registries, Stacks shared catalogue/lifecycle runtime, core Earth Engine and graphics, vendor/runtime texture, Location, core Data/recovery, service-worker/update manager, iOS support and primary-view assets.
+- Keep 37 distinct `APP_SHELL` files (38 routing entries including the `./` alias) plus 3 runtime dependencies (40 distinct install-time resources): Home/Prime Earth, primary Earth, Moon/Sun, shared registries, Stacks shared catalogue/lifecycle runtime, core Earth Engine and graphics, vendor/runtime texture, Location, core Data/recovery, service-worker/update manager, iOS support and primary-view assets.
 - Move all 12 Stacks feature-view implementations out of startup. Eleven standalone controller scripts leave `APP_SHELL`: Clouds, Weather, Earthquakes, Traffic, Atmosphere, Atmospheric Composition, Oceans, Land, Water & Ice, Earth Activity and Energy & Humanity. The Elevation view implementation is extracted from `Stacks/stacks-feature-views.js` into `Elevation/elevation-view.js` and is also loaded only on Orb selection.
 - Move the two feature-only numerical helpers out of `APP_SHELL`: `universal-grid-system.js` and `earth-grid-gpu-skin.js`. They load only when a selected numerical view requests a grid dataset.
 - Remove the documentation-only `EarthEngine/Assets/README.md` from `APP_SHELL`; keep the file in the repository.

@@ -332,6 +332,8 @@
     currentCleanup = () => {};
   }
 
+  const FEATURE_MODULE_LOAD_TIMEOUT_MS = 25000;
+
   function ensureFeatureModule(id) {
     const item = externalModulesById.get(id);
     const state = moduleStates.get(id);
@@ -345,25 +347,49 @@
     state.status = 'loading';
     const request = new Promise((resolve, reject) => {
       const script = document.createElement('script');
+      let settled = false;
+      let timeoutId = null;
+      const settle = (callback, value) => {
+        if (settled) return;
+        settled = true;
+        if (timeoutId !== null) clearTimeout(timeoutId);
+        script.onload = null;
+        script.onerror = null;
+        callback(value);
+      };
+
       script.src = new URL(item.path, document.baseURI).href;
       script.async = true;
       script.dataset.liveEarthOptionalFeature = id;
       script.onload = () => {
+        if (settled) return;
         if (typeof featureActivators.get(id) === 'function') {
           state.status = 'loaded';
-          resolve(true);
+          settle(resolve, true);
         } else {
           script.remove();
-          reject(new Error(`${VIEW_META[id].title} loaded but did not register its Stacks view.`));
+          settle(reject, new Error(`${VIEW_META[id].title} loaded but did not register its Stacks view.`));
         }
       };
       script.onerror = () => {
         script.remove();
-        reject(new Error(`You poor human! It's not alien technology. Connect to the Internet to access this, please. 👽🌐😂`));
+        settle(reject, new Error('This feature could not be downloaded. Check your connection and try again.'));
       };
+      timeoutId = setTimeout(() => {
+        // A script may have registered just before its load event was delayed.
+        if (typeof featureActivators.get(id) === 'function') {
+          state.status = 'loaded';
+          settle(resolve, true);
+          return;
+        }
+        script.remove();
+        settle(reject, new Error('This feature is taking longer than expected to load. Check your connection and try again.'));
+      }, FEATURE_MODULE_LOAD_TIMEOUT_MS);
       (document.head || document.documentElement).appendChild(script);
     });
 
+    // Keep a single shared in-flight request. Any failure, including timeout,
+    // returns the module to idle so a later Orb selection can retry it.
     state.promise = request.catch(error => {
       state.status = 'idle';
       state.promise = null;

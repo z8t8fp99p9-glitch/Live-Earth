@@ -1,31 +1,24 @@
-# Working Rules
+# Working Rules — Execution Checklist
 
-## Before source changes
+This page is a compact checklist, not a second copy of the governing project rules. For source authority and non-negotiable safeguards, read [`../PROJECT-CONTINUITY.md`](../PROJECT-CONTINUITY.md). For protected behaviour, read [`../PROTECTED-DECISIONS.md`](../PROTECTED-DECISIONS.md).
 
-1. Read the root continuity, global standards and protected-decision documents.
-2. Read `CURRENT-STATUS.md` and the relevant component note.
-3. Inspect current `main`, source, callers, runtime references and standalone entry points.
-4. Identify the smallest file scope and protected boundaries.
+## Before changing source
 
-## During changes
+1. Fetch the latest `main` and confirm the exact commit/ref.
+2. Read [`CURRENT-STATUS.md`](CURRENT-STATUS.md), [`ARCHITECTURE.md`](ARCHITECTURE.md), the startup policy if relevant, and the owning component contract.
+3. Trace callers, static/dynamic imports, service-worker routing, cache ownership, standalone entry points and compatibility paths.
+4. Write down the requested scope, protected boundaries, expected changed files and targeted acceptance checks.
 
-- Do not refactor unrelated views or shared infrastructure.
-- Do not modify Home, Orb behaviour, Moon, Sun, Location, Stacks lifecycle, service worker or update manager as a side effect of a feature task.
-- Do not delete runtime files, engines, assets, recovery material or data based on age or filename. Trace dependencies first.
-- Test files may be retired only when explicitly authorized; the current `Tests/` directory retirement is an explicit user decision.
-- Do not reintroduce the retired publishing systems.
-- `.github/` is protected from the ZIP extractor; workflow changes require a separate manual process.
+## While changing source
 
-## Verification and reporting
+- Keep the patch narrow; do not mix unrelated refactors or visual changes.
+- Preserve the app shell, startup readiness/recovery, user data and shared navigation unless explicitly in scope.
+- Keep feature loading and close behaviour within the feature's existing lifecycle.
+- Do not restore retired publishing systems or the retired `Tests/` directory. Do not modify `.github/` through the standard ZIP workflow.
 
-- Report exact syntax/source checks and failures. The repository's automated `Tests/` suite has been retired; do not imply it still exists or claim automated regression coverage.
-- Distinguish local checks, ZIP manifest validation, GitHub Actions, Pages deployment and installed-device acceptance.
-- Review the exact changed/deleted file list before packaging.
+## Verification and release
 
-## Repository release
-
-Follow the root `ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md` unchanged. The user uploads one manifest-validated ZIP to the repository root on `main` and commits through the automatic extractor. Do not write directly to GitHub. After upload, verify the extractor run, resulting commit and Pages deployment.
-
-## Documentation
-
-Keep a short current-state reference and concise component contracts. Keep durable decisions in `PROJECT-HISTORY.md`; do not retain every trial as a separate current-looking document. Git history preserves removed documentation. Never delete application source as part of documentation cleanup.
+- Run syntax checks and targeted mocks for the affected logic; report exactly what passed and what was not tested.
+- Review the final diff and changed/deleted paths. Do not claim device acceptance based on local tests or a green Pages workflow.
+- Follow the root `ZIP-UPLOAD-AND-COMMIT-TITLE-STANDARD-2026-11-06.md` unchanged. User uploads and commits the single manifest-validated ZIP; do not write directly to GitHub.
+- Verify the extractor commit, exact resulting `main` identity, Actions, Pages and installed-iPhone online/offline behaviour as separate gates.
