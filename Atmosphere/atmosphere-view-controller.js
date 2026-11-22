@@ -48,11 +48,11 @@
       .le-sfv--atmosphere .le-sfv-head { margin-bottom:9px; }
       /* The title is a permanent scene layer: the WebGL globe renders above it. */
       .le-atmo-scene-title {
-        /* Adaptive viewport anchor: 10% down from the screen top in Portrait.
+        /* Portrait header anchor: 12% down from the screen top.
            Keep the position proportional across screen sizes. */
         position:absolute; z-index:1;
-        top:10vh;
-        top:10svh;
+        top:12vh;
+        top:12svh;
         left:50%; right:auto; width:min(84vw,620px);
         box-sizing:border-box; transform:translateX(-50%);
         display:flex; align-items:center; justify-content:center;
@@ -233,11 +233,6 @@
       .le-atmo-instrument-label::after {
         background:linear-gradient(90deg,rgba(104,190,231,.46),transparent);
       }
-      .le-atmo-instrument-symbol {
-        color:#71cbed; font-family:Georgia,serif;
-        font-size:21px; font-weight:400; letter-spacing:0; line-height:.7;
-        text-shadow:0 0 12px rgba(63,194,246,.55);
-      }
       .le-atmo-scale-heading {
         display:flex; flex-flow:row nowrap; justify-content:flex-start;
         align-items:center; gap:8px;
@@ -271,7 +266,7 @@
       .le-atmo-scale-more {
         position:relative; flex:none; display:grid; place-items:center;
         width:var(--atmo-action-space); height:var(--atmo-action-space);
-        margin:0; padding:0; justify-self:end; align-self:center;
+        margin:0; padding:0; justify-self:center; align-self:center;
         border:1px solid rgba(116,218,250,.78); border-radius:50%;
         color:#d9f7ff;
         background:radial-gradient(circle at 35% 27%,rgba(78,190,229,.18),rgba(3,19,32,.72) 72%);
@@ -930,8 +925,7 @@ function installStyles() {
     scaleDock.setAttribute('aria-label', 'Active atmospheric field colour scale');
     scaleDock.hidden = true;
     const instrumentLabel = runtime.el('div', 'le-atmo-instrument-label');
-    instrumentLabel.append(
-      runtime.el('span', 'le-atmo-instrument-symbol', '≋'),
+    instrumentLabel.appendChild(
       runtime.el('span', 'le-atmo-instrument-name', 'Atmosphere')
     );
     // The verified data/provenance card is part of this instrument deck,
