@@ -12,6 +12,13 @@ CONFIG = {
     "earth.atmosphere.wind_speed": ("atmosphere_gfs", "noaa_ncep_gfs_025", "6-hourly"),
     "earth.atmosphere.wind_direction": ("atmosphere_gfs", "noaa_ncep_gfs_025", "6-hourly"),
     "earth.atmosphere.humidity": ("atmosphere_gfs", "noaa_ncep_gfs_025", "6-hourly"),
+
+    # Anonymous public NOAA/NCEP GFS fields. These are model fields, not
+    # direct satellite/instrument observations.
+    "earth.atmosphere.water_vapour": ("atmosphere_composition", "noaa_ncep_gfs_025", "6-hourly"),
+    "earth.atmosphere.cloud_properties": ("atmosphere_composition", "noaa_ncep_gfs_025", "6-hourly"),
+    "earth.atmosphere.ozone": ("atmosphere_composition", "noaa_ncep_gfs_025", "6-hourly"),
+
     "earth.oceans.sea_temperature": ("native_sources", "noaa_ncei_oisst", "daily"),
     "earth.land.land_temperature": ("native_sources", "nasa_power_daily", "daily"),
     "earth.water_ice.rainfall": ("native_sources", "nasa_power_daily", "daily"),
@@ -25,6 +32,11 @@ CONTRACTS = {
     "earth.atmosphere.wind_speed": ("metre_per_second", "global_native_0.25_degree_grid_10m_derived_from_UGRD_VGRD"),
     "earth.atmosphere.wind_direction": ("degree", "global_native_0.25_degree_grid_10m_meteorological_from_direction"),
     "earth.atmosphere.humidity": ("percent", "global_native_0.25_degree_grid_2m_relative_humidity"),
+
+    "earth.atmosphere.water_vapour": ("kg/m^2", "global_native_0.25_degree_grid_total_column_precipitable_water_GFS_model"),
+    "earth.atmosphere.cloud_properties": ("percent", "global_native_0.25_degree_grid_total_cloud_cover_GFS_model"),
+    "earth.atmosphere.ozone": ("Dobson_unit", "global_native_0.25_degree_grid_total_column_ozone_GFS_model"),
+
     "earth.oceans.sea_temperature": ("degree_C", "global_native_0.25_degree_grid"),
     "earth.land.land_temperature": ("degree_C", "six_sparse_regional_point_samples"),
     "earth.water_ice.rainfall": ("mm/day", "six_sparse_regional_point_samples"),
@@ -33,7 +45,7 @@ CONTRACTS = {
 }
 
 CADENCE_RESOLUTION = {
-    "6-hourly": "six_hourly_gfs_analysis_cycle",
+    "6-hourly": "six_hourly_gfs_forecast_cycle",
     "daily": "daily_source_observation",
     "hourly": "hourly_event_feed",
 }
@@ -59,6 +71,14 @@ def main():
                 "source_id": None,
                 "cadence": None,
             }
+            # Keep unsupported options explicitly unavailable, not pending.
+            if dataset_id in {
+                "earth.atmosphere.co2_concentration",
+                "earth.atmosphere.methane",
+                "earth.atmosphere.carbon_monoxide",
+                "earth.atmosphere.aerosols_dust",
+            }:
+                item["status"] = "source_not_configured"
             continue
 
         adapter, source, cadence = CONFIG[dataset_id]
@@ -69,7 +89,6 @@ def main():
             "cadence": cadence,
         }
 
-        # Do not erase the last collection outcome on every hourly bootstrap.
         if item.get("status") not in SUCCESS_STATES:
             item["status"] = "collector_configured_pending_first_success"
 
