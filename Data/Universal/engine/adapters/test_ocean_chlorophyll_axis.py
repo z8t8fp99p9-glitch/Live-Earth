@@ -55,6 +55,28 @@ class ChlorophyllLongitudeAxisTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "not monotonic"):
                 ocean_fixed._axis_values(self.spec, "longitude")
 
+    def test_accepts_float32_netcdf_coordinate_rounding(self):
+        source = -179.9791667 + np.arange(8640, dtype=np.float64) / 24.0
+        _, requested = ocean_fixed._axis_selector(source, 3)
+        returned = requested.astype(np.float32).astype(np.float64)
+        validated = ocean_fixed._validate_returned_axis(requested, returned, "longitude")
+        self.assertEqual(validated.size, 2880)
+        self.assertLessEqual(float(np.max(np.abs(validated - requested))), 5e-5)
+
+    def test_rejects_a_real_one_cell_longitude_shift(self):
+        source = -179.9791667 + np.arange(8640, dtype=np.float64) / 24.0
+        _, requested = ocean_fixed._axis_selector(source, 3)
+        shifted = requested + 0.125
+        with self.assertRaisesRegex(RuntimeError, "genuinely offset"):
+            ocean_fixed._validate_returned_axis(requested, shifted, "longitude")
+
+    def test_accepts_equivalent_longitude_origin_plus_360(self):
+        source = -179.9791667 + np.arange(8640, dtype=np.float64) / 24.0
+        _, requested = ocean_fixed._axis_selector(source, 3)
+        returned = requested + 360.0
+        validated = ocean_fixed._validate_returned_axis(requested, returned, "longitude")
+        self.assertTrue(np.allclose(validated, returned))
+
     def test_uses_dated_modis_nrt_product_instead_of_stale_time_actual_range(self):
         today = dt.datetime.now(dt.timezone.utc).date()
         product = f"AQUA_MODIS.{today:%Y%m%d}.L3m.DAY.CHL.chlor_a.4km.NRT.nc"

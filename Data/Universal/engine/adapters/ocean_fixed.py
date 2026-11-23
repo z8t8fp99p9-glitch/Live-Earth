@@ -6,6 +6,8 @@ import csv
 import datetime as dt
 import io
 import re
+import os
+import tempfile
 
 import numpy as np
 from . import ocean as _ocean
@@ -105,6 +107,98 @@ def _axis_values(spec: dict, axis_name: str) -> np.ndarray:
     return axis
 
 
+
+def _validate_returned_axis(requested: np.ndarray, returned: np.ndarray,
+                            axis_name: str) -> np.ndarray:
+    """Validate ERDDAP's decoded coordinates without rejecting float precision.
+
+    ERDDAP's CSV coordinate endpoint and NetCDF response can serialize the
+    same MODIS coordinates at different floating-point precision. Compare
+    positions within a strict sub-cell tolerance, then retain the coordinates
+    actually embedded in the NetCDF response for downstream metadata.
+    """
+    expected = np.asarray(requested, dtype=np.float64).reshape(-1)
+    actual = np.asarray(returned, dtype=np.float64).reshape(-1)
+    if actual.size != expected.size or actual.size < 2:
+        raise RuntimeError(
+            f"Returned {axis_name} coordinate count {actual.size} does not match "
+            f"requested count {expected.size}"
+        )
+    if not np.all(np.isfinite(actual)):
+        raise RuntimeError(f"Returned {axis_name} coordinates contain non-finite values")
+
+    expected_step = float(np.median(np.diff(expected)))
+    actual_delta = np.diff(actual)
+    actual_step = float(np.median(actual_delta))
+    step_tolerance = max(5e-5, abs(expected_step) * 2e-3)
+    if (not np.all(np.isfinite(actual_delta)) or np.any(actual_delta == 0)
+            or not (np.all(actual_delta > 0) or np.all(actual_delta < 0))
+            or abs(actual_step - expected_step) > step_tolerance
+            or float(np.max(np.abs(actual_delta - actual_step))) > step_tolerance):
+        raise RuntimeError(
+            f"Returned {axis_name} grid is not the requested regular native sample "
+            f"(requested step {expected_step:.10g}, returned step {actual_step:.10g})"
+        )
+
+    difference = actual - expected
+    if axis_name.lower() in {"longitude", "lon"}:
+        difference = (difference + 180.0) % 360.0 - 180.0
+    max_offset = float(np.max(np.abs(difference)))
+    # 0.00005 degrees is far below one native MODIS cell (~0.04167 degrees),
+    # but safely covers float32 coordinate serialization near +/-180 degrees.
+    if max_offset > 5e-5:
+        index = int(np.argmax(np.abs(difference)))
+        raise RuntimeError(
+            f"Returned {axis_name} coordinates are genuinely offset from the "
+            f"requested MODIS sample (max offset {max_offset:.8g} degrees at "
+            f"index {index}; requested {expected[index]:.10g}, "
+            f"returned {actual[index]:.10g})"
+        )
+    return actual
+
+
+_original_request_erddap = _ocean._request_erddap
+
+def _request_erddap(spec: dict, timestamp: dt.datetime, variable: str):
+    """Read and validate the coordinates embedded in the returned NetCDF.
+
+    The previous decoder compared CSV axis values to NetCDF coordinate values
+    at 1e-6 degrees. That is stricter than the provider's float serialization
+    and caused valid Aqua MODIS grids to fail after successful downloads.
+    """
+    raw, url, requested_lat, requested_lon = _original_request_erddap(
+        spec, timestamp, variable
+    )
+    if spec.get("source_id") != "nasa_aqua_modis_chlorophyll_4km":
+        return raw, url, requested_lat, requested_lon
+
+    fd, path = tempfile.mkstemp(suffix=".nc")
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(raw)
+        with _ocean.xr.open_dataset(
+            path, engine="netcdf4", decode_cf=True, mask_and_scale=True
+        ) as ds:
+            if "latitude" not in ds.variables or "longitude" not in ds.variables:
+                raise RuntimeError("Returned MODIS NetCDF is missing latitude/longitude coordinates")
+            actual_lat = _validate_returned_axis(
+                requested_lat, ds["latitude"].values, "latitude"
+            )
+            actual_lon = _validate_returned_axis(
+                requested_lon, ds["longitude"].values, "longitude"
+            )
+            if actual_lat.size != 1440 or actual_lon.size != 2880:
+                raise RuntimeError(
+                    f"Returned Aqua MODIS grid is {actual_lon.size}x{actual_lat.size}; "
+                    "renderer requires 2880x1440"
+                )
+        return raw, url, actual_lat, actual_lon
+    finally:
+        try:
+            os.unlink(path)
+        except FileNotFoundError:
+            pass
+
 _original_latest_erddap_time = _ocean._latest_erddap_time
 
 
@@ -135,6 +229,7 @@ def _latest_erddap_time(spec: dict) -> dt.datetime:
 _ocean._axis_selector = _axis_selector
 _ocean._axis_values = _axis_values
 _ocean._latest_erddap_time = _latest_erddap_time
+_ocean._request_erddap = _request_erddap
 
 
 def is_due(dataset: dict) -> bool:
