@@ -10,8 +10,8 @@
   "source_id": "usgs_comcat",
   "source_name": "USGS all-day earthquake GeoJSON event feed",
   "source_url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson",
-  "updated_at_utc": "2026-11-23T03:16:58.721569Z",
+  "updated_at_utc": "2026-11-23T03:18:00.509521Z",
   "value_bytes": 140285,
   "value_file": "records.jsonl",
-  "value_sha256": "b53a0564acea29af033449b646d209e7a28d41e1b3910189a9488127f35040e6"
+  "value_sha256": "1e3439f091ef9973b9b1f4db1b3e6ead42c744654746f13fd4d6ed44d9edec6b"
 }
