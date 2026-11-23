@@ -52,7 +52,7 @@ class OceanFixedPipelineTests(unittest.TestCase):
         self.assertEqual(spec["variables"], ("chlorophyll",))
         self.assertEqual(spec["source_id"], "nasa_aqua_modis_chlorophyll_8day")
         self.assertEqual(spec["cadence"], "8-day")
-        self.assertEqual(spec["stride"], 3)
+        self.assertEqual(spec["aggregation_factor"], 3)
         self.assertAlmostEqual(spec["expected_native_spacing_degrees"], 1 / 24)
 
     def test_salinity_native_grid_preserves_existing_target_dimensions(self):
@@ -62,14 +62,42 @@ class OceanFixedPipelineTests(unittest.TestCase):
         _, selected_lon = ocean_fixed._axis_selector(lon, 1)
         self.assertEqual((selected_lat.size, selected_lon.size), (720, 1440))
 
-    def test_chlorophyll_stride_three_preserves_existing_target_dimensions(self):
+    def test_chlorophyll_native_grid_is_full_resolution_for_block_aggregation(self):
         lat = 89.9791667 - np.arange(4320, dtype=float) / 24.0
         lon = -179.9791667 + np.arange(8640, dtype=float) / 24.0
-        _, selected_lat = ocean_fixed._axis_selector(lat, 3)
-        _, selected_lon = ocean_fixed._axis_selector(lon, 3)
-        self.assertEqual((selected_lat.size, selected_lon.size), (1440, 2880))
-        self.assertAlmostEqual(float(np.median(np.diff(selected_lat))), -0.125, places=6)
-        self.assertAlmostEqual(float(np.median(np.diff(selected_lon))), 0.125, places=6)
+        _, selected_lat = ocean_fixed._axis_selector(lat, 1)
+        _, selected_lon = ocean_fixed._axis_selector(lon, 1)
+        self.assertEqual((selected_lat.size, selected_lon.size), (4320, 8640))
+        self.assertAlmostEqual(float(np.median(np.diff(selected_lat))), -1 / 24, places=6)
+        self.assertAlmostEqual(float(np.median(np.diff(selected_lon))), 1 / 24, places=6)
+
+    def test_chlorophyll_3x3_mean_uses_only_valid_measured_pixels(self):
+        spec = ocean_fixed._ocean.DATASETS["earth.oceans.chlorophyll"]
+        values = np.full((6, 9), np.nan, dtype=float)
+        values[0, 0] = 3.0
+        values[0, 1] = 6.0
+        values[2, 2] = 9.0
+        values[0, 3] = 12.0
+        values[1, 3] = 15.0
+        values[3:6, 6:9] = 1000.0  # outside configured valid range
+        lat = 10.0 - np.arange(6) / 24.0
+        lon = -20.0 + np.arange(9) / 24.0
+        reduced, out_lat, out_lon = ocean_fixed._aggregate_chlorophyll_3x3(values, lat, lon, spec)
+        self.assertEqual(reduced.shape, (2, 3))
+        self.assertAlmostEqual(reduced[0, 0], 6.0)
+        self.assertAlmostEqual(reduced[0, 1], 13.5)
+        self.assertTrue(np.isnan(reduced[0, 2]))
+        self.assertTrue(np.isnan(reduced[1, 2]))
+        self.assertAlmostEqual(out_lat[0], lat[1])
+        self.assertAlmostEqual(out_lon[0], lon[1])
+
+    def test_chlorophyll_aggregation_keeps_all_missing_blocks_missing(self):
+        spec = ocean_fixed._ocean.DATASETS["earth.oceans.chlorophyll"]
+        values = np.full((3, 6), np.nan, dtype=float)
+        lat = 1.0 - np.arange(3) / 24.0
+        lon = 2.0 + np.arange(6) / 24.0
+        reduced, _, _ = ocean_fixed._aggregate_chlorophyll_3x3(values, lat, lon, spec)
+        self.assertTrue(np.isnan(reduced).all())
 
     def test_composite_cadences_are_registered(self):
         self.assertEqual(bootstrap.CONFIG["earth.oceans.salinity"], (

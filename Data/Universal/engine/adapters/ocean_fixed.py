@@ -57,21 +57,20 @@ _chl.update({
     "extra_dims": (),
     "source_id": "nasa_aqua_modis_chlorophyll_8day",
     "cadence": "8-day",
-    "stride": 3,
+    "aggregation_factor": 3,
     "expected_native_spacing_degrees": 1.0 / 24.0,
     "max_age_days": 14,
     "product": "NASA Aqua MODIS Level-3 mapped global 8-day chlorophyll-a composite, 4 km, R2022 NRT",
-    "description": "NASA Aqua MODIS R2022 near-real-time 8-day Level-3 mapped chlorophyll-a composite distributed by NOAA CoastWatch ERDDAP. The complete 4320 by 8640 source grid is sampled at a fixed integer stride of three to preserve LIVE // EARTH's existing 1440 by 2880 target grid; no additional interpolation or gap-filling is applied.",
+    "description": "NASA Aqua MODIS R2022 near-real-time 8-day Level-3 mapped chlorophyll-a composite distributed by NOAA CoastWatch ERDDAP. The complete 4320 by 8640 native source grid is reduced into LIVE // EARTH's existing 1440 by 2880 target grid by taking the mean of valid measured source pixels within each aligned 3 by 3 block. Missing source pixels are excluded; blocks with no valid measurements remain no-data. No interpolation or gap-filling is applied.",
     "field_label": "Chlorophyll-a concentration",
     "temporal_composite": "8-day centered composite",
 })
 
-# The target matrix dimensions are part of the existing Oceans data contract.
-# Validate the returned NetCDF axes against these exact dimensions before the
-# shared decoder is allowed to pass values to the current-value store.
+# Expected native dimensions are validated before decoding. Chlorophyll is
+# subsequently reduced to the existing 1440 x 2880 Oceans storage contract.
 _COMPOSITE_TARGET_SHAPES = {
     "noaa_coastwatch_smos_3day_composite": (720, 1440),
-    "nasa_aqua_modis_chlorophyll_8day": (1440, 2880),
+    "nasa_aqua_modis_chlorophyll_8day": (4320, 8640),
 }
 
 # Use a clear application identity rather than impersonating a desktop browser.
@@ -188,9 +187,13 @@ _original_request_erddap = _ocean._request_erddap
 
 
 def _request_erddap(spec: dict, timestamp: dt.datetime, variable: str):
-    """Validate exact target dimensions and coordinates for the two composites."""
+    """Validate exact native source dimensions and coordinates for the composites."""
+    request_spec = spec
+    if spec.get("source_id") == "nasa_aqua_modis_chlorophyll_8day":
+        request_spec = dict(spec)
+        request_spec["stride"] = 1
     raw, url, requested_lat, requested_lon = _original_request_erddap(
-        spec, timestamp, variable
+        request_spec, timestamp, variable
     )
     expected_shape = _COMPOSITE_TARGET_SHAPES.get(spec.get("source_id"))
     if expected_shape is None:
@@ -284,11 +287,66 @@ def _latest_erddap_time(spec: dict) -> dt.datetime:
     return _original_latest_erddap_time(spec)
 
 
+def _aggregate_chlorophyll_3x3(values: np.ndarray, lat: np.ndarray, lon: np.ndarray,
+                                spec: dict) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Mean only valid measured Aqua MODIS pixels in each aligned 3x3 block."""
+    factor = int(spec.get("aggregation_factor", 0))
+    if factor != 3:
+        raise RuntimeError("Chlorophyll aggregation factor must remain exactly 3")
+    values = np.asarray(values, dtype=np.float64)
+    lat = np.asarray(lat, dtype=np.float64).reshape(-1)
+    lon = np.asarray(lon, dtype=np.float64).reshape(-1)
+    if (values.ndim != 2 or values.shape[0] % factor or values.shape[1] % factor
+            or lat.size != values.shape[0] or lon.size != values.shape[1]):
+        raise RuntimeError(
+            "Aqua MODIS native chlorophyll grid must be a 2-D array divisible "
+            f"by {factor} on both axes and match its coordinates; received "
+            f"values={values.shape}, latitude={lat.size}, longitude={lon.size}"
+        )
+    out_height, out_width = values.shape[0] // factor, values.shape[1] // factor
+    dlat = np.diff(lat)
+    dlon = np.diff(lon)
+    native = float(spec["expected_native_spacing_degrees"])
+    if (not np.all(np.isfinite(lat)) or not np.all(np.isfinite(lon))
+            or not np.allclose(dlat, np.median(dlat), rtol=0.0, atol=5e-5)
+            or not np.allclose(dlon, np.median(dlon), rtol=0.0, atol=5e-5)
+            or abs(abs(float(np.median(dlat))) - native) > 5e-5
+            or abs(abs(float(np.median(dlon))) - native) > 5e-5):
+        raise RuntimeError("Aqua MODIS native coordinates are irregular or not 1/24 degree")
+
+    blocks = values.reshape(out_height, factor, out_width, factor)
+    valid = (np.isfinite(blocks)
+             & (blocks >= float(spec["valid_min"]))
+             & (blocks <= float(spec["valid_max"])))
+    sums = np.where(valid, blocks, 0.0).sum(axis=(1, 3), dtype=np.float64)
+    counts = valid.sum(axis=(1, 3))
+    aggregated = np.full((out_height, out_width), np.nan, dtype=np.float64)
+    np.divide(sums, counts, out=aggregated, where=counts > 0)
+
+    # The middle native pixel is the geometric center of each odd-sized block.
+    target_lat = lat[factor // 2::factor]
+    target_lon = lon[factor // 2::factor]
+    if target_lat.size != out_height or target_lon.size != out_width:
+        raise RuntimeError("Chlorophyll aggregation produced unexpected target axes")
+    return aggregated, target_lat, target_lon
+
+
+_original_decode_erddap = _ocean._decode_erddap
+
+
+def _decode_erddap(spec: dict, timestamp: dt.datetime):
+    values, lat, lon, observed, urls = _original_decode_erddap(spec, timestamp)
+    if spec.get("source_id") == "nasa_aqua_modis_chlorophyll_8day":
+        values, lat, lon = _aggregate_chlorophyll_3x3(values, lat, lon, spec)
+    return values, lat, lon, observed, urls
+
+
 # The collector resolves these helpers from ocean.py at runtime.
 _ocean._axis_selector = _axis_selector
 _ocean._axis_values = _axis_values
 _ocean._latest_erddap_time = _latest_erddap_time
 _ocean._request_erddap = _request_erddap
+_ocean._decode_erddap = _decode_erddap
 
 
 def is_due(dataset: dict) -> bool:

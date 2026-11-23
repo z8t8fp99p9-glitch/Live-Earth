@@ -42,7 +42,7 @@ class OceanPipelineContractTests(unittest.TestCase):
         self.assertEqual(chl["variables"], ("chlorophyll",))
         self.assertEqual(chl["source_id"], "nasa_aqua_modis_chlorophyll_8day")
         self.assertEqual(chl["cadence"], "8-day")
-        self.assertEqual(chl["stride"], 3)
+        self.assertEqual(chl["aggregation_factor"], 3)
         self.assertAlmostEqual(chl["expected_native_spacing_degrees"], 1 / 24)
 
     def test_all_six_ocean_layers_remain_configured(self):
@@ -61,13 +61,16 @@ class OceanPipelineContractTests(unittest.TestCase):
         _, selected_lon = ocean_fixed._axis_selector(lon, sal["stride"])
         self.assertEqual((selected_lat.size, selected_lon.size), (720, 1440))
 
-    def test_chlorophyll_sampling_preserves_existing_1440_by_2880_target(self):
+    def test_chlorophyll_aggregation_preserves_existing_1440_by_2880_target(self):
         spec = ocean.DATASETS["earth.oceans.chlorophyll"]
-        lat_axis = 89.9791667 - np.arange(4320, dtype=float) / 24.0
-        lon_axis = -179.9791667 + np.arange(8640, dtype=float) / 24.0
-        _, lat = ocean_fixed._axis_selector(lat_axis, spec["stride"])
-        _, lon = ocean_fixed._axis_selector(lon_axis, spec["stride"])
-        self.assertEqual((lon.size, lat.size), (2880, 1440))
+        lat_axis = 89.9791667 - np.arange(6, dtype=float) / 24.0
+        lon_axis = -179.9791667 + np.arange(9, dtype=float) / 24.0
+        values = np.ones((6, 9), dtype=float)
+        _, native_lat = ocean_fixed._axis_selector(lat_axis, 1)
+        _, native_lon = ocean_fixed._axis_selector(lon_axis, 1)
+        reduced, lat, lon = ocean_fixed._aggregate_chlorophyll_3x3(values, native_lat, native_lon, spec)
+        self.assertEqual((lon.size, lat.size), (3, 2))
+        self.assertEqual(reduced.shape, (2, 3))
         self.assertAlmostEqual(float(np.median(np.diff(lat))), -0.125, places=6)
         self.assertAlmostEqual(float(np.median(np.diff(lon))), 0.125, places=6)
 

@@ -29,19 +29,19 @@ class ChlorophyllCompositeAxisTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "materially irregular"):
                 ocean_fixed._axis_values(self.spec, "longitude")
 
-    def test_stride_three_uses_integer_index_and_point_125_degree_grid(self):
+    def test_full_native_axis_is_requested_without_stride(self):
         axis = -179.9791667 + np.arange(8640, dtype=np.float64) / 24.0
-        selector, selected = ocean_fixed._axis_selector(axis, 3)
-        self.assertEqual(selected.size, 2880)
-        self.assertIn("):3:(", selector)
-        self.assertAlmostEqual(float(np.median(np.diff(selected))), 0.125, places=6)
+        selector, selected = ocean_fixed._axis_selector(axis, 1)
+        self.assertEqual(selected.size, 8640)
+        self.assertIn("):1:(", selector)
+        self.assertAlmostEqual(float(np.median(np.diff(selected))), 1.0 / 24.0, places=6)
 
     def test_renderer_dimensions_are_preserved_for_eight_day_product(self):
         lat = 89.9791667 - np.arange(4320, dtype=np.float64) / 24.0
         lon = -179.9791667 + np.arange(8640, dtype=np.float64) / 24.0
-        _, sampled_lat = ocean_fixed._axis_selector(lat, 3)
-        _, sampled_lon = ocean_fixed._axis_selector(lon, 3)
-        self.assertEqual((sampled_lat.size, sampled_lon.size), (1440, 2880))
+        _, native_lat = ocean_fixed._axis_selector(lat, 1)
+        _, native_lon = ocean_fixed._axis_selector(lon, 1)
+        self.assertEqual((native_lat.size, native_lon.size), (4320, 8640))
 
     def test_rejects_non_monotonic_axis(self):
         axis = np.array([0.0, 0.0416667, 0.0833333, 0.01])
@@ -52,22 +52,22 @@ class ChlorophyllCompositeAxisTests(unittest.TestCase):
 
     def test_accepts_float32_netcdf_coordinate_rounding(self):
         source = -179.9791667 + np.arange(8640, dtype=np.float64) / 24.0
-        _, requested = ocean_fixed._axis_selector(source, 3)
+        _, requested = ocean_fixed._axis_selector(source, 1)
         returned = requested.astype(np.float32).astype(np.float64)
         validated = ocean_fixed._validate_returned_axis(requested, returned, "longitude")
-        self.assertEqual(validated.size, 2880)
+        self.assertEqual(validated.size, 8640)
         self.assertLessEqual(float(np.max(np.abs(validated - requested))), 5e-5)
 
     def test_rejects_a_real_one_cell_longitude_shift(self):
         source = -179.9791667 + np.arange(8640, dtype=np.float64) / 24.0
-        _, requested = ocean_fixed._axis_selector(source, 3)
-        shifted = requested + 0.125
+        _, requested = ocean_fixed._axis_selector(source, 1)
+        shifted = requested + (1.0 / 24.0)
         with self.assertRaisesRegex(RuntimeError, "genuinely offset"):
             ocean_fixed._validate_returned_axis(requested, shifted, "longitude")
 
     def test_accepts_equivalent_longitude_origin_plus_360(self):
         source = -179.9791667 + np.arange(8640, dtype=np.float64) / 24.0
-        _, requested = ocean_fixed._axis_selector(source, 3)
+        _, requested = ocean_fixed._axis_selector(source, 1)
         returned = requested + 360.0
         validated = ocean_fixed._validate_returned_axis(requested, returned, "longitude")
         self.assertTrue(np.allclose(validated, returned))

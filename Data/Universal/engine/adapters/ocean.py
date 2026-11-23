@@ -3,9 +3,10 @@ from __future__ import annotations
 """Fresh NOAA/NASA Ocean adapter for the LIVE // EARTH Universal Collector.
 
 Every layer is collected as a current numeric grid and stored through the
-existing atomic current-value store. Source grids are sampled only where a
-fixed integer stride is declared; no interpolation or synthetic values are
-introduced. All sources are public and require no account or API key.
+existing atomic current-value store. Source grids are retained directly or
+reduced only by explicitly declared integer sampling or mask-aware measured-
+value aggregation; no interpolation or synthetic values are introduced.
+All sources are public and require no account or API key.
 """
 
 import csv
@@ -503,9 +504,13 @@ def _result(dataset: dict, spec: dict, values: np.ndarray, lat: np.ndarray, lon:
         "nodata_value": float(np.float32(NODATA / scale)),
         "encoding": f"little-endian signed int16; value = stored_integer / {scale}",
         "compressed_payload": True,
-        "native_grid_spacing_degrees": {"latitude": abs(lat_step) / stride, "longitude": abs(lon_step) / stride},
+        "native_grid_spacing_degrees": {
+            "latitude": abs(lat_step) / int(spec.get("aggregation_factor", stride)),
+            "longitude": abs(lon_step) / int(spec.get("aggregation_factor", stride)),
+        },
         "stored_grid_spacing_degrees": {"latitude": abs(lat_step), "longitude": abs(lon_step)},
         "source_sample_stride": stride,
+        "source_aggregation_factor": int(spec["aggregation_factor"]) if spec.get("aggregation_factor") else None,
         "valid_cell_count": valid_count, "missing_cell_count": total_count - valid_count,
         "sha256_uncompressed_values": hashlib.sha256(raw).hexdigest(),
         "quality_status": "source_grid_downloaded_validated_no_interpolation",
@@ -521,12 +526,17 @@ def _result(dataset: dict, spec: dict, values: np.ndarray, lat: np.ndarray, lon:
             "source_url": source_urls[0], "source_urls": source_urls,
             "provider": spec["provider"], "product": spec["product"],
             "source_files": [u.rsplit("/", 1)[-1] for u in source_urls],
-            "method": "Public source grid decoded, validated, sampled only by declared integer stride, and packed without interpolation.",
+            "method": (
+                "Public source grid decoded, validated, reduced by mask-aware mean within aligned source blocks, and packed without interpolation."
+                if spec.get("aggregation_factor") else
+                "Public source grid decoded, validated, sampled only by declared integer stride, and packed without interpolation."
+            ),
         },
         "dimensions": {"width": int(lon.size), "height": int(lat.size)},
         "geometry": {"type": "global_regular_grid", "metadata": metadata},
         "quality": {"status": metadata["quality_status"], "valid_cell_count": valid_count,
-                    "missing_cell_count": total_count - valid_count, "sample_mode": "native_grid_stride" if stride > 1 else "native_grid"},
+                    "missing_cell_count": total_count - valid_count,
+                    "sample_mode": "valid_observation_block_mean" if spec.get("aggregation_factor") else ("native_grid_stride" if stride > 1 else "native_grid")},
     }
     return {"value_payload": payload, "metadata": metadata, "observations": [observation]}
 
@@ -580,13 +590,24 @@ def collect(dataset: dict) -> dict:
     values, lat, lon, observed, urls = _decode_erddap(spec, latest)
     if dataset_id == "earth.oceans.chlorophyll" and values.shape != (1440, 2880):
         raise RuntimeError(
-            f"NOAA replacement chlorophyll grid returned {values.shape}; "
-            "the renderer requires 2880 × 1440 after native integer-stride sampling"
+            f"NASA Aqua MODIS aggregated chlorophyll grid returned {values.shape}; "
+            "the renderer requires 2880 × 1440 after measured 3×3 block aggregation"
         )
     extra = {
         "source_variables": list(_resolve_variables(spec)),
         "source_file": f"{spec['dataset_id']}.nc",
         "processing_level": "latest_published_source_grid",
-        "quality_status": "native_source_grid_validated_no_interpolation" if int(spec.get("stride", 1)) == 1 else "native_source_grid_sampled_by_integer_stride_no_interpolation",
+        "quality_status": (
+            "native_source_grid_3x3_valid_observation_mean_no_interpolation"
+            if spec.get("aggregation_factor") else
+            ("native_source_grid_validated_no_interpolation" if int(spec.get("stride", 1)) == 1 else "native_source_grid_sampled_by_integer_stride_no_interpolation")
+        ),
     }
+    if spec.get("aggregation_factor"):
+        factor = int(spec["aggregation_factor"])
+        extra.update({
+            "source_aggregation_factor": [factor, factor],
+            "aggregation_method": "arithmetic mean of finite in-range measured source pixels within each aligned 3x3 block; blocks with zero valid source pixels remain no-data",
+            "observation_note": "Each stored cell is the mean of valid measured Aqua MODIS source pixels in its aligned 3x3 native block. Missing, land, non-finite, and out-of-range source pixels are excluded; a block with no valid measurements remains no-data. No interpolation or gap-filling is performed.",
+        })
     return _result(dataset, spec, values, lat, lon, observed, urls, extra)

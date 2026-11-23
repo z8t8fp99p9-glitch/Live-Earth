@@ -36,15 +36,15 @@ class VerifiedOceanCompositeSourceTests(unittest.TestCase):
         self.assertEqual(spec["dataset_id"], "erdMH1chla8day_R2022NRT")
         self.assertEqual(spec["variables"], ("chlorophyll",))
         self.assertEqual(spec["expected_native_spacing_degrees"], 1 / 24)
-        self.assertEqual(spec["stride"], 3)
+        self.assertEqual(spec["aggregation_factor"], 3)
         self.assertEqual(spec["cadence"], "8-day")
         lat = 89.9791667 - np.arange(4320, dtype=float) / 24.0
         lon = -179.9791667 + np.arange(8640, dtype=float) / 24.0
-        lat_selector, sampled_lat = ocean_fixed._axis_selector(lat, spec["stride"])
-        lon_selector, sampled_lon = ocean_fixed._axis_selector(lon, spec["stride"])
-        self.assertEqual((sampled_lon.size, sampled_lat.size), (2880, 1440))
-        self.assertIn("):3:(", lat_selector)
-        self.assertIn("):3:(", lon_selector)
+        lat_selector, sampled_lat = ocean_fixed._axis_selector(lat, 1)
+        lon_selector, sampled_lon = ocean_fixed._axis_selector(lon, 1)
+        self.assertEqual((sampled_lon.size, sampled_lat.size), (8640, 4320))
+        self.assertIn("):1:(", lat_selector)
+        self.assertIn("):1:(", lon_selector)
 
     def test_bootstrap_source_ids_and_cadences_match_adapter_specs(self):
         for dataset_id in (
