@@ -129,6 +129,25 @@ class AdditionalOceanDatasetTests(unittest.TestCase):
         self.assertEqual(decoded[0].date(), dt.date(2026, 1, 1))
         self.assertEqual(decoded[1].date(), dt.date(2026, 2, 1))
 
+    def test_months_since_time_units_decode_ncei_half_month_centers(self):
+        decoded = ocean_additional._decode_monthly_time_values(
+            np.array([252.5, 253.5], dtype=np.float32),
+            "months since 2005-01-01 00:00:00",
+            "standard",
+        )
+        # Half a calendar month is used, rather than rounding to month start
+        # or applying a fixed 15-day offset to every month.
+        self.assertEqual(decoded[0], dt.datetime(2026, 1, 16, 12, 0, tzinfo=dt.timezone.utc))
+        self.assertEqual(decoded[1], dt.datetime(2026, 2, 15, 0, 0, tzinfo=dt.timezone.utc))
+
+    def test_months_since_time_units_reject_unrecognized_fractional_offsets(self):
+        with self.assertRaisesRegex(RuntimeError, "unsupported fractional month offset"):
+            ocean_additional._decode_monthly_time_values(
+                np.array([252.25], dtype=np.float32),
+                "months since 2005-01-01 00:00:00",
+                "standard",
+            )
+
     def test_ncei_heat_decoder_selects_latest_month_on_native_one_degree_grid(self):
         lat = -89.5 + np.arange(180, dtype=np.float32)
         lon = -179.5 + np.arange(360, dtype=np.float32)
@@ -188,7 +207,7 @@ class AdditionalOceanDatasetTests(unittest.TestCase):
                 )
             },
             coords={
-                "time": ("time", np.array([252, 253], dtype=np.int32), {
+                "time": ("time", np.array([252.5, 253.5], dtype=np.float32), {
                     "units": "months since 2005-01-01 00:00:00",
                     "calendar": "standard",
                 }),
@@ -213,9 +232,8 @@ class AdditionalOceanDatasetTests(unittest.TestCase):
 
         self.assertEqual(values.shape, (180, 360))
         self.assertAlmostEqual(float(values[0, 0]), 2.0)
-        self.assertEqual(observed.date(), dt.date(2026, 2, 1))
+        self.assertEqual(observed, dt.datetime(2026, 2, 15, 0, 0, tzinfo=dt.timezone.utc))
         self.assertEqual(variable_name, "h18_hc")
-
 
 
 if __name__ == "__main__":

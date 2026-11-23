@@ -271,7 +271,13 @@ def _as_datetime(value) -> dt.datetime:
 
 
 def _decode_monthly_time_values(values, units: str, calendar: str = "standard"):
-    """Decode NCEI's integer `months since ...` monthly axis without CF guessing."""
+    """Decode NCEI's calendar-month offsets, including mid-month (x.5) stamps.
+
+    The NCEI monthly heat-content file encodes its monthly samples at half-month
+    offsets (for example, 0.5, 1.5, ...). Treat the fractional component as a
+    fraction of the actual calendar month length, not as a fixed 15-day offset.
+    Integer offsets remain supported for older/source variants.
+    """
     import calendar as calendar_module
     import re
 
@@ -298,16 +304,35 @@ def _decode_monthly_time_values(values, units: str, calendar: str = "standard"):
             offset = float(value)
             if not np.isfinite(offset):
                 raise RuntimeError(f"NCEI monthly time coordinate is not finite: {value!r}")
-            rounded = int(round(offset))
-            if abs(offset - rounded) > 1e-8:
-                raise RuntimeError(f"NCEI monthly time coordinate is not an integer month offset: {value!r}")
-            absolute_month = origin.year * 12 + (origin.month - 1) + rounded
+
+            # NCEI's monthly product uses half-month centers. Accept only
+            # integer or half-integer offsets; do not silently round arbitrary
+            # fractional coordinates into a different observation date.
+            month_offset = int(np.floor(offset))
+            fraction = offset - month_offset
+            if min(abs(fraction), abs(fraction - 0.5), abs(fraction - 1.0)) > 1e-6:
+                raise RuntimeError(
+                    f"NCEI monthly time coordinate has an unsupported fractional month offset: {value!r}"
+                )
+            if abs(fraction - 1.0) <= 1e-6:
+                month_offset += 1
+                fraction = 0.0
+
+            absolute_month = origin.year * 12 + (origin.month - 1) + month_offset
             out_year, zero_month = divmod(absolute_month, 12)
             out_month = zero_month + 1
             out_day = min(origin.day, calendar_module.monthrange(out_year, out_month)[1])
-            decoded.append(origin.replace(
-                year=out_year, month=out_month, day=out_day
-            ))
+            month_start = origin.replace(year=out_year, month=out_month, day=out_day)
+            if fraction:
+                next_absolute_month = absolute_month + 1
+                next_year, next_zero_month = divmod(next_absolute_month, 12)
+                next_month = next_zero_month + 1
+                next_day = min(origin.day, calendar_module.monthrange(next_year, next_month)[1])
+                next_month_start = origin.replace(
+                    year=next_year, month=next_month, day=next_day
+                )
+                month_start += (next_month_start - month_start) * fraction
+            decoded.append(month_start)
         return decoded
 
     calendar_name = str(calendar or "standard")
