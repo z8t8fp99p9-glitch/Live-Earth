@@ -1,22 +1,17 @@
 from __future__ import annotations
+
 import datetime as dt
 import unittest
 from unittest.mock import Mock, patch
+
 import numpy as np
 from Data.Universal.engine.adapters import ocean_fixed
 
-class ChlorophyllLongitudeAxisTests(unittest.TestCase):
+
+class ChlorophyllCompositeAxisTests(unittest.TestCase):
     def setUp(self):
         ocean_fixed._ocean._AXIS_CACHE.clear()
-        self.spec = {
-            "base": "https://example.noaa.gov/erddap",
-            "dataset_id": "erdMH1chla1day_R2022NRT",
-            "source_id": "nasa_aqua_modis_chlorophyll_4km",
-            "units": "mg m-3",
-            "stride": 3,
-            "expected_native_spacing_degrees": 1.0 / 24.0,
-            "max_age_days": 7,
-        }
+        self.spec = ocean_fixed._ocean.DATASETS["earth.oceans.chlorophyll"]
 
     def test_accepts_small_float_serialization_noise(self):
         base = -179.9791667 + np.arange(8640, dtype=np.float64) / 24.0
@@ -34,14 +29,14 @@ class ChlorophyllLongitudeAxisTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "materially irregular"):
                 ocean_fixed._axis_values(self.spec, "longitude")
 
-    def test_stride_three_uses_integer_erddap_index_and_point_125_degree_grid(self):
+    def test_stride_three_uses_integer_index_and_point_125_degree_grid(self):
         axis = -179.9791667 + np.arange(8640, dtype=np.float64) / 24.0
         selector, selected = ocean_fixed._axis_selector(axis, 3)
         self.assertEqual(selected.size, 2880)
         self.assertIn("):3:(", selector)
         self.assertAlmostEqual(float(np.median(np.diff(selected))), 0.125, places=6)
 
-    def test_renderer_dimensions_are_preserved(self):
+    def test_renderer_dimensions_are_preserved_for_eight_day_product(self):
         lat = 89.9791667 - np.arange(4320, dtype=np.float64) / 24.0
         lon = -179.9791667 + np.arange(8640, dtype=np.float64) / 24.0
         _, sampled_lat = ocean_fixed._axis_selector(lat, 3)
@@ -77,13 +72,28 @@ class ChlorophyllLongitudeAxisTests(unittest.TestCase):
         validated = ocean_fixed._validate_returned_axis(requested, returned, "longitude")
         self.assertTrue(np.allclose(validated, returned))
 
-    def test_uses_dated_modis_nrt_product_instead_of_stale_time_actual_range(self):
-        today = dt.datetime.now(dt.timezone.utc).date()
-        product = f"AQUA_MODIS.{today:%Y%m%d}.L3m.DAY.CHL.chlor_a.4km.NRT.nc"
-        records = [{"Row Type": "attribute", "Attribute Name": "product_name", "Value": product}]
+    def test_uses_centered_time_coordinate_for_eight_day_composite(self):
+        centered_time = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=1)
+        epoch = centered_time.timestamp()
+        records = [
+            {"Row Type": "attribute", "Variable Name": "NC_GLOBAL", "Attribute Name": "temporal_range", "Value": "8-day"},
+            {"Row Type": "attribute", "Variable Name": "NC_GLOBAL", "Attribute Name": "product_name", "Value": "AQUA_MODIS.20261109_20261116.L3m.8D.CHL.chlor_a.4km.NRT.nc"},
+            {"Row Type": "attribute", "Variable Name": "time", "Attribute Name": "actual_range", "Value": f"1646179200, {epoch}"},
+        ]
+        ocean_fixed._ocean._LATEST_CACHE.clear()
         with patch.object(ocean_fixed._ocean, "_dataset_info", return_value=records):
             latest = ocean_fixed._latest_erddap_time(self.spec)
-        self.assertEqual(latest.date(), today)
+        self.assertAlmostEqual(latest.timestamp(), epoch, delta=1.0)
+
+    def test_rejects_a_daily_product_returned_by_eight_day_dataset(self):
+        records = [
+            {"Row Type": "attribute", "Variable Name": "NC_GLOBAL", "Attribute Name": "temporal_range", "Value": "1-day"},
+            {"Row Type": "attribute", "Variable Name": "NC_GLOBAL", "Attribute Name": "product_name", "Value": "AQUA_MODIS.20261120.L3m.DAY.CHL.chlor_a.4km.NRT.nc"},
+        ]
+        with patch.object(ocean_fixed._ocean, "_dataset_info", return_value=records):
+            with self.assertRaisesRegex(RuntimeError, "does not declare an 8-day"):
+                ocean_fixed._validate_composite_product(self.spec)
+
 
 if __name__ == "__main__":
     unittest.main()
