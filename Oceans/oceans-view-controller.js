@@ -851,8 +851,8 @@ function installStyles() {
   document.head.appendChild(style);
 }
 
-  // 06 — Oceans view composition. The Atmosphere globe foundation is reused;
-  // Sea Temperature is connected to the shared current-grid pipeline.
+  // 06 — Oceans view composition. The shared Earth Engine globe and
+  // Universal current-grid pipeline power every configured scalar ocean field.
   function activateView() {
     installHudStyle();
     installResponsivePresentationStyles();
@@ -912,7 +912,7 @@ function installStyles() {
         "label": "Ocean currents",
         "icon": "currents",
         "color": "#71d9f7",
-        "status": "source_not_configured"
+        "status": "collector_configured_pending_first_success"
     },
     {
         "id": "salinity",
@@ -920,7 +920,7 @@ function installStyles() {
         "label": "Salinity",
         "icon": "salinity",
         "color": "#75baff",
-        "status": "source_not_configured"
+        "status": "collector_configured_pending_first_success"
     },
     {
         "id": "sea_level",
@@ -928,7 +928,7 @@ function installStyles() {
         "label": "Sea level",
         "icon": "sea_level",
         "color": "#87d7ce",
-        "status": "source_not_configured"
+        "status": "collector_configured_pending_first_success"
     },
     {
         "id": "wave_height",
@@ -936,7 +936,7 @@ function installStyles() {
         "label": "Wave height",
         "icon": "waves",
         "color": "#6bc9ff",
-        "status": "source_not_configured"
+        "status": "collector_configured_pending_first_success"
     },
     {
         "id": "chlorophyll",
@@ -944,7 +944,7 @@ function installStyles() {
         "label": "Chlorophyll",
         "icon": "chlorophyll",
         "color": "#8ce09b",
-        "status": "source_not_configured"
+        "status": "collector_configured_pending_first_success"
     },
     {
         "id": "ocean_colour",
@@ -982,14 +982,20 @@ function installStyles() {
     const datasetOrbButtons = new Map();
     let selectedDataset = null;
     const selectedDatasetConfig = new Map([
-      ['sea_temperature', {
-        id: 'sea_temperature',
-        label: 'Sea temperature',
-        datasetId: 'earth.oceans.sea_temperature'
-      }]
+      ['sea_temperature', { id: 'sea_temperature', label: 'Sea temperature', datasetId: 'earth.oceans.sea_temperature', width: 1440, height: 720, units: 'degree_C', displayUnit: '°C' }],
+      ['ocean_currents', { id: 'ocean_currents', label: 'Ocean currents', datasetId: 'earth.oceans.ocean_currents', width: 1440, height: 720, units: 'metre_per_second', displayUnit: 'm/s', note: 'Geostrophic current speed derived from NOAA eastward and northward components' }],
+      ['salinity', { id: 'salinity', label: 'Salinity', datasetId: 'earth.oceans.salinity', width: 1440, height: 720, units: 'PSU', displayUnit: 'PSU' }],
+      ['sea_level', { id: 'sea_level', label: 'Sea level', datasetId: 'earth.oceans.sea_level', width: 1440, height: 720, units: 'm', displayUnit: 'm' }],
+      ['wave_height', { id: 'wave_height', label: 'Wave height', datasetId: 'earth.oceans.wave_height', width: 1440, height: 721, units: 'm', displayUnit: 'm', note: 'NOAA GFS-Wave model forecast · HTSGW' }],
+      ['chlorophyll', { id: 'chlorophyll', label: 'Chlorophyll', datasetId: 'earth.oceans.chlorophyll', width: 2880, height: 1440, units: 'mg m-3', displayUnit: 'mg/m³' }]
     ]);
     const PALETTES = {
-      'sea_temperature': ['#080d2c', '#203b8a', '#1689b8', '#45b978', '#f0c64b', '#f06429', '#8b152a']
+      'sea_temperature': ['#080d2c', '#203b8a', '#1689b8', '#45b978', '#f0c64b', '#f06429', '#8b152a'],
+      'ocean_currents': ['#07152e', '#124c78', '#168caa', '#57c6b5', '#d7edb4', '#fff1bb'],
+      'salinity': ['#17143d', '#264a85', '#267fa7', '#31b8a2', '#b9d88a', '#fff0b0'],
+      'sea_level': ['#30134b', '#4555a1', '#278eae', '#68c4ab', '#e5e9a0', '#fff2c4'],
+      'wave_height': ['#071a3a', '#12598e', '#168fba', '#48c5c3', '#d8edcc', '#fff2c0'],
+      'chlorophyll': ['#20113e', '#3c357f', '#247b80', '#48a45f', '#b5c84c', '#f4e46c']
     };
 
     const iconMarkup = {
@@ -1052,7 +1058,7 @@ function installStyles() {
       if (!Number.isFinite(min) || !Number.isFinite(max) || max < min) {
         throw new Error('The selected ocean dataset has no valid numeric range for its colour scale.');
       }
-      const unit = grid.units === 'degree_C' ? '°C' : (grid.units || 'source units not supplied');
+      const unit = config.displayUnit || (grid.units === 'degree_C' ? '°C' : (grid.units || 'source units not supplied'));
       const colors = PALETTES[config.id];
       if (!colors) throw new Error(`No colour palette is registered for ${config.label}.`);
       legendTitle.textContent = `${config.label} · ${unit}`;
@@ -1097,9 +1103,8 @@ function installStyles() {
       hudToggle.setAttribute('aria-expanded', 'false');
       hudToggle.setAttribute('aria-label', 'Open ocean datasets');
 
-      // Preserve all ten Oceans choices. Only Sea Temperature currently has a
-      // configured Universal data source; the other nine remain honest, inert
-      // registry entries and never receive fabricated data.
+      // Six configured scalar ocean fields share the verified Universal Grid
+      // System and GPU skin. Remaining registered controls stay inert.
       if (!config) {
         dataRequest?.abort();
         dataRequest = null;
@@ -1163,11 +1168,11 @@ function installStyles() {
         if (!grid?.definition || !grid?.values) {
           throw new Error('The dataset did not return a verified numerical grid.');
         }
-        if (grid.definition.width !== 1440 || grid.definition.height !== 720) {
-          throw new Error(`The stored OISST grid is ${grid.definition.width} × ${grid.definition.height}; the expected complete native grid is 1440 × 720.`);
+        if (grid.definition.width !== config.width || grid.definition.height !== config.height) {
+          throw new Error(`The stored ${config.label.toLowerCase()} grid is ${grid.definition.width} × ${grid.definition.height}; expected the registered ${config.width} × ${config.height} grid.`);
         }
-        if (grid.units !== 'degree_C') {
-          throw new Error(`The stored sea-temperature grid uses ${grid.units || 'unknown units'}; expected degree_C.`);
+        if (grid.units !== config.units) {
+          throw new Error(`The stored ${config.label.toLowerCase()} grid uses ${grid.units || 'unknown units'}; expected ${config.units}.`);
         }
         if (!(grid.validCount > 0)) throw new Error('The selected ocean field contains no valid cells.');
 
@@ -1177,12 +1182,13 @@ function installStyles() {
           try { sourceHost = new URL(grid.sourceUrl).hostname; } catch (_) {}
         }
         source.textContent = [
+          config.note,
           grid.provider,
           grid.product,
           grid.processingLevel ? `Processing: ${grid.processingLevel}` : null,
           sourceHost ? `Source: ${sourceHost}` : null
         ].filter(Boolean).join(' · ');
-        const unit = grid.units === 'degree_C' ? '°C' : (grid.units || 'source units not supplied');
+        const unit = config.displayUnit || (grid.units === 'degree_C' ? '°C' : (grid.units || 'source units not supplied'));
         rangeValue.textContent = `${formatFieldValue(grid.min)} — ${formatFieldValue(grid.max)}`;
         rangeUnit.textContent = `Current global range · ${unit}`;
         metric.replaceChildren();
@@ -1233,7 +1239,7 @@ function installStyles() {
           throw new Error(`The ${config.label.toLowerCase()} grid layer could not attach.`);
         }
         view.root.dataset.gridRenderingSkin = 'gpu-ready';
-        view.root.dataset.gridData = 'central-database-sea_temperature';
+        view.root.dataset.gridData = `central-database-${datasetKey}`;
         clearStatus();
         worldGlobe.requestRender?.();
       } catch (error) {

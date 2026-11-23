@@ -26,6 +26,11 @@ CONFIG = {
     # checks it on its normal hourly run and the current-value store replaces
     # the prior grid atomically when NOAA publishes a newer analysis.
     "earth.oceans.sea_temperature": ("ocean_sources", "noaa_ncei_oisst", "daily"),
+    "earth.oceans.ocean_currents": ("ocean_public", "noaa_coastwatch_altimetry", "daily"),
+    "earth.oceans.sea_level": ("ocean_public", "noaa_coastwatch_altimetry", "daily"),
+    "earth.oceans.salinity": ("ocean_public", "noaa_coastwatch_smos", "daily"),
+    "earth.oceans.wave_height": ("ocean_public", "noaa_ncep_gfs_wave", "6-hourly"),
+    "earth.oceans.chlorophyll": ("ocean_public", "nasa_modis_aqua_chlorophyll_noaa_erddap", "daily"),
     "earth.land.land_temperature": ("native_sources", "nasa_power_daily", "daily"),
     "earth.water_ice.rainfall": ("native_sources", "nasa_power_daily", "daily"),
     "earth.earth_activity.earthquakes": ("native_sources", "usgs_comcat", "hourly"),
@@ -46,6 +51,11 @@ CONTRACTS = {
     "earth.atmosphere.carbon_monoxide": ("ppb", "global_native_0.25_degree_grid_surface_dry_air_mole_fraction_GEOS_CF"),
     "earth.atmosphere.aerosols_dust": ("ug/m^3", "global_native_0.25_degree_grid_dust_contribution_to_PM25_at_RH35_GEOS_CF"),
     "earth.oceans.sea_temperature": ("degree_C", "global_native_0.25_degree_grid"),
+    "earth.oceans.ocean_currents": ("metre_per_second", "global_native_0.25_degree_grid_geostrophic_current_speed_from_ugos_vgos"),
+    "earth.oceans.sea_level": ("m", "global_native_0.25_degree_grid_altimetric_sea_level_anomaly"),
+    "earth.oceans.salinity": ("PSU", "global_native_0.25_degree_grid_smos_sea_surface_salinity"),
+    "earth.oceans.wave_height": ("m", "global_published_0.25_degree_grid_noaa_gfs_wavewatch_iii_significant_wave_height"),
+    "earth.oceans.chlorophyll": ("mg m-3", "global_0.125_degree_sampled_from_nasa_modis_aqua_0.04167_degree_chlorophyll_grid"),
     "earth.land.land_temperature": ("degree_C", "six_sparse_regional_point_samples"),
     "earth.water_ice.rainfall": ("mm/day", "six_sparse_regional_point_samples"),
     "earth.earth_activity.earthquakes": ("magnitude", "USGS_all_day_event_feed"),
