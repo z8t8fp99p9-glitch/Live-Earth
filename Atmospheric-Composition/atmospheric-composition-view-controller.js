@@ -1222,9 +1222,14 @@ function installStyles() {
       setSelectedDataset(datasetKey);
       details.hidden = false;
       source.hidden = false;
+      disclosure.open = false;
+      syncScaleMore();
       details.querySelector('h2').textContent = config.label;
-      details.querySelector('p').textContent = `${config.detail} · verified units and range are taken from the loaded grid.`;
-      source.textContent = `${config.datasetId} · registered in the Universal Dataset Registry.`;
+      // Keep the card focused on the selected field and its measured grid range.
+      // The descriptive placeholder adds no information once a dataset is selected.
+      const cardDescription = details.querySelector('p');
+      if (cardDescription) cardDescription.hidden = true;
+      source.textContent = '';
 
       const controller = new AbortController();
       dataRequest = controller;
@@ -1249,12 +1254,14 @@ function installStyles() {
         }
         if (!(grid.validCount > 0)) throw new Error('The selected composition field contains no valid cells.');
         const bounds = updateLegend(grid, config);
+        let sourceHost = null;
+        if (grid.sourceUrl) {
+          try { sourceHost = new URL(grid.sourceUrl).hostname; } catch (_) {}
+        }
         const provenance = [
-          config.datasetId,
           grid.provider,
           grid.product,
-          grid.qualityStatus ? `Quality: ${grid.qualityStatus}` : null,
-          grid.sourceUrl ? `Source: ${grid.sourceUrl}` : null
+          sourceHost ? `Source: ${sourceHost}` : null
         ].filter(Boolean);
         source.textContent = provenance.join(' · ');
         const unit = grid.units || 'source units not supplied';
@@ -1265,7 +1272,6 @@ function installStyles() {
         makeMetric('Valid cells', grid.validCount.toLocaleString(), `of ${(grid.definition.width * grid.definition.height).toLocaleString()}`);
         makeMetric('Observed / valid time', formatTime(grid.observedAt));
         makeMetric('Snapshot published', formatTime(grid.retrievedAt));
-        makeMetric('Verified range', `${formatFieldValue(grid.min)} to ${formatFieldValue(grid.max)}`, unit);
         if (closed || controller.signal.aborted || !runtime.isActive(WORLD.id)) return;
         if (!worldGlobe || typeof worldGlobe.attachLayer !== 'function') throw new Error('The Earth Engine globe is not ready.');
         layerDispose = worldGlobe.attachLayer(`composition-${datasetKey}`, ({ THREE, earth }) => {

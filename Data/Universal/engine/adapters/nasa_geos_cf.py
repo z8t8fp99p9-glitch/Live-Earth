@@ -49,7 +49,7 @@ DATASETS = {
     },
     "earth.atmosphere.carbon_monoxide": {
         "product": "chem_surface", "variable": "co", "unit": "ppb",
-        "conversion": 1_000_000_000.0, "scale": 10, "source_units": "mol mol-1 (dry air)",
+        "conversion": 1_000_000_000.0, "scale": 0.1, "source_units": "mol mol-1 (dry air)",
         "description": "Near-surface carbon monoxide dry-air mole fraction from NASA GEOS-CF v2 surface chemistry product.",
         "scientific_level": "surface_level_singleton_coordinate", "range": (0.0, 100000.0),
     },

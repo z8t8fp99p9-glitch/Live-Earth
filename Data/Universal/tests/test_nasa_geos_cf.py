@@ -47,6 +47,25 @@ class NasaGeosCfAdapterTests(unittest.TestCase):
         self.assertEqual(len(raw), 1440 * 721 * 2)
         self.assertEqual(len(gzip.decompress(payload)), len(raw))
 
+    def test_carbon_monoxide_uses_safe_int16_scale_without_clipping(self):
+        # 50,000 ppb exceeds the old scale=10 int16 ceiling (3,276.7 ppb).
+        # The revised scale=0.1 stores 10 ppb steps and round-trips exactly.
+        values = np.full((2, 1, 721, 1440), 5.0e-5, dtype=np.float32)
+        ds = xr.Dataset(
+            {"co": (("time", "lev", "lat", "lon"), values)},
+            coords={**self.coords, "lev": [72]},
+        )
+        try:
+            payload, raw, _ = adapter._extract_latest(
+                ds, adapter.DATASETS["earth.atmosphere.carbon_monoxide"]
+            )
+        finally:
+            ds.close()
+        packed = np.frombuffer(gzip.decompress(payload), dtype="<i2")
+        self.assertTrue(np.all(packed == 5000))
+        self.assertAlmostEqual(float(packed[0]) / adapter.DATASETS["earth.atmosphere.carbon_monoxide"]["scale"], 50000.0)
+        self.assertEqual(len(raw), 1440 * 721 * 2)
+
     def test_column_average_co2_conversion_and_encoding(self):
         values = np.full((2, 721, 1440), 4.2e-4, dtype=np.float32)
         ds = xr.Dataset(
