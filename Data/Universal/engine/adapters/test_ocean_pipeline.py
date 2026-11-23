@@ -3,37 +3,33 @@ from __future__ import annotations
 import gzip
 import hashlib
 import unittest
-from unittest.mock import patch, Mock
-from pathlib import Path
+from unittest.mock import Mock, patch
 
 import numpy as np
 
-from Data.Universal.engine.adapters import ocean
+from Data.Universal.engine.adapters import ocean, ocean_fixed
 from Data.Universal.engine import bootstrap
 
 
 class OceanPipelineContractTests(unittest.TestCase):
-    def test_bootstrap_routes_all_ocean_fields_to_new_adapter(self):
+    def test_bootstrap_routes_all_ocean_fields_to_corrected_adapter(self):
         ocean_ids = {key for key in bootstrap.CONFIG if key.startswith("earth.oceans.")}
         self.assertEqual(ocean_ids, set(ocean.DATASETS))
         for dataset_id in ocean_ids:
             adapter, source_id, cadence = bootstrap.CONFIG[dataset_id]
-            self.assertEqual(adapter, "ocean")
+            self.assertEqual(adapter, "ocean_fixed")
             self.assertEqual(source_id, ocean.DATASETS[dataset_id]["source_id"])
             self.assertEqual(cadence, ocean.DATASETS[dataset_id]["cadence"])
 
-    def test_all_six_layers_route_to_one_adapter(self):
+    def test_all_six_layers_route_to_one_corrected_adapter(self):
         expected = {
-            "earth.oceans.sea_temperature",
-            "earth.oceans.ocean_currents",
-            "earth.oceans.sea_level",
-            "earth.oceans.salinity",
-            "earth.oceans.wave_height",
-            "earth.oceans.chlorophyll",
+            "earth.oceans.sea_temperature", "earth.oceans.ocean_currents",
+            "earth.oceans.sea_level", "earth.oceans.salinity",
+            "earth.oceans.wave_height", "earth.oceans.chlorophyll",
         }
         self.assertEqual(set(ocean.DATASETS), expected)
 
-    def test_erddap_request_uses_explicit_coordinate_selectors(self):
+    def test_erddap_request_uses_integer_index_strides_and_coordinate_values(self):
         spec = dict(ocean.DATASETS["earth.oceans.sea_temperature"])
         lat = np.array([-89.875, -89.625, -89.375, -89.125], dtype=float)
         lon = np.array([-179.875, -179.625, -179.375, -179.125], dtype=float)
@@ -44,8 +40,8 @@ class OceanPipelineContractTests(unittest.TestCase):
             )
         self.assertEqual(raw, b"CDF\x01")
         self.assertIn("sst[(2026-11-07T12:00:00Z)]", url)
-        self.assertIn("[(-89.875):0.25:(-89.125)]", url)
-        self.assertIn("[(-179.875):0.25:(-179.125)]", url)
+        self.assertIn("[(-89.875):1:(-89.125)]", url)
+        self.assertIn("[(-179.875):1:(-179.125)]", url)
         self.assertEqual(requested_lat.size, 4)
         self.assertEqual(requested_lon.size, 4)
 
@@ -60,25 +56,22 @@ class OceanPipelineContractTests(unittest.TestCase):
         with patch.object(ocean, "_dataset_info", return_value=records):
             self.assertEqual(ocean._resolve_variables(spec), ("east_vel", "north_vel"))
 
-    def test_coordinate_selectors_use_values_not_indices(self):
+    def test_coordinate_selectors_use_values_and_integer_stride(self):
         ascending = np.array([-89.875, -89.625, -89.375, -89.125], dtype=float)
-        selector, sampled = ocean._axis_selector(ascending, 1)
-        self.assertIn("-89.875", selector)
-        self.assertIn("-89.125", selector)
-        self.assertNotIn("[0:", selector)
+        selector, sampled = ocean_fixed._axis_selector(ascending, 1)
+        self.assertEqual(selector, "[(-89.875):1:(-89.125)]")
         self.assertEqual(sampled.size, 4)
-
         descending = np.array([89.97916, 89.93749, 89.89582, 89.85415], dtype=float)
-        selector, sampled = ocean._axis_selector(descending, 3)
+        selector, sampled = ocean_fixed._axis_selector(descending, 3)
         self.assertEqual(sampled.size, 2)
         self.assertLess(float(sampled[1]), float(sampled[0]))
-        self.assertIn(":-0.125", selector)
+        self.assertIn("):3:(", selector)
 
     def test_chlorophyll_stride_matches_existing_renderer_contract(self):
         source_lat = np.arange(4320, dtype=float)
         source_lon = np.arange(8640, dtype=float)
-        _, lat = ocean._axis_selector(source_lat, 3)
-        _, lon = ocean._axis_selector(source_lon, 3)
+        _, lat = ocean_fixed._axis_selector(source_lat, 3)
+        _, lon = ocean_fixed._axis_selector(source_lon, 3)
         self.assertEqual((lon.size, lat.size), (2880, 1440))
 
     def test_packed_grid_matches_browser_and_storage_contract(self):

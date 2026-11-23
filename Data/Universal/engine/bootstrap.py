@@ -19,12 +19,12 @@ CONFIG = {
     "earth.atmosphere.methane": ("nasa_geos_cf", "nasa_geos_cf_v2", "3-hourly"),
     "earth.atmosphere.carbon_monoxide": ("nasa_geos_cf", "nasa_geos_cf_v2", "hourly"),
     "earth.atmosphere.aerosols_dust": ("nasa_geos_cf", "nasa_geos_cf_v2", "hourly"),
-    "earth.oceans.sea_temperature": ("ocean", "noaa_ncei_oisst21", "daily"),
-    "earth.oceans.ocean_currents": ("ocean", "noaa_coastwatch_nrt_currents", "daily"),
-    "earth.oceans.sea_level": ("ocean", "noaa_coastwatch_nrt_sla", "daily"),
-    "earth.oceans.salinity": ("ocean", "noaa_coastwatch_smos", "daily"),
-    "earth.oceans.wave_height": ("ocean", "noaa_ncep_gfs_wave", "6-hourly"),
-    "earth.oceans.chlorophyll": ("ocean", "nasa_modis_aqua_chlorophyll_noaa_erddap", "daily"),
+    "earth.oceans.sea_temperature": ("ocean_fixed", "noaa_ncei_oisst21", "daily"),
+    "earth.oceans.ocean_currents": ("ocean_fixed", "noaa_coastwatch_nrt_currents", "daily"),
+    "earth.oceans.sea_level": ("ocean_fixed", "noaa_coastwatch_nrt_sla", "daily"),
+    "earth.oceans.salinity": ("ocean_fixed", "noaa_coastwatch_smos", "daily"),
+    "earth.oceans.wave_height": ("ocean_fixed", "noaa_ncep_gfs_wave", "6-hourly"),
+    "earth.oceans.chlorophyll": ("ocean_fixed", "nasa_modis_aqua_chlorophyll_noaa_erddap", "daily"),
     "earth.land.land_temperature": ("native_sources", "nasa_power_daily", "daily"),
     "earth.water_ice.rainfall": ("native_sources", "nasa_power_daily", "daily"),
     "earth.earth_activity.earthquakes": ("native_sources", "usgs_comcat", "hourly"),
@@ -82,9 +82,7 @@ def main():
         adapter, source, cadence = CONFIG[dataset_id]
         previous_adapter = item.get("collection", {}).get("adapter_id")
         item["collection"] = {"enabled": True, "adapter_id": adapter, "source_id": source, "cadence": cadence}
-        # Force a clean first-success state when migrating the Ocean datasets
-        # from the retired adapters to this replacement adapter.
-        if dataset_id.startswith("earth.oceans.") and previous_adapter != "ocean":
+        if dataset_id.startswith("earth.oceans.") and previous_adapter not in {"ocean", "ocean_fixed"}:
             item["status"] = "collector_configured_pending_first_success"
         elif item.get("status") not in SUCCESS_STATES:
             item["status"] = "collector_configured_pending_first_success"
