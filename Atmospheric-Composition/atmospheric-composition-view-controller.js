@@ -65,6 +65,11 @@ async function initializeEngineView(view, worldId) {
   let camera = null;
   let earthGlobe = null;
   let gestureController = null;
+  let locationMarker = null;
+  let locationHalo = null;
+  let locationDot = null;
+  let locationVector = null;
+  let syncCompositionLocation = null;
   let disposed = false;
   let renderQueued = false;
   let resizeObserver = null;
@@ -129,6 +134,57 @@ async function initializeEngineView(view, worldId) {
     });
     if (disposed) { earthGlobe.dispose(); throw new Error("The world view closed while its Engine globe was loading."); }
     scene.add(earthGlobe.group);
+
+    // 03 — Composition-owned marker driven by the shared app-wide live location.
+    // This consumes the same location state as Atmosphere; it does not request
+    // GPS permission or create a second geolocation watch.
+    locationMarker = new T.Group();
+    locationMarker.name = "liveEarthCompositionLocationMarker";
+    locationVector = new T.Vector3();
+    locationHalo = new T.Mesh(
+      new T.SphereGeometry(0.031, 16, 12),
+      new T.MeshBasicMaterial({
+        color: 0xff234d, transparent: true, opacity: 0.28,
+        depthTest: false, depthWrite: false
+      })
+    );
+    locationDot = new T.Mesh(
+      new T.SphereGeometry(0.014, 16, 12),
+      new T.MeshBasicMaterial({
+        color: 0xff183f, depthTest: false, depthWrite: false
+      })
+    );
+    // Keep the shared location indicator above the active composition data skin.
+    locationHalo.renderOrder = 20;
+    locationDot.renderOrder = 21;
+    locationMarker.add(locationHalo, locationDot);
+    locationMarker.visible = false;
+    earthGlobe.surface.add(locationMarker);
+
+    syncCompositionLocation = function syncCompositionLocation() {
+      const fix = window.liveEarthGetLocationState?.() === true
+        ? window.liveEarthGetLocationFix?.()
+        : null;
+      if (!fix || !locationMarker || !locationVector) {
+        if (locationMarker) locationMarker.visible = false;
+        requestRender();
+        return;
+      }
+      const phi = fix.latitude * Math.PI / 180;
+      const lambda = fix.longitude * Math.PI / 180;
+      locationVector.set(
+        Math.cos(phi) * Math.cos(lambda),
+        Math.sin(phi),
+        -Math.cos(phi) * Math.sin(lambda)
+      ).normalize();
+      locationHalo.position.copy(locationVector).multiplyScalar(1.006);
+      locationDot.position.copy(locationVector).multiplyScalar(1.019);
+      locationMarker.visible = true;
+      requestRender();
+    };
+    window.addEventListener("live-earth-location-fix", syncCompositionLocation);
+    window.addEventListener("live-earth-location-state", syncCompositionLocation);
+    syncCompositionLocation();
 
     // 04 — Match Atmosphere's complete surface-anchored globe interaction.
     // Dragging keeps the picked geographic point beneath the pointer; pinch
@@ -303,8 +359,17 @@ async function initializeEngineView(view, worldId) {
       window.removeEventListener("resize", resize);
       window.removeEventListener("orientationchange", resize);
       resizeObserver?.disconnect(); resizeObserver = null;
+      if (syncCompositionLocation) {
+        window.removeEventListener("live-earth-location-fix", syncCompositionLocation);
+        window.removeEventListener("live-earth-location-state", syncCompositionLocation);
+        syncCompositionLocation = null;
+      }
       gestureController?.dispose?.(); gestureController = null;
       for (const id of [...layers.keys()]) removeLayer(id);
+      if (locationMarker?.parent) locationMarker.parent.remove(locationMarker);
+      locationHalo?.geometry?.dispose?.(); locationHalo?.material?.dispose?.();
+      locationDot?.geometry?.dispose?.(); locationDot?.material?.dispose?.();
+      locationMarker = null; locationHalo = null; locationDot = null; locationVector = null;
       earthGlobe?.dispose?.(); earthGlobe = null;
       renderer?.dispose?.(); renderer?.forceContextLoss?.(); renderer = null;
       canvas.remove();
@@ -317,6 +382,14 @@ async function initializeEngineView(view, worldId) {
   } catch (error) {
     disposed = true;
     resizeObserver?.disconnect();
+    if (syncCompositionLocation) {
+      window.removeEventListener("live-earth-location-fix", syncCompositionLocation);
+      window.removeEventListener("live-earth-location-state", syncCompositionLocation);
+      syncCompositionLocation = null;
+    }
+    if (locationMarker?.parent) locationMarker.parent.remove(locationMarker);
+    locationHalo?.geometry?.dispose?.(); locationHalo?.material?.dispose?.();
+    locationDot?.geometry?.dispose?.(); locationDot?.material?.dispose?.();
     gestureController?.dispose?.();
     earthGlobe?.dispose?.();
     renderer?.dispose?.();

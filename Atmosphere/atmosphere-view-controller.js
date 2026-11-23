@@ -494,10 +494,23 @@
    *    - Rename view-specific constants and diagnostics (for example,
    *      ATMOSPHERE_MAX_ZOOM) consistently; do not leave Atmosphere ids or
    *      labels in another view's controller.
-   *    - The red location marker and its location-state listeners above are
-   *      Atmosphere feature-specific, NOT required for the reusable globe
-   *      interaction. Copy them only if the destination explicitly needs the
-   *      same location indicator, and then give it destination-owned names.
+   *    - LIVE LOCATION IS A SHARED APP SERVICE, not a view-owned GPS request.
+   *      Read it through window.liveEarthGetLocationState() and
+   *      window.liveEarthGetLocationFix(). The state getter must be true before
+   *      using the fix; otherwise hide the marker.
+   *    - Subscribe to window events "live-earth-location-fix" and
+   *      "live-earth-location-state", then call the sync function once after
+   *      creating the marker so an already-active fix appears immediately.
+   *    - Convert fix.latitude / fix.longitude to the globe's local unit vector:
+   *      phi = latitude * PI / 180; lambda = longitude * PI / 180;
+   *      vector = (cos(phi)*cos(lambda), sin(phi), -cos(phi)*sin(lambda)).
+   *      Normalize it, place the halo at radius 1.006 and dot at 1.019.
+   *    - Keep the marker attached to earthGlobe.surface, with renderOrder 20
+   *      (halo) and 21 (dot), so it stays above the data skin. Do not create a
+   *      second geolocation permission flow or call navigator.geolocation here.
+   *    - Every destination that adopts this indicator owns its marker objects
+   *      and event listeners: remove both listeners, detach the marker, and
+   *      dispose both geometries and materials during globe disposal.
    *
    * VALIDATION BEFORE HANDOFF:
    *    1. Compare portrait and landscape framing at initial load and after
