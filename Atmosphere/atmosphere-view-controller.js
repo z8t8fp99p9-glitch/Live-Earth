@@ -1533,9 +1533,8 @@ function installStyles() {
           width:clamp(126px,12.24vw,151px); max-width:16.2vw;
           display:grid; grid-template-columns:minmax(0,1fr);
           grid-template-rows:auto auto auto auto; column-gap:0; row-gap:8px;
-          padding:8px 8px 8px; border:1px solid rgba(112,190,226,.22);
-          border-radius:16px; background:transparent;
-          box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 8px 28px rgba(0,0,0,.16);
+          padding:8px 8px 8px; border:0; border-radius:0; background:transparent;
+          box-shadow:none;
           backdrop-filter:none; -webkit-backdrop-filter:none;
           pointer-events:auto;
         }
