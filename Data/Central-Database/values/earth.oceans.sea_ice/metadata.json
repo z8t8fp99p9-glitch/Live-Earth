@@ -1,0 +1,61 @@
+{
+  "cell_count": 1036800,
+  "compressed_payload": true,
+  "coordinate_order": "latitude-longitude",
+  "data_kind": "grid",
+  "database_schema_version": 1,
+  "dataset": "Sea ice concentration fraction",
+  "dataset_id": "earth.oceans.sea_ice",
+  "description": "Sea-ice area fraction supplied as the ice variable in NOAA NCEI OISST v2.1. Values remain fractions from 0 to 1; the existing 0.25-degree source grid is retained without interpolation.",
+  "encoding": "little-endian signed int16; value = stored_integer / 10000",
+  "format": "gzip+int16-le-div-10000",
+  "height": 720,
+  "latitude_first": -89.875,
+  "latitude_step": 0.25,
+  "longitude_convention": "-180..180",
+  "longitude_first": -179.875,
+  "longitude_step": 0.25,
+  "missing_cell_count": 897671,
+  "native_grid_spacing_degrees": {
+    "latitude": 0.25,
+    "longitude": 0.25
+  },
+  "nodata_value": -3.2767999172210693,
+  "observation_note": "Source grid values are retained without interpolation. Missing, land, and out-of-range cells remain no-data.",
+  "observed_at_utc": "2026-11-07T12:00:00Z",
+  "processing_level": "latest_published_source_grid",
+  "product": "NOAA NCEI OISST v2.1 AVHRR-only final sea-ice concentration fraction, global 0.25 degree",
+  "provider": "NOAA National Centers for Environmental Information",
+  "quality_status": "native_source_grid_validated_no_interpolation",
+  "record_count": null,
+  "retrieved_at_utc": "2026-11-23T17:45:23.036973Z",
+  "row_order": "south-to-north",
+  "scale_factor": 10000,
+  "schema_version": 1,
+  "sha256_uncompressed_values": "75f20b7cff448e0117d995669d6ed569d5168d33d7027789117967c135dc6ba8",
+  "source_aggregation_factor": null,
+  "source_file": "ncdcOisst21Agg_LonPM180.nc",
+  "source_id": "noaa_ncei_oisst21_sea_ice_fraction",
+  "source_name": "NOAA NCEI OISST v2.1 AVHRR-only final sea-ice concentration fraction, global 0.25 degree",
+  "source_sample_stride": 1,
+  "source_url": "https://upwell.pfeg.noaa.gov/erddap/griddap/ncdcOisst21Agg_LonPM180.nc?ice[(2026-11-07T12:00:00Z)][(0)][(-89.875):1:(89.875)][(-179.875):1:(179.875)]",
+  "source_urls": [
+    "https://upwell.pfeg.noaa.gov/erddap/griddap/ncdcOisst21Agg_LonPM180.nc?ice[(2026-11-07T12:00:00Z)][(0)][(-89.875):1:(89.875)][(-179.875):1:(179.875)]"
+  ],
+  "source_variables": [
+    "ice"
+  ],
+  "stored_grid_spacing_degrees": {
+    "latitude": 0.25,
+    "longitude": 0.25
+  },
+  "units": "1",
+  "updated_at_utc": "2026-11-23T17:45:23.038406Z",
+  "valid_cell_count": 139129,
+  "valid_time_utc": "2026-11-07T12:00:00Z",
+  "value_bytes": 48869,
+  "value_file": "values.bin",
+  "value_sha256": "ffa59b615bfb281b7379c5806d59321ecf7f43b1d66ea108fc39eb672f0f183f",
+  "variable": "ice",
+  "width": 1440
+}

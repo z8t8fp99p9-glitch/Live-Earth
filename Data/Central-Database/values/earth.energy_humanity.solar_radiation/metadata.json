@@ -52,8 +52,8 @@
   "source_id": "nasa_power_daily",
   "source_name": "NASA POWER daily all-sky surface shortwave radiation at six regional sample points",
   "units": "kWh/m^2/day",
-  "updated_at_utc": "2026-11-23T16:47:05.262127Z",
+  "updated_at_utc": "2026-11-23T17:45:28.664763Z",
   "value_bytes": 3378,
   "value_file": "records.jsonl",
-  "value_sha256": "4cdc0ebfa195f4522fa14f341885d81ae27df5633266e77283e4639f24f6b96a"
+  "value_sha256": "274370bc5f0cd43cca8a8639428847ece2afb9df57154f20b6cf823877452c64"
 }
