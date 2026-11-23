@@ -340,7 +340,7 @@
         transform:translate(-50%,-50%);
       }
       .le-atmo-legend-ticks {
-        position:relative; width:var(--atmo-content-width);
+        position:relative; width:100%;
         height:14px; margin-top:4px;
         color:#b9cddd; font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;
         font-size:clamp(9px,1.8cqi,11px); font-weight:500;
