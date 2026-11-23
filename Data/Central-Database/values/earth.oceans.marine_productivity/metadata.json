@@ -15,32 +15,32 @@
   "longitude_convention": "-180..180",
   "longitude_first": -180.0,
   "longitude_step": 0.12500953674316406,
-  "missing_cell_count": 3703844,
+  "missing_cell_count": 3693167,
   "native_grid_spacing_degrees": {
     "latitude": 0.041676839192708336,
     "longitude": 0.04166984558105469
   },
   "nodata_value": -3276.800048828125,
   "observation_note": "Source grid values are retained without interpolation. Missing, land, and out-of-range cells remain no-data.",
-  "observed_at_utc": "2026-11-21T12:00:00Z",
+  "observed_at_utc": "2026-11-22T12:00:00Z",
   "processing_level": "latest_published_source_grid",
   "product": "VIIRS NOAA-20 primary productivity, near-real-time, global 4 km daily",
   "provider": "NOAA CoastWatch West Coast Node",
   "quality_status": "native_source_grid_sampled_by_integer_stride_no_interpolation",
   "record_count": null,
-  "retrieved_at_utc": "2026-11-23T18:06:33.043691Z",
+  "retrieved_at_utc": "2026-11-23T19:31:27.451784Z",
   "row_order": "north-to-south",
   "scale_factor": 10,
   "schema_version": 1,
-  "sha256_uncompressed_values": "9499c615deec90f3f73336defe692f6a8c07939ed7e828e4081ab2cf5cf51190",
+  "sha256_uncompressed_values": "612025ce8a343f5854480ebb8436f6c021e2bbc155b10afdce898d2ba446c4ea",
   "source_aggregation_factor": null,
   "source_file": "productivity_viirs_noaa20_daily_nrt.nc",
   "source_id": "noaa_coastwatch_viirs_noaa20_productivity_daily",
   "source_name": "VIIRS NOAA-20 primary productivity, near-real-time, global 4 km daily",
   "source_sample_stride": 3,
-  "source_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/productivity_viirs_noaa20_daily_nrt.nc?productivity[(2026-11-21T12:00:00Z)][(90):3:(-89.91665)][(-180):3:(179.9167)]",
+  "source_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/productivity_viirs_noaa20_daily_nrt.nc?productivity[(2026-11-22T12:00:00Z)][(90):3:(-89.91665)][(-180):3:(179.9167)]",
   "source_urls": [
-    "https://coastwatch.pfeg.noaa.gov/erddap/griddap/productivity_viirs_noaa20_daily_nrt.nc?productivity[(2026-11-21T12:00:00Z)][(90):3:(-89.91665)][(-180):3:(179.9167)]"
+    "https://coastwatch.pfeg.noaa.gov/erddap/griddap/productivity_viirs_noaa20_daily_nrt.nc?productivity[(2026-11-22T12:00:00Z)][(90):3:(-89.91665)][(-180):3:(179.9167)]"
   ],
   "source_variables": [
     "productivity"
@@ -50,12 +50,12 @@
     "longitude": 0.12500953674316406
   },
   "units": "mg C m-2 day-1",
-  "updated_at_utc": "2026-11-23T18:06:33.050485Z",
-  "valid_cell_count": 443356,
-  "valid_time_utc": "2026-11-21T12:00:00Z",
-  "value_bytes": 961914,
+  "updated_at_utc": "2026-11-23T19:31:27.460350Z",
+  "valid_cell_count": 454033,
+  "valid_time_utc": "2026-11-22T12:00:00Z",
+  "value_bytes": 983480,
   "value_file": "values.bin",
-  "value_sha256": "c8708cae5caecd532a20057f6d1456d37d436e12bbff4c124822a8e7e4cf9135",
+  "value_sha256": "7a60350849984eeaaa98f421daf59d664787d21919dd5232a7cb55562bd5e5bb",
   "variable": "productivity",
   "width": 2880
 }

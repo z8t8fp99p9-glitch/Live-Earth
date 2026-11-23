@@ -15,32 +15,32 @@
   "longitude_convention": "-180..180",
   "longitude_first": -179.9791717529297,
   "longitude_step": 0.125,
-  "missing_cell_count": 4025472,
+  "missing_cell_count": 4008843,
   "native_grid_spacing_degrees": {
     "latitude": 0.041666666666666664,
     "longitude": 0.041666666666666664
   },
   "nodata_value": -32.768001556396484,
   "observation_note": "Source grid values are retained without interpolation. Missing, land, and out-of-range cells remain no-data.",
-  "observed_at_utc": "2026-11-21T12:00:00Z",
+  "observed_at_utc": "2026-11-22T12:00:00Z",
   "processing_level": "latest_published_source_grid",
   "product": "Aqua MODIS Level-3 mapped normalized fluorescence line height, R2022 NRT, global 4 km daily",
   "provider": "NASA Goddard Space Flight Center Ocean Biology Processing Group",
   "quality_status": "native_source_grid_sampled_by_integer_stride_no_interpolation",
   "record_count": null,
-  "retrieved_at_utc": "2026-11-23T18:06:26.108354Z",
+  "retrieved_at_utc": "2026-11-23T19:31:18.135401Z",
   "row_order": "north-to-south",
   "scale_factor": 1000,
   "schema_version": 1,
-  "sha256_uncompressed_values": "75620dc1c0b0b991ed4d5c5824dfa14abc34153c2ee29bec4191b74b755a26e6",
+  "sha256_uncompressed_values": "21a06cab72a62f3a1a85a7bd673ffb04e4fc91ef8ac47321568bbb87e4653a36",
   "source_aggregation_factor": null,
   "source_file": "erdMH1cflh1day_R2022NRT.nc",
   "source_id": "nasa_aqua_modis_fluorescence_line_height",
   "source_name": "Aqua MODIS Level-3 mapped normalized fluorescence line height, R2022 NRT, global 4 km daily",
   "source_sample_stride": 3,
-  "source_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1cflh1day_R2022NRT.nc?nflh[(2026-11-21T12:00:00Z)][(89.979164):3:(-89.895836)][(-179.97917):3:(179.89584)]",
+  "source_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1cflh1day_R2022NRT.nc?nflh[(2026-11-22T12:00:00Z)][(89.979164):3:(-89.895836)][(-179.97917):3:(179.89584)]",
   "source_urls": [
-    "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1cflh1day_R2022NRT.nc?nflh[(2026-11-21T12:00:00Z)][(89.979164):3:(-89.895836)][(-179.97917):3:(179.89584)]"
+    "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1cflh1day_R2022NRT.nc?nflh[(2026-11-22T12:00:00Z)][(89.979164):3:(-89.895836)][(-179.97917):3:(179.89584)]"
   ],
   "source_variables": [
     "nflh"
@@ -50,12 +50,12 @@
     "longitude": 0.125
   },
   "units": "W m-2 um-1 sr-1",
-  "updated_at_utc": "2026-11-23T18:06:26.113876Z",
-  "valid_cell_count": 121728,
-  "valid_time_utc": "2026-11-21T12:00:00Z",
-  "value_bytes": 243076,
+  "updated_at_utc": "2026-11-23T19:31:18.141387Z",
+  "valid_cell_count": 138357,
+  "valid_time_utc": "2026-11-22T12:00:00Z",
+  "value_bytes": 272150,
   "value_file": "values.bin",
-  "value_sha256": "dbdc2cba55cc9e58318ed8489ad9d7d9a60f3fe9b07b8b84f9fc8f46fb5790e0",
+  "value_sha256": "d680125fad3ec813d0de1bc0e611819f76f2d5f886e4b62b217632be4cbf8bdb",
   "variable": "nflh",
   "width": 2880
 }
