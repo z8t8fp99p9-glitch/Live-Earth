@@ -52,8 +52,8 @@
   "source_id": "nasa_power_daily",
   "source_name": "NASA POWER daily 2m air temperature at six regional sample points",
   "units": "degree_C",
-  "updated_at_utc": "2026-11-23T17:45:25.072346Z",
+  "updated_at_utc": "2026-11-23T18:06:38.214553Z",
   "value_bytes": 3209,
   "value_file": "records.jsonl",
-  "value_sha256": "49e913829db3c3eb4f932d22c3122643104c03e4bcf56645efa66f09f80e24d4"
+  "value_sha256": "510558f41b0bae388f0444113d2d649d61e37a8e11562feafbc231a1b6206c98"
 }
