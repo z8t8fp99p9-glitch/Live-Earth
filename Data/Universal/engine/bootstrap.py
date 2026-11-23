@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 import json
 from pathlib import Path
 
@@ -24,13 +23,12 @@ CONFIG = {
     "earth.oceans.sea_level": ("ocean_fixed", "noaa_coastwatch_nrt_sla", "daily"),
     "earth.oceans.salinity": ("ocean_fixed", "noaa_coastwatch_smos", "daily"),
     "earth.oceans.wave_height": ("ocean_fixed", "noaa_ncep_gfs_wave", "6-hourly"),
-    "earth.oceans.chlorophyll": ("ocean_fixed", "noaa_coastwatch_n20_n21_dineof_chlorophyll_2km", "daily"),
+    "earth.oceans.chlorophyll": ("ocean_fixed", "nasa_aqua_modis_chlorophyll_4km", "daily"),
     "earth.land.land_temperature": ("native_sources", "nasa_power_daily", "daily"),
     "earth.water_ice.rainfall": ("native_sources", "nasa_power_daily", "daily"),
     "earth.earth_activity.earthquakes": ("native_sources", "usgs_comcat", "hourly"),
     "earth.energy_humanity.solar_radiation": ("native_sources", "nasa_power_daily", "daily"),
 }
-
 CONTRACTS = {
     "earth.atmosphere.air_temperature": ("degree_Celsius", "global_native_0.25_degree_grid"),
     "earth.atmosphere.atmospheric_pressure": ("kilopascal", "global_native_0.25_degree_grid_mean_sea_level"),
@@ -49,13 +47,12 @@ CONTRACTS = {
     "earth.oceans.sea_level": ("m", "global_native_0.25_degree_grid_altimetric_sea_level_anomaly"),
     "earth.oceans.salinity": ("PSU", "global_native_0.25_degree_grid_smos_sea_surface_salinity"),
     "earth.oceans.wave_height": ("m", "global_published_0.25_degree_grid_noaa_gfs_wavewatch_iii_significant_height"),
-    "earth.oceans.chlorophyll": ("mg m-3", "global_0.125_degree_sampled_from_noaa_n20_n21_dineof_0.02083_degree_chlorophyll_grid"),
+    "earth.oceans.chlorophyll": ("mg m-3", "global_0.125_degree_sampled_from_nasa_aqua_modis_0.04167_degree_chlorophyll_grid"),
     "earth.land.land_temperature": ("degree_C", "six_sparse_regional_point_samples"),
     "earth.water_ice.rainfall": ("mm/day", "six_sparse_regional_point_samples"),
     "earth.earth_activity.earthquakes": ("magnitude", "USGS_all_day_event_feed"),
     "earth.energy_humanity.solar_radiation": ("kWh/m^2/day", "six_sparse_regional_point_samples"),
 }
-
 CADENCE_RESOLUTION = {
     "hourly": "hourly_source_forecast_valid_time",
     "3-hourly": "three_hourly_source_forecast_valid_time",
@@ -63,7 +60,6 @@ CADENCE_RESOLUTION = {
     "daily": "daily_source_observation",
 }
 SUCCESS_STATES = {"collector_configured_success", "collector_configured_failed"}
-
 
 def main():
     data = json.loads(REGISTRY.read_text(encoding="utf-8"))
@@ -98,7 +94,6 @@ def main():
     REGISTRY.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     enabled = sum(1 for item in data["datasets"] if item.get("collection", {}).get("enabled"))
     print(f"UNIVERSAL_REGISTRY_READY enabled={enabled} disabled={len(data['datasets']) - enabled}")
-
 
 if __name__ == "__main__":
     main()
