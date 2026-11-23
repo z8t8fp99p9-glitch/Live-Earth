@@ -31,6 +31,20 @@
   if (window.__liveEarthStacksFeatureViewsLoading) return;
   window.__liveEarthStacksFeatureViewsLoading = true;
 
+  // These seven numerical worlds own independent Earth Engine globes and need
+  // a shared exclusive-screen guard. Other Stacks views retain their own
+  // presentation: Prime Earth layer overlays, Weather's full-page scene, or
+  // the dedicated Traffic/Editorial workspaces.
+  const EXCLUSIVE_WORLD_VIEWS = new Set([
+    'atmosphere',
+    'atmospheric-composition',
+    'oceans',
+    'land',
+    'water-ice',
+    'earth-activity',
+    'energy-humanity'
+  ]);
+
   const VIEW_META = {
     clouds: { title: 'Clouds', symbol: '☁', description: 'Online NASA cloud-fraction imagery over the existing Earth globe; the product is daily, not minute-by-minute.' },
     weather: { title: 'Weather', symbol: '🌦', description: 'Online current-model weather for the existing enabled location; Location must be ON.' },
@@ -60,6 +74,12 @@
     #le-feature-library .le-feature-library-item[data-feature="editorial-engine"] .orbShell,#le-feature-dock .le-feature-orb[data-feature="editorial-engine"] .orbShell{background:radial-gradient(circle at 30% 22%,#ffe0a8 0,#b7793d 24%,#4b281b 67%,#160e0b 100%);border-color:#f4d09a;box-shadow:inset 2px 2px 7px #fff9,inset -5px -7px 12px #160a0acc,0 0 22px #d69c5577,0 5px 12px #000b}
     #le-feature-library .le-feature-library-item[data-feature="editorial-engine"] .orbShell:before{background:radial-gradient(ellipse at 28% 16%,rgba(255,255,255,.58),transparent 30%),linear-gradient(138deg,rgba(255,255,255,.25),rgba(255,255,255,.035) 27%,transparent 47%,rgba(255,255,255,.09) 76%,rgba(255,255,255,.22))}
     #le-feature-library .le-feature-library-item[data-feature="editorial-engine"] .le-feature-symbol,#le-feature-dock .le-feature-orb[data-feature="editorial-engine"] .le-feature-symbol{font-size:clamp(30px,8vmin,42px)}
+    /* Independent numerical worlds are exclusive full-screen observatories.
+       Hide Home's canvas while one is mounted; the shared three-Orb dock stays above the stage. */
+    body.le-exclusive-world-open #scene{visibility:hidden!important;pointer-events:none!important}
+    body.le-exclusive-world-open .le-world-engine-host{
+      background:radial-gradient(ellipse at 50% 43%,#0a1b2b 0%,#030914 58%,#010308 100%);
+    }
     /* Feature views occupy the complete stage. The protected Global three-Orb dock stays above them. */
     #le-feature-stage.le-sfv-open{display:block!important;padding:0!important;overflow:hidden!important;background:transparent!important}
     #le-feature-stage .le-feature-stage-card[hidden]{display:none!important}
@@ -167,6 +187,9 @@
     currentFeature = id;
     const host = stage();
     if (!host) return null;
+    if (EXCLUSIVE_WORLD_VIEWS.has(id)) {
+      document.body.classList.add('le-exclusive-world-open');
+    }
     const cardNode = stageCard();
     if (cardNode) cardNode.hidden = true;
     host.classList.add('le-sfv-open');
@@ -207,6 +230,9 @@
     currentRoot = null;
     const host = stage();
     host?.classList.remove('le-sfv-open');
+    // The flag is runtime-owned so it is cleared for every close/switch path,
+    // even when a controller's own cleanup encounters an error.
+    document.body.classList.remove('le-exclusive-world-open');
     const cardNode = stageCard();
     if (cardNode) cardNode.hidden = false;
     currentFeature = null;

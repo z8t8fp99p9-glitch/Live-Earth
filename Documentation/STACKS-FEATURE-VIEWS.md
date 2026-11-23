@@ -55,7 +55,9 @@ Optional feature scripts use the Service Worker's bounded same-origin optional c
 
 ## Numerical worlds
 
-All seven numerical worlds use the same Stacks catalogue, three-Orb dock and per-view lifecycle:
+All seven numerical worlds use the same Stacks catalogue, three-Orb dock and per-view lifecycle. Each owns an independent Earth Engine globe and is an exclusive full-screen observatory. When one is mounted, the shared Stacks runtime sets `body.le-exclusive-world-open`, hides Home's `#scene` canvas and gives the Engine host an opaque observatory background. `cleanupCurrent()` removes that state on the feature-Orb close, feature switch, or primary-view transition; individual controllers continue to dispose their own globe, layers, listeners, observers, timers and requests.
+
+The Home-canvas guard is owned by the shared runtime rather than by a stylesheet injected by an individual controller. This prevents a previously opened numerical world from suppressing another world's full-screen guard when multiple controllers share rendering styles. This guard is intentionally limited to the seven numerical worlds: Clouds, Elevation and Earthquakes retain their Prime Earth layer overlays; Weather keeps its own opaque full-page weather scene; Traffic and Editorial Engine retain their existing workspaces.
 
 | World | Controller | Scope |
 |---|---|---|
