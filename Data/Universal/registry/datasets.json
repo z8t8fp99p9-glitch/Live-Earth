@@ -264,7 +264,7 @@
       "status": "collector_configured_success",
       "collection": {
         "enabled": true,
-        "adapter_id": "native_sources",
+        "adapter_id": "ocean_sources",
         "source_id": "noaa_ncei_oisst",
         "cadence": "daily"
       },
