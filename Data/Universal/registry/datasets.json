@@ -156,18 +156,18 @@
       "legacy_ids": [
         "ATMOSPHERE_08"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "nasa_geos_cf",
+        "source_id": "nasa_geos_cf_v2",
+        "cadence": "3-hourly"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "ppm",
+        "spatial_coverage": "global_native_0.25_degree_grid_column_average_dry_air_mole_fraction_GEOS_CF",
+        "temporal_resolution": "three_hourly_source_forecast_valid_time"
       },
       "provenance_required": true
     },
@@ -177,18 +177,18 @@
       "legacy_ids": [
         "ATMOSPHERE_09"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "nasa_geos_cf",
+        "source_id": "nasa_geos_cf_v2",
+        "cadence": "3-hourly"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "ppb",
+        "spatial_coverage": "global_native_0.25_degree_grid_column_average_dry_air_mole_fraction_GEOS_CF",
+        "temporal_resolution": "three_hourly_source_forecast_valid_time"
       },
       "provenance_required": true
     },
@@ -219,18 +219,18 @@
       "legacy_ids": [
         "ATMOSPHERE_11"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "nasa_geos_cf",
+        "source_id": "nasa_geos_cf_v2",
+        "cadence": "hourly"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "ppb",
+        "spatial_coverage": "global_native_0.25_degree_grid_surface_dry_air_mole_fraction_GEOS_CF",
+        "temporal_resolution": "hourly_source_forecast_valid_time"
       },
       "provenance_required": true
     },
@@ -240,18 +240,18 @@
       "legacy_ids": [
         "ATMOSPHERE_12"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "nasa_geos_cf",
+        "source_id": "nasa_geos_cf_v2",
+        "cadence": "hourly"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "ug/m^3",
+        "spatial_coverage": "global_native_0.25_degree_grid_dust_contribution_to_PM25_at_RH35_GEOS_CF",
+        "temporal_resolution": "hourly_source_forecast_valid_time"
       },
       "provenance_required": true
     },
@@ -902,7 +902,7 @@
         "measurement_type": "event",
         "units": "magnitude",
         "spatial_coverage": "USGS_all_day_event_feed",
-        "temporal_resolution": "hourly_event_feed"
+        "temporal_resolution": "hourly_source_forecast_valid_time"
       },
       "provenance_required": true
     },
