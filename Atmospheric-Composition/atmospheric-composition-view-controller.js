@@ -1178,7 +1178,7 @@ function installStyles() {
       for (let index = 0; index < 5; index++) {
         const value = min + (max - min) * index / 4;
         const position = index * 25;
-        const node = runtime.el('span', '', `${formatFieldValue(value)}${grid.units ? ` ${grid.units}` : ''}`);
+        const node = runtime.el('span', '', formatFieldValue(value));
         node.style.left = `${position}%`;
         node.style.setProperty('--acomp-tick-position', `${100 - position}%`);
         legendTicks.appendChild(node);

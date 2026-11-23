@@ -1211,16 +1211,14 @@ function installStyles() {
       const tickValues = config.ticks
         ? config.ticks.map(label => {
             const match = String(label).match(/[−-]?\d+(?:\.\d+)?/);
-            return { label, value: match ? Number(match[0].replace('−','-')) : min };
+            return { value: match ? Number(match[0].replace('−','-')) : min };
           })
-        : Array.from({ length: 5 }, (_, index) => {
-            const value = min + (max - min) * index / 4;
-            const suffix = config === FIELD_CONFIG.temperature ? '°' : ` ${config.displayUnits}`;
-            return { label: `${formatFieldValue(value)}${suffix}`, value };
-          });
+        : Array.from({ length: 5 }, (_, index) => ({
+            value: min + (max - min) * index / 4
+          }));
       for (const tick of tickValues) {
         const position = max > min ? Math.max(0, Math.min(100, ((tick.value - min) / (max - min)) * 100)) : 0;
-        const node = runtime.el('span', '', tick.label);
+        const node = runtime.el('span', '', formatFieldValue(tick.value));
         node.style.left = `${position}%`;
         node.style.setProperty('--atmo-tick-position', `${100 - position}%`);
         legendTicks.appendChild(node);
