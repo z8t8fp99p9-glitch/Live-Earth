@@ -261,10 +261,10 @@
       "legacy_ids": [
         "OCEANS_01"
       ],
-      "status": "collector_configured_failed",
+      "status": "collector_configured_success",
       "collection": {
         "enabled": true,
-        "adapter_id": "ocean",
+        "adapter_id": "ocean_fixed",
         "source_id": "noaa_ncei_oisst21",
         "cadence": "daily"
       },
@@ -282,10 +282,10 @@
       "legacy_ids": [
         "OCEANS_02"
       ],
-      "status": "collector_configured_failed",
+      "status": "collector_configured_success",
       "collection": {
         "enabled": true,
-        "adapter_id": "ocean",
+        "adapter_id": "ocean_fixed",
         "source_id": "noaa_coastwatch_nrt_currents",
         "cadence": "daily"
       },
@@ -303,10 +303,10 @@
       "legacy_ids": [
         "OCEANS_03"
       ],
-      "status": "collector_configured_failed",
+      "status": "collector_configured_success",
       "collection": {
         "enabled": true,
-        "adapter_id": "ocean",
+        "adapter_id": "ocean_fixed",
         "source_id": "noaa_coastwatch_smos",
         "cadence": "daily"
       },
@@ -324,10 +324,10 @@
       "legacy_ids": [
         "OCEANS_04"
       ],
-      "status": "collector_configured_failed",
+      "status": "collector_configured_success",
       "collection": {
         "enabled": true,
-        "adapter_id": "ocean",
+        "adapter_id": "ocean_fixed",
         "source_id": "noaa_coastwatch_nrt_sla",
         "cadence": "daily"
       },
@@ -348,7 +348,7 @@
       "status": "collector_configured_success",
       "collection": {
         "enabled": true,
-        "adapter_id": "ocean",
+        "adapter_id": "ocean_fixed",
         "source_id": "noaa_ncep_gfs_wave",
         "cadence": "6-hourly"
       },
@@ -369,7 +369,7 @@
       "status": "collector_configured_failed",
       "collection": {
         "enabled": true,
-        "adapter_id": "ocean",
+        "adapter_id": "ocean_fixed",
         "source_id": "nasa_modis_aqua_chlorophyll_noaa_erddap",
         "cadence": "daily"
       },

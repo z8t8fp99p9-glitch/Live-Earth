@@ -1,0 +1,62 @@
+{
+  "cell_count": 1036800,
+  "compressed_payload": true,
+  "coordinate_order": "latitude-longitude",
+  "data_kind": "grid",
+  "database_schema_version": 1,
+  "dataset": "Geostrophic current speed",
+  "dataset_id": "earth.oceans.ocean_currents",
+  "description": "Scalar geostrophic current speed derived from the source eastward and northward velocity components; direction is not encoded in this scalar layer.",
+  "encoding": "little-endian signed int16; value = stored_integer / 100",
+  "format": "gzip+int16-le-div-100",
+  "height": 720,
+  "latitude_first": -89.875,
+  "latitude_step": 0.25,
+  "longitude_convention": "-180..180",
+  "longitude_first": -179.875,
+  "longitude_step": 0.25,
+  "missing_cell_count": 469634,
+  "native_grid_spacing_degrees": {
+    "latitude": 0.25,
+    "longitude": 0.25
+  },
+  "nodata_value": -327.67999267578125,
+  "observation_note": "Source grid values are retained without interpolation. Missing, land, and out-of-range cells remain no-data.",
+  "observed_at_utc": "2026-11-21T00:00:00Z",
+  "processing_level": "latest_published_source_grid",
+  "product": "Global near-real-time daily geostrophic surface currents from satellite altimetry",
+  "provider": "NOAA CoastWatch / PolarWatch",
+  "quality_status": "native_source_grid_validated_no_interpolation",
+  "record_count": null,
+  "retrieved_at_utc": "2026-11-23T12:14:59.845631Z",
+  "row_order": "south-to-north",
+  "scale_factor": 100,
+  "schema_version": 1,
+  "sha256_uncompressed_values": "8dc26af92417da3be9ec3ea10e138554631abc4bec0f4e195552cdb81e965265",
+  "source_file": "noaacwBLENDEDNRTcurrentsDaily.nc",
+  "source_id": "noaa_coastwatch_nrt_currents",
+  "source_name": "Global near-real-time daily geostrophic surface currents from satellite altimetry",
+  "source_sample_stride": 1,
+  "source_url": "https://polarwatch.noaa.gov/erddap/griddap/noaacwBLENDEDNRTcurrentsDaily.nc?u_current[(2026-11-21T00:00:00Z)][(-89.875):1:(89.875)][(-179.875):1:(179.875)]",
+  "source_urls": [
+    "https://polarwatch.noaa.gov/erddap/griddap/noaacwBLENDEDNRTcurrentsDaily.nc?u_current[(2026-11-21T00:00:00Z)][(-89.875):1:(89.875)][(-179.875):1:(179.875)]",
+    "https://polarwatch.noaa.gov/erddap/griddap/noaacwBLENDEDNRTcurrentsDaily.nc?v_current[(2026-11-21T00:00:00Z)][(-89.875):1:(89.875)][(-179.875):1:(179.875)]"
+  ],
+  "source_variables": [
+    "u_current",
+    "v_current"
+  ],
+  "stored_grid_spacing_degrees": {
+    "latitude": 0.25,
+    "longitude": 0.25
+  },
+  "units": "metre_per_second",
+  "updated_at_utc": "2026-11-23T12:14:59.847822Z",
+  "valid_cell_count": 567166,
+  "valid_time_utc": "2026-11-21T00:00:00Z",
+  "value_bytes": 496177,
+  "value_file": "values.bin",
+  "value_sha256": "5b58a1241257c47644ed882969f2c78164859417953d464cb1f31bc5202e1043",
+  "variable": "u_current+v_current",
+  "width": 1440
+}

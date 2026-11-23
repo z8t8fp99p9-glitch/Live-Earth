@@ -1,0 +1,60 @@
+{
+  "cell_count": 1036800,
+  "compressed_payload": true,
+  "coordinate_order": "latitude-longitude",
+  "data_kind": "grid",
+  "database_schema_version": 1,
+  "dataset": "Sea surface temperature",
+  "dataset_id": "earth.oceans.sea_temperature",
+  "description": "Global daily sea-surface temperature analysis. NOAA final OISST is a delayed final analysis; the observed time is retained from the source coordinate.",
+  "encoding": "little-endian signed int16; value = stored_integer / 100",
+  "format": "gzip+int16-le-div-100",
+  "height": 720,
+  "latitude_first": -89.875,
+  "latitude_step": 0.25,
+  "longitude_convention": "-180..180",
+  "longitude_first": -179.875,
+  "longitude_step": 0.25,
+  "missing_cell_count": 345650,
+  "native_grid_spacing_degrees": {
+    "latitude": 0.25,
+    "longitude": 0.25
+  },
+  "nodata_value": -327.67999267578125,
+  "observation_note": "Source grid values are retained without interpolation. Missing, land, and out-of-range cells remain no-data.",
+  "observed_at_utc": "2026-11-07T12:00:00Z",
+  "processing_level": "latest_published_source_grid",
+  "product": "Daily Optimum Interpolation Sea Surface Temperature (OISST) v2.1, AVHRR-only, final",
+  "provider": "NOAA National Centers for Environmental Information",
+  "quality_status": "native_source_grid_validated_no_interpolation",
+  "record_count": null,
+  "retrieved_at_utc": "2026-11-23T12:13:54.720237Z",
+  "row_order": "south-to-north",
+  "scale_factor": 100,
+  "schema_version": 1,
+  "sha256_uncompressed_values": "7babc172a9e4ce7ee4fda587b1109914a8a33dbf815ab4b28b7fdfa991236f59",
+  "source_file": "ncdcOisst21Agg_LonPM180.nc",
+  "source_id": "noaa_ncei_oisst21",
+  "source_name": "Daily Optimum Interpolation Sea Surface Temperature (OISST) v2.1, AVHRR-only, final",
+  "source_sample_stride": 1,
+  "source_url": "https://upwell.pfeg.noaa.gov/erddap/griddap/ncdcOisst21Agg_LonPM180.nc?sst[(2026-11-07T12:00:00Z)][(0)][(-89.875):1:(89.875)][(-179.875):1:(179.875)]",
+  "source_urls": [
+    "https://upwell.pfeg.noaa.gov/erddap/griddap/ncdcOisst21Agg_LonPM180.nc?sst[(2026-11-07T12:00:00Z)][(0)][(-89.875):1:(89.875)][(-179.875):1:(179.875)]"
+  ],
+  "source_variables": [
+    "sst"
+  ],
+  "stored_grid_spacing_degrees": {
+    "latitude": 0.25,
+    "longitude": 0.25
+  },
+  "units": "degree_C",
+  "updated_at_utc": "2026-11-23T12:13:54.722644Z",
+  "valid_cell_count": 691150,
+  "valid_time_utc": "2026-11-07T12:00:00Z",
+  "value_bytes": 762888,
+  "value_file": "values.bin",
+  "value_sha256": "d4a3f2846f71fdc86e34d634cf98863855aafe4cb42696d7640bac58b84fa751",
+  "variable": "sst",
+  "width": 1440
+}
