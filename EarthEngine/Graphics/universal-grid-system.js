@@ -122,6 +122,8 @@
       observedAt: metadata.valid_time_utc || metadata.source_cycle_utc || null,
       retrievedAt: metadata.updated_at_utc || metadata.retrieved_at_utc || null,
       provider: definition.provider, product: definition.product,
+      processingLevel: metadata.processing_level || metadata.product_version || null,
+      sourceName: metadata.source_name || null,
       qualityStatus: definition.qualityStatus,
       checksum: actualHash, sourceUrl: metadata.source_url || metadata.source_urls?.[0] || metadataUrl
     });

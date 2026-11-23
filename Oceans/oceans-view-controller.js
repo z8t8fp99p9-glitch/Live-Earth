@@ -1,7 +1,7 @@
 /* LIVE // EARTH — Oceans View Controller.
-   Transfers the complete Atmosphere globe foundation and observatory HUD.
-   Oceans owns its ten registered dataset controls; data adapters are deferred.
-   The base Earth remains interactive without data and no sample values are shown.
+   Uses the shared Earth Engine globe, Universal Grid System and GPU Grid Skin.
+   Oceans owns ten registered dataset controls; configured fields load only
+   verified current values from the Universal Central Database.
 */
 (() => {
   'use strict';
@@ -18,7 +18,7 @@
     id: 'oceans',
     title: 'Oceans',
     symbol: '≈',
-    message: 'Ocean numerical observations will appear here after the database and approved data sources are connected.'
+    message: 'Select an available ocean field to load its verified current grid from the shared Earth data system.'
   };
   const VALUES_BASE_URL = 'https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/Data/Central-Database/values/';
 
@@ -851,8 +851,8 @@ function installStyles() {
   document.head.appendChild(style);
 }
 
-  // 06 — Oceans view composition. The Atmosphere visual foundation is reused;
-  // ocean datasets remain registered UI choices until their data adapters are built.
+  // 06 — Oceans view composition. The Atmosphere globe foundation is reused;
+  // Sea Temperature is connected to the shared current-grid pipeline.
   function activateView() {
     installHudStyle();
     installResponsivePresentationStyles();
@@ -981,6 +981,16 @@ function installStyles() {
 ];
     const datasetOrbButtons = new Map();
     let selectedDataset = null;
+    const selectedDatasetConfig = new Map([
+      ['sea_temperature', {
+        id: 'sea_temperature',
+        label: 'Sea temperature',
+        datasetId: 'earth.oceans.sea_temperature'
+      }]
+    ]);
+    const PALETTES = {
+      'sea_temperature': ['#080d2c', '#203b8a', '#1689b8', '#45b978', '#f0c64b', '#f06429', '#8b152a']
+    };
 
     const iconMarkup = {
       temperature: '<path d="M10 14.5V5a2 2 0 1 1 4 0v9.5a4 4 0 1 1-4 0Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12 10v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
@@ -1004,15 +1014,243 @@ function installStyles() {
       }
     }
 
-    function selectDataset(item) {
-      setSelectedDataset(item.id);
+    function paletteStops(colors) {
+      return colors.map((hex, index) => {
+        const value = Number.parseInt(hex.slice(1), 16);
+        return [
+          index / Math.max(1, colors.length - 1),
+          ((value >> 16) & 255) / 255,
+          ((value >> 8) & 255) / 255,
+          (value & 255) / 255
+        ];
+      });
+    }
+
+    function paletteGradient(colors, angle = '90deg') {
+      const last = Math.max(1, colors.length - 1);
+      return `linear-gradient(${angle},${colors.map((color, index) => `${color} ${index / last * 100}%`).join(',')})`;
+    }
+
+    function formatFieldValue(value) {
+      if (!Number.isFinite(value)) return '—';
+      const absolute = Math.abs(value);
+      const digits = absolute >= 1000 ? 0 : (absolute >= 100 ? 1 : 2);
+      return value.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: 0 });
+    }
+
+    function formatTime(value) {
+      if (!value) return 'Time unavailable';
+      const date = new Date(value);
+      return Number.isNaN(date.getTime())
+        ? 'Time unavailable'
+        : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+    }
+
+    function updateLegend(grid, config) {
+      const min = grid.min;
+      const max = grid.max;
+      if (!Number.isFinite(min) || !Number.isFinite(max) || max < min) {
+        throw new Error('The selected ocean dataset has no valid numeric range for its colour scale.');
+      }
+      const unit = grid.units === 'degree_C' ? '°C' : (grid.units || 'source units not supplied');
+      const colors = PALETTES[config.id];
+      if (!colors) throw new Error(`No colour palette is registered for ${config.label}.`);
+      legendTitle.textContent = `${config.label} · ${unit}`;
+      legendBar.style.background = paletteGradient(colors, '90deg');
+      scaleDock.style.setProperty('--ocean-gradient-vertical', paletteGradient(colors, '0deg'));
+      legendBar.setAttribute('aria-label', `${config.label} from ${formatFieldValue(min)} to ${formatFieldValue(max)} ${unit}`);
+      legendTicks.replaceChildren();
+      legendGraduations.replaceChildren();
+      for (let index = 0; index < 5; index++) {
+        const fraction = index / 4;
+        const value = min + (max - min) * fraction;
+        const position = max === min ? fraction * 100 : ((value - min) / (max - min)) * 100;
+        const node = runtime.el('span', '', `${formatFieldValue(value)}${unit === '°C' ? '°' : ''}`);
+        node.style.left = `${position}%`;
+        node.style.setProperty('--ocean-tick-position', `${100 - position}%`);
+        legendTicks.appendChild(node);
+        if (index > 0 && index < 4) {
+          const graduation = runtime.el('span');
+          graduation.style.setProperty('--ocean-graduation-position', `${position}%`);
+          legendGraduations.appendChild(graduation);
+        }
+      }
+      scaleRange.textContent = `${formatFieldValue(min)} — ${formatFieldValue(max)} ${unit}`;
+      scaleDock.hidden = false;
+      return { min, max };
+    }
+
+    function makeMetric(labelText, value, unit = '') {
+      const item = runtime.el('div', 'le-sfv-metric');
+      item.appendChild(runtime.el('span', 'le-sfv-metric-label', labelText));
+      const valueNode = runtime.el('strong', 'le-sfv-metric-value', value);
+      if (unit) valueNode.appendChild(runtime.el('span', 'le-sfv-metric-unit', ` ${unit}`));
+      item.appendChild(valueNode);
+      metric.appendChild(item);
+    }
+
+    async function selectDataset(item) {
+      if (closed || !runtime.isActive(WORLD.id)) return;
+      const datasetKey = item.id;
+      const config = selectedDatasetConfig.get(datasetKey);
       datasetOrbMenu.classList.remove('is-open');
       hudToggle.setAttribute('aria-expanded', 'false');
       hudToggle.setAttribute('aria-label', 'Open ocean datasets');
-      const stateMessage = item.status === 'collector_configured_pending_first_success'
-        ? 'The collection pipeline is configured, but its first successful observation and visual layer are still pending.'
-        : 'This dataset is registered, but its source adapter has not been configured yet.';
-      showStatus(`${item.label} · ${stateMessage} The base Earth globe remains fully interactive.`, 'neutral');
+
+      // Preserve all ten Oceans choices. Only Sea Temperature currently has a
+      // configured Universal data source; the other nine remain honest, inert
+      // registry entries and never receive fabricated data.
+      if (!config) {
+        dataRequest?.abort();
+        dataRequest = null;
+        for (const button of datasetOrbButtons.values()) button.disabled = false;
+        removeActiveLayer();
+        setSelectedDataset(datasetKey);
+        details.hidden = true;
+        source.hidden = true;
+        scaleDock.hidden = true;
+        showStatus(`${item.label} · This dataset is registered, but its source adapter has not been configured yet. The base Earth globe remains fully interactive.`, 'neutral');
+        worldGlobe?.requestRender?.();
+        return;
+      }
+
+      if (selectedDataset === datasetKey && layerDispose) {
+        dataRequest?.abort();
+        dataRequest = null;
+        removeActiveLayer();
+        setSelectedDataset(null);
+        details.hidden = true;
+        source.hidden = true;
+        scaleDock.hidden = true;
+        clearStatus();
+        worldGlobe?.requestRender?.();
+        return;
+      }
+
+      dataRequest?.abort();
+      dataRequest = null;
+      for (const button of datasetOrbButtons.values()) button.disabled = false;
+      removeActiveLayer();
+      scaleDock.hidden = true;
+      setSelectedDataset(datasetKey);
+      details.hidden = false;
+      source.hidden = false;
+      disclosure.open = false;
+      syncScaleMore();
+      details.querySelector('h2').textContent = config.label;
+      if (placeholderDescription) placeholderDescription.hidden = true;
+      source.textContent = '';
+
+      const controller = new AbortController();
+      dataRequest = controller;
+      const button = datasetOrbButtons.get(datasetKey);
+      if (button) button.disabled = true;
+      showStatus(`Loading and verifying ${config.label.toLowerCase()} grid values…`, 'neutral');
+
+      try {
+        await loadSharedGridTools();
+        if (engineReady) await engineReady;
+        if (closed || controller.signal.aborted || !runtime.isActive(WORLD.id)) return;
+        if (!window.LiveEarthUniversalGridSystem?.loadCurrentGrid) {
+          throw new Error('The shared Universal Grid System is unavailable.');
+        }
+        const grid = await window.LiveEarthUniversalGridSystem.loadCurrentGrid({
+          baseUrl: VALUES_BASE_URL,
+          datasetId: config.datasetId,
+          signal: controller.signal
+        });
+        if (closed || controller.signal.aborted || !runtime.isActive(WORLD.id)) return;
+        if (!grid?.definition || !grid?.values) {
+          throw new Error('The dataset did not return a verified numerical grid.');
+        }
+        if (grid.definition.width !== 1440 || grid.definition.height !== 720) {
+          throw new Error(`The stored OISST grid is ${grid.definition.width} × ${grid.definition.height}; the expected complete native grid is 1440 × 720.`);
+        }
+        if (grid.units !== 'degree_C') {
+          throw new Error(`The stored sea-temperature grid uses ${grid.units || 'unknown units'}; expected degree_C.`);
+        }
+        if (!(grid.validCount > 0)) throw new Error('The selected ocean field contains no valid cells.');
+
+        const bounds = updateLegend(grid, config);
+        let sourceHost = null;
+        if (grid.sourceUrl) {
+          try { sourceHost = new URL(grid.sourceUrl).hostname; } catch (_) {}
+        }
+        source.textContent = [
+          grid.provider,
+          grid.product,
+          grid.processingLevel ? `Processing: ${grid.processingLevel}` : null,
+          sourceHost ? `Source: ${sourceHost}` : null
+        ].filter(Boolean).join(' · ');
+        const unit = grid.units === 'degree_C' ? '°C' : (grid.units || 'source units not supplied');
+        rangeValue.textContent = `${formatFieldValue(grid.min)} — ${formatFieldValue(grid.max)}`;
+        rangeUnit.textContent = `Current global range · ${unit}`;
+        metric.replaceChildren();
+        makeMetric('Grid dimensions', `${grid.definition.width} × ${grid.definition.height}`, 'cells');
+        makeMetric('Valid cells', grid.validCount.toLocaleString(), `of ${(grid.definition.width * grid.definition.height).toLocaleString()}`);
+        makeMetric('Observed / valid time', formatTime(grid.observedAt));
+        makeMetric('Snapshot published', formatTime(grid.retrievedAt));
+        if (grid.processingLevel) makeMetric('Processing level', grid.processingLevel);
+
+        if (closed || controller.signal.aborted || !runtime.isActive(WORLD.id)) return;
+        if (!worldGlobe || typeof worldGlobe.attachLayer !== 'function') {
+          throw new Error('The Earth Engine globe is not ready.');
+        }
+        layerDispose = worldGlobe.attachLayer(`oceans-${datasetKey}`, ({ THREE, earth }) => {
+          if (!THREE?.Group || !earth?.add) {
+            throw new Error('The Earth Engine did not provide its Three.js globe surface.');
+          }
+          gridRoot = new THREE.Group();
+          gridRoot.name = `liveEarth-oceans-${datasetKey}-grid-layer`;
+          gridHandle = window.LiveEarthGpuGridSkin.create({
+            THREE,
+            grid,
+            radius: 1.009,
+            opacity: 0.80,
+            min: bounds.min,
+            max: bounds.max,
+            colorStops: paletteStops(PALETTES[datasetKey]),
+            contourInterval: 0,
+            contourStrength: 0.14,
+            contourColor: [0.12, 0.10, 0.15],
+            name: `OCEANS-${datasetKey}`
+          });
+          gridRoot.add(gridHandle.mesh);
+          earth.add(gridRoot);
+          return () => {
+            try { gridHandle?.dispose?.(); } catch (_) {}
+            gridHandle = null;
+            try { gridRoot?.removeFromParent?.(); } catch (_) {}
+            gridRoot = null;
+          };
+        });
+        if (closed || controller.signal.aborted) {
+          layerDispose?.();
+          layerDispose = null;
+          return;
+        }
+        if (typeof layerDispose !== 'function') {
+          throw new Error(`The ${config.label.toLowerCase()} grid layer could not attach.`);
+        }
+        view.root.dataset.gridRenderingSkin = 'gpu-ready';
+        view.root.dataset.gridData = 'central-database-sea_temperature';
+        clearStatus();
+        worldGlobe.requestRender?.();
+      } catch (error) {
+        if (!closed && !controller.signal.aborted && runtime.isActive(WORLD.id)) {
+          removeActiveLayer();
+          setSelectedDataset(null);
+          details.hidden = true;
+          source.hidden = true;
+          scaleDock.hidden = true;
+          showStatus(`${config.label} data could not be displayed. The base globe remains active. ${error?.message || ''}`, 'error');
+        }
+      } finally {
+        if (dataRequest === controller) {
+          dataRequest = null;
+          if (button) button.disabled = false;
+        }
+      }
     }
 
     for (const item of DATASET_OPTIONS) {
@@ -1035,14 +1273,17 @@ function installStyles() {
     }
     view.root.appendChild(datasetOrbMenu);
 
-    // Keep the Atmosphere data instrument structure ready for the later data pass.
-    // It stays hidden until a verified ocean grid and its visual adapter exist.
+    // Keep the existing Oceans instrument and populate it only from a verified
+    // current grid returned by the shared Universal Grid System.
     const details = runtime.card('Ocean dataset', 'Verified source metadata and measurements will appear when the selected ocean layer is connected.');
     details.classList.add('le-ocean-data-card');
     details.hidden = true;
     const range = runtime.el('div', 'le-ocean-range');
-    range.append(runtime.el('strong', '', '—'), runtime.el('span', '', 'Current global range'));
+    const rangeValue = runtime.el('strong', '', '—');
+    const rangeUnit = runtime.el('span', '', 'Current global range');
+    range.append(rangeValue, rangeUnit);
     details.appendChild(range);
+    const placeholderDescription = details.querySelector('p');
 
     const scaleDock = runtime.el('section', 'le-ocean-scale-dock');
     scaleDock.setAttribute('aria-label', 'Active ocean field colour scale');
@@ -1090,13 +1331,17 @@ function installStyles() {
     disclosure.addEventListener('toggle', syncScaleMore);
     const metric = runtime.el('div', 'le-sfv-metric-grid');
     disclosure.appendChild(metric);
-    details.append(disclosure, runtime.el('p', 'le-sfv-attribution', 'Verified dataset attribution and source metadata will be displayed after data integration.'));
+    const source = runtime.el('p', 'le-sfv-attribution', 'Verified dataset attribution and source metadata will be displayed when the selected field is connected.');
+    source.hidden = true;
+    details.append(disclosure, source);
 
     let closed = false;
     let layerDispose = null;
     let gridHandle = null;
     let gridRoot = null;
     let worldGlobe = null;
+    let dataRequest = null;
+    let engineReady = null;
 
     const onKeyDown = event => {
       if (event.key === 'Escape' && datasetOrbMenu.classList.contains('is-open')) {
@@ -1107,61 +1352,56 @@ function installStyles() {
     };
     document.addEventListener('keydown', onKeyDown);
 
+    function removeActiveLayer() {
+      if (typeof layerDispose === 'function') {
+        const dispose = layerDispose;
+        layerDispose = null;
+        try { dispose(); } catch (error) { console.warn(`[LIVE // EARTH] ${WORLD.id} layer detach failed.`, error); }
+      }
+      try { gridHandle?.dispose?.(); } catch (_) {}
+      gridHandle = null;
+      try { gridRoot?.removeFromParent?.(); } catch (_) {}
+      gridRoot = null;
+      delete view.root.dataset.gridData;
+    }
+
     const cleanup = () => {
       if (closed) return;
       closed = true;
       document.removeEventListener('keydown', onKeyDown);
       document.body.classList.remove('le-oceans-fullscreen-open');
+      dataRequest?.abort();
       hudToggle.remove();
       datasetOrbMenu.remove();
       scaleDock.remove();
       status.remove();
-      try { gridHandle?.dispose?.(); } catch (_) {}
-      gridHandle = null;
-      try { layerDispose?.(); } catch (error) { console.warn(`[LIVE // EARTH] ${WORLD.id} grid layer cleanup failed.`, error); }
-      layerDispose = null;
-      try { gridRoot?.removeFromParent?.(); } catch (_) {}
-      gridRoot = null;
+      removeActiveLayer();
       try { worldGlobe?.dispose?.(); } catch (error) { console.warn(`[LIVE // EARTH] ${WORLD.id} Engine globe cleanup failed.`, error); }
       worldGlobe = null;
     };
 
-    // The base Earth is initialized immediately. No data request or grid-tool
-    // download gates globe rendering, rotation or zoom.
-    (async () => {
-      try {
-        worldGlobe = await initializeEngineView(view, WORLD.id);
-        if (closed || !runtime.isActive(WORLD.id)) { worldGlobe?.dispose?.(); worldGlobe = null; return; }
-        if (!worldGlobe || typeof worldGlobe.attachLayer !== 'function') {
-          throw new Error('The Earth Engine globe could not be created.');
-        }
-        layerDispose = worldGlobe.attachLayer(WORLD.id, ({ THREE, earth }) => {
-          if (!THREE?.Group || !earth?.add) {
-            throw new Error('The Earth Engine did not provide its Three.js globe surface.');
-          }
-          gridRoot = new THREE.Group();
-          gridRoot.name = `liveEarth-${WORLD.id}-numerical-grid-layer`;
-          earth.add(gridRoot);
-          return () => {
-            try { gridHandle?.dispose?.(); } catch (_) {}
-            gridHandle = null;
-            try { gridRoot?.removeFromParent?.(); } catch (_) {}
-            gridRoot = null;
-          };
-        });
-        if (closed) { layerDispose?.(); layerDispose = null; return; }
-        if (typeof layerDispose !== 'function') {
-          throw new Error('The empty ocean grid layer could not attach to the Earth Engine globe.');
-        }
-        view.root.dataset.globeEngine = 'ready';
-        worldGlobe.requestRender?.();
-        clearStatus();
-      } catch (error) {
-        if (!closed && runtime.isActive(WORLD.id)) {
-          showStatus(`The Earth Engine globe could not open. ${error?.message || ''}`, 'error');
-        }
+    // Initialize the base globe immediately, as Composition does. Grid tools and
+    // the data request are loaded only when a registered dataset is selected.
+    engineReady = initializeEngineView(view, WORLD.id).then(globe => {
+      if (closed || !runtime.isActive(WORLD.id)) {
+        globe?.dispose?.();
+        return null;
       }
-    })();
+      if (!globe || typeof globe.attachLayer !== 'function') {
+        throw new Error('The Earth Engine globe could not be created.');
+      }
+      worldGlobe = globe;
+      view.root.dataset.globeEngine = 'ready';
+      globe.requestRender?.();
+      return globe;
+    }).catch(error => {
+      if (!closed && runtime.isActive(WORLD.id)) {
+        showStatus(`The Earth Engine globe could not open. ${error?.message || ''}`, 'error');
+      }
+      throw error;
+    });
+    // Prevent an unhandled rejection if the Engine fails before a dataset is selected.
+    engineReady.catch(() => {});
 
     return cleanup;
   }
