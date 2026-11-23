@@ -415,6 +415,106 @@
       ? 'Time unavailable'
       : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
   }
+  /*
+   * ========================================================================
+   * FULL GLOBE TRANSFER GUIDE — AUTHORITATIVE REFERENCE FOR OTHER VIEWS
+   * ========================================================================
+   * If another view needs the SAME complete globe anchor, framing, responsive
+   * behaviour and touch interaction as Atmosphere, use this section (03–04)
+   * as the reference. Do not rebuild a partial approximation from memory.
+   *
+   * TRANSFER THE COMPLETE GLOBE SYSTEM AS ONE UNIT:
+   *
+   * A) ENGINE / GLOBE FOUNDATION — initializeEngineView(), section 03
+   *    - Keep the shared Three.js import and shared Earth Engine imports:
+   *      createEarthGlobe/createGlobe and getDefaultCameraDistance().
+   *    - Create a destination-owned canvas, renderer, scene and perspective
+   *      camera. Keep the globe radius, initial look-at target and lighting
+   *      setup consistent unless the destination explicitly requires otherwise.
+   *    - Use the shared Earth Engine globe factory and its returned group,
+   *      surface and dispose API. Do not copy or fork Earth Engine internals.
+   *
+   * B) GLOBE ANCHOR / FRAMING / ZOOM
+   *    - Copy the camera setup AND resize() together. The current reference is
+   *      FOV 38°, radius 1, diameterFraction 0.71, with camera distance
+   *      calculated by getDefaultCameraDistance({width,height,radius,
+   *      fieldOfView,diameterFraction}).
+   *    - Preserve zoomFactor and ATMOSPHERE_MAX_ZOOM (currently 3), with
+   *      camera.position.z = defaultCameraDistance / zoomFactor.
+   *    - Recalculate the default distance from the destination view's actual
+   *      root bounds whenever it resizes. Do not substitute fixed pixel offsets
+   *      or a one-time viewport measurement.
+   *
+   * C) RENDERER / RESPONSIVE / ORIENTATION
+   *    - Transfer renderer creation settings, output colour space, transparent
+   *      clear, max pixel-ratio cap, setSize(), camera aspect and projection
+   *      update, requestRender(), and the ResizeObserver.
+   *    - Keep both window resize and orientationchange listeners. The observer
+   *      handles the view container changing size even when the window itself
+   *      does not; the window listeners cover viewport/orientation changes.
+   *
+   * D) COMPLETE POINTER + TOUCH GESTURE CONTROLLER — section 04
+   *    - Transfer the whole gestureController closure, not just the listeners.
+   *      Its raycaster, NDC conversion, surface picking, local/world anchor
+   *      vectors, sphere intersection, quaternion delta rotation, pointer map,
+   *      pointer capture and pointer lifecycle form one connected algorithm.
+   *    - A drag begins only when the initial pointer-down hits the visible
+   *      globe surface. The selected geographic surface point stays anchored
+   *      beneath the moving pointer (surface-anchored drag).
+   *    - Preserve two-finger pinch zoom, its start-distance/start-zoom state,
+   *      pointer admission rules and the transition back to one-finger drag.
+   *    - Preserve the north/south tilt clamp (currently -1.15 to +1.15 radians),
+   *      the heading/tilt quaternion convention and the no-roll reconstruction.
+   *      Do not replace this with simple screen-delta rotation; that is not the
+   *      same interaction model.
+   *    - Keep pointercancel and lostpointercapture handling, preventDefault()
+   *      where used, and remove every installed listener in dispose().
+   *
+   * E) VIEW LIFECYCLE / CLEANUP
+   *    - Transfer the disposed/active guards, async-load cancellation checks,
+   *      requestRender guard, ResizeObserver disconnect, window listener
+   *      removal, gesture dispose, attached-layer cleanup, globe dispose,
+   *      renderer dispose/forceContextLoss, canvas removal and host-class reset.
+   *    - Keep the destination view's own activation/deactivation lifecycle.
+   *      A globe transfer is incomplete if it works while open but leaks
+   *      listeners, observers, GPU resources or canvases after the view closes.
+   *
+   * SHARED DEPENDENCIES — REUSE, DO NOT DUPLICATE:
+   *    - The shared ../EarthEngine/Core/earth-engine.js API and shared
+   *      ../vendor/three.module.js are dependencies, not code to clone.
+   *    - Use the destination view's existing feature-view runtime and its
+   *      active-view guard. Do not create a second Stacks runtime, Earth Engine,
+   *      Universal Grid System or GPU grid skin for the destination.
+   *
+   * DESTINATION-SPECIFIC ADAPTATION (REQUIRED):
+   *    - Give the destination its own view id, root/panel lookup, canvas and
+   *      renderer lifecycle, CSS hooks, event names, labels and layer ids.
+   *    - Keep its own datasets, layer selection, palettes, legends, controls,
+   *      scene composition and feature UI. Transfer globe mechanics only.
+   *    - Rename view-specific constants and diagnostics (for example,
+   *      ATMOSPHERE_MAX_ZOOM) consistently; do not leave Atmosphere ids or
+   *      labels in another view's controller.
+   *    - The red location marker and its location-state listeners above are
+   *      Atmosphere feature-specific, NOT required for the reusable globe
+   *      interaction. Copy them only if the destination explicitly needs the
+   *      same location indicator, and then give it destination-owned names.
+   *
+   * VALIDATION BEFORE HANDOFF:
+   *    1. Compare portrait and landscape framing at initial load and after
+   *       repeated resize/orientation changes.
+   *    2. Check globe centring/anchor, default size and zoom range (1×–3×).
+   *    3. Drag from several visible surface points; the grabbed point must stay
+   *       under the finger. Touching outside the globe must not start a gesture.
+   *    4. Test two-finger pinch, lifting one finger into continued one-finger
+   *       drag, pointer cancellation and lost pointer capture.
+   *    5. Switch away from the view and back; verify there are no duplicate
+   *       canvases, stale gestures, leaked listeners or broken layers.
+   *
+   * SOURCE OF TRUTH: this controller's initializeEngineView() sections 03–04.
+   * Copy/adapt the complete mechanics and lifecycle as a unit; never copy only
+   * the camera numbers and call it a full globe transfer.
+   * ========================================================================
+   */
   // 03 — Earth renderer, location marker and globe lifecycle.
   // This controller calls the shared Earth Engine directly and owns its view renderer.
 async function initializeEngineView(view, viewId) {
