@@ -1,0 +1,62 @@
+{
+  "cell_count": 1038240,
+  "compressed_payload": true,
+  "coordinate_order": "latitude-longitude",
+  "data_kind": "grid",
+  "database_schema_version": 1,
+  "dataset": "Significant wave height",
+  "dataset_id": "earth.oceans.wave_height",
+  "description": "Significant height of combined wind waves and swell (HTSGW) from the operational NOAA GFS-Wave forecast. This is a model forecast, not a satellite or buoy observation.",
+  "encoding": "little-endian signed int16; value = stored_integer / 100",
+  "forecast_hour": 3,
+  "format": "gzip+int16-le-div-100",
+  "height": 721,
+  "latitude_first": 90.0,
+  "latitude_step": -0.25,
+  "longitude_convention": "0..360",
+  "longitude_first": 0.0,
+  "longitude_step": 0.2500000111188285,
+  "missing_cell_count": 467584,
+  "native_grid_spacing_degrees": {
+    "latitude": 0.25,
+    "longitude": 0.2500000111188285
+  },
+  "nodata_value": -327.67999267578125,
+  "observation_note": "NOAA GFS-Wave global.0p25 published post-processed model grid; the collector performs no additional interpolation. Forecast, not direct instrument observation.",
+  "observed_at_utc": "2026-11-23T09:00:00Z",
+  "processing_level": "forecast_f003",
+  "product": "Global GFS-Wave 0.25 degree WAVEWATCH III forecast",
+  "provider": "NOAA / National Centers for Environmental Prediction",
+  "quality_status": "noaa_gfs_wave_forecast_grid_validated_no_interpolation",
+  "record_count": null,
+  "retrieved_at_utc": "2026-11-23T12:00:37.389399Z",
+  "row_order": "north-to-south",
+  "scale_factor": 100,
+  "schema_version": 1,
+  "sha256_uncompressed_values": "32b7e2537ad9b9c9d392fad5b797415c1ee92b5153cf6c336462066eebb9331e",
+  "source_cycle_utc": "2026-11-23T06:00:00Z",
+  "source_file": "gfswave.t06z.global.0p25.f003.grib2",
+  "source_id": "noaa_ncep_gfs_wave",
+  "source_name": "Global GFS-Wave 0.25 degree WAVEWATCH III forecast",
+  "source_sample_stride": 1,
+  "source_url": "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.20261123/06/wave/gridded/gfswave.t06z.global.0p25.f003.grib2",
+  "source_urls": [
+    "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.20261123/06/wave/gridded/gfswave.t06z.global.0p25.f003.grib2"
+  ],
+  "source_variables": [
+    "HTSGW"
+  ],
+  "stored_grid_spacing_degrees": {
+    "latitude": 0.25,
+    "longitude": 0.2500000111188285
+  },
+  "units": "m",
+  "updated_at_utc": "2026-11-23T12:00:37.391028Z",
+  "valid_cell_count": 570656,
+  "valid_time_utc": "2026-11-23T09:00:00Z",
+  "value_bytes": 528549,
+  "value_file": "values.bin",
+  "value_sha256": "b22e9a1843d7e0ca5a3e7c1db07cc66afe0f098ba63c70054bf5e68b6aa80441",
+  "variable": "HTSGW",
+  "width": 1440
+}

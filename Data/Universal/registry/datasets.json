@@ -261,11 +261,11 @@
       "legacy_ids": [
         "OCEANS_01"
       ],
-      "status": "collector_configured_success",
+      "status": "collector_configured_failed",
       "collection": {
         "enabled": true,
-        "adapter_id": "ocean_sources",
-        "source_id": "noaa_ncei_oisst",
+        "adapter_id": "ocean",
+        "source_id": "noaa_ncei_oisst21",
         "cadence": "daily"
       },
       "data_contract": {
@@ -282,18 +282,18 @@
       "legacy_ids": [
         "OCEANS_02"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_failed",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "ocean",
+        "source_id": "noaa_coastwatch_nrt_currents",
+        "cadence": "daily"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "metre_per_second",
+        "spatial_coverage": "global_native_0.25_degree_grid_geostrophic_current_speed_from_ugos_vgos",
+        "temporal_resolution": "daily_source_observation"
       },
       "provenance_required": true
     },
@@ -303,18 +303,18 @@
       "legacy_ids": [
         "OCEANS_03"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_failed",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "ocean",
+        "source_id": "noaa_coastwatch_smos",
+        "cadence": "daily"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "PSU",
+        "spatial_coverage": "global_native_0.25_degree_grid_smos_sea_surface_salinity",
+        "temporal_resolution": "daily_source_observation"
       },
       "provenance_required": true
     },
@@ -324,18 +324,18 @@
       "legacy_ids": [
         "OCEANS_04"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_failed",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "ocean",
+        "source_id": "noaa_coastwatch_nrt_sla",
+        "cadence": "daily"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "m",
+        "spatial_coverage": "global_native_0.25_degree_grid_altimetric_sea_level_anomaly",
+        "temporal_resolution": "daily_source_observation"
       },
       "provenance_required": true
     },
@@ -345,18 +345,18 @@
       "legacy_ids": [
         "OCEANS_05"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "ocean",
+        "source_id": "noaa_ncep_gfs_wave",
+        "cadence": "6-hourly"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "m",
+        "spatial_coverage": "global_published_0.25_degree_grid_noaa_gfs_wavewatch_iii_significant_height",
+        "temporal_resolution": "six_hourly_gfs_forecast_cycle"
       },
       "provenance_required": true
     },
@@ -366,18 +366,18 @@
       "legacy_ids": [
         "OCEANS_06"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_failed",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "ocean",
+        "source_id": "nasa_modis_aqua_chlorophyll_noaa_erddap",
+        "cadence": "daily"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "mg m-3",
+        "spatial_coverage": "global_0.125_degree_sampled_from_nasa_modis_aqua_0.04167_degree_chlorophyll_grid",
+        "temporal_resolution": "daily_source_observation"
       },
       "provenance_required": true
     },
