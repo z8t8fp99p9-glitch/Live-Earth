@@ -387,18 +387,18 @@
       "legacy_ids": [
         "OCEANS_07"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_pending_first_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "ocean_additional",
+        "source_id": "nasa_aqua_modis_fluorescence_line_height",
+        "cadence": "daily"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "W m-2 um-1 sr-1",
+        "spatial_coverage": "global_0.125_degree_sampled_from_nasa_aqua_modis_4km_fluorescence_grid",
+        "temporal_resolution": "daily_source_observation"
       },
       "provenance_required": true
     },
@@ -408,18 +408,18 @@
       "legacy_ids": [
         "OCEANS_08"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_pending_first_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "ocean_additional",
+        "source_id": "noaa_coastwatch_viirs_noaa20_productivity_daily",
+        "cadence": "daily"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "mg C m-2 day-1",
+        "spatial_coverage": "global_0.125_degree_sampled_from_noaa_viirs_noaa20_4km_productivity_grid",
+        "temporal_resolution": "daily_source_observation"
       },
       "provenance_required": true
     },
@@ -429,18 +429,18 @@
       "legacy_ids": [
         "OCEANS_09"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_pending_first_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "ocean_additional",
+        "source_id": "noaa_ncei_ohc_0_2000_monthly",
+        "cadence": "monthly"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "10^18 J",
+        "spatial_coverage": "global_native_1_degree_monthly_0_2000m_heat_content_anomaly",
+        "temporal_resolution": "monthly_source_analysis"
       },
       "provenance_required": true
     },
@@ -450,18 +450,18 @@
       "legacy_ids": [
         "OCEANS_10"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_pending_first_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "ocean_additional",
+        "source_id": "noaa_ncei_oisst21_sea_ice_fraction",
+        "cadence": "daily"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "1",
+        "spatial_coverage": "global_native_0.25_degree_oisst21_sea_ice_area_fraction",
+        "temporal_resolution": "daily_source_observation"
       },
       "provenance_required": true
     },

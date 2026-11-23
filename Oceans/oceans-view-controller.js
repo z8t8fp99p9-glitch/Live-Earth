@@ -952,7 +952,7 @@ function installStyles() {
         "label": "Ocean colour",
         "icon": "colour",
         "color": "#b5a4ff",
-        "status": "source_not_configured"
+        "status": "collector_configured_pending_first_success"
     },
     {
         "id": "marine_productivity",
@@ -960,7 +960,7 @@ function installStyles() {
         "label": "Marine productivity",
         "icon": "productivity",
         "color": "#a5dc88",
-        "status": "source_not_configured"
+        "status": "collector_configured_pending_first_success"
     },
     {
         "id": "ocean_heat",
@@ -968,7 +968,7 @@ function installStyles() {
         "label": "Ocean heat",
         "icon": "heat",
         "color": "#ff8d7a",
-        "status": "source_not_configured"
+        "status": "collector_configured_pending_first_success"
     },
     {
         "id": "sea_ice",
@@ -976,7 +976,7 @@ function installStyles() {
         "label": "Sea ice",
         "icon": "ice",
         "color": "#a9eaff",
-        "status": "source_not_configured"
+        "status": "collector_configured_pending_first_success"
     }
 ];
     const datasetOrbButtons = new Map();
@@ -987,7 +987,11 @@ function installStyles() {
       ['salinity', { id: 'salinity', label: 'Salinity', datasetId: 'earth.oceans.salinity', width: 1440, height: 720, units: 'PSU', displayUnit: 'PSU' }],
       ['sea_level', { id: 'sea_level', label: 'Sea level', datasetId: 'earth.oceans.sea_level', width: 1440, height: 720, units: 'm', displayUnit: 'm' }],
       ['wave_height', { id: 'wave_height', label: 'Wave height', datasetId: 'earth.oceans.wave_height', width: 1440, height: 721, units: 'm', displayUnit: 'm', note: 'NOAA GFS-Wave model forecast · HTSGW' }],
-      ['chlorophyll', { id: 'chlorophyll', label: 'Chlorophyll', datasetId: 'earth.oceans.chlorophyll', width: 2880, height: 1440, units: 'mg m-3', displayUnit: 'mg/m³' }]
+      ['chlorophyll', { id: 'chlorophyll', label: 'Chlorophyll', datasetId: 'earth.oceans.chlorophyll', width: 2880, height: 1440, units: 'mg m-3', displayUnit: 'mg/m³' }],
+      ['ocean_colour', { id: 'ocean_colour', label: 'Ocean colour', datasetId: 'earth.oceans.ocean_colour', width: 2880, height: 1440, units: 'W m-2 um-1 sr-1', displayUnit: 'W/m²/μm/sr', note: 'NASA Aqua MODIS normalized fluorescence line height · ocean-optics indicator, not reflectance' }],
+      ['marine_productivity', { id: 'marine_productivity', label: 'Marine productivity', datasetId: 'earth.oceans.marine_productivity', width: 2880, height: 1440, units: 'mg C m-2 day-1', displayUnit: 'mg C/m²/day' }],
+      ['ocean_heat', { id: 'ocean_heat', label: 'Ocean heat', datasetId: 'earth.oceans.ocean_heat', width: 360, height: 180, units: '10^18 J', displayUnit: '10¹⁸ J', note: 'Monthly 0–2000 m ocean heat-content anomaly · native 1° grid' }],
+      ['sea_ice', { id: 'sea_ice', label: 'Sea ice', datasetId: 'earth.oceans.sea_ice', width: 1440, height: 720, units: '1', displayUnit: 'fraction' }]
     ]);
     const PALETTES = {
       'sea_temperature': ['#080d2c', '#203b8a', '#1689b8', '#45b978', '#f0c64b', '#f06429', '#8b152a'],
@@ -995,7 +999,11 @@ function installStyles() {
       'salinity': ['#17143d', '#264a85', '#267fa7', '#31b8a2', '#b9d88a', '#fff0b0'],
       'sea_level': ['#30134b', '#4555a1', '#278eae', '#68c4ab', '#e5e9a0', '#fff2c4'],
       'wave_height': ['#071a3a', '#12598e', '#168fba', '#48c5c3', '#d8edcc', '#fff2c0'],
-      'chlorophyll': ['#20113e', '#3c357f', '#247b80', '#48a45f', '#b5c84c', '#f4e46c']
+      'chlorophyll': ['#20113e', '#3c357f', '#247b80', '#48a45f', '#b5c84c', '#f4e46c'],
+      'ocean_colour': ['#17123b', '#393b8f', '#376ca8', '#39a6a2', '#b6d56c', '#fff0a8'],
+      'marine_productivity': ['#1a1c3e', '#285b78', '#3c9b72', '#9acb55', '#f0dc67', '#fff3b0'],
+      'ocean_heat': ['#243b8a', '#3f85b5', '#80c5bb', '#f0d17a', '#e77c50', '#8d263b'],
+      'sea_ice': ['#061b3a', '#14518a', '#3c91c4', '#9bd8e8', '#e5f5f5', '#ffffff']
     };
 
     const iconMarkup = {

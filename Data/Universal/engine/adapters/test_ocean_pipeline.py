@@ -5,7 +5,7 @@ import hashlib
 import unittest
 
 import numpy as np
-from Data.Universal.engine.adapters import ocean, ocean_fixed
+from Data.Universal.engine.adapters import ocean, ocean_fixed, ocean_additional
 from Data.Universal.engine import bootstrap
 
 
@@ -15,7 +15,12 @@ class OceanPipelineContractTests(unittest.TestCase):
         self.assertEqual(ocean_ids, set(ocean.DATASETS))
         for dataset_id in ocean_ids:
             adapter, source_id, cadence = bootstrap.CONFIG[dataset_id]
-            self.assertEqual(adapter, "ocean_fixed")
+            expected_adapter = "ocean_fixed" if dataset_id in {
+                "earth.oceans.sea_temperature", "earth.oceans.ocean_currents",
+                "earth.oceans.sea_level", "earth.oceans.salinity",
+                "earth.oceans.wave_height", "earth.oceans.chlorophyll",
+            } else "ocean_additional"
+            self.assertEqual(adapter, expected_adapter)
             self.assertEqual(source_id, ocean.DATASETS[dataset_id]["source_id"])
             self.assertEqual(cadence, ocean.DATASETS[dataset_id]["cadence"])
 
@@ -45,11 +50,13 @@ class OceanPipelineContractTests(unittest.TestCase):
         self.assertEqual(chl["aggregation_factor"], 3)
         self.assertAlmostEqual(chl["expected_native_spacing_degrees"], 1 / 24)
 
-    def test_all_six_ocean_layers_remain_configured(self):
+    def test_all_ten_ocean_layers_are_configured(self):
         expected = {
             "earth.oceans.sea_temperature", "earth.oceans.ocean_currents",
             "earth.oceans.sea_level", "earth.oceans.salinity",
             "earth.oceans.wave_height", "earth.oceans.chlorophyll",
+            "earth.oceans.ocean_colour", "earth.oceans.marine_productivity",
+            "earth.oceans.ocean_heat", "earth.oceans.sea_ice",
         }
         self.assertEqual(set(ocean.DATASETS), expected)
 

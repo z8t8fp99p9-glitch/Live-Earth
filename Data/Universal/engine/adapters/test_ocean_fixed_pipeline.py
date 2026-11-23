@@ -31,6 +31,7 @@ if _MODULE not in sys.modules:
     sys.modules[_MODULE] = _stub
 
 ocean_fixed = importlib.import_module("Data.Universal.engine.adapters.ocean_fixed")
+ocean_additional = importlib.import_module("Data.Universal.engine.adapters.ocean_additional")
 from Data.Universal.engine import bootstrap
 
 
@@ -109,11 +110,22 @@ class OceanFixedPipelineTests(unittest.TestCase):
         self.assertEqual(bootstrap.CADENCE_RESOLUTION["3-day"], "three_day_mean_source_composite")
         self.assertEqual(bootstrap.CADENCE_RESOLUTION["8-day"], "eight_day_centered_source_composite")
 
-    def test_all_six_ocean_layers_remain_on_the_same_adapter(self):
-        ocean_ids = [key for key in bootstrap.CONFIG if key.startswith("earth.oceans.")]
-        self.assertEqual(len(ocean_ids), 6)
-        for dataset_id in ocean_ids:
+    def test_six_established_ocean_layers_remain_on_the_same_adapter(self):
+        established = {
+            "earth.oceans.sea_temperature", "earth.oceans.ocean_currents",
+            "earth.oceans.salinity", "earth.oceans.sea_level",
+            "earth.oceans.wave_height", "earth.oceans.chlorophyll",
+        }
+        for dataset_id in established:
             self.assertEqual(bootstrap.CONFIG[dataset_id][0], "ocean_fixed")
+
+    def test_four_additional_ocean_layers_use_the_additive_adapter(self):
+        additional = {
+            "earth.oceans.ocean_colour", "earth.oceans.marine_productivity",
+            "earth.oceans.ocean_heat", "earth.oceans.sea_ice",
+        }
+        for dataset_id in additional:
+            self.assertEqual(bootstrap.CONFIG[dataset_id][0], "ocean_additional")
 
     def test_salinity_composite_metadata_is_checked_before_fetch(self):
         spec = ocean_fixed._ocean.DATASETS["earth.oceans.salinity"]

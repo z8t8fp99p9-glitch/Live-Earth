@@ -24,6 +24,10 @@ CONFIG = {
     "earth.oceans.salinity": ("ocean_fixed", "noaa_coastwatch_smos_3day_composite", "3-day"),
     "earth.oceans.wave_height": ("ocean_fixed", "noaa_ncep_gfs_wave", "6-hourly"),
     "earth.oceans.chlorophyll": ("ocean_fixed", "nasa_aqua_modis_chlorophyll_8day", "8-day"),
+    "earth.oceans.ocean_colour": ("ocean_additional", "nasa_aqua_modis_fluorescence_line_height", "daily"),
+    "earth.oceans.marine_productivity": ("ocean_additional", "noaa_coastwatch_viirs_noaa20_productivity_daily", "daily"),
+    "earth.oceans.ocean_heat": ("ocean_additional", "noaa_ncei_ohc_0_2000_monthly", "monthly"),
+    "earth.oceans.sea_ice": ("ocean_additional", "noaa_ncei_oisst21_sea_ice_fraction", "daily"),
     "earth.land.land_temperature": ("native_sources", "nasa_power_daily", "daily"),
     "earth.water_ice.rainfall": ("native_sources", "nasa_power_daily", "daily"),
     "earth.earth_activity.earthquakes": ("native_sources", "usgs_comcat", "hourly"),
@@ -48,6 +52,10 @@ CONTRACTS = {
     "earth.oceans.salinity": ("PSU", "global_native_0.25_degree_grid_smos_3day_mean_composite"),
     "earth.oceans.wave_height": ("m", "global_published_0.25_degree_grid_noaa_gfs_wavewatch_iii_significant_height"),
     "earth.oceans.chlorophyll": ("mg m-3", "global_0.125_degree_sampled_from_nasa_aqua_modis_8day_0.04167_degree_chlorophyll_grid"),
+    "earth.oceans.ocean_colour": ("W m-2 um-1 sr-1", "global_0.125_degree_sampled_from_nasa_aqua_modis_4km_fluorescence_grid"),
+    "earth.oceans.marine_productivity": ("mg C m-2 day-1", "global_0.125_degree_sampled_from_noaa_viirs_noaa20_4km_productivity_grid"),
+    "earth.oceans.ocean_heat": ("10^18 J", "global_native_1_degree_monthly_0_2000m_heat_content_anomaly"),
+    "earth.oceans.sea_ice": ("1", "global_native_0.25_degree_oisst21_sea_ice_area_fraction"),
     "earth.land.land_temperature": ("degree_C", "six_sparse_regional_point_samples"),
     "earth.water_ice.rainfall": ("mm/day", "six_sparse_regional_point_samples"),
     "earth.earth_activity.earthquakes": ("magnitude", "USGS_all_day_event_feed"),
@@ -60,6 +68,7 @@ CADENCE_RESOLUTION = {
     "daily": "daily_source_observation",
     "3-day": "three_day_mean_source_composite",
     "8-day": "eight_day_centered_source_composite",
+    "monthly": "monthly_source_analysis",
 }
 SUCCESS_STATES = {"collector_configured_success", "collector_configured_failed"}
 
@@ -81,7 +90,7 @@ def main():
         adapter, source, cadence = CONFIG[dataset_id]
         previous_adapter = item.get("collection", {}).get("adapter_id")
         item["collection"] = {"enabled": True, "adapter_id": adapter, "source_id": source, "cadence": cadence}
-        if dataset_id.startswith("earth.oceans.") and previous_adapter not in {"ocean", "ocean_fixed"}:
+        if dataset_id.startswith("earth.oceans.") and previous_adapter not in {"ocean", "ocean_fixed", "ocean_additional"}:
             item["status"] = "collector_configured_pending_first_success"
         elif item.get("status") not in SUCCESS_STATES:
             item["status"] = "collector_configured_pending_first_success"

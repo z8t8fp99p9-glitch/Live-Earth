@@ -47,28 +47,28 @@
     {
       "dataset_id": "OCEANS_07",
       "name": "ocean_colour",
-      "status": "source_not_configured",
+      "status": "collector_configured_pending_first_success",
       "grid_id": null,
       "latest_snapshot": null
     },
     {
       "dataset_id": "OCEANS_08",
       "name": "marine_productivity",
-      "status": "source_not_configured",
+      "status": "collector_configured_pending_first_success",
       "grid_id": null,
       "latest_snapshot": null
     },
     {
       "dataset_id": "OCEANS_09",
       "name": "ocean_heat",
-      "status": "source_not_configured",
+      "status": "collector_configured_pending_first_success",
       "grid_id": null,
       "latest_snapshot": null
     },
     {
       "dataset_id": "OCEANS_10",
       "name": "sea_ice",
-      "status": "source_not_configured",
+      "status": "collector_configured_pending_first_success",
       "grid_id": null,
       "latest_snapshot": null
     }
