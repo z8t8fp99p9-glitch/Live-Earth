@@ -4,3 +4,4 @@ xarray>=2024.1
 cfgrib>=0.9.14
 eccodes>=2.37
 pydap>=3.5.8
+netCDF4>=1.6

@@ -22,7 +22,10 @@ CONFIG = {
     "earth.atmosphere.carbon_monoxide": ("nasa_geos_cf", "nasa_geos_cf_v2", "hourly"),
     "earth.atmosphere.aerosols_dust": ("nasa_geos_cf", "nasa_geos_cf_v2", "hourly"),
 
-    "earth.oceans.sea_temperature": ("native_sources", "noaa_ncei_oisst", "daily"),
+    # NOAA OISST is a daily source product; the Universal workflow still
+    # checks it on its normal hourly run and the current-value store replaces
+    # the prior grid atomically when NOAA publishes a newer analysis.
+    "earth.oceans.sea_temperature": ("ocean_sources", "noaa_ncei_oisst", "daily"),
     "earth.land.land_temperature": ("native_sources", "nasa_power_daily", "daily"),
     "earth.water_ice.rainfall": ("native_sources", "nasa_power_daily", "daily"),
     "earth.earth_activity.earthquakes": ("native_sources", "usgs_comcat", "hourly"),
