@@ -134,7 +134,10 @@ def _axis_selector_with_4km_roundoff(axis: np.ndarray, stride: int):
     sampled_step = float(np.median(delta)) * int(stride)
     if not np.allclose(
         np.diff(selected), sampled_step, rtol=0.0,
-        atol=max(5e-5, abs(sampled_step) * 1e-4),
+        # The native ERDDAP axis has already passed ocean_fixed's monotonicity
+        # and 0.2%-of-cell spacing checks. Every-third-point differences can
+        # accumulate that float32 coordinate noise across three source cells.
+        atol=max(1e-4, abs(sampled_step) * 2e-3),
     ):
         raise RuntimeError("Sampled coordinate axis is materially irregular; refusing to resample")
     return (
@@ -147,6 +150,85 @@ _ADDITIONAL_ERDDAP_SOURCE_IDS = {
     "nasa_aqua_modis_fluorescence_line_height",
     "noaa_coastwatch_viirs_noaa20_productivity_daily",
 }
+
+
+# The ERDDAP CSV axis endpoint serializes coordinates independently from the
+# NetCDF response. For these 4 km products that can introduce float32 rounding
+# offsets greater than the generic decoder's 1e-6 exactness threshold. Validate
+# the returned NetCDF axes against the requested sample using the same strict,
+# sub-cell tolerance as the established ocean_fixed adapter, then pass the
+# actual NetCDF coordinates into the generic decoder so it compares like with
+# like. This does not alter or relax any of the six established datasets.
+_original_request_erddap = _ocean._request_erddap
+
+
+def _request_erddap_with_4km_coordinate_validation(
+    spec: dict, timestamp: dt.datetime, variable: str
+):
+    raw, url, requested_lat, requested_lon = _original_request_erddap(
+        spec, timestamp, variable
+    )
+    if spec.get("source_id") not in _ADDITIONAL_ERDDAP_SOURCE_IDS:
+        return raw, url, requested_lat, requested_lon
+
+    fd, path = tempfile.mkstemp(suffix=".nc")
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(raw)
+        with xr.open_dataset(
+            path, engine="netcdf4", decode_cf=True, mask_and_scale=True
+        ) as ds:
+            if "latitude" not in ds.variables or "longitude" not in ds.variables:
+                raise RuntimeError(
+                    f"Returned {spec['product']} NetCDF is missing latitude/longitude coordinates"
+                )
+            def validate_axis(requested, returned, axis_name):
+                expected = np.asarray(requested, dtype=np.float64).reshape(-1)
+                actual = np.asarray(returned, dtype=np.float64).reshape(-1)
+                if actual.size != expected.size or actual.size < 2 or not np.all(np.isfinite(actual)):
+                    raise RuntimeError(
+                        f"Returned {axis_name} coordinate count/values do not match the requested sample"
+                    )
+                expected_step = float(np.median(np.diff(expected)))
+                actual_delta = np.diff(actual)
+                actual_step = float(np.median(actual_delta))
+                step_tolerance = max(1e-4, abs(expected_step) * 2e-3)
+                if (not np.all(np.isfinite(actual_delta)) or np.any(actual_delta == 0)
+                        or not (np.all(actual_delta > 0) or np.all(actual_delta < 0))
+                        or abs(actual_step - expected_step) > step_tolerance
+                        or float(np.max(np.abs(actual_delta - actual_step))) > step_tolerance):
+                    raise RuntimeError(
+                        f"Returned {axis_name} grid is materially irregular "
+                        f"(requested step {expected_step:.10g}, returned {actual_step:.10g})"
+                    )
+                difference = actual - expected
+                if axis_name.lower() in {"longitude", "lon"}:
+                    difference = (difference + 180.0) % 360.0 - 180.0
+                max_offset = float(np.max(np.abs(difference)))
+                if max_offset > 1e-4:
+                    index = int(np.argmax(np.abs(difference)))
+                    raise RuntimeError(
+                        f"Returned {axis_name} coordinates differ from the requested source grid "
+                        f"by {max_offset:.8g} degrees at index {index}"
+                    )
+                return actual
+
+            actual_lat = validate_axis(requested_lat, ds["latitude"].values, "latitude")
+            actual_lon = validate_axis(requested_lon, ds["longitude"].values, "longitude")
+            if (actual_lat.size, actual_lon.size) != (1440, 2880):
+                raise RuntimeError(
+                    f"{spec['dataset_id']} returned {(actual_lat.size, actual_lon.size)}; "
+                    "expected the 1440 × 2880 Ocean renderer grid"
+                )
+        return raw, url, actual_lat, actual_lon
+    finally:
+        try:
+            os.unlink(path)
+        except FileNotFoundError:
+            pass
+
+
+_ocean._request_erddap = _request_erddap_with_4km_coordinate_validation
 
 
 # Apply the relaxed coordinate selector only while decoding one of these two
@@ -188,10 +270,66 @@ def _as_datetime(value) -> dt.datetime:
     raise RuntimeError(f"Unsupported NCEI heat-content time coordinate: {value!r}")
 
 
+def _decode_monthly_time_values(values, units: str, calendar: str = "standard"):
+    """Decode NCEI's integer `months since ...` monthly axis without CF guessing."""
+    import calendar as calendar_module
+    import re
+
+    raw = np.asarray(values).reshape(-1)
+    units_text = str(units or "").strip()
+    match = re.fullmatch(
+        r"months\s+since\s+(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}):(\d{2})(?:\.([0-9]+))?)?(?:\s*(Z|UTC))?",
+        units_text,
+        flags=re.IGNORECASE,
+    )
+    if match:
+        year, month, day = (int(match.group(i)) for i in (1, 2, 3))
+        hour, minute, second = (int(match.group(i) or 0) for i in (4, 5, 6))
+        fraction = match.group(7)
+        microsecond = int((fraction or "0").ljust(6, "0")[:6])
+        origin = dt.datetime(year, month, day, hour, minute, second, microsecond, tzinfo=UTC)
+        calendar_name = str(calendar or "standard").lower()
+        if calendar_name not in {"standard", "gregorian", "proleptic_gregorian"}:
+            raise RuntimeError(
+                f"Unsupported NCEI monthly time calendar for calendar-month offsets: {calendar_name!r}"
+            )
+        decoded = []
+        for value in raw:
+            offset = float(value)
+            if not np.isfinite(offset):
+                raise RuntimeError(f"NCEI monthly time coordinate is not finite: {value!r}")
+            rounded = int(round(offset))
+            if abs(offset - rounded) > 1e-8:
+                raise RuntimeError(f"NCEI monthly time coordinate is not an integer month offset: {value!r}")
+            absolute_month = origin.year * 12 + (origin.month - 1) + rounded
+            out_year, zero_month = divmod(absolute_month, 12)
+            out_month = zero_month + 1
+            out_day = min(origin.day, calendar_module.monthrange(out_year, out_month)[1])
+            decoded.append(origin.replace(
+                year=out_year, month=out_month, day=out_day
+            ))
+        return decoded
+
+    calendar_name = str(calendar or "standard")
+    try:
+        decoded = xr.coding.times.decode_cf_datetime(
+            raw, units_text, calendar=calendar_name, use_cftime=None
+        )
+    except Exception as exc:
+        raise RuntimeError(
+            f"Unable to decode NCEI heat-content time axis units {units_text!r} "
+            f"with calendar {calendar_name!r}: {exc}"
+        ) from exc
+    return [_as_datetime(value) for value in np.asarray(decoded).reshape(-1)]
+
+
 def _decode_heat_file(path: str | Path, spec: dict):
     """Decode one native NCEI monthly 0–2000 m heat-content field."""
+    # NCEI publishes its monthly coordinate as `months since ...`. That unit
+    # is rejected by xarray's default CF decoder for a standard calendar, so
+    # read raw coordinates and convert integer calendar-month offsets below.
     with xr.open_dataset(
-        path, engine="netcdf4", decode_cf=True, mask_and_scale=True
+        path, engine="netcdf4", decode_times=False, mask_and_scale=True
     ) as ds:
         lat_name = next((name for name in ("lat", "latitude") if name in ds.variables), None)
         lon_name = next((name for name in ("lon", "longitude") if name in ds.variables), None)
@@ -220,7 +358,12 @@ def _decode_heat_file(path: str | Path, spec: dict):
         time_values = np.asarray(ds["time"].values).reshape(-1)
         if not time_values.size:
             raise RuntimeError("NCEI heat-content source has no published monthly time values")
-        converted_times = [_as_datetime(value) for value in time_values]
+        time_attrs = ds["time"].attrs
+        converted_times = _decode_monthly_time_values(
+            time_values,
+            str(time_attrs.get("units", "")),
+            str(time_attrs.get("calendar", "standard")),
+        )
         latest_index = max(range(len(converted_times)), key=lambda index: converted_times[index])
         observed = converted_times[latest_index]
 
