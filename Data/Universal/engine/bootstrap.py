@@ -15,22 +15,16 @@ CONFIG = {
     "earth.atmosphere.water_vapour": ("atmosphere_composition", "noaa_ncep_gfs_025", "6-hourly"),
     "earth.atmosphere.cloud_properties": ("atmosphere_composition", "noaa_ncep_gfs_025", "6-hourly"),
     "earth.atmosphere.ozone": ("atmosphere_composition", "noaa_ncep_gfs_025", "6-hourly"),
-
-    # Latest anonymous NASA GEOS-CF v2 current-value fields.
     "earth.atmosphere.co2_concentration": ("nasa_geos_cf", "nasa_geos_cf_v2", "3-hourly"),
     "earth.atmosphere.methane": ("nasa_geos_cf", "nasa_geos_cf_v2", "3-hourly"),
     "earth.atmosphere.carbon_monoxide": ("nasa_geos_cf", "nasa_geos_cf_v2", "hourly"),
     "earth.atmosphere.aerosols_dust": ("nasa_geos_cf", "nasa_geos_cf_v2", "hourly"),
-
-    # NOAA OISST is a daily source product; the Universal workflow still
-    # checks it on its normal hourly run and the current-value store replaces
-    # the prior grid atomically when NOAA publishes a newer analysis.
-    "earth.oceans.sea_temperature": ("ocean_sources", "noaa_ncei_oisst", "daily"),
-    "earth.oceans.ocean_currents": ("ocean_public", "noaa_coastwatch_altimetry", "daily"),
-    "earth.oceans.sea_level": ("ocean_public", "noaa_coastwatch_altimetry", "daily"),
-    "earth.oceans.salinity": ("ocean_public", "noaa_coastwatch_smos", "daily"),
-    "earth.oceans.wave_height": ("ocean_public", "noaa_ncep_gfs_wave", "6-hourly"),
-    "earth.oceans.chlorophyll": ("ocean_public", "nasa_modis_aqua_chlorophyll_noaa_erddap", "daily"),
+    "earth.oceans.sea_temperature": ("ocean", "noaa_ncei_oisst21", "daily"),
+    "earth.oceans.ocean_currents": ("ocean", "noaa_coastwatch_nrt_currents", "daily"),
+    "earth.oceans.sea_level": ("ocean", "noaa_coastwatch_nrt_sla", "daily"),
+    "earth.oceans.salinity": ("ocean", "noaa_coastwatch_smos", "daily"),
+    "earth.oceans.wave_height": ("ocean", "noaa_ncep_gfs_wave", "6-hourly"),
+    "earth.oceans.chlorophyll": ("ocean", "nasa_modis_aqua_chlorophyll_noaa_erddap", "daily"),
     "earth.land.land_temperature": ("native_sources", "nasa_power_daily", "daily"),
     "earth.water_ice.rainfall": ("native_sources", "nasa_power_daily", "daily"),
     "earth.earth_activity.earthquakes": ("native_sources", "usgs_comcat", "hourly"),
@@ -54,7 +48,7 @@ CONTRACTS = {
     "earth.oceans.ocean_currents": ("metre_per_second", "global_native_0.25_degree_grid_geostrophic_current_speed_from_ugos_vgos"),
     "earth.oceans.sea_level": ("m", "global_native_0.25_degree_grid_altimetric_sea_level_anomaly"),
     "earth.oceans.salinity": ("PSU", "global_native_0.25_degree_grid_smos_sea_surface_salinity"),
-    "earth.oceans.wave_height": ("m", "global_published_0.25_degree_grid_noaa_gfs_wavewatch_iii_significant_wave_height"),
+    "earth.oceans.wave_height": ("m", "global_published_0.25_degree_grid_noaa_gfs_wavewatch_iii_significant_height"),
     "earth.oceans.chlorophyll": ("mg m-3", "global_0.125_degree_sampled_from_nasa_modis_aqua_0.04167_degree_chlorophyll_grid"),
     "earth.land.land_temperature": ("degree_C", "six_sparse_regional_point_samples"),
     "earth.water_ice.rainfall": ("mm/day", "six_sparse_regional_point_samples"),
@@ -86,8 +80,13 @@ def main():
                 item["status"] = "source_not_configured"
             continue
         adapter, source, cadence = CONFIG[dataset_id]
+        previous_adapter = item.get("collection", {}).get("adapter_id")
         item["collection"] = {"enabled": True, "adapter_id": adapter, "source_id": source, "cadence": cadence}
-        if item.get("status") not in SUCCESS_STATES:
+        # Force a clean first-success state when migrating the Ocean datasets
+        # from the retired adapters to this replacement adapter.
+        if dataset_id.startswith("earth.oceans.") and previous_adapter != "ocean":
+            item["status"] = "collector_configured_pending_first_success"
+        elif item.get("status") not in SUCCESS_STATES:
             item["status"] = "collector_configured_pending_first_success"
         if dataset_id in CONTRACTS:
             units, coverage = CONTRACTS[dataset_id]
