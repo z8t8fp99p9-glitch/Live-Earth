@@ -47,6 +47,8 @@ async function initializeEngineView(view, worldId) {
   const T = await import("../vendor/three.module.js");
   const engine = await import("../EarthEngine/Core/earth-engine.js");
   const createEarthGlobe = engine.createEarthGlobe || engine.createGlobe;
+  const getDefaultCameraDistance = engine.getDefaultCameraDistance;
+  if (typeof getDefaultCameraDistance !== "function") throw new Error("Earth Engine default framing API is unavailable.");
   if (typeof createEarthGlobe !== "function") throw new Error("The reusable Earth Engine factory is unavailable.");
 
   const root = view.root;
@@ -62,12 +64,15 @@ async function initializeEngineView(view, worldId) {
   let scene = null;
   let camera = null;
   let earthGlobe = null;
-  let interactions = null;
+  let gestureController = null;
   let disposed = false;
   let renderQueued = false;
   let resizeObserver = null;
+  let defaultCameraDistance = 3.15;
+  const COMPOSITION_MAX_ZOOM = 3;
+  let zoomFactor = 1;
   const layers = new Map();
-  const maxPixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);
+  const maxPixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
 
   function requestRender() {
     if (disposed || renderQueued) return;
@@ -87,11 +92,14 @@ async function initializeEngineView(view, worldId) {
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
+    defaultCameraDistance = getDefaultCameraDistance({ width, height, radius: 1, fieldOfView: 38, diameterFraction: 0.71 });
+    camera.position.z = defaultCameraDistance / zoomFactor;
+    camera.lookAt(0, 0, 0);
     requestRender();
   }
 
   try {
-    renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "low-power" });
+    renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
     renderer.outputColorSpace = T.SRGBColorSpace;
     renderer.setClearColor(0x02050b, 0);
     scene = new T.Scene();
@@ -100,7 +108,8 @@ async function initializeEngineView(view, worldId) {
     const width = Math.max(1, rect.width || window.innerWidth || 1);
     const height = Math.max(1, rect.height || window.innerHeight || 1);
     camera = new T.PerspectiveCamera(38, width / height, 0.1, 100);
-    camera.position.set(0, 0, 3.15);
+    defaultCameraDistance = getDefaultCameraDistance({ width, height, radius: 1, fieldOfView: 38, diameterFraction: 0.71 });
+    camera.position.set(0, 0, defaultCameraDistance);
     camera.lookAt(0, 0, 0);
     scene.add(new T.AmbientLight(0x8aa7c8, 0.28));
     const key = new T.DirectionalLight(0xffffff, 2.0);
@@ -120,20 +129,147 @@ async function initializeEngineView(view, worldId) {
     });
     if (disposed) { earthGlobe.dispose(); throw new Error("The world view closed while its Engine globe was loading."); }
     scene.add(earthGlobe.group);
-    interactions = earthGlobe.attachInteractions({
-      element: canvas,
-      enabled: () => !disposed && root.isConnected && runtime.isActive(worldId),
-      rotation: { sensitivityX: 0.008, sensitivityY: 0.006, minPitch: -1.25, maxPitch: 1.25 },
-      zoom: {
-        enabled: true,
-        getDistance: () => camera.position.z,
-        setDistance: distance => { camera.position.z = Math.max(1.45, Math.min(4.2, distance)); camera.lookAt(0, 0, 0); requestRender(); },
-        minDistance: 1.45,
-        maxDistance: 4.2
-      },
-      onRotate: requestRender,
-      onZoom: requestRender
-    });
+
+    // 04 — Match Atmosphere's complete surface-anchored globe interaction.
+    // Dragging keeps the picked geographic point beneath the pointer; pinch
+    // zoom is admitted only when both pointers begin on the visible globe.
+    gestureController = (() => {
+      const raycaster = new T.Raycaster();
+      const pointerNdc = new T.Vector2();
+      const anchorLocal = new T.Vector3();
+      const anchorWorld = new T.Vector3();
+      const targetWorld = new T.Vector3();
+      const sphere = new T.Sphere(new T.Vector3(0, 0, 0), 1.001);
+      const deltaRotation = new T.Quaternion();
+      const MIN_GLOBE_TILT = -1.15;
+      const MAX_GLOBE_TILT = 1.15;
+      const worldXAxis = new T.Vector3(1, 0, 0);
+      const localYAxis = new T.Vector3(0, 1, 0);
+      const tiltRotation = new T.Quaternion();
+      const headingRotation = new T.Quaternion();
+      const pointers = new Map();
+      let activePointerId = null;
+      let pinchStartDistance = 0;
+      let pinchStartZoom = 1;
+      let hasAnchor = false;
+
+      const isEnabled = () => !disposed && root.isConnected && runtime.isActive(worldId);
+      const updatePointerRay = (x, y) => {
+        const bounds = canvas.getBoundingClientRect();
+        if (!(bounds.width > 0 && bounds.height > 0)) return false;
+        pointerNdc.set(((x - bounds.left) / bounds.width) * 2 - 1, -((y - bounds.top) / bounds.height) * 2 + 1);
+        raycaster.setFromCamera(pointerNdc, camera);
+        return true;
+      };
+      const pickSurfacePoint = (x, y, target) => {
+        if (!updatePointerRay(x, y)) return false;
+        const hits = raycaster.intersectObject(earthGlobe.surface, true);
+        if (!hits.length) return false;
+        earthGlobe.group.updateMatrixWorld(true);
+        target.copy(hits[0].point);
+        earthGlobe.group.worldToLocal(target);
+        return target.lengthSq() > 0;
+      };
+      const pointerRayToSphere = (x, y, target) => {
+        if (!updatePointerRay(x, y)) return false;
+        if (!raycaster.ray.intersectSphere(sphere, target)) return false;
+        target.normalize();
+        return true;
+      };
+      const clampGlobeTilt = () => {
+        const q = earthGlobe.group.quaternion;
+        const headingHalf = Math.atan2(q.y, q.w);
+        const sinHalfTilt = q.x * Math.cos(headingHalf) + q.z * Math.sin(headingHalf);
+        const cosHalfTilt = Math.hypot(q.w, q.y);
+        const tilt = 2 * Math.atan2(sinHalfTilt, cosHalfTilt);
+        const boundedTilt = Math.max(MIN_GLOBE_TILT, Math.min(MAX_GLOBE_TILT, tilt));
+        const heading = 2 * headingHalf;
+        tiltRotation.setFromAxisAngle(worldXAxis, boundedTilt);
+        headingRotation.setFromAxisAngle(localYAxis, heading);
+        q.copy(tiltRotation).multiply(headingRotation).normalize();
+      };
+      const pointerDistance = () => {
+        const values = [...pointers.values()];
+        if (values.length < 2) return 0;
+        return Math.hypot(values[0].x - values[1].x, values[0].y - values[1].y);
+      };
+      const setZoom = value => {
+        zoomFactor = Math.max(1, Math.min(COMPOSITION_MAX_ZOOM, value));
+        camera.position.z = defaultCameraDistance / zoomFactor;
+        camera.lookAt(0, 0, 0);
+        requestRender();
+      };
+      const beginAnchor = pointer => {
+        hasAnchor = pickSurfacePoint(pointer.x, pointer.y, anchorLocal);
+        activePointerId = hasAnchor ? pointer.id : null;
+        return hasAnchor;
+      };
+      const onPointerDown = event => {
+        if (!isEnabled() || (event.pointerType === "mouse" && event.button !== 0)) return;
+        const pointer = { id: event.pointerId, x: event.clientX, y: event.clientY };
+        if (!pickSurfacePoint(pointer.x, pointer.y, anchorLocal)) return;
+        pointers.set(event.pointerId, pointer);
+        try { canvas.setPointerCapture(event.pointerId); } catch (_) {}
+        if (pointers.size === 1) beginAnchor(pointer);
+        else if (pointers.size === 2) {
+          hasAnchor = false;
+          activePointerId = null;
+          pinchStartDistance = Math.max(1, pointerDistance());
+          pinchStartZoom = zoomFactor;
+        }
+        event.preventDefault();
+      };
+      const onPointerMove = event => {
+        if (!isEnabled() || !pointers.has(event.pointerId)) return;
+        const pointer = pointers.get(event.pointerId);
+        pointer.x = event.clientX;
+        pointer.y = event.clientY;
+        if (pointers.size >= 2) {
+          const distance = pointerDistance();
+          if (pinchStartDistance > 0) setZoom(pinchStartZoom * distance / pinchStartDistance);
+          event.preventDefault();
+          return;
+        }
+        if (pointers.size !== 1 || event.pointerId !== activePointerId || !hasAnchor) return;
+        if (!pointerRayToSphere(pointer.x, pointer.y, targetWorld)) return;
+        earthGlobe.group.updateMatrixWorld(true);
+        anchorWorld.copy(anchorLocal).applyQuaternion(earthGlobe.group.quaternion).normalize();
+        deltaRotation.setFromUnitVectors(anchorWorld, targetWorld);
+        earthGlobe.group.quaternion.premultiply(deltaRotation).normalize();
+        clampGlobeTilt();
+        earthGlobe.group.updateMatrixWorld(true);
+        requestRender();
+        event.preventDefault();
+      };
+      const onPointerUp = event => {
+        if (!pointers.has(event.pointerId)) return;
+        pointers.delete(event.pointerId);
+        try { if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId); } catch (_) {}
+        hasAnchor = false;
+        activePointerId = null;
+        if (pointers.size === 1) beginAnchor([...pointers.values()][0]);
+        else if (pointers.size >= 2) {
+          pinchStartDistance = Math.max(1, pointerDistance());
+          pinchStartZoom = zoomFactor;
+        }
+      };
+      const onPointerCancel = event => onPointerUp(event);
+      canvas.addEventListener("pointerdown", onPointerDown, { passive: false });
+      canvas.addEventListener("pointermove", onPointerMove, { passive: false });
+      canvas.addEventListener("pointerup", onPointerUp);
+      canvas.addEventListener("pointercancel", onPointerCancel);
+      canvas.addEventListener("lostpointercapture", onPointerCancel);
+      return { dispose() {
+        canvas.removeEventListener("pointerdown", onPointerDown);
+        canvas.removeEventListener("pointermove", onPointerMove);
+        canvas.removeEventListener("pointerup", onPointerUp);
+        canvas.removeEventListener("pointercancel", onPointerCancel);
+        canvas.removeEventListener("lostpointercapture", onPointerCancel);
+        pointers.clear();
+        hasAnchor = false;
+      }};
+    })();
+
     resize();
     if (typeof ResizeObserver === "function") {
       resizeObserver = new ResizeObserver(resize);
@@ -146,16 +282,7 @@ async function initializeEngineView(view, worldId) {
       if (disposed) throw new Error("This world globe has already been disposed.");
       if (typeof id !== "string" || !id.trim() || typeof factory !== "function") throw new TypeError("A layer needs an id and factory.");
       removeLayer(id);
-      const cleanup = factory({
-        THREE: T,
-        scene,
-        earth: earthGlobe.surface,
-        group: earthGlobe.group,
-        camera,
-        renderer,
-        redraw: requestRender,
-        requestRender
-      });
+      const cleanup = factory({ THREE: T, scene, earth: earthGlobe.surface, group: earthGlobe.group, camera, renderer, redraw: requestRender, requestRender });
       if (typeof cleanup === "function") layers.set(id, cleanup);
       requestRender();
       return () => removeLayer(id);
@@ -176,7 +303,7 @@ async function initializeEngineView(view, worldId) {
       window.removeEventListener("resize", resize);
       window.removeEventListener("orientationchange", resize);
       resizeObserver?.disconnect(); resizeObserver = null;
-      interactions?.dispose?.(); interactions = null;
+      gestureController?.dispose?.(); gestureController = null;
       for (const id of [...layers.keys()]) removeLayer(id);
       earthGlobe?.dispose?.(); earthGlobe = null;
       renderer?.dispose?.(); renderer?.forceContextLoss?.(); renderer = null;
@@ -186,23 +313,11 @@ async function initializeEngineView(view, worldId) {
     }
 
     requestRender();
-    return Object.freeze({
-      THREE: T,
-      scene,
-      camera,
-      renderer,
-      canvas,
-      globe: earthGlobe,
-      earth: earthGlobe.surface,
-      attachLayer,
-      removeLayer,
-      requestRender,
-      dispose
-    });
+    return Object.freeze({ THREE: T, scene, camera, renderer, canvas, globe: earthGlobe, earth: earthGlobe.surface, attachLayer, removeLayer, requestRender, dispose });
   } catch (error) {
     disposed = true;
     resizeObserver?.disconnect();
-    interactions?.dispose?.();
+    gestureController?.dispose?.();
     earthGlobe?.dispose?.();
     renderer?.dispose?.();
     canvas.remove();
@@ -210,7 +325,6 @@ async function initializeEngineView(view, worldId) {
     throw error;
   }
 }
-
 
 function installStyles() {
   if (document.getElementById("le-world-engine-canvas-style")) return;
