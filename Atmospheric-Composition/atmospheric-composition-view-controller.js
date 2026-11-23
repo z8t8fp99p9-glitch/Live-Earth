@@ -728,9 +728,9 @@ function installStyles() {
         transform:translateX(-50%);
       }
       .le-acomp-legend-ticks span:first-child { transform:none; text-align:left; }
-      .le-acomp-legend-ticks span:first-child::before { left:0; }
+      .le-acomp-legend-ticks span:first-child::before { content:none; }
       .le-acomp-legend-ticks span:last-child { transform:translateX(-100%); text-align:right; }
-      .le-acomp-legend-ticks span:last-child::before { left:100%; }
+      .le-acomp-legend-ticks span:last-child::before { content:none; left:100%; }
 
       .le-acomp-details { margin-top:10px; border-top:1px solid rgba(165,208,235,.14); padding-top:8px; }
       .le-acomp-details summary {

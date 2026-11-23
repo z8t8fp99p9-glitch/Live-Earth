@@ -344,9 +344,9 @@
         transform:translateX(-50%);
       }
       .le-atmo-legend-ticks span:first-child { transform:none; text-align:left; }
-      .le-atmo-legend-ticks span:first-child::before { left:0; }
+      .le-atmo-legend-ticks span:first-child::before { content:none; }
       .le-atmo-legend-ticks span:last-child { transform:translateX(-100%); text-align:right; }
-      .le-atmo-legend-ticks span:last-child::before { left:100%; }
+      .le-atmo-legend-ticks span:last-child::before { content:none; left:100%; }
 
       .le-atmo-details { margin-top:10px; border-top:1px solid rgba(165,208,235,.14); padding-top:8px; }
       .le-atmo-details summary {
