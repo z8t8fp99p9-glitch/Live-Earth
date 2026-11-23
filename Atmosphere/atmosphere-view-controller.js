@@ -1120,8 +1120,8 @@ function installStyles() {
 
     // 07 — Wind visualisation layer.
     // Direction is meteorological FROM-north; vectors are converted to the
-    // direction the air travels. Particles are visual tracers, not live
-    // measurements or a claim of physically scaled animation time.
+    // direction the air travels. Animated streamlines are visual tracers,
+    // not live measurements or a claim of physically scaled animation time.
     function makeWindTracers(THREE, earth, camera, speedGrid, directionGrid, requestRender) {
       const def=speedGrid.definition, dirDef=directionGrid.definition;
       if(def.width!==dirDef.width || def.height!==dirDef.height ||
@@ -1131,9 +1131,9 @@ function installStyles() {
         throw new Error('Wind tracer grids do not share identical coordinates.');
       }
 
-      // A denser field, longer history and faster visual advection make the
-      // flow legible on a phone while keeping the scientific colour layer clear.
-      const COUNT=88, TRAIL_STEPS=20, RADIUS=1.014;
+      // A calmer field of longer, curved streamlines replaces isolated
+      // particle heads. The globe's verified scalar colours remain untouched.
+      const COUNT=64, TRAIL_STEPS=28, RADIUS=1.014;
       const DEG=Math.PI/180, RAD=180/Math.PI;
       const speedValues=speedGrid.values, directionValues=directionGrid.values;
       const width=def.width, height=def.height;
@@ -1175,31 +1175,29 @@ function installStyles() {
         };
       }
 
-      const positions=new Float32Array(COUNT*3);
       const trailPositions=new Float32Array(COUNT*TRAIL_STEPS*2*3);
+      const trailColors=new Float32Array(COUNT*TRAIL_STEPS*2*3);
       const particles=[];
-      const pointGeometry=new THREE.BufferGeometry();
-      pointGeometry.setAttribute('position',new THREE.BufferAttribute(positions,3).setUsage(THREE.DynamicDrawUsage));
-      const pointMaterial=new THREE.PointsMaterial({
-        color:0xeafaff, size:0.012, sizeAttenuation:true,
-        transparent:true, opacity:0.98, depthTest:true, depthWrite:false,
-        blending:THREE.AdditiveBlending, toneMapped:false
-      });
-      const points=new THREE.Points(pointGeometry,pointMaterial);
-      points.name='liveEarthWind88FlowHeads';
-      points.renderOrder=12; points.frustumCulled=false; points.raycast=()=>{};
-
       const trailGeometry=new THREE.BufferGeometry();
       trailGeometry.setAttribute('position',new THREE.BufferAttribute(trailPositions,3).setUsage(THREE.DynamicDrawUsage));
+      trailGeometry.setAttribute('color',new THREE.BufferAttribute(trailColors,3).setUsage(THREE.DynamicDrawUsage));
       const trailMaterial=new THREE.LineBasicMaterial({
-        color:0xb5efff, transparent:true, opacity:0.50,
+        color:0xffffff, vertexColors:true, transparent:true, opacity:0.82,
         depthTest:true, depthWrite:false, blending:THREE.AdditiveBlending,
         toneMapped:false
       });
-      const trails=new THREE.LineSegments(trailGeometry,trailMaterial);
-      trails.name='liveEarthWind20StepFlowTrails';
+      const glowMaterial=new THREE.LineBasicMaterial({
+        color:0x36bfff, transparent:true, opacity:0.16,
+        depthTest:true, depthWrite:false, blending:THREE.AdditiveBlending,
+        toneMapped:false
+      });
+      const trails=new THREE.LineSegments(trailGeometry,glowMaterial);
+      trails.name='liveEarthWind64StreamlineGlow';
       trails.renderOrder=11; trails.frustumCulled=false; trails.raycast=()=>{};
-      earth.add(trails,points);
+      const streamlineCores=new THREE.LineSegments(trailGeometry,trailMaterial);
+      streamlineCores.name='liveEarthWind64AnimatedStreamlines';
+      streamlineCores.renderOrder=12; streamlineCores.frustumCulled=false; streamlineCores.raycast=()=>{};
+      earth.add(trails,streamlineCores);
 
       const cameraLocal=new THREE.Vector3(), worldCamera=new THREE.Vector3();
       function getViewDirection() {
@@ -1252,20 +1250,29 @@ function installStyles() {
         particles.push(particle);
       }
 
+      const tailColor=new THREE.Color(0x087cae);
+      const headColor=new THREE.Color(0xb8f4ff);
       function writeBuffers() {
         for(let i=0;i<COUNT;i++) {
-          const p=particles[i], valid=p.position.lengthSq()>0.5;
-          const head=valid?p.position:null, offset=i*3;
-          positions[offset]=head?head.x:0; positions[offset+1]=head?head.y:0; positions[offset+2]=head?head.z:0;
+          const p=particles[i];
           for(let j=0;j<TRAIL_STEPS;j++) {
             const a=p.history[j], b=p.history[j+1], k=(i*TRAIL_STEPS+j)*6;
             trailPositions[k]=a.x; trailPositions[k+1]=a.y; trailPositions[k+2]=a.z;
             trailPositions[k+3]=b.x; trailPositions[k+4]=b.y; trailPositions[k+5]=b.z;
+            // Colour brightens toward the advancing end of each streamline.
+            const t=(j+1)/TRAIL_STEPS;
+            const r=tailColor.r+(headColor.r-tailColor.r)*t;
+            const g=tailColor.g+(headColor.g-tailColor.g)*t;
+            const blue=tailColor.b+(headColor.b-tailColor.b)*t;
+            trailColors[k]=tailColor.r+(headColor.r-tailColor.r)*(j/TRAIL_STEPS);
+            trailColors[k+1]=tailColor.g+(headColor.g-tailColor.g)*(j/TRAIL_STEPS);
+            trailColors[k+2]=tailColor.b+(headColor.b-tailColor.b)*(j/TRAIL_STEPS);
+            trailColors[k+3]=r; trailColors[k+4]=g; trailColors[k+5]=blue;
           }
         }
-        pointGeometry.attributes.position.needsUpdate=true;
         trailGeometry.attributes.position.needsUpdate=true;
-        pointGeometry.computeBoundingSphere(); trailGeometry.computeBoundingSphere();
+        trailGeometry.attributes.color.needsUpdate=true;
+        trailGeometry.computeBoundingSphere();
       }
 
       const tangent=new THREE.Vector3();
@@ -1323,11 +1330,10 @@ function installStyles() {
         dispose() {
           if(disposed) return;
           disposed=true; cancelAnimationFrame(frame);
-          points.removeFromParent(); trails.removeFromParent();
-          pointGeometry.dispose(); trailGeometry.dispose();
-          pointMaterial.dispose(); trailMaterial.dispose();
+          trails.removeFromParent(); streamlineCores.removeFromParent();
+          trailGeometry.dispose(); glowMaterial.dispose(); trailMaterial.dispose();
         },
-        stats:{renderer:'88-visible-wind-flow-tracers',count:COUNT,trailSegments:COUNT*TRAIL_STEPS}
+        stats:{renderer:'64-visible-animated-wind-streamlines',count:COUNT,trailSegments:COUNT*TRAIL_STEPS}
       };
     }
 
@@ -1390,8 +1396,8 @@ function installStyles() {
         makeMetric('Verified range', `${formatFieldValue(grid.min)} to ${formatFieldValue(grid.max)}`, config.displayUnits);
         if (datasetKey === 'wind') {
           makeMetric('Wind direction range', `${formatFieldValue(grids[1].min)} to ${formatFieldValue(grids[1].max)}`, 'degrees FROM north');
-          makeMetric('Flow display', '76', 'animated tracers');
-          makeMetric('Direction basis', 'From north', 'particles travel downwind');
+          makeMetric('Flow display', '64', 'animated streamlines');
+          makeMetric('Direction basis', 'From north', 'lines follow downwind flow');
         }
         if (closed || controller.signal.aborted || !runtime.isActive(ATMOSPHERE_VIEW.id)) return;
         if (!worldGlobe || typeof worldGlobe.attachLayer !== 'function') throw new Error('The Earth Engine globe is not ready.');

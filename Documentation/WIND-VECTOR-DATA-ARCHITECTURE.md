@@ -2,7 +2,7 @@
 
 **Status:** Approved target architecture; interim verified-grid flow rendering is implemented in the Atmosphere controller.
 **Scope:** Atmosphere Wind only.
-**Current baseline:** The current controller loads the verified speed and direction grids together for flow rendering. The speed grid remains the scalar GPU colour surface; the paired direction grid drives particle motion. The existing speed-only and direction-only products remain independent and must be preserved.
+**Current baseline:** The current controller loads the verified speed and direction grids together for flow rendering. The speed grid remains the scalar GPU colour surface; the paired direction grid drives streamline motion. The existing speed-only and direction-only products remain independent and must be preserved.
 
 ## Decision
 
@@ -27,7 +27,7 @@ For each valid cell:
 - Meteorological direction **FROM** north, clockwise:
   `(atan2(-U, -V) * 180 / PI + 360) % 360`.
 
-The direction convention must remain explicit. A meteorological direction describes where wind comes from; animated particles move toward the vector `(U,V)`. Do not use the FROM bearing as the particle travel bearing without reversing it.
+The direction convention must remain explicit. A meteorological direction describes where wind comes from; animated streamlines follow the vector `(U,V)`. Do not use the FROM bearing as the particle travel bearing without reversing it.
 
 ## Combined grid contract
 
@@ -49,7 +49,7 @@ One combined dataset feeds one Wind GPU grid surface:
 
 - **Speed mode:** colour the surface from derived speed.
 - **Direction mode:** reconstruct the meteorological bearing from interpolated U/V and apply a cyclic compass palette.
-- **Flow mode:** advect subtle particles/streamlets using U/V; use speed to control movement rate and trail treatment.
+- **Flow mode:** advect curved streamlines using U/V; use speed to control movement rate and visual trail treatment.
 
 Do not render speed and direction as two independent coplanar transparent globe meshes. Do not invent decorative paths or cyclones; visible flow must follow the actual vector field.
 
@@ -79,13 +79,13 @@ Do not render speed and direction as two independent coplanar transparent globe 
 - Derived speed matches `hypot(U,V)` within the declared encoding precision.
 - Reconstructed direction matches the meteorological FROM convention.
 - Interpolation across north (359°/1°) remains near north.
-- Flow particles travel toward `(U,V)`, not toward the FROM bearing.
+- Flow streamlines follow the direction of `(U,V)`, not the FROM bearing.
 - One Wind surface is rendered; no coplanar duplicate overlays or colour blending.
 - Existing scalar datasets and all non-Wind views behave exactly as before.
 - Failure of the new product leaves existing Wind products available.
 
 ## Current implementation status
 
-**Interim flow rendering implemented; combined vector dataset remains future work.** The Atmosphere Wind selection loads both verified NOAA 10 m speed and direction grids, checks that their geometry aligns, renders the speed field on the existing GPU skin, and advects visible-hemisphere particles using bilinearly sampled vector components. Meteorological FROM bearings are reversed to obtain the direction particles travel. The current visual layer uses 88 tracers with 20 trail segments each; stronger verified winds move tracers faster. Calm and missing cells do not generate invented flow. Animation pauses while the document is hidden and is disposed with the Wind layer.
+**Interim flow rendering implemented; combined vector dataset remains future work.** The Atmosphere Wind selection loads both verified NOAA 10 m speed and direction grids, checks that their geometry aligns, renders the speed field on the existing GPU skin, and advects visible-hemisphere streamlines using bilinearly sampled vector components. Meteorological FROM bearings are reversed to obtain the direction particles travel. The current visual layer uses 64 animated streamlines with 28 segments each, a restrained cyan glow, and a brighter advancing edge; stronger verified winds move streamlines faster. Isolated particle heads are not rendered. Calm and missing cells do not generate invented flow. Animation pauses while the document is hidden and is disposed with the Wind layer.
 
 This interim implementation does **not** create `earth.atmosphere.wind_vector`, change the collector/publisher, alter the database schema, or add a multi-channel GPU texture. The scalar speed surface and paired direction grid remain separate verified products. The combined vector architecture above remains the intended future design.
