@@ -711,6 +711,18 @@ function installStyles() {
         background:linear-gradient(90deg,#080d2c 0%,#101c50 7.1429%,#203b8a 14.2857%,#1689b8 32.1429%,#45b978 50%,#f0c64b 67.8571%,#f06429 82.1429%,#c83f36 89.2857%,#8b152a 94.6429%,#450417 100%);
         box-shadow:inset 0 0 0 1px rgba(255,255,255,.30),0 0 9px rgba(68,159,222,.24);
       }
+      /* Three true internal graduations are drawn directly on the live scale bar. */
+      .le-acomp-legend-graduations {
+        position:absolute; inset:0; overflow:visible; pointer-events:none;
+      }
+      .le-acomp-legend-bar { position:relative; }
+      .le-acomp-legend-graduations span {
+        position:absolute; left:var(--acomp-graduation-position); top:50%;
+        width:1px; height:14px; border-radius:1px;
+        background:rgba(226,248,255,.92);
+        box-shadow:0 0 3px rgba(112,220,255,.78);
+        transform:translate(-50%,-50%);
+      }
       .le-acomp-legend-ticks {
         position:relative; width:var(--acomp-content-width);
         height:14px; margin-top:4px;
@@ -878,6 +890,11 @@ function installStyles() {
           width:100%; height:100%; min-height:100%;
           background:var(--acomp-gradient-vertical)!important;
           border-radius:999px;
+        }
+        .le-acomp-legend-graduations span {
+          left:50%; top:var(--acomp-graduation-position);
+          width:14px; height:1px;
+          transform:translate(-50%,-50%);
         }
         .le-acomp-legend-ticks {
           position:relative; width:max-content; height:auto; min-height:clamp(210px,48vh,300px);
@@ -1083,6 +1100,9 @@ function installStyles() {
     const legendBar = runtime.el('div', 'le-acomp-legend-bar');
     legendBar.setAttribute('role', 'img');
     legendBar.setAttribute('aria-label', 'Atmospheric composition field colour gradient');
+    const legendGraduations = runtime.el('div', 'le-acomp-legend-graduations');
+    legendGraduations.setAttribute('aria-hidden', 'true');
+    legendBar.appendChild(legendGraduations);
     scaleTrack.appendChild(legendBar);
     const legendTicks = runtime.el('div', 'le-acomp-legend-ticks');
     scaleVisual.append(scaleTrack, legendTicks);
@@ -1175,13 +1195,23 @@ function installStyles() {
       legendBar.style.background = paletteGradient(colors, '90deg');
       legendBar.style.setProperty('--acomp-gradient-vertical', paletteGradient(colors, '0deg'));
       legendTicks.replaceChildren();
+      legendGraduations.replaceChildren();
       for (let index = 0; index < 5; index++) {
-        const value = min + (max - min) * index / 4;
-        const position = index * 25;
+        const fraction = index / 4;
+        const value = min + (max - min) * fraction;
+        const position = max === min ? fraction * 100 : ((value - min) / (max - min)) * 100;
         const node = runtime.el('span', '', formatFieldValue(value));
         node.style.left = `${position}%`;
         node.style.setProperty('--acomp-tick-position', `${100 - position}%`);
         legendTicks.appendChild(node);
+
+        // Endpoints are the existing scale bounds; only the three internal
+        // graduations are drawn across the gradient itself.
+        if (index > 0 && index < 4) {
+          const graduation = runtime.el('span');
+          graduation.style.setProperty('--acomp-graduation-position', `${position}%`);
+          legendGraduations.appendChild(graduation);
+        }
       }
       scaleRange.textContent = `${formatFieldValue(min)} — ${formatFieldValue(max)}${grid.units ? ` ${grid.units}` : ''}`;
       scaleDock.hidden = false;
