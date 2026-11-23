@@ -1,23 +1,26 @@
 from __future__ import annotations
 
-"""Corrected NOAA ERDDAP source configuration and coordinate handling."""
+"""NOAA ocean source configuration and strict ERDDAP grid selection."""
 
 import csv
+import datetime as dt
 import io
+import re
+
 import numpy as np
 from . import ocean as _ocean
 
-# Restore the two verified public source definitions. Keep all other Ocean
-# source definitions, storage, encoding, and renderer contracts untouched.
+# NOAA's Upwell ERDDAP mirror serves the same NOAA NCEI OISST v2.1 final
+# dataset and grid. Keep the chlorophyll product as NASA Aqua MODIS R2022 NRT.
 _sst = _ocean.DATASETS["earth.oceans.sea_temperature"]
 _sst.update({
     "dataset_id": "ncdcOisst21Agg_LonPM180",
-    "base": "https://coastwatch.pfeg.noaa.gov/erddap",
+    "base": "https://upwell.pfeg.noaa.gov/erddap",
     "variables": ("sst",),
     "extra_dims": ("zlev",),
     "source_id": "noaa_ncei_oisst21",
     "product": "NOAA NCEI OISST v2.1 AVHRR-only final, global 0.25 degree",
-    "description": "Daily NOAA NCEI OISST v2.1 final sea-surface temperature analysis.",
+    "description": "Daily NOAA NCEI OISST v2.1 final sea-surface temperature analysis, accessed through NOAA Upwell ERDDAP.",
 })
 _chl = _ocean.DATASETS["earth.oceans.chlorophyll"]
 _chl.update({
@@ -28,30 +31,45 @@ _chl.update({
     "source_id": "nasa_aqua_modis_chlorophyll_4km",
     "stride": 3,
     "expected_native_spacing_degrees": 1.0 / 24.0,
+    "max_age_days": 7,
     "product": "NASA Aqua MODIS Level-3 mapped global daily chlorophyll-a, 4 km, R2022 NRT",
-    "description": "NASA Aqua MODIS daily chlorophyll-a distributed openly through NOAA CoastWatch ERDDAP. Every third native 4 km cell is sampled to preserve the existing 0.125-degree renderer grid; no interpolation is applied.",
+    "description": "NASA Aqua MODIS daily chlorophyll-a observations distributed by NOAA CoastWatch ERDDAP. Every third native 4 km cell is selected to match the existing 0.125-degree renderer grid; no interpolation or gap-filling is applied.",
 })
+
+# Use a clear application identity rather than impersonating a desktop browser.
+_ocean.SESSION.headers.update({
+    "User-Agent": "LIVE-EARTH-open-data-collector/1.0 (NOAA/NASA public data; contact: project-maintainer)",
+    "Accept": "application/json,text/csv,application/x-netcdf,*/*",
+})
+
 
 def _number(value: float) -> str:
     return format(float(value), ".12g")
 
+
 def _axis_selector(axis: np.ndarray, stride: int):
-    if stride < 1:
+    """Build ERDDAP's integer-index stride selector, not a degree stride."""
+    if not isinstance(stride, (int, np.integer)) or stride < 1:
         raise ValueError("Grid sampling stride must be a positive integer")
     source = np.asarray(axis, dtype=np.float64)
-    selected = source[::stride]
+    if source.ndim != 1 or source.size < 2 or not np.all(np.isfinite(source)):
+        raise RuntimeError("Source coordinate axis is not a usable one-dimensional grid")
+    selected = source[::int(stride)]
     if selected.size < 2:
         raise RuntimeError("Sampling stride leaves fewer than two grid coordinates")
     delta = np.diff(source)
+    if (not np.all(np.isfinite(delta)) or np.any(delta == 0)
+            or not (np.all(delta > 0) or np.all(delta < 0))):
+        raise RuntimeError("Source coordinate axis is not strictly monotonic")
     native_step = float(np.median(delta))
-    step = native_step * int(stride)
-    sampled_delta = np.diff(selected)
-    tolerance = max(5e-5, abs(step) * 2e-3)
-    if (not np.all(np.isfinite(sampled_delta)) or np.any(sampled_delta == 0)
-            or not (np.all(sampled_delta > 0) or np.all(sampled_delta < 0))
-            or not np.allclose(sampled_delta, step, rtol=0.0, atol=tolerance)):
-        raise RuntimeError("Sampled coordinate axis is materially irregular; refusing to resample")
-    return f"[({_number(selected[0])}):{_number(step)}:({_number(selected[-1])})]", selected
+    expected = _ocean.DATASETS["earth.oceans.chlorophyll"].get("expected_native_spacing_degrees")
+    if expected is not None and stride == 3 and abs(abs(native_step) - float(expected)) > 5e-5:
+        raise RuntimeError("Aqua MODIS native grid spacing does not match the documented 4 km grid")
+    sampled_step = native_step * int(stride)
+    if not np.allclose(np.diff(selected), sampled_step, rtol=0.0, atol=max(1e-7, abs(sampled_step) * 1e-4)):
+        raise RuntimeError("Sampled coordinate axis is irregular; refusing to resample")
+    return f"[({_number(selected[0])}):{int(stride)}:({_number(selected[-1])})]", selected
+
 
 def _axis_values(spec: dict, axis_name: str) -> np.ndarray:
     key = (spec["base"], spec["dataset_id"], axis_name)
@@ -81,18 +99,47 @@ def _axis_values(spec: dict, axis_name: str) -> np.ndarray:
     tolerance = max(5e-5, abs(step) * 2e-3)
     if expected is not None and abs(abs(step) - float(expected)) > max(5e-5, float(expected) * 0.02):
         raise RuntimeError(f"{spec['dataset_id']} {axis_name} spacing {step:.8g} does not match its documented native grid")
-    deviation = float(np.max(np.abs(delta - step)))
-    if deviation > tolerance:
-        raise RuntimeError(f"{spec['dataset_id']} {axis_name} axis is materially irregular (max deviation {deviation:.8g})")
+    if float(np.max(np.abs(delta - step))) > tolerance:
+        raise RuntimeError(f"{spec['dataset_id']} {axis_name} axis is materially irregular")
     _ocean._AXIS_CACHE[key] = axis
     return axis
 
-# Existing collector code resolves these helpers from ocean.py.
+
+_original_latest_erddap_time = _ocean._latest_erddap_time
+
+
+def _latest_erddap_time(spec: dict) -> dt.datetime:
+    """Use NASA's dated NRT product_name; ERDDAP time actual_range can lag."""
+    if spec.get("source_id") == "nasa_aqua_modis_chlorophyll_4km":
+        records = _ocean._dataset_info(spec)
+        for record in records:
+            if (str(record.get("Row Type", "")).lower() == "attribute"
+                    and record.get("Attribute Name") == "product_name"):
+                match = re.search(r"AQUA_MODIS\.(\d{8})\.L3m\.DAY\.CHL\.chlor_a\.4km\.NRT", str(record.get("Value", "")))
+                if match:
+                    day = dt.datetime.strptime(match.group(1), "%Y%m%d").date()
+                    latest = dt.datetime.combine(day, dt.time(12), tzinfo=dt.timezone.utc)
+                    age = dt.datetime.now(dt.timezone.utc) - latest
+                    if age > dt.timedelta(days=int(spec["max_age_days"])):
+                        raise RuntimeError(
+                            f"NASA Aqua MODIS latest product is stale ({age.days} days; "
+                            f"limit {spec['max_age_days']}): {latest.date().isoformat()}"
+                        )
+                    _ocean._LATEST_CACHE[(spec["base"], spec["dataset_id"])] = latest
+                    return latest
+        raise RuntimeError("NOAA ERDDAP metadata did not publish a dated NASA Aqua MODIS NRT product_name")
+    return _original_latest_erddap_time(spec)
+
+
+# The collector resolves these helpers from ocean.py at runtime.
 _ocean._axis_selector = _axis_selector
 _ocean._axis_values = _axis_values
+_ocean._latest_erddap_time = _latest_erddap_time
+
 
 def is_due(dataset: dict) -> bool:
     return _ocean.is_due(dataset)
+
 
 def collect(dataset: dict) -> dict:
     return _ocean.collect(dataset)

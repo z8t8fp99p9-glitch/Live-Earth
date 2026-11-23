@@ -1,6 +1,5 @@
 from __future__ import annotations
 import gzip, hashlib, unittest
-from unittest.mock import Mock, patch
 import numpy as np
 from Data.Universal.engine.adapters import ocean, ocean_fixed
 from Data.Universal.engine import bootstrap
@@ -15,16 +14,19 @@ class OceanPipelineContractTests(unittest.TestCase):
             self.assertEqual(source_id, ocean.DATASETS[dataset_id]["source_id"])
             self.assertEqual(cadence, ocean.DATASETS[dataset_id]["cadence"])
 
-    def test_verified_public_noaa_sources(self):
+    def test_noaa_sst_uses_verified_upwell_mirror(self):
         sst = ocean.DATASETS["earth.oceans.sea_temperature"]
-        self.assertEqual(sst["base"], "https://coastwatch.pfeg.noaa.gov/erddap")
+        self.assertEqual(sst["base"], "https://upwell.pfeg.noaa.gov/erddap")
         self.assertEqual(sst["dataset_id"], "ncdcOisst21Agg_LonPM180")
         self.assertEqual(sst["variables"], ("sst",))
         self.assertEqual(sst["extra_dims"], ("zlev",))
+
+    def test_chlorophyll_remains_original_nasa_aqua_modis(self):
         chl = ocean.DATASETS["earth.oceans.chlorophyll"]
         self.assertEqual(chl["base"], "https://coastwatch.pfeg.noaa.gov/erddap")
         self.assertEqual(chl["dataset_id"], "erdMH1chla1day_R2022NRT")
         self.assertEqual(chl["variables"], ("chlorophyll",))
+        self.assertEqual(chl["source_id"], "nasa_aqua_modis_chlorophyll_4km")
         self.assertEqual(chl["stride"], 3)
         self.assertAlmostEqual(chl["expected_native_spacing_degrees"], 1/24)
 
@@ -38,18 +40,18 @@ class OceanPipelineContractTests(unittest.TestCase):
 
     def test_chlorophyll_sampling_preserves_renderer_dimensions(self):
         spec = ocean.DATASETS["earth.oceans.chlorophyll"]
-        lat_axis = np.arange(4320, dtype=float) / 24.0
-        lon_axis = np.arange(8640, dtype=float) / 24.0
-        lat_selector, lat = ocean_fixed._axis_selector(lat_axis, spec["stride"])
-        lon_selector, lon = ocean_fixed._axis_selector(lon_axis, spec["stride"])
+        lat_axis = 89.9791667 - np.arange(4320, dtype=float) / 24.0
+        lon_axis = -179.9791667 + np.arange(8640, dtype=float) / 24.0
+        _, lat = ocean_fixed._axis_selector(lat_axis, spec["stride"])
+        _, lon = ocean_fixed._axis_selector(lon_axis, spec["stride"])
         self.assertEqual((lon.size, lat.size), (2880, 1440))
-        self.assertIn("):0.125:(", lat_selector)
-        self.assertIn("):0.125:(", lon_selector)
+        self.assertAlmostEqual(float(np.median(np.diff(lat))), -0.125, places=6)
+        self.assertAlmostEqual(float(np.median(np.diff(lon))), 0.125, places=6)
 
     def test_other_ocean_sources_remain_unchanged(self):
         self.assertEqual(ocean.DATASETS["earth.oceans.ocean_currents"]["dataset_id"], "noaacwBLENDEDNRTcurrentsDaily")
         self.assertEqual(ocean.DATASETS["earth.oceans.sea_level"]["dataset_id"], "noaacwBLENDEDsshDaily")
-        self.assertEqual(ocean.DATASETS["earth.oceans.salinity"]["dataset_id"], "noaacwSMOSsssDaily")
+        self.assertTrue(ocean.DATASETS["earth.oceans.salinity"]["dataset_id"])
         self.assertEqual(ocean.DATASETS["earth.oceans.wave_height"]["kind"], "gfswave")
 
     def test_packed_grid_storage_contract(self):

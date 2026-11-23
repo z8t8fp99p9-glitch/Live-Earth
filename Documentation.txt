@@ -1,0 +1,23 @@
+LIVE // EARTH — NOAA OCEAN / AQUA MODIS REPAIR
+
+Scope
+- Keeps chlorophyll on the original NASA Aqua MODIS R2022 NRT daily 4 km product:
+  dataset id: erdMH1chla1day_R2022NRT
+  variable: chlorophyll
+  source id: nasa_aqua_modis_chlorophyll_4km
+- DINEOF is not configured or referenced by this patch.
+- Keeps the existing chlorophyll renderer contract at 1,440 x 2,880.
+- Moves NOAA NCEI OISST v2.1 final to NOAA's Upwell ERDDAP mirror, which publishes the same dataset id and 0.25-degree grid.
+
+Corrections
+1. ERDDAP griddap selectors use integer index strides. The previous implementation emitted geographic coordinate spacing as the stride, which is not the ERDDAP selector syntax. The corrected chlorophyll selector uses integer stride 3 and validates that the sampled coordinates remain 0.125 degrees apart.
+2. The Aqua MODIS ERDDAP metadata can expose a stale time actual_range while the NRT product_name is current. The adapter now reads the date embedded in the published AQUA_MODIS.YYYYMMDD... product_name and applies a 7-day freshness check.
+3. Uses a transparent LIVE-EARTH open-data User-Agent rather than impersonating a browser.
+
+Validation
+- Python compileall succeeded.
+- 13 focused adapter/axis tests passed in the local validation environment.
+- Synthetic native-axis check confirms 4,320 x 8,640 sampled by 3 yields 1,440 x 2,880 and 0.125-degree coordinate spacing.
+- No live GitHub Actions execution or NOAA request from GitHub-hosted runner has been performed by this package. The previous Actions run returned HTTP 403 from the CoastWatch ERDDAP info endpoint for both SST and MODIS. OISST now uses the verified NOAA Upwell mirror. The MODIS source endpoint remains the original CoastWatch ERDDAP because no verified alternate host for this exact current Aqua MODIS dataset was established; its live 403 must be checked again after upload.
+
+No changes are made to the repository directly. Upload this single root ZIP through the existing ZIP extractor workflow.
