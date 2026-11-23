@@ -1,0 +1,63 @@
+{
+  "cell_count": 64800,
+  "compressed_payload": true,
+  "coordinate_order": "latitude-longitude",
+  "data_kind": "grid",
+  "database_schema_version": 1,
+  "dataset": "Ocean heat content anomaly, 0\u20132000 m",
+  "dataset_id": "earth.oceans.ocean_heat",
+  "description": "NOAA NCEI monthly globally analyzed ocean heat-content anomaly integrated over 0\u20132000 m. The source field is retained on its native 1-degree latitude/longitude grid; no interpolation or regridding is performed.",
+  "encoding": "little-endian signed int16; value = stored_integer / 100",
+  "format": "gzip+int16-le-div-100",
+  "height": 180,
+  "latitude_first": -89.5,
+  "latitude_step": 1.0,
+  "longitude_convention": "-180..180",
+  "longitude_first": -179.5,
+  "longitude_step": 1.0,
+  "missing_cell_count": 23342,
+  "native_grid_spacing_degrees": {
+    "latitude": 1.0,
+    "longitude": 1.0
+  },
+  "nodata_value": -327.67999267578125,
+  "observation_note": "Monthly global 0\u20132000 m ocean heat-content anomaly from NOAA NCEI. Values are retained on the native 1-degree grid; no interpolation, regridding, or temporal synthesis is performed.",
+  "observed_at_utc": "2026-06-16T00:00:00Z",
+  "processing_level": "monthly_global_analyzed_0_2000m_heat_content_anomaly",
+  "product": "Global monthly ocean heat content anomaly, 0\u20132000 m, 1-degree analyzed fields",
+  "provider": "NOAA National Centers for Environmental Information",
+  "quality_status": "noaa_ncei_monthly_native_one_degree_grid_validated_no_interpolation",
+  "record_count": null,
+  "retrieved_at_utc": "2026-11-23T18:18:13.799362Z",
+  "row_order": "south-to-north",
+  "scale_factor": 100,
+  "schema_version": 1,
+  "sha256_uncompressed_values": "28cb019a60af4e60ccd7311ea5532e156d29120f06a68a4029717c4c77132642",
+  "source_aggregation_factor": null,
+  "source_etag": "\"40183c1-65d2429f84dd9\"",
+  "source_file": "heat_content_anomaly_0-2000_monthly.nc",
+  "source_id": "noaa_ncei_ohc_0_2000_monthly",
+  "source_last_modified_utc": "2026-10-06T04:09:24Z",
+  "source_name": "Global monthly ocean heat content anomaly, 0\u20132000 m, 1-degree analyzed fields",
+  "source_sample_stride": 1,
+  "source_url": "https://www.ncei.noaa.gov/data/oceans/woa/DATA_ANALYSIS/3M_HEAT_CONTENT/NETCDF/heat_content/heat_content_anomaly_0-2000_monthly.nc",
+  "source_urls": [
+    "https://www.ncei.noaa.gov/data/oceans/woa/DATA_ANALYSIS/3M_HEAT_CONTENT/NETCDF/heat_content/heat_content_anomaly_0-2000_monthly.nc"
+  ],
+  "source_variables": [
+    "h18_hc"
+  ],
+  "stored_grid_spacing_degrees": {
+    "latitude": 1.0,
+    "longitude": 1.0
+  },
+  "units": "10^18 J",
+  "updated_at_utc": "2026-11-23T18:18:13.803746Z",
+  "valid_cell_count": 41458,
+  "valid_time_utc": "2026-06-16T00:00:00Z",
+  "value_bytes": 67245,
+  "value_file": "values.bin",
+  "value_sha256": "8e9197da344d33425eb7ad6f29d307ebbe43aaceaf02b1ed68340a368ee90522",
+  "variable": "h18_hc",
+  "width": 360
+}

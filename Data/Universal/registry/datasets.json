@@ -303,7 +303,7 @@
       "legacy_ids": [
         "OCEANS_03"
       ],
-      "status": "collector_configured_success",
+      "status": "collector_configured_failed",
       "collection": {
         "enabled": true,
         "adapter_id": "ocean_fixed",
@@ -366,7 +366,7 @@
       "legacy_ids": [
         "OCEANS_06"
       ],
-      "status": "collector_configured_success",
+      "status": "collector_configured_failed",
       "collection": {
         "enabled": true,
         "adapter_id": "ocean_fixed",
@@ -387,7 +387,7 @@
       "legacy_ids": [
         "OCEANS_07"
       ],
-      "status": "collector_configured_success",
+      "status": "collector_configured_failed",
       "collection": {
         "enabled": true,
         "adapter_id": "ocean_additional",
@@ -408,7 +408,7 @@
       "legacy_ids": [
         "OCEANS_08"
       ],
-      "status": "collector_configured_success",
+      "status": "collector_configured_failed",
       "collection": {
         "enabled": true,
         "adapter_id": "ocean_additional",
@@ -429,7 +429,7 @@
       "legacy_ids": [
         "OCEANS_09"
       ],
-      "status": "collector_configured_failed",
+      "status": "collector_configured_success",
       "collection": {
         "enabled": true,
         "adapter_id": "ocean_additional",
@@ -450,7 +450,7 @@
       "legacy_ids": [
         "OCEANS_10"
       ],
-      "status": "collector_configured_success",
+      "status": "collector_configured_failed",
       "collection": {
         "enabled": true,
         "adapter_id": "ocean_additional",
