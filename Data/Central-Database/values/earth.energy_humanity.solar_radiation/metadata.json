@@ -10,12 +10,12 @@
   "parameter": "ALLSKY_SFC_SW_DWN",
   "record_count": 6,
   "request_urls": {
-    "east_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=35.0&latitude=0.0&start=19810101&end=20261122&format=JSON",
-    "east_asia_pacific": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=125.0&latitude=25.0&start=19810101&end=20261122&format=JSON",
-    "europe_north_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=15.0&latitude=35.0&start=19810101&end=20261122&format=JSON",
-    "north_america": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=-100.0&latitude=40.0&start=19810101&end=20261122&format=JSON",
-    "south_america": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=-60.0&latitude=-15.0&start=19810101&end=20261122&format=JSON",
-    "south_asia": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=80.0&latitude=20.0&start=19810101&end=20261122&format=JSON"
+    "east_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=35.0&latitude=0.0&start=19810101&end=20261123&format=JSON",
+    "east_asia_pacific": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=125.0&latitude=25.0&start=19810101&end=20261123&format=JSON",
+    "europe_north_africa": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=15.0&latitude=35.0&start=19810101&end=20261123&format=JSON",
+    "north_america": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=-100.0&latitude=40.0&start=19810101&end=20261123&format=JSON",
+    "south_america": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=-60.0&latitude=-15.0&start=19810101&end=20261123&format=JSON",
+    "south_asia": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=80.0&latitude=20.0&start=19810101&end=20261123&format=JSON"
   },
   "sample_tiles": [
     {
@@ -52,8 +52,8 @@
   "source_id": "nasa_power_daily",
   "source_name": "NASA POWER daily all-sky surface shortwave radiation at six regional sample points",
   "units": "kWh/m^2/day",
-  "updated_at_utc": "2026-11-22T22:11:59.616681Z",
+  "updated_at_utc": "2026-11-23T02:03:41.340665Z",
   "value_bytes": 3378,
   "value_file": "records.jsonl",
-  "value_sha256": "3d34516194b2af5bd50c05998d414de332b0ea436f4a1338b0e03ff49d4022f3"
+  "value_sha256": "79309f095b083fc5aca0e2c7585e642451e1957e73a3148d468bc4f750010496"
 }
