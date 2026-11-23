@@ -261,7 +261,7 @@
       "legacy_ids": [
         "OCEANS_01"
       ],
-      "status": "collector_configured_success",
+      "status": "collector_configured_failed",
       "collection": {
         "enabled": true,
         "adapter_id": "ocean_fixed",
@@ -303,7 +303,7 @@
       "legacy_ids": [
         "OCEANS_03"
       ],
-      "status": "collector_configured_success",
+      "status": "collector_configured_failed",
       "collection": {
         "enabled": true,
         "adapter_id": "ocean_fixed",
