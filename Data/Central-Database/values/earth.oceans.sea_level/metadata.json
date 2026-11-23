@@ -15,31 +15,31 @@
   "longitude_convention": "-180..180",
   "longitude_first": -179.875,
   "longitude_step": 0.25,
-  "missing_cell_count": 470332,
+  "missing_cell_count": 470170,
   "native_grid_spacing_degrees": {
     "latitude": 0.25,
     "longitude": 0.25
   },
   "nodata_value": -32.768001556396484,
   "observation_note": "Source grid values are retained without interpolation. Missing, land, and out-of-range cells remain no-data.",
-  "observed_at_utc": "2026-11-21T00:00:00Z",
+  "observed_at_utc": "2026-11-22T00:00:00Z",
   "processing_level": "latest_published_source_grid",
   "product": "Global near-real-time daily sea-surface height anomaly from satellite altimetry",
   "provider": "NOAA CoastWatch / PolarWatch",
   "quality_status": "native_source_grid_validated_no_interpolation",
   "record_count": null,
-  "retrieved_at_utc": "2026-11-23T12:16:13.640321Z",
+  "retrieved_at_utc": "2026-11-23T13:36:09.529875Z",
   "row_order": "south-to-north",
   "scale_factor": 1000,
   "schema_version": 1,
-  "sha256_uncompressed_values": "e74998422d9054ed5863ade7521dcba31bb2a62fd8e10c16b51157a2e9c4837a",
+  "sha256_uncompressed_values": "dc82baf991e2fcab960d9d8d50b3dc96e6a1205924f75960d7042330abe06ae9",
   "source_file": "noaacwBLENDEDsshDaily.nc",
   "source_id": "noaa_coastwatch_nrt_sla",
   "source_name": "Global near-real-time daily sea-surface height anomaly from satellite altimetry",
   "source_sample_stride": 1,
-  "source_url": "https://polarwatch.noaa.gov/erddap/griddap/noaacwBLENDEDsshDaily.nc?sla[(2026-11-21T00:00:00Z)][(-89.875):1:(89.875)][(-179.875):1:(179.875)]",
+  "source_url": "https://polarwatch.noaa.gov/erddap/griddap/noaacwBLENDEDsshDaily.nc?sla[(2026-11-22T00:00:00Z)][(-89.875):1:(89.875)][(-179.875):1:(179.875)]",
   "source_urls": [
-    "https://polarwatch.noaa.gov/erddap/griddap/noaacwBLENDEDsshDaily.nc?sla[(2026-11-21T00:00:00Z)][(-89.875):1:(89.875)][(-179.875):1:(179.875)]"
+    "https://polarwatch.noaa.gov/erddap/griddap/noaacwBLENDEDsshDaily.nc?sla[(2026-11-22T00:00:00Z)][(-89.875):1:(89.875)][(-179.875):1:(179.875)]"
   ],
   "source_variables": [
     "sla"
@@ -49,12 +49,12 @@
     "longitude": 0.25
   },
   "units": "m",
-  "updated_at_utc": "2026-11-23T12:16:13.642060Z",
-  "valid_cell_count": 566468,
-  "valid_time_utc": "2026-11-21T00:00:00Z",
-  "value_bytes": 740971,
+  "updated_at_utc": "2026-11-23T13:36:09.532169Z",
+  "valid_cell_count": 566630,
+  "valid_time_utc": "2026-11-22T00:00:00Z",
+  "value_bytes": 741749,
   "value_file": "values.bin",
-  "value_sha256": "db42aef72e8787d7898fbefd23897b4916870c61287444517c05f8238fc98e16",
+  "value_sha256": "d4632a78fe11ddafc45ad87ec91df394e960c9d8c4a78430feb3036a985c0225",
   "variable": "sla",
   "width": 1440
 }
