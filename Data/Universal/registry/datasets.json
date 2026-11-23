@@ -303,18 +303,18 @@
       "legacy_ids": [
         "OCEANS_03"
       ],
-      "status": "collector_configured_failed",
+      "status": "collector_configured_success",
       "collection": {
         "enabled": true,
         "adapter_id": "ocean_fixed",
-        "source_id": "noaa_coastwatch_smos",
-        "cadence": "daily"
+        "source_id": "noaa_coastwatch_smos_3day_composite",
+        "cadence": "3-day"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
         "units": "PSU",
-        "spatial_coverage": "global_native_0.25_degree_grid_smos_sea_surface_salinity",
-        "temporal_resolution": "daily_source_observation"
+        "spatial_coverage": "global_native_0.25_degree_grid_smos_3day_mean_composite",
+        "temporal_resolution": "three_day_mean_source_composite"
       },
       "provenance_required": true
     },
@@ -370,14 +370,14 @@
       "collection": {
         "enabled": true,
         "adapter_id": "ocean_fixed",
-        "source_id": "nasa_aqua_modis_chlorophyll_4km",
-        "cadence": "daily"
+        "source_id": "nasa_aqua_modis_chlorophyll_8day",
+        "cadence": "8-day"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
         "units": "mg m-3",
-        "spatial_coverage": "global_0.125_degree_sampled_from_nasa_aqua_modis_0.04167_degree_chlorophyll_grid",
-        "temporal_resolution": "daily_source_observation"
+        "spatial_coverage": "global_0.125_degree_sampled_from_nasa_aqua_modis_8day_0.04167_degree_chlorophyll_grid",
+        "temporal_resolution": "eight_day_centered_source_composite"
       },
       "provenance_required": true
     },

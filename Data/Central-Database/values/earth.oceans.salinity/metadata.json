@@ -6,7 +6,7 @@
   "database_schema_version": 1,
   "dataset": "Sea surface salinity",
   "dataset_id": "earth.oceans.salinity",
-  "description": "Daily sea-surface salinity derived from ESA SMOS satellite observations and distributed openly by NOAA CoastWatch.",
+  "description": "NOAA CoastWatch's precomputed 3-day mean of ESA SMOS MIRAS Level-2 corrected sea-surface salinity. One centered composite is fetched as a complete 720 by 1440 global grid; no daily grids are assembled locally and no interpolation is applied.",
   "encoding": "little-endian signed int16; value = stored_integer / 100",
   "format": "gzip+int16-le-div-100",
   "height": 720,
@@ -15,31 +15,31 @@
   "longitude_convention": "-180..180",
   "longitude_first": -179.875,
   "longitude_step": 0.25,
-  "missing_cell_count": 792136,
+  "missing_cell_count": 628634,
   "native_grid_spacing_degrees": {
     "latitude": 0.25,
     "longitude": 0.25
   },
   "nodata_value": -327.67999267578125,
   "observation_note": "Source grid values are retained without interpolation. Missing, land, and out-of-range cells remain no-data.",
-  "observed_at_utc": "2026-11-21T12:00:00Z",
+  "observed_at_utc": "2026-11-18T12:00:00Z",
   "processing_level": "latest_published_source_grid",
-  "product": "MIRAS SMOS near-real-time daily sea-surface salinity, global 0.25 degree",
+  "product": "NOAA CoastWatch MIRAS SMOS Level-3 global 0.25-degree 3-day mean sea-surface salinity composite",
   "provider": "NOAA NESDIS CoastWatch",
   "quality_status": "native_source_grid_validated_no_interpolation",
   "record_count": null,
-  "retrieved_at_utc": "2026-11-23T12:15:45.317162Z",
+  "retrieved_at_utc": "2026-11-23T15:11:03.114096Z",
   "row_order": "south-to-north",
   "scale_factor": 100,
   "schema_version": 1,
-  "sha256_uncompressed_values": "97e7f97960305be405999ccdc95ecc180383abbaf2c5244cea4d4c43d062cdba",
-  "source_file": "coastwatchSMOSv662SSS1day.nc",
-  "source_id": "noaa_coastwatch_smos",
-  "source_name": "MIRAS SMOS near-real-time daily sea-surface salinity, global 0.25 degree",
+  "sha256_uncompressed_values": "e192a25fcbe757c38f1f71b1679be46d726169994754d2b1ef83dbb6c4d67e12",
+  "source_file": "coastwatchSMOSv662SSS3day.nc",
+  "source_id": "noaa_coastwatch_smos_3day_composite",
+  "source_name": "NOAA CoastWatch MIRAS SMOS Level-3 global 0.25-degree 3-day mean sea-surface salinity composite",
   "source_sample_stride": 1,
-  "source_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/coastwatchSMOSv662SSS1day.nc?sss[(2026-11-21T12:00:00Z)][(0)][(-89.875):1:(89.875)][(-179.875):1:(179.875)]",
+  "source_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/coastwatchSMOSv662SSS3day.nc?sss[(2026-11-18T12:00:00Z)][(0)][(-89.875):1:(89.875)][(-179.875):1:(179.875)]",
   "source_urls": [
-    "https://coastwatch.pfeg.noaa.gov/erddap/griddap/coastwatchSMOSv662SSS1day.nc?sss[(2026-11-21T12:00:00Z)][(0)][(-89.875):1:(89.875)][(-179.875):1:(179.875)]"
+    "https://coastwatch.pfeg.noaa.gov/erddap/griddap/coastwatchSMOSv662SSS3day.nc?sss[(2026-11-18T12:00:00Z)][(0)][(-89.875):1:(89.875)][(-179.875):1:(179.875)]"
   ],
   "source_variables": [
     "sss"
@@ -49,12 +49,12 @@
     "longitude": 0.25
   },
   "units": "PSU",
-  "updated_at_utc": "2026-11-23T12:15:45.318969Z",
-  "valid_cell_count": 244664,
-  "valid_time_utc": "2026-11-21T12:00:00Z",
-  "value_bytes": 418745,
+  "updated_at_utc": "2026-11-23T15:11:03.116906Z",
+  "valid_cell_count": 408166,
+  "valid_time_utc": "2026-11-18T12:00:00Z",
+  "value_bytes": 621507,
   "value_file": "values.bin",
-  "value_sha256": "22d11125f024ec7749a712c2bc5614196eacc8051ceb695ba4ce83057e032324",
+  "value_sha256": "02b5fce3036f045d248327055f37e0921500703e74c31495e51b907a6ace7bc7",
   "variable": "sss",
   "width": 1440
 }

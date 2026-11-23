@@ -6,7 +6,7 @@
   "database_schema_version": 1,
   "dataset": "Chlorophyll-a concentration",
   "dataset_id": "earth.oceans.chlorophyll",
-  "description": "NASA Aqua MODIS daily chlorophyll-a observations distributed by NOAA CoastWatch ERDDAP. Every third native 4 km cell is selected to match the existing 0.125-degree renderer grid; no interpolation or gap-filling is applied.",
+  "description": "NASA Aqua MODIS R2022 near-real-time 8-day Level-3 mapped chlorophyll-a composite distributed by NOAA CoastWatch ERDDAP. The complete 4320 by 8640 source grid is sampled at a fixed integer stride of three to preserve LIVE // EARTH's existing 1440 by 2880 target grid; no additional interpolation or gap-filling is applied.",
   "encoding": "little-endian signed int16; value = stored_integer / 10",
   "format": "gzip+int16-le-div-10",
   "height": 1440,
@@ -15,31 +15,31 @@
   "longitude_convention": "-180..180",
   "longitude_first": -179.9791717529297,
   "longitude_step": 0.125,
-  "missing_cell_count": 3998802,
+  "missing_cell_count": 3121112,
   "native_grid_spacing_degrees": {
     "latitude": 0.041666666666666664,
     "longitude": 0.041666666666666664
   },
   "nodata_value": -3276.800048828125,
   "observation_note": "Source grid values are retained without interpolation. Missing, land, and out-of-range cells remain no-data.",
-  "observed_at_utc": "2026-11-21T12:00:00Z",
+  "observed_at_utc": "2026-11-13T00:00:00Z",
   "processing_level": "latest_published_source_grid",
-  "product": "NASA Aqua MODIS Level-3 mapped global daily chlorophyll-a, 4 km, R2022 NRT",
+  "product": "NASA Aqua MODIS Level-3 mapped global 8-day chlorophyll-a composite, 4 km, R2022 NRT",
   "provider": "NOAA NESDIS STAR CoastWatch",
   "quality_status": "native_source_grid_sampled_by_integer_stride_no_interpolation",
   "record_count": null,
-  "retrieved_at_utc": "2026-11-23T13:52:54.594731Z",
+  "retrieved_at_utc": "2026-11-23T15:11:14.052447Z",
   "row_order": "north-to-south",
   "scale_factor": 10,
   "schema_version": 1,
-  "sha256_uncompressed_values": "f2f51e05a24d7d78e992e76824b01cdc2929197b3e65c2a7758a081261933782",
-  "source_file": "erdMH1chla1day_R2022NRT.nc",
-  "source_id": "nasa_aqua_modis_chlorophyll_4km",
-  "source_name": "NASA Aqua MODIS Level-3 mapped global daily chlorophyll-a, 4 km, R2022 NRT",
+  "sha256_uncompressed_values": "0187b0c9f04e663c33d67b535019e72760a9de02432cb5af2281647fcb5c3700",
+  "source_file": "erdMH1chla8day_R2022NRT.nc",
+  "source_id": "nasa_aqua_modis_chlorophyll_8day",
+  "source_name": "NASA Aqua MODIS Level-3 mapped global 8-day chlorophyll-a composite, 4 km, R2022 NRT",
   "source_sample_stride": 3,
-  "source_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1chla1day_R2022NRT.nc?chlorophyll[(2026-11-21T12:00:00Z)][(89.979164):3:(-89.895836)][(-179.97917):3:(179.89584)]",
+  "source_url": "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1chla8day_R2022NRT.nc?chlorophyll[(2026-11-13T00:00:00Z)][(89.979164):3:(-89.895836)][(-179.97917):3:(179.89584)]",
   "source_urls": [
-    "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1chla1day_R2022NRT.nc?chlorophyll[(2026-11-21T12:00:00Z)][(89.979164):3:(-89.895836)][(-179.97917):3:(179.89584)]"
+    "https://coastwatch.pfeg.noaa.gov/erddap/griddap/erdMH1chla8day_R2022NRT.nc?chlorophyll[(2026-11-13T00:00:00Z)][(89.979164):3:(-89.895836)][(-179.97917):3:(179.89584)]"
   ],
   "source_variables": [
     "chlorophyll"
@@ -49,12 +49,12 @@
     "longitude": 0.125
   },
   "units": "mg m-3",
-  "updated_at_utc": "2026-11-23T13:52:54.600691Z",
-  "valid_cell_count": 148398,
-  "valid_time_utc": "2026-11-21T12:00:00Z",
-  "value_bytes": 107084,
+  "updated_at_utc": "2026-11-23T15:11:14.059838Z",
+  "valid_cell_count": 1026088,
+  "valid_time_utc": "2026-11-13T00:00:00Z",
+  "value_bytes": 400078,
   "value_file": "values.bin",
-  "value_sha256": "1c4405d5fd01589bc64d6003c4d4858968bfb43083853c902078dc78f979a49d",
+  "value_sha256": "95ae91ab4aab439c6c264a157333c7c9b5bd16299cd4d5400fbd12e55a7fc421",
   "variable": "chlorophyll",
   "width": 2880
 }
