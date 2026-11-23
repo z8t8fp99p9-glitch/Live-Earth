@@ -30,3 +30,12 @@ not be rendered as global grids.
 
 No existing Atmosphere adapter, Globe renderer, Composition controller,
 navigation, or Stacks registration is replaced by this overlay.
+
+
+GRIB decoding correction (2026-11-23):
+- PWAT and TOZNE use GRIB2 fixed-surface type 200, decoded by ecCodes as
+  atmosphereSingleLayer. Their decoder filters now select that level type.
+- TCDC uses the entire-atmosphere level (type 10), decoded as atmosphere.
+- All three decoder filters explicitly select stepType=instant so an
+  interval-averaged cloud-cover message cannot be mistaken for the
+  instantaneous total-cloud-cover field.

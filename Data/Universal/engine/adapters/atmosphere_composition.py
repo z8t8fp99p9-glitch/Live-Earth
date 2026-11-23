@@ -37,7 +37,7 @@ DATASETS = {
         "name": "water_vapour",
         "variable": "PWAT",
         "level": "entire_atmosphere_(considered_as_a_single_layer)",
-        "filter": {"typeOfLevel": "atmosphere"},
+        "filter": {"typeOfLevel": "atmosphereSingleLayer", "stepType": "instant"},
         "units": "kg/m^2",
         "scale": 100,
         "description": "Total-column precipitable water from NOAA GFS; not near-surface humidity.",
@@ -48,7 +48,7 @@ DATASETS = {
         "name": "cloud_properties",
         "variable": "TCDC",
         "level": "entire_atmosphere",
-        "filter": {"typeOfLevel": "atmosphere"},
+        "filter": {"typeOfLevel": "atmosphere", "stepType": "instant"},
         "units": "percent",
         "scale": 100,
         "description": "Total cloud cover from NOAA GFS; this is cloud fraction, not a full cloud microphysics product.",
@@ -59,7 +59,7 @@ DATASETS = {
         "name": "ozone",
         "variable": "TOZNE",
         "level": "entire_atmosphere_(considered_as_a_single_layer)",
-        "filter": {"typeOfLevel": "atmosphere"},
+        "filter": {"typeOfLevel": "atmosphereSingleLayer", "stepType": "instant"},
         "units": "Dobson_unit",
         "scale": 10,
         "description": "Total-column ozone from NOAA GFS, expressed in Dobson units.",
@@ -90,7 +90,7 @@ def is_due(dataset):
     if cycle is None:
         return True
     dataset_id = dataset["dataset_id"]
-    root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "Data", "Central-Database", "values"))
+    root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "Central-Database", "values"))
     metadata_path = os.path.join(root, dataset_id, "metadata.json")
     if not os.path.isfile(metadata_path):
         return True
