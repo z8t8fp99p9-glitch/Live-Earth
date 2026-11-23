@@ -3,7 +3,7 @@ name: LIVE // EARTH Universal Data Refresh
 
 on:
   schedule:
-    # Run automatically every hour at minute 23 UTC.
+    # Run automatically every hour at minute 55 UTC.
     - cron: "55 * * * *"
 
   # Allow manual runs from GitHub Actions.
@@ -62,8 +62,8 @@ jobs:
         run: |
           python -m Data.Universal.engine.collector
 
-      - name: Commit central database and registry
-        if: always() && steps.checkout.outcome == 'success' && steps.collect.outcome == 'success'
+      - name: Commit successful datasets and registry
+        if: always() && steps.checkout.outcome == 'success'
         run: |
           git add Data/Universal Data/Central-Database
 
