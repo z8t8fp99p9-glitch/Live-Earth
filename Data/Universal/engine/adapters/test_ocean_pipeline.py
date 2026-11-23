@@ -21,6 +21,20 @@ class OceanPipelineContractTests(unittest.TestCase):
             self.assertEqual(source_id, ocean.DATASETS[dataset_id]["source_id"])
             self.assertEqual(cadence, ocean.DATASETS[dataset_id]["cadence"])
 
+    def test_recovered_ocean_sources_use_current_noaa_public_distributions(self):
+        sst = ocean.DATASETS["earth.oceans.sea_temperature"]
+        self.assertEqual(sst["base"], "https://www.ncei.noaa.gov/erddap")
+        self.assertEqual(sst["dataset_id"], "ncdc_oisst_v2_avhrr_by_time_zlev_lat_lon")
+        self.assertEqual(sst["extra_dims"], ("depth",))
+        salinity = ocean.DATASETS["earth.oceans.salinity"]
+        self.assertEqual(salinity["base"], "https://polarwatch.noaa.gov/erddap")
+        self.assertEqual(salinity["dataset_id"], "noaacwSMOSsssDaily")
+        chlorophyll = ocean.DATASETS["earth.oceans.chlorophyll"]
+        self.assertEqual(chlorophyll["base"], "https://coastwatch.noaa.gov/erddap")
+        self.assertEqual(chlorophyll["dataset_id"], "noaacwN20N21DINEOF2kmDaily")
+        self.assertEqual(chlorophyll["source_id"], "noaa_coastwatch_n20_n21_dineof_chlorophyll_2km")
+        self.assertAlmostEqual(chlorophyll["expected_native_spacing_degrees"], 1 / 48)
+
     def test_all_six_layers_route_to_one_corrected_adapter(self):
         expected = {
             "earth.oceans.sea_temperature", "earth.oceans.ocean_currents",
@@ -44,6 +58,18 @@ class OceanPipelineContractTests(unittest.TestCase):
         self.assertIn("[(-179.875):1:(-179.125)]", url)
         self.assertEqual(requested_lat.size, 4)
         self.assertEqual(requested_lon.size, 4)
+
+    def test_ncei_latest_time_prefers_iso_time_coverage_end(self):
+        spec = dict(ocean.DATASETS["earth.oceans.sea_temperature"])
+        records = [
+            {"Row Type": "attribute", "Variable Name": "NC_GLOBAL",
+             "Attribute Name": "time_coverage_end", "Value": "2026-11-07T12:00:00Z"},
+            {"Row Type": "attribute", "Variable Name": "time",
+             "Attribute Name": "actual_range", "Value": "0, 1"},
+        ]
+        with patch.object(ocean, "_dataset_info", return_value=records):
+            latest = ocean._latest_erddap_time(spec)
+        self.assertEqual(latest, ocean.dt.datetime(2026, 11, 7, 12, tzinfo=ocean.UTC))
 
     def test_provider_variable_names_can_be_resolved_from_metadata(self):
         records = [
@@ -130,7 +156,7 @@ class OceanPipelineContractTests(unittest.TestCase):
             spec = ocean.DATASETS[dataset_id]
             self.assertEqual(spec["units"], units)
             if dataset_id == "earth.oceans.chlorophyll":
-                self.assertEqual(((8640 - 1) // 3 + 1, (4320 - 1) // 3 + 1), (width, height))
+                self.assertEqual(((17280 - 1) // 6 + 1, (8640 - 1) // 6 + 1), (width, height))
             elif dataset_id == "earth.oceans.wave_height":
                 self.assertEqual((width, height), (1440, 721))
             else:

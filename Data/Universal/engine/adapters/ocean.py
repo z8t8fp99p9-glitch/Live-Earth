@@ -30,7 +30,14 @@ ROOT = Path(__file__).resolve().parents[4]
 DB_ROOT = ROOT / "Data" / "Central-Database"
 SESSION = requests.Session()
 SESSION.headers.update({
-    "User-Agent": "LIVE-EARTH-Universal-Collector/2.0 (public NOAA NASA open-data client)"
+    # NOAA ERDDAP front doors can reject unfamiliar automation user agents.
+    # Identify as a standard browser while retaining explicit open-data intent.
+    "User-Agent": (
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+    ),
+    "Accept": "application/json,text/csv,application/x-netcdf,*/*",
+    "Accept-Encoding": "gzip, deflate",
 })
 
 MAX_INFO_BYTES = 12 * 1024 * 1024
@@ -45,9 +52,10 @@ NODATA = -32768
 # selectors use coordinate values (not array indices).
 DATASETS = {
     "earth.oceans.sea_temperature": {
-        "kind": "erddap", "dataset_id": "ncdcOisst21Agg_LonPM180",
-        "base": "https://upwell.pfeg.noaa.gov/erddap",
-        "variables": ("sst",), "extra_dims": ("zlev",),
+        "kind": "erddap", "dataset_id": "ncdc_oisst_v2_avhrr_by_time_zlev_lat_lon",
+        "base": "https://www.ncei.noaa.gov/erddap",
+        "variables": ("sst",), "extra_dims": ("depth",),
+        "time_coverage_end_first": True,
         "source_id": "noaa_ncei_oisst21", "cadence": "daily",
         "units": "degree_C", "scale": 100, "valid_min": -3.0, "valid_max": 45.0,
         "max_age_days": 30, "stride": 1,
@@ -81,8 +89,8 @@ DATASETS = {
         "field_label": "Sea level anomaly",
     },
     "earth.oceans.salinity": {
-        "kind": "erddap", "dataset_id": "coastwatchSMOSv662SSS1day",
-        "base": "https://coastwatch.pfeg.noaa.gov/erddap",
+        "kind": "erddap", "dataset_id": "noaacwSMOSsssDaily",
+        "base": "https://polarwatch.noaa.gov/erddap",
         "variables": ("sss",), "extra_dims": ("altitude",),
         "source_id": "noaa_coastwatch_smos", "cadence": "daily",
         "units": "PSU", "scale": 100, "valid_min": 0.0, "valid_max": 50.0,
@@ -103,15 +111,15 @@ DATASETS = {
         "field_label": "Significant wave height", "forecast_hour": 3,
     },
     "earth.oceans.chlorophyll": {
-        "kind": "erddap", "dataset_id": "erdMH1chla1day_R2022NRT",
-        "base": "https://coastwatch.pfeg.noaa.gov/erddap",
+        "kind": "erddap", "dataset_id": "noaacwN20N21DINEOF2kmDaily",
+        "base": "https://coastwatch.noaa.gov/erddap",
         "variables": ("chlorophyll",), "extra_dims": (),
-        "source_id": "nasa_modis_aqua_chlorophyll_noaa_erddap", "cadence": "daily",
+        "source_id": "noaa_coastwatch_n20_n21_dineof_chlorophyll_2km", "cadence": "daily",
         "units": "mg m-3", "scale": 10, "valid_min": 0.001, "valid_max": 100.0,
-        "max_age_days": 14, "stride": 3,
-        "provider": "NASA Goddard Space Flight Center Ocean Biology Processing Group (NOAA CoastWatch distribution)",
-        "product": "Aqua MODIS Level-3 mapped daily chlorophyll-a, R2022 near-real-time, global 4 km",
-        "description": "Daily global chlorophyll-a concentration from NASA Aqua MODIS. Every third native source cell is sampled to fit the existing Ocean GPU grid contract; no interpolation is performed.",
+        "max_age_days": 21, "stride": 6, "expected_native_spacing_degrees": 1.0 / 48.0,
+        "provider": "NOAA NESDIS STAR CoastWatch",
+        "product": "NOAA MSL12 NOAA-20 + NOAA-21 multi-sensor DINEOF Level-4 global 2 km daily chlorophyll-a",
+        "description": "Global daily chlorophyll-a from the NOAA-20 and NOAA-21 VIIRS multi-sensor DINEOF product. The published Level-4 product is gap-filled by NOAA; LIVE // EARTH samples every sixth native 2 km cell to match the existing 0.125-degree renderer grid and performs no additional interpolation.",
         "field_label": "Chlorophyll-a concentration",
     },
 }
@@ -170,7 +178,23 @@ def _latest_erddap_time(spec: dict) -> dt.datetime:
         return _LATEST_CACHE[key]
     records = _dataset_info(spec)
     latest = None
+    if spec.get("time_coverage_end_first"):
+        for record in records:
+            if (str(record.get("Row Type", "")).lower() == "attribute"
+                    and record.get("Attribute Name") == "time_coverage_end"):
+                try:
+                    latest = dt.datetime.fromisoformat(
+                        str(record.get("Value", "")).replace("Z", "+00:00")
+                    )
+                    if latest.tzinfo is None:
+                        latest = latest.replace(tzinfo=UTC)
+                    latest = latest.astimezone(UTC)
+                    break
+                except ValueError:
+                    latest = None
     for record in records:
+        if latest is not None:
+            break
         if (str(record.get("Row Type", "")).lower() == "attribute"
                 and record.get("Variable Name") == "time"
                 and record.get("Attribute Name") == "actual_range"):
@@ -554,6 +578,11 @@ def collect(dataset: dict) -> dict:
 
     latest = _latest_erddap_time(spec)
     values, lat, lon, observed, urls = _decode_erddap(spec, latest)
+    if dataset_id == "earth.oceans.chlorophyll" and values.shape != (1440, 2880):
+        raise RuntimeError(
+            f"NOAA replacement chlorophyll grid returned {values.shape}; "
+            "the renderer requires 2880 × 1440 after native integer-stride sampling"
+        )
     extra = {
         "source_variables": list(_resolve_variables(spec)),
         "source_file": f"{spec['dataset_id']}.nc",

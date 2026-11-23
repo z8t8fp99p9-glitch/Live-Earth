@@ -79,10 +79,18 @@ def _axis_values(spec: dict, axis_name: str) -> np.ndarray:
     if not np.isfinite(step) or abs(step) < 1e-10:
         raise RuntimeError(f"{spec['dataset_id']} {axis_name} axis has no usable spacing")
 
-    if spec.get("units") == "mg m-3":
-        # MODIS Aqua R2022NRT 4 km coordinates are serialized through ERDDAP
-        # with small float precision variations. A 0.0005-degree cap is about
-        # 1.2% of a nominal 1/24-degree cell and cannot conceal missing cells.
+    if spec.get("expected_native_spacing_degrees"):
+        expected_step = float(spec["expected_native_spacing_degrees"])
+        # NOAA's replacement global 2 km DINEOF product is on a nominal
+        # 1/48-degree regular grid. Permit only coordinate serialization noise.
+        tolerance = max(5e-4, expected_step * 0.02)
+        if abs(abs(step) - expected_step) > tolerance:
+            raise RuntimeError(
+                f"{spec['dataset_id']} {axis_name} spacing {step:.8g} is outside "
+                f"the expected native grid spacing {expected_step:.8g}"
+            )
+    elif spec.get("units") == "mg m-3":
+        # Retain compatibility for the legacy MODIS 4 km axis tests.
         tolerance = 5e-4
         if abs(step) < 0.03 or abs(step) > 0.05:
             raise RuntimeError(

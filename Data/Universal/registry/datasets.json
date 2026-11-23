@@ -370,13 +370,13 @@
       "collection": {
         "enabled": true,
         "adapter_id": "ocean_fixed",
-        "source_id": "nasa_modis_aqua_chlorophyll_noaa_erddap",
+        "source_id": "noaa_coastwatch_n20_n21_dineof_chlorophyll_2km",
         "cadence": "daily"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
         "units": "mg m-3",
-        "spatial_coverage": "global_0.125_degree_sampled_from_nasa_modis_aqua_0.04167_degree_chlorophyll_grid",
+        "spatial_coverage": "global_0.125_degree_sampled_from_noaa_n20_n21_dineof_0.02083_degree_chlorophyll_grid",
         "temporal_resolution": "daily_source_observation"
       },
       "provenance_required": true
