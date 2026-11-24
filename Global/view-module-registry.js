@@ -621,6 +621,21 @@
       }
       const feature = catalog.get(activeFeature);
       if (!feature) return;
+
+      // These scientific views provide their own live globe scenes. The generic
+      // preview card belongs only to placeholder features and must never cover
+      // a globe-first view while its controller initializes data in the background.
+      const globeFirstViews = new Set([
+        "atmosphere",
+        "atmospheric-composition",
+        "oceans"
+      ]);
+      if (globeFirstViews.has(feature.id)) {
+        stage.hidden = true;
+        stage.removeAttribute("data-feature");
+        return;
+      }
+
       stage.dataset.feature = feature.id;
       stageSymbol.textContent = feature.symbol || "✦";
       stageTitle.textContent = feature.title;
