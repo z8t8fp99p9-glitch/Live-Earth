@@ -18,17 +18,31 @@
     id: 'land',
     title: 'Land',
     symbol: '⌁',
-    message: 'Select a registered Land dataset to inspect its verified numerical observations.'
+    message: 'Select a Land dataset to inspect its verified regional observations.'
   };
   const VALUES_BASE_URL = 'https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/Data/Central-Database/values/';
-  const LAND_TEMPERATURE = {
-    id: 'land_temperature',
-    datasetId: 'earth.land.land_temperature',
-    label: 'Land temperature',
-    units: 'degree_C',
-    displayUnit: '°C',
-    sourceId: 'nasa_power_daily',
-    parameter: 'T2M'
+  const LAND_DATASETS = {
+    land_temperature: {
+      id:'land_temperature', datasetId:'earth.land.land_temperature',
+      label:'Land temperature', units:'degree_C', displayUnit:'°C',
+      sourceId:'nasa_power_daily', parameter:'T2M', kind:'numeric',
+      sourceLabel:'NASA POWER daily 2 m air temperature',
+      description:'Daily 2 m air temperature at six regional sample points.'
+    },
+    vegetation_health: {
+      id:'vegetation_health', datasetId:'earth.land.vegetation_health',
+      label:'Vegetation activity', units:'1', displayUnit:'NDVI',
+      sourceId:'noaa_cdr_viirs_ndvi_daily', kind:'ndvi',
+      sourceLabel:'NOAA CDR VIIRS Normalized Difference Vegetation Index',
+      description:'NDVI indicates satellite-derived vegetation greenness/activity; it is not a direct diagnosis of plant health.'
+    },
+    forest_change: {
+      id:'forest_change', datasetId:'earth.land.forest_change',
+      label:'Forest change', units:'year', displayUnit:'loss year',
+      sourceId:'hansen_global_forest_change_2025_v1_13', kind:'forest',
+      sourceLabel:'Hansen Global Forest Change 2025 v1.13',
+      description:'Point samples of gross stand-replacement forest loss during 2001–2025. Zero means no detected loss at the sampled pixel.'
+    }
   };
 
   const DATASET_OPTIONS = [
@@ -38,8 +52,8 @@
     { id:'elevation', label:'Elevation', icon:'elevation', color:'#d2bd91' },
     { id:'terrain', label:'Terrain', icon:'terrain', color:'#a9c6d8' },
     { id:'land_cover', label:'Land cover', icon:'cover', color:'#8bdd9a' },
-    { id:'vegetation_health', label:'Vegetation health', icon:'vegetation', color:'#a8e78e' },
-    { id:'forest_change', label:'Forest change', icon:'forest', color:'#78d6a3' },
+    { id:'vegetation_health', label:'Vegetation activity', icon:'vegetation', color:'#a8e78e', available:true },
+    { id:'forest_change', label:'Forest change', icon:'forest', color:'#78d6a3', available:true },
     { id:'surface_reflectance', label:'Surface reflectance', icon:'reflectance', color:'#e5d48e' },
     { id:'urban_expansion', label:'Urban expansion', icon:'urban', color:'#c4b2ff' }
   ];
@@ -735,11 +749,11 @@
     // The Land information instrument occupies the same floating dock as the
     // Atmosphere/Oceans colour scale. Its content remains discrete because the
     // current Land dataset contains six point samples, not a continuous raster.
-    const details = runtime.card('Land temperature', 'Verified NASA POWER point observations and source details.');
+    const details = runtime.card('Land observations', 'Verified regional point observations and source details.');
     details.classList.add('le-land-data-card');
     details.hidden = true;
     const summaryRange = runtime.el('div', 'le-land-summary-range', '—');
-    const summaryTitle = runtime.el('div', 'le-land-summary-title', 'Land temperature · sample range');
+    const summaryTitle = runtime.el('div', 'le-land-summary-title', 'Land observations · sample range');
     const summaryHeading = runtime.el('div', 'le-land-summary-heading');
     summaryHeading.append(summaryTitle, summaryRange);
     const scaleDock = runtime.el('section', 'le-land-scale-dock');
@@ -795,7 +809,7 @@
       orb.dataset.dataset = item.id;
       orb.setAttribute('aria-label', item.label);
       orb.setAttribute('aria-pressed', 'false');
-      orb.title = `${item.label}${item.available ? ' · NASA POWER numerical point samples' : ' · Source adapter not configured'}`;
+      orb.title = `${item.label}${item.available ? ' · verified regional point samples' : ' · Source adapter not configured'}`;
       const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       icon.setAttribute('viewBox', '0 0 24 24');
       icon.setAttribute('aria-hidden', 'true');
@@ -858,17 +872,72 @@
       metric.appendChild(item);
     }
 
-    function renderSampleMarkers(records) {
+    function markerColor(record, config) {
+      const status = record.quality?.sample_status;
+      if (config.kind === 'forest') {
+        if (status === 'mapped_land' && record.value === 0) return 0x79e2ae;
+        if (status === 'mapped_land' && Number.isFinite(record.value)) return 0xff986f;
+        if (status === 'water') return 0x65bce8;
+        return 0x8995a5;
+      }
+      if (config.kind === 'ndvi') {
+        if (status !== 'valid' || !Number.isFinite(record.value)) return 0x8995a5;
+        const value = Math.max(-0.2, Math.min(1, record.value));
+        const t = (value + 0.2) / 1.2;
+        const low = [224, 171, 112], high = [105, 225, 151];
+        return (Math.round(low[0] + (high[0] - low[0]) * t) << 16) |
+          (Math.round(low[1] + (high[1] - low[1]) * t) << 8) |
+          Math.round(low[2] + (high[2] - low[2]) * t);
+      }
+      if (!Number.isFinite(record.value)) return 0x8995a5;
+      const values = recordsForColorScale;
+      const min = Math.min(...values), max = Math.max(...values);
+      const t = max === min ? 0.5 : (record.value - min) / (max - min);
+      const low = [83, 173, 235], high = [255, 164, 103];
+      return (Math.round(low[0] + (high[0] - low[0]) * t) << 16) |
+        (Math.round(low[1] + (high[1] - low[1]) * t) << 8) |
+        Math.round(low[2] + (high[2] - low[2]) * t);
+    }
+
+    let recordsForColorScale = [];
+
+    function sampleStatusLabel(record, config) {
+      if (Number.isFinite(record.value)) {
+        if (config.kind === 'forest') return record.value === 0 ? 'No detected loss · mapped land' : `Loss year code ${record.value}`;
+        if (config.kind === 'ndvi') return `NDVI ${formatNumber(record.value)}`;
+        return `${formatNumber(record.value)} ${config.displayUnit}`;
+      }
+      const status = record.quality?.sample_status;
+      if (status === 'water') return 'Persistent water · no land value';
+      if (status === 'unmapped') return 'Unmapped · no data';
+      if (status === 'source_nodata') return 'Source no-data';
+      return 'No data';
+    }
+
+    function renderSampleMarkers(records, config) {
       if (!worldGlobe || typeof worldGlobe.attachLayer !== 'function') throw new Error('The Earth Engine globe is not ready.');
-      layerDispose = worldGlobe.attachLayer('land-temperature-point-observations', ({ THREE, earth }) => {
+      recordsForColorScale = records.filter(record => Number.isFinite(record.value)).map(record => record.value);
+      layerDispose = worldGlobe.attachLayer(`land-${config.id}-regional-samples`, ({ THREE, earth }) => {
         if (!THREE?.Group || !earth?.add) throw new Error('The Earth Engine did not provide its Three.js globe surface.');
         markerRoot = new THREE.Group();
-        markerRoot.name = 'liveEarth-land-temperature-discrete-point-samples';
+        markerRoot.name = `liveEarth-land-${config.id}-regional-samples`;
+        const geometries = [];
+        const materials = [];
         const haloGeometry = new THREE.SphereGeometry(0.022, 14, 10);
-        const dotGeometry = new THREE.SphereGeometry(0.009, 14, 10);
-        const haloMaterial = new THREE.MeshBasicMaterial({ color:0x4fc8ff, transparent:true, opacity:0.30, depthTest:true, depthWrite:false });
-        const dotMaterial = new THREE.MeshBasicMaterial({ color:0xbceeff, transparent:false, depthTest:true, depthWrite:false });
+        const dotGeometry = new THREE.SphereGeometry(0.010, 16, 12);
+        geometries.push(haloGeometry, dotGeometry);
         for (const record of records) {
+          const color = markerColor(record, config);
+          const isMissing = !Number.isFinite(record.value);
+          const haloMaterial = new THREE.MeshBasicMaterial({
+            color, transparent:true, opacity:isMissing ? 0.13 : 0.27,
+            depthTest:true, depthWrite:false
+          });
+          const dotMaterial = new THREE.MeshBasicMaterial({
+            color, transparent:isMissing, opacity:isMissing ? 0.68 : 1,
+            depthTest:true, depthWrite:false
+          });
+          materials.push(haloMaterial, dotMaterial);
           const phi = record.latitude * Math.PI / 180;
           const lambda = record.longitude * Math.PI / 180;
           const direction = new THREE.Vector3(
@@ -882,35 +951,70 @@
           const dot = new THREE.Mesh(dotGeometry, dotMaterial);
           dot.position.copy(direction).multiplyScalar(1.022);
           dot.renderOrder = 15;
-          halo.userData.sampleTile = record.quality?.sample_tile_id || '';
-          dot.userData.sampleTile = record.quality?.sample_tile_id || '';
+          const tile = record.quality?.sample_tile_id || '';
+          halo.userData.sampleTile = tile;
+          dot.userData.sampleTile = tile;
+          dot.userData.sampleStatus = record.quality?.sample_status || (isMissing ? 'no_data' : 'valid');
+          dot.userData.sampleValue = record.value;
           markerRoot.add(halo, dot);
         }
         earth.add(markerRoot);
         return () => {
           markerRoot?.removeFromParent?.();
-          haloGeometry.dispose();
-          dotGeometry.dispose();
-          haloMaterial.dispose();
-          dotMaterial.dispose();
+          geometries.forEach(geometry => geometry.dispose());
+          materials.forEach(material => material.dispose());
           markerRoot = null;
         };
       });
       if (typeof layerDispose !== 'function') throw new Error('The discrete Land observation markers could not attach.');
-      view.root.dataset.landObservations = 'verified-nasa-power-point-samples';
+      view.root.dataset.landObservations = `verified-${config.id}-regional-point-samples`;
       worldGlobe.requestRender?.();
     }
 
-    function buildSampleCards(records) {
+    function buildSampleCards(records, config) {
       sampleGrid.replaceChildren();
       for (const record of records) {
         const key = record.quality?.sample_tile_id;
         const card = runtime.el('article', 'le-land-sample-card');
         card.appendChild(runtime.el('span', 'le-land-sample-name', REGION_NAMES[key] || key || 'Regional sample'));
-        card.appendChild(runtime.el('strong', 'le-land-sample-value', `${formatNumber(record.value)} °C`));
+        card.appendChild(runtime.el('strong', 'le-land-sample-value', sampleStatusLabel(record, config)));
         card.appendChild(runtime.el('span', 'le-land-sample-coordinate', `${formatNumber(record.latitude)}°, ${formatNumber(record.longitude)}°`));
+        const quality = record.quality?.quality_flag_raw;
+        if (Number.isFinite(quality)) card.appendChild(runtime.el('span', 'le-land-sample-coordinate', `Source quality flag ${quality}`));
         sampleGrid.appendChild(card);
       }
+    }
+
+    function validateDatasetRecords(metadata, records, config) {
+      if (metadata.dataset_id !== config.datasetId) throw new Error('Dataset identity does not match the Land registry.');
+      if (metadata.format !== 'records' || metadata.data_kind !== 'point_samples') throw new Error('The selected Land field is not registered as point samples.');
+      if (metadata.coverage_mode !== 'six_sparse_regional_point_samples') throw new Error('Unexpected Land sample coverage mode.');
+      if (metadata.units !== config.units || metadata.source_id !== config.sourceId) throw new Error('Land source or units do not match the registered dataset.');
+      if (config.parameter && metadata.parameter !== config.parameter) throw new Error('Land parameter does not match the registered NASA POWER field.');
+      const valid = records.filter(record =>
+        record.dataset_id === config.datasetId &&
+        record.source_id === config.sourceId &&
+        record.unit === config.units &&
+        Number.isFinite(record.latitude) && record.latitude >= -90 && record.latitude <= 90 &&
+        Number.isFinite(record.longitude) && record.longitude >= -180 && record.longitude <= 180 &&
+        typeof record.observed_at === 'string' && !Number.isNaN(Date.parse(record.observed_at)) &&
+        (config.kind === 'numeric'
+          ? record.quality?.sample_mode === 'regional_point' && Number.isFinite(record.value)
+          : config.kind === 'ndvi'
+            ? record.quality?.sample_mode === 'nearest_native_grid_cell' &&
+              (Number.isFinite(record.value) || record.quality?.sample_status === 'source_nodata')
+            : record.quality?.sample_mode === 'regional_point' &&
+              (Number.isFinite(record.value) || ['water','unmapped'].includes(record.quality?.sample_status)))
+      );
+      const sampleIds = valid.map(record => record.quality?.sample_tile_id);
+      if (valid.length !== 6 || new Set(sampleIds).size !== 6 || metadata.record_count !== 6) {
+        throw new Error(`Expected six unique regional sample locations, including source no-data states; received ${valid.length}.`);
+      }
+      for (const id of REGION_ORDER) {
+        if (!sampleIds.includes(id)) throw new Error(`The registered ${REGION_NAMES[id]} sample is missing.`);
+      }
+      valid.sort((a, b) => REGION_ORDER.indexOf(a.quality.sample_tile_id) - REGION_ORDER.indexOf(b.quality.sample_tile_id));
+      return valid;
     }
 
     async function selectDataset(item) {
@@ -919,7 +1023,8 @@
       hudToggle.setAttribute('aria-expanded', 'false');
       hudToggle.setAttribute('aria-label', 'Open Land datasets');
 
-      if (!item.available) {
+      const config = LAND_DATASETS[item.id];
+      if (!config) {
         dataRequest?.abort();
         dataRequest = null;
         removeActiveLayer();
@@ -955,17 +1060,17 @@
       disclosure.open = false;
       syncScaleMore();
       setSelectedDataset(item.id);
-      summaryTitle.textContent = 'Land temperature · sample range';
+      summaryTitle.textContent = `${config.label} · regional samples`;
       const controller = new AbortController();
       dataRequest = controller;
       const button = datasetOrbButtons.get(item.id);
       if (button) button.disabled = true;
-      showStatus('Loading and verifying NASA POWER regional point observations…', 'neutral');
+      showStatus(`Loading and verifying ${config.sourceLabel} regional point samples…`, 'neutral');
 
       try {
         if (engineReady) await engineReady;
         if (closed || controller.signal.aborted || !runtime.isActive(WORLD.id)) return;
-        const base = `${VALUES_BASE_URL}${LAND_TEMPERATURE.datasetId}/`;
+        const base = `${VALUES_BASE_URL}${config.datasetId}/`;
         const [metadataResponse, recordsResponse] = await Promise.all([
           fetch(`${base}metadata.json`, { cache:'no-store', signal:controller.signal }),
           fetch(`${base}records.jsonl`, { cache:'no-store', signal:controller.signal })
@@ -978,67 +1083,58 @@
         const records = recordsText.split(/\r?\n/).filter(Boolean).map(line => JSON.parse(line));
         if (closed || controller.signal.aborted || !runtime.isActive(WORLD.id)) return;
 
-        if (metadata.dataset_id !== LAND_TEMPERATURE.datasetId) throw new Error('Dataset identity does not match the Land registry.');
-        if (metadata.format !== 'records' || metadata.data_kind !== 'point_samples') throw new Error('The selected Land field is not registered as numerical point samples.');
-        if (metadata.coverage_mode !== 'six_sparse_regional_point_samples') throw new Error('Unexpected Land temperature coverage mode.');
-        if (metadata.units !== LAND_TEMPERATURE.units || metadata.source_id !== LAND_TEMPERATURE.sourceId || metadata.parameter !== LAND_TEMPERATURE.parameter) {
-          throw new Error('Land temperature source, parameter or units do not match the registered NASA POWER field.');
-        }
-        const valid = records.filter(record =>
-          record.dataset_id === LAND_TEMPERATURE.datasetId &&
-          record.source_id === LAND_TEMPERATURE.sourceId &&
-          record.unit === LAND_TEMPERATURE.units &&
-          record.quality?.sample_mode === 'regional_point' &&
-          Number.isFinite(record.latitude) && record.latitude >= -90 && record.latitude <= 90 &&
-          Number.isFinite(record.longitude) && record.longitude >= -180 && record.longitude <= 180 &&
-          Number.isFinite(record.value) &&
-          typeof record.observed_at === 'string' && !Number.isNaN(Date.parse(record.observed_at))
-        );
-        const sampleIds = valid.map(record => record.quality.sample_tile_id);
-        if (valid.length !== metadata.record_count || valid.length !== 6 || new Set(sampleIds).size !== valid.length) {
-          throw new Error(`Expected six unique verified regional point samples; received ${valid.length}.`);
-        }
-        for (const id of REGION_ORDER) {
-          if (!sampleIds.includes(id)) throw new Error(`The registered ${REGION_NAMES[id]} sample is missing.`);
-        }
-        valid.sort((a, b) => REGION_ORDER.indexOf(a.quality.sample_tile_id) - REGION_ORDER.indexOf(b.quality.sample_tile_id));
-
-        const observedTimes = valid.map(record => Date.parse(record.observed_at));
+        const samples = validateDatasetRecords(metadata, records, config);
+        const numeric = samples.filter(record => Number.isFinite(record.value));
+        if (!numeric.length) throw new Error('This dataset currently contains no numeric samples to plot.');
+        const observedTimes = samples.map(record => Date.parse(record.observed_at));
         const latestObserved = new Date(Math.max(...observedTimes)).toISOString();
-        const min = Math.min(...valid.map(record => record.value));
-        const max = Math.max(...valid.map(record => record.value));
-        const updated = metadata.updated_at_utc || valid.map(record => record.retrieved_at).filter(Boolean).sort().at(-1);
+        const min = Math.min(...numeric.map(record => record.value));
+        const max = Math.max(...numeric.map(record => record.value));
+        const updated = metadata.updated_at_utc || samples.map(record => record.retrieved_at).filter(Boolean).sort().at(-1);
         const observedLabel = formatTime(latestObserved);
         const updatedLabel = formatTime(updated);
+        const validCount = numeric.length;
+        const missingCount = samples.length - validCount;
 
         if (closed || controller.signal.aborted || !runtime.isActive(WORLD.id)) return;
-        renderSampleMarkers(valid);
-        buildSampleCards(valid);
-        details.querySelector('h2').textContent = LAND_TEMPERATURE.label;
+        renderSampleMarkers(samples, config);
+        buildSampleCards(samples, config);
+        details.querySelector('h2').textContent = config.label;
         const subtitle = details.querySelector('p');
-        if (subtitle) subtitle.textContent = `NASA POWER · Daily 2 m air temperature · ${valid.length} sparse regional point samples`;
-        summaryRange.textContent = `${formatNumber(min)}–${formatNumber(max)} °C`;
-        sampleCountLabel.textContent = `${valid.length} regional point samples`;
+        if (subtitle) subtitle.textContent = `${config.sourceLabel} · ${samples.length} regional locations`;
+        summaryRange.textContent = config.kind === 'forest'
+          ? `${validCount} mapped land samples`
+          : `${formatNumber(min)}–${formatNumber(max)} ${config.displayUnit}`;
+        sampleCountLabel.textContent = `${validCount} numeric · ${missingCount} no-data`;
         details.hidden = false;
         scaleDock.hidden = false;
         metric.replaceChildren();
-        makeMetric('Coverage', '6 regional samples');
-        makeMetric('Parameter', 'T2M', '2 m air temperature');
+        makeMetric('Regional locations', String(samples.length));
+        makeMetric('Numeric samples', String(validCount));
+        makeMetric('No-data samples', String(missingCount));
         makeMetric('Observed / valid time', observedLabel);
         makeMetric('Snapshot updated', updatedLabel);
-        makeMetric('Sample range', `${formatNumber(min)} to ${formatNumber(max)}`, '°C');
-        makeMetric('Source', 'NASA POWER daily', 'AG community');
-
-        const sourceUrl = valid[0]?.provenance?.source_url;
+        makeMetric('Sample range', config.kind === 'forest'
+          ? 'No detected loss at mapped samples'
+          : `${formatNumber(min)} to ${formatNumber(max)} ${config.displayUnit}`);
+        makeMetric('Source', config.sourceLabel);
+        const period = metadata.source_observation_period ? ` Observation period: ${metadata.source_observation_period}.` : '';
+        const warning = config.kind === 'ndvi'
+          ? ' NDVI represents vegetation greenness/activity, not a direct plant-health diagnosis.'
+          : config.kind === 'forest'
+            ? ' These are six point samples, not a global forest-loss raster or area estimate. Water and unmapped pixels are not treated as zero loss.'
+            : ' No continuous global field, raster, or interpolation is shown.';
+        const sourceUrl = samples.find(record => record.provenance?.source_url)?.provenance?.source_url || metadata.source_url;
         provenance.replaceChildren();
         provenance.appendChild(document.createTextNode(
-          `Observed ${observedLabel}. Updated ${updatedLabel}. Values are six discrete regional point samples only; no continuous global field, raster, or interpolation is shown. Source: ${metadata.source_name || 'NASA POWER daily 2 m air temperature'}. `
+          `Observed ${observedLabel}. Updated ${updatedLabel}.${period}${warning} Source: ${metadata.source_name || config.sourceLabel}. `
         ));
         if (typeof sourceUrl === 'string') {
           try {
             const url = new URL(sourceUrl);
-            if (url.protocol === 'https:' && url.hostname === 'power.larc.nasa.gov') {
-              const link = runtime.el('a', '', 'Open NASA POWER source');
+            const allowedHosts = ['power.larc.nasa.gov','www.ncei.noaa.gov','storage.googleapis.com'];
+            if (url.protocol === 'https:' && allowedHosts.includes(url.hostname)) {
+              const link = runtime.el('a', '', 'Open source data');
               link.href = url.href;
               link.target = '_blank';
               link.rel = 'noopener noreferrer';
@@ -1047,7 +1143,7 @@
             }
           } catch (_) {}
         }
-        view.root.dataset.landDataset = LAND_TEMPERATURE.datasetId;
+        view.root.dataset.landDataset = config.datasetId;
         clearStatus();
         worldGlobe?.requestRender?.();
       } catch (error) {
@@ -1056,7 +1152,7 @@
           setSelectedDataset(null);
           details.hidden = true;
           scaleDock.hidden = true;
-          showStatus(`Land temperature data could not be displayed. The base Earth globe remains active. ${error?.message || ''}`, 'error');
+          showStatus(`${config.label} data could not be displayed. The base Earth globe remains active. ${error?.message || ''}`, 'error');
         }
       } finally {
         if (dataRequest === controller) {
