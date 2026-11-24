@@ -471,18 +471,18 @@
       "legacy_ids": [
         "LAND_01"
       ],
-      "status": "collector_configured_success",
+      "status": "source_not_configured",
       "collection": {
-        "enabled": true,
-        "adapter_id": "native_sources",
-        "source_id": "nasa_power_daily",
-        "cadence": "daily"
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
         "units": "degree_C",
-        "spatial_coverage": "six_sparse_regional_point_samples",
-        "temporal_resolution": "daily_source_observation"
+        "spatial_coverage": "unverified_no_grid_source_configured",
+        "temporal_resolution": "unverified"
       },
       "provenance_required": true
     },
@@ -502,7 +502,7 @@
       "data_contract": {
         "measurement_type": "field_or_indicator",
         "units": null,
-        "spatial_coverage": "unverified",
+        "spatial_coverage": "unverified_no_grid_source_configured",
         "temporal_resolution": "unverified"
       },
       "provenance_required": true
@@ -523,7 +523,7 @@
       "data_contract": {
         "measurement_type": "field_or_indicator",
         "units": null,
-        "spatial_coverage": "unverified",
+        "spatial_coverage": "unverified_no_grid_source_configured",
         "temporal_resolution": "unverified"
       },
       "provenance_required": true
@@ -534,18 +534,18 @@
       "legacy_ids": [
         "LAND_04"
       ],
-      "status": "collector_configured_failed",
+      "status": "source_not_configured",
       "collection": {
-        "enabled": true,
-        "adapter_id": "land_dem_sources",
-        "source_id": "copernicus_dem_glo30",
-        "cadence": "static"
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
         "units": "m",
-        "spatial_coverage": "six_sparse_regional_point_samples_from_global_30m_Copernicus_GLO30_DSM",
-        "temporal_resolution": "static_reference_product"
+        "spatial_coverage": "unverified_no_grid_source_configured",
+        "temporal_resolution": "unverified"
       },
       "provenance_required": true
     },
@@ -555,18 +555,18 @@
       "legacy_ids": [
         "LAND_05"
       ],
-      "status": "collector_configured_failed",
+      "status": "source_not_configured",
       "collection": {
-        "enabled": true,
-        "adapter_id": "land_dem_sources",
-        "source_id": "copernicus_dem_glo30",
-        "cadence": "static"
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
         "units": "degree",
-        "spatial_coverage": "six_sparse_regional_point_slope_samples_derived_from_Copernicus_GLO30_DSM",
-        "temporal_resolution": "static_reference_product"
+        "spatial_coverage": "unverified_no_grid_source_configured",
+        "temporal_resolution": "unverified"
       },
       "provenance_required": true
     },
@@ -576,18 +576,18 @@
       "legacy_ids": [
         "LAND_06"
       ],
-      "status": "collector_configured_failed",
+      "status": "source_not_configured",
       "collection": {
-        "enabled": true,
-        "adapter_id": "land_sources",
-        "source_id": "esa_worldcover_2021_v200",
-        "cadence": "annual"
+        "enabled": false,
+        "adapter_id": null,
+        "source_id": null,
+        "cadence": null
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
         "units": "class_code",
-        "spatial_coverage": "six_sparse_regional_point_samples_from_global_10m_ESA_WorldCover_2021_v200",
-        "temporal_resolution": "annual_source_product_epoch"
+        "spatial_coverage": "unverified_no_grid_source_configured",
+        "temporal_resolution": "unverified"
       },
       "provenance_required": true
     },
@@ -597,7 +597,7 @@
       "legacy_ids": [
         "LAND_07"
       ],
-      "status": "collector_configured_success",
+      "status": "collector_configured_failed",
       "collection": {
         "enabled": true,
         "adapter_id": "land_sources",
@@ -607,7 +607,7 @@
       "data_contract": {
         "measurement_type": "field_or_indicator",
         "units": "1",
-        "spatial_coverage": "six_sparse_regional_point_samples_from_NOAA_CDR_VIIRS_global_0.05_degree_NDVI",
+        "spatial_coverage": "global_NOAA_VIIRS_NDVI_native_0.05_degree_aggregated_to_0.25_degree_grid",
         "temporal_resolution": "daily_source_observation"
       },
       "provenance_required": true
@@ -618,7 +618,7 @@
       "legacy_ids": [
         "LAND_08"
       ],
-      "status": "collector_configured_success",
+      "status": "collector_configured_failed",
       "collection": {
         "enabled": true,
         "adapter_id": "land_sources",
@@ -627,8 +627,8 @@
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": "year",
-        "spatial_coverage": "six_sparse_regional_point_samples_from_global_30m_Hansen_GFC_2025_lossyear",
+        "units": "year_code",
+        "spatial_coverage": "global_Hansen_GFC_30m_10x10_degree_tiles_aggregated_to_0.25_degree_grid_80N_to_60S",
         "temporal_resolution": "annual_source_product_epoch"
       },
       "provenance_required": true
@@ -649,7 +649,7 @@
       "data_contract": {
         "measurement_type": "field_or_indicator",
         "units": null,
-        "spatial_coverage": "unverified",
+        "spatial_coverage": "unverified_no_grid_source_configured",
         "temporal_resolution": "unverified"
       },
       "provenance_required": true
@@ -670,7 +670,7 @@
       "data_contract": {
         "measurement_type": "field_or_indicator",
         "units": null,
-        "spatial_coverage": "unverified",
+        "spatial_coverage": "unverified_no_grid_source_configured",
         "temporal_resolution": "unverified"
       },
       "provenance_required": true
