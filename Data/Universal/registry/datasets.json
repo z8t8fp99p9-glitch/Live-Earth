@@ -534,18 +534,18 @@
       "legacy_ids": [
         "LAND_04"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_pending_first_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "land_sources",
+        "source_id": "copernicus_dem_glo30",
+        "cadence": "static"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "m",
+        "spatial_coverage": "six_sparse_regional_point_samples_from_global_30m_Copernicus_GLO30_DSM",
+        "temporal_resolution": "static_reference_product"
       },
       "provenance_required": true
     },
@@ -555,18 +555,18 @@
       "legacy_ids": [
         "LAND_05"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_pending_first_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "land_sources",
+        "source_id": "copernicus_dem_glo30",
+        "cadence": "static"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "degree",
+        "spatial_coverage": "six_sparse_regional_point_slope_samples_derived_from_Copernicus_GLO30_DSM",
+        "temporal_resolution": "static_reference_product"
       },
       "provenance_required": true
     },
@@ -576,18 +576,18 @@
       "legacy_ids": [
         "LAND_06"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_pending_first_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "land_sources",
+        "source_id": "esa_worldcover_2021_v200",
+        "cadence": "annual"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "class_code",
+        "spatial_coverage": "six_sparse_regional_point_samples_from_global_10m_ESA_WorldCover_2021_v200",
+        "temporal_resolution": "annual_source_product_epoch"
       },
       "provenance_required": true
     },
@@ -597,18 +597,18 @@
       "legacy_ids": [
         "LAND_07"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_pending_first_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "land_sources",
+        "source_id": "noaa_cdr_viirs_ndvi_daily",
+        "cadence": "daily"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "1",
+        "spatial_coverage": "six_sparse_regional_point_samples_from_NOAA_CDR_VIIRS_global_0.05_degree_NDVI",
+        "temporal_resolution": "daily_source_observation"
       },
       "provenance_required": true
     },
@@ -618,18 +618,18 @@
       "legacy_ids": [
         "LAND_08"
       ],
-      "status": "source_not_configured",
+      "status": "collector_configured_pending_first_success",
       "collection": {
-        "enabled": false,
-        "adapter_id": null,
-        "source_id": null,
-        "cadence": null
+        "enabled": true,
+        "adapter_id": "land_sources",
+        "source_id": "hansen_global_forest_change_2025_v1_13",
+        "cadence": "annual"
       },
       "data_contract": {
         "measurement_type": "field_or_indicator",
-        "units": null,
-        "spatial_coverage": "unverified",
-        "temporal_resolution": "unverified"
+        "units": "year",
+        "spatial_coverage": "six_sparse_regional_point_samples_from_global_30m_Hansen_GFC_2025_lossyear",
+        "temporal_resolution": "annual_source_product_epoch"
       },
       "provenance_required": true
     },
