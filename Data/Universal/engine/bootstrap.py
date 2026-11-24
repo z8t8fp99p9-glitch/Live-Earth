@@ -29,6 +29,11 @@ CONFIG = {
     "earth.oceans.ocean_heat": ("ocean_additional", "noaa_ncei_ohc_0_2000_monthly", "monthly"),
     "earth.oceans.sea_ice": ("ocean_additional", "noaa_ncei_oisst21_sea_ice_fraction", "daily"),
     "earth.land.land_temperature": ("native_sources", "nasa_power_daily", "daily"),
+    "earth.land.elevation": ("land_sources", "copernicus_dem_glo30", "static"),
+    "earth.land.terrain": ("land_sources", "copernicus_dem_glo30", "static"),
+    "earth.land.land_cover": ("land_sources", "esa_worldcover_2021_v200", "annual"),
+    "earth.land.vegetation_health": ("land_sources", "noaa_cdr_viirs_ndvi_daily", "daily"),
+    "earth.land.forest_change": ("land_sources", "hansen_global_forest_change_2025_v1_13", "annual"),
     "earth.water_ice.rainfall": ("native_sources", "nasa_power_daily", "daily"),
     "earth.earth_activity.earthquakes": ("native_sources", "usgs_comcat", "hourly"),
     "earth.energy_humanity.solar_radiation": ("native_sources", "nasa_power_daily", "daily"),
@@ -57,6 +62,11 @@ CONTRACTS = {
     "earth.oceans.ocean_heat": ("10^18 J", "global_native_1_degree_monthly_0_2000m_heat_content_anomaly"),
     "earth.oceans.sea_ice": ("1", "global_native_0.25_degree_oisst21_sea_ice_area_fraction"),
     "earth.land.land_temperature": ("degree_C", "six_sparse_regional_point_samples"),
+    "earth.land.elevation": ("m", "six_sparse_regional_point_samples_from_global_30m_Copernicus_GLO30_DSM"),
+    "earth.land.terrain": ("degree", "six_sparse_regional_point_slope_samples_derived_from_Copernicus_GLO30_DSM"),
+    "earth.land.land_cover": ("class_code", "six_sparse_regional_point_samples_from_global_10m_ESA_WorldCover_2021_v200"),
+    "earth.land.vegetation_health": ("1", "six_sparse_regional_point_samples_from_NOAA_CDR_VIIRS_global_0.05_degree_NDVI"),
+    "earth.land.forest_change": ("year", "six_sparse_regional_point_samples_from_global_30m_Hansen_GFC_2025_lossyear"),
     "earth.water_ice.rainfall": ("mm/day", "six_sparse_regional_point_samples"),
     "earth.earth_activity.earthquakes": ("magnitude", "USGS_all_day_event_feed"),
     "earth.energy_humanity.solar_radiation": ("kWh/m^2/day", "six_sparse_regional_point_samples"),
@@ -69,6 +79,8 @@ CADENCE_RESOLUTION = {
     "3-day": "three_day_mean_source_composite",
     "8-day": "eight_day_centered_source_composite",
     "monthly": "monthly_source_analysis",
+    "annual": "annual_source_product_epoch",
+    "static": "static_reference_product",
 }
 SUCCESS_STATES = {"collector_configured_success", "collector_configured_failed"}
 

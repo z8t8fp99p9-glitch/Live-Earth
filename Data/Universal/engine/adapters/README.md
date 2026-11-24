@@ -1,7 +1,9 @@
-# Native source adapters
+# Universal source adapters
 
-`native_sources.py` is the Universal Collector's native adapter module. It retrieves data directly from NOAA/NCEP, NOAA/NCEI, NASA POWER and USGS.
+`native_sources.py` retrieves the existing NOAA/NCEP, NOAA/NCEI, NASA POWER and USGS products.
 
-`nasa_geos_cf.py` retrieves the latest anonymous NASA GEOS-CF v2 global fields for the four Atmospheric Composition datasets (CO2, methane, carbon monoxide and dust-attributed PM2.5). It reads only the newest available source time and updates the existing current-value grid in place. It does not create historical snapshots or archive provider responses.
+`nasa_geos_cf.py` retrieves the latest anonymous NASA GEOS-CF v2 global fields for the Atmospheric Composition datasets.
 
-All scheduled collection runs through `Data/Universal/engine/collector.py`. The adapters return source-backed records and metadata for validation and storage by the Universal pipeline; they do not maintain a separate collection or publication system.
+`land_sources.py` adds anonymous Land sampling from the NOAA/NCEI VIIRS NDVI Climate Data Record and public scientific raster sources (Copernicus DEM GLO-30, ESA WorldCover 2021 v200 and Hansen Global Forest Change 2025 v1.13). The Land adapters return the same six regional point samples used by the existing Land view; they do not create a parallel database or claim global grid coverage. Static products are source-revision checked and are not redownloaded on every hourly workflow run. The NOAA NDVI adapter checks the public THREDDS catalogue for a newly published source file before deciding whether a download is due.
+
+All adapters return data and metadata to `Data/Universal/engine/collector.py`, which validates and stores the current values centrally. An adapter failure does not overwrite the prior good value set.
