@@ -13,6 +13,20 @@ from .bootstrap import (
 from .registry import SUPPORTED_GROUPS, dataset_group
 
 
+def _load_registry():
+    raw = REGISTRY.read_text(encoding="utf-8")
+
+    # Recover from a previous workflow write that appended the two literal
+    # characters "\\n" instead of a real newline after the JSON document.
+    # Only remove this exact marker at EOF; preserve all registry content.
+    cleaned = raw.rstrip()
+    while cleaned.endswith(r"\n"):
+        cleaned = cleaned[:-2].rstrip()
+
+    data = json.loads(cleaned)
+    return data
+
+
 def configure_group(group: str):
     if group not in SUPPORTED_GROUPS:
         supported = ", ".join(sorted(SUPPORTED_GROUPS))
@@ -20,7 +34,7 @@ def configure_group(group: str):
             f"Unknown dataset group {group!r}. Supported groups: {supported}"
         )
 
-    data = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    data = _load_registry()
     datasets = data.get("datasets")
     if not isinstance(datasets, list):
         raise ValueError("Dataset registry must contain a datasets array")
@@ -91,10 +105,11 @@ def configure_group(group: str):
         )
 
     # Only this group's entries are modified; every other registry entry
-    # is retained exactly as loaded.
+    # is retained exactly as loaded. Always emit a real newline.
     REGISTRY.write_text(
-        json.dumps(data, indent=2) + "\n",
+        json.dumps(data, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
+        newline="",
     )
 
     enabled = sum(
