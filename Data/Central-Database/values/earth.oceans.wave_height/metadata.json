@@ -23,26 +23,26 @@
   },
   "nodata_value": -327.67999267578125,
   "observation_note": "NOAA GFS-Wave global.0p25 published post-processed model grid; the collector performs no additional interpolation. Forecast, not direct instrument observation.",
-  "observed_at_utc": "2026-11-23T15:00:00Z",
+  "observed_at_utc": "2026-11-23T21:00:00Z",
   "processing_level": "forecast_f003",
   "product": "Global GFS-Wave 0.25 degree WAVEWATCH III forecast",
   "provider": "NOAA / National Centers for Environmental Prediction",
   "quality_status": "noaa_gfs_wave_forecast_grid_validated_no_interpolation",
   "record_count": null,
-  "retrieved_at_utc": "2026-11-23T16:46:53.822198Z",
+  "retrieved_at_utc": "2026-11-24T00:28:34.049757Z",
   "row_order": "north-to-south",
   "scale_factor": 100,
   "schema_version": 1,
-  "sha256_uncompressed_values": "e98c099f47b37f9c98c9fd4fffe229b52c64e88197f9b374468ed159d6bff546",
+  "sha256_uncompressed_values": "7156e33085c37dd8e01115b9cf588ad4f58a512051cde0b1df9c8ee0c78754e6",
   "source_aggregation_factor": null,
-  "source_cycle_utc": "2026-11-23T12:00:00Z",
-  "source_file": "gfswave.t12z.global.0p25.f003.grib2",
+  "source_cycle_utc": "2026-11-23T18:00:00Z",
+  "source_file": "gfswave.t18z.global.0p25.f003.grib2",
   "source_id": "noaa_ncep_gfs_wave",
   "source_name": "Global GFS-Wave 0.25 degree WAVEWATCH III forecast",
   "source_sample_stride": 1,
-  "source_url": "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.20261123/12/wave/gridded/gfswave.t12z.global.0p25.f003.grib2",
+  "source_url": "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.20261123/18/wave/gridded/gfswave.t18z.global.0p25.f003.grib2",
   "source_urls": [
-    "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.20261123/12/wave/gridded/gfswave.t12z.global.0p25.f003.grib2"
+    "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.20261123/18/wave/gridded/gfswave.t18z.global.0p25.f003.grib2"
   ],
   "source_variables": [
     "HTSGW"
@@ -52,12 +52,12 @@
     "longitude": 0.2500000111188285
   },
   "units": "m",
-  "updated_at_utc": "2026-11-23T16:46:53.823868Z",
+  "updated_at_utc": "2026-11-24T00:28:34.051232Z",
   "valid_cell_count": 570981,
-  "valid_time_utc": "2026-11-23T15:00:00Z",
-  "value_bytes": 531485,
+  "valid_time_utc": "2026-11-23T21:00:00Z",
+  "value_bytes": 532666,
   "value_file": "values.bin",
-  "value_sha256": "da0b45d591907ba2771c31cdc93d5365d50988fb3dda9477bd73d9e23da75af2",
+  "value_sha256": "e464e9880ca41f92163b9bd9324406c5e566fabdb613d04544913c564d22273f",
   "variable": "HTSGW",
   "width": 1440
 }
