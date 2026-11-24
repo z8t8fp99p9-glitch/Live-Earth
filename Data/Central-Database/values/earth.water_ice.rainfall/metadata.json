@@ -52,8 +52,8 @@
   "source_id": "nasa_power_daily",
   "source_name": "NASA POWER daily corrected precipitation at six regional sample points",
   "units": "mm/day",
-  "updated_at_utc": "2026-11-24T00:28:40.836225Z",
+  "updated_at_utc": "2026-11-24T01:18:33.867501Z",
   "value_bytes": 3220,
   "value_file": "records.jsonl",
-  "value_sha256": "1a84a9f70ddf8dbb0b7f333dd1564a022ec383f66478000f6303be89b5cc8334"
+  "value_sha256": "0b086fa3e86934e643afe7ccccf70e3330c6f677e7064b1cd437129929c4bbc7"
 }
