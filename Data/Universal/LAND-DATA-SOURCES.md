@@ -1,34 +1,33 @@
 # LIVE // EARTH — Land source integration
 
-The Land view currently uses six stable regional point locations. The first Land source tranche preserves that representation and does not pretend those points are a global continuous raster.
+The Land view is built on the existing Universal Collector, Central Database, Universal Grid System and GPU Grid Skin. It does not use regional point samples.
 
-## Configured in this tranche
+The temperature layer reuses an already-collected Atmosphere grid. The Land collector itself collects the two dedicated source grids listed below; it does not duplicate the temperature field in a second dataset.
 
-| Dataset | Source | Product time | Stored sample |
-|---|---|---|---|
-| Land temperature | NASA POWER (existing collector, unchanged) | Latest available daily record per point | 2 m air temperature |
-| Elevation | Copernicus DEM GLO-30 Public | Source acquisition period 2011–2015; release/revision tracked separately | Digital surface model elevation in metres |
-| Terrain | Derived from the same Copernicus DEM GLO-30 | Same source period as elevation | Local 3x3 slope estimate in degrees |
-| Land cover | ESA WorldCover 10 m 2021 v200 | 2021 product epoch | Original WorldCover class code |
-| Vegetation health indicator | NOAA/NCEI VIIRS NDVI CDR | Latest date-stamped public daily file found in anonymous THREDDS catalog | NDVI, with raw QA value retained when present |
-| Forest change | Hansen Global Forest Change 2025 v1.13 | Forest-loss period 2001–2025 | Last detected gross loss year (0 means no detected loss in product period) |
+## Land grid layers
 
-All newly added sources are accessed through public, anonymous HTTPS downloads. No account, subscription, API key or credential is used. COG/GeoTIFF assets are sampled remotely; the adapter does not download complete global mosaics.
+| Dataset | Source product | Native source grid | Stored display grid |
+|---|---|---:|---:|
+| Near-surface temperature | Existing NOAA/NCEP GFS 2 m air-temperature grid (shared from Atmosphere) | 0.25° global model grid | Reused directly; no duplicate dataset or collector |
+| Vegetation activity | NOAA/NCEI VIIRS NDVI CDR daily NetCDF | 0.05° global grid | 0.25° valid-cell mean (5 × 5 native cells) |
+| Forest change | Hansen Global Forest Change 2025 v1.13 `lossyear` + `datamask` GeoTIFF tiles | 1 arc-second (~30 m) | 0.25° global display grid derived from 10° × 10° source tiles |
 
-## Interpretation and limits
+All source access is anonymous HTTPS. Current grid values are packed as gzip-compressed little-endian int16 and stored at the stable central path `Data/Central-Database/values/<dataset_id>/values.bin`. Metadata records dimensions, coordinates, grid spacing, units, source revision, observation period/time, valid-cell count, processing method, no-data semantics and both stored/decoded SHA-256 checksums.
 
-- The six records are regional point samples matching the existing Land view's sample positions. They are not a full global data cube.
-- Copernicus GLO-30 is a digital surface model (DSM), so vegetation and buildings can affect height. Its source acquisition period is stored as a period, not represented as a per-pixel timestamp. Terrain slope is derived from a 3x3 neighbourhood of that same DSM.
-- ESA WorldCover 2021 v200 is a static reference epoch. It is not a current or daily land-cover observation. Class codes are preserved, not converted to guessed percentages.
-- NOAA NDVI is a vegetation greenness/activity indicator, not a medical or ecological diagnosis of plant health. The source QA code is retained unmodified; this collector does not invent its interpretation.
-- Hansen `lossyear` codes are translated to years 2001–2025. Code 0 means no detected forest loss in the mapped period. The `datamask` is used to distinguish mapped land, water and no-data samples. This is gross stand-replacement loss, not every type of forest degradation.
-- Source observation time, source product period/revision and retrieval time are kept distinct in the metadata/records.
+## Processing and interpretation
 
-## Still deferred (not enabled)
+- **Near-surface temperature:** the Land view reuses the already-collected NOAA/NCEP GFS 0.25° global 2 m air-temperature analysis grid from `earth.atmosphere.air_temperature`. It is one shared stored grid, not a duplicate Land collection. It is model analysis data, not a direct observation or satellite land-surface-temperature retrieval. The old `earth.land.land_temperature` point-sample records are retired and that duplicate collector is disabled.
+- **Vegetation activity:** NOAA VIIRS NDVI is a daily global vegetation greenness/activity index. The 0.05° native values are aggregated into non-overlapping 5 × 5 blocks by arithmetic mean of valid source cells to produce a 0.25° grid suitable for the mobile GPU texture. Blocks with no valid source cells remain no-data. Fill/out-of-range values are excluded. The product QA bit flags are not currently applied or stored, so this is not a QA-screened NDVI composite.
+- **Forest change:** Hansen `lossyear` and `datamask` are read from matching 10° × 10° 1-arc-second source granules discovered from the provider’s official per-layer URL manifests. The collector intersects the two manifests and skips ocean-only mask tiles that do not have a loss-year granule. The display grid keeps the maximum loss-year code within each 0.25° cell and only renders cells where the dominant source mask class is mapped land. Codes 0=no detected loss; 1–25=2001–2025. Water and no-data remain transparent. The displayed maximum year is not an area or percentage estimate.
+- Hansen source tiles cover 80°N to 60°S; cells outside the published source extent remain no-data, not zero loss. The loss product maps gross stand-replacement disturbance, not every form of forest degradation. Changes in the v1.13 methodology mean long-period comparisons require caution.
 
-- Soil moisture: NASA SMAP standard archive routes require Earthdata authentication; NOAA CPC has a public model-derived monthly product, but its live file format and newest publication cycle need a verified anonymous file test before collection is enabled. We will not label that model estimate as direct satellite measurement.
-- Soil properties: FAO HWSD requires a verified direct anonymous v2.0 file and a checked raster-to-attribute-table mapping before use.
-- Surface reflectance: Sentinel-2 STAC discovery is public, but this project requirement excludes API-based discovery; a stable direct anonymous file route still needs verification.
-- Urban expansion: GHSL has an anonymous open download route, but a specific observed epoch, tile scheme and sample mapping must be validated before enabling it. Future projected epochs must never be reported as observations.
+## Deferred Land catalogue entries
 
-NASA/NOAA products remain the first choice when anonymous direct file access is verified. Alternative scientific sources are used only where they meet the same access and provenance rules.
+Soil moisture, soil properties, elevation, terrain, land cover, surface reflectance and urban expansion remain registered catalogue options but are not enabled for collection or shown as available grid layers in this tranche. They will only be enabled after their global grid source, storage encoding and visual interpretation are verified. No point-sample substitutes are collected for these entries.
+
+## Sources and attribution
+
+- NOAA/NCEP GFS source is collected by the existing Atmosphere grid pipeline; the Land view reads its central current-value grid directly.
+- NOAA NCEI NDVI CDR documentation and DOI: https://www.ncei.noaa.gov/products/climate-data-records/normalized-difference-vegetation-index and https://doi.org/10.25921/gakh-st76
+- Hansen Global Forest Change v1.13 download and attribution: https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/download.html
+- Hansen license: CC-BY-4.0. Display attribution: Source: Hansen/UMD/Google/USGS/NASA.

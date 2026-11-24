@@ -17,7 +17,6 @@ POWER_TILES = [
 DATASETS = {
  "earth.atmosphere.air_temperature": ("gfs_grid", "NOAA/NCEP GFS 0.25 degree 2m air temperature", "degree_Celsius"),
  "earth.oceans.sea_temperature": ("oisst_grid", "NOAA/NCEI OISST v2.1 daily global sea surface temperature", "degree_C"),
- "earth.land.land_temperature": ("power_points", "NASA POWER daily 2m air temperature at six regional sample points", "degree_C"),
  "earth.water_ice.rainfall": ("power_points", "NASA POWER daily corrected precipitation at six regional sample points", "mm/day"),
  "earth.earth_activity.earthquakes": ("usgs_events", "USGS all-day earthquake GeoJSON event feed", "magnitude"),
  "earth.energy_humanity.solar_radiation": ("power_points", "NASA POWER daily all-sky surface shortwave radiation at six regional sample points", "kWh/m^2/day"),
@@ -164,7 +163,6 @@ def collect(dataset):
     kind,source_name,unit=spec; retrieved=_iso(dt.datetime.now(UTC))
     if kind=="gfs_grid": raw,meta,rows=_gfs(dataset_id,retrieved)
     elif kind=="oisst_grid": raw,meta,rows=_oisst(dataset_id,retrieved)
-    elif dataset_id=="earth.land.land_temperature":raw,meta,rows=_power(dataset_id,retrieved,"T2M","AG","degree_C",source_name)
     elif dataset_id=="earth.water_ice.rainfall":raw,meta,rows=_power(dataset_id,retrieved,"PRECTOTCORR","AG","mm/day",source_name)
     elif dataset_id=="earth.energy_humanity.solar_radiation":raw,meta,rows=_power(dataset_id,retrieved,"ALLSKY_SFC_SW_DWN","RE","kWh/m^2/day",source_name)
     elif kind=="usgs_events":raw,meta,rows=_usgs(dataset_id,retrieved)

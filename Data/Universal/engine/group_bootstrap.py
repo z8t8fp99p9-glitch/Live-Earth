@@ -62,12 +62,18 @@ def configure_group(group: str):
                 "earth.atmosphere.methane",
                 "earth.atmosphere.carbon_monoxide",
                 "earth.atmosphere.aerosols_dust",
-            }:
+            } or dataset_id.startswith("earth.land."):
                 item["status"] = "source_not_configured"
+                if dataset_id.startswith("earth.land."):
+                    contract = item.setdefault("data_contract", {})
+                    contract["spatial_coverage"] = "unverified_no_grid_source_configured"
+                    contract["temporal_resolution"] = "unverified"
             continue
 
         adapter, source, cadence = CONFIG[dataset_id]
-        previous_adapter = item.get("collection", {}).get("adapter_id")
+        previous_collection = item.get("collection", {})
+        previous_adapter = previous_collection.get("adapter_id")
+        previous_source = previous_collection.get("source_id")
         item["collection"] = {
             "enabled": True,
             "adapter_id": adapter,
@@ -75,7 +81,21 @@ def configure_group(group: str):
             "cadence": cadence,
         }
 
-        if (
+        next_contract = CONTRACTS.get(dataset_id)
+        previous_coverage = (item.get("data_contract") or {}).get("spatial_coverage")
+        land_configuration_changed = (
+            dataset_id.startswith("earth.land.")
+            and (
+                previous_adapter != adapter
+                or previous_source != source
+                or (next_contract is not None and previous_coverage != next_contract[1])
+            )
+        )
+        if land_configuration_changed:
+            # A prior successful point-sample collection is not evidence that the
+            # replacement grid collector has produced a valid global grid.
+            item["status"] = "collector_configured_pending_first_success"
+        elif (
             dataset_id.startswith("earth.oceans.")
             and previous_adapter not in {"ocean", "ocean_fixed", "ocean_additional"}
         ):

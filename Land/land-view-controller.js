@@ -1,7 +1,6 @@
 /* LIVE // EARTH — Land View Controller.
-   Globe-first Land observatory. Mirrors the accepted Atmosphere/Oceans view
-   composition and complete Earth Engine interaction model, while preserving
-   Land's verified sparse numerical point-sample data semantics.
+   Globe-first Land observatory using the shared Universal Grid System and GPU
+   Grid Skin. Land values are verified source grids, not regional point samples.
 */
 (() => {
   'use strict';
@@ -18,35 +17,49 @@
     id: 'land',
     title: 'Land',
     symbol: '⌁',
-    message: 'Select a Land dataset to inspect its verified regional observations.'
+    message: 'Select a Land dataset to render its verified global source grid.'
   };
   const VALUES_BASE_URL = 'https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/Data/Central-Database/values/';
   const LAND_DATASETS = {
     land_temperature: {
-      id:'land_temperature', datasetId:'earth.land.land_temperature',
-      label:'Land temperature', units:'degree_C', displayUnit:'°C',
-      sourceId:'nasa_power_daily', parameter:'T2M', kind:'numeric',
-      sourceLabel:'NASA POWER daily 2 m air temperature',
-      description:'Daily 2 m air temperature at six regional sample points.'
+      id:'land_temperature', datasetId:'earth.atmosphere.air_temperature',
+      label:'Near-surface temperature', units:'degree_Celsius', displayUnit:'°C',
+      sourceId:'noaa_ncep_gfs_025', gridId:'GRID_NOAA_GFS_025_V1',
+      sourceLabel:'NOAA/NCEP GFS 2 m air temperature',
+      description:'Reuses the existing global 0.25° NOAA/NCEP GFS 2 m air-temperature grid from the Atmosphere dataset.',
+      note:'Shared GFS model analysis · 2 m air temperature, not satellite land-surface temperature or a direct instrument observation',
+      palette:['#102b59','#236da1','#65b8c4','#e6d27c','#ec8b4b','#a8323e'],
+      colorMin:-40, colorMax:50
     },
     vegetation_health: {
       id:'vegetation_health', datasetId:'earth.land.vegetation_health',
       label:'Vegetation activity', units:'1', displayUnit:'NDVI',
-      sourceId:'noaa_cdr_viirs_ndvi_daily', kind:'ndvi',
+      sourceId:'noaa_cdr_viirs_ndvi_daily',
       sourceLabel:'NOAA CDR VIIRS Normalized Difference Vegetation Index',
-      description:'NDVI indicates satellite-derived vegetation greenness/activity; it is not a direct diagnosis of plant health.'
+      description:'Daily global NDVI; native 0.05° cells are aggregated to a 0.25° display grid.',
+      note:'NDVI represents satellite-derived vegetation greenness/activity, not a direct diagnosis of plant health. Source QA bit flags are not currently applied.',
+      palette:['#7d4a2d','#bb8247','#e0c86c','#9bc66a','#32885a','#0e513b'],
+      colorMin:-0.2, colorMax:0.9
     },
     forest_change: {
       id:'forest_change', datasetId:'earth.land.forest_change',
-      label:'Forest change', units:'year', displayUnit:'loss year',
-      sourceId:'hansen_global_forest_change_2025_v1_13', kind:'forest',
+      label:'Forest change', units:'year_code', displayUnit:'loss-year code',
+      sourceId:'hansen_global_forest_change_2025_v1_13',
       sourceLabel:'Hansen Global Forest Change 2025 v1.13',
-      description:'Point samples of gross stand-replacement forest loss during 2001–2025. Zero means no detected loss at the sampled pixel.'
+      description:'Global 0.25° layer derived from Hansen 30 m loss-year and data-mask tiles.',
+      note:'Each mapped cell shows the latest detected gross forest-loss year within that cell. 0 means no detected loss; water and no-data remain transparent.',
+      palette:['#174a35','#4e9855','#c9b35b','#e58a43','#b93b36'],
+      colorMin:0, colorMax:25
     }
   };
 
+  const LAND_PALETTES = Object.fromEntries(
+    Object.entries(LAND_DATASETS).map(([id, config]) => [id, config.palette])
+  );
+
+
   const DATASET_OPTIONS = [
-    { id:'land_temperature', label:'Land temperature', icon:'temperature', color:'#ff9c68', available:true },
+    { id:'land_temperature', label:'Near-surface temperature', icon:'temperature', color:'#ff9c68', available:true },
     { id:'soil_moisture', label:'Soil moisture', icon:'moisture', color:'#71c9f4' },
     { id:'soil_properties', label:'Soil properties', icon:'soil', color:'#c2a080' },
     { id:'elevation', label:'Elevation', icon:'elevation', color:'#d2bd91' },
@@ -58,18 +71,27 @@
     { id:'urban_expansion', label:'Urban expansion', icon:'urban', color:'#c4b2ff' }
   ];
 
-  const REGION_NAMES = {
-    north_america:'North America',
-    south_america:'South America',
-    europe_north_africa:'Europe & North Africa',
-    east_africa:'East Africa',
-    south_asia:'South Asia',
-    east_asia_pacific:'East Asia & Pacific'
-  };
-  const REGION_ORDER = [
-    'north_america','south_america','europe_north_africa',
-    'east_africa','south_asia','east_asia_pacific'
-  ];
+  function loadSharedGridTools() {
+    const scripts = [
+      ['./EarthEngine/Graphics/universal-grid-system.js', () => !!window.LiveEarthUniversalGridSystem?.loadCurrentGrid],
+      ['./EarthEngine/Graphics/earth-grid-gpu-skin.js', () => !!window.LiveEarthGpuGridSkin?.create]
+    ];
+    return scripts.reduce((chain, [path, ready]) => chain.then(() => {
+      if (ready()) return;
+      const key = `__leScriptPromise:${path}`;
+      if (window[key]) return window[key];
+      window[key] = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = new URL(path, document.baseURI).href;
+        script.async = true;
+        script.onload = () => ready() ? resolve() : reject(new Error(`${path} loaded without its public API.`));
+        script.onerror = () => reject(new Error(`Could not load ${path}.`));
+        (document.head || document.documentElement).appendChild(script);
+      }).catch(error => { window[key] = null; throw error; });
+      return window[key];
+    }), Promise.resolve());
+  }
+
 
   const ICONS = {
     temperature:'<path d="M10 14.5V5a2 2 0 1 1 4 0v9.5a4 4 0 1 1-4 0Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12 10v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
@@ -233,10 +255,8 @@
       .le-land-summary-title { min-width:0; overflow:hidden; color:#c6ddeb; font-size:clamp(9px,2.25cqi,11px); font-weight:620; letter-spacing:.055em; text-overflow:ellipsis; text-transform:uppercase; }
       .le-land-summary-range { flex:0 0 auto; color:#f7fbff; font-size:clamp(15px,4.1cqi,21px); font-weight:560; letter-spacing:-.025em; font-variant-numeric:tabular-nums; white-space:nowrap; }
       .le-land-summary-track-row { display:grid; grid-template-columns:minmax(0,1fr) var(--land-action-space); align-items:center; column-gap:var(--land-track-gap); min-width:0; }
-      .le-land-sample-count { display:flex; align-items:center; justify-content:space-between; min-width:0; gap:8px; }
-      .le-land-sample-count-label { color:#b9cddd; font-size:clamp(9px,1.8cqi,11px); font-weight:550; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap; }
-      .le-land-sample-dots { display:flex; align-items:center; justify-content:flex-end; gap:clamp(6px,1.8vw,12px); min-width:0; }
-      .le-land-sample-dots span { width:5px; height:5px; flex:none; border-radius:50%; background:#8fe5ff; box-shadow:0 0 7px rgba(65,185,255,.65); }
+      .le-land-grid-count { display:flex; align-items:center; justify-content:space-between; min-width:0; gap:8px; }
+      .le-land-grid-count-label { color:#b9cddd; font-size:clamp(9px,1.8cqi,11px); font-weight:550; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap; }
       .le-land-scale-more {
         position:relative; flex:none; display:grid; place-items:center;
         width:var(--land-action-space); height:var(--land-action-space); margin:0; padding:0;
@@ -260,11 +280,7 @@
       .le-sfv--land .le-sfv-metric-label { font-size:8px; margin-bottom:4px; }
       .le-sfv--land .le-sfv-metric-value { font-size:clamp(13px,3.5vw,17px); }
       .le-sfv--land .le-sfv-attribution { margin:7px 2px 0; font-size:8px; color:#8da9bc; }
-      .le-land-sample-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; margin-top:10px; }
-      .le-land-sample-card { min-width:0; padding:9px 10px; border:1px solid rgba(142,185,207,.16); border-radius:12px; background:rgba(1,8,17,.42); }
-      .le-land-sample-name { display:block; color:#a9c6d8; font-size:9px; line-height:1.3; }
-      .le-land-sample-value { display:block; margin-top:4px; color:#f2fbff; font-size:clamp(15px,4vw,19px); line-height:1.1; font-weight:650; font-variant-numeric:tabular-nums; }
-      .le-land-sample-coordinate { display:block; margin-top:4px; color:#8da9bc; font:8px/1.35 ui-monospace,monospace; }
+      .le-land-grid-note { margin-top:10px; padding:10px 11px; border:1px solid rgba(142,185,207,.16); border-radius:12px; background:rgba(1,8,17,.42); color:#a9c6d8; font-size:10px; line-height:1.5; }
       .le-land-provenance-note { margin:9px 2px 0; color:#9bb5c6; font-size:9px; line-height:1.5; }
 
       @media (orientation:portrait) {
@@ -289,13 +305,11 @@
         .le-land-summary-title { font-size:9px; text-align:center; white-space:normal; }
         .le-land-summary-range { font-size:clamp(13px,1.45vw,16px); text-align:center; }
         .le-land-summary-track-row { grid-column:1; grid-row:3; display:flex; flex-direction:column; gap:8px; }
-        .le-land-sample-count { flex-direction:column; gap:8px; }
-        .le-land-sample-count-label { font-size:8px; white-space:normal; text-align:center; }
-        .le-land-sample-dots { display:grid; grid-template-columns:repeat(3,5px); justify-content:center; gap:7px; }
+        .le-land-grid-count { flex-direction:column; gap:8px; }
+        .le-land-grid-count-label { font-size:8px; white-space:normal; text-align:center; }
         .le-land-scale-more { grid-column:1; grid-row:4; width:34px; height:34px; justify-self:center; align-self:center; margin:1px 0 0; }
         .le-land-scale-dock .le-land-data-card { left:calc(100% + 14px); right:auto; top:50%; bottom:auto; transform:translateY(-50%); width:min(42vw,620px); max-width:calc(80vw - 200px); max-height:85svh; overflow:auto; border-radius:16px; }
       }
-      @media (max-width:360px) { .le-land-sample-grid { grid-template-columns:1fr; } }
       @media (max-height:700px) {
         .le-sfv--land.le-world-engine-host .le-sfv-body { margin-top:clamp(145px,28vh,230px); }
         .le-sfv--land .le-sfv-panel { padding-bottom:calc(env(safe-area-inset-bottom) + 112px); }
@@ -311,7 +325,7 @@
         .le-land-summary-title { font-size:8px; }
         .le-land-summary-range { font-size:15px; }
         .le-land-instrument-label { font-size:9px; letter-spacing:.22em; margin-bottom:5px; }
-        .le-land-sample-count-label { font-size:8px; }
+        .le-land-grid-count-label { font-size:8px; }
       }
     `;
     document.head.appendChild(style);
@@ -721,7 +735,7 @@
       status.hidden = true;
     };
 
-    // Match the compact Atmosphere/Oceans settings orb and ten-orb menu.
+    // Match the compact Atmosphere/Oceans settings orb and ten-dataset menu.
     const hudToggle = runtime.el('button', 'le-land-hud-toggle');
     hudToggle.type = 'button';
     const hudIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -746,53 +760,49 @@
     });
     view.root.appendChild(hudToggle);
 
-    // The Land information instrument occupies the same floating dock as the
-    // Atmosphere/Oceans colour scale. Its content remains discrete because the
-    // current Land dataset contains six point samples, not a continuous raster.
-    const details = runtime.card('Land observations', 'Verified regional point observations and source details.');
+    // The Land information instrument mirrors the Atmosphere/Oceans numerical
+    // grid summary. The globe itself displays the source grid through the GPU skin.
+    const details = runtime.card('Land grid', 'Verified source-grid coverage and provenance.');
     details.classList.add('le-land-data-card');
     details.hidden = true;
     const summaryRange = runtime.el('div', 'le-land-summary-range', '—');
-    const summaryTitle = runtime.el('div', 'le-land-summary-title', 'Land observations · sample range');
+    const summaryTitle = runtime.el('div', 'le-land-summary-title', 'Land grid · global value range');
     const summaryHeading = runtime.el('div', 'le-land-summary-heading');
     summaryHeading.append(summaryTitle, summaryRange);
     const scaleDock = runtime.el('section', 'le-land-scale-dock');
-    scaleDock.setAttribute('aria-label', 'Land numerical observation summary');
+    scaleDock.setAttribute('aria-label', 'Land numerical grid summary');
     scaleDock.hidden = true;
     const instrumentLabel = runtime.el('div', 'le-land-instrument-label');
     instrumentLabel.appendChild(runtime.el('span', 'le-land-instrument-name', 'Land'));
     scaleDock.append(details, instrumentLabel, summaryHeading);
 
     const summaryTrackRow = runtime.el('div', 'le-land-summary-track-row');
-    const sampleCount = runtime.el('div', 'le-land-sample-count');
-    const sampleCountLabel = runtime.el('span', 'le-land-sample-count-label', '6 regional point samples');
-    const sampleDots = runtime.el('div', 'le-land-sample-dots');
-    sampleDots.setAttribute('aria-label', 'Six distinct regional observations');
-    for (let i = 0; i < 6; i++) sampleDots.appendChild(runtime.el('span'));
-    sampleCount.append(sampleCountLabel, sampleDots);
+    const gridCount = runtime.el('div', 'le-land-grid-count');
+    const gridCountLabel = runtime.el('span', 'le-land-grid-count-label', 'Global grid · loading');
+    gridCount.appendChild(gridCountLabel);
     const scaleMore = runtime.el('button', 'le-land-scale-more', '+');
     scaleMore.type = 'button';
-    scaleMore.setAttribute('aria-label', 'Show Land observations and provenance');
+    scaleMore.setAttribute('aria-label', 'Show Land grid details and provenance');
     scaleMore.setAttribute('aria-controls', 'le-land-data-details');
     scaleMore.setAttribute('aria-expanded', 'false');
-    summaryTrackRow.append(sampleCount, scaleMore);
+    summaryTrackRow.append(gridCount, scaleMore);
     scaleDock.appendChild(summaryTrackRow);
     view.root.appendChild(scaleDock);
 
-    const sampleGrid = runtime.el('div', 'le-land-sample-grid');
+    const gridNote = runtime.el('div', 'le-land-grid-note');
     const disclosure = runtime.el('details', 'le-land-details');
     disclosure.id = 'le-land-data-details';
     disclosure.appendChild(runtime.el('summary', '', 'Data details & provenance'));
     const metric = runtime.el('div', 'le-sfv-metric-grid');
     disclosure.appendChild(metric);
     const provenance = runtime.el('p', 'le-land-provenance-note', '');
-    details.append(sampleGrid, disclosure, provenance);
+    details.append(gridNote, disclosure, provenance);
 
     const syncScaleMore = () => {
       const expanded = disclosure.open;
       scaleMore.textContent = expanded ? '−' : '+';
       scaleMore.setAttribute('aria-expanded', String(expanded));
-      scaleMore.setAttribute('aria-label', expanded ? 'Collapse Land observations and provenance' : 'Expand Land observations and provenance');
+      scaleMore.setAttribute('aria-label', expanded ? 'Collapse Land grid details and provenance' : 'Expand Land observations and provenance');
       view.root.classList.toggle('le-land-details-expanded', expanded);
     };
     scaleMore.addEventListener('click', () => {
@@ -809,7 +819,7 @@
       orb.dataset.dataset = item.id;
       orb.setAttribute('aria-label', item.label);
       orb.setAttribute('aria-pressed', 'false');
-      orb.title = `${item.label}${item.available ? ' · verified regional point samples' : ' · Source adapter not configured'}`;
+      orb.title = `${item.label}${item.available ? ' · global source grid' : ' · Source adapter not configured'}`;
       const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       icon.setAttribute('viewBox', '0 0 24 24');
       icon.setAttribute('aria-hidden', 'true');
@@ -825,7 +835,6 @@
 
     let closed = false;
     let layerDispose = null;
-    let markerRoot = null;
     let worldGlobe = null;
     let dataRequest = null;
     let engineReady = null;
@@ -857,11 +866,12 @@
       if (typeof layerDispose === 'function') {
         const dispose = layerDispose;
         layerDispose = null;
-        try { dispose(); } catch (error) { console.warn('[LIVE // EARTH] Land point layer detach failed.', error); }
+        try { dispose(); } catch (error) { console.warn('[LIVE // EARTH] Land grid layer detach failed.', error); }
       }
-      try { markerRoot?.removeFromParent?.(); } catch (_) {}
-      markerRoot = null;
       delete view.root.dataset.landObservations;
+      delete view.root.dataset.landGrid;
+      delete view.root.dataset.gridRenderingSkin;
+      delete view.root.dataset.gridData;
     }
 
     function makeMetric(labelText, value, unit = '') {
@@ -869,152 +879,72 @@
       item.appendChild(runtime.el('span', 'le-sfv-metric-label', labelText));
       const valueNode = runtime.el('strong', 'le-sfv-metric-value', value);
       if (unit) valueNode.appendChild(runtime.el('span', 'le-sfv-metric-unit', ` ${unit}`));
+      item.appendChild(valueNode);
       metric.appendChild(item);
     }
 
-    function markerColor(record, config) {
-      const status = record.quality?.sample_status;
-      if (config.kind === 'forest') {
-        if (status === 'mapped_land' && record.value === 0) return 0x79e2ae;
-        if (status === 'mapped_land' && Number.isFinite(record.value)) return 0xff986f;
-        if (status === 'water') return 0x65bce8;
-        return 0x8995a5;
-      }
-      if (config.kind === 'ndvi') {
-        if (status !== 'valid' || !Number.isFinite(record.value)) return 0x8995a5;
-        const value = Math.max(-0.2, Math.min(1, record.value));
-        const t = (value + 0.2) / 1.2;
-        const low = [224, 171, 112], high = [105, 225, 151];
-        return (Math.round(low[0] + (high[0] - low[0]) * t) << 16) |
-          (Math.round(low[1] + (high[1] - low[1]) * t) << 8) |
-          Math.round(low[2] + (high[2] - low[2]) * t);
-      }
-      if (!Number.isFinite(record.value)) return 0x8995a5;
-      const values = recordsForColorScale;
-      const min = Math.min(...values), max = Math.max(...values);
-      const t = max === min ? 0.5 : (record.value - min) / (max - min);
-      const low = [83, 173, 235], high = [255, 164, 103];
-      return (Math.round(low[0] + (high[0] - low[0]) * t) << 16) |
-        (Math.round(low[1] + (high[1] - low[1]) * t) << 8) |
-        Math.round(low[2] + (high[2] - low[2]) * t);
+    function formatFieldValue(value) {
+      if (!Number.isFinite(value)) return '—';
+      return value.toLocaleString(undefined, { maximumFractionDigits: Math.abs(value) >= 100 ? 1 : 2, minimumFractionDigits: 0 });
     }
 
-    let recordsForColorScale = [];
-
-    function sampleStatusLabel(record, config) {
-      if (Number.isFinite(record.value)) {
-        if (config.kind === 'forest') return record.value === 0 ? 'No detected loss · mapped land' : `Loss year code ${record.value}`;
-        if (config.kind === 'ndvi') return `NDVI ${formatNumber(record.value)}`;
-        return `${formatNumber(record.value)} ${config.displayUnit}`;
-      }
-      const status = record.quality?.sample_status;
-      if (status === 'water') return 'Persistent water · no land value';
-      if (status === 'unmapped') return 'Unmapped · no data';
-      if (status === 'source_nodata') return 'Source no-data';
-      return 'No data';
+    function formatGridResolution(value) {
+      if (!Number.isFinite(value)) return '—';
+      return value < 0.01 ? value.toFixed(5) : formatNumber(value);
     }
 
-    function renderSampleMarkers(records, config) {
+    function formatPaletteStops(colors) {
+      return colors.map((hex, index) => {
+        const value = Number.parseInt(hex.slice(1), 16);
+        return [index / Math.max(1, colors.length - 1), ((value >> 16) & 255) / 255, ((value >> 8) & 255) / 255, (value & 255) / 255];
+      });
+    }
+
+    function validateDatasetGrid(metadata, grid, config) {
+      if (metadata.dataset_id !== config.datasetId) throw new Error('Dataset identity does not match the Land registry.');
+      if (metadata.data_kind !== 'grid' || metadata.value_file !== 'values.bin') throw new Error('The selected Land dataset is not stored as a numerical grid.');
+      const sourceMatches = config.gridId
+        ? metadata.grid_id === config.gridId
+        : metadata.source_id === config.sourceId;
+      if (!sourceMatches || metadata.units !== config.units) throw new Error('Land grid source or units do not match the registered dataset.');
+      if (!grid?.definition || !grid?.values || grid.values.length !== grid.definition.width * grid.definition.height) throw new Error('The decoded Land grid does not match its declared dimensions.');
+      if (!(grid.validCount > 0) || !Number.isFinite(grid.min) || !Number.isFinite(grid.max) || grid.max < grid.min) throw new Error('The verified Land grid contains no valid numeric cells.');
+      if (metadata.sha256_uncompressed_values !== undefined && !/^[a-f0-9]{64}$/i.test(metadata.sha256_uncompressed_values)) throw new Error('Land grid metadata has an invalid decoded-value checksum.');
+    }
+
+    function attachGridLayer(grid, config) {
       if (!worldGlobe || typeof worldGlobe.attachLayer !== 'function') throw new Error('The Earth Engine globe is not ready.');
-      recordsForColorScale = records.filter(record => Number.isFinite(record.value)).map(record => record.value);
-      layerDispose = worldGlobe.attachLayer(`land-${config.id}-regional-samples`, ({ THREE, earth }) => {
+      let handle = null;
+      let root = null;
+      layerDispose = worldGlobe.attachLayer(`land-${config.id}-grid`, ({ THREE, earth }) => {
         if (!THREE?.Group || !earth?.add) throw new Error('The Earth Engine did not provide its Three.js globe surface.');
-        markerRoot = new THREE.Group();
-        markerRoot.name = `liveEarth-land-${config.id}-regional-samples`;
-        const geometries = [];
-        const materials = [];
-        const haloGeometry = new THREE.SphereGeometry(0.022, 14, 10);
-        const dotGeometry = new THREE.SphereGeometry(0.010, 16, 12);
-        geometries.push(haloGeometry, dotGeometry);
-        for (const record of records) {
-          const color = markerColor(record, config);
-          const isMissing = !Number.isFinite(record.value);
-          const haloMaterial = new THREE.MeshBasicMaterial({
-            color, transparent:true, opacity:isMissing ? 0.13 : 0.27,
-            depthTest:true, depthWrite:false
-          });
-          const dotMaterial = new THREE.MeshBasicMaterial({
-            color, transparent:isMissing, opacity:isMissing ? 0.68 : 1,
-            depthTest:true, depthWrite:false
-          });
-          materials.push(haloMaterial, dotMaterial);
-          const phi = record.latitude * Math.PI / 180;
-          const lambda = record.longitude * Math.PI / 180;
-          const direction = new THREE.Vector3(
-            Math.cos(phi) * Math.cos(lambda),
-            Math.sin(phi),
-            -Math.cos(phi) * Math.sin(lambda)
-          ).normalize();
-          const halo = new THREE.Mesh(haloGeometry, haloMaterial);
-          halo.position.copy(direction).multiplyScalar(1.012);
-          halo.renderOrder = 14;
-          const dot = new THREE.Mesh(dotGeometry, dotMaterial);
-          dot.position.copy(direction).multiplyScalar(1.022);
-          dot.renderOrder = 15;
-          const tile = record.quality?.sample_tile_id || '';
-          halo.userData.sampleTile = tile;
-          dot.userData.sampleTile = tile;
-          dot.userData.sampleStatus = record.quality?.sample_status || (isMissing ? 'no_data' : 'valid');
-          dot.userData.sampleValue = record.value;
-          markerRoot.add(halo, dot);
-        }
-        earth.add(markerRoot);
+        root = new THREE.Group();
+        root.name = `liveEarth-land-${config.id}-grid-layer`;
+        handle = window.LiveEarthGpuGridSkin.create({
+          THREE,
+          grid,
+          radius: 1.009,
+          opacity: 0.88,
+          min: config.colorMin,
+          max: config.colorMax,
+          colorStops: formatPaletteStops(LAND_PALETTES[config.id]),
+          contourInterval: 0,
+          name: `LAND-${config.id.toUpperCase()}-GRID`
+        });
+        root.add(handle.mesh);
+        earth.add(root);
         return () => {
-          markerRoot?.removeFromParent?.();
-          geometries.forEach(geometry => geometry.dispose());
-          materials.forEach(material => material.dispose());
-          markerRoot = null;
+          try { handle?.dispose?.(); } catch (_) {}
+          handle = null;
+          try { root?.removeFromParent?.(); } catch (_) {}
+          root = null;
         };
       });
-      if (typeof layerDispose !== 'function') throw new Error('The discrete Land observation markers could not attach.');
-      view.root.dataset.landObservations = `verified-${config.id}-regional-point-samples`;
+      if (typeof layerDispose !== 'function') throw new Error('The Land numerical grid layer could not attach.');
+      view.root.dataset.landGrid = `verified-${config.id}-global-grid`;
+      view.root.dataset.gridRenderingSkin = 'gpu-ready';
+      view.root.dataset.gridData = `central-database-${config.id}`;
       worldGlobe.requestRender?.();
-    }
-
-    function buildSampleCards(records, config) {
-      sampleGrid.replaceChildren();
-      for (const record of records) {
-        const key = record.quality?.sample_tile_id;
-        const card = runtime.el('article', 'le-land-sample-card');
-        card.appendChild(runtime.el('span', 'le-land-sample-name', REGION_NAMES[key] || key || 'Regional sample'));
-        card.appendChild(runtime.el('strong', 'le-land-sample-value', sampleStatusLabel(record, config)));
-        card.appendChild(runtime.el('span', 'le-land-sample-coordinate', `${formatNumber(record.latitude)}°, ${formatNumber(record.longitude)}°`));
-        const quality = record.quality?.quality_flag_raw;
-        if (Number.isFinite(quality)) card.appendChild(runtime.el('span', 'le-land-sample-coordinate', `Source quality flag ${quality}`));
-        sampleGrid.appendChild(card);
-      }
-    }
-
-    function validateDatasetRecords(metadata, records, config) {
-      if (metadata.dataset_id !== config.datasetId) throw new Error('Dataset identity does not match the Land registry.');
-      if (metadata.format !== 'records' || metadata.data_kind !== 'point_samples') throw new Error('The selected Land field is not registered as point samples.');
-      if (metadata.coverage_mode !== 'six_sparse_regional_point_samples') throw new Error('Unexpected Land sample coverage mode.');
-      if (metadata.units !== config.units || metadata.source_id !== config.sourceId) throw new Error('Land source or units do not match the registered dataset.');
-      if (config.parameter && metadata.parameter !== config.parameter) throw new Error('Land parameter does not match the registered NASA POWER field.');
-      const valid = records.filter(record =>
-        record.dataset_id === config.datasetId &&
-        record.source_id === config.sourceId &&
-        record.unit === config.units &&
-        Number.isFinite(record.latitude) && record.latitude >= -90 && record.latitude <= 90 &&
-        Number.isFinite(record.longitude) && record.longitude >= -180 && record.longitude <= 180 &&
-        typeof record.observed_at === 'string' && !Number.isNaN(Date.parse(record.observed_at)) &&
-        (config.kind === 'numeric'
-          ? record.quality?.sample_mode === 'regional_point' && Number.isFinite(record.value)
-          : config.kind === 'ndvi'
-            ? record.quality?.sample_mode === 'nearest_native_grid_cell' &&
-              (Number.isFinite(record.value) || record.quality?.sample_status === 'source_nodata')
-            : record.quality?.sample_mode === 'regional_point' &&
-              (Number.isFinite(record.value) || ['water','unmapped'].includes(record.quality?.sample_status)))
-      );
-      const sampleIds = valid.map(record => record.quality?.sample_tile_id);
-      if (valid.length !== 6 || new Set(sampleIds).size !== 6 || metadata.record_count !== 6) {
-        throw new Error(`Expected six unique regional sample locations, including source no-data states; received ${valid.length}.`);
-      }
-      for (const id of REGION_ORDER) {
-        if (!sampleIds.includes(id)) throw new Error(`The registered ${REGION_NAMES[id]} sample is missing.`);
-      }
-      valid.sort((a, b) => REGION_ORDER.indexOf(a.quality.sample_tile_id) - REGION_ORDER.indexOf(b.quality.sample_tile_id));
-      return valid;
     }
 
     async function selectDataset(item) {
@@ -1033,7 +963,7 @@
         scaleDock.hidden = true;
         disclosure.open = false;
         syncScaleMore();
-        showStatus(`${item.label} is registered in the Land catalogue, but its source adapter has not been configured. The clean Earth globe remains interactive.`, 'neutral');
+        showStatus(`${item.label} is registered in the Land catalogue, but its global grid source is not configured yet. The Earth globe remains interactive.`, 'neutral');
         worldGlobe?.requestRender?.();
         return;
       }
@@ -1060,79 +990,75 @@
       disclosure.open = false;
       syncScaleMore();
       setSelectedDataset(item.id);
-      summaryTitle.textContent = `${config.label} · regional samples`;
+      summaryTitle.textContent = `${config.label} · global grid range`;
       const controller = new AbortController();
       dataRequest = controller;
       const button = datasetOrbButtons.get(item.id);
       if (button) button.disabled = true;
-      showStatus(`Loading and verifying ${config.sourceLabel} regional point samples…`, 'neutral');
+      showStatus(`Loading and verifying the ${config.sourceLabel} grid…`, 'neutral');
 
       try {
+        await loadSharedGridTools();
         if (engineReady) await engineReady;
         if (closed || controller.signal.aborted || !runtime.isActive(WORLD.id)) return;
         const base = `${VALUES_BASE_URL}${config.datasetId}/`;
-        const [metadataResponse, recordsResponse] = await Promise.all([
-          fetch(`${base}metadata.json`, { cache:'no-store', signal:controller.signal }),
-          fetch(`${base}records.jsonl`, { cache:'no-store', signal:controller.signal })
-        ]);
-        if (!metadataResponse.ok || !recordsResponse.ok) {
-          throw new Error(`Stored Land dataset request failed (${metadataResponse.status}/${recordsResponse.status}).`);
-        }
+        const metadataResponse = await fetch(`${base}metadata.json`, { cache:'no-store', signal:controller.signal });
+        if (!metadataResponse.ok) throw new Error(`Stored Land grid metadata request failed (${metadataResponse.status}).`);
         const metadata = await metadataResponse.json();
-        const recordsText = await recordsResponse.text();
-        const records = recordsText.split(/\r?\n/).filter(Boolean).map(line => JSON.parse(line));
+        const grid = await window.LiveEarthUniversalGridSystem.loadCurrentGrid({
+          baseUrl: VALUES_BASE_URL,
+          datasetId: config.datasetId,
+          signal: controller.signal
+        });
         if (closed || controller.signal.aborted || !runtime.isActive(WORLD.id)) return;
+        validateDatasetGrid(metadata, grid, config);
 
-        const samples = validateDatasetRecords(metadata, records, config);
-        const numeric = samples.filter(record => Number.isFinite(record.value));
-        if (!numeric.length) throw new Error('This dataset currently contains no numeric samples to plot.');
-        const observedTimes = samples.map(record => Date.parse(record.observed_at));
-        const latestObserved = new Date(Math.max(...observedTimes)).toISOString();
-        const min = Math.min(...numeric.map(record => record.value));
-        const max = Math.max(...numeric.map(record => record.value));
-        const updated = metadata.updated_at_utc || samples.map(record => record.retrieved_at).filter(Boolean).sort().at(-1);
-        const observedLabel = formatTime(latestObserved);
-        const updatedLabel = formatTime(updated);
-        const validCount = numeric.length;
-        const missingCount = samples.length - validCount;
+        const width = grid.definition.width;
+        const height = grid.definition.height;
+        const totalCells = width * height;
+        const updated = metadata.updated_at_utc || grid.retrievedAt;
+        const observed = grid.observedAt || metadata.observed_at_utc || metadata.valid_time_utc || metadata.source_observation_period;
+        const gridStep = Math.max(Math.abs(grid.definition.latStep), Math.abs(grid.definition.lonStep));
+        const nativeResolution = metadata.native_grid_spacing_degrees ?? gridStep;
+        const displayResolution = metadata.grid_resolution_degrees ?? gridStep;
+        const rangeMin = formatFieldValue(grid.min);
+        const rangeMax = formatFieldValue(grid.max);
+        const unit = config.displayUnit || grid.units;
 
         if (closed || controller.signal.aborted || !runtime.isActive(WORLD.id)) return;
-        renderSampleMarkers(samples, config);
-        buildSampleCards(samples, config);
+        attachGridLayer(grid, config);
+        buildGridSummary(gridNote, metadata, config, grid);
         details.querySelector('h2').textContent = config.label;
         const subtitle = details.querySelector('p');
-        if (subtitle) subtitle.textContent = `${config.sourceLabel} · ${samples.length} regional locations`;
-        summaryRange.textContent = config.kind === 'forest'
-          ? `${validCount} mapped land samples`
-          : `${formatNumber(min)}–${formatNumber(max)} ${config.displayUnit}`;
-        sampleCountLabel.textContent = `${validCount} numeric · ${missingCount} no-data`;
+        if (subtitle) subtitle.textContent = `${metadata.source_name || metadata.product || config.sourceLabel} · ${width.toLocaleString()} × ${height.toLocaleString()} global grid`;
+        summaryRange.textContent = `${rangeMin}–${rangeMax} ${unit}`;
+        gridCountLabel.textContent = `${grid.validCount.toLocaleString()} valid grid cells`;
         details.hidden = false;
         scaleDock.hidden = false;
         metric.replaceChildren();
-        makeMetric('Regional locations', String(samples.length));
-        makeMetric('Numeric samples', String(validCount));
-        makeMetric('No-data samples', String(missingCount));
-        makeMetric('Observed / valid time', observedLabel);
-        makeMetric('Snapshot updated', updatedLabel);
-        makeMetric('Sample range', config.kind === 'forest'
-          ? 'No detected loss at mapped samples'
-          : `${formatNumber(min)} to ${formatNumber(max)} ${config.displayUnit}`);
-        makeMetric('Source', config.sourceLabel);
-        const period = metadata.source_observation_period ? ` Observation period: ${metadata.source_observation_period}.` : '';
-        const warning = config.kind === 'ndvi'
-          ? ' NDVI represents vegetation greenness/activity, not a direct plant-health diagnosis.'
-          : config.kind === 'forest'
-            ? ' These are six point samples, not a global forest-loss raster or area estimate. Water and unmapped pixels are not treated as zero loss.'
-            : ' No continuous global field, raster, or interpolation is shown.';
-        const sourceUrl = samples.find(record => record.provenance?.source_url)?.provenance?.source_url || metadata.source_url;
+        makeMetric('Grid dimensions', `${width.toLocaleString()} × ${height.toLocaleString()}`, 'cells');
+        makeMetric('Valid cells', grid.validCount.toLocaleString(), `of ${totalCells.toLocaleString()}`);
+        if (Number.isFinite(displayResolution)) makeMetric('Display grid spacing', `${formatGridResolution(displayResolution)}°`);
+        if (Number.isFinite(nativeResolution)) makeMetric('Native source spacing', `${formatGridResolution(nativeResolution)}°`);
+        makeMetric('Observed / valid time', formatTime(observed));
+        makeMetric('Current values updated', formatTime(updated));
+        makeMetric('Grid value range', `${rangeMin} to ${rangeMax} ${unit}`);
+        makeMetric('Source', metadata.source_name || metadata.product || config.sourceLabel);
+        const sourceUrl = metadata.source_url || metadata.source_urls?.[0];
+        const notes = [
+          metadata.source_observation_period ? `Source period: ${metadata.source_observation_period}.` : '',
+          metadata.aggregation_method ? `Grid processing: ${metadata.aggregation_method}` : '',
+          metadata.interpretation_note || metadata.note || config.note,
+          (metadata.attribution || metadata.source_attribution) ? `Attribution: ${metadata.attribution || metadata.source_attribution}.` : ''
+        ].filter(Boolean).join(' ');
         provenance.replaceChildren();
         provenance.appendChild(document.createTextNode(
-          `Observed ${observedLabel}. Updated ${updatedLabel}.${period}${warning} Source: ${metadata.source_name || config.sourceLabel}. `
+          `Observed ${formatTime(observed)}. Updated ${formatTime(updated)}. ${notes} Source: ${metadata.source_name || metadata.product || config.sourceLabel}. `
         ));
         if (typeof sourceUrl === 'string') {
           try {
             const url = new URL(sourceUrl);
-            const allowedHosts = ['power.larc.nasa.gov','www.ncei.noaa.gov','storage.googleapis.com'];
+            const allowedHosts = ['power.larc.nasa.gov','www.ncei.noaa.gov','storage.googleapis.com','nomads.ncep.noaa.gov'];
             if (url.protocol === 'https:' && allowedHosts.includes(url.hostname)) {
               const link = runtime.el('a', '', 'Open source data');
               link.href = url.href;
@@ -1152,7 +1078,7 @@
           setSelectedDataset(null);
           details.hidden = true;
           scaleDock.hidden = true;
-          showStatus(`${config.label} data could not be displayed. The base Earth globe remains active. ${error?.message || ''}`, 'error');
+          showStatus(`${config.label} grid could not be displayed. The base Earth globe remains active. ${error?.message || ''}`, 'error');
         }
       } finally {
         if (dataRequest === controller) {
@@ -1161,6 +1087,16 @@
         }
       }
     }
+
+    function buildGridSummary(host, metadata, config, grid) {
+      const width = grid.definition.width;
+      const height = grid.definition.height;
+      const resolution = metadata.grid_resolution_degrees ?? Math.max(Math.abs(grid.definition.latStep), Math.abs(grid.definition.lonStep));
+      const resolutionLabel = Number.isFinite(resolution) ? `${formatGridResolution(resolution)}° grid spacing` : 'source grid spacing';
+      const coverage = metadata.coverage_note || 'Global gridded source field';
+      host.textContent = `${coverage} · ${width.toLocaleString()} × ${height.toLocaleString()} cells · ${resolutionLabel} · ${grid.validCount.toLocaleString()} valid cells`;
+    }
+
 
     const cleanup = () => {
       if (closed) return;
@@ -1178,6 +1114,7 @@
       worldGlobe = null;
       delete view.root.dataset.landDataset;
       delete view.root.dataset.landObservations;
+      delete view.root.dataset.landGrid;
       delete view.root.dataset.globeEngine;
       view.root.classList.remove('le-land-details-expanded');
     };

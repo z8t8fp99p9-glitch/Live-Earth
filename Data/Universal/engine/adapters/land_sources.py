@@ -1,13 +1,18 @@
 from __future__ import annotations
 
-"""Anonymous NASA/NOAA-first and open global-source adapters for Land.
+"""Global Land grid adapters for the LIVE // EARTH Universal Collector.
 
-The current Land view is intentionally fed with the same six stable regional
-sample points as NASA POWER. These are point samples, not a fabricated global
-raster. Static source epochs and product quality/mask information are retained.
+Each collected Land dataset is stored as one verified numerical grid in
+Central-Database/values/<dataset_id>/values.bin. The adapters never reduce a
+source raster to regional point samples. Native products are retained at
+source resolution where practical; very high-resolution imagery is aggregated
+with an explicit, documented method for a mobile-friendly globe texture.
 """
 
+import concurrent.futures
 import datetime as dt
+import gzip
+import hashlib
 import json
 import math
 import os
@@ -21,103 +26,61 @@ import numpy as np
 import rasterio
 import requests
 import xarray as xr
-from rasterio.windows import Window
+from rasterio.enums import Resampling
 
 UTC = dt.timezone.utc
 SESSION = requests.Session()
-SESSION.headers.update({"User-Agent": "LIVE-EARTH-Universal-Collector/1.0 (open public Earth data)"})
+SESSION.headers.update({"User-Agent": "LIVE-EARTH-Universal-Collector/2.0 (open public Earth data; grid collection)"})
+DB_VALUES = Path(__file__).resolve().parents[3] / "Central-Database" / "values"
 
-SITES = [
-    {"id": "north_america", "lat": 40.0, "lon": -100.0},
-    {"id": "south_america", "lat": -15.0, "lon": -60.0},
-    {"id": "europe_north_africa", "lat": 35.0, "lon": 15.0},
-    {"id": "east_africa", "lat": 0.0, "lon": 35.0},
-    {"id": "south_asia", "lat": 20.0, "lon": 80.0},
-    {"id": "east_asia_pacific", "lat": 25.0, "lon": 125.0},
-]
-
-STATIC_SOURCES = {
-    "earth.land.elevation": {
-        "source_id": "copernicus_dem_glo30",
-        "revision": "GLO-30_Public_2021_1",
-        "kind": "dem",
-        "unit": "m",
-        "observed_at": "2015-12-31T00:00:00Z",
-        "observation_period": "2011-2015",
-    },
-    "earth.land.terrain": {
-        "source_id": "copernicus_dem_glo30",
-        "revision": "GLO-30_Public_2021_1",
-        "kind": "slope",
-        "unit": "degree",
-        "observed_at": "2015-12-31T00:00:00Z",
-        "observation_period": "2011-2015",
-    },
-    "earth.land.land_cover": {
-        "source_id": "esa_worldcover_2021_v200",
-        "revision": "2021_v200",
-        "kind": "worldcover",
-        "unit": "class_code",
-        "observed_at": "2021-12-31T00:00:00Z",
-        "observation_period": "2021",
-    },
-    "earth.land.forest_change": {
-        "source_id": "hansen_global_forest_change_2025_v1_13",
-        "revision": "GFC-2025-v1.13",
-        "kind": "forest_loss_year",
-        "unit": "year",
-        "observed_at": "2025-12-31T00:00:00Z",
-        "observation_period": "2001-2025",
-    },
-}
+# Stable display grids. NDVI is reduced from 0.05° to 0.25° with a valid-cell
+# mean. Hansen 1-arc-second source tiles are reduced to 0.25° with the latest
+# detected loss year in each cell and the dominant source data-mask class.
 NDVI_DATASET_ID = "earth.land.vegetation_health"
 NDVI_SOURCE_ID = "noaa_cdr_viirs_ndvi_daily"
 NDVI_CATALOG_ROOT = "https://www.ncei.noaa.gov/thredds/catalog/cdr/ndvi"
 NDVI_FILESERVER_ROOT = "https://www.ncei.noaa.gov/thredds/fileServer"
-DB_VALUES = Path(__file__).resolve().parents[3] / "Central-Database" / "values"
-_LATEST_NDVI = None
+NDVI_NATIVE_RESOLUTION = 0.05
+NDVI_DISPLAY_RESOLUTION = 0.25
+NDVI_AGGREGATION_FACTOR = 5
+NDVI_NO_DATA_INT16 = -32768
+
+FOREST_DATASET_ID = "earth.land.forest_change"
+FOREST_SOURCE_ID = "hansen_global_forest_change_2025_v1_13"
+FOREST_REVISION = "GFC-2025-v1.13"
+FOREST_BASE_URL = "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13"
+FOREST_CATALOG_URL = f"{FOREST_BASE_URL}/download.html"
+FOREST_LOSSYEAR_LIST_URL = f"{FOREST_BASE_URL}/lossyear.txt"
+FOREST_DATAMASK_LIST_URL = f"{FOREST_BASE_URL}/datamask.txt"
+FOREST_NATIVE_RESOLUTION_DEGREES = 1.0 / 3600.0
+FOREST_DISPLAY_RESOLUTION = 0.25
+FOREST_TILE_OUTPUT_SIZE = 40
+FOREST_NO_DATA_INT16 = -32768
 
 
 def _iso(value: dt.datetime) -> str:
     return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
 
 
-def _get(url: str, *, cap: int = 500 * 1024 * 1024, attempts: int = 3) -> requests.Response:
+def _get(url: str, *, params=None, cap: int = 600 * 1024 * 1024, attempts: int = 3) -> requests.Response:
     last_error = None
     for attempt in range(attempts):
         try:
-            response = SESSION.get(url, timeout=(25, 240))
+            response = SESSION.get(url, params=params, timeout=(25, 240))
             if response.status_code == 429 or 500 <= response.status_code < 600:
-                last_error = RuntimeError(f"HTTP {response.status_code} from {url}")
+                last_error = RuntimeError(f"HTTP {response.status_code} from {response.url}")
                 if attempt + 1 < attempts:
                     time.sleep(2 ** attempt)
                     continue
             response.raise_for_status()
             if not response.content or len(response.content) > cap:
-                raise RuntimeError(f"Invalid response size ({len(response.content)} bytes) from {url}")
+                raise RuntimeError(f"Invalid response size ({len(response.content)} bytes) from {response.url}")
             return response
         except (requests.Timeout, requests.ConnectionError) as exc:
             last_error = exc
             if attempt + 1 < attempts:
                 time.sleep(2 ** attempt)
     raise RuntimeError(f"Public source request failed: {last_error}")
-
-
-def _record(dataset_id, source_id, observed_at, retrieved_at, value, unit, source_url, site, **extra):
-    return {
-        "dataset_id": dataset_id,
-        "source_id": source_id,
-        "observed_at": observed_at,
-        "retrieved_at": retrieved_at,
-        "value": value,
-        "unit": unit,
-        "latitude": site["lat"],
-        "longitude": site["lon"],
-        "geometry": {"type": "Point", "coordinates": [site["lon"], site["lat"]]},
-        "quality": {"sample_tile_id": site["id"], **extra.pop("quality", {})},
-        "provenance": {"source_url": source_url},
-        **extra,
-    }
 
 
 def _metadata_path(dataset_id: str) -> Path:
@@ -134,216 +97,128 @@ def _stored_metadata(dataset_id: str) -> dict:
         return {}
 
 
-def _tile_component(value: int, latitude: bool) -> str:
-    prefix = ("N" if value >= 0 else "S") if latitude else ("E" if value >= 0 else "W")
-    width = 2 if latitude else 3
-    return f"{prefix}{abs(value):0{width}d}"
+def _coordinate_name(ds: xr.Dataset, axis: str) -> str:
+    wanted = "latitude" if axis == "lat" else "longitude"
+    aliases = {"lat", "latitude"} if axis == "lat" else {"lon", "longitude"}
+    for name, coord in ds.variables.items():
+        standard = str(coord.attrs.get("standard_name", "")).lower()
+        units = str(coord.attrs.get("units", "")).lower()
+        if coord.ndim == 1 and (standard == wanted or name.lower() in aliases):
+            return name
+        if coord.ndim == 1 and axis == "lat" and units in {"degrees_north", "degree_north", "degrees_n"}:
+            return name
+        if coord.ndim == 1 and axis == "lon" and units in {"degrees_east", "degree_east", "degrees_e"}:
+            return name
+    raise RuntimeError(f"Source NetCDF has no one-dimensional {wanted} coordinate")
 
 
-def _copernicus_dem_url(lat: float, lon: float) -> str:
-    lat0, lon0 = math.floor(lat), math.floor(lon)
-    name = f"Copernicus_DSM_COG_10_{_tile_component(lat0, True)}_00_{_tile_component(lon0, False)}_00_DEM"
-    return f"https://copernicus-dem-30m.s3.amazonaws.com/{name}/{name}.tif"
+def _regular_step(values: np.ndarray, label: str, expected: float | None = None) -> float:
+    if values.ndim != 1 or values.size < 2 or not np.isfinite(values).all():
+        raise RuntimeError(f"Source {label} coordinate is not a valid one-dimensional array")
+    differences = np.diff(values)
+    step = float(np.median(differences))
+    if step == 0 or not np.allclose(differences, step, rtol=0, atol=max(1e-7, abs(step) * 1e-4)):
+        raise RuntimeError(f"Source {label} coordinate is not a regular grid")
+    if expected is not None and not math.isclose(abs(step), expected, rel_tol=0.015, abs_tol=1e-5):
+        raise RuntimeError(f"Unexpected {label} resolution {step}; expected approximately {expected}")
+    return step
 
 
-def _worldcover_url(lat: float, lon: float) -> str:
-    lat0 = math.floor(lat / 3.0) * 3
-    lon0 = math.floor(lon / 3.0) * 3
-    tile = f"{_tile_component(lat0, True)}{_tile_component(lon0, False)}"
-    name = f"ESA_WorldCover_10m_2021_v200_{tile}_Map.tif"
-    return f"https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/{name}"
+def _pack_grid(values: np.ndarray, *, scale: int, no_data_code: int, metadata: dict):
+    """Pack a north-to-south float field as gzip + little-endian int16."""
+    field = np.asarray(values, dtype=np.float32)
+    if field.ndim != 2 or field.size == 0:
+        raise RuntimeError("Grid field must be a non-empty two-dimensional array")
+    if not np.isfinite(scale) or scale <= 0 or not -32768 <= no_data_code <= 32767:
+        raise ValueError("Invalid grid packing parameters")
+    valid = np.isfinite(field)
+    if not valid.any():
+        raise RuntimeError("Source grid contains no valid numeric cells")
+    encoded = np.full(field.shape, no_data_code, dtype="<i2")
+    packed = np.rint(field[valid] * scale)
+    if np.any(packed < -32767) or np.any(packed > 32767):
+        raise RuntimeError("Source values exceed the approved int16 storage range")
+    encoded[valid] = packed.astype("<i2")
+    raw_values = encoded.tobytes(order="C")
+    payload = gzip.compress(raw_values, compresslevel=9, mtime=0)
+    decoded_nodata = float(np.float32(no_data_code / scale))
+    meta = dict(metadata)
+    meta.update({
+        "data_kind": "grid",
+        "format": "gzip+int16-le",
+        "width": int(field.shape[1]),
+        "height": int(field.shape[0]),
+        "coordinate_order": "latitude-longitude",
+        "row_order": "north-to-south",
+        "longitude_convention": meta.get("longitude_convention", "0..360"),
+        "units": meta["units"],
+        "scale_factor": int(scale),
+        "encoding": f"little-endian signed int16; value = stored_integer / {int(scale)}",
+        "nodata_value": decoded_nodata,
+        "compressed_payload": True,
+        "valid_cell_count": int(valid.sum()),
+        "source_min": float(np.min(field[valid])),
+        "source_max": float(np.max(field[valid])),
+        "sha256_uncompressed_values": hashlib.sha256(raw_values).hexdigest(),
+    })
+    return payload, meta
 
 
-def _hansen_tile(lat: float, lon: float):
-    # Hansen granules use the form 40N_080W: north-west corner of a 10x10 tile.
-    north = math.ceil(lat / 10.0) * 10
-    west = math.floor(lon / 10.0) * 10
-    lat_part = f"{abs(north):02d}{'N' if north >= 0 else 'S'}"
-    lon_part = f"{abs(west):03d}{'E' if west >= 0 else 'W'}"
-    return f"{lat_part}_{lon_part}"
+def _descriptor(dataset_id: str, source_id: str, observed_at: str, retrieved_at: str, unit: str, source_url: str, metadata: dict):
+    return [{
+        "dataset_id": dataset_id,
+        "source_id": source_id,
+        "observed_at": observed_at,
+        "retrieved_at": retrieved_at,
+        "value": None,
+        "unit": unit,
+        "provenance": {"source_url": source_url},
+        "geometry": {"type": "global_regular_grid", "metadata": {
+            "width": metadata["width"], "height": metadata["height"],
+            "latitude_first": metadata["latitude_first"], "latitude_step": metadata["latitude_step"],
+            "longitude_first": metadata["longitude_first"], "longitude_step": metadata["longitude_step"],
+            "longitude_convention": metadata["longitude_convention"],
+        }},
+    }]
 
 
-def _hansen_url(lat: float, lon: float, layer: str) -> str:
-    tile = _hansen_tile(lat, lon)
-    filename = f"Hansen_GFC-2025-v1.13_{layer}_{tile}.tif"
-    return f"https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/{filename}"
+def _normalise_global_field(variable: xr.DataArray, lat_values: np.ndarray, lon_values: np.ndarray):
+    lat_dim = variable.dims[-2]
+    lon_dim = variable.dims[-1]
+    if lat_dim not in variable.dims or lon_dim not in variable.dims:
+        raise RuntimeError("Source field dimensions do not match latitude/longitude coordinates")
+    field = np.asarray(variable.transpose(lat_dim, lon_dim).values, dtype=np.float32)
+    if field.shape != (lat_values.size, lon_values.size):
+        raise RuntimeError("Source field shape does not match its latitude/longitude coordinates")
+    lat_order = np.argsort(lat_values)[::-1]
+    lon_360 = np.mod(lon_values, 360.0)
+    lon_order = np.argsort(lon_360)
+    lon_sorted_all = lon_360[lon_order]
+    # Global APIs sometimes include both -180 and +180 (or 0 and 360). They
+    # describe the same meridian, so keep one rather than storing a duplicate
+    # seam column that would make a nominal global grid wider than 360°.
+    keep_lon = np.ones(lon_sorted_all.shape, dtype=bool)
+    if lon_sorted_all.size > 1:
+        keep_lon[1:] = np.diff(lon_sorted_all) > 1e-7
+    lon_order = lon_order[keep_lon]
+    field = field[np.ix_(lat_order, lon_order)]
+    lat_sorted = lat_values[lat_order]
+    lon_sorted = lon_360[lon_order]
+    lat_step = _regular_step(lat_sorted, "latitude")
+    lon_step = _regular_step(lon_sorted, "longitude")
+    if lat_step >= 0 or lon_step <= 0:
+        raise RuntimeError("Source coordinates could not be normalized to north-to-south / eastward order")
+    if not (math.isclose(float(lat_sorted[0]), 90.0, abs_tol=0.3) and math.isclose(float(lat_sorted[-1]), -90.0, abs_tol=0.3)):
+        raise RuntimeError("Source latitude grid does not cover the globe")
+    if not math.isclose(float(lon_sorted[-1] - lon_sorted[0] + lon_step), 360.0, abs_tol=0.02):
+        raise RuntimeError("Source longitude grid does not cover 360 degrees")
+    return field, lat_sorted, lon_sorted, lat_step, lon_step
 
 
-def _raster_env():
-    return rasterio.Env(
-        GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR",
-        CPL_VSIL_CURL_ALLOWED_EXTENSIONS=".tif,.tiff",
-        CPL_VSIL_CURL_USE_HEAD="YES",
-        GDAL_HTTP_MULTIRANGE="YES",
-        AWS_NO_SIGN_REQUEST="YES",
-    )
-
-
-def _read_pixel_and_window(url: str, lat: float, lon: float, window_size: int = 1):
-    """Read only a pixel or small local neighbourhood from a public COG/GeoTIFF."""
-    with _raster_env():
-        with rasterio.open(url) as src:
-            if src.crs is None or src.crs.to_epsg() != 4326:
-                raise RuntimeError(f"Expected an EPSG:4326 source raster: {url}")
-            row, col = src.index(lon, lat)
-            if row < 0 or col < 0 or row >= src.height or col >= src.width:
-                raise RuntimeError(f"Sample coordinate falls outside source tile: {url}")
-            if window_size == 1:
-                result = src.read(1, window=Window(col, row, 1, 1), masked=True)
-                value = result[0, 0]
-                if np.ma.is_masked(value) or not np.isfinite(float(value)):
-                    return None, None
-                return float(value), None
-            half = window_size // 2
-            if row < half or col < half or row + half >= src.height or col + half >= src.width:
-                raise RuntimeError(f"Terrain neighbourhood crosses DEM tile edge: {url}")
-            result = src.read(1, window=Window(col - half, row - half, window_size, window_size), masked=True)
-            arr = np.asarray(result.filled(np.nan), dtype=np.float64)
-            if arr.shape != (window_size, window_size) or not np.isfinite(arr).all():
-                raise RuntimeError(f"DEM neighbourhood contains nodata: {url}")
-            return float(arr[half, half]), (arr, float(src.res[0]), float(src.res[1]))
-
-
-def _collect_dem(dataset, retrieved_at: str, terrain: bool):
-    dataset_id = dataset["dataset_id"]
-    spec = STATIC_SOURCES[dataset_id]
-    rows, urls = [], []
-    for site in SITES:
-        # Keep boundary points just inside the tile chosen by the standard floor rule.
-        sample_lat, sample_lon = site["lat"] + 1e-5, site["lon"] + 1e-5
-        url = _copernicus_dem_url(sample_lat, sample_lon)
-        value, detail = _read_pixel_and_window(url, sample_lat, sample_lon, 3 if terrain else 1)
-        if value is None:
-            raise RuntimeError(f"Copernicus DEM has no valid elevation at {site['id']}")
-        if terrain:
-            arr, res_x, res_y = detail
-            dx = abs(res_x) * 111320.0 * max(0.01, math.cos(math.radians(sample_lat)))
-            dy = abs(res_y) * 110574.0
-            dz_dy, dz_dx = np.gradient(arr, dy, dx)
-            slope = math.degrees(math.atan(math.sqrt(float(dz_dx[1, 1]) ** 2 + float(dz_dy[1, 1]) ** 2)))
-            value = float(slope)
-        urls.append(url)
-        rows.append(_record(
-            dataset_id, spec["source_id"], spec["observed_at"], retrieved_at,
-            round(value, 3), spec["unit"], url, site,
-            quality={
-                "source_observation_period": spec["observation_period"],
-                "source_product": "Copernicus DEM GLO-30 Public",
-                "elevation_model_type": "digital_surface_model",
-                "terrain_method": "3x3 local DEM gradient; slope in degrees" if terrain else None,
-                "sample_mode": "regional_point",
-            },
-        ))
-    meta = {
-        "data_kind": "point_samples", "format": "records",
-        "source_name": "Copernicus DEM GLO-30 Public",
-        "source_id": spec["source_id"], "source_revision": spec["revision"],
-        "source_observation_period": spec["observation_period"],
-        "observation_time_semantics": "period_end_marker_not_per_pixel_acquisition_timestamp",
-        "source_url": urls[0], "source_urls": sorted(set(urls)),
-        "coverage_mode": "six_sparse_regional_point_samples",
-        "units": spec["unit"], "sample_sites": SITES,
-        "elevation_model_type": "digital_surface_model",
-        "description": "Slope is derived from a 3x3 neighbourhood of the same DEM; elevation includes surface objects such as vegetation and buildings.",
-    }
-    return {"value_payload": None, "metadata": meta, "observations": rows}
-
-
-def _collect_worldcover(dataset, retrieved_at: str):
-    dataset_id = dataset["dataset_id"]
-    spec = STATIC_SOURCES[dataset_id]
-    rows, urls = [], []
-    for site in SITES:
-        sample_lat, sample_lon = site["lat"] + 1e-5, site["lon"] + 1e-5
-        url = _worldcover_url(sample_lat, sample_lon)
-        value, _ = _read_pixel_and_window(url, sample_lat, sample_lon)
-        if value is None:
-            raise RuntimeError(f"ESA WorldCover has no valid land-cover class at {site['id']}")
-        code = int(round(value))
-        if code not in {10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 100}:
-            raise RuntimeError(f"Unexpected ESA WorldCover class code {code} at {site['id']}")
-        urls.append(url)
-        rows.append(_record(
-            dataset_id, spec["source_id"], spec["observed_at"], retrieved_at,
-            code, spec["unit"], url, site,
-            quality={"source_observation_period": "2021", "class_code": code,
-                     "sample_mode": "regional_point", "raster_resolution_m": 10},
-        ))
-    return {
-        "value_payload": None,
-        "metadata": {
-            "data_kind": "point_samples", "format": "records",
-            "source_name": "ESA WorldCover 10 m 2021 v200",
-            "source_id": spec["source_id"], "source_revision": spec["revision"],
-            "source_observation_period": "2021", "source_url": urls[0],
-            "source_urls": sorted(set(urls)), "coverage_mode": "six_sparse_regional_point_samples",
-            "units": spec["unit"], "sample_sites": SITES,
-            "class_codes": {"10": "Tree cover", "20": "Shrubland", "30": "Grassland", "40": "Cropland",
-                            "50": "Built-up", "60": "Bare or sparse vegetation", "70": "Snow and ice",
-                            "80": "Permanent water bodies", "90": "Herbaceous wetland", "95": "Mangroves",
-                            "100": "Moss and lichen"},
-            "attribution": "© ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium",
-        },
-        "observations": rows,
-    }
-
-
-def _collect_forest_change(dataset, retrieved_at: str):
-    dataset_id = dataset["dataset_id"]
-    spec = STATIC_SOURCES[dataset_id]
-    rows, urls = [], []
-    for site in SITES:
-        # Hansen's granules use a north-west corner naming convention.
-        sample_lat = site["lat"] - 1e-5
-        sample_lon = site["lon"] + 1e-5
-        loss_url = _hansen_url(sample_lat, sample_lon, "lossyear")
-        mask_url = _hansen_url(sample_lat, sample_lon, "datamask")
-        code, _ = _read_pixel_and_window(loss_url, sample_lat, sample_lon)
-        mask, _ = _read_pixel_and_window(mask_url, sample_lat, sample_lon)
-        if code is None or mask is None:
-            year = None
-            status = "nodata"
-        elif int(round(mask)) == 2:
-            year = None
-            status = "water"
-        elif int(round(mask)) != 1:
-            year = None
-            status = "unmapped"
-        else:
-            loss_code = int(round(code))
-            if not 0 <= loss_code <= 25:
-                raise RuntimeError(f"Unexpected Hansen lossyear code {loss_code} at {site['id']}")
-            year = 2000 + loss_code if loss_code else 0
-            status = "mapped_land"
-        urls.extend([loss_url, mask_url])
-        rows.append(_record(
-            dataset_id, spec["source_id"], spec["observed_at"], retrieved_at,
-            year, spec["unit"], loss_url, site,
-            quality={"source_observation_period": "2001-2025", "lossyear_code": None if code is None else int(round(code)),
-                     "data_mask": None if mask is None else int(round(mask)), "sample_status": status,
-                     "zero_means": "no detected forest loss during 2001-2025", "sample_mode": "regional_point"},
-            related_source_url=mask_url,
-        ))
-    return {
-        "value_payload": None,
-        "metadata": {
-            "data_kind": "point_samples", "format": "records",
-            "source_name": "Hansen Global Forest Change 2025 v1.13",
-            "source_id": spec["source_id"], "source_revision": spec["revision"],
-            "source_observation_period": "2001-2025", "source_url": urls[0],
-            "source_urls": sorted(set(urls)), "coverage_mode": "six_sparse_regional_point_samples",
-            "units": spec["unit"], "sample_sites": SITES,
-            "lossyear_encoding": "0=no detected loss; 1-25 represent 2001-2025",
-            "data_mask_encoding": {"0": "no data", "1": "mapped land", "2": "persistent water"},
-            "interpretation_warning": "The product maps gross stand-replacement forest loss, not every form of forest degradation. Yearly pixel counts should not be treated as definitive area estimates without the source's methodological caveats.",
-            "license": "CC-BY-4.0",
-            "attribution": "Source: Hansen/UMD/Google/USGS/NASA",
-        },
-        "observations": rows,
-    }
-
+# --- NOAA CDR VIIRS NDVI ---------------------------------------------------------
 
 def _parse_date_from_name(value: str):
+    import re
     for token in re.findall(r"(?<!\d)(?:19|20)\d{6}(?!\d)", value):
         try:
             return dt.datetime.strptime(token, "%Y%m%d").replace(tzinfo=UTC)
@@ -353,7 +228,6 @@ def _parse_date_from_name(value: str):
 
 
 def _latest_ndvi_file():
-    """Find the latest published NOAA NCEI VIIRS CDR file via anonymous THREDDS catalog."""
     now = dt.datetime.now(UTC)
     for year in range(now.year, 2013, -1):
         catalog_url = f"{NDVI_CATALOG_ROOT}/{year}/catalog.xml"
@@ -372,55 +246,34 @@ def _latest_ndvi_file():
             if valid_time is None or valid_time.year != year:
                 continue
             candidates.append((valid_time, url_path, name))
-        if not candidates:
-            continue
-        # Prefer the VIIRS stream for recent data; AVHRR is a historical fallback only.
+        # This dataset identity is explicitly the VIIRS CDR. Never silently
+        # substitute an AVHRR file under a VIIRS source id when a year has no
+        # VIIRS publication in its catalogue.
         viirs = [item for item in candidates if "viirs" in (item[1] + item[2]).lower()]
-        chosen = max(viirs or candidates, key=lambda item: item[0])
-        valid_time, url_path, name = chosen
-        return {
-            "valid_time": valid_time,
-            "name": name or Path(url_path).name,
-            "url_path": url_path,
-            "source_url": f"{NDVI_FILESERVER_ROOT}/{url_path.lstrip('/')}",
-            "catalog_url": catalog_url,
-        }
-    raise RuntimeError("NOAA NCEI NDVI THREDDS catalog has no date-stamped public NetCDF file in available yearly catalogs")
+        if viirs:
+            valid_time, url_path, name = max(viirs, key=lambda item: item[0])
+            return {
+                "valid_time": valid_time,
+                "name": name or Path(url_path).name,
+                "url_path": url_path,
+                "source_url": f"{NDVI_FILESERVER_ROOT}/{url_path.lstrip('/')}",
+                "catalog_url": catalog_url,
+            }
+    raise RuntimeError("NOAA NCEI NDVI THREDDS catalogue has no date-stamped public NetCDF file")
 
 
-def _coordinate_name(ds: xr.Dataset, axis: str) -> str:
-    wanted = "latitude" if axis == "lat" else "longitude"
-    for name, coord in ds.variables.items():
-        standard = str(coord.attrs.get("standard_name", "")).lower()
-        units = str(coord.attrs.get("units", "")).lower()
-        if standard == wanted or name.lower() in ({"lat", "latitude"} if axis == "lat" else {"lon", "longitude"}):
-            if coord.ndim == 1:
-                return name
-        if axis == "lat" and units in {"degrees_north", "degree_north", "degrees_n"} and coord.ndim == 1:
-            return name
-        if axis == "lon" and units in {"degrees_east", "degree_east", "degrees_e"} and coord.ndim == 1:
-            return name
-    raise RuntimeError(f"NOAA NDVI NetCDF has no 1-D {wanted} coordinate")
-
-
-def _nearest_index(values: np.ndarray, target: float) -> int:
-    arr = np.asarray(values, dtype=np.float64)
-    return int(np.nanargmin(np.abs(arr - target)))
-
-
-def _collect_ndvi(dataset, retrieved_at: str):
+def _collect_ndvi(dataset: dict, retrieved_at: str):
     spec = _LATEST_NDVI or _latest_ndvi_file()
-    raw = _get(spec["source_url"], cap=500 * 1024 * 1024).content
-    fd, path = tempfile.mkstemp(prefix="live-earth-ndvi-", suffix=".nc")
+    raw = _get(spec["source_url"], cap=550 * 1024 * 1024).content
+    fd, path = tempfile.mkstemp(prefix="live-earth-ndvi-grid-", suffix=".nc")
     try:
         with os.fdopen(fd, "wb") as stream:
             stream.write(raw)
         with xr.open_dataset(path, engine="netcdf4", decode_cf=True, mask_and_scale=True) as ds:
             var_name = next((name for name in ds.data_vars if name.lower() == "ndvi"), None)
-            if var_name is None:
-                raise RuntimeError("NOAA NDVI NetCDF does not contain an NDVI variable")
-            lat_name = _coordinate_name(ds, "lat")
-            lon_name = _coordinate_name(ds, "lon")
+            if not var_name:
+                raise RuntimeError("NOAA CDR NetCDF does not contain the NDVI variable")
+            lat_name, lon_name = _coordinate_name(ds, "lat"), _coordinate_name(ds, "lon")
             variable = ds[var_name]
             for dim in list(variable.dims):
                 if dim.lower() in {"time", "times"}:
@@ -428,55 +281,239 @@ def _collect_ndvi(dataset, retrieved_at: str):
             variable = variable.squeeze(drop=True)
             lat_values = np.asarray(ds[lat_name].values, dtype=np.float64)
             lon_values = np.asarray(ds[lon_name].values, dtype=np.float64)
-            lat_dim = ds[lat_name].dims[0]
-            lon_dim = ds[lon_name].dims[0]
-            if lat_dim not in variable.dims or lon_dim not in variable.dims:
-                raise RuntimeError("NOAA NDVI field dimensions do not match latitude/longitude coordinates")
-            qa_name = next((name for name in ds.data_vars if name.lower() in {"qa", "quality", "quality_flag"}), None)
-            qa_var = ds[qa_name].squeeze(drop=True) if qa_name else None
-            rows = []
-            for site in SITES:
-                lon_target = site["lon"] % 360.0 if np.nanmax(lon_values) > 180.0 else site["lon"]
-                iy = _nearest_index(lat_values, site["lat"])
-                ix = _nearest_index(lon_values, lon_target)
-                selected = variable.isel({lat_dim: iy, lon_dim: ix})
-                value_raw = np.asarray(selected.values).item()
-                value = None
-                if value_raw is not None and np.isfinite(value_raw):
-                    value = float(value_raw)
-                    if not -1.05 <= value <= 1.05:
-                        raise RuntimeError(f"NOAA NDVI value outside physical range at {site['id']}: {value}")
-                qa_value = None
-                if qa_var is not None and lat_dim in qa_var.dims and lon_dim in qa_var.dims:
-                    qa_raw = np.asarray(qa_var.isel({lat_dim: iy, lon_dim: ix}).values).item()
-                    if qa_raw is not None and np.isfinite(qa_raw):
-                        qa_value = int(qa_raw)
-                rows.append(_record(
-                    dataset["dataset_id"], NDVI_SOURCE_ID, _iso(spec["valid_time"]), retrieved_at,
-                    value, "1", spec["source_url"], site,
-                    quality={"sample_mode": "nearest_native_grid_cell", "native_grid_spacing_degrees": 0.05,
-                             "quality_flag_raw": qa_value, "quality_flag_interpretation": "raw source code retained; not reclassified by collector",
-                             "sample_status": "valid" if value is not None else "source_nodata"},
-                ))
-            metadata = {
-                "data_kind": "point_samples", "format": "records",
+            field, lat_sorted, lon_sorted, lat_step, lon_step = _normalise_global_field(variable, lat_values, lon_values)
+            if not math.isclose(abs(lat_step), NDVI_NATIVE_RESOLUTION, rel_tol=0, abs_tol=0.002) or not math.isclose(abs(lon_step), NDVI_NATIVE_RESOLUTION, rel_tol=0, abs_tol=0.002):
+                raise RuntimeError(f"Unexpected NOAA NDVI native grid spacing {lat_step}/{lon_step}")
+            if field.shape[0] % NDVI_AGGREGATION_FACTOR or field.shape[1] % NDVI_AGGREGATION_FACTOR:
+                raise RuntimeError("NOAA NDVI native grid dimensions are not divisible by the 5×5 display aggregation")
+            valid = np.isfinite(field) & (field >= -1.05) & (field <= 1.05)
+            field = np.where(valid, field, np.nan)
+            out_h = field.shape[0] // NDVI_AGGREGATION_FACTOR
+            out_w = field.shape[1] // NDVI_AGGREGATION_FACTOR
+            blocks = field.reshape(out_h, NDVI_AGGREGATION_FACTOR, out_w, NDVI_AGGREGATION_FACTOR)
+            valid_blocks = np.isfinite(blocks)
+            counts = valid_blocks.sum(axis=(1, 3))
+            sums = np.nansum(blocks, axis=(1, 3), dtype=np.float64)
+            aggregated = np.full((out_h, out_w), np.nan, dtype=np.float32)
+            np.divide(sums, counts, out=aggregated, where=counts > 0, casting="unsafe")
+            display_lat_step = float(lat_step * NDVI_AGGREGATION_FACTOR)
+            display_lon_step = float(lon_step * NDVI_AGGREGATION_FACTOR)
+            lat_first = float(np.mean(lat_sorted[:NDVI_AGGREGATION_FACTOR]))
+            lon_first = float(np.mean(lon_sorted[:NDVI_AGGREGATION_FACTOR]))
+            valid_native = int(valid.sum())
+            valid_display = int(np.isfinite(aggregated).sum())
+            source_url = spec["source_url"]
+            observed = _iso(spec["valid_time"])
+            payload, metadata = _pack_grid(aggregated, scale=10000, no_data_code=NDVI_NO_DATA_INT16, metadata={
+                "dataset_id": NDVI_DATASET_ID,
                 "source_name": "NOAA CDR VIIRS Normalized Difference Vegetation Index",
-                "source_id": NDVI_SOURCE_ID, "source_revision": "NOAA_NCEI_VIIRS_CDR",
-                "source_url": spec["source_url"], "catalog_url": spec["catalog_url"],
-                "source_file": spec["name"], "valid_time_utc": _iso(spec["valid_time"]),
-                "source_observation_period": "daily product; actual file date recorded as valid_time_utc",
-                "coverage_mode": "six_sparse_regional_point_samples",
-                "native_grid_spacing_degrees": 0.05, "units": "1",
-                "sample_sites": SITES,
+                "source_id": NDVI_SOURCE_ID,
+                "source_revision": "NOAA_NCEI_VIIRS_CDR_V1",
+                "provider": "NOAA National Centers for Environmental Information",
+                "product": "Daily VIIRS Climate Data Record NDVI",
+                "processing_level": "native 0.05° NDVI aggregated to 0.25° display grid",
+                "source_url": source_url,
+                "catalog_url": spec["catalog_url"],
+                "source_file": spec["name"],
+                "valid_time_utc": observed,
+                "source_observation_period": "daily source file; valid time follows the date in the source filename",
+                "native_grid_spacing_degrees": NDVI_NATIVE_RESOLUTION,
+                "grid_resolution_degrees": NDVI_DISPLAY_RESOLUTION,
+                "native_grid_width": int(field.shape[1]),
+                "native_grid_height": int(field.shape[0]),
+                "native_valid_cell_count": valid_native,
+                "native_latitude_spacing_degrees": abs(lat_step),
+                "native_longitude_spacing_degrees": abs(lon_step),
+                "aggregation_factor": "5×5",
+                "aggregation_method": "Arithmetic mean of valid native NDVI cells in each non-overlapping 5×5 block; blocks with no valid cells remain no-data.",
+                "latitude_first": lat_first,
+                "latitude_step": display_lat_step,
+                "longitude_first": lon_first,
+                "longitude_step": display_lon_step,
+                "longitude_convention": "0..360",
+                "units": "1",
+                "variable": var_name,
+                "quality_policy": "Native fill and non-physical values are excluded. Raw QA flags are not reclassified; no undocumented QA bit interpretation is applied.",
                 "description": "NDVI is a satellite-derived vegetation greenness/activity index, not a direct diagnosis of plant health.",
                 "citation": "NOAA Climate Data Record of VIIRS NDVI, Version 1; DOI: 10.25921/gakh-st76",
-            }
-            return {"value_payload": None, "metadata": metadata, "observations": rows}
+            })
+            metadata["display_valid_cell_count"] = valid_display
+            return {"value_payload": payload, "metadata": metadata,
+                    "observations": _descriptor(NDVI_DATASET_ID, NDVI_SOURCE_ID, observed, retrieved_at, "1", source_url, metadata)}
     finally:
         try:
             os.unlink(path)
         except FileNotFoundError:
             pass
+
+
+# --- Hansen Global Forest Change ------------------------------------------------
+
+def _hansen_tile_name(north: int, west: int) -> str:
+    lat_part = f"{abs(north):02d}{'N' if north >= 0 else 'S'}"
+    lon_part = f"{abs(west):03d}{'E' if west >= 0 else 'W'}"
+    return f"{lat_part}_{lon_part}"
+
+
+def _hansen_tile_urls(north: int, west: int):
+    tile = _hansen_tile_name(north, west)
+    prefix = f"Hansen_GFC-2025-v1.13"
+    return (
+        f"{FOREST_BASE_URL}/{prefix}_lossyear_{tile}.tif",
+        f"{FOREST_BASE_URL}/{prefix}_datamask_{tile}.tif",
+    )
+
+
+def _hansen_tile_specs() -> list[tuple[int, int]]:
+    """Use the provider's official per-layer manifests, not a guessed tile matrix."""
+    lossyear_response = _get(FOREST_LOSSYEAR_LIST_URL, cap=2 * 1024 * 1024)
+    datamask_response = _get(FOREST_DATAMASK_LIST_URL, cap=2 * 1024 * 1024)
+
+    def parse_layer(text: str, layer: str) -> set[tuple[int, int]]:
+        specs = set()
+        suffix = re.compile(
+            rf"Hansen_GFC-2025-v1\.13_{layer}_(\d{{2}}[NS])_(\d{{3}}[EW])\.tif$",
+            re.IGNORECASE,
+        )
+        for raw_line in text.splitlines():
+            url = raw_line.strip()
+            if not url:
+                continue
+            parsed = suffix.search(url)
+            if not parsed or not url.startswith(FOREST_BASE_URL + "/"):
+                raise RuntimeError(f"Unexpected URL in Hansen {layer} manifest: {url[:180]}")
+            lat_token, lon_token = parsed.groups()
+            north = int(lat_token[:2]) * (1 if lat_token[-1].upper() == "N" else -1)
+            west = int(lon_token[:3]) * (1 if lon_token[-1].upper() == "E" else -1)
+            if north < -60 or north > 80 or north % 10 or west < -180 or west >= 180 or west % 10:
+                raise RuntimeError(f"Hansen manifest contains an out-of-range tile: {url}")
+            spec = (north, west)
+            if spec in specs:
+                raise RuntimeError(f"Hansen {layer} manifest contains a duplicate tile: {url}")
+            specs.add(spec)
+        if not specs:
+            raise RuntimeError(f"Hansen {layer} manifest contains no valid tiles")
+        return specs
+
+    loss_tiles = parse_layer(lossyear_response.text, "lossyear")
+    mask_tiles = parse_layer(datamask_response.text, "datamask")
+    missing_masks = loss_tiles - mask_tiles
+    if missing_masks:
+        raise RuntimeError(f"Hansen datamask manifest is missing {len(missing_masks)} loss-year tiles")
+    return sorted(loss_tiles, key=lambda item: (-item[0], item[1]))
+
+
+def _raster_env():
+    return rasterio.Env(
+        GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR",
+        CPL_VSIL_CURL_ALLOWED_EXTENSIONS=".tif,.tiff",
+        CPL_VSIL_CURL_USE_HEAD="YES",
+        GDAL_HTTP_MULTIRANGE="YES",
+        GDAL_HTTP_TIMEOUT="60",
+        GDAL_HTTP_MAX_RETRY="2",
+        GDAL_HTTP_RETRY_DELAY="1",
+        AWS_NO_SIGN_REQUEST="YES",
+    )
+
+
+def _read_hansen_display_tile(north: int, west: int):
+    loss_url, mask_url = _hansen_tile_urls(north, west)
+    with _raster_env():
+        with rasterio.open(loss_url) as loss_src, rasterio.open(mask_url) as mask_src:
+            expected_bounds = (float(west), float(north - 10), float(west + 10), float(north))
+            for src, label in ((loss_src, "lossyear"), (mask_src, "datamask")):
+                if src.crs is None or src.crs.to_epsg() != 4326:
+                    raise RuntimeError(f"Hansen {label} tile has an unexpected CRS: {_hansen_tile_name(north, west)}")
+                if src.width < 1000 or src.height < 1000:
+                    raise RuntimeError(f"Hansen {label} tile is unexpectedly small: {_hansen_tile_name(north, west)}")
+                actual_bounds = (src.bounds.left, src.bounds.bottom, src.bounds.right, src.bounds.top)
+                if any(abs(actual - expected) > 0.002 for actual, expected in zip(actual_bounds, expected_bounds)):
+                    raise RuntimeError(
+                        f"Hansen {label} tile bounds {actual_bounds} do not match "
+                        f"the named 10-degree tile {expected_bounds}: {_hansen_tile_name(north, west)}"
+                    )
+            loss = loss_src.read(1, out_shape=(FOREST_TILE_OUTPUT_SIZE, FOREST_TILE_OUTPUT_SIZE), resampling=Resampling.max)
+            data_mask = mask_src.read(1, out_shape=(FOREST_TILE_OUTPUT_SIZE, FOREST_TILE_OUTPUT_SIZE), resampling=Resampling.mode)
+    if np.any(~np.isin(data_mask, (0, 1, 2))):
+        raise RuntimeError(f"Hansen datamask has unknown classes in tile {_hansen_tile_name(north, west)}")
+    valid_land = data_mask == 1
+    if np.any(loss[valid_land] > 25):
+        raise RuntimeError(f"Hansen lossyear has an unknown code in tile {_hansen_tile_name(north, west)}")
+    result = np.full((FOREST_TILE_OUTPUT_SIZE, FOREST_TILE_OUTPUT_SIZE), np.nan, dtype=np.float32)
+    # Preserve source semantics: 0=no detected loss; 1..25 are loss-year codes.
+    result[valid_land] = loss[valid_land].astype(np.float32)
+    return north, west, result, int(valid_land.sum())
+
+
+def _collect_forest_change(dataset: dict, retrieved_at: str):
+    # The source provides 10° × 10° tiles from 80°N to 60°S. Each tile is
+    # reduced to 40×40 (0.25°) cells using max(lossyear) and dominant datamask.
+    output = np.full((720, 1440), np.nan, dtype=np.float32)
+    tile_specs = _hansen_tile_specs()
+    completed = 0
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as pool:
+        futures = [pool.submit(_read_hansen_display_tile, north, west) for north, west in tile_specs]
+        for future in concurrent.futures.as_completed(futures):
+            north, west, tile_values, tile_valid = future.result()
+            row_start = int(round((89.875 - (north - 0.125)) / FOREST_DISPLAY_RESOLUTION))
+            lon_start = (west % 360.0) + 0.125
+            col_start = int(round(lon_start / FOREST_DISPLAY_RESOLUTION)) % 1440
+            row_end = row_start + FOREST_TILE_OUTPUT_SIZE
+            col_end = col_start + FOREST_TILE_OUTPUT_SIZE
+            if row_start < 0 or row_end > output.shape[0] or col_end > output.shape[1]:
+                raise RuntimeError(f"Hansen tile placement is outside the global display grid: {_hansen_tile_name(north, west)}")
+            if col_end <= output.shape[1]:
+                output[row_start:row_end, col_start:col_end] = tile_values
+            else:
+                split = output.shape[1] - col_start
+                output[row_start:row_end, col_start:] = tile_values[:, :split]
+                output[row_start:row_end, :col_end - output.shape[1]] = tile_values[:, split:]
+            completed += 1
+            if completed % 36 == 0:
+                print(f"LAND_FOREST_GRID_TILES completed={completed}/{len(tile_specs)}", flush=True)
+    if completed != len(tile_specs):
+        raise RuntimeError(f"Hansen forest grid is incomplete: {completed}/{len(tile_specs)} tiles")
+    if not np.isfinite(output).any():
+        raise RuntimeError("Hansen forest grid contains no mapped land cells")
+
+    observed = "2025-12-31T00:00:00Z"
+    payload, metadata = _pack_grid(output, scale=1, no_data_code=FOREST_NO_DATA_INT16, metadata={
+        "dataset_id": FOREST_DATASET_ID,
+        "source_name": "Hansen Global Forest Change 2025 v1.13",
+        "source_id": FOREST_SOURCE_ID,
+        "source_revision": FOREST_REVISION,
+        "provider": "University of Maryland GLAD / Hansen Global Forest Change",
+        "product": "Global gross forest loss year and data mask",
+        "processing_level": "30 m source tiles aggregated to 0.25° display grid",
+        "source_url": FOREST_CATALOG_URL,
+        "source_tile_manifests": [FOREST_LOSSYEAR_LIST_URL, FOREST_DATAMASK_LIST_URL],
+        "valid_time_utc": observed,
+        "source_observation_period": "2001-2025",
+        "native_grid_spacing_degrees": FOREST_NATIVE_RESOLUTION_DEGREES,
+        "grid_resolution_degrees": FOREST_DISPLAY_RESOLUTION,
+        "latitude_first": 89.875,
+        "latitude_step": -FOREST_DISPLAY_RESOLUTION,
+        "longitude_first": 0.125,
+        "longitude_step": FOREST_DISPLAY_RESOLUTION,
+        "longitude_convention": "0..360",
+        "units": "year_code",
+        "variable": "lossyear",
+        "source_tile_size_degrees": 10,
+        "source_tile_count": len(tile_specs),
+        "source_layer_files": ["lossyear", "datamask"],
+        "source_tile_selection": "Intersection of the official provider lossyear.txt and datamask.txt manifests; ocean-only mask tiles without a loss-year granule are not requested.",
+        "aggregation_method": "For each 0.25° cell, retain the maximum valid lossyear code and render only where the dominant source datamask class is mapped land (1). Codes 0=no detected loss; 1-25=2001-2025. Water/no-data cells remain transparent.",
+        "coverage_note": "Source granules cover 80°N to 60°S; outside this source extent cells are no-data and are not rendered as zero loss.",
+        "interpretation_note": "The value is the latest detected loss-year code within the coarse cell, not a percentage of forest lost or an area estimate. The product maps gross stand-replacement disturbance, not every form of degradation.",
+        "license": "CC-BY-4.0",
+        "attribution": "Source: Hansen/UMD/Google/USGS/NASA",
+    })
+    metadata["mapped_land_display_cells"] = int(np.isfinite(output).sum())
+    return {"value_payload": payload, "metadata": metadata,
+            "observations": _descriptor(FOREST_DATASET_ID, FOREST_SOURCE_ID, observed, retrieved_at, "year_code", FOREST_CATALOG_URL, metadata)}
+
+
+_LATEST_NDVI = None
 
 
 def is_due(dataset: dict) -> bool:
@@ -487,36 +524,32 @@ def is_due(dataset: dict) -> bool:
         try:
             _LATEST_NDVI = _latest_ndvi_file()
         except Exception:
-            # Do not destroy a good existing value just because the small catalog is
-            # temporarily unavailable. A first collection must still attempt a fetch.
-            return not bool(current)
-        return current.get("source_id") != NDVI_SOURCE_ID or current.get("source_url") != _LATEST_NDVI["source_url"]
-    spec = STATIC_SOURCES.get(dataset_id)
-    if spec is None:
-        return True
-    return current.get("source_id") != spec["source_id"] or current.get("source_revision") != spec["revision"]
-
+            return not (current.get("data_kind") == "grid" and current.get("value_file") == "values.bin")
+        return (current.get("data_kind") != "grid" or
+                current.get("source_id") != NDVI_SOURCE_ID or
+                current.get("source_url") != _LATEST_NDVI["source_url"] or
+                current.get("grid_resolution_degrees") != NDVI_DISPLAY_RESOLUTION)
+    if dataset_id == FOREST_DATASET_ID:
+        return not (current.get("data_kind") == "grid" and
+                    current.get("source_id") == FOREST_SOURCE_ID and
+                    current.get("source_revision") == FOREST_REVISION and
+                    current.get("width") == 1440 and current.get("height") == 720)
+    return True
 
 def collect(dataset: dict) -> dict:
     dataset_id = dataset.get("dataset_id")
     source_id = dataset.get("collection", {}).get("source_id")
     retrieved_at = _iso(dt.datetime.now(UTC))
-    if dataset_id == NDVI_DATASET_ID:
-        if source_id != NDVI_SOURCE_ID:
-            raise ValueError(f"NOAA NDVI source id mismatch: {source_id!r}")
-        return _collect_ndvi(dataset, retrieved_at)
-    spec = STATIC_SOURCES.get(dataset_id)
-    if spec is None:
-        raise ValueError(f"No Land source adapter for {dataset_id!r}")
-    if source_id != spec["source_id"]:
+    expected = {
+        NDVI_DATASET_ID: NDVI_SOURCE_ID,
+        FOREST_DATASET_ID: FOREST_SOURCE_ID,
+    }
+    if dataset_id not in expected:
+        raise ValueError(f"No global Land grid adapter is configured for {dataset_id!r}")
+    if source_id != expected[dataset_id]:
         raise ValueError(f"Land source id mismatch for {dataset_id}: {source_id!r}")
-    kind = spec["kind"]
-    if kind == "dem":
-        return _collect_dem(dataset, retrieved_at, terrain=False)
-    if kind == "slope":
-        return _collect_dem(dataset, retrieved_at, terrain=True)
-    if kind == "worldcover":
-        return _collect_worldcover(dataset, retrieved_at)
-    if kind == "forest_loss_year":
+    if dataset_id == NDVI_DATASET_ID:
+        return _collect_ndvi(dataset, retrieved_at)
+    if dataset_id == FOREST_DATASET_ID:
         return _collect_forest_change(dataset, retrieved_at)
-    raise ValueError(f"Unsupported Land source kind {kind!r}")
+    raise ValueError(f"Unsupported Land grid dataset: {dataset_id!r}")

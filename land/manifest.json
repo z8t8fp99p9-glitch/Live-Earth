@@ -5,10 +5,22 @@
   "snapshots": [
     {
       "dataset": "near_surface_air_temperature",
-      "data": "../Data/Central-Database/values/earth.land.land_temperature/records.jsonl",
-      "metadata": "../Data/Central-Database/values/earth.land.land_temperature/metadata.json",
-      "valid_time_utc": "2026-11-16T00:00:00Z",
-      "dataset_id": "earth.land.land_temperature"
+      "data": "../Data/Central-Database/values/earth.atmosphere.air_temperature/values.bin",
+      "metadata": "../Data/Central-Database/values/earth.atmosphere.air_temperature/metadata.json",
+      "dataset_id": "earth.atmosphere.air_temperature",
+      "shared_with": ["atmosphere"]
+    },
+    {
+      "dataset": "vegetation_activity",
+      "data": "../Data/Central-Database/values/earth.land.vegetation_health/values.bin",
+      "metadata": "../Data/Central-Database/values/earth.land.vegetation_health/metadata.json",
+      "dataset_id": "earth.land.vegetation_health"
+    },
+    {
+      "dataset": "forest_change",
+      "data": "../Data/Central-Database/values/earth.land.forest_change/values.bin",
+      "metadata": "../Data/Central-Database/values/earth.land.forest_change/metadata.json",
+      "dataset_id": "earth.land.forest_change"
     }
   ]
 }
