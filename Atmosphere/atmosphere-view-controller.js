@@ -437,6 +437,35 @@
    *
    * TRANSFER THE COMPLETE GLOBE SYSTEM AS ONE UNIT:
    *
+   * NEW VIEW STARTUP / CLEAN GLOBE PRESENTATION — COPY WITH THE GLOBE:
+   *    - Use the same globe-first activation lifecycle as this controller.
+   *      Mount with runtime.mount(DESTINATION_VIEW.id), then build that view's
+   *      own scene title and controls. Do not add a generic title/pill layer.
+   *    - Keep the Stacks module-download handoff silent for globe-first views.
+   *      Stacks should manage registration and activation only; it should not
+   *      replace the scene with a generic "Loading…" panel.
+   *    - Start initializeEngineView(view, DESTINATION_VIEW.id) immediately
+   *      inside an async IIFE. If later dataset actions need to wait for the
+   *      globe, assign the IIFE promise to engineReady and let those actions
+   *      await it. Keep this promise inside the controller, not in Stacks.
+   *    - After the await, check the controller's closed flag AND
+   *      runtime.isActive(DESTINATION_VIEW.id). Dispose the returned globe if
+   *      the view closed or lost focus while initialization was in progress.
+   *    - Validate the globe and attachLayer API, retain it as worldGlobe, set
+   *      root.dataset.globeEngine = 'ready', and requestRender() only after
+   *      successful initialization.
+   *    - Catch startup errors inside the controller. Show an error only while
+   *      the view is still active. If using engineReady, rethrow and attach
+   *      engineReady.catch(() => {}) to prevent an unhandled rejection before
+   *      a dataset is selected; dataset actions must handle await failures.
+   *    - Keep all startup and dataset loading behind the scene. The clean
+   *      globe is the view's baseline; do not replace it with loading cards.
+   *      Keep only the view's own controls/title visible, and show genuine
+   *      failures without leaving stale loading UI behind.
+   *    - Copy/adapt the matching cleanup too: abort pending requests, remove
+   *      listeners and controls, detach layers, dispose the globe, and guard
+   *      late async results with closed/active checks.
+   *
    * A) ENGINE / GLOBE FOUNDATION — initializeEngineView(), section 03
    *    - Keep the shared Three.js import and shared Earth Engine imports:
    *      createEarthGlobe/createGlobe and getDefaultCameraDistance().

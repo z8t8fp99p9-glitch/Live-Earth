@@ -432,7 +432,16 @@
     const state = moduleStates.get(id);
     if (!state) return;
     const activationToken = ++state.activationToken;
-    showFeatureLoadStatus(id, `Loading ${VIEW_META[id].title}…`);
+    // These world views are globe-first: keep controller download/registration
+    // silent so the user never sees a generic loading panel before the globe.
+    // The controllers own their startup and dataset status; module failures
+    // still use the shared error surface below.
+    const silentGlobeFirstLoad = id === 'atmosphere'
+      || id === 'oceans'
+      || id === 'atmospheric-composition';
+    if (!silentGlobeFirstLoad) {
+      showFeatureLoadStatus(id, `Loading ${VIEW_META[id].title}…`);
+    }
     ensureFeatureModule(id).then(() => {
       // A user may switch away and back while one script request is in flight.
       // Only the newest selection token may activate when that shared request resolves.

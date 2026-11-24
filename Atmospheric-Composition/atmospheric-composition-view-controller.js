@@ -990,6 +990,10 @@ function installStyles() {
     installResponsivePresentationStyles();
     const view = runtime.mount(WORLD.id);
     if (!view) return () => {};
+    // Clean globe-first presentation, consistent with Atmosphere.
+    // This view owns its scene title and controls; no generic intro is needed.
+    view.root.querySelector('.le-sfv-head')?.remove();
+    view.root.querySelector('.le-sfv-pill')?.remove();
     document.body.classList.add('le-composition-fullscreen-open');
 
     const sceneTitle = runtime.el('div', 'le-acomp-scene-title');
@@ -1357,22 +1361,27 @@ function installStyles() {
       }
     }
 
-    engineReady = initializeEngineView(view, WORLD.id).then(globe => {
-      if (closed || !runtime.isActive(WORLD.id)) {
-        globe?.dispose?.();
-        return null;
+    engineReady = (async () => {
+      try {
+        const globe = await initializeEngineView(view, WORLD.id);
+        if (closed || !runtime.isActive(WORLD.id)) {
+          globe?.dispose?.();
+          return null;
+        }
+        if (!globe || typeof globe.attachLayer !== 'function') {
+          throw new Error('The Earth Engine globe could not be created.');
+        }
+        worldGlobe = globe;
+        view.root.dataset.globeEngine = 'ready';
+        globe.requestRender?.();
+        return globe;
+      } catch (error) {
+        if (!closed && runtime.isActive(WORLD.id)) {
+          showStatus(`The Earth Engine globe could not open. ${error?.message || ''}`, 'error');
+        }
+        throw error;
       }
-      if (!globe || typeof globe.attachLayer !== 'function') throw new Error('The Earth Engine globe could not be created.');
-      worldGlobe = globe;
-      view.root.dataset.globeEngine = 'ready';
-      globe.requestRender?.();
-      return globe;
-    }).catch(error => {
-      if (!closed && runtime.isActive(WORLD.id)) {
-        showStatus(`The Earth Engine globe could not open. ${error?.message || ''}`, 'error');
-      }
-      throw error;
-    });
+    })();
     // Avoid an unhandled rejection when the globe fails before a field is selected.
     engineReady.catch(() => {});
 
