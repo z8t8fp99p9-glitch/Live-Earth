@@ -534,10 +534,10 @@
       "legacy_ids": [
         "LAND_04"
       ],
-      "status": "collector_configured_pending_first_success",
+      "status": "collector_configured_failed",
       "collection": {
         "enabled": true,
-        "adapter_id": "land_sources",
+        "adapter_id": "land_dem_sources",
         "source_id": "copernicus_dem_glo30",
         "cadence": "static"
       },
@@ -555,10 +555,10 @@
       "legacy_ids": [
         "LAND_05"
       ],
-      "status": "collector_configured_pending_first_success",
+      "status": "collector_configured_failed",
       "collection": {
         "enabled": true,
-        "adapter_id": "land_sources",
+        "adapter_id": "land_dem_sources",
         "source_id": "copernicus_dem_glo30",
         "cadence": "static"
       },
@@ -576,7 +576,7 @@
       "legacy_ids": [
         "LAND_06"
       ],
-      "status": "collector_configured_pending_first_success",
+      "status": "collector_configured_failed",
       "collection": {
         "enabled": true,
         "adapter_id": "land_sources",
@@ -597,7 +597,7 @@
       "legacy_ids": [
         "LAND_07"
       ],
-      "status": "collector_configured_pending_first_success",
+      "status": "collector_configured_success",
       "collection": {
         "enabled": true,
         "adapter_id": "land_sources",
@@ -618,7 +618,7 @@
       "legacy_ids": [
         "LAND_08"
       ],
-      "status": "collector_configured_pending_first_success",
+      "status": "collector_configured_success",
       "collection": {
         "enabled": true,
         "adapter_id": "land_sources",

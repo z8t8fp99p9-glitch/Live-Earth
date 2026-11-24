@@ -1,0 +1,75 @@
+{
+  "attribution": "Source: Hansen/UMD/Google/USGS/NASA",
+  "cell_count": null,
+  "coverage_mode": "six_sparse_regional_point_samples",
+  "data_kind": "point_samples",
+  "data_mask_encoding": {
+    "0": "no data",
+    "1": "mapped land",
+    "2": "persistent water"
+  },
+  "database_schema_version": 1,
+  "dataset_id": "earth.land.forest_change",
+  "format": "records",
+  "interpretation_warning": "The product maps gross stand-replacement forest loss, not every form of forest degradation. Yearly pixel counts should not be treated as definitive area estimates without the source's methodological caveats.",
+  "license": "CC-BY-4.0",
+  "lossyear_encoding": "0=no detected loss; 1-25 represent 2001-2025",
+  "observed_at_utc": "2025-12-31T00:00:00Z",
+  "record_count": 6,
+  "sample_sites": [
+    {
+      "id": "north_america",
+      "lat": 40.0,
+      "lon": -100.0
+    },
+    {
+      "id": "south_america",
+      "lat": -15.0,
+      "lon": -60.0
+    },
+    {
+      "id": "europe_north_africa",
+      "lat": 35.0,
+      "lon": 15.0
+    },
+    {
+      "id": "east_africa",
+      "lat": 0.0,
+      "lon": 35.0
+    },
+    {
+      "id": "south_asia",
+      "lat": 20.0,
+      "lon": 80.0
+    },
+    {
+      "id": "east_asia_pacific",
+      "lat": 25.0,
+      "lon": 125.0
+    }
+  ],
+  "source_id": "hansen_global_forest_change_2025_v1_13",
+  "source_name": "Hansen Global Forest Change 2025 v1.13",
+  "source_observation_period": "2001-2025",
+  "source_revision": "GFC-2025-v1.13",
+  "source_url": "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_lossyear_40N_100W.tif",
+  "source_urls": [
+    "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_datamask_00N_030E.tif",
+    "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_datamask_10S_060W.tif",
+    "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_datamask_20N_080E.tif",
+    "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_datamask_30N_120E.tif",
+    "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_datamask_40N_010E.tif",
+    "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_datamask_40N_100W.tif",
+    "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_lossyear_00N_030E.tif",
+    "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_lossyear_10S_060W.tif",
+    "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_lossyear_20N_080E.tif",
+    "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_lossyear_30N_120E.tif",
+    "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_lossyear_40N_010E.tif",
+    "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_lossyear_40N_100W.tif"
+  ],
+  "units": "year",
+  "updated_at_utc": "2026-11-24T08:00:49.900555Z",
+  "value_bytes": 5085,
+  "value_file": "records.jsonl",
+  "value_sha256": "82dc79eef39949e0606490cfa099844af0b23721cf8161f8b0b1730413ec4472"
+}

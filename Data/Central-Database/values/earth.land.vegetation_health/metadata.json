@@ -1,0 +1,58 @@
+{
+  "catalog_url": "https://www.ncei.noaa.gov/thredds/catalog/cdr/ndvi/2015/catalog.xml",
+  "cell_count": null,
+  "citation": "NOAA Climate Data Record of VIIRS NDVI, Version 1; DOI: 10.25921/gakh-st76",
+  "coverage_mode": "six_sparse_regional_point_samples",
+  "data_kind": "point_samples",
+  "database_schema_version": 1,
+  "dataset_id": "earth.land.vegetation_health",
+  "description": "NDVI is a satellite-derived vegetation greenness/activity index, not a direct diagnosis of plant health.",
+  "format": "records",
+  "native_grid_spacing_degrees": 0.05,
+  "observed_at_utc": "2015-12-31T00:00:00Z",
+  "record_count": 6,
+  "sample_sites": [
+    {
+      "id": "north_america",
+      "lat": 40.0,
+      "lon": -100.0
+    },
+    {
+      "id": "south_america",
+      "lat": -15.0,
+      "lon": -60.0
+    },
+    {
+      "id": "europe_north_africa",
+      "lat": 35.0,
+      "lon": 15.0
+    },
+    {
+      "id": "east_africa",
+      "lat": 0.0,
+      "lon": 35.0
+    },
+    {
+      "id": "south_asia",
+      "lat": 20.0,
+      "lon": 80.0
+    },
+    {
+      "id": "east_asia_pacific",
+      "lat": 25.0,
+      "lon": 125.0
+    }
+  ],
+  "source_file": "VIIRS-Land_v001_NPP13C1_S-NPP_20151231_c20240125005943.nc",
+  "source_id": "noaa_cdr_viirs_ndvi_daily",
+  "source_name": "NOAA CDR VIIRS Normalized Difference Vegetation Index",
+  "source_observation_period": "daily product; actual file date recorded as valid_time_utc",
+  "source_revision": "NOAA_NCEI_VIIRS_CDR",
+  "source_url": "https://www.ncei.noaa.gov/thredds/fileServer/cdr/ndvi/2015/VIIRS-Land_v001_NPP13C1_S-NPP_20151231_c20240125005943.nc",
+  "units": "1",
+  "updated_at_utc": "2026-11-24T08:00:43.728377Z",
+  "valid_time_utc": "2015-12-31T00:00:00Z",
+  "value_bytes": 4381,
+  "value_file": "records.jsonl",
+  "value_sha256": "7fe37b86c1c9c17b8d606ab774c751bbd495a3c5eb1cf23dfb9676f44a8b32a0"
+}
