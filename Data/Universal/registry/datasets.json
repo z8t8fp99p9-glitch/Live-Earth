@@ -597,7 +597,7 @@
       "legacy_ids": [
         "LAND_07"
       ],
-      "status": "collector_configured_failed",
+      "status": "collector_configured_success",
       "collection": {
         "enabled": true,
         "adapter_id": "land_sources",
@@ -618,7 +618,7 @@
       "legacy_ids": [
         "LAND_08"
       ],
-      "status": "collector_configured_failed",
+      "status": "collector_configured_success",
       "collection": {
         "enabled": true,
         "adapter_id": "land_sources",
