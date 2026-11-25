@@ -43,7 +43,6 @@
       description:'Reuses the existing global 0.25° NOAA/NCEP GFS 2 m air-temperature grid from the Atmosphere dataset.',
       note:'Shared GFS model analysis · 2 m air temperature, not satellite land-surface temperature or a direct instrument observation',
       palette:['#102b59','#236da1','#65b8c4','#e6d27c','#ec8b4b','#a8323e'],
-      colorMin:-40, colorMax:50
     },
     vegetation_health: {
       id:'vegetation_health', datasetId:'earth.land.vegetation_health',
@@ -53,7 +52,6 @@
       description:'Daily global NDVI; native 0.05° cells are aggregated to a 0.25° display grid.',
       note:'NDVI represents satellite-derived vegetation greenness/activity, not a direct diagnosis of plant health. Source QA bit flags are not currently applied.',
       palette:['#7d4a2d','#bb8247','#e0c86c','#9bc66a','#32885a','#0e513b'],
-      colorMin:-0.2, colorMax:0.9
     },
     forest_change: {
       id:'forest_change', datasetId:'earth.land.forest_change',
@@ -63,7 +61,6 @@
       description:'Global 0.25° layer derived from Hansen 30 m loss-year and data-mask tiles.',
       note:'Each mapped cell shows the latest detected gross forest-loss year within that cell. 0 means no detected loss; water and no-data remain transparent.',
       palette:['#174a35','#4e9855','#c9b35b','#e58a43','#b93b36'],
-      colorMin:0, colorMax:25
     }
   };
 
@@ -1288,8 +1285,8 @@ function activateView() {
           contourInterval: config.id === 'land_temperature' ? 5 : 0,
           contourStrength: config.id === 'land_temperature' ? 0.085 : 0.16,
           contourColor: [0.13,0.10,0.09],
-          min: config.id === 'land_temperature' ? grid.min : config.colorMin,
-          max: config.id === 'land_temperature' ? grid.max : config.colorMax,
+          min: grid.min,
+          max: grid.max,
           colorStops: config.id === 'land_temperature' ? LAND_TEMPERATURE_COLOR_STOPS : formatPaletteStops(LAND_PALETTES[config.id]),
           name: `LAND-${config.id.toUpperCase()}-GRID`
         });
@@ -1404,8 +1401,8 @@ function activateView() {
         legendBar.style.setProperty('--land-gradient-vertical',gradient.replace('90deg','0deg'));
         legendTicks.replaceChildren();
         legendGraduations.replaceChildren();
-        const legendMin = config.id === 'land_temperature' ? grid.min : config.colorMin;
-        const legendMax = config.id === 'land_temperature' ? grid.max : config.colorMax;
+        const legendMin = grid.min;
+        const legendMax = grid.max;
         for(let i=0;i<5;i++){
           const fraction=i/4, value=legendMin+(legendMax-legendMin)*fraction, position=fraction*100;
           const tick=runtime.el('span','',formatFieldValue(value));
