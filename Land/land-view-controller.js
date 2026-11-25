@@ -197,12 +197,16 @@
         position:absolute; z-index:6;
         top:calc(env(safe-area-inset-top) + 72px);
         right:max(14px,env(safe-area-inset-right));
-        display:flex; flex-direction:column; align-items:center; gap:9px;
+        display:grid; grid-template-columns:repeat(2,clamp(42px,5.8vmin,48px));
+        gap:8px; align-items:center; justify-items:center; width:max-content;
+        max-height:min(68svh,440px); overflow-y:auto; overscroll-behavior:contain;
+        padding:4px; scrollbar-width:none;
         opacity:0; visibility:hidden; pointer-events:none;
         transform:translateY(-7px) scale(.96);
         transform-origin:top center;
         transition:opacity .2s ease,transform .2s ease,visibility .2s ease;
       }
+      .le-land-dataset-orb-menu::-webkit-scrollbar { display:none; }
       .le-land-dataset-orb-menu.is-open {
         opacity:1; visibility:visible; pointer-events:auto;
         transform:translateY(0) scale(1);
