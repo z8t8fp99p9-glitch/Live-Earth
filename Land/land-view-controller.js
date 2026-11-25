@@ -20,6 +20,20 @@
     message: 'Select a Land dataset to render its verified global source grid.'
   };
   const VALUES_BASE_URL = 'https://raw.githubusercontent.com/z8t8fp99p9-glitch/Live-Earth/main/Data/Central-Database/values/';
+  const LAND_TEMPERATURE_COLOR_STOPS = [
+    [0.000000, 0.0314, 0.0510, 0.1725], // 0% · midnight navy
+    [0.071429, 0.0627, 0.1098, 0.3137], // 7.1% · polar indigo
+    [0.142857, 0.1255, 0.2314, 0.5412], // 14.3% · deep blue
+    [0.321429, 0.0863, 0.5373, 0.7216], // 32.1% · blue-cyan
+    [0.500000, 0.2706, 0.7255, 0.4706], // 50% · green
+    [0.678571, 0.9412, 0.7765, 0.2941], // 67.9% · gold
+    [0.821429, 0.9412, 0.3922, 0.1608], // 82.1% · orange
+    [0.892857, 0.7843, 0.2471, 0.2118], // 89.3% · red
+    [0.946429, 0.5451, 0.0824, 0.1647], // 94.6% · deep crimson
+    [1.000000, 0.2706, 0.0157, 0.0902]  // 100% · dark burgundy
+  ];
+  const LAND_TEMPERATURE_LEGEND = 'linear-gradient(90deg,#080d2c 0%,#101c50 7.1429%,#203b8a 14.2857%,#1689b8 32.1429%,#45b978 50%,#f0c64b 67.8571%,#f06429 82.1429%,#c83f36 89.2857%,#8b152a 94.6429%,#450417 100%)';
+
   const LAND_DATASETS = {
     land_temperature: {
       id:'land_temperature', datasetId:'earth.atmosphere.air_temperature',
@@ -111,18 +125,26 @@
     const style = document.createElement('style');
     style.id = 'le-land-cinematic-hud';
     style.textContent = `
+      /* Land observatory: cinematic globe, quiet controls, precise data instrument. */
       .le-sfv--land .le-sfv-panel {
-        display:flex; flex-direction:column; align-items:stretch; overflow:hidden;
-        background:transparent!important; backdrop-filter:none!important;
-        -webkit-backdrop-filter:none!important;
-        padding:calc(env(safe-area-inset-top) + clamp(66px,9vmin,82px)) clamp(15px,4vw,32px) 0;
+        display:flex; flex-direction:column; align-items:stretch;
+        overflow:hidden; background:transparent!important;
+        backdrop-filter:none!important; -webkit-backdrop-filter:none!important;
+        padding:calc(env(safe-area-inset-top) + clamp(66px,9vmin,82px))
+          clamp(15px,4vw,32px) 0;
       }
       .le-sfv--land .le-sfv-head { margin-bottom:9px; }
+      /* The title is a permanent scene layer: the WebGL globe renders above it. */
       .le-land-scene-title {
-        position:absolute; z-index:3; top:12vh; top:12svh;
-        left:50%; right:auto; width:min(84vw,620px); box-sizing:border-box;
-        transform:translateX(-50%); display:flex; align-items:center;
-        justify-content:center; gap:clamp(12px,3vw,24px);
+        /* Portrait header anchor: 12% down from the screen top.
+           Keep the position proportional across screen sizes. */
+        position:absolute; z-index:1;
+        top:12vh;
+        top:12svh;
+        left:50%; right:auto; width:min(84vw,620px);
+        box-sizing:border-box; transform:translateX(-50%);
+        display:flex; align-items:center; justify-content:center;
+        gap:clamp(12px,3vw,24px);
         color:rgba(226,241,250,.88); pointer-events:none; user-select:none;
       }
       .le-land-scene-title::before,.le-land-scene-title::after {
@@ -141,18 +163,25 @@
         box-shadow:0 0 8px rgba(30,151,255,.45); font-style:normal;
       }
       .le-land-scene-title i::after {
-        content:""; position:absolute; left:50%; top:50%; width:5px; height:5px;
-        border-radius:50%; transform:translate(-50%,-50%); background:#a8eaff;
-        box-shadow:0 0 6px 2px #168fff,0 0 15px 5px rgba(20,133,255,.55);
+        content:""; position:absolute; left:50%; top:50%; width:5px; height:5px; border-radius:50%;
+        transform:translate(-50%,-50%); background:#a8eaff; box-shadow:0 0 6px 2px #168fff,0 0 15px 5px rgba(20,133,255,.55);
       }
       .le-land-hud-toggle {
         position:absolute; z-index:5; top:calc(env(safe-area-inset-top) + 14px);
-        right:max(14px,env(safe-area-inset-right)); display:grid; place-items:center;
+        right:max(14px,env(safe-area-inset-right));
+        display:grid; place-items:center;
         width:clamp(46px,6vmin,52px); height:clamp(46px,6vmin,52px);
         min-width:44px; min-height:44px; padding:0; aspect-ratio:1;
-        border:1px solid rgba(135,205,239,.48); border-radius:50%; color:#eaf7ff;
-        background:radial-gradient(circle at 34% 25%,rgba(112,207,245,.18),transparent 48%),linear-gradient(155deg,rgba(13,39,61,.94),rgba(3,12,24,.96));
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 0 0 3px rgba(122,205,240,.035),0 0 18px rgba(54,174,231,.14),0 5px 18px rgba(0,0,0,.28);
+        border:1px solid rgba(135,205,239,.48); border-radius:50%;
+        color:#eaf7ff;
+        background:
+          radial-gradient(circle at 34% 25%,rgba(112,207,245,.18),transparent 48%),
+          linear-gradient(155deg,rgba(13,39,61,.94),rgba(3,12,24,.96));
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,.16),
+          inset 0 0 0 3px rgba(122,205,240,.035),
+          0 0 18px rgba(54,174,231,.14),
+          0 5px 18px rgba(0,0,0,.28);
         backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
         cursor:pointer; touch-action:manipulation; pointer-events:auto;
         transition:background .2s ease,border-color .2s ease,box-shadow .2s ease,transform .2s ease;
@@ -160,25 +189,49 @@
       .le-land-hud-toggle:active { transform:scale(.94); }
       .le-land-hud-toggle:focus-visible { outline:2px solid #80d9f5; outline-offset:3px; }
       .le-land-hud-toggle-icon { width:19px; height:19px; flex:none; color:#a6e5ff; }
-      .le-land-hud-toggle[aria-expanded="true"] { border-color:rgba(111,218,255,.78); box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 0 22px rgba(55,190,245,.25),0 5px 18px rgba(0,0,0,.28); }
-      .le-land-dataset-orb-menu {
-        position:absolute; z-index:6; top:calc(env(safe-area-inset-top) + 72px);
-        right:max(14px,env(safe-area-inset-right)); display:grid;
-        grid-template-columns:repeat(2,clamp(42px,5.8vmin,48px)); gap:8px;
-        align-items:center; justify-items:center; width:max-content;
-        max-height:min(68svh,440px); overflow-y:auto; overscroll-behavior:contain;
-        padding:4px; scrollbar-width:none; opacity:0; visibility:hidden;
-        pointer-events:none; transform:translateY(-7px) scale(.96);
-        transform-origin:top center; transition:opacity .2s ease,transform .2s ease,visibility .2s ease;
+      .le-land-hud-toggle[aria-expanded="true"] {
+        border-color:rgba(111,218,255,.78);
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 0 22px rgba(55,190,245,.25),0 5px 18px rgba(0,0,0,.28);
       }
-      .le-land-dataset-orb-menu::-webkit-scrollbar { display:none; }
-      .le-land-dataset-orb-menu.is-open { opacity:1; visibility:visible; pointer-events:auto; transform:translateY(0) scale(1); }
+      .le-land-dataset-orb-menu {
+        position:absolute; z-index:6;
+        top:calc(env(safe-area-inset-top) + 72px);
+        right:max(14px,env(safe-area-inset-right));
+        display:flex; flex-direction:column; align-items:center; gap:9px;
+        opacity:0; visibility:hidden; pointer-events:none;
+        transform:translateY(-7px) scale(.96);
+        transform-origin:top center;
+        transition:opacity .2s ease,transform .2s ease,visibility .2s ease;
+      }
+      .le-land-dataset-orb-menu.is-open {
+        opacity:1; visibility:visible; pointer-events:auto;
+        transform:translateY(0) scale(1);
+      }
+      /* Portrait: place the floating dataset control below the centered header.
+         The menu follows the button so it opens directly beneath it on every screen size. */
+      @media (orientation:portrait) {
+        .le-land-hud-toggle { top:15svh; }
+        .le-land-dataset-orb-menu {
+          top:calc(15svh + clamp(46px,6vmin,52px) + 10px);
+        }
+      }
+      /* Landscape: keep the dataset control lower and slightly inset from the edge. */
+      @media (orientation:landscape) {
+        .le-land-hud-toggle { top:8svh; right:8vw; }
+        .le-land-dataset-orb-menu {
+          top:calc(8svh + clamp(46px,6vmin,52px) + 10px);
+          right:8vw;
+        }
+      }
       .le-land-dataset-orb {
         appearance:none; display:grid; place-items:center;
         width:clamp(42px,5.8vmin,48px); height:clamp(42px,5.8vmin,48px);
         min-width:42px; min-height:42px; padding:0; border-radius:50%;
-        border:1px solid rgba(122,205,240,.42); color:#eaf7ff;
-        background:radial-gradient(circle at 34% 24%,rgba(111,204,245,.2),transparent 52%),linear-gradient(155deg,rgba(12,37,58,.96),rgba(3,12,24,.97));
+        border:1px solid rgba(122,205,240,.42);
+        color:#eaf7ff;
+        background:
+          radial-gradient(circle at 34% 24%,rgba(111,204,245,.2),transparent 52%),
+          linear-gradient(155deg,rgba(12,37,58,.96),rgba(3,12,24,.97));
         box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 0 15px rgba(54,174,231,.13),0 4px 13px rgba(0,0,0,.28);
         backdrop-filter:blur(13px); -webkit-backdrop-filter:blur(13px);
         cursor:pointer; touch-action:manipulation;
@@ -186,92 +239,225 @@
       }
       .le-land-dataset-orb:active { transform:scale(.92); }
       .le-land-dataset-orb:focus-visible { outline:2px solid #80d9f5; outline-offset:3px; }
-      .le-land-dataset-orb.is-selected { border-color:rgba(112,225,210,.9); box-shadow:inset 0 0 0 1px rgba(112,225,210,.22),0 0 19px rgba(72,220,196,.28),0 4px 13px rgba(0,0,0,.28); background:linear-gradient(155deg,rgba(15,65,72,.96),rgba(3,18,31,.98)); }
+      .le-land-dataset-orb.is-selected {
+        border-color:rgba(112,225,210,.9);
+        box-shadow:inset 0 0 0 1px rgba(112,225,210,.22),0 0 19px rgba(72,220,196,.28),0 4px 13px rgba(0,0,0,.28);
+        background:linear-gradient(155deg,rgba(15,65,72,.96),rgba(3,18,31,.98));
+      }
       .le-land-dataset-orb:disabled { opacity:.48; cursor:progress; }
       .le-land-dataset-orb-icon { width:21px; height:21px; display:block; }
-      .le-sfv--land .le-sfv-panel.le-land-hud-hidden { opacity:0; visibility:hidden; pointer-events:none; transition:opacity .2s ease,visibility .2s ease; }
+      .le-sfv--land .le-sfv-panel.le-land-hud-hidden {
+        opacity:0; visibility:hidden; pointer-events:none;
+        transition:opacity .2s ease,visibility .2s ease;
+      }
       .le-sfv--land .le-sfv-panel { transition:opacity .2s ease,visibility .2s ease; }
-      .le-sfv--land.le-world-engine-host .le-sfv-panel { z-index:3; background:transparent!important; }
+      .le-sfv--land.le-world-engine-host .le-world-engine-canvas { z-index:2; }
+      .le-sfv--land.le-world-engine-host .le-sfv-panel { z-index:3; }
       .le-sfv--land .le-sfv-pill { margin-bottom:10px; }
+
       .le-sfv--land.le-world-engine-host .le-sfv-body {
-        display:block; box-sizing:border-box; width:min(100%,680px); margin:auto auto 0;
-        min-height:0; max-height:min(48dvh,540px); overflow-y:auto; overflow-x:hidden;
-        overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
-        padding-bottom:calc(env(safe-area-inset-bottom) + 144px); scrollbar-width:none;
-        pointer-events:none;
+        display:block; box-sizing:border-box; width:min(100%,680px);
+        margin:auto auto 0; min-height:0; max-height:min(48dvh,540px);
+        overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain;
+        -webkit-overflow-scrolling:touch;
+        padding-bottom:calc(env(safe-area-inset-bottom) + 144px);
+        scrollbar-width:none;
       }
       .le-sfv--land.le-world-engine-host .le-sfv-body::-webkit-scrollbar { display:none; }
+      /* Empty feature-body space must pass gestures through to the globe.
+         Restore pointer handling only on actual content and controls. */
+      .le-sfv--land.le-world-engine-host .le-sfv-body {
+        pointer-events:none;
+      }
       .le-sfv--land.le-world-engine-host .le-sfv-body > *,
-      .le-sfv--land.le-world-engine-host .le-sfv-body :is(button,a,input,select,textarea,summary,[role="button"],.le-land-details,.le-land-scale-dock,.le-land-data-card) { pointer-events:auto; }
+      .le-sfv--land.le-world-engine-host .le-sfv-body :is(
+        button, a, input, select, textarea, summary, [role="button"],
+        .le-land-details, .le-land-scale-dock, .le-land-data-card
+      ) {
+        pointer-events:auto;
+      }
       .le-sfv--land .le-sfv-status {
-        display:inline-block; width:auto; max-width:100%; margin:0 0 9px; padding:7px 11px;
-        border-radius:999px; font-size:9px; line-height:1.35;
+        display:inline-block; width:auto; max-width:100%; margin:0 0 9px;
+        padding:7px 11px; border-radius:999px; font-size:9px; line-height:1.35;
         background:rgba(3,13,24,.54); border-color:rgba(126,228,189,.22);
         backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
       }
       .le-sfv--land .le-sfv-card {
-        padding:13px 15px; border-radius:17px; border-color:rgba(159,211,249,.19);
+        padding:13px 15px; border-radius:17px;
+        border-color:rgba(159,211,249,.19);
         background:linear-gradient(145deg,rgba(8,23,40,.80),rgba(3,10,20,.78));
         box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 28px rgba(0,0,0,.22);
         backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
       }
-      .le-sfv--land .le-sfv-card h2 { margin:0 0 4px; font-size:10px; letter-spacing:.12em; color:#a9c9de; text-transform:uppercase; }
+      .le-sfv--land .le-sfv-card h2 {
+        margin:0 0 4px; font-size:10px; letter-spacing:.12em;
+        color:#a9c9de; text-transform:uppercase;
+      }
+      .le-land-range { display:flex; align-items:baseline; flex-wrap:wrap; gap:5px 10px; }
+      .le-land-range strong { color:#f2fbff; font-size:clamp(23px,6vw,31px); letter-spacing:-.035em; font-weight:760; }
+      .le-land-range span { color:#a9c6d8; font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
 
+      /* The scale is a floating instrument, not a card. Its text and spectrum share one track. */
+      .le-land-grid-count {
+        color:rgba(190,211,226,.82); font:500 clamp(8px,2.1vmin,11px)/1.35 system-ui,-apple-system,sans-serif;
+        letter-spacing:.13em; text-transform:uppercase; font-variant-numeric:tabular-nums;
+      }
       .le-land-scale-dock {
-        container-type:inline-size; --land-action-space:42px; --land-track-gap:12px;
-        --land-content-width:calc(100% - var(--land-action-space) - var(--land-track-gap));
-        position:absolute; z-index:4; left:clamp(20px,4.5vw,48px); right:clamp(20px,4.5vw,48px);
+        container-type:inline-size;
+        --atmo-action-space:42px;
+        --atmo-track-gap:12px;
+        --atmo-content-width:calc(100% - var(--atmo-action-space) - var(--atmo-track-gap));
+        position:absolute; z-index:4;
+        left:clamp(20px,4.5vw,48px); right:clamp(20px,4.5vw,48px);
         bottom:calc(env(safe-area-inset-bottom) + clamp(82px,12svh,112px));
-        box-sizing:border-box; width:min(calc(100% - 40px),760px); margin:0 auto; padding:0;
-        border:0; border-radius:0; color:#eff8ff; background:transparent; box-shadow:none;
-        backdrop-filter:none; -webkit-backdrop-filter:none; pointer-events:none;
+        box-sizing:border-box; width:min(calc(100% - 40px),760px);
+        margin:0 auto; padding:0;
+        border:0; border-radius:0; color:#eff8ff;
+        background:transparent; box-shadow:none;
+        backdrop-filter:none; -webkit-backdrop-filter:none;
+        pointer-events:none;
       }
-      .le-land-scale-dock[hidden] { display:none!important; }
       .le-land-scale-dock > .le-land-data-card { pointer-events:auto; }
+      .le-land-scale-dock[hidden] { display:none!important; }
+      /* Provenance opens as a separate panel anchored above the scale.
+         It is removed from layout flow, so the scale deck never moves,
+         grows, or changes its position when the panel is opened. */
       .le-land-scale-dock .le-land-data-card {
-        display:none!important; position:absolute; left:0; right:0;
-        bottom:calc(100% + clamp(10px,1.6svh,18px)); width:100%;
-        max-height:min(52svh,560px); box-sizing:border-box; margin:0;
-        overflow:auto; overscroll-behavior:contain; pointer-events:auto; z-index:6;
+        display:none!important;
+        position:absolute; left:0; right:0;
+        bottom:calc(100% + clamp(10px,1.6svh,18px));
+        width:100%; max-height:min(52svh,560px);
+        box-sizing:border-box; margin:0;
+        overflow:auto; overscroll-behavior:contain;
+        pointer-events:auto; z-index:6;
       }
-      .le-sfv--land.le-land-details-expanded .le-land-scale-dock .le-land-data-card { display:block!important; }
+      .le-sfv--land.le-land-details-expanded .le-land-scale-dock .le-land-data-card {
+        display:block!important;
+      }
+      .le-land-scale-dock .le-sfv-attribution { margin:8px 2px 0; }
+      .le-land-scale-dock .le-land-details { pointer-events:auto; }
+
       .le-land-instrument-label {
         display:flex; align-items:center; justify-content:center; gap:7px;
-        width:100%; margin:0 0 6px; color:#b7dff4;
-        font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;
-        font-size:10px; font-weight:650; letter-spacing:.28em; line-height:1;
-        text-align:center; text-transform:uppercase; text-shadow:0 0 16px rgba(65,176,235,.20);
+        width:100%; margin:0 0 6px;
+        color:#b7dff4; font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;
+        font-size:10px; font-weight:650; letter-spacing:.28em;
+        line-height:1; text-align:center; text-transform:uppercase;
+        text-shadow:0 0 16px rgba(65,176,235,.20);
       }
-      .le-land-instrument-label::before,.le-land-instrument-label::after {
+      .le-land-instrument-label::before,
+      .le-land-instrument-label::after {
         content:""; display:block; flex:1 1 0; max-width:88px; height:1px;
         background:linear-gradient(90deg,transparent,rgba(104,190,231,.46));
       }
-      .le-land-instrument-label::after { background:linear-gradient(90deg,rgba(104,190,231,.46),transparent); }
-      .le-land-summary-heading {
-        display:flex; flex-flow:row nowrap; justify-content:space-between; align-items:baseline;
-        gap:8px; width:var(--land-content-width); min-width:0; margin:0 0 6px;
-        white-space:nowrap; line-height:1;
+      .le-land-instrument-label::after {
+        background:linear-gradient(90deg,rgba(104,190,231,.46),transparent);
       }
-      .le-land-summary-title { min-width:0; overflow:hidden; color:#c6ddeb; font-size:clamp(9px,2.25cqi,11px); font-weight:620; letter-spacing:.055em; text-overflow:ellipsis; text-transform:uppercase; }
-      .le-land-summary-range { flex:0 0 auto; color:#f7fbff; font-size:clamp(15px,4.1cqi,21px); font-weight:560; letter-spacing:-.025em; font-variant-numeric:tabular-nums; white-space:nowrap; }
-      .le-land-summary-track-row { display:grid; grid-template-columns:minmax(0,1fr) var(--land-action-space); align-items:center; column-gap:var(--land-track-gap); min-width:0; }
-      .le-land-grid-count { display:flex; align-items:center; justify-content:space-between; min-width:0; gap:8px; }
-      .le-land-grid-count-label { color:#b9cddd; font-size:clamp(9px,1.8cqi,11px); font-weight:550; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap; }
+      .le-land-scale-heading {
+        display:flex; flex-flow:row nowrap; justify-content:flex-start;
+        align-items:center; gap:8px;
+        width:var(--atmo-content-width); min-width:0;
+        margin:0 0 5px; white-space:nowrap; line-height:1;
+        text-align:left;
+      }
+      .le-land-legend-title {
+        display:block; flex:0 1 auto; min-width:0; overflow:hidden; margin:0;
+        padding:0; color:#c6ddeb;
+        font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;
+        font-size:clamp(9px,2.25cqi,11px); font-weight:620;
+        letter-spacing:.055em; text-align:left;
+        text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap;
+      }
+      .le-land-scale-range {
+        display:block; flex:0 0 auto; min-width:0; margin:0;
+        padding:0 0 0 8px; border-left:1px solid rgba(137,200,228,.56);
+        color:#f7fbff;
+        font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;
+        font-size:clamp(16px,4.1cqi,22px); font-weight:560;
+        letter-spacing:-.025em; font-variant-numeric:tabular-nums;
+        white-space:nowrap; text-align:left;
+      }
+      .le-land-scale-track-row {
+        display:grid; grid-template-columns:minmax(0,1fr) var(--atmo-action-space);
+        align-items:center; column-gap:var(--atmo-track-gap); min-width:0;
+        --atmo-gradient-height:8px;
+      }
+      .le-land-scale-visual { min-width:0; width:100%; }
+      .le-land-scale-track { min-width:0; width:100%; }
       .le-land-scale-more {
         position:relative; flex:none; display:grid; place-items:center;
-        width:var(--land-action-space); height:var(--land-action-space); margin:0; padding:0;
-        justify-self:center; align-self:center; border:1px solid rgba(116,218,250,.78);
-        border-radius:50%; color:#d9f7ff;
+        width:var(--atmo-action-space); height:var(--atmo-action-space);
+        margin:0; padding:0; justify-self:center; align-self:center;
+        border:1px solid rgba(116,218,250,.78); border-radius:50%;
+        color:#d9f7ff;
         background:radial-gradient(circle at 35% 27%,rgba(78,190,229,.18),rgba(3,19,32,.72) 72%);
-        box-shadow:0 0 0 1px rgba(82,186,228,.07),0 0 13px rgba(49,177,228,.20),inset 0 1px 4px rgba(255,255,255,.10);
-        font:300 22px/1 ui-sans-serif,system-ui,sans-serif; cursor:pointer;
-        pointer-events:auto; touch-action:manipulation;
+        box-shadow:0 0 0 1px rgba(82,186,228,.07),0 0 13px rgba(49,177,228,.20),
+          inset 0 1px 4px rgba(255,255,255,.10);
+        font:300 22px/1 ui-sans-serif,system-ui,sans-serif;
+        cursor:pointer; pointer-events:auto; touch-action:manipulation;
         transition:background .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease;
+      }
+      /* Portrait: centre the + control on the colour gradient itself,
+         not on the combined gradient-and-tick-label block. The offset is
+         derived from the live control size and gradient thickness. */
+      @media (orientation:portrait) {
+        .le-land-scale-track-row { align-items:start; }
+        .le-land-scale-more {
+          align-self:start; justify-self:center;
+          margin-top:calc((var(--atmo-gradient-height) - var(--atmo-action-space)) / 2);
+        }
+      }
+      .le-land-scale-more:hover {
+        border-color:rgba(150,232,255,.95);
+        background:radial-gradient(circle at 35% 27%,rgba(78,190,229,.30),rgba(3,19,32,.82) 72%);
+        box-shadow:0 0 16px rgba(49,177,228,.30);
       }
       .le-land-scale-more:active { transform:scale(.94); }
       .le-land-scale-more:focus-visible { outline:2px solid #80d9f5; outline-offset:3px; }
+      .le-land-legend-bar {
+        width:100%; height:8px; border-radius:999px;
+        background:linear-gradient(90deg,#080d2c 0%,#101c50 7.1429%,#203b8a 14.2857%,#1689b8 32.1429%,#45b978 50%,#f0c64b 67.8571%,#f06429 82.1429%,#c83f36 89.2857%,#8b152a 94.6429%,#450417 100%);
+        box-shadow:inset 0 0 0 1px rgba(255,255,255,.30),0 0 9px rgba(68,159,222,.24);
+      }
+      /* Three true internal graduations are drawn directly on the live scale bar. */
+      .le-land-legend-graduations {
+        position:absolute; inset:0; overflow:visible; pointer-events:none;
+      }
+      .le-land-legend-bar { position:relative; }
+      .le-land-legend-graduations span {
+        position:absolute; left:var(--atmo-graduation-position); top:50%;
+        width:1px; height:14px; border-radius:1px;
+        background:rgba(226,248,255,.92);
+        box-shadow:0 0 3px rgba(112,220,255,.78);
+        transform:translate(-50%,-50%);
+      }
+      .le-land-legend-ticks {
+        position:relative; width:100%;
+        height:14px; margin-top:4px;
+        color:#b9cddd; font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;
+        font-size:clamp(9px,1.8cqi,11px); font-weight:500;
+        line-height:1; font-variant-numeric:tabular-nums;
+      }
+      .le-land-legend-ticks span {
+        position:absolute; top:0; transform:translateX(-50%);
+        white-space:nowrap; text-align:center;
+      }
+      .le-land-legend-ticks span::before {
+        content:""; position:absolute; left:50%; top:-6px;
+        width:1px; height:3px; background:rgba(171,211,233,.58);
+        transform:translateX(-50%);
+      }
+      .le-land-legend-ticks span:first-child { transform:none; text-align:left; }
+      .le-land-legend-ticks span:first-child::before { content:none; }
+      .le-land-legend-ticks span:last-child { transform:translateX(-100%); text-align:right; }
+      .le-land-legend-ticks span:last-child::before { content:none; left:100%; }
+
       .le-land-details { margin-top:10px; border-top:1px solid rgba(165,208,235,.14); padding-top:8px; }
-      .le-land-details summary { list-style:none; cursor:pointer; color:#b7d8e9; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; display:flex; justify-content:space-between; align-items:center; min-height:26px; }
+      .le-land-details summary {
+        list-style:none; cursor:pointer; color:#b7d8e9; font-size:10px;
+        font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+        display:flex; justify-content:space-between; align-items:center; min-height:26px;
+      }
       .le-land-details summary::-webkit-details-marker { display:none; }
       .le-land-details summary::after { content:'＋'; color:#82d9f5; font-size:15px; }
       .le-land-details[open] summary::after { content:'−'; }
@@ -280,426 +466,456 @@
       .le-sfv--land .le-sfv-metric-label { font-size:8px; margin-bottom:4px; }
       .le-sfv--land .le-sfv-metric-value { font-size:clamp(13px,3.5vw,17px); }
       .le-sfv--land .le-sfv-attribution { margin:7px 2px 0; font-size:8px; color:#8da9bc; }
-      .le-land-grid-note { margin-top:10px; padding:10px 11px; border:1px solid rgba(142,185,207,.16); border-radius:12px; background:rgba(1,8,17,.42); color:#a9c6d8; font-size:10px; line-height:1.5; }
-      .le-land-provenance-note { margin:9px 2px 0; color:#9bb5c6; font-size:9px; line-height:1.5; }
-
-      @media (orientation:portrait) {
-        .le-land-hud-toggle { top:15svh; }
-        .le-land-dataset-orb-menu { top:calc(15svh + clamp(46px,6vmin,52px) + 10px); }
+      .le-sfv--land .le-land-dataset-card { margin-bottom:9px; }
+      .le-land-dataset-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+      .le-land-dataset-option {
+        appearance:none; display:flex; flex-direction:column; align-items:flex-start;
+        gap:4px; min-width:0; min-height:66px; padding:10px 11px;
+        border:1px solid rgba(130,197,230,.22); border-radius:13px;
+        color:#eaf7ff; text-align:left;
+        background:linear-gradient(145deg,rgba(16,43,65,.82),rgba(4,13,25,.82));
+        cursor:pointer; font:inherit;
+        transition:border-color .18s ease,background .18s ease,transform .18s ease;
       }
-      @media (orientation:landscape) {
-        .le-land-scene-title { top:3vh; top:3svh; }
-        .le-land-hud-toggle { top:8svh; right:8vw; }
-        .le-land-dataset-orb-menu { top:calc(8svh + clamp(46px,6vmin,52px) + 10px); right:8vw; }
-        .le-land-scale-dock {
-          left:6%; right:auto; top:50%; bottom:auto; transform:translateY(-50%);
-          width:clamp(126px,12.24vw,151px); max-width:16.2vw;
-          display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto auto auto;
-          column-gap:0; row-gap:8px; padding:8px; border:0; border-radius:0;
-          background:transparent; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none;
-          pointer-events:auto;
-        }
-        .le-land-instrument-label { grid-column:1; grid-row:1; width:100%; margin:0 0 1px; font-size:9px; letter-spacing:.18em; }
-        .le-land-instrument-label::before,.le-land-instrument-label::after { max-width:24px; }
-        .le-land-summary-heading { grid-column:1; grid-row:2; display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; gap:6px; white-space:normal; text-align:center; }
-        .le-land-summary-title { font-size:9px; text-align:center; white-space:normal; }
-        .le-land-summary-range { font-size:clamp(13px,1.45vw,16px); text-align:center; }
-        .le-land-summary-track-row { grid-column:1; grid-row:3; display:flex; flex-direction:column; gap:8px; }
-        .le-land-grid-count { flex-direction:column; gap:8px; }
-        .le-land-grid-count-label { font-size:8px; white-space:normal; text-align:center; }
-        .le-land-scale-more { grid-column:1; grid-row:4; width:34px; height:34px; justify-self:center; align-self:center; margin:1px 0 0; }
-        .le-land-scale-dock .le-land-data-card { left:calc(100% + 14px); right:auto; top:50%; bottom:auto; transform:translateY(-50%); width:min(42vw,620px); max-width:calc(80vw - 200px); max-height:85svh; overflow:auto; border-radius:16px; }
+      .le-land-dataset-option:active:not(:disabled) { transform:scale(.985); }
+      .le-land-dataset-option.is-selected {
+        border-color:rgba(91,222,190,.8);
+        background:linear-gradient(145deg,rgba(15,76,75,.78),rgba(4,24,35,.92));
+        box-shadow:inset 0 0 0 1px rgba(91,222,190,.14),0 0 18px rgba(62,218,181,.12);
       }
-      @media (max-height:700px) {
-        .le-sfv--land.le-world-engine-host .le-sfv-body { margin-top:clamp(145px,28vh,230px); }
-        .le-sfv--land .le-sfv-panel { padding-bottom:calc(env(safe-area-inset-bottom) + 112px); }
-      }
-      @container (max-width:430px) {
-        .le-land-summary-heading { gap:7px; }
-        .le-land-summary-title { font-size:clamp(8.5px,2.2cqi,10px); letter-spacing:.025em; }
-        .le-land-summary-range { font-size:clamp(15px,4cqi,19px); }
-      }
-      @container (max-width:350px) {
-        .le-land-scale-dock { --land-action-space:40px; --land-track-gap:9px; }
-        .le-land-summary-heading { gap:5px; margin-bottom:5px; }
-        .le-land-summary-title { font-size:8px; }
-        .le-land-summary-range { font-size:15px; }
-        .le-land-instrument-label { font-size:9px; letter-spacing:.22em; margin-bottom:5px; }
-        .le-land-grid-count-label { font-size:8px; }
-      }
+      .le-land-dataset-option:disabled { opacity:.48; cursor:not-allowed; }
+      .le-land-dataset-name { font-size:12px; letter-spacing:.02em; }
+      .le-land-dataset-detail { color:#a9c6d8; font-size:9px; line-height:1.35; }
+      .le-land-dataset-state { margin-top:auto; color:#80d9c1; font-size:7px; font-weight:800; letter-spacing:.1em; }
+      .le-land-dataset-option.is-unavailable .le-land-dataset-state { color:#91a4b4; }
     `;
     document.head.appendChild(style);
   }
 
-  function installEngineStyles() {
-    if (document.getElementById('le-land-world-engine-canvas-style')) return;
-    const style = document.createElement('style');
-    style.id = 'le-land-world-engine-canvas-style';
-    style.textContent = `
-      body.le-land-fullscreen-open #scene { visibility:hidden!important; pointer-events:none!important; }
-      .le-sfv--land.le-world-engine-host { position:absolute; inset:0; isolation:isolate; background:radial-gradient(ellipse at 50% 43%,#0a1b2b 0%,#030914 58%,#010308 100%); pointer-events:none; }
-      .le-world-engine-host { isolation:isolate; background:radial-gradient(ellipse at 50% 42%,rgba(15,47,75,.22),rgba(2,6,13,.88) 76%); }
-      .le-world-engine-canvas { position:absolute; inset:0; z-index:0; width:100%; height:100%; display:block; pointer-events:auto; touch-action:none; outline:none; -webkit-tap-highlight-color:transparent; }
-      .le-world-engine-host .le-sfv-panel { z-index:1; pointer-events:none; overflow:hidden; background:transparent; backdrop-filter:none; -webkit-backdrop-filter:none; }
-      .le-world-engine-host .le-sfv-head,.le-world-engine-host .le-sfv-body { pointer-events:auto; }
-      .le-world-engine-host .le-sfv-body { max-height:calc(100% - 150px); overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
-      .le-world-engine-host .le-sfv-head { text-shadow:0 2px 18px rgba(0,0,0,.85); }
-      .le-world-engine-host .le-sfv-card { background:rgba(4,13,24,.58); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
-    `;
-    document.head.appendChild(style);
-  }
+  
 
   // Complete Atmosphere/Oceans globe transfer: adaptive frame, resize, shared
   // location marker, globe-surface drag, pinch admission and full cleanup.
-  async function initializeEngineView(view, viewId) {
-    if (!view?.root || !view?.panel || !viewId) throw new TypeError('A mounted world view and stable world id are required.');
-    const T = await import('../vendor/three.module.js');
-    const engine = await import('../EarthEngine/Core/earth-engine.js');
-    const createEarthGlobe = engine.createEarthGlobe || engine.createGlobe;
-    const getDefaultCameraDistance = engine.getDefaultCameraDistance;
-    if (typeof getDefaultCameraDistance !== 'function') throw new Error('Earth Engine default framing API is unavailable.');
-    if (typeof createEarthGlobe !== 'function') throw new Error('The reusable Earth Engine factory is unavailable.');
+  function installStyles() {
+  if (document.getElementById("le-land-world-engine-canvas-style")) return;
+  const style = document.createElement("style");
+  style.id = "le-land-world-engine-canvas-style";
+  style.textContent = `
+    /* Land is an exclusive full-screen world, not a transparent Home overlay. */
+    body.le-land-fullscreen-open #scene{visibility:hidden!important;pointer-events:none!important}
+    .le-sfv--land.le-world-engine-host{position:absolute;inset:0;isolation:isolate;background:radial-gradient(ellipse at 50% 43%,#0a1b2b 0%,#030914 58%,#010308 100%);pointer-events:none}
+    .le-world-engine-host{isolation:isolate;background:radial-gradient(ellipse at 50% 42%,rgba(15,47,75,.22),rgba(2,6,13,.88) 76%)}
+    .le-world-engine-canvas{position:absolute;inset:0;z-index:0;width:100%;height:100%;display:block;pointer-events:auto;touch-action:none;outline:none;-webkit-tap-highlight-color:transparent}
+    .le-world-engine-host .le-sfv-panel{z-index:1;pointer-events:none;overflow:hidden;background:linear-gradient(180deg,rgba(3,12,23,.34),rgba(3,9,18,.04) 46%,rgba(2,7,14,.28));backdrop-filter:none;-webkit-backdrop-filter:none}
+    .le-sfv--land.le-world-engine-host .le-sfv-panel{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none}
+    .le-world-engine-host .le-sfv-head,.le-world-engine-host .le-sfv-body{pointer-events:auto}
+    .le-world-engine-host .le-sfv-body{max-height:calc(100% - 150px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+    .le-world-engine-host .le-sfv-head{ text-shadow:0 2px 18px rgba(0,0,0,.85) }
+    
+    .le-world-engine-host .le-sfv-card{background:rgba(4,13,24,.58);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  `;
+  document.head.appendChild(style);
+}
 
-    const root = view.root;
-    root.classList.add('le-world-engine-host');
-    installEngineStyles();
-    const canvas = document.createElement('canvas');
-    canvas.className = 'le-world-engine-canvas';
-    canvas.setAttribute('aria-label', `${viewId} independent interactive Earth globe`);
-    canvas.setAttribute('role', 'img');
-    root.insertBefore(canvas, root.firstChild);
-    const sceneTitle = document.createElement('div');
-    sceneTitle.className = 'le-land-scene-title';
-    sceneTitle.setAttribute('aria-label', 'Land');
-    sceneTitle.innerHTML = '<span>LAND</span><i aria-hidden="true"></i>';
-    root.appendChild(sceneTitle);
+async function initializeEngineView(view, viewId) {
+  if (!view?.root || !view?.panel || !viewId) throw new TypeError("A mounted world view and stable world id are required.");
+  const T = await import("../vendor/three.module.js");
+  const engine = await import("../EarthEngine/Core/earth-engine.js");
+  const createEarthGlobe = engine.createEarthGlobe || engine.createGlobe;
+  const getDefaultCameraDistance = engine.getDefaultCameraDistance;
+  if (typeof getDefaultCameraDistance !== "function") throw new Error("Earth Engine default framing API is unavailable.");
+  if (typeof createEarthGlobe !== "function") throw new Error("The reusable Earth Engine factory is unavailable.");
 
-    let renderer = null;
-    let scene = null;
-    let camera = null;
-    let earthGlobe = null;
-    let gestureController = null;
-    let locationMarker = null;
-    let locationHalo = null;
-    let locationDot = null;
-    let locationVector = null;
-    let syncLandLocation = null;
-    let disposed = false;
-    let renderQueued = false;
-    let resizeObserver = null;
-    let defaultCameraDistance = 3.15;
-    const LAND_MAX_ZOOM = 3;
-    let zoomFactor = 1;
-    const layers = new Map();
-    const maxPixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+  const root = view.root;
+  root.classList.add("le-world-engine-host");
+  const canvas = document.createElement("canvas");
+  canvas.className = "le-world-engine-canvas";
+  canvas.setAttribute("aria-label", `${viewId} independent interactive Earth globe`);
+  canvas.setAttribute("role", "img");
+  root.insertBefore(canvas, root.firstChild);
+  installStyles();
+  const sceneTitle = document.createElement("div");
+  sceneTitle.className = "le-land-scene-title";
+  sceneTitle.setAttribute("aria-label", "Land");
+  sceneTitle.innerHTML = "<span>LAND</span><i aria-hidden=\"true\"></i>";
+  root.appendChild(sceneTitle);
 
-    function requestRender() {
-      if (disposed || renderQueued) return;
-      renderQueued = true;
-      requestAnimationFrame(() => {
-        renderQueued = false;
-        if (!disposed && renderer && scene && camera) renderer.render(scene, camera);
-      });
+  let renderer = null;
+  let scene = null;
+  let camera = null;
+  let earthGlobe = null;
+  let gestureController = null;
+  let locationMarker = null;
+  let locationHalo = null;
+  let locationDot = null;
+  let locationVector = null;
+  let disposed = false;
+  let renderQueued = false;
+  let resizeObserver = null;
+  let defaultCameraDistance = 3.15;
+  const LAND_MAX_ZOOM = 3;
+  let zoomFactor = 1;
+  const layers = new Map();
+  const maxPixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+
+  function requestRender() {
+    if (disposed || renderQueued) return;
+    renderQueued = true;
+    requestAnimationFrame(() => {
+      renderQueued = false;
+      if (!disposed && renderer && scene && camera) renderer.render(scene, camera);
+    });
+  }
+
+  function resize() {
+    if (disposed || !renderer || !camera) return;
+    const rect = root.getBoundingClientRect();
+    const width = Math.max(1, Math.round(rect.width || window.innerWidth || 1));
+    const height = Math.max(1, Math.round(rect.height || window.innerHeight || 1));
+    renderer.setPixelRatio(maxPixelRatio);
+    renderer.setSize(width, height, false);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    defaultCameraDistance = getDefaultCameraDistance({ width, height, radius: 1, fieldOfView: 38, diameterFraction: 0.71 });
+    camera.position.z = defaultCameraDistance / zoomFactor;
+    requestRender();
+  }
+
+  try {
+    renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
+    renderer.outputColorSpace = T.SRGBColorSpace;
+    renderer.setClearColor(0x02050b, 0);
+    scene = new T.Scene();
+    scene.background = null;
+    const rect = root.getBoundingClientRect();
+    const width = Math.max(1, rect.width || window.innerWidth || 1);
+    const height = Math.max(1, rect.height || window.innerHeight || 1);
+    camera = new T.PerspectiveCamera(38, width / height, 0.1, 100);
+    defaultCameraDistance = getDefaultCameraDistance({ width, height, radius: 1, fieldOfView: 38, diameterFraction: 0.71 });
+    camera.position.set(0, 0, defaultCameraDistance);
+    camera.lookAt(0, 0, 0);
+    scene.add(new T.AmbientLight(0x8aa7c8, 0.28));
+    const key = new T.DirectionalLight(0xffffff, 2.0);
+    key.position.set(-3, 2, 4);
+    scene.add(key);
+    const fill = new T.DirectionalLight(0x245b9b, 0.10);
+    fill.position.set(4, -2, -3);
+    scene.add(fill);
+
+    earthGlobe = await createEarthGlobe({
+      THREE: T,
+      radius: 1,
+      textureUrl: "./EarthEngine/Assets/earth-land-ocean-ice-2048.png",
+      geometryDetail: "standard",
+      maxAnisotropy: renderer.capabilities.getMaxAnisotropy(),
+      land: true
+    });
+    if (disposed) { earthGlobe.dispose(); throw new Error("The world view closed while its Engine globe was loading."); }
+    scene.add(earthGlobe.group);
+
+    if (disposed) {
+      earthGlobe.dispose();
+      throw new Error("The Land view closed while its globe was loading.");
     }
 
-    function resize() {
-      if (disposed || !renderer || !camera) return;
-      const rect = root.getBoundingClientRect();
-      const width = Math.max(1, Math.round(rect.width || window.innerWidth || 1));
-      const height = Math.max(1, Math.round(rect.height || window.innerHeight || 1));
-      renderer.setPixelRatio(maxPixelRatio);
-      renderer.setSize(width, height, false);
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      defaultCameraDistance = getDefaultCameraDistance({ width, height, radius: 1, fieldOfView: 38, diameterFraction: 0.71 });
-      camera.position.z = defaultCameraDistance / zoomFactor;
+    // Match the Home Earth location marker: a small red halo and dot attached
+    // directly to this view's Earth surface, so it follows every globe rotation.
+    locationVector = new T.Vector3();
+    locationMarker = new T.Group();
+    locationMarker.name = "liveEarthLandLocationMarker";
+    locationHalo = new T.Mesh(
+      new T.SphereGeometry(0.031, 16, 12),
+      new T.MeshBasicMaterial({
+        color: 0xff234d, transparent: true, opacity: 0.28,
+        depthTest: false, depthWrite: false
+      })
+    );
+    locationDot = new T.Mesh(
+      new T.SphereGeometry(0.014, 16, 12),
+      new T.MeshBasicMaterial({
+        color: 0xff183f, depthTest: false, depthWrite: false
+      })
+    );
+    // The universal temperature skin renders at order 4. Draw the Home-style
+    // location marker afterward so the data surface cannot cover it.
+    locationHalo.renderOrder = 20;
+    locationDot.renderOrder = 21;
+    locationMarker.add(locationHalo, locationDot);
+    locationMarker.visible = false;
+    earthGlobe.surface.add(locationMarker);
+
+    function syncLandLocation() {
+      const fix = window.liveEarthGetLocationState?.() === true
+        ? window.liveEarthGetLocationFix?.()
+        : null;
+      if (!fix || !locationMarker || !locationVector) {
+        if (locationMarker) locationMarker.visible = false;
+        requestRender();
+        return;
+      }
+      const phi = fix.latitude * Math.PI / 180;
+      const lambda = fix.longitude * Math.PI / 180;
+      locationVector.set(
+        Math.cos(phi) * Math.cos(lambda),
+        Math.sin(phi),
+        -Math.cos(phi) * Math.sin(lambda)
+      ).normalize();
+      locationHalo.position.copy(locationVector).multiplyScalar(1.006);
+      locationDot.position.copy(locationVector).multiplyScalar(1.019);
+      locationMarker.visible = true;
       requestRender();
     }
+    window.addEventListener("live-earth-location-fix", syncLandLocation);
+    window.addEventListener("live-earth-location-state", syncLandLocation);
+    syncLandLocation();
 
-    try {
-      renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
-      renderer.outputColorSpace = T.SRGBColorSpace;
-      renderer.setClearColor(0x02050b, 0);
-      scene = new T.Scene();
-      scene.background = null;
-      const rect = root.getBoundingClientRect();
-      const width = Math.max(1, Math.round(rect.width || window.innerWidth || 1));
-      const height = Math.max(1, Math.round(rect.height || window.innerHeight || 1));
-      camera = new T.PerspectiveCamera(38, width / height, 0.1, 100);
-      defaultCameraDistance = getDefaultCameraDistance({ width, height, radius: 1, fieldOfView: 38, diameterFraction: 0.71 });
-      camera.position.set(0, 0, defaultCameraDistance);
-      camera.lookAt(0, 0, 0);
-      scene.add(new T.AmbientLight(0x8aa7c8, 0.28));
-      const key = new T.DirectionalLight(0xffffff, 2.0);
-      key.position.set(-3, 2, 4);
-      scene.add(key);
-      const fill = new T.DirectionalLight(0x245b9b, 0.10);
-      fill.position.set(4, -2, -3);
-      scene.add(fill);
+    // 04 — Shared globe interaction: surface-anchored drag and pinch zoom.
+    // Land owns its gestures. A geographic surface point is picked once
+    // on pointer-down; every drag move rotates the globe until that same local
+    // point intersects the camera ray beneath the finger.
+    gestureController = (() => {
+      const raycaster = new T.Raycaster();
+      const pointerNdc = new T.Vector2();
+      const anchorLocal = new T.Vector3();
+      const anchorWorld = new T.Vector3();
+      const targetWorld = new T.Vector3();
+      const sphere = new T.Sphere(new T.Vector3(0, 0, 0), 1.001);
+      const deltaRotation = new T.Quaternion();
+      // Match Home/Earth's shared north-south tilt limits. Horizontal heading
+      // remains unrestricted; only the globe's vertical tilt is clamped.
+      const MIN_GLOBE_TILT = -1.15;
+      const MAX_GLOBE_TILT = 1.15;
+      const worldXAxis = new T.Vector3(1, 0, 0);
+      const localYAxis = new T.Vector3(0, 1, 0);
+      const tiltRotation = new T.Quaternion();
+      const headingRotation = new T.Quaternion();
+      const pointers = new Map();
+      let activePointerId = null;
+      let pinchStartDistance = 0;
+      let pinchStartZoom = 1;
+      let hasAnchor = false;
 
-      earthGlobe = await createEarthGlobe({
-        THREE: T,
-        radius: 1,
-        textureUrl: './EarthEngine/Assets/earth-land-ocean-ice-2048.png',
-        geometryDetail: 'standard',
-        maxAnisotropy: renderer.capabilities.getMaxAnisotropy(),
-        atmosphere: true
-      });
-      if (disposed) { earthGlobe.dispose(); throw new Error('The Land view closed while its Engine globe was loading.'); }
-      scene.add(earthGlobe.group);
+      const isEnabled = () => !disposed && root.isConnected && runtime.isActive(viewId);
+      const updatePointerRay = (x, y) => {
+        const rect = canvas.getBoundingClientRect();
+        if (!(rect.width > 0 && rect.height > 0)) return false;
+        pointerNdc.set(
+          ((x - rect.left) / rect.width) * 2 - 1,
+          -((y - rect.top) / rect.height) * 2 + 1
+        );
+        raycaster.setFromCamera(pointerNdc, camera);
+        return true;
+      };
+      const pickSurfacePoint = (x, y, target) => {
+        if (!updatePointerRay(x, y)) return false;
+        const hits = raycaster.intersectObject(earthGlobe.surface, true);
+        if (!hits.length) return false;
+        earthGlobe.group.updateMatrixWorld(true);
+        target.copy(hits[0].point);
+        earthGlobe.group.worldToLocal(target);
+        return target.lengthSq() > 0;
+      };
+      const pointerRayToSphere = (x, y, target) => {
+        if (!updatePointerRay(x, y)) return false;
+        const hit = raycaster.ray.intersectSphere(sphere, target);
+        if (!hit) return false;
+        target.normalize();
+        return true;
+      };
+      const clampGlobeTilt = () => {
+        const q = earthGlobe.group.quaternion;
+        // Decompose using the same q = qX(tilt) * qY(heading) convention
+        // used by Earth Engine's standard globe gestures.
+        const headingHalf = Math.atan2(q.y, q.w);
+        const sinHalfTilt = q.x * Math.cos(headingHalf) + q.z * Math.sin(headingHalf);
+        const cosHalfTilt = Math.hypot(q.w, q.y);
+        const tilt = 2 * Math.atan2(sinHalfTilt, cosHalfTilt);
+        const boundedTilt = Math.max(MIN_GLOBE_TILT, Math.min(MAX_GLOBE_TILT, tilt));
+        const heading = 2 * headingHalf;
 
-      // Shared app Location marker. Land never starts its own GPS permission flow.
-      locationVector = new T.Vector3();
-      locationMarker = new T.Group();
-      locationMarker.name = 'liveEarthLandLocationMarker';
-      locationHalo = new T.Mesh(
-        new T.SphereGeometry(0.031, 16, 12),
-        new T.MeshBasicMaterial({ color:0xff234d, transparent:true, opacity:0.28, depthTest:false, depthWrite:false })
-      );
-      locationDot = new T.Mesh(
-        new T.SphereGeometry(0.014, 16, 12),
-        new T.MeshBasicMaterial({ color:0xff183f, depthTest:false, depthWrite:false })
-      );
-      locationHalo.renderOrder = 20;
-      locationDot.renderOrder = 21;
-      locationMarker.add(locationHalo, locationDot);
-      locationMarker.visible = false;
-      earthGlobe.surface.add(locationMarker);
-
-      syncLandLocation = () => {
-        const fix = window.liveEarthGetLocationState?.() === true
-          ? window.liveEarthGetLocationFix?.()
-          : null;
-        if (!fix || !locationMarker || !locationVector) {
-          if (locationMarker) locationMarker.visible = false;
-          requestRender();
-          return;
-        }
-        const phi = fix.latitude * Math.PI / 180;
-        const lambda = fix.longitude * Math.PI / 180;
-        locationVector.set(
-          Math.cos(phi) * Math.cos(lambda),
-          Math.sin(phi),
-          -Math.cos(phi) * Math.sin(lambda)
-        ).normalize();
-        locationHalo.position.copy(locationVector).multiplyScalar(1.006);
-        locationDot.position.copy(locationVector).multiplyScalar(1.019);
-        locationMarker.visible = true;
+        // Rebuild without roll so the poles can never turn over, while heading
+        // can continue through a complete 360 degrees in either direction.
+        tiltRotation.setFromAxisAngle(worldXAxis, boundedTilt);
+        headingRotation.setFromAxisAngle(localYAxis, heading);
+        q.copy(tiltRotation).multiply(headingRotation).normalize();
+      };
+      const pointerDistance = () => {
+        const values = [...pointers.values()];
+        if (values.length < 2) return 0;
+        return Math.hypot(values[0].x - values[1].x, values[0].y - values[1].y);
+      };
+      const setZoom = value => {
+        zoomFactor = Math.max(1, Math.min(LAND_MAX_ZOOM, value));
+        camera.position.z = defaultCameraDistance / zoomFactor;
+        camera.lookAt(0, 0, 0);
         requestRender();
       };
-      window.addEventListener('live-earth-location-fix', syncLandLocation);
-      window.addEventListener('live-earth-location-state', syncLandLocation);
-      syncLandLocation();
+      const beginAnchor = pointer => {
+        hasAnchor = pickSurfacePoint(pointer.x, pointer.y, anchorLocal);
+        activePointerId = hasAnchor ? pointer.id : null;
+        return hasAnchor;
+      };
+      const onPointerDown = event => {
+        if (!isEnabled()) return;
+        if (event.pointerType === "mouse" && event.button !== 0) return;
 
-      // Surface-anchored drag and two-finger pinch, transferred as one algorithm.
-      gestureController = (() => {
-        const raycaster = new T.Raycaster();
-        const pointerNdc = new T.Vector2();
-        const anchorLocal = new T.Vector3();
-        const anchorWorld = new T.Vector3();
-        const targetWorld = new T.Vector3();
-        const sphere = new T.Sphere(new T.Vector3(0, 0, 0), 1.001);
-        const deltaRotation = new T.Quaternion();
-        const MIN_GLOBE_TILT = -1.15;
-        const MAX_GLOBE_TILT = 1.15;
-        const worldXAxis = new T.Vector3(1, 0, 0);
-        const localYAxis = new T.Vector3(0, 1, 0);
-        const tiltRotation = new T.Quaternion();
-        const headingRotation = new T.Quaternion();
-        const pointers = new Map();
-        let activePointerId = null;
-        let pinchStartDistance = 0;
-        let pinchStartZoom = 1;
-        let hasAnchor = false;
+        const pointer = { id: event.pointerId, x: event.clientX, y: event.clientY };
+        const startedOnGlobe = pickSurfacePoint(pointer.x, pointer.y, anchorLocal);
+        // Ignore touches that begin outside the visible globe. They must not
+        // become a drag or a pinch participant, even if they later move over it.
+        if (!startedOnGlobe) return;
 
-        const isEnabled = () => !disposed && root.isConnected && runtime.isActive(viewId);
-        const updatePointerRay = (x, y) => {
-          const bounds = canvas.getBoundingClientRect();
-          if (!(bounds.width > 0 && bounds.height > 0)) return false;
-          pointerNdc.set(((x - bounds.left) / bounds.width) * 2 - 1, -((y - bounds.top) / bounds.height) * 2 + 1);
-          raycaster.setFromCamera(pointerNdc, camera);
-          return true;
-        };
-        const pickSurfacePoint = (x, y, target) => {
-          if (!updatePointerRay(x, y)) return false;
-          const hits = raycaster.intersectObject(earthGlobe.surface, true);
-          if (!hits.length) return false;
-          earthGlobe.group.updateMatrixWorld(true);
-          target.copy(hits[0].point);
-          earthGlobe.group.worldToLocal(target);
-          return target.lengthSq() > 0;
-        };
-        const pointerRayToSphere = (x, y, target) => {
-          if (!updatePointerRay(x, y)) return false;
-          const hit = raycaster.ray.intersectSphere(sphere, target);
-          if (!hit) return false;
-          target.normalize();
-          return true;
-        };
-        const clampGlobeTilt = () => {
-          const q = earthGlobe.group.quaternion;
-          const headingHalf = Math.atan2(q.y, q.w);
-          const sinHalfTilt = q.x * Math.cos(headingHalf) + q.z * Math.sin(headingHalf);
-          const cosHalfTilt = Math.hypot(q.w, q.y);
-          const tilt = 2 * Math.atan2(sinHalfTilt, cosHalfTilt);
-          const boundedTilt = Math.max(MIN_GLOBE_TILT, Math.min(MAX_GLOBE_TILT, tilt));
-          const heading = 2 * headingHalf;
-          tiltRotation.setFromAxisAngle(worldXAxis, boundedTilt);
-          headingRotation.setFromAxisAngle(localYAxis, heading);
-          q.copy(tiltRotation).multiply(headingRotation).normalize();
-        };
-        const pointerDistance = () => {
-          const values = [...pointers.values()];
-          if (values.length < 2) return 0;
-          return Math.hypot(values[0].x - values[1].x, values[0].y - values[1].y);
-        };
-        const setZoom = value => {
-          zoomFactor = Math.max(1, Math.min(LAND_MAX_ZOOM, value));
-          camera.position.z = defaultCameraDistance / zoomFactor;
-          camera.lookAt(0, 0, 0);
-          requestRender();
-        };
-        const beginAnchor = pointer => {
-          hasAnchor = pickSurfacePoint(pointer.x, pointer.y, anchorLocal);
-          activePointerId = hasAnchor ? pointer.id : null;
-          return hasAnchor;
-        };
-        const onPointerDown = event => {
-          if (!isEnabled()) return;
-          if (event.pointerType === 'mouse' && event.button !== 0) return;
-          const pointer = { id:event.pointerId, x:event.clientX, y:event.clientY };
-          const startedOnGlobe = pickSurfacePoint(pointer.x, pointer.y, anchorLocal);
-          if (!startedOnGlobe) return;
-          pointers.set(event.pointerId, pointer);
-          try { canvas.setPointerCapture(event.pointerId); } catch (_) {}
-          if (pointers.size === 1) beginAnchor(pointer);
-          else if (pointers.size === 2) {
-            hasAnchor = false;
-            activePointerId = null;
-            pinchStartDistance = Math.max(1, pointerDistance());
-            pinchStartZoom = zoomFactor;
-          }
-          event.preventDefault();
-        };
-        const onPointerMove = event => {
-          if (!isEnabled() || !pointers.has(event.pointerId)) return;
-          const pointer = pointers.get(event.pointerId);
-          pointer.x = event.clientX;
-          pointer.y = event.clientY;
-          if (pointers.size >= 2) {
-            const distance = pointerDistance();
-            if (pinchStartDistance > 0) setZoom(pinchStartZoom * distance / pinchStartDistance);
-            event.preventDefault();
-            return;
-          }
-          if (pointers.size !== 1 || event.pointerId !== activePointerId || !hasAnchor) return;
-          if (!pointerRayToSphere(pointer.x, pointer.y, targetWorld)) return;
-          earthGlobe.group.updateMatrixWorld(true);
-          anchorWorld.copy(anchorLocal).applyQuaternion(earthGlobe.group.quaternion).normalize();
-          deltaRotation.setFromUnitVectors(anchorWorld, targetWorld);
-          earthGlobe.group.quaternion.premultiply(deltaRotation).normalize();
-          clampGlobeTilt();
-          earthGlobe.group.updateMatrixWorld(true);
-          requestRender();
-          event.preventDefault();
-        };
-        const onPointerUp = event => {
-          if (!pointers.has(event.pointerId)) return;
-          pointers.delete(event.pointerId);
-          try { if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId); } catch (_) {}
+        pointers.set(event.pointerId, pointer);
+        try { canvas.setPointerCapture(event.pointerId); } catch (_) {}
+        if (pointers.size === 1) {
+          beginAnchor(pointer);
+        } else if (pointers.size === 2) {
+          // Both pointers are admitted only after independently hitting the
+          // globe surface, so pinch zoom cannot start from the surrounding UI.
           hasAnchor = false;
           activePointerId = null;
-          if (pointers.size === 1) beginAnchor([...pointers.values()][0]);
-          else if (pointers.size >= 2) {
-            pinchStartDistance = Math.max(1, pointerDistance());
-            pinchStartZoom = zoomFactor;
-          }
-        };
-        const onPointerCancel = event => onPointerUp(event);
-        canvas.addEventListener('pointerdown', onPointerDown, { passive:false });
-        canvas.addEventListener('pointermove', onPointerMove, { passive:false });
-        canvas.addEventListener('pointerup', onPointerUp);
-        canvas.addEventListener('pointercancel', onPointerCancel);
-        canvas.addEventListener('lostpointercapture', onPointerCancel);
-        return {
-          dispose() {
-            canvas.removeEventListener('pointerdown', onPointerDown);
-            canvas.removeEventListener('pointermove', onPointerMove);
-            canvas.removeEventListener('pointerup', onPointerUp);
-            canvas.removeEventListener('pointercancel', onPointerCancel);
-            canvas.removeEventListener('lostpointercapture', onPointerCancel);
-            pointers.clear();
-            hasAnchor = false;
-          }
-        };
-      })();
-
-      resize();
-      if (typeof ResizeObserver === 'function') {
-        resizeObserver = new ResizeObserver(resize);
-        resizeObserver.observe(root);
-      }
-      window.addEventListener('resize', resize, { passive:true });
-      window.addEventListener('orientationchange', resize, { passive:true });
-
-      function attachLayer(id, factory) {
-        if (disposed) throw new Error('This world globe has already been disposed.');
-        if (typeof id !== 'string' || !id.trim() || typeof factory !== 'function') throw new TypeError('A layer needs an id and factory.');
-        removeLayer(id);
-        const cleanup = factory({ THREE:T, scene, earth:earthGlobe.surface, group:earthGlobe.group, camera, renderer, redraw:requestRender, requestRender });
-        if (typeof cleanup === 'function') layers.set(id, cleanup);
-        requestRender();
-        return () => removeLayer(id);
-      }
-      function removeLayer(id) {
-        const cleanup = layers.get(id);
-        if (!cleanup) return false;
-        layers.delete(id);
-        try { cleanup(); } catch (error) { console.warn(`[LIVE // EARTH] ${viewId} layer cleanup failed:`, error); }
-        requestRender();
-        return true;
-      }
-      function dispose() {
-        if (disposed) return;
-        disposed = true;
-        window.removeEventListener('resize', resize);
-        window.removeEventListener('orientationchange', resize);
-        resizeObserver?.disconnect(); resizeObserver = null;
-        if (syncLandLocation) {
-          window.removeEventListener('live-earth-location-fix', syncLandLocation);
-          window.removeEventListener('live-earth-location-state', syncLandLocation);
+          pinchStartDistance = Math.max(1, pointerDistance());
+          pinchStartZoom = zoomFactor;
         }
-        gestureController?.dispose?.(); gestureController = null;
-        for (const id of [...layers.keys()]) removeLayer(id);
-        if (locationMarker?.parent) locationMarker.parent.remove(locationMarker);
-        locationHalo?.geometry?.dispose?.(); locationHalo?.material?.dispose?.();
-        locationDot?.geometry?.dispose?.(); locationDot?.material?.dispose?.();
-        locationMarker = null; locationHalo = null; locationDot = null; locationVector = null;
-        earthGlobe?.dispose?.(); earthGlobe = null;
-        renderer?.dispose?.(); renderer?.forceContextLoss?.(); renderer = null;
-        sceneTitle.remove(); canvas.remove(); scene = null; camera = null;
-        root.classList.remove('le-world-engine-host');
-      }
+        event.preventDefault();
+      };
+      const onPointerMove = event => {
+        if (!isEnabled() || !pointers.has(event.pointerId)) return;
+        const pointer = pointers.get(event.pointerId);
+        pointer.x = event.clientX;
+        pointer.y = event.clientY;
+        if (pointers.size >= 2) {
+          const distance = pointerDistance();
+          if (pinchStartDistance > 0) setZoom(pinchStartZoom * distance / pinchStartDistance);
+          event.preventDefault();
+          return;
+        }
+        if (pointers.size !== 1 || event.pointerId !== activePointerId || !hasAnchor) return;
+        if (!pointerRayToSphere(pointer.x, pointer.y, targetWorld)) return;
+
+        earthGlobe.group.updateMatrixWorld(true);
+        anchorWorld.copy(anchorLocal).applyQuaternion(earthGlobe.group.quaternion).normalize();
+        deltaRotation.setFromUnitVectors(anchorWorld, targetWorld);
+        earthGlobe.group.quaternion.premultiply(deltaRotation).normalize();
+        clampGlobeTilt();
+        earthGlobe.group.updateMatrixWorld(true);
+        requestRender();
+        event.preventDefault();
+      };
+      const onPointerUp = event => {
+        if (!pointers.has(event.pointerId)) return;
+        pointers.delete(event.pointerId);
+        try { if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId); } catch (_) {}
+        hasAnchor = false;
+        activePointerId = null;
+        if (pointers.size === 1) {
+          const remaining = [...pointers.values()][0];
+          beginAnchor(remaining);
+        } else if (pointers.size >= 2) {
+          pinchStartDistance = Math.max(1, pointerDistance());
+          pinchStartZoom = zoomFactor;
+        }
+      };
+      const onPointerCancel = event => onPointerUp(event);
+      canvas.addEventListener("pointerdown", onPointerDown, { passive: false });
+      canvas.addEventListener("pointermove", onPointerMove, { passive: false });
+      canvas.addEventListener("pointerup", onPointerUp);
+      canvas.addEventListener("pointercancel", onPointerCancel);
+      canvas.addEventListener("lostpointercapture", onPointerCancel);
+      return {
+        dispose() {
+          canvas.removeEventListener("pointerdown", onPointerDown);
+          canvas.removeEventListener("pointermove", onPointerMove);
+          canvas.removeEventListener("pointerup", onPointerUp);
+          canvas.removeEventListener("pointercancel", onPointerCancel);
+          canvas.removeEventListener("lostpointercapture", onPointerCancel);
+          pointers.clear();
+          hasAnchor = false;
+        }
+      };
+    })();
+    resize();
+    if (typeof ResizeObserver === "function") {
+      resizeObserver = new ResizeObserver(resize);
+      resizeObserver.observe(root);
+    }
+    window.addEventListener("resize", resize, { passive: true });
+    window.addEventListener("orientationchange", resize, { passive: true });
+
+    function attachLayer(id, factory) {
+      if (disposed) throw new Error("This world globe has already been disposed.");
+      if (typeof id !== "string" || !id.trim() || typeof factory !== "function") throw new TypeError("A layer needs an id and factory.");
+      removeLayer(id);
+      const cleanup = factory({
+        THREE: T,
+        scene,
+        earth: earthGlobe.surface,
+        group: earthGlobe.group,
+        camera,
+        renderer,
+        redraw: requestRender,
+        requestRender
+      });
+      if (typeof cleanup === "function") layers.set(id, cleanup);
       requestRender();
-      return Object.freeze({ THREE:T, scene, camera, renderer, canvas, globe:earthGlobe, earth:earthGlobe.surface, attachLayer, removeLayer, requestRender, dispose });
-    } catch (error) {
+      return () => removeLayer(id);
+    }
+
+    function removeLayer(id) {
+      const cleanup = layers.get(id);
+      if (!cleanup) return false;
+      layers.delete(id);
+      try { cleanup(); } catch (error) { console.warn(`[LIVE // EARTH] ${viewId} layer cleanup failed:`, error); }
+      requestRender();
+      return true;
+    }
+
+    function dispose() {
+      if (disposed) return;
       disposed = true;
-      window.removeEventListener('resize', resize);
-      window.removeEventListener('orientationchange', resize);
-      resizeObserver?.disconnect();
-      if (syncLandLocation) {
-        window.removeEventListener('live-earth-location-fix', syncLandLocation);
-        window.removeEventListener('live-earth-location-state', syncLandLocation);
-      }
-      gestureController?.dispose?.();
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("orientationchange", resize);
+      resizeObserver?.disconnect(); resizeObserver = null;
+      window.removeEventListener("live-earth-location-fix", syncLandLocation);
+      window.removeEventListener("live-earth-location-state", syncLandLocation);
+      gestureController?.dispose?.(); gestureController = null;
+      for (const id of [...layers.keys()]) removeLayer(id);
       if (locationMarker?.parent) locationMarker.parent.remove(locationMarker);
       locationHalo?.geometry?.dispose?.(); locationHalo?.material?.dispose?.();
       locationDot?.geometry?.dispose?.(); locationDot?.material?.dispose?.();
-      earthGlobe?.dispose?.(); renderer?.dispose?.(); renderer?.forceContextLoss?.();
-      sceneTitle.remove(); canvas.remove(); root.classList.remove('le-world-engine-host');
-      throw error;
+      locationMarker = null; locationHalo = null; locationDot = null; locationVector = null;
+      earthGlobe?.dispose?.(); earthGlobe = null;
+      renderer?.dispose?.(); renderer?.forceContextLoss?.(); renderer = null;
+      canvas.remove();
+      scene = null; camera = null;
+      root.classList.remove("le-world-engine-host");
     }
+
+    requestRender();
+    return Object.freeze({
+      THREE: T,
+      scene,
+      camera,
+      renderer,
+      canvas,
+      globe: earthGlobe,
+      earth: earthGlobe.surface,
+      attachLayer,
+      removeLayer,
+      requestRender,
+      dispose
+    });
+  } catch (error) {
+    disposed = true;
+    resizeObserver?.disconnect();
+    gestureController?.dispose?.();
+    earthGlobe?.dispose?.();
+    renderer?.dispose?.();
+    canvas.remove();
+    root.classList.remove("le-world-engine-host");
+    throw error;
   }
+}
 
   function formatNumber(value) {
     return Number.isFinite(value)
@@ -714,8 +930,133 @@
       : new Intl.DateTimeFormat(undefined, { dateStyle:'medium', timeStyle:'short' }).format(date);
   }
 
-  function activateView() {
+  function installResponsivePresentationStyles() {
+    if (document.getElementById('le-land-responsive-presentation-style')) return;
+    const style = document.createElement('style');
+    style.id = 'le-land-responsive-presentation-style';
+    style.textContent = `
+      /* Compact-width presentation */
+      @container (max-width:430px) {
+        .le-land-scale-heading { gap:7px; }
+        .le-land-legend-title { font-size:clamp(8.5px,2.2cqi,10px); letter-spacing:.025em; }
+        .le-land-scale-range { padding-left:8px; font-size:clamp(15px,4cqi,19px); }
+        .le-land-instrument-label { margin-bottom:6px; }
+      }
+      @container (max-width:350px) {
+        .le-land-scale-dock { --atmo-action-space:40px; --atmo-track-gap:9px; }
+        .le-land-scale-heading { gap:5px; margin-bottom:5px; }
+        .le-land-legend-title { font-size:8px; }
+        .le-land-scale-range { padding-left:6px; font-size:15px; }
+        .le-land-instrument-label { font-size:9px; letter-spacing:.22em; margin-bottom:5px; }
+        .le-land-legend-ticks { font-size:8px; }
+      }
+      @media (max-width:360px) {
+        .le-land-dataset-grid { grid-template-columns:1fr; }
+      }
+      @media (max-height:700px) {
+        .le-sfv--land.le-world-engine-host .le-sfv-body { margin-top:clamp(145px,28vh,230px); }
+        .le-sfv--land .le-sfv-panel { padding-bottom:calc(env(safe-area-inset-bottom) + 112px); }
+      }
+
+      /* Landscape presentation — scale only. Globe, header, orbs and shared
+         feature controls retain their existing presentation and behavior. */
+      @media (orientation:landscape) {
+        .le-land-scene-title { top:3vh; top:3svh; }
+        .le-land-scale-dock {
+          left:6%; right:auto;
+          top:50%; bottom:auto; transform:translateY(-50%);
+          width:clamp(126px,12.24vw,151px); max-width:16.2vw;
+          display:grid; grid-template-columns:minmax(0,1fr);
+          grid-template-rows:auto auto auto auto; column-gap:0; row-gap:8px;
+          padding:8px 8px 8px; border:0; border-radius:0; background:transparent;
+          box-shadow:none;
+          backdrop-filter:none; -webkit-backdrop-filter:none;
+          pointer-events:auto;
+        }
+        .le-land-instrument-label {
+          grid-column:1 / -1; grid-row:1;
+          width:100%; margin:0 0 1px; font-size:9px; letter-spacing:.18em;
+        }
+        .le-land-instrument-label::before,.le-land-instrument-label::after { max-width:24px; }
+
+        /* Dataset label is vertical; the live numeric range stays horizontal. */
+        .le-land-scale-heading { display:contents; }
+        .le-land-legend-title {
+          position:absolute; z-index:1;
+          left:7px; top:53%;
+          grid-column:auto; grid-row:auto;
+          align-self:auto; justify-self:auto;
+          display:flex; align-items:center; justify-content:center;
+          width:18px; max-width:none; overflow:visible;
+          writing-mode:vertical-rl; transform:translateY(-50%) rotate(180deg);
+          font-size:9px; letter-spacing:.08em; text-align:center;
+          text-overflow:clip; white-space:nowrap;
+        }
+        .le-land-scale-range {
+          grid-column:1; grid-row:2;
+          display:block; width:100%; min-width:0;
+          padding:0; border:0; font-size:clamp(13px,1.45vw,16px);
+          line-height:1.1; letter-spacing:-.035em;
+          white-space:nowrap; text-align:center;
+        }
+        .le-land-scale-track-row { display:contents; }
+        .le-land-scale-visual {
+          grid-column:1; grid-row:3;
+          display:grid; grid-template-columns:8px max-content;
+          align-items:stretch; column-gap:7px;
+          width:max-content; max-width:100%; min-width:0;
+          justify-self:center;
+        }
+        .le-land-scale-track { width:8px; height:clamp(210px,48vh,300px); }
+        .le-land-legend-bar {
+          width:100%; height:100%; min-height:100%;
+          background:var(--land-gradient-vertical)!important;
+          border-radius:999px;
+        }
+        .le-land-legend-graduations span {
+          left:50%; top:var(--atmo-graduation-position);
+          width:14px; height:1px;
+          transform:translate(-50%,-50%);
+        }
+        .le-land-legend-ticks {
+          position:relative; width:max-content; height:auto; min-height:clamp(210px,48vh,300px);
+          margin:0; font-size:clamp(8px,.85vw,10px); line-height:1;
+        }
+        .le-land-legend-ticks span {
+          top:var(--atmo-tick-position); left:0!important;
+          transform:translateY(-50%); text-align:left; white-space:nowrap;
+        }
+        .le-land-legend-ticks span::before {
+          left:-7px; top:50%; width:4px; height:1px;
+          transform:translateY(-50%);
+        }
+        .le-land-legend-ticks span:first-child { transform:translateY(-50%); }
+        .le-land-legend-ticks span:last-child { transform:translateY(-50%); text-align:left; }
+        .le-land-scale-more {
+          grid-column:1; grid-row:4;
+          width:34px; height:34px; justify-self:center; align-self:center;
+          margin:1px 0 0;
+        }
+
+        /* The + control opens provenance in a right-side drawer, not above
+           the scale, so the drawer stays inside the Landscape viewport. */
+        .le-land-scale-dock .le-land-data-card {
+          left:calc(100% + 14px); right:auto;
+          top:50%; bottom:auto; transform:translateY(-50%);
+          width:min(42vw,620px);
+          max-width:calc(80vw - 200px);
+          max-height:85svh; overflow:auto;
+          border-radius:16px;
+        }
+      }
+    
+    `;
+    document.head.appendChild(style);
+  }
+
+function activateView() {
     installHudStyle();
+    installResponsivePresentationStyles();
     const view = runtime.mount(WORLD.id);
     if (!view) return () => {};
     view.root.querySelector('.le-sfv-head')?.remove();
@@ -767,16 +1108,29 @@
     details.hidden = true;
     const summaryRange = runtime.el('div', 'le-land-summary-range', '—');
     const summaryTitle = runtime.el('div', 'le-land-summary-title', 'Land grid · global value range');
-    const summaryHeading = runtime.el('div', 'le-land-summary-heading');
+    const summaryHeading = runtime.el('div', 'le-land-scale-heading');
     summaryHeading.append(summaryTitle, summaryRange);
     const scaleDock = runtime.el('section', 'le-land-scale-dock');
     scaleDock.setAttribute('aria-label', 'Land numerical grid summary');
     scaleDock.hidden = true;
     const instrumentLabel = runtime.el('div', 'le-land-instrument-label');
     instrumentLabel.appendChild(runtime.el('span', 'le-land-instrument-name', 'Land'));
+    const legendTitle = runtime.el('span','le-land-legend-title','Land data');
+    const legendRange = runtime.el('span','le-land-scale-range','—');
+    summaryHeading.replaceChildren(legendTitle,legendRange);
+    const scaleVisual = runtime.el('div','le-land-scale-visual');
+    const scaleTrack = runtime.el('div','le-land-scale-track');
+    const legendBar = runtime.el('div','le-land-legend-bar');
+    legendBar.setAttribute('role','img');
+    legendBar.setAttribute('aria-label','Land dataset colour gradient');
+    const legendGraduations = runtime.el('div','le-land-legend-graduations');
+    legendBar.appendChild(legendGraduations);
+    scaleTrack.appendChild(legendBar);
+    const legendTicks = runtime.el('div','le-land-legend-ticks');
+    scaleVisual.append(scaleTrack,legendTicks);
     scaleDock.append(details, instrumentLabel, summaryHeading);
 
-    const summaryTrackRow = runtime.el('div', 'le-land-summary-track-row');
+    const summaryTrackRow = runtime.el('div', 'le-land-scale-track-row');
     const gridCount = runtime.el('div', 'le-land-grid-count');
     const gridCountLabel = runtime.el('span', 'le-land-grid-count-label', 'Global grid · loading');
     gridCount.appendChild(gridCountLabel);
@@ -785,8 +1139,9 @@
     scaleMore.setAttribute('aria-label', 'Show Land grid details and provenance');
     scaleMore.setAttribute('aria-controls', 'le-land-data-details');
     scaleMore.setAttribute('aria-expanded', 'false');
-    summaryTrackRow.append(gridCount, scaleMore);
+    summaryTrackRow.append(scaleVisual, scaleMore);
     scaleDock.appendChild(summaryTrackRow);
+    scaleDock.appendChild(gridCount);
     view.root.appendChild(scaleDock);
 
     const gridNote = runtime.el('div', 'le-land-grid-note');
@@ -924,11 +1279,14 @@
           THREE,
           grid,
           radius: 1.009,
-          opacity: 0.88,
-          min: config.colorMin,
-          max: config.colorMax,
-          colorStops: formatPaletteStops(LAND_PALETTES[config.id]),
-          contourInterval: 0,
+          opacity: config.id === 'land_temperature' ? 0.75 : 0.88,
+          thermalAura: config.id === 'land_temperature' ? { enabled:true, expansion:0.0015, intensity:0.075, diffusion:0.012 } : undefined,
+          contourInterval: config.id === 'land_temperature' ? 5 : 0,
+          contourStrength: config.id === 'land_temperature' ? 0.085 : 0.16,
+          contourColor: [0.13,0.10,0.09],
+          min: config.id === 'land_temperature' ? grid.min : config.colorMin,
+          max: config.id === 'land_temperature' ? grid.max : config.colorMax,
+          colorStops: config.id === 'land_temperature' ? LAND_TEMPERATURE_COLOR_STOPS : formatPaletteStops(LAND_PALETTES[config.id]),
           name: `LAND-${config.id.toUpperCase()}-GRID`
         });
         root.add(handle.mesh);
@@ -1032,6 +1390,30 @@
         const subtitle = details.querySelector('p');
         if (subtitle) subtitle.textContent = `${metadata.source_name || metadata.product || config.sourceLabel} · ${width.toLocaleString()} × ${height.toLocaleString()} global grid`;
         summaryRange.textContent = `${rangeMin}–${rangeMax} ${unit}`;
+        legendRange.textContent = `${rangeMin} — ${rangeMax} ${unit}`;
+        legendTitle.textContent = `${config.label} · ${unit}`;
+        const palette = config.id === 'land_temperature' ? null : LAND_PALETTES[config.id];
+        const gradient = palette
+          ? `linear-gradient(90deg,${palette.map((c,i,a)=>`${c} ${i/(a.length-1)*100}%`).join(',')})`
+          : LAND_TEMPERATURE_LEGEND;
+        legendBar.style.background = gradient;
+        legendBar.style.setProperty('--land-gradient-vertical',gradient.replace('90deg','0deg'));
+        legendTicks.replaceChildren();
+        legendGraduations.replaceChildren();
+        const legendMin = config.id === 'land_temperature' ? grid.min : config.colorMin;
+        const legendMax = config.id === 'land_temperature' ? grid.max : config.colorMax;
+        for(let i=0;i<5;i++){
+          const fraction=i/4, value=legendMin+(legendMax-legendMin)*fraction, position=fraction*100;
+          const tick=runtime.el('span','',formatFieldValue(value));
+          tick.style.left=`${position}%`;
+          tick.style.setProperty('--atmo-tick-position',`${100-position}%`);
+          legendTicks.appendChild(tick);
+          if(i>0 && i<4){
+            const mark=runtime.el('span');
+            mark.style.setProperty('--atmo-graduation-position',`${position}%`);
+            legendGraduations.appendChild(mark);
+          }
+        }
         gridCountLabel.textContent = `${grid.validCount.toLocaleString()} valid grid cells`;
         details.hidden = false;
         scaleDock.hidden = false;
