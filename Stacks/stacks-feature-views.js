@@ -31,7 +31,7 @@
   if (window.__liveEarthStacksFeatureViewsLoading) return;
   window.__liveEarthStacksFeatureViewsLoading = true;
 
-  // These seven numerical worlds own independent Earth Engine globes and need
+  // These eight numerical worlds own independent Earth Engine globes and need
   // a shared exclusive-screen guard. Other Stacks views retain their own
   // presentation: Prime Earth layer overlays, Weather's full-page scene, or
   // the dedicated Traffic/Editorial workspaces.
@@ -40,6 +40,7 @@
     'atmospheric-composition',
     'oceans',
     'land',
+    'land-properties',
     'water-ice',
     'earth-activity',
     'energy-humanity'
@@ -56,7 +57,8 @@
     atmosphere: { title: 'Atmosphere', symbol: '◉', description: 'A numerical view of atmospheric conditions: temperature, pressure, wind and moisture.' },
     'atmospheric-composition': { title: 'Atmospheric Composition', symbol: '◌', description: 'A dedicated world for verified atmospheric constituents and chemistry, including greenhouse gases, ozone, aerosols and particulates.' },
     oceans: { title: 'Oceans', symbol: '≈', description: 'A visual preview of numerical ocean systems: currents, heat, salinity, sea level and marine productivity.' },
-    land: { title: 'Land', symbol: '⌁', description: 'A visual preview of numerical land systems: terrain, soils, vegetation and land-cover change.' },
+    land: { title: 'Land', symbol: '⌁', description: 'A visual preview of numerical land systems: near-surface conditions, vegetation and land-cover change.' },
+    'land-properties': { title: 'Land Properties', symbol: '▤', description: 'A dedicated soil-profile view for mapped chemical, texture, structural, carbon and water-retention properties across six depth intervals. Source grids are not connected yet.' },
     'water-ice': { title: 'Water & Ice', symbol: '❄', description: 'A visual preview of freshwater and cryosphere systems: rainfall, snow, glaciers, ice and water storage.' },
     'earth-activity': { title: 'Earth Activity', symbol: '✧', description: 'A visual preview of measured geophysical and environmental activity, including earthquakes, volcanoes and fires.' },
     'energy-humanity': { title: 'Energy & Humanity', symbol: '✺', description: 'A visual preview of planetary energy and human activity indicators, including radiation, night lights and land use.' },
@@ -70,6 +72,10 @@
     .le-feature-library-item .le-feature-symbol{font-size:clamp(30px,8vmin,42px);filter:drop-shadow(0 2px 5px rgba(0,0,0,.72))}
     #le-feature-dock .le-feature-orb .le-feature-symbol{font-size:clamp(30px,8vmin,42px)}
     #le-feature-library .le-feature-library-item .orbShell:before{background:radial-gradient(ellipse at 28% 16%,rgba(255,255,255,.58),transparent 30%),linear-gradient(138deg,rgba(255,255,255,.25),rgba(255,255,255,.035) 27%,transparent 47%,rgba(255,255,255,.09) 76%,rgba(255,255,255,.22))}
+    /* Land Properties Orb — restrained mineral/soil glass; shared Orb geometry is unchanged. */
+    #le-feature-library .le-feature-library-item[data-feature="land-properties"] .orbShell,#le-feature-dock .le-feature-orb[data-feature="land-properties"] .orbShell{background:radial-gradient(circle at 30% 22%,#f0d2a0 0,#a77a4c 25%,#513b2b 67%,#17110d 100%);border-color:#cdb38a;box-shadow:inset 2px 2px 7px #fff8,inset -5px -7px 12px #160a0acc,0 0 20px #b98b5966,0 5px 12px #000b}
+    #le-feature-library .le-feature-library-item[data-feature="land-properties"] .orbShell:before{background:radial-gradient(ellipse at 28% 16%,rgba(255,255,255,.58),transparent 30%),linear-gradient(138deg,rgba(255,255,255,.25),rgba(255,255,255,.035) 27%,transparent 47%,rgba(255,255,255,.09) 76%,rgba(255,255,255,.22))}
+    #le-feature-library .le-feature-library-item[data-feature="land-properties"] .le-feature-symbol,#le-feature-dock .le-feature-orb[data-feature="land-properties"] .le-feature-symbol{font-size:clamp(30px,8vmin,42px);color:#fff0d4}
     /* The Editorial Orb keeps its identity in the shared catalogue; its workspace stays on-demand. */
     #le-feature-library .le-feature-library-item[data-feature="editorial-engine"] .orbShell,#le-feature-dock .le-feature-orb[data-feature="editorial-engine"] .orbShell{background:radial-gradient(circle at 30% 22%,#ffe0a8 0,#b7793d 24%,#4b281b 67%,#160e0b 100%);border-color:#f4d09a;box-shadow:inset 2px 2px 7px #fff9,inset -5px -7px 12px #160a0acc,0 0 22px #d69c5577,0 5px 12px #000b}
     #le-feature-library .le-feature-library-item[data-feature="editorial-engine"] .orbShell:before{background:radial-gradient(ellipse at 28% 16%,rgba(255,255,255,.58),transparent 30%),linear-gradient(138deg,rgba(255,255,255,.25),rgba(255,255,255,.035) 27%,transparent 47%,rgba(255,255,255,.09) 76%,rgba(255,255,255,.22))}
@@ -316,6 +322,7 @@
     { id: 'atmospheric-composition', path: './Atmospheric-Composition/atmospheric-composition-view-controller.js', connected: false },
     { id: 'oceans', path: './Oceans/oceans-view-controller.js', connected: false },
     { id: 'land', path: './Land/land-view-controller.js', connected: false },
+    { id: 'land-properties', path: './Land-Properties/land-properties-view-controller.js', connected: false },
     { id: 'water-ice', path: './Water-Ice/water-ice-view-controller.js', connected: false },
     { id: 'earth-activity', path: './Earth-Activity/earth-activity-view-controller.js', connected: false },
     { id: 'energy-humanity', path: './Energy-Humanity/energy-humanity-view-controller.js', connected: false },
@@ -438,7 +445,8 @@
     // still use the shared error surface below.
     const silentGlobeFirstLoad = id === 'atmosphere'
       || id === 'oceans'
-      || id === 'atmospheric-composition';
+      || id === 'atmospheric-composition'
+      || id === 'land-properties';
     if (!silentGlobeFirstLoad) {
       showFeatureLoadStatus(id, `Loading ${VIEW_META[id].title}…`);
     }
@@ -494,7 +502,7 @@
   // All feature-view implementations, including Elevation, load only on Orb selection.
   const catalogueOrder = [
     'clouds', 'weather', 'elevation', 'earthquakes', 'traffic',
-    'atmosphere', 'atmospheric-composition', 'oceans', 'land', 'water-ice',
+    'atmosphere', 'atmospheric-composition', 'oceans', 'land', 'land-properties', 'water-ice',
     'earth-activity', 'energy-humanity', 'editorial-engine'
   ];
   for (const id of catalogueOrder) {

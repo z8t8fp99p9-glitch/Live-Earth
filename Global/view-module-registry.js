@@ -628,7 +628,8 @@
       const globeFirstViews = new Set([
         "atmosphere",
         "atmospheric-composition",
-        "oceans"
+        "oceans",
+        "land-properties"
       ]);
       if (globeFirstViews.has(feature.id)) {
         stage.hidden = true;

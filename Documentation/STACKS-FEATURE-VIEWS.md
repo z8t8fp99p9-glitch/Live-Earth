@@ -25,12 +25,13 @@ The shared runtime registers the full catalogue immediately in this order:
 7. Atmospheric Composition
 8. Oceans
 9. Land
-10. Water & Ice
-11. Earth Activity
-12. Energy & Humanity
-13. Editorial Engine
+10. Land Properties
+11. Water & Ice
+12. Earth Activity
+13. Energy & Humanity
+14. Editorial Engine
 
-All 12 Stacks feature-view implementations are separate optional controllers, including Elevation. The additional Editorial Engine workspace is also an optional controller. Each is fetched only when the user selects its matching Orb and self-registers with the shared runtime. The loader waits for registration and opens it only if that same Orb is still selected; closing or switching views while a request is pending prevents a late response from activating a stale view.
+All 13 Stacks feature-view implementations are separate optional controllers, including Elevation. The additional Editorial Engine workspace is also an optional controller. Each is fetched only when the user selects its matching Orb and self-registers with the shared runtime. The loader waits for registration and opens it only if that same Orb is still selected; closing or switching views while a request is pending prevents a late response from activating a stale view.
 
 `__liveEarthStacksFeatureViewsInstalled` means the shared runtime and complete catalogue are installed. It does not wait for optional controller downloads. This allows the Home startup gate to complete without downloading all feature controllers.
 
@@ -55,20 +56,21 @@ Optional feature scripts use the Service Worker's bounded same-origin optional c
 
 ## Numerical worlds and globe-first views
 
-All seven numerical-style views use the same Stacks catalogue, three-Orb dock and per-view lifecycle. Each owns an independent Earth Engine globe and is an exclusive full-screen observatory. When one is mounted, the shared Stacks runtime sets `body.le-exclusive-world-open`, hides Home's `#scene` canvas and gives the Engine host an opaque observatory background. `cleanupCurrent()` removes that state on the feature-Orb close, feature switch, or primary-view transition; individual controllers continue to dispose their own globe, layers, listeners, observers, timers and requests.
+All eight numerical-style views use the same Stacks catalogue, three-Orb dock and per-view lifecycle. Each owns an independent Earth Engine globe and is an exclusive full-screen observatory. When one is mounted, the shared Stacks runtime sets `body.le-exclusive-world-open`, hides Home's `#scene` canvas and gives the Engine host an opaque observatory background. `cleanupCurrent()` removes that state on the feature-Orb close, feature switch, or primary-view transition; individual controllers continue to dispose their own globe, layers, listeners, observers, timers and requests.
 
-**Atmosphere, Oceans and Atmospheric Composition are globe-first views.** Their controllers create their own Earth Engine scenes and initialize them asynchronously. The current `Global/view-module-registry.js` explicitly suppresses the generic preview stage for feature IDs `atmosphere`, `oceans` and `atmospheric-composition`; the generic preview card therefore does not cover the scientific globe. A failed Engine initialization is reported locally to the still-active feature. A late globe result after close/switch is disposed rather than attached to a stale view.
+**Atmosphere, Oceans, Atmospheric Composition and Land Properties are globe-first views.** Their controllers create their own Earth Engine scenes and initialize them asynchronously. The current `Global/view-module-registry.js` explicitly suppresses the generic preview stage for feature IDs `atmosphere`, `oceans`, `atmospheric-composition` and `land-properties`; Land and Land Properties remove their shared intro shell as their globe controllers initialize; the generic preview card therefore does not cover the scientific globe. A failed Engine initialization is reported locally to the still-active feature. A late globe result after close/switch is disposed rather than attached to a stale view.
 
 This preview-stage suppression is a presentation rule only. It does not mean that every dataset in a World is configured, fresh or complete. Each selected data layer must still pass the owning controller's current-grid/record validation.
 
-The Home-canvas guard is owned by the shared runtime rather than by a stylesheet injected by an individual controller. This prevents a previously opened numerical world from suppressing another world's full-screen guard when multiple controllers share rendering styles. This guard is intentionally limited to the seven numerical views: Clouds, Elevation and Earthquakes retain their Prime Earth layer overlays; Weather keeps its own opaque full-page weather scene; Traffic and Editorial Engine retain their existing workspaces.
+The Home-canvas guard is owned by the shared runtime rather than by a stylesheet injected by an individual controller. This prevents a previously opened numerical world from suppressing another world's full-screen guard when multiple controllers share rendering styles. This guard is intentionally limited to the eight numerical views: Clouds, Elevation and Earthquakes retain their Prime Earth layer overlays; Weather keeps its own opaque full-page weather scene; Traffic and Editorial Engine retain their existing workspaces.
 
 | World/view | Controller | Scope |
 |---|---|---|
 | Atmosphere | `Atmosphere/atmosphere-view-controller.js` | Temperature, pressure, wind and moisture |
 | Atmospheric Composition | `Atmospheric-Composition/atmospheric-composition-view-controller.js` | Seven separately selectable constituent/model fields; see `ATMOSPHERIC-COMPOSITION-DATA.md` |
 | Oceans | `Oceans/oceans-view-controller.js` | Ocean currents, heat, salinity, sea level and marine productivity |
-| Land | `Land/land-view-controller.js` | Terrain, soils, vegetation and land-cover change |
+| Land | `Land/land-view-controller.js` | Near-surface conditions, vegetation and land-cover change |
+| Land Properties | `Land-Properties/land-properties-view-controller.js` | SoilGrids property catalogue across six profile depths; source grids are not connected yet |
 | Water & Ice | `Water-Ice/water-ice-view-controller.js` | Freshwater and cryosphere systems |
 | Earth Activity | `Earth-Activity/earth-activity-view-controller.js` | Geophysical/environmental activity and event data |
 | Energy & Humanity | `Energy-Humanity/energy-humanity-view-controller.js` | Radiation, night lights and human activity indicators |

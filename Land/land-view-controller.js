@@ -72,7 +72,6 @@
   const DATASET_OPTIONS = [
     { id:'land_temperature', label:'Near-surface temperature', icon:'temperature', color:'#ff9c68', available:true },
     { id:'soil_moisture', label:'Soil moisture', icon:'moisture', color:'#71c9f4' },
-    { id:'soil_properties', label:'Soil properties', icon:'soil', color:'#c2a080' },
     { id:'elevation', label:'Elevation', icon:'elevation', color:'#d2bd91' },
     { id:'terrain', label:'Terrain', icon:'terrain', color:'#a9c6d8' },
     { id:'land_cover', label:'Land cover', icon:'cover', color:'#8bdd9a' },
@@ -107,7 +106,6 @@
   const ICONS = {
     temperature:'<path d="M10 14.5V5a2 2 0 1 1 4 0v9.5a4 4 0 1 1-4 0Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12 10v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
     moisture:'<path d="M12 3.5s-6 6.4-6 10.5a6 6 0 0 0 12 0c0-4.1-6-10.5-6-10.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 15.2a3.2 3.2 0 0 0 3.2 3.1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
-    soil:'<path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 7v5m5 0v5m5-10v5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
     elevation:'<path d="m3 18 6.2-10 3.1 5 2.2-3.2L21 18H3Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m7.2 11.2 2 1.1 1.2-1.5m3.4 1.3 1.7 1.1 1.2-1" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
     terrain:'<path d="M3 17c2.5-5 4.5-5 7 0s4.5 5 7 0 4.5-5 4-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M3 11c2.5-5 4.5-5 7 0s4.5 5 7 0 4.5-5 4-5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
     cover:'<path d="M19.5 4.5C11 4.5 5 7.4 5 13.2c0 3.3 2.3 5.3 5.3 5.3 5.8 0 8.7-6 9.2-14Z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 20c3.2-4.4 6.6-7.1 12-10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
