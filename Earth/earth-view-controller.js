@@ -1,6 +1,6 @@
 /* LIVE // EARTH — Earth View Controller.
    Owns the full-screen Earth View lifecycle, controls and camera.
-   Default finger rotation and pinch zoom are supplied by the reusable Earth Engine. */
+   Surface-anchored drag and pinch zoom are owned by this view. */
 (() => {
   "use strict";
   if (window.__liveEarthEarthRendererInstalled) return;
@@ -55,37 +55,14 @@
   scannerButton.innerHTML = '<span class="le-radar-dot" aria-hidden="true"></span><span>Scanner</span>';
   document.body.appendChild(scannerButton);
 
-  let stage = null;
-  let canvas = null;
-  let T = null;
-  let renderer = null;
-  let scene = null;
-  let camera = null;
-  let earthGroup = null;
-  let earthMesh = null;
-  let atmosphere = null;
-  let locationMarker = null;
-  let earthGlobe = null;
-  let earthInteractions = null;
-  let quality = "basic";
-  let active = false;
-  let activationGeneration = 0;
-  let initialized = false;
-  let initPromise = null;
-  let drawFrame = 0;
-  let animationFrame = 0;
-  let solarTimer = 0;
-  let resizeObserver = null;
-  let baseDistance = 0;
-  let scannerVisible = false;
-  let entering = false;
-  let lastWidth = 0;
-  let lastHeight = 0;
-  let lastPixelRatio = 0;
+  let stage = null, canvas = null, T = null, renderer = null, scene = null, camera = null;
+  let earthGroup = null, earthMesh = null, atmosphere = null, locationMarker = null, earthGlobe = null;
+  let earthInteractions = null, quality = "basic", active = false, activationGeneration = 0;
+  let initialized = false, initPromise = null, drawFrame = 0, animationFrame = 0, solarTimer = 0;
+  let resizeObserver = null, baseDistance = 0, scannerVisible = false, entering = false;
+  let lastWidth = 0, lastHeight = 0, lastPixelRatio = 0;
   const fovRadians = FOV * Math.PI / 180;
-  let solarVector = null;
-  let shaderUniforms = null;
-  let resizeSettleTimers = [];
+  let solarVector = null, shaderUniforms = null, resizeSettleTimers = [];
 
   try { quality = localStorage.getItem(QUALITY_KEY) === "hd" ? "hd" : "basic"; } catch (_) {}
 
@@ -119,8 +96,6 @@
     canvas.setAttribute("role", "img");
     stage.appendChild(canvas);
     root.appendChild(stage);
-    // The Engine binds the shared capture-phase pointer handler after creating
-    // its globe. No view-specific drag implementation is installed here.
     if (resizeObserver) {
       resizeObserver.observe(stage);
       stage.dataset.resizeObserved = "true";
@@ -141,15 +116,8 @@
     const shortest = Math.max(1, Math.min(size.width, size.height));
     return size.height / (diameterFraction * shortest * Math.tan(fovRadians / 2));
   }
-
-  function homeEquivalentDistance() {
-    // Home's approved camera fits the globe to 75% of the shorter screen edge.
-    return distanceForDiameter(0.75);
-  }
-
-  function cinematicDistance() {
-    return distanceForDiameter(TARGET_DIAMETER);
-  }
+  function homeEquivalentDistance() { return distanceForDiameter(0.75); }
+  function cinematicDistance() { return distanceForDiameter(TARGET_DIAMETER); }
 
   function queueDraw() {
     if (!active || !renderer || !scene || !camera || drawFrame) return;
@@ -158,17 +126,14 @@
       if (active && renderer && scene && camera) renderer.render(scene, camera);
     });
   }
-
   function stopCameraAnimation() {
     if (animationFrame) cancelAnimationFrame(animationFrame);
     animationFrame = 0;
   }
-
   function animateCamera(target, duration = 860, onComplete = null) {
     stopCameraAnimation();
     if (!camera) return;
-    const startDistance = camera.position.z;
-    const startedAt = performance.now();
+    const startDistance = camera.position.z, startedAt = performance.now();
     const length = reducedMotion() ? 0 : duration;
     const tick = now => {
       if (!active || !camera) { animationFrame = 0; return; }
@@ -205,19 +170,31 @@
     return quality;
   }
 
+  function zoomLimits() {
+    return {
+      minimum: cinematicDistance() * (quality === "hd" ? 0.72 : 0.86),
+      maximum: baseDistance || homeEquivalentDistance()
+    };
+  }
+  function setCameraDistance(distance) {
+    if (!camera || !Number.isFinite(distance)) return;
+    const limits = zoomLimits();
+    camera.position.z = clamp(distance, limits.minimum, limits.maximum);
+    camera.lookAt(0, 0, 0);
+    queueDraw();
+  }
   function zoomBy(factor) {
     if (!active || !camera || !Number.isFinite(factor) || factor <= 0) return;
     entering = false;
-    const minimum = cinematicDistance() * (quality === "hd" ? 0.72 : 0.86);
-    const maximum = baseDistance || homeEquivalentDistance();
-    const target = clamp(camera.position.z * factor, minimum, maximum);
+    const limits = zoomLimits();
+    const target = clamp(camera.position.z * factor, limits.minimum, limits.maximum);
     animateCamera(target, 360);
   }
 
   function syncLocationMarker() {
     if (!locationMarker) return;
     const allowed = window.liveEarthLocationAllowed?.() === true;
-    const api = window.LiveEarthPrimeScene; // Prime Earth is consulted only for the approved location marker.
+    const api = window.LiveEarthPrimeScene;
     const position = allowed ? api?.getLocation?.() : null;
     if (!position || !Number.isFinite(position.latitude) || !Number.isFinite(position.longitude)) {
       locationMarker.visible = false;
@@ -227,8 +204,7 @@
     const latitude = position.latitude * Math.PI / 180;
     const longitude = position.longitude * Math.PI / 180;
     const vector = new T.Vector3(
-      Math.cos(latitude) * Math.cos(longitude),
-      Math.sin(latitude),
+      Math.cos(latitude) * Math.cos(longitude), Math.sin(latitude),
       -Math.cos(latitude) * Math.sin(longitude)
     ).normalize();
     locationMarker.children[0].position.copy(vector).multiplyScalar(1.006);
@@ -250,8 +226,7 @@
       - 0.014615 * Math.cos(2 * gamma) - 0.040849 * Math.sin(2 * gamma));
     const subsolarLongitude = (720 - (hour * 60 + equationMinutes)) * Math.PI / 720;
     const local = new T.Vector3(
-      Math.cos(declination) * Math.cos(subsolarLongitude),
-      Math.sin(declination),
+      Math.cos(declination) * Math.cos(subsolarLongitude), Math.sin(declination),
       -Math.cos(declination) * Math.sin(subsolarLongitude)
     ).normalize();
     const worldQuaternion = new T.Quaternion();
@@ -292,9 +267,7 @@
     let seed = 721;
     const random = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
     for (let i = 0; i < 500; i++) {
-      const radius = 18 + random() * 25;
-      const angle = random() * Math.PI * 2;
-      const z = random() * 2 - 1;
+      const radius = 18 + random() * 25, angle = random() * Math.PI * 2, z = random() * 2 - 1;
       const ring = Math.sqrt(1 - z * z);
       positions.push(radius * ring * Math.cos(angle), radius * z, radius * ring * Math.sin(angle));
     }
@@ -305,17 +278,176 @@
 
   function addLocationMarker() {
     locationMarker = new T.Group();
-    const halo = new T.Mesh(
-      new T.SphereGeometry(0.031, 16, 12),
-      new T.MeshBasicMaterial({ color: 0xff234d, transparent: true, opacity: 0.28, depthWrite: false })
-    );
-    const dot = new T.Mesh(
-      new T.SphereGeometry(0.014, 16, 12),
-      new T.MeshBasicMaterial({ color: 0xff183f, depthWrite: false })
-    );
+    const halo = new T.Mesh(new T.SphereGeometry(0.031, 16, 12),
+      new T.MeshBasicMaterial({ color: 0xff234d, transparent: true, opacity: 0.28, depthWrite: false }));
+    const dot = new T.Mesh(new T.SphereGeometry(0.014, 16, 12),
+      new T.MeshBasicMaterial({ color: 0xff183f, depthWrite: false }));
     locationMarker.add(halo, dot);
     locationMarker.visible = false;
     earthMesh.add(locationMarker);
+  }
+
+  // Earth View's own controller mirrors Atmosphere's geographic surface anchor.
+  // The Engine capture-phase gesture controller is deliberately not attached.
+  function attachSurfaceAnchoredInteractions() {
+    const raycaster = new T.Raycaster();
+    const pointerNdc = new T.Vector2();
+    const anchorLocal = new T.Vector3();
+    const anchorWorld = new T.Vector3();
+    const targetWorld = new T.Vector3();
+    const sphere = new T.Sphere(new T.Vector3(0, 0, 0), 1.001);
+    const deltaRotation = new T.Quaternion();
+    const worldXAxis = new T.Vector3(1, 0, 0);
+    const localYAxis = new T.Vector3(0, 1, 0);
+    const tiltRotation = new T.Quaternion();
+    const headingRotation = new T.Quaternion();
+    const pointers = new Map();
+    const MIN_TILT = -1.15, MAX_TILT = 1.15;
+    let activePointerId = null, pinchStartDistance = 0, pinchStartCameraDistance = 0;
+    let hasAnchor = false, disposed = false;
+
+    const isEnabled = () => !disposed && active && !!canvas?.isConnected;
+    function updatePointerRay(x, y) {
+      const rect = canvas.getBoundingClientRect();
+      if (!(rect.width > 0 && rect.height > 0)) return false;
+      pointerNdc.set(((x - rect.left) / rect.width) * 2 - 1,
+        -((y - rect.top) / rect.height) * 2 + 1);
+      raycaster.setFromCamera(pointerNdc, camera);
+      return true;
+    }
+    function pickSurfacePoint(x, y, target) {
+      if (!updatePointerRay(x, y)) return false;
+      const hits = raycaster.intersectObject(earthMesh, true);
+      if (!hits.length) return false;
+      earthGroup.updateMatrixWorld(true);
+      target.copy(hits[0].point);
+      earthGroup.worldToLocal(target);
+      return target.lengthSq() > 0;
+    }
+    function pointerRayToSphere(x, y, target) {
+      if (!updatePointerRay(x, y)) return false;
+      if (!raycaster.ray.intersectSphere(sphere, target)) return false;
+      target.normalize();
+      return true;
+    }
+    function clampGlobeTilt() {
+      const q = earthGroup.quaternion;
+      const headingHalf = Math.atan2(q.y, q.w);
+      const sinHalfTilt = q.x * Math.cos(headingHalf) + q.z * Math.sin(headingHalf);
+      const cosHalfTilt = Math.hypot(q.w, q.y);
+      const tilt = 2 * Math.atan2(sinHalfTilt, cosHalfTilt);
+      const boundedTilt = clamp(tilt, MIN_TILT, MAX_TILT);
+      const heading = 2 * headingHalf;
+      tiltRotation.setFromAxisAngle(worldXAxis, boundedTilt);
+      headingRotation.setFromAxisAngle(localYAxis, heading);
+      q.copy(tiltRotation).multiply(headingRotation).normalize();
+    }
+    function pointerDistance() {
+      const values = [...pointers.values()];
+      return values.length < 2 ? 0 : Math.hypot(values[0].x - values[1].x, values[0].y - values[1].y);
+    }
+    function beginAnchor(pointer) {
+      hasAnchor = pickSurfacePoint(pointer.x, pointer.y, anchorLocal);
+      activePointerId = hasAnchor ? pointer.id : null;
+      return hasAnchor;
+    }
+    function onPointerDown(event) {
+      if (!isEnabled() || (event.pointerType === "mouse" && event.button !== 0)) return;
+      if (pointers.has(event.pointerId)) return;
+      const pointer = { id: event.pointerId, x: event.clientX, y: event.clientY };
+      // Only admit a pointer that begins on the visible globe surface.
+      if (!pickSurfacePoint(pointer.x, pointer.y, anchorLocal)) return;
+      pointers.set(event.pointerId, pointer);
+      try { canvas.setPointerCapture(event.pointerId); } catch (_) {}
+      if (pointers.size === 1) {
+        beginAnchor(pointer);
+      } else if (pointers.size === 2) {
+        hasAnchor = false;
+        activePointerId = null;
+        pinchStartDistance = Math.max(1, pointerDistance());
+        pinchStartCameraDistance = camera.position.z;
+      } else {
+        pointers.delete(event.pointerId);
+        try { if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId); } catch (_) {}
+        return;
+      }
+      entering = false;
+      stopCameraAnimation();
+      event.preventDefault();
+    }
+    function onPointerMove(event) {
+      if (!isEnabled() || !pointers.has(event.pointerId)) return;
+      const pointer = pointers.get(event.pointerId);
+      pointer.x = event.clientX;
+      pointer.y = event.clientY;
+      if (pointers.size >= 2) {
+        const distance = pointerDistance();
+        if (pinchStartDistance > 0 && distance > 0) {
+          setCameraDistance(pinchStartCameraDistance * pinchStartDistance / distance);
+        }
+        event.preventDefault();
+        return;
+      }
+      if (pointers.size !== 1 || event.pointerId !== activePointerId || !hasAnchor) return;
+      if (!pointerRayToSphere(pointer.x, pointer.y, targetWorld)) return;
+      earthGroup.updateMatrixWorld(true);
+      anchorWorld.copy(anchorLocal).applyQuaternion(earthGroup.quaternion).normalize();
+      deltaRotation.setFromUnitVectors(anchorWorld, targetWorld);
+      earthGroup.quaternion.premultiply(deltaRotation).normalize();
+      clampGlobeTilt();
+      earthGroup.updateMatrixWorld(true);
+      updateSolarDirection();
+      queueDraw();
+      event.preventDefault();
+    }
+    function finishPointer(event) {
+      if (!pointers.has(event.pointerId)) return;
+      pointers.delete(event.pointerId);
+      try {
+        if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+      } catch (_) {}
+      if (pointers.size === 1) {
+        const remaining = [...pointers.values()][0];
+        // Re-anchor the remaining finger after a pinch without a rotation jump.
+        beginAnchor(remaining);
+      } else if (pointers.size >= 2) {
+        hasAnchor = false;
+        activePointerId = null;
+        pinchStartDistance = Math.max(1, pointerDistance());
+        pinchStartCameraDistance = camera.position.z;
+      } else {
+        hasAnchor = false;
+        activePointerId = null;
+        pinchStartDistance = 0;
+      }
+      if (event.cancelable) event.preventDefault();
+    }
+    function reset() {
+      const capturedPointers = [...pointers.keys()];
+      pointers.clear();
+      hasAnchor = false;
+      activePointerId = null;
+      pinchStartDistance = 0;
+      for (const pointerId of capturedPointers) {
+        try { if (canvas.hasPointerCapture(pointerId)) canvas.releasePointerCapture(pointerId); } catch (_) {}
+      }
+    }
+    function dispose() {
+      if (disposed) return;
+      reset();
+      disposed = true;
+      canvas.removeEventListener("pointerdown", onPointerDown);
+      canvas.removeEventListener("pointermove", onPointerMove);
+      canvas.removeEventListener("pointerup", finishPointer);
+      canvas.removeEventListener("pointercancel", finishPointer);
+      canvas.removeEventListener("lostpointercapture", finishPointer);
+    }
+    canvas.addEventListener("pointerdown", onPointerDown, { passive: false });
+    canvas.addEventListener("pointermove", onPointerMove, { passive: false });
+    canvas.addEventListener("pointerup", finishPointer);
+    canvas.addEventListener("pointercancel", finishPointer);
+    canvas.addEventListener("lostpointercapture", finishPointer);
+    return Object.freeze({ reset, dispose });
   }
 
   async function initializeRenderer() {
@@ -333,7 +465,6 @@
       camera = new T.PerspectiveCamera(FOV, size.width / size.height, 0.1, 180);
       camera.position.set(0, 0, homeEquivalentDistance());
       camera.lookAt(0, 0, 0);
-
       scene.add(new T.AmbientLight(0x8aa7c8, 0.12));
       const sunlight = new T.DirectionalLight(0xffffff, 2.3);
       sunlight.userData.leSolarKey = true;
@@ -347,8 +478,7 @@
       const createEarthGlobe = engineModule.createEarthGlobe || engineModule.createGlobe || window.LiveEarthEngine?.createGlobe;
       if (typeof createEarthGlobe !== "function") throw new Error("The reusable Earth Engine API is unavailable.");
       earthGlobe = await createEarthGlobe({
-        THREE: T,
-        radius: 1,
+        THREE: T, radius: 1,
         textureUrl: "./EarthEngine/Assets/earth-land-ocean-ice-2048.png",
         geometryDetail: quality === "hd" ? "high" : "standard",
         maxAnisotropy: renderer.capabilities.getMaxAnisotropy(),
@@ -358,38 +488,8 @@
       earthMesh = earthGlobe.surface;
       atmosphere = earthGlobe.atmosphere;
       scene.add(earthGroup);
-      earthInteractions = earthGlobe.attachInteractions({
-        element: canvas,
-        enabled: () => active,
-        rotation: {
-          sensitivityX: 0.008,
-          sensitivityY: 0.006,
-          minPitch: -1.25,
-          maxPitch: 1.25
-        },
-        zoom: {
-          enabled: true,
-          getDistance: () => camera.position.z,
-          setDistance: distance => {
-            camera.position.z = distance;
-            camera.lookAt(0, 0, 0);
-          },
-          minDistance: () => cinematicDistance() * (quality === "hd" ? 0.72 : 0.86),
-          maxDistance: () => baseDistance || homeEquivalentDistance()
-        },
-        onStart: () => {
-          entering = false;
-          stopCameraAnimation();
-        },
-        onRotate: () => {
-          updateSolarDirection();
-          queueDraw();
-        },
-        onZoom: () => {
-          camera.lookAt(0, 0, 0);
-          queueDraw();
-        }
-      });
+      earthInteractions = attachSurfaceAnchoredInteractions();
+
       solarVector = new T.Vector3(0, 0, 1);
       installDayNightShader(earthMesh.material);
       addLocationMarker();
@@ -544,17 +644,12 @@
   function registerModule() {
     if (!window.LiveEarthViewModules || window.LiveEarthViewModules.has("earth-independent-renderer")) return;
     window.LiveEarthViewModules.register("earth-independent-renderer", {
-      views: ["earth"],
-      activate,
-      deactivate
+      views: ["earth"], activate, deactivate
     });
     window.__liveEarthEarthRendererInstalled = true;
     window.dispatchEvent(new Event("live-earth-startup-ready"));
   }
-
   function registerAfterSkyHost() {
-    // Register after the shared host so the registry opens #le-sky-view before
-    // this controller attempts to create its independent Earth stage.
     if (window.LiveEarthSkyViews && document.getElementById("le-sky-view")) {
       registerModule();
       return;
