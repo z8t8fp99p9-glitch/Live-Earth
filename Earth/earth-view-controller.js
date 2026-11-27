@@ -4,8 +4,32 @@
 (() => {
   "use strict";
   if (window.__liveEarthEarthRendererInstalled) return;
+  if (window.__liveEarthEarthRendererInstalled) return;
+
+  /*
+   * EARTH VIEW ORGANISATION MAP
+   * This remains one view-owned controller, following the numbered-section
+   * convention established by Atmosphere. Sections group related responsibilities;
+   * they are not separate modules and do not introduce new runtime features.
+   *
+   * FUTURE EXTENSION RULES
+   * - Keep the base globe, camera, gestures and view lifecycle independent of layers.
+   * - Keep data acquisition/validation separate from GPU preparation and rendering.
+   * - Use the appropriate renderer for each family: surface skins, terrain/3D
+   *   geometry, vectors/traffic, or points/events. Do not force every feature
+   *   into a surface texture.
+   * - Give every future layer explicit attach, update, remove and dispose ownership.
+   * - Load optional data and heavy assets only when requested; never make them
+   *   prerequisites for opening the clean Earth globe.
+   * - Reuse the shared Earth Engine factory; do not borrow Prime Earth's scene,
+   *   camera, renderer or layer registry.
+   *
+   * The rules above are architectural guidance only. No future feature or layer
+   * system is implemented by this organisation pass.
+   */
 
   const STYLE_ID = "le-independent-earth-view-style";
+  // 01 — View configuration and stable identifiers.
   const STAGE_ID = "le-ev-stage";
   const QUALITY_KEY = "liveEarthQuality";
   const FOV = 34;
@@ -14,6 +38,7 @@
   const reducedMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
 
   const style = document.createElement("style");
+  // 02 — View-owned presentation foundation: stage, quality controls and Scanner.
   style.id = STYLE_ID;
   style.textContent = `
     #le-sky-view .le-ev-stage{position:absolute;z-index:2;inset:0;overflow:hidden;touch-action:none;background:transparent}
@@ -56,6 +81,7 @@
   document.body.appendChild(scannerButton);
 
   let stage = null, canvas = null, T = null, renderer = null, scene = null, camera = null;
+  // 03 — Runtime state, owned resources and persisted view preferences.
   let earthGroup = null, earthMesh = null, atmosphere = null, locationMarker = null, earthGlobe = null;
   let earthInteractions = null, quality = "basic", active = false, activationGeneration = 0;
   let initialized = false, initPromise = null, drawFrame = 0, animationFrame = 0, solarTimer = 0;
@@ -67,6 +93,7 @@
   try { quality = localStorage.getItem(QUALITY_KEY) === "hd" ? "hd" : "basic"; } catch (_) {}
 
   function showStatus(message, duration = 2600) {
+  // 04 — Small shared UI and status helpers.
     const status = document.querySelector("#status");
     if (!status) return;
     status.hidden = false;
@@ -83,6 +110,7 @@
   }
 
   function makeStage() {
+  // 05 — Stage, viewport measurements and responsive geometry.
     if (stage?.isConnected) return;
     const root = document.getElementById("le-sky-view");
     if (!root) throw new Error("The shared Sky View stage is not ready.");
@@ -112,6 +140,7 @@
   }
 
   function distanceForDiameter(diameterFraction) {
+  // 06 — Camera framing, transitions, quality and zoom controls.
     const size = viewport();
     const shortest = Math.max(1, Math.min(size.width, size.height));
     return size.height / (diameterFraction * shortest * Math.tan(fovRadians / 2));
@@ -192,6 +221,7 @@
   }
 
   function syncLocationMarker() {
+  // 07 — Approved location integration and solar direction.
     if (!locationMarker) return;
     const allowed = window.liveEarthLocationAllowed?.() === true;
     const api = window.LiveEarthPrimeScene;
@@ -263,6 +293,7 @@
   }
 
   function addStars() {
+  // 08 — Globe-owned visual elements: environment, marker and day/night skin.
     const positions = [];
     let seed = 721;
     const random = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
@@ -288,6 +319,7 @@
   }
 
   // Earth View's own controller mirrors Atmosphere's geographic surface anchor.
+  // 09 — Surface-anchored interaction: pointer admission, drag, pinch and cleanup.
   // The Engine capture-phase gesture controller is deliberately not attached.
   function attachSurfaceAnchoredInteractions() {
     const raycaster = new T.Raycaster();
@@ -451,6 +483,7 @@
   }
 
   async function initializeRenderer() {
+  // 10 — Earth Engine instance and base globe construction.
     if (initialized) return true;
     if (initPromise) return initPromise;
     makeStage();
@@ -510,6 +543,7 @@
   }
 
   function resizeRenderer(resetDistance = false) {
+  // 11 — Renderer sizing, pixel ratio and orientation settling.
     if (!active || !renderer || !camera || !stage) return;
     const size = viewport();
     const previousBase = baseDistance || homeEquivalentDistance();
@@ -556,6 +590,7 @@
   }
 
   function activate() {
+  // 12 — View activation/deactivation and owned runtime lifecycle.
     active = true;
     const activation = ++activationGeneration;
     makeStage();
@@ -603,6 +638,7 @@
 
   controls.querySelectorAll("[data-quality]").forEach(button => {
     button.addEventListener("click", () => setQuality(button.dataset.quality));
+  // 13 — UI actions and application event wiring.
   });
   controls.querySelectorAll("[data-zoom]").forEach(button => {
     button.addEventListener("click", () => zoomBy(button.dataset.zoom === "in" ? 0.82 : 1.22));
@@ -642,6 +678,7 @@
   }
 
   function registerModule() {
+  // 14 — Feature-module registration and startup handoff.
     if (!window.LiveEarthViewModules || window.LiveEarthViewModules.has("earth-independent-renderer")) return;
     window.LiveEarthViewModules.register("earth-independent-renderer", {
       views: ["earth"], activate, deactivate
