@@ -1,7 +1,7 @@
 /* LIVE // EARTH — Clouds full-screen Earth Engine world.
-   Owns its complete interactive globe lifecycle, then attaches the NASA Terra
-   daily cloud-fraction raster as an independent transparent surface layer.
-   The NASA GIBS request/validation/date-fallback behaviour remains network-only.
+   Owns the interactive globe, then attaches real multi-mission geostationary
+   satellite imagery as an independent transparent Earth-surface layer.
+   Global imagery discovery, timestamps and WMS requests live inside /Clouds.
 */
 (() => {
   'use strict';
@@ -14,7 +14,7 @@
 
   const VIEW_ID = 'clouds';
   const { mount, el, button, setStatus, attribution, isActive } = runtime;
-  const { fetchImageBlob, textureFromBlob, getEarthRaster, timeLabel } = runtime;
+  const { fetchImageBlob, textureFromBlob, timeLabel } = runtime;
 
   // -------------------------------------------------------------------------
   // 01 — Clouds-only presentation. The shared Stacks dock remains untouched.
@@ -126,6 +126,8 @@
         font:700 9px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
         letter-spacing:.05em; pointer-events:auto; touch-action:manipulation;
       }
+      .le-clouds-mode-row { display:flex; gap:8px; margin-top:8px; }
+      .le-clouds-mode-row button { flex:1 1 0; min-width:0; }
       .le-clouds-opacity-row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:7px; }
       .le-clouds-opacity-row label { color:#b8ccdc; font-size:9px; }
       .le-clouds-opacity-row strong { color:#dbeefa; font-size:9px; font-variant-numeric:tabular-nums; }
@@ -497,6 +499,11 @@
     let cloudVisible = true;
     let cloudImageReady = false;
     let loading = false;
+    let activeMode = 'natural';
+    let staticCloudTexture = null;
+    let animationTextures = [];
+    let animationTimer = 0;
+    let animationLoading = false;
     let cloudRequestController = null;
     let hourlyTimer = 0;
     let onlineRetryTimer = 0;
@@ -515,13 +522,13 @@
     emblem.setAttribute('aria-hidden', 'true');
     const heading = el('div', 'le-clouds-heading');
     const title = el('h1', 'le-clouds-title', 'Clouds');
-    const subtitle = el('p', 'le-clouds-subtitle', 'NASA Terra MODIS · Global cloud fraction · Daily satellite product');
+    const subtitle = el('p', 'le-clouds-subtitle', 'Global satellite cloud imagery · Five-satellite geostationary ring · 3-hour composite');
     heading.append(title, subtitle);
     header.append(emblem, heading);
 
     const refresh = button('', () => { loadCloudTexture(); }, 'le-clouds-refresh');
-    refresh.setAttribute('aria-label', 'Refresh NASA cloud imagery');
-    refresh.title = 'Refresh NASA cloud imagery';
+    refresh.setAttribute('aria-label', 'Refresh global satellite cloud imagery');
+    refresh.title = 'Refresh global satellite cloud imagery';
     refresh.disabled = true;
     const refreshIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     refreshIcon.setAttribute('viewBox', '0 0 24 24');
@@ -537,12 +544,12 @@
     const controlTop = el('div', 'le-clouds-control-top');
     const controlTitle = el('div', 'le-clouds-control-title');
     controlTitle.append(
-      el('strong', '', 'Cloud layer'),
-      el('span', '', 'Terra · MODIS · Cloud fraction (day)')
+      el('strong', '', 'Satellite cloud imagery'),
+      el('span', '', 'GOES · METEOSAT · HIMAWARI · GLOBAL RING')
     );
-    const toggle = button('Hide layer', () => {
+    const toggle = button('Hide imagery', () => {
       cloudVisible = !cloudVisible;
-      toggle.textContent = cloudVisible ? 'Hide layer' : 'Show layer';
+      toggle.textContent = cloudVisible ? 'Hide imagery' : 'Show imagery';
       toggle.setAttribute('aria-pressed', String(cloudVisible));
       if (cloudLayerMesh) cloudLayerMesh.visible = cloudVisible && cloudImageReady;
       worldGlobe?.requestRender?.();
@@ -551,25 +558,45 @@
     controlTop.append(controlTitle, toggle);
 
     const rangeRow = el('div', 'le-clouds-opacity-row');
-    const rangeLabel = el('label', '', 'Layer opacity');
-    const rangeValue = el('strong', '', '58%');
+    const rangeLabel = el('label', '', 'Satellite imagery opacity');
+    const rangeValue = el('strong', '', '100%');
     rangeRow.append(rangeLabel, rangeValue);
     const range = el('input', 'le-clouds-range');
     range.type = 'range';
-    range.min = '10';
-    range.max = '95';
+    range.min = '20';
+    range.max = '100';
     range.step = '5';
-    range.value = '58';
+    range.value = '100';
     range.setAttribute('aria-label', 'Cloud layer opacity');
     const rangeId = 'le-clouds-opacity';
     range.id = rangeId;
     rangeLabel.htmlFor = rangeId;
 
-    controls.append(controlTop, rangeRow, range);
+    const modeRow = el('div', 'le-clouds-mode-row');
+    const modeButton = button('Switch to infrared', () => {
+      if (loading || animationLoading || !isAlive()) return;
+      stopCloudAnimation();
+      activeMode = activeMode === 'natural' ? 'infrared' : 'natural';
+      modeButton.textContent = activeMode === 'natural' ? 'Switch to infrared' : 'Switch to natural colour';
+      loadCloudTexture();
+    }, 'le-clouds-toggle');
+    modeButton.setAttribute('aria-label', 'Switch satellite cloud imagery mode');
+    const animationButton = button('Play cloud movement', () => {
+      if (animationTimer) stopCloudAnimation();
+      else startCloudAnimation();
+    }, 'le-clouds-toggle');
+    animationButton.setAttribute('aria-label', 'Play recent satellite cloud observations');
+    modeRow.append(modeButton, animationButton);
+
+    controls.append(controlTop, modeRow, rangeRow, range);
     attribution(controls, [
-      { text: 'Imagery: ' },
-      { label: 'NASA Global Imagery Browse Services (GIBS)', href: 'https://nasa-gibs.github.io/gibs-api-docs/' },
-      { text: ' · MODIS/Terra Cloud Fraction (Day)' }
+      { text: 'Satellite imagery: ' },
+      { label: 'EUMETSAT', href: 'https://www.eumetsat.int/' },
+      { text: ' · ' },
+      { label: 'NOAA', href: 'https://www.noaa.gov/' },
+      { text: ' · ' },
+      { label: 'JMA', href: 'https://www.jma.go.jp/jma/indexe.html' },
+      { text: ' · delivered through public EUMETView / NASA GIBS imagery services' }
     ]).classList.add('le-clouds-attribution');
 
     body.append(header, status, refresh, controls);
@@ -591,78 +618,185 @@
     }
 
     // -----------------------------------------------------------------------
-    // 04 — NASA data pipeline. It starts only after the clean Earth is ready.
-    // The current daily product, fallback dates and no-store fetch are retained.
+    // 04 — Global satellite imagery pipeline. It starts only after the clean Earth is ready.
+    // The global geostationary ring is discovered from live WMS capabilities; imagery remains network-only.
     // -----------------------------------------------------------------------
+    function disposeAnimationTextures(keepTexture = null) {
+      for (const texture of animationTextures) {
+        if (texture && texture !== keepTexture) texture.dispose?.();
+      }
+      animationTextures = keepTexture ? [keepTexture] : [];
+    }
+
+    function stopCloudAnimation() {
+      const wasPlaying = Boolean(animationTimer);
+      if (animationTimer) window.clearInterval(animationTimer);
+      animationTimer = 0;
+      if (cloudMaterial && staticCloudTexture) {
+        cloudMaterial.map = staticCloudTexture;
+        cloudMaterial.needsUpdate = true;
+      }
+      disposeAnimationTextures(staticCloudTexture);
+      animationButton.textContent = 'Play cloud movement';
+      animationButton.disabled = false;
+      worldGlobe?.requestRender?.();
+      if (wasPlaying && isAlive()) setCloudStatus('Showing the latest available satellite observation.');
+    }
+
+    function applyCloudTexture(texture) {
+      if (!cloudMaterial || !texture) return;
+      const previousTexture = cloudMaterial.map;
+      cloudMaterial.map = texture;
+      cloudMaterial.needsUpdate = true;
+      cloudImageReady = true;
+      setLayerVisible();
+      if (previousTexture && previousTexture !== texture && !animationTextures.includes(previousTexture)) {
+        previousTexture.dispose?.();
+      }
+    }
+
     async function loadCloudTexture() {
-      if (!isAlive() || loading || !worldGlobe || !cloudMaterial) return;
+      if (!isAlive() || loading || animationLoading || !worldGlobe || !cloudMaterial) return;
       if (navigator.onLine === false) {
-        setCloudStatus('Offline · the Earth globe remains available; NASA cloud imagery requires an internet connection.', 'error');
+        setCloudStatus('Offline · the Earth remains available; fresh satellite imagery requires an internet connection.', 'error');
         return;
       }
 
+      stopCloudAnimation();
+      animationTextures = [];
       setLoadingState(true);
       cloudImageReady = false;
       if (cloudLayerMesh) cloudLayerMesh.visible = false;
       worldGlobe.requestRender?.();
-      setCloudStatus('Requesting the latest available NASA daily cloud observation…');
+      setCloudStatus('Finding the latest available global satellite cloud observation…');
 
       const request = new AbortController();
       cloudRequestController = request;
-      const requestedDates = [0, 1, 2].map(daysAgo => {
-        const date = new Date();
-        date.setUTCDate(date.getUTCDate() - daysAgo);
-        return date.toISOString().slice(0, 10);
-      });
-
       try {
+        const satellite = await import('./clouds-satellite.js');
+        const times = await satellite.discoverRecentTimes({ mode: activeMode, limit: 5, signal: request.signal });
+        if (!times.length) throw new Error('The satellite service did not report an available observation time.');
         let result = null;
-        let usedDate = '';
-        let lastError = null;
-
-        for (let index = 0; index < requestedDates.length; index++) {
-          const date = requestedDates[index];
+        let lastFrameError = null;
+        for (let index = 0; index < times.length; index++) {
           try {
-            const url = await getEarthRaster('MODIS_Terra_Cloud_Fraction_Day', date);
-            result = await fetchImageBlob(url, 12000, request.signal);
-            usedDate = date;
+            result = await satellite.fetchGlobalCloudFrame({
+              mode: activeMode,
+              time: times[index],
+              signal: request.signal,
+              fetchImageBlob
+            });
             break;
           } catch (error) {
-            lastError = error;
+            lastFrameError = error;
             if (!isAlive() || request.signal.aborted || error?.name === 'AbortError') throw error;
-            if (index < requestedDates.length - 1) {
-              setCloudStatus(`No image was returned for ${date}. Trying the previous daily observation…`);
+            if (index < times.length - 1) {
+              setCloudStatus(`The newest global satellite slot is not available yet. Trying the previous observation…`);
             }
           }
         }
-
-        if (!result) throw lastError || new Error('NASA did not return a recent daily cloud image.');
+        if (!result) throw lastFrameError || new Error('No recent global satellite image was returned.');
         const texture = await textureFromBlob(worldGlobe.THREE, result.blob);
         if (!isAlive() || cloudRequestController !== request || request.signal.aborted || !cloudMaterial) {
           texture?.dispose?.();
           return;
         }
 
-        const previousTexture = cloudMaterial.map;
-        cloudMaterial.map = texture;
-        cloudMaterial.needsUpdate = true;
-        cloudImageReady = true;
-        setLayerVisible();
-        if (previousTexture && previousTexture !== texture) previousTexture.dispose();
+        staticCloudTexture = texture;
+        applyCloudTexture(texture);
+        const observation = new Date(result.time).toLocaleString(undefined, {
+          day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
+        });
         setCloudStatus(
-          `NASA cloud image loaded · product date ${usedDate} · checked ${timeLabel(result.checkedAt)}. Daily observation, not minute-by-minute cloud motion.`,
+          `Global satellite image loaded · ${activeMode === 'natural' ? 'natural colour' : 'infrared'} · ${result.title || result.provider} · observation ${observation} · checked ${timeLabel(result.checkedAt)}. Composite cadence: about 3 hours.`,
           'success'
         );
       } catch (error) {
         if (request.signal.aborted || error?.name === 'AbortError' || !isAlive() || cloudRequestController !== request) return;
         const offline = navigator.onLine === false
-          ? ' Internet access is required; no saved cloud image is shown offline.'
+          ? ' Internet access is required; no saved satellite image is shown offline.'
           : '';
-        setCloudStatus(`Cloud imagery is unavailable. The Earth remains visible.${offline} ${error?.message || ''}`, 'error');
+        setCloudStatus(`Global satellite imagery is unavailable. The real Earth remains visible.${offline} ${error?.message || ''}`, 'error');
       } finally {
         if (cloudRequestController === request) cloudRequestController = null;
         if (isAlive()) setLoadingState(false);
         else loading = false;
+      }
+    }
+
+    async function startCloudAnimation() {
+      if (!isAlive() || animationLoading || loading || !worldGlobe || !cloudMaterial) return;
+      if (navigator.onLine === false) {
+        setCloudStatus('Cloud movement playback requires an internet connection.', 'error');
+        return;
+      }
+
+      animationLoading = true;
+      animationButton.disabled = true;
+      setCloudStatus('Loading recent satellite observations for cloud movement playback…');
+      const request = new AbortController();
+      cloudRequestController = request;
+      const frames = [];
+
+      try {
+        const satellite = await import('./clouds-satellite.js');
+        const times = await satellite.discoverRecentTimes({ mode: activeMode, limit: 4, signal: request.signal });
+        if (times.length < 2) throw new Error('Not enough recent satellite observations are available for an animation.');
+        for (const time of times) {
+          if (!isAlive() || request.signal.aborted) throw new DOMException('Cloud view closed', 'AbortError');
+          try {
+            const result = await satellite.fetchGlobalCloudFrame({
+              mode: activeMode, time, signal: request.signal, fetchImageBlob
+            });
+            const texture = await textureFromBlob(worldGlobe.THREE, result.blob);
+            if (!isAlive() || request.signal.aborted) {
+              texture?.dispose?.();
+              throw new DOMException('Cloud view closed', 'AbortError');
+            }
+            frames.push({ texture, time: result.time });
+          } catch (error) {
+            if (!isAlive() || request.signal.aborted || error?.name === 'AbortError') throw error;
+            console.warn('[LIVE // EARTH] A historical satellite frame was skipped:', error);
+          }
+        }
+
+        if (frames.length < 2) throw new Error('Fewer than two recent satellite frames could be loaded.');
+        if (!isAlive() || request.signal.aborted || !cloudMaterial) {
+          for (const frame of frames) frame.texture.dispose?.();
+          return;
+        }
+
+        stopCloudAnimation();
+        animationTextures = frames.map(frame => frame.texture);
+        staticCloudTexture = frames[0].texture;
+        let index = 0;
+        applyCloudTexture(frames[0].texture);
+        animationButton.textContent = 'Stop movement';
+        animationButton.disabled = false;
+        const oldest = new Date(frames[frames.length - 1].time).toLocaleString();
+        const newest = new Date(frames[0].time).toLocaleString();
+        setCloudStatus(
+          `Playing ${frames.length} real satellite observations · ${newest} back to ${oldest}. Each frame is approximately 3 hours apart; playback is accelerated.`,
+          'success'
+        );
+        animationTimer = window.setInterval(() => {
+          if (!isAlive() || !cloudMaterial || !animationTextures.length) {
+            stopCloudAnimation();
+            return;
+          }
+          index = (index + 1) % animationTextures.length;
+          cloudMaterial.map = animationTextures[index];
+          cloudMaterial.needsUpdate = true;
+          worldGlobe?.requestRender?.();
+        }, 1050);
+      } catch (error) {
+        for (const frame of frames) frame.texture.dispose?.();
+        if (request.signal.aborted || error?.name === 'AbortError' || !isAlive()) return;
+        setCloudStatus(`Cloud movement playback is unavailable. ${error?.message || ''}`, 'error');
+      } finally {
+        if (cloudRequestController === request) cloudRequestController = null;
+        animationLoading = false;
+        if (isAlive()) animationButton.disabled = false;
       }
     }
 
@@ -678,6 +812,7 @@
     const offlineHandler = () => {
       if (!isAlive()) return;
       cloudRequestController?.abort();
+      stopCloudAnimation();
       cloudImageReady = false;
       if (cloudLayerMesh) cloudLayerMesh.visible = false;
       const oldTexture = cloudMaterial?.map;
@@ -686,13 +821,15 @@
         cloudMaterial.needsUpdate = true;
       }
       oldTexture?.dispose?.();
+      staticCloudTexture = null;
+      animationTextures = [];
       setCloudStatus('Offline · cloud imagery hidden. Your interactive Earth remains available.', 'error');
       worldGlobe?.requestRender?.();
     };
 
     const onlineHandler = () => {
       if (!isAlive()) return;
-      setCloudStatus('Connection restored · requesting the latest available NASA image…');
+      setCloudStatus('Connection restored · requesting the latest global satellite image…');
       if (onlineRetryTimer) window.clearTimeout(onlineRetryTimer);
       onlineRetryTimer = window.setTimeout(() => {
         onlineRetryTimer = 0;
@@ -704,7 +841,7 @@
     window.addEventListener('online', onlineHandler);
 
     // -----------------------------------------------------------------------
-    // 05 — Globe-first startup. NASA begins only after the clean Earth exists.
+    // 05 — Globe-first startup. Satellite imagery begins only after the clean Earth exists.
     // -----------------------------------------------------------------------
     engineReady = (async () => {
       try {
@@ -719,7 +856,7 @@
         }
 
         root.dataset.globeEngine = 'ready';
-        layerDispose = worldGlobe.attachLayer('clouds-nasa-cloud-fraction', ({ THREE, earth, requestRender }) => {
+        layerDispose = worldGlobe.attachLayer('clouds-global-geostationary-imagery', ({ THREE, earth, requestRender }) => {
           if (!THREE || !earth?.add) throw new Error('The Clouds globe did not provide its Earth surface.');
           const material = new THREE.MeshBasicMaterial({
             transparent: true,
@@ -729,7 +866,7 @@
             side: THREE.FrontSide
           });
           const mesh = new THREE.Mesh(new THREE.SphereGeometry(1.009, 128, 96), material);
-          mesh.name = 'nasaTerraDailyCloudFraction';
+          mesh.name = 'globalGeostationarySatelliteCloudImagery';
           mesh.renderOrder = 3;
           mesh.visible = false;
           earth.add(mesh);
@@ -748,18 +885,18 @@
             }
           };
         });
-        if (typeof layerDispose !== 'function') throw new Error('The NASA cloud layer could not attach to the Earth surface.');
+        if (typeof layerDispose !== 'function') throw new Error('The global satellite imagery layer could not attach to the Earth surface.');
 
         refresh.disabled = false;
         worldGlobe.requestRender?.();
         if (navigator.onLine === false) {
-          setCloudStatus('Earth ready · offline. NASA cloud imagery will load when the connection returns.', 'error');
+          setCloudStatus('Earth ready · offline. Global satellite imagery will load when the connection returns.', 'error');
         } else {
           await loadCloudTexture();
         }
         if (!isAlive()) return null;
         hourlyTimer = window.setInterval(() => {
-          if (isAlive() && !document.hidden) loadCloudTexture();
+          if (isAlive() && !document.hidden && !animationTimer) loadCloudTexture();
         }, 60 * 60 * 1000);
         return worldGlobe;
       } catch (error) {
@@ -779,6 +916,9 @@
       onlineRetryTimer = 0;
       cloudRequestController?.abort();
       cloudRequestController = null;
+      stopCloudAnimation();
+      staticCloudTexture = null;
+      animationTextures = [];
       window.removeEventListener('offline', offlineHandler);
       window.removeEventListener('online', onlineHandler);
       try { layerDispose?.(); } catch (error) { console.warn('[LIVE // EARTH] Clouds layer detach failed:', error); }
