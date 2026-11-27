@@ -151,7 +151,10 @@ export function createEarthTerrainController(options = {}) {
         const contentType = response.headers.get("content-type") || "";
         if (!/^image\//i.test(contentType)) throw new Error("The elevation provider returned a non-image tile.");
         const decoded = await decodeTerrariumTile(response);
-        if (!enabled || controller.signal.aborted) {
+        // A Basic/HD toggle must not discard a tile that has already been
+        // downloaded. Keep decoded data while the view is alive, even if HD
+        // was switched off during the request. Only final disposal cancels it.
+        if (controller.signal.aborted || disposed) {
           const abortError = new Error("The terrain request was cancelled.");
           abortError.name = "AbortError";
           throw abortError;
@@ -367,12 +370,12 @@ export function createEarthTerrainController(options = {}) {
     generation++;
     if (scheduleTimer) window.clearTimeout(scheduleTimer);
     scheduleTimer = 0;
-    for (const request of inFlight.values()) request.controller.abort();
-    inFlight.clear();
+    // Basic hides HD geometry, but retains decoded elevation tiles and lets
+    // already-started downloads finish. Re-entering HD can rebuild meshes
+    // from memory instead of downloading the same tiles again.
     for (const key of [...meshes.keys()]) removeMesh(key);
     material?.dispose?.();
     material = null;
-    decodedTiles.clear();
     desiredKeys.clear();
     removeCredit();
     requestRender();
@@ -382,6 +385,10 @@ export function createEarthTerrainController(options = {}) {
     if (disposed) return;
     disable();
     disposed = true;
+    // The cache belongs to this Earth View session, not to the next one.
+    for (const request of inFlight.values()) request.controller.abort();
+    inFlight.clear();
+    decodedTiles.clear();
   }
 
   return Object.freeze({
