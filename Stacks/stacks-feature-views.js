@@ -31,11 +31,11 @@
   if (window.__liveEarthStacksFeatureViewsLoading) return;
   window.__liveEarthStacksFeatureViewsLoading = true;
 
-  // These eight numerical worlds own independent Earth Engine globes and need
-  // a shared exclusive-screen guard. Other Stacks views retain their own
-  // presentation: Prime Earth layer overlays, Weather's full-page scene, or
-  // the dedicated Traffic/Editorial workspaces.
+  // Independent globe worlds own separate Earth Engine scenes and use the
+  // shared exclusive-screen guard. Other Stacks views retain their own
+  // presentation: Prime Earth overlays, Weather's scene, or dedicated workspaces.
   const EXCLUSIVE_WORLD_VIEWS = new Set([
+    'clouds',
     'atmosphere',
     'atmospheric-composition',
     'oceans',
@@ -204,10 +204,9 @@
     root.dataset.feature = id;
     root.setAttribute('role', 'region');
     root.setAttribute('aria-label', `${meta.title} view`);
-    // Atmosphere is intentionally a globe-first instrument. Do not create the
-    // generic feature intro (title, description, symbol or FEATURE VIEW pill)
-    // for this view. Other feature views retain the shared intro unchanged.
-    if (id === 'atmosphere') {
+    // Atmosphere and Clouds are globe-first worlds. Their controllers provide
+    // purpose-built scene headers and controls; omit the generic intro and pill.
+    if (id === 'atmosphere' || id === 'clouds') {
       root.innerHTML = `<div class="le-sfv-panel"><div class="le-sfv-body"></div></div>`;
     } else {
       root.innerHTML = `<div class="le-sfv-panel"><header class="le-sfv-head"><span class="le-sfv-symbol" aria-hidden="true"></span><div><h1 class="le-sfv-title"></h1><p class="le-sfv-subtitle"></p></div></header><div class="le-sfv-pill"><span class="le-sfv-dot" aria-hidden="true"></span><span class="le-sfv-pill-text"></span></div><div class="le-sfv-body"></div></div>`;
@@ -443,7 +442,8 @@
     // silent so the user never sees a generic loading panel before the globe.
     // The controllers own their startup and dataset status; module failures
     // still use the shared error surface below.
-    const silentGlobeFirstLoad = id === 'atmosphere'
+    const silentGlobeFirstLoad = id === 'clouds'
+      || id === 'atmosphere'
       || id === 'oceans'
       || id === 'atmospheric-composition'
       || id === 'land-properties';
