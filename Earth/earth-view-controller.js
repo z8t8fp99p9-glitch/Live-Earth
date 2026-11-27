@@ -4,7 +4,6 @@
 (() => {
   "use strict";
   if (window.__liveEarthEarthRendererInstalled) return;
-  if (window.__liveEarthEarthRendererInstalled) return;
 
   /*
    * EARTH VIEW ORGANISATION MAP
@@ -84,6 +83,7 @@
   // 03 — Runtime state, owned resources and persisted view preferences.
   let earthGroup = null, earthMesh = null, atmosphere = null, locationMarker = null, earthGlobe = null;
   let earthInteractions = null, quality = "basic", active = false, activationGeneration = 0;
+  let terrainController = null, terrainLoadPromise = null;
   let initialized = false, initPromise = null, drawFrame = 0, animationFrame = 0, solarTimer = 0;
   let resizeObserver = null, baseDistance = 0, scannerVisible = false, entering = false;
   let lastWidth = 0, lastHeight = 0, lastPixelRatio = 0;
@@ -148,7 +148,8 @@
   function homeEquivalentDistance() { return distanceForDiameter(0.75); }
   function cinematicDistance() { return distanceForDiameter(TARGET_DIAMETER); }
 
-  function queueDraw() {
+  function queueDraw(skipTerrainUpdate = false) {
+    if (!skipTerrainUpdate && quality === "hd") terrainController?.scheduleUpdate();
     if (!active || !renderer || !scene || !camera || drawFrame) return;
     drawFrame = requestAnimationFrame(() => {
       drawFrame = 0;
@@ -184,8 +185,38 @@
     animationFrame = requestAnimationFrame(tick);
   }
 
+  async function loadTerrain() {
+    if (navigator.onLine === false) throw new Error("HD terrain requires an internet connection.");
+    if (terrainController) return terrainController.enable();
+    if (!terrainLoadPromise) {
+      terrainLoadPromise = import("./terrain-controller.js").then(module => {
+        if (!active || quality !== "hd" || navigator.onLine === false) return false;
+        terrainController = module.createEarthTerrainController({
+          THREE: T,
+          earthMesh,
+          requestRender: () => queueDraw(true),
+          getCameraDistance: () => camera?.position.z,
+          getHomeDistance: homeEquivalentDistance,
+          onStatus: message => showStatus(message, 3600),
+          onUnavailable: () => {
+            if (quality !== "hd") return;
+            setQuality("basic");
+            showStatus("HD terrain could not be reached. Check your connection and try HD again.", 5200);
+          }
+        });
+        return terrainController.enable();
+      }).finally(() => { terrainLoadPromise = null; });
+    }
+    return terrainLoadPromise;
+  }
+
   function setQuality(next) {
-    quality = next === "hd" ? "hd" : "basic";
+    let requested = next === "hd" ? "hd" : "basic";
+    if (requested === "hd" && navigator.onLine === false) {
+      requested = "basic";
+      showStatus("HD terrain needs an internet connection. Basic Earth remains available.", 4200);
+    }
+    quality = requested;
     try { localStorage.setItem(QUALITY_KEY, quality); } catch (_) {}
     if (renderer && earthMesh && earthGlobe) {
       earthGlobe.setGeometryDetail(quality === "hd" ? "high" : "standard");
@@ -194,6 +225,15 @@
       lastPixelRatio = pixelRatio;
       resizeRenderer(false);
     }
+    if (quality === "hd" && initialized && active) {
+      loadTerrain().catch(error => {
+        console.warn("[LIVE // EARTH] HD terrain could not start.", error);
+        if (quality === "hd") setQuality("basic");
+        showStatus("HD terrain could not start. Basic Earth remains available.", 5200);
+      });
+    } else if (quality !== "hd") {
+      terrainController?.disable();
+    }
     paintQuality();
     queueDraw();
     return quality;
@@ -201,7 +241,7 @@
 
   function zoomLimits() {
     return {
-      minimum: cinematicDistance() * (quality === "hd" ? 0.72 : 0.86),
+      minimum: quality === "hd" ? 1.2 : cinematicDistance() * 0.86,
       maximum: baseDistance || homeEquivalentDistance()
     };
   }
@@ -562,7 +602,7 @@
     baseDistance = homeEquivalentDistance();
     if (resetDistance) camera.position.z = baseDistance;
     else {
-      const minimum = cinematicDistance() * (quality === "hd" ? 0.72 : 0.86);
+      const minimum = quality === "hd" ? 1.2 : cinematicDistance() * 0.86;
       camera.position.z = clamp(baseDistance * previousRatio, minimum, baseDistance);
     }
     camera.lookAt(0, 0, 0);
@@ -606,6 +646,9 @@
       syncLocationMarker();
       updateSolarDirection();
       queueDraw();
+      if (quality === "hd" && navigator.onLine !== false) {
+        loadTerrain().catch(error => console.warn("[LIVE // EARTH] HD terrain could not resume.", error));
+      }
       entering = true;
       animateCamera(cinematicDistance(), 900, () => { entering = false; });
       if (!solarTimer) solarTimer = window.setInterval(() => {
@@ -621,6 +664,7 @@
     entering = false;
     stopCameraAnimation();
     earthInteractions?.reset();
+    terrainController?.disable();
     if (drawFrame) cancelAnimationFrame(drawFrame);
     drawFrame = 0;
     if (solarTimer) window.clearInterval(solarTimer);
@@ -636,9 +680,9 @@
     window.dispatchEvent(new CustomEvent("live-earth-exclusive-mode", { detail: { active: false } }));
   }
 
+  // 13 — UI actions and application event wiring.
   controls.querySelectorAll("[data-quality]").forEach(button => {
     button.addEventListener("click", () => setQuality(button.dataset.quality));
-  // 13 — UI actions and application event wiring.
   });
   controls.querySelectorAll("[data-zoom]").forEach(button => {
     button.addEventListener("click", () => zoomBy(button.dataset.zoom === "in" ? 0.82 : 1.22));
@@ -668,6 +712,12 @@
     scannerVisible = false;
     scannerButton.setAttribute("aria-pressed", "false");
     if (active) syncLocationMarker();
+  });
+  window.addEventListener("offline", () => {
+    if (quality === "hd") {
+      setQuality("basic");
+      showStatus("HD terrain paused because the connection was lost. Basic Earth remains available.", 5200);
+    }
   });
   window.addEventListener("resize", () => queueResize(false), { passive: true });
   window.addEventListener("orientationchange", () => queueResize(true), { passive: true });
